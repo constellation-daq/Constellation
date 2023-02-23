@@ -16,15 +16,13 @@ namespace Constellation {
         LoggerImplementation(std::string topic)
         :  topic_(std::move(topic)) {
             // Create logger from global sinks
-            auto sink_mgr = LogSinkManager::getInstance();
-            spdlog_logger_ = sink_mgr->createLogger(topic_);
+            spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
         }
 
         void setConsoleLogLevel(LogLevel level) {
             // The logger itself forwards all debug messages to sinks by default,
             // console output controlled by the corresponding sink
-            auto sink_mgr = LogSinkManager::getInstance();
-            sink_mgr->getConsoleSink()->set_level(static_cast<spdlog::level::level_enum>(level));
+            LogSinkManager::getInstance().getConsoleSink()->set_level(static_cast<spdlog::level::level_enum>(level));
         }
 
         // Enables backtrace and enables TRACE messages over ZeroMQ sink

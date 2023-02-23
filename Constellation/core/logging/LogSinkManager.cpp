@@ -2,9 +2,9 @@
 
 using namespace Constellation;
 
-LogSinkManager* LogSinkManager::getInstance() {
+LogSinkManager& LogSinkManager::getInstance() {
     static LogSinkManager instance {};
-    return &instance;
+    return instance;
 }
 
 LogSinkManager::LogSinkManager() {

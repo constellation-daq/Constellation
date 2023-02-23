@@ -12,7 +12,7 @@ namespace Constellation {
     // Global manager for sinks
     class LogSinkManager {
     public:
-        static LogSinkManager* getInstance();
+        static LogSinkManager& getInstance();
 
         LogSinkManager(LogSinkManager const&) = delete;
         LogSinkManager& operator=(LogSinkManager const&) = delete;
