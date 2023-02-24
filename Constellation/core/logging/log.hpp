@@ -1,6 +1,9 @@
 #pragma once
 
-#include "Constellation/core/logging/Logger.hpp"
+#include "Constellation/core/logging/LogLevel.hpp"
+
+// Forward enum definitions
+using enum Constellation::LogLevel;
 
 // Nested concatenation to support __LINE__, see https://stackoverflow.com/a/19666216/17555746
 #define _CONCAT_IMPL(x, y) \
