@@ -19,28 +19,28 @@
     _CONCAT(_LOG_VAR_L, __LINE__)
 
 // If message with level should be logged
-#define _IFLOG(logger, level) \
-    if(logger.shouldLog(level))
+#define IFLOG(level) \
+    if(LOGGER.shouldLog(level))
 
 // Log message
-#define _LOG(logger, level) \
-    _IFLOG(logger, level) \
-        logger.getStream(level)
+#define LOG(level) \
+    IFLOG(level) \
+        LOGGER.getStream(level)
 
 // Log message if condition is met
-#define _LOG_IF(logger, level, condition) \
-    _IFLOG(logger, level) \
+#define LOG_IF(level, condition) \
+    IFLOG(level) \
         if(condition) \
-            logger.getStream(level)
+            LOGGER.getStream(level)
 
 // Log message at most N times
-#define _LOG_N(logger, level, count) \
+#define LOG_N(level, count) \
     _GENERATE_LOG_VAR(count); \
-    _IFLOG(logger, level) \
+    IFLOG(level) \
         if(_GET_LOG_VAR() > 0) \
-            logger.getStream(level) \
+            LOGGER.getStream(level) \
             << ((--_GET_LOG_VAR() == 0) ? "[further messages suppressed] " : "")
 
 // Log message at most one time
-#define _LOG_ONCE(logger, level) \
-    _LOG_N(logger, level, 1)
+#define LOG_ONCE(level) \
+    LOG_N(level, 1)
