@@ -8,8 +8,7 @@ namespace Constellation {
         INFO = 2,
         WARNING = 3,
         ERROR = 4,
-	STATUS = 5,
-        CRITICAL = 6,
-        OFF = 7,
+        CRITICAL = 5,
+        OFF = 6,
     };
 }
