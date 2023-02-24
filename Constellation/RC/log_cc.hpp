@@ -4,18 +4,18 @@
 #include "Constellation/core/logging/log.hpp"
 
 namespace Constellation {
-    class CoreLogger : public Logger {
+    class CCLogger : public Logger {
     public:
-        static CoreLogger& getInstance() {
-            static CoreLogger instance {};
+        static CCLogger& getInstance() {
+            static CCLogger instance {};
             return instance;
         }
 
-        CoreLogger(CoreLogger const&) = delete;
-        CoreLogger& operator=(CoreLogger const&) = delete;
+        CCLogger(CCLogger const&) = delete;
+        CCLogger& operator=(CCLogger const&) = delete;
 
     private:
-        CoreLogger() : Logger("Core") {
+        CCLogger() : Logger("CC") {
             enableTrace();  // debug settings for now
             setConsoleLogLevel(TRACE);
         }
@@ -23,7 +23,7 @@ namespace Constellation {
 }
 
 // Logger instance
-#define LOGGER Constellation::CoreLogger::getInstance()
+#define LOGGER Constellation::CCLogger::getInstance()
 
 // If message with level should be logged
 #define IFLOG(level) \

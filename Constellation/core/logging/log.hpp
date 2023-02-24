@@ -18,21 +18,25 @@
 #define _GET_LOG_VAR() \
     _CONCAT(_LOG_VAR_L, __LINE__)
 
+// If message with level should be logged
+#define _IFLOG(logger, level) \
+    if(logger.shouldLog(level))
+
 // Log message
 #define _LOG(logger, level) \
-    if(logger.shouldLog(level)) \
+    _IFLOG(logger, level) \
         logger.getStream(level)
 
 // Log message if condition is met
 #define _LOG_IF(logger, level, condition) \
-    if(logger.shouldLog(level)) \
+    _IFLOG(logger, level) \
         if(condition) \
             logger.getStream(level)
 
 // Log message at most N times
 #define _LOG_N(logger, level, count) \
     _GENERATE_LOG_VAR(count); \
-    if(logger.shouldLog(level)) \
+    _IFLOG(logger, level) \
         if(_GET_LOG_VAR() > 0) \
             logger.getStream(level) \
             << ((--_GET_LOG_VAR() == 0) ? "[further messages suppressed] " : "")
