@@ -1,12 +1,14 @@
-#pragma once
+// SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+// SPDX-License-Identifier: EUPL-1.2
 
-#include "Constellation/core/logging/LogLevel.hpp"
+#pragma once
 
 #include <memory>
 #include <string>
 
-#include "spdlog/spdlog.h"
+#include <spdlog/spdlog.h>
 
+#include "Constellation/core/logging/LogLevel.hpp"
 #include "Constellation/core/logging/LogSinkManager.hpp"
 
 namespace Constellation {

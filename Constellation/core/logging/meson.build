@@ -1,4 +1,7 @@
-core_logging_src = files(
+# SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+# SPDX-License-Identifier: EUPL-1.2
+
+CoreLogging_src = files(
   'Logger.cpp',
   'LogSinkManager.cpp',
   'swap_ostringstream.cpp',
@@ -6,8 +9,8 @@ core_logging_src = files(
 
 CoreLogging_lib = static_library(
   'ConstellationCoreLogging',
-  sources: core_logging_src,
-  install: false,
-  include_directories: [Constellation_inc],
+  sources: CoreLogging_src,
+  include_directories: Constellation_inc,
   dependencies: [spdlog_dep],
+  install: false,
 )

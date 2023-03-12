@@ -1,10 +1,13 @@
+// SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+// SPDX-License-Identifier: EUPL-1.2
+
 #pragma once
 
 #include <memory>
 #include <string>
 
-#include "spdlog/async.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
+#include <spdlog/async.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "Constellation/core/logging/zmq_sink.hpp"
 

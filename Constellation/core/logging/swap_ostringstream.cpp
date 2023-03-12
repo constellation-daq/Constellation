@@ -1,4 +1,7 @@
-#include "Constellation/core/logging/swap_ostringstream.hpp"
+// SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+// SPDX-License-Identifier: EUPL-1.2
+
+#include "swap_ostringstream.hpp"
 
 #include "Constellation/core/logging/Logger.hpp"
 

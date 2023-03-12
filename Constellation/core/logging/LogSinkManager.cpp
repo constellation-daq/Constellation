@@ -1,4 +1,7 @@
-#include "Constellation/core/logging/LogSinkManager.hpp"
+// SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+// SPDX-License-Identifier: EUPL-1.2
+
+#include "LogSinkManager.hpp"
 
 using namespace Constellation;
 

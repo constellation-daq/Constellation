@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Stephan Lachnit
+# SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
 # SPDX-License-Identifier: EUPL-1.2
 
 conf_data = configuration_data()
@@ -12,8 +12,6 @@ configure_file(
 
 Core_src = files(
   'DSOLoader.cpp',
-  'messaging/ConstellationMessage.cpp',
-  'messaging/Channel.cpp',
 )
 
 subdir('logging')

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
+// SPDX-License-Identifier: EUPL-1.2
+
 #pragma once
 
 #include <mutex>
@@ -7,25 +10,27 @@
 
 // TODO implement
 
-template<typename Mutex>
-class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
-public:
-    zmq_sink() {}
+namespace Constellation {
+    template<typename Mutex>
+    class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
+    public:
+        zmq_sink() {}
 
-protected:
-    void sink_it_(const spdlog::details::log_msg& msg) override {
-        // Format log message
-        spdlog::memory_buf_t formatted {};
-        spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
-        auto msg_fmt = fmt::to_string(formatted);
+    protected:
+        void sink_it_(const spdlog::details::log_msg& msg) override {
+            // Format log message
+            spdlog::memory_buf_t formatted {};
+            spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+            auto msg_fmt = fmt::to_string(formatted);
 
-        // Send msg_fmt over ZeroMQ
-        // TODO
-    }
+            // Send msg_fmt over ZeroMQ
+            // TODO
+        }
 
-    void flush_() override {}
-};
+        void flush_() override {}
+    };
 
-// TODO: mt even needed? ZeroMQ should be thread safe...
-using zmq_sink_mt = zmq_sink<std::mutex>;
-using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
+    // TODO: mt even needed? ZeroMQ should be thread safe...
+    using zmq_sink_mt = zmq_sink<std::mutex>;
+    using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
+}
