@@ -2,11 +2,12 @@
 
 BroadcastRecv::BroadcastRecv(asio::io_context& io_context)
   : io_context_(io_context),
-    endpoint_(asio::ip::address_v4::broadcast(), asio::ip::port_type(60123)),
+    endpoint_(asio::ip::address_v4::any(), asio::ip::port_type(60123)),
     socket_(io_context, endpoint_.protocol()) {
     // Set reuseable address and broadcast option
     socket_.set_option(asio::socket_base::reuse_address(true));
     socket_.set_option(asio::socket_base::broadcast(true));
+    // Bind socket on receiving side
     socket_.bind(endpoint_);
 }
 

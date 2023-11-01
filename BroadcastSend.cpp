@@ -7,7 +7,6 @@ BroadcastSend::BroadcastSend(asio::io_context& io_context)
     // Set reuseable address and broadcast option
     socket_.set_option(asio::socket_base::reuse_address(true));
     socket_.set_option(asio::socket_base::broadcast(true));
-    socket_.bind(endpoint_);
 }
 
 void BroadcastSend::SendBroadcast(std::string_view message) {
