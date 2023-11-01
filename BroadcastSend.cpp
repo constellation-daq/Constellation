@@ -12,10 +12,10 @@ BroadcastSend::BroadcastSend(asio::io_context& io_context, asio::ip::address_v4 
 }
 
 BroadcastSend::BroadcastSend(asio::io_context& io_context, const std::string& broadcast_ip)
-  : BroadcastSend(io_context, asio::ip::address_v4::from_string(broadcast_ip)) {};
+  : BroadcastSend(io_context, asio::ip::address_v4::from_string(broadcast_ip)) {}
 
 BroadcastSend::BroadcastSend(asio::io_context& io_context)
-  : BroadcastSend(io_context, asio::ip::address_v4::broadcast()) {};
+  : BroadcastSend(io_context, asio::ip::address_v4::broadcast()) {}
 
 void BroadcastSend::SendBroadcast(std::string_view message) {
     socket_.send(asio::buffer(message));
@@ -23,4 +23,4 @@ void BroadcastSend::SendBroadcast(std::string_view message) {
 
 void BroadcastSend::SendBroadcast(const std::string& message) {
     SendBroadcast(std::string_view(message.data(), message.length()));
-};
+}

@@ -13,16 +13,21 @@ asio_dep = dependency('asio')
 asio_test = library('asio_test',
     sources: ['BroadcastRecv.cpp', 'BroadcastSend.cpp'],
     dependencies: [asio_dep],
+    cpp_args: ['-DASIO_STANDALONE=1'],
+)
+
+asio_test_dep = declare_dependency(
+    link_with: [asio_test],
+    dependencies: [asio_dep],
+    compile_args: ['-DASIO_STANDALONE=1'],
 )
 
 executable('broadcast_recv',
     sources: ['broadcast_recv.cpp'],
-    dependencies: [asio_dep],
-    link_with: [asio_test],
+    dependencies: [asio_test_dep],
 )
 
 executable('broadcast_send',
     sources: ['broadcast_send.cpp'],
-    dependencies: [asio_dep],
-    link_with: [asio_test],
+    dependencies: [asio_test_dep],
 )
