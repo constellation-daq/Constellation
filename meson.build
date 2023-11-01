@@ -8,7 +8,7 @@ project('constellation', 'cpp',
 
 constellation_inc = include_directories('.')
 
- = dependency('asio')
+asio_dep = dependency('asio')
 
 asio_test = library('asio_test',
     sources: ['BroadcastRecv.cpp', 'BroadcastSend.cpp'],

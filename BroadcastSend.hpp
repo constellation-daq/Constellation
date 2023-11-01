@@ -5,6 +5,8 @@
 
 class BroadcastSend {
 public:
+    BroadcastSend(asio::io_context& io_context, asio::ip::address_v4 broadcast_address);
+    BroadcastSend(asio::io_context& io_context, const std::string& broadcast_ip);
     BroadcastSend(asio::io_context& io_context);
 
     void SendBroadcast(std::string_view message);
