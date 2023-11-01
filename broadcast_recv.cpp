@@ -9,6 +9,7 @@ int main() {
     BroadcastRecv receiver {io_context};
 
     while(true) {
-        std::cout << "recv message: " << receiver.RecvBroadcast() << std::endl;
+        auto message = receiver.RecvBroadcast();
+        std::cout << "recv message from " << message.ip.to_string() << ": " << message.content << std::endl;
     }
 }

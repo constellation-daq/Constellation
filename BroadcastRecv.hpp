@@ -2,11 +2,16 @@
 
 #include "asio.hpp"
 
+struct BroadcastMessage {
+    std::string content;
+    asio::ip::address ip;
+};
+
 class BroadcastRecv {
 public:
     BroadcastRecv(asio::io_context& io_context);
 
-    std::string RecvBroadcast();
+    BroadcastMessage RecvBroadcast();
 
 private:
     asio::io_context& io_context_;

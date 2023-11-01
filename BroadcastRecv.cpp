@@ -11,14 +11,21 @@ BroadcastRecv::BroadcastRecv(asio::io_context& io_context)
     socket_.bind(endpoint_);
 }
 
-std::string BroadcastRecv::RecvBroadcast() {
-    // Create string and reserve some space
-    std::string message {};
-    message.resize(1024);
-    // Receive data and length of message
+BroadcastMessage BroadcastRecv::RecvBroadcast() {
+    BroadcastMessage message {};
+
+    // Reserve some space for message
+    message.content.resize(1024);
+
+    // Receive content and length of message
     asio::ip::udp::endpoint sender_endpoint {};
-    auto length = socket_.receive_from(asio::buffer(message), sender_endpoint);
-    // Resize string to actual message length
-    message.resize(length);
+    auto length = socket_.receive_from(asio::buffer(message.content), sender_endpoint);
+
+    // Store IP address
+    message.ip = sender_endpoint.address();
+
+    // Resize content to actual message length
+    message.content.resize(length);
+
     return message;
 }
