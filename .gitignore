@@ -3,6 +3,8 @@
 
 /subprojects/packagecache/
 /subprojects/asio-*/
+/subprojects/magic_enum-*/
+
 # Data files do not belong into the repository
 *.pdf
 *.log

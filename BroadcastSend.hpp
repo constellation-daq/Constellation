@@ -1,5 +1,5 @@
-#include <string_view>
 #include <string>
+#include <string_view>
 
 #include "asio.hpp"
 
@@ -11,6 +11,7 @@ public:
 
     void SendBroadcast(std::string_view message);
     void SendBroadcast(const std::string& message);
+    void SendBroadcast(const void* data, std::size_t size);
 
 private:
     asio::io_context& io_context_;

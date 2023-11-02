@@ -10,6 +10,6 @@ int main() {
 
     while(true) {
         auto message = receiver.RecvBroadcast();
-        std::cout << "recv message from " << message.ip.to_string() << ": " << message.content << std::endl;
+        std::cout << "recv message from " << message.ip.to_string() << ": " << message.content_to_string() << std::endl;
     }
 }
