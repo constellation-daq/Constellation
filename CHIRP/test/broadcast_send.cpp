@@ -3,16 +3,18 @@
 
 #include "asio.hpp"
 
-#include "BroadcastSend.hpp"
+#include "CHIRP/BroadcastSend.hpp"
+
+using namespace cnstln::CHIRP;
 
 int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline
-    asio::ip::address_v4 broadcast_address {};
+    asio::ip::address broadcast_address {};
     if(argc < 2) {
         broadcast_address = asio::ip::address_v4::broadcast();
     }
     else if (argc == 2) {
-        broadcast_address = asio::ip::address_v4::from_string(argv[1]);
+        broadcast_address = asio::ip::make_address(argv[1]);
     }
     else {
         return 1;
@@ -24,7 +26,7 @@ int main(int argc, char* argv[]) {
     while(true) {
         std::string message;
         std::cout << "send message: ";
-        std::cin >> message;
+        std::getline(std::cin, message);
 
         sender.SendBroadcast(message);
     }

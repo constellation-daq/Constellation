@@ -209,9 +209,9 @@ namespace MD5_NS
 			constexpr MD5();
 
 			constexpr void reset();
-			CONSTEXPR_CPP17_CHOCOBO1_HASH MD5& finalize();  // after this, only `operator T()`, `reset()`, `toArray()`, `toString()`, `toVector()` are available
+			CONSTEXPR_CPP17_CHOCOBO1_HASH MD5& finalize();  // after this, only `operator T()`, `reset()`, `toArray()`, `to_string()`, `toVector()` are available
 
-			std::string toString() const;
+			std::string to_string() const;
 			std::vector<Byte> toVector() const;
 			CONSTEXPR_CPP17_CHOCOBO1_HASH ResultArrayType toArray() const;
 			template <typename T>
@@ -331,7 +331,7 @@ namespace MD5_NS
 		return (*this);
 	}
 
-	std::string MD5::toString() const
+	std::string MD5::to_string() const
 	{
 		const auto digest = toArray();
 		std::string ret;
