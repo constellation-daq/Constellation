@@ -17,6 +17,10 @@ executable('chirp_send',
   sources: 'chirp_send.cpp',
   dependencies: [chirp_dep, magic_enum_dep],
 )
+executable('chirp_manager',
+  sources: 'chirp_manager.cpp',
+  dependencies: [chirp_dep, magic_enum_dep],
+)
 
 # unit tests for broadcast code
 broadcast_test = executable('broadcast_test',

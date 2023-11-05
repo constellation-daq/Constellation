@@ -1,5 +1,6 @@
 #include "Message.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include "CHIRP/exceptions.hpp"
@@ -40,13 +41,11 @@ bool MD5Hash::operator<(const MD5Hash& other) const {
     return false;
 }
 
-AssembledMessage::AssembledMessage(std::vector<std::uint8_t> assembled_message) {
+AssembledMessage::AssembledMessage(const std::vector<std::uint8_t>& assembled_message) {
     if (assembled_message.size() != MESSAGE_LENGTH) {
         throw DecodeError("Message length is not " + std::to_string(MESSAGE_LENGTH) + " bytes");
     }
-    for (std::size_t n = 0; n < MESSAGE_LENGTH; ++n) {
-        this->at(n) = std::move(assembled_message[n]);
-    }
+    std::copy_n(assembled_message.cbegin(), MESSAGE_LENGTH, this->begin());
 }
 
 Message::Message(MessageType type, MD5Hash group_hash, MD5Hash name_hash, ServiceIdentifier service, Port port)

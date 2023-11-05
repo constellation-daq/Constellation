@@ -40,7 +40,7 @@ public:
 class AssembledMessage : public std::array<std::uint8_t, MESSAGE_LENGTH> {
 public:
     constexpr AssembledMessage() {}
-    CHIRP_API AssembledMessage(std::vector<std::uint8_t> assembled_message);
+    CHIRP_API AssembledMessage(const std::vector<std::uint8_t>& assembled_message);
 };
 
 class Message {

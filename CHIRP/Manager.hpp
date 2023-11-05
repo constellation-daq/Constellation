@@ -1,8 +1,10 @@
 #pragma once
 
+#include <mutex>
 #include <set>
 #include <string_view>
 #include <thread>
+#include <utility>
 
 #include "asio.hpp"
 
@@ -21,37 +23,48 @@ struct RegisteredService {
 };
 
 struct DiscoveredService {
+    asio::ip::address ip;
     MD5Hash name_hash;
     ServiceIdentifier identifier;
     Port port;
     bool operator<(const DiscoveredService& other) const;
 };
 
+using DiscoverCallback = void(DiscoveredService service, bool leaving, void* data);
+
 class Manager {
 public:
-    Manager(asio::io_context& io_context, std::string_view group, std::string_view name);
-    virtual ~Manager();
+    CHIRP_API Manager(asio::io_context& io_context, std::string_view group, std::string_view name);
+    CHIRP_API virtual ~Manager();
 
-    void Start();
+    CHIRP_API void Start();
 
-    void RegisterService(RegisteredService service);
-    void UnregisterService(RegisteredService service);
-    void UnregisterServices();
+    CHIRP_API bool RegisterService(RegisteredService service);
+    CHIRP_API bool UnregisterService(RegisteredService service);
+    CHIRP_API void UnregisterServices();
+    CHIRP_API std::set<RegisteredService> GetRegisteredServices();
 
-    std::set<DiscoveredService> GetDiscoveredServices();
+    CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, void* data);
+    CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, void* data);
+    CHIRP_API void UnregisterDiscoverCallbacks();
+    CHIRP_API std::set<DiscoveredService> GetDiscoveredServices();
 
 private:
-    void SendOffer(RegisteredService service);
+    void SendMessage(MessageType type, RegisteredService service);
     void Run(std::stop_token stop_token);
 
 private:
-    std::jthread run_thread_;
-    std::set<RegisteredService> registered_services_;  // not thread safe!
-    std::set<DiscoveredService> discovered_services_;  // not thread safe!
     BroadcastRecv receiver_;
     BroadcastSend sender_;
     MD5Hash group_hash_;
     MD5Hash name_hash_;
+    std::set<RegisteredService> registered_services_;
+    std::set<DiscoveredService> discovered_services_;
+    std::set<std::pair<DiscoverCallback*, void*>> discover_callbacks_;
+    std::mutex registered_services_mutex_;
+    std::mutex discovered_services_mutex_;
+    std::mutex discover_callbacks_mutex_;
+    std::jthread run_thread_;
 };
 
 }

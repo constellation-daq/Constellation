@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 
+#include "asio.hpp"
 #include "magic_enum.hpp"
 
 #include "CHIRP/BroadcastSend.hpp"
@@ -8,9 +9,15 @@
 
 using namespace cnstln::CHIRP;
 
-int main() {
+int main(int argc, char* argv[]) {
+    // Specify broadcast address via cmdline
+    asio::ip::address brd_address = asio::ip::address_v4::broadcast();
+    if (argc >= 2) {
+        brd_address = asio::ip::make_address(argv[1]);
+    }
+
     auto io_context = asio::io_context();
-    auto sender = BroadcastSend(io_context);
+    auto sender = BroadcastSend(io_context, brd_address);
 
     while (true) {
         std::cout << "-----------------------------------------" << std::endl;

@@ -8,15 +8,9 @@ using namespace cnstln::CHIRP;
 
 int main(int argc, char* argv[]) {
     // Specify any address via cmdline
-    asio::ip::address any_address {};
-    if(argc < 2) {
-        any_address = asio::ip::address_v4::broadcast();
-    }
-    else if (argc == 2) {
+    asio::ip::address any_address = asio::ip::address_v4::any();
+    if(argc >= 2) {
         any_address = asio::ip::make_address(argv[1]);
-    }
-    else {
-        return 1;
     }
 
     asio::io_context io_context {};
