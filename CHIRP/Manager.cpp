@@ -1,6 +1,8 @@
 #include "Manager.hpp"
 
+#include <cstdint>
 #include <functional>
+#include <utility>
 
 #include "CHIRP/exceptions.hpp"
 
@@ -37,6 +39,27 @@ bool DiscoveredService::operator<(const DiscoveredService& other) const {
         return false;
     }
     return port < other.port;
+}
+
+bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const {
+    // First sort after callback address
+    auto ord_callback = reinterpret_cast<std::uintptr_t>(callback) <=> reinterpret_cast<std::uintptr_t>(other.callback);
+    if (std::is_lt(ord_callback)) {
+        return true;
+    }
+    if (std::is_gt(ord_callback)) {
+        return false;
+    }
+    // Then after service identifier to listen to
+    auto ord_service = std::to_underlying(service) <=> std::to_underlying(other.service);
+    if (std::is_lt(ord_service)) {
+        return true;
+    }
+    if (std::is_gt(ord_service)) {
+        return false;
+    }
+    // Lastly after user_data address
+    return reinterpret_cast<std::uintptr_t>(user_data) < reinterpret_cast<std::uintptr_t>(other.user_data);
 }
 
 Manager::Manager(asio::io_context& io_context, asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name)
@@ -98,17 +121,17 @@ std::set<RegisteredService> Manager::GetRegisteredServices() {
     return registered_services_;
 }
 
-bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, void* data) {
+bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto insert_ret = discover_callbacks_.emplace(callback, data);
+    const auto insert_ret = discover_callbacks_.emplace(callback, service, user_data);
 
     // Return if actually inserted
     return insert_ret.second;
 }
 
-bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, void* data) {
+bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto erase_ret = discover_callbacks_.erase(std::make_pair(callback, data));
+    const auto erase_ret = discover_callbacks_.erase({callback, service, user_data});
 
     // Return if actually erased
     return erase_ret > 0;
@@ -119,9 +142,18 @@ void Manager::UnregisterDiscoverCallbacks() {
     discover_callbacks_.clear();
 }
 
+void Manager::ForgetDiscoveredServices() {
+    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    discovered_services_.clear();
+}
+
 std::set<DiscoveredService> Manager::GetDiscoveredServices() {
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     return discovered_services_;
+}
+
+void Manager::SendRequest(ServiceIdentifier service) {
+    SendMessage(REQUEST, {service, 0});
 }
 
 void Manager::SendMessage(MessageType type, RegisteredService service) {
@@ -140,7 +172,7 @@ void Manager::Run(std::stop_token stop_token) {
                 // Broadcast from different group, ignore
                 continue;
             }
-            if (chirp_msg.GetNameHash() != name_hash_) {
+            if (chirp_msg.GetNameHash() == name_hash_) {
                 // Broadcast from self, ignore
                 continue;
             }
@@ -169,8 +201,10 @@ void Manager::Run(std::stop_token stop_token) {
                     // Acquire lock for discover_callbacks_
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
-                    for (const auto& callback_data : discover_callbacks_) {
-                        std::thread(callback_data.first, discovered_service, false, callback_data.second).detach();
+                    for (const auto& cb_entry : discover_callbacks_) {
+                        if (cb_entry.service == discovered_service.identifier) {
+                            std::thread(cb_entry.callback, discovered_service, false, cb_entry.user_data).detach();
+                        }
                     }
                 }
                 break;
@@ -185,8 +219,10 @@ void Manager::Run(std::stop_token stop_token) {
                     // Acquire lock for discover_callbacks_
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
-                    for (const auto& callback_data : discover_callbacks_) {
-                        std::thread(callback_data.first, discovered_service, true, callback_data.second).detach();
+                    for (const auto& cb_entry : discover_callbacks_) {
+                        if (cb_entry.service == discovered_service.identifier) {
+                            std::thread(cb_entry.callback, discovered_service, true, cb_entry.user_data).detach();
+                        }
                     }
                 }
                 break;

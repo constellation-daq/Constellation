@@ -85,3 +85,20 @@ Note regarding unsubscribing: sending OFFER with port 0 is not optimal, because 
 - REQUEST always port == 0
 - OFFER   never  port == 0
 - LEAVING never  port == 0
+
+## CHIRP Manager
+
+To run the CHIRP manager, run:
+```sh
+./builddir/CHIRP/test/chirp_manager
+```
+
+The following commands are available:
+- `list_registered_services`: list of services registered by the user in the manager
+- `list_discovered_services`: list of services discovered by the manager and are in the same group
+- `register_service [SERVICE] [PORT]`: register a service in the manager
+- `register_callback [SERVICE]`: register a discover callback for a service that prints the discovered service
+- `request [SERVICE]`: send a CHIRP request for a given service
+- `unregister_service [SERVICE] [PORT]`: unregister a service in the manager
+- `unregister_callback [SERVICE]`: unregister a discover callback for a service
+- `reset`: unregister all services and callbacks, and forget discovered services

@@ -4,7 +4,6 @@
 #include <set>
 #include <string_view>
 #include <thread>
-#include <utility>
 
 #include "asio.hpp"
 
@@ -30,7 +29,14 @@ struct DiscoveredService {
     bool operator<(const DiscoveredService& other) const;
 };
 
-using DiscoverCallback = void(DiscoveredService service, bool leaving, void* data);
+using DiscoverCallback = void(DiscoveredService service, bool leaving, void* user_data);
+
+struct DiscoverCallbackEntry {
+    DiscoverCallback* callback;
+    ServiceIdentifier service;
+    void* user_data;
+    bool operator<(const DiscoverCallbackEntry& other) const;
+};
 
 class Manager {
 public:
@@ -44,10 +50,14 @@ public:
     CHIRP_API void UnregisterServices();
     CHIRP_API std::set<RegisteredService> GetRegisteredServices();
 
-    CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, void* data);
-    CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, void* data);
+    CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data);
+    CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data);
     CHIRP_API void UnregisterDiscoverCallbacks();
+
+    CHIRP_API void ForgetDiscoveredServices();
     CHIRP_API std::set<DiscoveredService> GetDiscoveredServices();
+
+    CHIRP_API void SendRequest(ServiceIdentifier service);
 
 private:
     void SendMessage(MessageType type, RegisteredService service);
@@ -60,7 +70,7 @@ private:
     MD5Hash name_hash_;
     std::set<RegisteredService> registered_services_;
     std::set<DiscoveredService> discovered_services_;
-    std::set<std::pair<DiscoverCallback*, void*>> discover_callbacks_;
+    std::set<DiscoverCallbackEntry> discover_callbacks_;
     std::mutex registered_services_mutex_;
     std::mutex discovered_services_mutex_;
     std::mutex discover_callbacks_mutex_;

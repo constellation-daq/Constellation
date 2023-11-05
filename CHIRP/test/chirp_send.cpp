@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
         std::string port_s {};
         std::cout << "Port:    [23999]   ";
         std::getline(std::cin, port_s);
-        std::uint16_t port = 23999;
+        Port port = 23999;
         std::from_chars(port_s.data(), port_s.data() + port_s.size(), port);
 
         auto chirp_msg = Message(type, group, name, service, port);
