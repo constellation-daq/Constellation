@@ -39,8 +39,8 @@ bool DiscoveredService::operator<(const DiscoveredService& other) const {
     return port < other.port;
 }
 
-Manager::Manager(asio::io_context& io_context, std::string_view group, std::string_view name)
-  : receiver_(io_context), sender_(io_context),
+Manager::Manager(asio::io_context& io_context, asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name)
+  : receiver_(io_context, any_address), sender_(io_context, brd_address),
     group_hash_(MD5Hash(group)), name_hash_(MD5Hash(name)) {}
 
 Manager::~Manager() {

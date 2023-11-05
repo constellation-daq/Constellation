@@ -16,8 +16,8 @@ int main(int argc, char* argv[]) {
         brd_address = asio::ip::make_address(argv[1]);
     }
 
-    auto io_context = asio::io_context();
-    auto sender = BroadcastSend(io_context, brd_address);
+    asio::io_context io_context {};
+    BroadcastSend sender {io_context, brd_address};
 
     while (true) {
         std::cout << "-----------------------------------------" << std::endl;

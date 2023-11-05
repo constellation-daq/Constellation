@@ -34,7 +34,7 @@ using DiscoverCallback = void(DiscoveredService service, bool leaving, void* dat
 
 class Manager {
 public:
-    CHIRP_API Manager(asio::io_context& io_context, std::string_view group, std::string_view name);
+    CHIRP_API Manager(asio::io_context& io_context, asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name);
     CHIRP_API virtual ~Manager();
 
     CHIRP_API void Start();

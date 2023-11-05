@@ -21,7 +21,7 @@ int test_message_md5_hash() {
     fails += (MD5Hash("abcdefghijklmnopqrstuvwxyz"sv).to_string() == "c3fcd3d76192e4007dfb496cca67e13b") ? 0 : 1;
     fails += (MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"sv).to_string() == "d174ab98d277d9f5a5611c2c9f419d9f") ? 0 : 1;
     fails += (MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890"sv).to_string() == "57edf4a22be3c955ac49da2e2107b67a") ? 0 : 1;
-    return (fails == 0) ? 0 : 1;
+    return fails == 0 ? 0 : 1;
 }
 
 int test_assembled_message() {
@@ -53,7 +53,7 @@ int test_message_reconstructed() {
     fails += (msg.GetNameHash() == msg_reconstructed.GetNameHash()) ? 0 : 1;
     fails += (msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier()) ? 0 : 1;
     fails += (msg.GetPort() == msg_reconstructed.GetPort()) ? 0 : 1;
-    return (fails == 0) ? 0 : 1;
+    return fails == 0 ? 0 : 1;
 }
 
 int test_message_construct_invalid_chirpv1() {

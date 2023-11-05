@@ -11,8 +11,8 @@ using namespace cnstln::CHIRP;
 using namespace std::literals::string_literals;
 
 int test_broadcast_send_recv_string(asio::io_context& io_context) {
-    BroadcastRecv receiver {io_context};
-    BroadcastSend sender {io_context};
+    BroadcastRecv receiver {io_context, "0.0.0.0"};
+    BroadcastSend sender {io_context, "0.0.0.0"};
 
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -22,12 +22,12 @@ int test_broadcast_send_recv_string(asio::io_context& io_context) {
     // Receive message
     auto msg = msg_future.get();
     // Convert to string and compare
-    return (msg.content_to_string() == msg_content) ? 0 : 1;
+    return msg.content_to_string() == msg_content ? 0 : 1;
 }
 
 int test_broadcast_send_recv_array(asio::io_context& io_context) {
     BroadcastRecv receiver {io_context, "0.0.0.0"};
-    BroadcastSend sender {io_context, "255.255.255.255"};
+    BroadcastSend sender {io_context, "0.0.0.0"};
 
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -37,7 +37,22 @@ int test_broadcast_send_recv_array(asio::io_context& io_context) {
     // Receive message
     auto msg = msg_future.get();
     // Compare
-    return (msg.content == msg_content) ? 0 : 1;
+    return msg.content == msg_content ? 0 : 1;
+}
+
+int test_broadcast_localhost_ip(asio::io_context& io_context) {
+    BroadcastRecv receiver {io_context, "0.0.0.0"};
+    BroadcastSend sender {io_context, "0.0.0.0"};
+
+    // Start receiving new message
+    auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    // Send message (string)
+    auto msg_content = "test message"s;
+    sender.SendBroadcast(msg_content);
+    // Receive message
+    auto msg = msg_future.get();
+    // Compare IP
+    return msg.ip == asio::ip::make_address("0.0.0.0");
 }
 
 int main() {
@@ -52,9 +67,15 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    // broadcast_send_recv_array
+    // test_broadcast_send_recv_array
     std::cout << "test_broadcast_send_recv_array...            " << std::flush;
     ret_test = test_broadcast_send_recv_array(io_context);
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_broadcast_localhost_ip
+    std::cout << "test_broadcast_localhost_ip...               " << std::flush;
+    ret_test = test_broadcast_localhost_ip(io_context);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 

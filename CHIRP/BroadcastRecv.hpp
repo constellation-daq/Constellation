@@ -19,7 +19,7 @@ struct BroadcastMessage {
 
 class BroadcastRecv {
 public:
-    CHIRP_API BroadcastRecv(asio::io_context& io_context, asio::ip::address any_address);
+    CHIRP_API BroadcastRecv(asio::io_context& io_context, asio::ip::address any_address = asio::ip::address_v4::any());
     CHIRP_API BroadcastRecv(asio::io_context& io_context, const std::string& any_ip);
     CHIRP_API BroadcastRecv(asio::io_context& io_context);
 

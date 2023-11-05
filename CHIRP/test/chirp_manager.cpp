@@ -26,10 +26,10 @@ int main(int argc, char* argv[]) {
         any_address = asio::ip::make_address(argv[4]);
     }
 
-    auto io_context = asio::io_context();
+    asio::io_context io_context {};
     {
         // TODO: add brd and any address
-        auto manager = Manager(io_context, group, name);
+        Manager manager {io_context, brd_address, any_address, group, name};
 
         // TODO: this is just a demo, make it a proper CLI
         manager.RegisterService({CONTROL, 23999});
