@@ -45,8 +45,8 @@ int test_assembled_message() {
 
 int test_message_reconstructed() {
     auto msg = Message(OFFER, "group", "name", CONTROL, 47890);
-    auto msg_assembled = msg.Assemble();
-    auto msg_reconstructed = Message(msg_assembled);
+    auto asm_msg = msg.Assemble();
+    auto msg_reconstructed = Message(asm_msg);
     int fails = 0;
     fails += (msg.GetType() == msg_reconstructed.GetType()) ? 0 : 1;
     fails += (msg.GetGroupHash() == msg_reconstructed.GetGroupHash()) ? 0 : 1;
@@ -58,11 +58,11 @@ int test_message_reconstructed() {
 
 int test_message_construct_invalid_chirpv1() {
     auto msg = Message(REQUEST, "group", "name", HEARTBEAT, 0);
-    auto msg_assembled = msg.Assemble();
-    msg_assembled[0] = 'X';
+    auto asm_msg = msg.Assemble();
+    asm_msg[0] = 'X';
     int ret = 1;
     try {
-        Message {msg_assembled};
+        Message {asm_msg};
     }
     catch (const DecodeError& error) {
         if (std::strcmp(error.what(), "Not a CHIRP v1 broadcast") == 0) {
@@ -74,10 +74,10 @@ int test_message_construct_invalid_chirpv1() {
 
 int test_message_construct_invalid_type() {
     auto msg = Message(static_cast<MessageType>(255), "group", "name", DATA, 0);
-    auto msg_assembled = msg.Assemble();
+    auto asm_msg = msg.Assemble();
     int ret = 1;
     try {
-        Message {msg_assembled};
+        Message {asm_msg};
     }
     catch (const DecodeError& error) {
         if (std::strcmp(error.what(), "Message Type invalid") == 0) {
@@ -89,10 +89,10 @@ int test_message_construct_invalid_type() {
 
 int test_message_construct_invalid_service() {
     auto msg = Message(OFFER, "group", "name", static_cast<ServiceIdentifier>(255), 12345);
-    auto msg_assembled = msg.Assemble();
+    auto asm_msg = msg.Assemble();
     int ret = 1;
     try {
-        Message {msg_assembled};
+        Message {asm_msg};
     }
     catch (const DecodeError& error) {
         if (std::strcmp(error.what(), "Service Identifier invalid") == 0) {

@@ -31,6 +31,15 @@ std::string MD5Hash::to_string() const {
     return ret;
 }
 
+bool MD5Hash::operator<(const MD5Hash& other) const {
+    for (std::uint8_t n = 0; n < this->size(); ++n) {
+        if (this->at(n) < other[n]) {
+            return true;
+        }
+    }
+    return false;
+}
+
 AssembledMessage::AssembledMessage(std::vector<std::uint8_t> assembled_message) {
     if (assembled_message.size() != MESSAGE_LENGTH) {
         throw DecodeError("Message length is not " + std::to_string(MESSAGE_LENGTH) + " bytes");
@@ -58,7 +67,7 @@ Message::Message(const AssembledMessage& assembled_message) {
     }
     // Message Type
     if (assembled_message[6] < std::to_underlying(MessageType::REQUEST) ||
-        assembled_message[6] > std::to_underlying(MessageType::OFFER)) {
+        assembled_message[6] > std::to_underlying(MessageType::LEAVING)) {
         throw DecodeError("Message Type invalid");
     }
     type_ = static_cast<MessageType>(assembled_message[6]);

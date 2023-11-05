@@ -65,3 +65,8 @@ To send CHIRP messages:
 
 TODO:
 - [ ] Mention MD5 hashing and service identifiers somewhere - in CHIRP itself or other RFC?
+
+Note regarding unsubscribing: sending OFFER with port 0 is not optimal, because might have multiple services on one satellite with different ports. Let us to add a new message type instead instead:
+- REQUEST always port == 0
+- OFFER   never  port == 0
+- LEAVING never  port == 0
