@@ -34,7 +34,7 @@ public:
     constexpr MD5Hash() {}
     CHIRP_API MD5Hash(std::string_view string);
     CHIRP_API std::string to_string() const;
-    bool operator<(const MD5Hash& other) const;
+    CHIRP_API bool operator<(const MD5Hash& other) const;
 };
 
 class AssembledMessage : public std::array<std::uint8_t, MESSAGE_LENGTH> {

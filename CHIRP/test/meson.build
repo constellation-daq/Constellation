@@ -23,15 +23,22 @@ executable('chirp_manager',
 )
 
 # unit tests for broadcast code
-broadcast_test = executable('broadcast_test',
-  sources: 'broadcast_test.cpp',
+test_broadcast = executable('test_broadcast',
+  sources: 'test_broadcast.cpp',
   dependencies: chirp_dep,
 )
-test('CHIRP broadcast test', broadcast_test)
+test('CHIRP broadcast test', test_broadcast, is_parallel : false)
 
 # unit tests for CHIRP message code
-message_test = executable('message_test',
-  sources: 'message_test.cpp',
+test_message = executable('test_message',
+  sources: 'test_message.cpp',
   dependencies: chirp_dep,
 )
-test('CHIRP message test', message_test)
+test('CHIRP message test', test_message)
+
+# unit tests for CHIRP manager code
+test_manager = executable('test_manager',
+  sources: 'test_manager.cpp',
+  dependencies: chirp_dep,
+)
+test('CHIRP manager test', test_manager, is_parallel : false)

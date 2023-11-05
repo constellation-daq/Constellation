@@ -18,7 +18,7 @@ namespace CHIRP {
 struct RegisteredService {
     ServiceIdentifier identifier;
     Port port;
-    bool operator<(const RegisteredService& other) const;
+    CHIRP_API bool operator<(const RegisteredService& other) const;
 };
 
 struct DiscoveredService {
@@ -26,7 +26,7 @@ struct DiscoveredService {
     MD5Hash name_hash;
     ServiceIdentifier identifier;
     Port port;
-    bool operator<(const DiscoveredService& other) const;
+    CHIRP_API bool operator<(const DiscoveredService& other) const;
 };
 
 using DiscoverCallback = void(DiscoveredService service, bool leaving, void* user_data);
@@ -35,12 +35,13 @@ struct DiscoverCallbackEntry {
     DiscoverCallback* callback;
     ServiceIdentifier service;
     void* user_data;
-    bool operator<(const DiscoverCallbackEntry& other) const;
+    CHIRP_API bool operator<(const DiscoverCallbackEntry& other) const;
 };
 
 class Manager {
 public:
-    CHIRP_API Manager(asio::io_context& io_context, asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name);
+    CHIRP_API Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name);
+    CHIRP_API Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view name);
     CHIRP_API virtual ~Manager();
 
     CHIRP_API void Start();

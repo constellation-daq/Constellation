@@ -1,12 +1,16 @@
 #include "Manager.hpp"
 
 #include <cstdint>
+#include <chrono>
 #include <functional>
 #include <utility>
+
+#include <iostream>
 
 #include "CHIRP/exceptions.hpp"
 
 using namespace cnstln::CHIRP;
+using namespace std::literals::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {
     // Sort first by service id
@@ -62,9 +66,11 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return reinterpret_cast<std::uintptr_t>(user_data) < reinterpret_cast<std::uintptr_t>(other.user_data);
 }
 
-Manager::Manager(asio::io_context& io_context, asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name)
-  : receiver_(io_context, any_address), sender_(io_context, brd_address),
-    group_hash_(MD5Hash(group)), name_hash_(MD5Hash(name)) {}
+Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name)
+  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group)), name_hash_(MD5Hash(name)) {}
+
+Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view name)
+  : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group, name) {}
 
 Manager::~Manager() {
     // First stop Run function
@@ -164,8 +170,14 @@ void Manager::SendMessage(MessageType type, RegisteredService service) {
 void Manager::Run(std::stop_token stop_token) {
     while (!stop_token.stop_requested()) {
         try {
-            auto raw_msg = receiver_.RecvBroadcast();  // TODO: timeout
+            const auto raw_msg_opt = receiver_.AsyncRecvBroadcast(100ms);
 
+            // Check for timeout
+            if (!raw_msg_opt.has_value()) {
+                continue;
+            }
+
+            const auto raw_msg = raw_msg_opt.value();
             auto chirp_msg = Message(AssembledMessage(raw_msg.content));
 
             if (chirp_msg.GetGroupHash() != group_hash_) {

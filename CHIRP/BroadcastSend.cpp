@@ -4,9 +4,9 @@
 
 using namespace cnstln::CHIRP;
 
-BroadcastSend::BroadcastSend(asio::io_context& io_context, asio::ip::address brd_address)
-  : endpoint_(std::move(brd_address), asio::ip::port_type(CHIRP_PORT)),
-    socket_(io_context, endpoint_.protocol()) {
+BroadcastSend::BroadcastSend(asio::ip::address brd_address)
+  : io_context_(), endpoint_(std::move(brd_address), asio::ip::port_type(CHIRP_PORT)),
+    socket_(io_context_, endpoint_.protocol()) {
     // Set reuseable address and broadcast socket options
     socket_.set_option(asio::socket_base::reuse_address(true));
     socket_.set_option(asio::socket_base::broadcast(true));
@@ -14,8 +14,8 @@ BroadcastSend::BroadcastSend(asio::io_context& io_context, asio::ip::address brd
     socket_.connect(endpoint_);
 }
 
-BroadcastSend::BroadcastSend(asio::io_context& io_context, std::string_view brd_ip)
-  : BroadcastSend(io_context, asio::ip::make_address(brd_ip)) {}
+BroadcastSend::BroadcastSend(std::string_view brd_ip)
+  : BroadcastSend(asio::ip::make_address(brd_ip)) {}
 
 void BroadcastSend::SendBroadcast(std::string_view message) {
     socket_.send(asio::buffer(message));

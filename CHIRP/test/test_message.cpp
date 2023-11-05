@@ -14,17 +14,24 @@ using namespace std::literals::string_view_literals;
 int test_message_md5_hash() {
     int fails = 0;
     // Test values from RFC 1321 reference implementation
-    fails += (MD5Hash(""sv).to_string() == "d41d8cd98f00b204e9800998ecf8427e") ? 0 : 1;
-    fails += (MD5Hash("a"sv).to_string() == "0cc175b9c0f1b6a831c399e269772661") ? 0 : 1;
-    fails += (MD5Hash("abc"sv).to_string() == "900150983cd24fb0d6963f7d28e17f72") ? 0 : 1;
-    fails += (MD5Hash("message digest"sv).to_string() == "f96b697d7cb7938d525a2f31aaf161d0") ? 0 : 1;
-    fails += (MD5Hash("abcdefghijklmnopqrstuvwxyz"sv).to_string() == "c3fcd3d76192e4007dfb496cca67e13b") ? 0 : 1;
-    fails += (MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"sv).to_string() == "d174ab98d277d9f5a5611c2c9f419d9f") ? 0 : 1;
-    fails += (MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890"sv).to_string() == "57edf4a22be3c955ac49da2e2107b67a") ? 0 : 1;
+    fails += MD5Hash(""sv).to_string() == "d41d8cd98f00b204e9800998ecf8427e" ? 0 : 1;
+    fails += MD5Hash("a"sv).to_string() == "0cc175b9c0f1b6a831c399e269772661" ? 0 : 1;
+    fails += MD5Hash("abc"sv).to_string() == "900150983cd24fb0d6963f7d28e17f72" ? 0 : 1;
+    fails += MD5Hash("message digest"sv).to_string() == "f96b697d7cb7938d525a2f31aaf161d0" ? 0 : 1;
+    fails += MD5Hash("abcdefghijklmnopqrstuvwxyz"sv).to_string() == "c3fcd3d76192e4007dfb496cca67e13b" ? 0 : 1;
+    fails += MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"sv).to_string() == "d174ab98d277d9f5a5611c2c9f419d9f" ? 0 : 1;
+    fails += MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890"sv).to_string() == "57edf4a22be3c955ac49da2e2107b67a" ? 0 : 1;
     return fails == 0 ? 0 : 1;
 }
 
-int test_assembled_message() {
+int test_message_md5_sort() {
+    int fails = 0;
+    fails += MD5Hash("a") < MD5Hash("a") ? 1 : 0;
+    fails += MD5Hash("a") < MD5Hash("b") ? 0 : 1;
+    return fails == 0 ? 0 : 1;
+}
+
+int test_message_assemble() {
     std::vector<std::uint8_t> msg_data {};
     // Success on correct size
     msg_data.resize(MESSAGE_LENGTH);
@@ -112,9 +119,15 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    // test_assembled_message
-    std::cout << "test_assembled_message...                    " << std::flush;
-    ret_test = test_assembled_message();
+    // test_message_md5_sort
+    std::cout << "test_message_md5_sort...                     " << std::flush;
+    ret_test = test_message_md5_sort();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_message_assemble
+    std::cout << "test_message_assemble...                    " << std::flush;
+    ret_test = test_message_assemble();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
@@ -141,7 +154,6 @@ int main() {
     ret_test = test_message_construct_invalid_service();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
-
 
     if (ret == 0) {
         std::cout << "\nAll tests passed" << std::endl;

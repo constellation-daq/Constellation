@@ -1,6 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,13 +21,14 @@ struct BroadcastMessage {
 
 class BroadcastRecv {
 public:
-    CHIRP_API BroadcastRecv(asio::io_context& io_context, asio::ip::address any_address = asio::ip::address_v4::any());
-    CHIRP_API BroadcastRecv(asio::io_context& io_context, const std::string& any_ip);
-    CHIRP_API BroadcastRecv(asio::io_context& io_context);
+    CHIRP_API BroadcastRecv(asio::ip::address any_address = asio::ip::address_v4::any());
+    CHIRP_API BroadcastRecv(const std::string& any_ip);
 
     CHIRP_API BroadcastMessage RecvBroadcast();
+    CHIRP_API std::optional<BroadcastMessage> AsyncRecvBroadcast(std::chrono::steady_clock::duration timeout);
 
 private:
+    asio::io_context io_context_;
     asio::ip::udp::endpoint endpoint_;
     asio::ip::udp::socket socket_;
 };

@@ -15,8 +15,7 @@ int main(int argc, char* argv[]) {
         any_address = asio::ip::make_address(argv[1]);
     }
 
-    asio::io_context io_context {};
-    BroadcastRecv receiver {io_context, any_address};
+    BroadcastRecv receiver {any_address};
 
     while(true) {
         // Receive message

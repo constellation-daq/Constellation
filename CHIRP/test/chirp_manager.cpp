@@ -56,8 +56,7 @@ int main(int argc, char* argv[]) {
         any_address = asio::ip::make_address(argv[4]);
     }
 
-    asio::io_context io_context {};
-    Manager manager {io_context, brd_address, any_address, group, name};
+    Manager manager {brd_address, any_address, group, name};
 
     std::cout << "Commands: "
               << "\n list_registered_services"
