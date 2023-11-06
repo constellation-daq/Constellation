@@ -24,7 +24,7 @@ BroadcastRecv::BroadcastRecv(asio::ip::address any_address)
     socket_.bind(endpoint_);
 }
 
-BroadcastRecv::BroadcastRecv(const std::string& any_ip)
+BroadcastRecv::BroadcastRecv(std::string_view any_ip)
   : BroadcastRecv(asio::ip::make_address(any_ip)) {}
 
 BroadcastMessage BroadcastRecv::RecvBroadcast() {

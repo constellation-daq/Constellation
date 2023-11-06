@@ -45,6 +45,9 @@ public:
     CHIRP_API Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view name);
     CHIRP_API virtual ~Manager();
 
+    constexpr MD5Hash GetGroupHash() const { return group_hash_; }
+    constexpr MD5Hash GetNameHash() const { return name_hash_; }
+
     CHIRP_API void Start();
 
     CHIRP_API bool RegisterService(RegisteredService service);

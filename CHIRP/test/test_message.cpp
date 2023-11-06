@@ -1,26 +1,23 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include <string>
-#include <string_view>
 #include <vector>
 
 #include "CHIRP/exceptions.hpp"
 #include "CHIRP/Message.hpp"
 
 using namespace cnstln::CHIRP;
-using namespace std::literals::string_view_literals;
 
 int test_message_md5_hash() {
     int fails = 0;
     // Test values from RFC 1321 reference implementation
-    fails += MD5Hash(""sv).to_string() == "d41d8cd98f00b204e9800998ecf8427e" ? 0 : 1;
-    fails += MD5Hash("a"sv).to_string() == "0cc175b9c0f1b6a831c399e269772661" ? 0 : 1;
-    fails += MD5Hash("abc"sv).to_string() == "900150983cd24fb0d6963f7d28e17f72" ? 0 : 1;
-    fails += MD5Hash("message digest"sv).to_string() == "f96b697d7cb7938d525a2f31aaf161d0" ? 0 : 1;
-    fails += MD5Hash("abcdefghijklmnopqrstuvwxyz"sv).to_string() == "c3fcd3d76192e4007dfb496cca67e13b" ? 0 : 1;
-    fails += MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"sv).to_string() == "d174ab98d277d9f5a5611c2c9f419d9f" ? 0 : 1;
-    fails += MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890"sv).to_string() == "57edf4a22be3c955ac49da2e2107b67a" ? 0 : 1;
+    fails += MD5Hash("").to_string() == "d41d8cd98f00b204e9800998ecf8427e" ? 0 : 1;
+    fails += MD5Hash("a").to_string() == "0cc175b9c0f1b6a831c399e269772661" ? 0 : 1;
+    fails += MD5Hash("abc").to_string() == "900150983cd24fb0d6963f7d28e17f72" ? 0 : 1;
+    fails += MD5Hash("message digest").to_string() == "f96b697d7cb7938d525a2f31aaf161d0" ? 0 : 1;
+    fails += MD5Hash("abcdefghijklmnopqrstuvwxyz").to_string() == "c3fcd3d76192e4007dfb496cca67e13b" ? 0 : 1;
+    fails += MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").to_string() == "d174ab98d277d9f5a5611c2c9f419d9f" ? 0 : 1;
+    fails += MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890").to_string() == "57edf4a22be3c955ac49da2e2107b67a" ? 0 : 1;
     return fails == 0 ? 0 : 1;
 }
 
@@ -55,11 +52,11 @@ int test_message_reconstructed() {
     auto asm_msg = msg.Assemble();
     auto msg_reconstructed = Message(asm_msg);
     int fails = 0;
-    fails += (msg.GetType() == msg_reconstructed.GetType()) ? 0 : 1;
-    fails += (msg.GetGroupHash() == msg_reconstructed.GetGroupHash()) ? 0 : 1;
-    fails += (msg.GetNameHash() == msg_reconstructed.GetNameHash()) ? 0 : 1;
-    fails += (msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier()) ? 0 : 1;
-    fails += (msg.GetPort() == msg_reconstructed.GetPort()) ? 0 : 1;
+    fails += msg.GetType() == msg_reconstructed.GetType() ? 0 : 1;
+    fails += msg.GetGroupHash() == msg_reconstructed.GetGroupHash() ? 0 : 1;
+    fails += msg.GetNameHash() == msg_reconstructed.GetNameHash() ? 0 : 1;
+    fails += msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier() ? 0 : 1;
+    fails += msg.GetPort() == msg_reconstructed.GetPort() ? 0 : 1;
     return fails == 0 ? 0 : 1;
 }
 

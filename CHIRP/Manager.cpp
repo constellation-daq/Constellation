@@ -254,8 +254,7 @@ void Manager::Run(std::stop_token stop_token) {
                 }
                 break;
             }
-            default:
-                std::unreachable();
+            default: std::unreachable();
             }
         }
         catch (const DecodeError& error) {
