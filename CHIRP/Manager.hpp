@@ -4,6 +4,7 @@
 #include <set>
 #include <string_view>
 #include <thread>
+#include <vector>
 
 #include "asio.hpp"
 
@@ -56,7 +57,8 @@ public:
     CHIRP_API void UnregisterDiscoverCallbacks();
 
     CHIRP_API void ForgetDiscoveredServices();
-    CHIRP_API std::set<DiscoveredService> GetDiscoveredServices();
+    CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices();
+    CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service);
 
     CHIRP_API void SendRequest(ServiceIdentifier service);
 

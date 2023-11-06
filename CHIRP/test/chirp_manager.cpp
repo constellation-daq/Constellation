@@ -1,6 +1,7 @@
 #include <charconv>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -61,7 +62,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Commands: "
               << "\n list_registered_services"
-              << "\n list_discovered_services"
+              << "\n list_discovered_services <ServiceIdentifier>"
               << "\n register_service <ServiceIdentifier:CONTROL> <Port:23999>"
               << "\n unregister_service <ServiceIdentifier:CONTROL> <Port:23999>"
               << "\n register_callback <ServiceIdentifier:CONTROL>"
@@ -105,7 +106,12 @@ int main(int argc, char* argv[]) {
         }
         // List discovered services
         else if (cmd == list_discovered_services) {
-            auto discovered_services = manager.GetDiscoveredServices();
+            std::optional<ServiceIdentifier> service_opt {std::nullopt};
+            if (cmd_split.size() >= 2) {
+                service_opt = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]);
+            }
+            auto discovered_services = service_opt.has_value() ? manager.GetDiscoveredServices(service_opt.value())
+                                                               : manager.GetDiscoveredServices();
             std::cout << " Discovered Services:";
             for (const auto& service : discovered_services) {
                 std::cout << "\n Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)

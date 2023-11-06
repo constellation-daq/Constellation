@@ -1,8 +1,10 @@
 #include "Manager.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <chrono>
 #include <functional>
+#include <iterator>
 #include <utility>
 
 #include <iostream>
@@ -153,9 +155,22 @@ void Manager::ForgetDiscoveredServices() {
     discovered_services_.clear();
 }
 
-std::set<DiscoveredService> Manager::GetDiscoveredServices() {
+std::vector<DiscoveredService> Manager::GetDiscoveredServices() {
+    std::vector<DiscoveredService> ret {};
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
-    return discovered_services_;
+    std::copy(discovered_services_.begin(), discovered_services_.end(), std::back_inserter(ret));
+    return ret;
+}
+
+std::vector<DiscoveredService> Manager::GetDiscoveredServices(ServiceIdentifier service) {
+    std::vector<DiscoveredService> ret {};
+    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    for (const auto& discovered_service : discovered_services_) {
+        if (discovered_service.identifier == service) {
+            ret.push_back(discovered_service);
+        }
+    }
+    return ret;
 }
 
 void Manager::SendRequest(ServiceIdentifier service) {
