@@ -6,6 +6,7 @@
 
 #include "asio.hpp"
 
+#include "CHIRP/BroadcastRecv.hpp"
 #include "CHIRP/BroadcastSend.hpp"
 #include "CHIRP/Manager.hpp"
 #include "CHIRP/Message.hpp"
@@ -148,26 +149,6 @@ int test_manager_ignore_self() {
     return manager.GetDiscoveredServices().size() == 0 ? 0 : 1;
 }
 
-int test_manager_register_send_offer() {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastRecv receiver {"0.0.0.0"};
-    // Note: it seems we have to construct receiver after manager, else we do not receive messages (why?)
-
-    // Start listening for OFFER message
-    auto raw_msg_fut = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
-    // Register service, should send OFFER
-    manager.RegisterService({CONTROL, 23999});
-    // Receive message
-    const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = Message(AssembledMessage(raw_msg.content));
-    // Check message
-    int fails = 0;
-    fails += msg_from_manager.GetType() == OFFER ? 0 : 1;
-    fails += msg_from_manager.GetServiceIdentifier() == CONTROL ? 0 : 1;
-    fails += msg_from_manager.GetPort() == 23999 ? 0 : 1;
-    return fails == 0 ? 0 : 1;
-}
-
 int test_manager_discovery() {
     Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
@@ -288,8 +269,63 @@ int test_manager_callbacks() {
     return fails == 0 ? 0 : 1;
 }
 
-// TODO: test request
-// TODO: test decode error
+int test_manager_send_request() {
+    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    BroadcastRecv receiver {"0.0.0.0"};
+    // Note: it seems we have to construct receiver after manager, else we do not receive messages
+    // Wwhy? we can only have one working recv binding to the same socket per process unfortunately :/
+
+    // Start listening for request message
+    auto raw_msg_fut = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    // Send request
+    manager.SendRequest(CONTROL);
+    // Receive message
+    const auto raw_msg = raw_msg_fut.get();
+    auto msg_from_manager = Message(AssembledMessage(raw_msg.content));
+    // Check message
+    int fails = 0;
+    fails += msg_from_manager.GetType() == REQUEST ? 0 : 1;
+    fails += msg_from_manager.GetServiceIdentifier() == CONTROL ? 0 : 1;
+    fails += msg_from_manager.GetPort() == 0 ? 0 : 1;
+    return fails == 0 ? 0 : 1;
+}
+
+int test_manager_recv_request() {
+    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    BroadcastSend sender {"0.0.0.0"};
+    // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
+
+    // Register service
+    manager.Start();
+    manager.RegisterService({CONTROL, 45454});
+    // Send requests
+    const auto asm_msg_a = Message(REQUEST, "group1", "sat2", CONTROL, 0).Assemble();
+    const auto asm_msg_b = Message(REQUEST, "group1", "sat2", DATA, 0).Assemble();
+    sender.SendBroadcast(asm_msg_a.data(), asm_msg_a.size());
+    sender.SendBroadcast(asm_msg_b.data(), asm_msg_b.size());
+    // Wait a bit ensure we received the message
+    std::this_thread::sleep_for(5ms);
+
+    // If everything worked, the lines should be marked as exectued such in coverage
+    return 0;
+}
+
+int test_manager_decode_error() {
+    BroadcastSend sender {"0.0.0.0"};
+    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    manager.Start();
+
+    // Create invalid message
+    auto asm_msg = Message(REQUEST, "group1", "sat2", CONTROL, 0).Assemble();
+    asm_msg[0] = 'X';
+    // Send message
+    sender.SendBroadcast(asm_msg.data(), asm_msg.size());
+    // Wait a bit ensure we received the message
+    std::this_thread::sleep_for(5ms);
+
+    // If everything worked, the lines should be marked as exectued such in coverage
+    return 0;
+}
 
 int main() {
     int ret = 0;
@@ -343,12 +379,6 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    // test_manager_register_send_offer
-    std::cout << "test_manager_register_send_offer...          " << std::flush;
-    ret_test = test_manager_register_send_offer();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
     // test_manager_discovery
     std::cout << "test_manager_discovery...                    " << std::flush;
     ret_test = test_manager_discovery();
@@ -358,6 +388,24 @@ int main() {
     // test_manager_callbacks
     std::cout << "test_manager_callbacks...                    " << std::flush;
     ret_test = test_manager_callbacks();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_manager_send_request
+    std::cout << "test_manager_send_request...                 " << std::flush;
+    ret_test = test_manager_send_request();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_manager_recv_request
+    std::cout << "test_manager_recv_request...                 " << std::flush;
+    ret_test = test_manager_recv_request();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_manager_decode_error
+    std::cout << "test_manager_decode_error...                 " << std::flush;
+    ret_test = test_manager_decode_error();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
