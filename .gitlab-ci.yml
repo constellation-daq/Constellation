@@ -8,8 +8,6 @@ fmt:reuse:
     image:
         name: registry.cern.ch/docker.io/fsfe/reuse:latest
         entrypoint: [""]
-    tags:
-      - docker
     stage: formatting
     needs: []
     dependencies: []
