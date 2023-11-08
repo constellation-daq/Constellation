@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+Checks : '-*,
+          boost-*,
+          mpi-*,
+          performance-*,
+          google-*,-google-readability-todo,-google-build-using-namespace,-google-readability-namespace-comments,-google-runtime-references,-google-runtime-int,
+          readability-*,-readability-named-parameter,-readability-inconsistent-declaration-parameter-name,-readability-avoid-const-params-in-decls,-readability-simplify-boolean-expr,-readability-redundant-declaration,-readability-else-after-return,-readability-magic-numbers,-readability-isolate-declaration,-readability-uppercase-literal-suffix,-readability-const-return-type,-readability-convert-member-functions-to-static,-readability-function-cognitive-complexity,
+          llvm-*,-llvm-include-order,-llvm-header-guard,-llvm-namespace-comment,-llvm-qualified-auto,-llvm-else-after-return,
+          modernize-*,-modernize-raw-string-literal,-modernize-use-nodiscard,-modernize-use-trailing-return-type,-modernize-avoid-bind,
+          cppcoreguidelines-*,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-type-member-init,-cppcoreguidelines-special-member-functions,-cppcoreguidelines-pro-type-static-cast-downcast,-cppcoreguidelines-pro-bounds-constant-array-index,-cppcoreguidelines-owning-memory,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-macro-usage,-cppcoreguidelines-non-private-member-variables-in-classes,-cppcoreguidelines-avoid-non-const-global-variables,
+          cert-*,-cert-err58-cpp,-cert-err34-c,-cert-msc51-cpp,-cert-msc32-c,-cert-dcl16-c,-cert-oop54-cpp,
+          misc-*,-misc-noexcept-move-constructor,-misc-non-private-member-variables-in-classes,-misc-no-recursion,
+          clang-analyzer-*,-clang-analyzer-alpha*,-clang-analyzer-core*,-clang-analyzer-cplusplus*,-clang-analyzer-optin*'
+WarningsAsErrors: '*'
+HeaderFilterRegex: '*.h *.hpp'
+CheckOptions:
+  - { key: readability-identifier-naming.NamespaceCase,       value: lower_case }
+  - { key: readability-identifier-naming.ClassCase,           value: CamelCase  }
+  - { key: readability-identifier-naming.StructCase,          value: lower_case  }
+  - { key: readability-identifier-naming.PublicMethodCase,    value: camelBack  }
