@@ -21,7 +21,7 @@ The CHIRP protocol provides a way of discovering and announcing services on a ne
 
 ### Identification and Life-cycle
 
-A CHIRP host represents a source or a target for messaging. Hosts usually map to applications. A CHIRP host is identified by a 16-octet universally unique identifier (UUID). CHIRP does not define how a host is created or destroyed but does assume that hosts have a certain durability.
+A CHIRP host represents a source or a target for messaging. Hosts usually map to applications. A CHIRP host is identified by a 16-octet universally unique identifier (UUID). Each CHIRP host belongs to a group which is identified by a 16-octet universally unique identifier (UUID). CHIRP does not define how a host is created or destroyed but does assume that hosts have a certain durability.
 
 ### Host Discovery and Service Announcement
 
