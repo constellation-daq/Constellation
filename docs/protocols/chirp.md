@@ -41,15 +41,15 @@ The header SHALL consist of the letters ‘C’, ‘H’, ‘I’, ‘R’ and �
 
 The body SHALL consist of the 16-octet UUID of the sender, followed by a one-byte beacon type identifier, a one-byte service descriptor, and a two-byte port number in network byte order. If the port is non-zero this signals that the peer will accept ZeroMQ TCP connections on that port number.
 
-The type SHALL be either %x01 (dubbed ‘REQUEST’) or %x02 (dubbed ‘OFFER’).
+The type SHALL be either %x01 (dubbed ‘REQUEST’), %x02 (dubbed ‘OFFER’), %x03 (dubbed ‘DEPART‘).
 
 A valid beacon SHALL use a recognized header and a body of the correct size. A host that receives an invalid beacon SHALL discard it silently. A host MAY log the sender IP address for the purposes of debugging. A host SHALL discard beacons that it receives from itself.
 
-When a CHIRP host receives a beacon of type ‘OFFER’ from a host that it does not already know about, with a non-zero port number, it MAY connect to this peer if it SHOULD participate in the offered service.
+When a CHIRP host receives a beacon of type ‘OFFER’ from a host that it does not already know about, with a non-zero port number, it MAY connect to the service provided by this peer on the provided port if it SHOULD participate in the offered service.
 
-When a CHIRP host receives a beacon with type ‘REQUEST’ from any host, with a zero or non-zero port number, and it offers the requested service, it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service.
+When a CHIRP host receives a beacon with type ‘REQUEST’ from any host, with a zero or non-zero port number, and it offers the requested service, it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service, providing the port number for this service.
 
-When a CHIRP host receives a beacon of type ‘OFFER’ from a known host, with a zero port number, it SHALL disconnect from this peer.
+When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host, with a non-zero port number, it SHALL disconnect from the service offered by this peer on the provided port number. A host SHALL discard beacons of type ‘DEPART‘ from unknown hosts.
 
 ## Protocol Grammar
 
