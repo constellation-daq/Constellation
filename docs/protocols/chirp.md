@@ -55,9 +55,10 @@ When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host with 
 
 ## Protocol Grammar
 
+The following ABNF grammar defines the CHIRP protocol:
 
 ```abnf
-chirp   = [request depart] *offer
+chirp   = [request] *offer [depart]
 
 ; Request offers from other hosts
 request = header version %x01 g-uuid h-uuid service port
