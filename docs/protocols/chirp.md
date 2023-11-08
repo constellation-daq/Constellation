@@ -25,7 +25,7 @@ A CHIRP host represents a source or a target for messaging. Hosts usually map to
 
 ### Host Discovery and Service Announcement
 
-CHIRP uses UDP IPv4 beacon broadcasts to discover hosts. Each CHIRP host SHALL listen to the CHIRP discovery service which is UDP port 7123. Each CHIRP host SHALL broadcast, upon creation, on UDP port 7123 a beacon that identifies itself to any listening hosts on the network. A separate CHIRP beacon SHALL be broadcast for every service the host advertizes.
+CHIRP uses UDP IPv4 beacon broadcasts to discover hosts. Each CHIRP host SHALL listen to the CHIRP discovery service which is UDP port 7123. Each CHIRP host SHALL broadcast, upon creation, on UDP port 7123 a beacon that identifies itself to any listening hosts on the network. A separate CHIRP beacon SHALL be broadcast for every service the host advertises.
 
 The CHIRP beacon consists of one 42-octet UDP message with this format:
 
