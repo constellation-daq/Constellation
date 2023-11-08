@@ -47,7 +47,9 @@ A valid beacon SHALL use a recognized header and a body of the correct size. A h
 
 When a CHIRP host receives a beacon of type ‘OFFER’ from a host with the same sender group that it does not already know about, with a non-zero port number, it MAY connect to the service provided by this peer on the provided port if it SHOULD participate in the offered service.
 
-When a CHIRP host receives a beacon with type ‘REQUEST’ from any host with the same sender group, with a zero or non-zero port number, and it offers the requested service, it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service, providing the port number for this service.
+When a CHIRP host sends a beacon with type ‘REQUEST’, the port number SHOULD be zero.
+
+When a CHIRP host receives a beacon with type ‘REQUEST’ from any host with the same sender group, and it offers the requested service, it SHALL ignore the port number of the received beacon and it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service, providing the port number for this service.
 
 When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host with the same sender group, with a non-zero port number, it SHALL disconnect from the service offered by this peer on the provided port number. A host SHALL discard beacons of type ‘DEPART‘ from unknown hosts.
 
