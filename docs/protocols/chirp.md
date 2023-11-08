@@ -39,7 +39,7 @@ The CHIRP beacon consists of one 27-octet UDP message with this format:
 
 The header SHALL consist of the letters ‘C’, ‘H’, ‘I’, ‘R’ and ‘P’, followed by the beacon version number, which SHALL be %x01.
 
-The body SHALL consist of the sender’s 16-octet UUID, followed by a one-byte beacon type identifier, a two-byte service descriptor, and a two-byte port number in network byte order. If the port is non-zero this signals that the peer will accept ZeroMQ TCP connections on that port number. If the port is zero, this signals that the peer is disconnecting from the network.
+The body SHALL consist of the 16-octet UUID of the sender, followed by a one-byte beacon type identifier, a two-byte service descriptor, and a two-byte port number in network byte order. If the port is non-zero this signals that the peer will accept ZeroMQ TCP connections on that port number.
 
 The type SHALL be either %x01 (dubbed ‘REQUEST’) or %x02 (dubbed ‘OFFER’).
 
