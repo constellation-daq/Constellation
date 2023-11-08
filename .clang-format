@@ -3,7 +3,7 @@
 
 ---
 Language: Cpp
-Standard: c++17
+Standard: c++20
 BasedOnStyle: LLVM
 SortIncludes: true
 AccessModifierOffset: -4
