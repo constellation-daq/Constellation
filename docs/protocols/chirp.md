@@ -55,23 +55,29 @@ When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host with 
 
 
 ```abnf
-chirp   = [request] *offer
+chirp   = [request depart] *offer
 
 ; Request offers from other hosts
-request = header version uuid %x01 service port
+request = header version %x01 g-uuid h-uuid service port
 
 ; Make an offer of a service to other hosts
-offer   = header version uuid %x02 servoce port
+offer   = header version %x02 g-uuid h-uuid service port
+
+; Notify the departure of a service to other hosts
+depart   = header version %x03 g-uuid h-uuid service port
 
 ; Header and version of the protocol
 header = "chirp"
 version = %x01
 
-; Unique identifier for the host
-uuid = 16OCTET
+; Unique identifier for the sender group
+g-uuid = 16OCTET
+
+; Unique identifier for the sender host
+h-uuid = 16OCTET
 
 ; Service definition for this beacon
-service = 2OCTET
+service = 1OCTET
 
 ; Port of the host to connect to for this service
 port = 2OCTET
