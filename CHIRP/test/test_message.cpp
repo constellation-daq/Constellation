@@ -53,8 +53,8 @@ int test_message_reconstructed() {
     auto msg_reconstructed = Message(asm_msg);
     int fails = 0;
     fails += msg.GetType() == msg_reconstructed.GetType() ? 0 : 1;
-    fails += msg.GetGroupHash() == msg_reconstructed.GetGroupHash() ? 0 : 1;
-    fails += msg.GetHostHash() == msg_reconstructed.GetHostHash() ? 0 : 1;
+    fails += msg.GetGroupID() == msg_reconstructed.GetGroupID() ? 0 : 1;
+    fails += msg.GetHostID() == msg_reconstructed.GetHostID() ? 0 : 1;
     fails += msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier() ? 0 : 1;
     fails += msg.GetPort() == msg_reconstructed.GetPort() ? 0 : 1;
     return fails == 0 ? 0 : 1;

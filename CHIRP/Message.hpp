@@ -50,8 +50,8 @@ public:
     CHIRP_API Message(const AssembledMessage& assembled_message);
 
     constexpr MessageType GetType() const { return type_; }
-    constexpr MD5Hash GetGroupHash() const { return group_hash_; }
-    constexpr MD5Hash GetHostHash() const { return host_hash_; }
+    constexpr MD5Hash GetGroupID() const { return group_hash_; }
+    constexpr MD5Hash GetHostID() const { return host_hash_; }
     constexpr ServiceIdentifier GetServiceIdentifier() const { return service_; }
     constexpr Port GetPort() const { return port_; }
 

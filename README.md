@@ -97,3 +97,14 @@ The following commands are available:
 - `unregister_service [SERVICE] [PORT]`: unregister a service in the manager
 - `unregister_callback [SERVICE]`: unregister a discover callback for a service
 - `reset`: unregister all services and callbacks, and forget discovered services
+
+## Documentation
+
+```bash
+sudo apt install libclang-dev  # note down version, e.g. 14.0.6
+python3 -m venv venv
+source venv/bin/active
+pip install clang=[VERSION]  # insert clang version
+pip install sphinx hawkmoth myst-parser sphinx_immaterial
+pip install hawkmoth @ git+https://github.com/stephanlachnit/hawkmoth.git@slachnit
+```

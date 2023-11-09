@@ -29,11 +29,11 @@ bool RegisteredService::operator<(const RegisteredService& other) const {
 
 bool DiscoveredService::operator<(const DiscoveredService& other) const {
     // Ignore IP when sorting, we only care about the host
-    auto ord_md5 = host_hash <=> other.host_hash;
-    if (std::is_lt(ord_md5)) {
+    auto ord_host_id = host_id <=> other.host_id;
+    if (std::is_lt(ord_host_id)) {
         return true;
     }
-    if (std::is_gt(ord_md5)) {
+    if (std::is_gt(ord_host_id)) {
         return false;
     }
     // Same as RegisteredService::operator<
@@ -68,11 +68,11 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return reinterpret_cast<std::uintptr_t>(user_data) < reinterpret_cast<std::uintptr_t>(other.user_data);
 }
 
-Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view host)
-  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group)), host_hash_(MD5Hash(host)) {}
+Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name)
+  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group_name)), host_hash_(MD5Hash(host_name)) {}
 
-Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view host)
-  : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group, host) {}
+Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
+  : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group_name, host_name) {}
 
 Manager::~Manager() {
     // First stop Run function
@@ -198,16 +198,16 @@ void Manager::Run(std::stop_token stop_token) {
             const auto raw_msg = raw_msg_opt.value();
             auto chirp_msg = Message(AssembledMessage(raw_msg.content));
 
-            if (chirp_msg.GetGroupHash() != group_hash_) {
+            if (chirp_msg.GetGroupID() != group_hash_) {
                 // Broadcast from different group, ignore
                 continue;
             }
-            if (chirp_msg.GetHostHash() == host_hash_) {
+            if (chirp_msg.GetHostID() == host_hash_) {
                 // Broadcast from self, ignore
                 continue;
             }
 
-            DiscoveredService discovered_service {raw_msg.ip, chirp_msg.GetHostHash(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
+            DiscoveredService discovered_service {raw_msg.ip, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
 
             switch (chirp_msg.GetType()) {
             case REQUEST: {

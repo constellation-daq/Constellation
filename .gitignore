@@ -5,6 +5,10 @@
 /subprojects/asio-*/
 /subprojects/magic_enum-*/
 
+
+/venv/
+/docs/build/
+
 # Data files do not belong into the repository
 *.pdf
 *.log

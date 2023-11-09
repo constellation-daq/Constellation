@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
         std::from_chars(port_s.data(), port_s.data() + port_s.size(), port);
 
         auto chirp_msg = Message(type, group, host, service, port);
-        std::cout << "Group:   " << chirp_msg.GetGroupHash().to_string() << std::endl;
-        std::cout << "Name:    " << chirp_msg.GetHostHash().to_string() << std::endl;
+        std::cout << "Group:   " << chirp_msg.GetGroupID().to_string() << std::endl;
+        std::cout << "Name:    " << chirp_msg.GetHostID().to_string() << std::endl;
 
         auto asm_msg = chirp_msg.Assemble();
         sender.SendBroadcast(asm_msg.data(), asm_msg.size());

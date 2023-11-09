@@ -33,8 +33,8 @@ void discover_callback(DiscoveredService service, bool depart, void*) {
     std::cout << "Callback:\n"
               << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
               << " Port " << std::setw(5) << service.port
-              << " Host " << service.host_hash.to_string()
-              << " IP " << std::left << std::setw(15) << service.ip.to_string()
+              << " Host " << service.host_id.to_string()
+              << " IP " << std::left << std::setw(15) << service.address.to_string()
               << (depart ? " DEPART" : " OFFER")
               << std::endl;
 }
@@ -116,8 +116,8 @@ int main(int argc, char* argv[]) {
             for (const auto& service : discovered_services) {
                 std::cout << "\n Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
                           << " Port " << std::setw(5) << service.port
-                          << " Host " << service.host_hash.to_string()
-                          << " IP " << std::left << std::setw(15) << service.ip.to_string();
+                          << " Host " << service.host_id.to_string()
+                          << " IP " << std::left << std::setw(15) << service.address.to_string();
             }
             std::cout << std::endl;
         }

@@ -163,8 +163,8 @@ int test_manager_discovery() {
     const auto services_1 = manager2.GetDiscoveredServices();
     if (services_1.size() == 1) {
         // Test that message is correct
-        fails += services_1[0].host_hash == manager1.GetHostHash() ? 0 : 1;
-        fails += services_1[0].ip == asio::ip::make_address("127.0.0.1") ? 0 : 1;
+        fails += services_1[0].host_id == manager1.GetHostID() ? 0 : 1;
+        fails += services_1[0].address == asio::ip::make_address("127.0.0.1") ? 0 : 1;
         fails += services_1[0].identifier == DATA ? 0 : 1;
         fails += services_1[0].port == 24000 ? 0 : 1;
     }
