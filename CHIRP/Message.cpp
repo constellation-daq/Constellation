@@ -48,11 +48,11 @@ AssembledMessage::AssembledMessage(const std::vector<std::uint8_t>& assembled_me
     std::copy_n(assembled_message.cbegin(), MESSAGE_LENGTH, this->begin());
 }
 
-Message::Message(MessageType type, MD5Hash group_hash, MD5Hash name_hash, ServiceIdentifier service, Port port)
-  : type_(type), group_hash_(std::move(group_hash)), name_hash_(std::move(name_hash)), service_(service), port_(port) {}
+Message::Message(MessageType type, MD5Hash group_hash, MD5Hash host_hash, ServiceIdentifier service, Port port)
+  : type_(type), group_hash_(std::move(group_hash)), host_hash_(std::move(host_hash)), service_(service), port_(port) {}
 
-Message::Message(MessageType type, std::string_view group, std::string_view name, ServiceIdentifier service, Port port)
-  : Message(type, MD5Hash(group), MD5Hash(name), service, port) {}
+Message::Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service, Port port)
+  : Message(type, MD5Hash(group), MD5Hash(host), service, port) {}
 
 Message::Message(const AssembledMessage& assembled_message) {
     // Header
@@ -66,7 +66,7 @@ Message::Message(const AssembledMessage& assembled_message) {
     }
     // Message Type
     if (assembled_message[6] < std::to_underlying(MessageType::REQUEST) ||
-        assembled_message[6] > std::to_underlying(MessageType::LEAVING)) {
+        assembled_message[6] > std::to_underlying(MessageType::DEPART)) {
         throw DecodeError("Message Type invalid");
     }
     type_ = static_cast<MessageType>(assembled_message[6]);
@@ -74,9 +74,9 @@ Message::Message(const AssembledMessage& assembled_message) {
     for (std::uint8_t n = 0; n < 16; ++n) {
         group_hash_[n] = assembled_message[7+n];
     }
-    // Name Hash
+    // Host Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        name_hash_[n] = assembled_message[23+n];
+        host_hash_[n] = assembled_message[23+n];
     }
     // Service Identifier
     if (assembled_message[39] < std::to_underlying(ServiceIdentifier::CONTROL) ||
@@ -104,9 +104,9 @@ AssembledMessage Message::Assemble() const {
     for (std::uint8_t n = 0; n < 16; ++n) {
         ret[7+n] = group_hash_[n];
     }
-    // Name Hash
+    // Host Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        ret[23+n] = name_hash_[n];
+        ret[23+n] = host_hash_[n];
     }
     // Service Identifier
     ret[39] = std::to_underlying(service_);

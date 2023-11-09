@@ -81,11 +81,6 @@ The broadcast IP can be specified optionally. See [above](#notes-on-broadcast-ad
 TODO:
 - [ ] Mention MD5 hashing and service identifiers somewhere - in CHIRP itself or other RFC?
 
-Note regarding unsubscribing: sending OFFER with port 0 is not optimal, because might have multiple services on one satellite with different ports. Let us to add a new message type instead instead:
-- REQUEST always port == 0
-- OFFER   never  port == 0
-- LEAVING never  port == 0
-
 ## CHIRP Manager
 
 To run the CHIRP manager, run:
@@ -95,7 +90,7 @@ To run the CHIRP manager, run:
 
 The following commands are available:
 - `list_registered_services`: list of services registered by the user in the manager
-- `list_discovered_services`: list of services discovered by the manager and are in the same group
+- `list_discovered_services [SERVICE]`: list of services discovered by the manager and are in the same group
 - `register_service [SERVICE] [PORT]`: register a service in the manager
 - `register_callback [SERVICE]`: register a discover callback for a service that prints the discovered service
 - `request [SERVICE]`: send a CHIRP request for a given service

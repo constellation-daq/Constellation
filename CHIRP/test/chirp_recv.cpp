@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         std::cout << "-----------------------------------------" << std::endl;
         std::cout << "Type:    " << magic_enum::enum_name(chirp_msg.GetType()) << std::endl;
         std::cout << "Group:   " << chirp_msg.GetGroupHash().to_string() << std::endl;
-        std::cout << "Name:    " << chirp_msg.GetNameHash().to_string() << std::endl;
+        std::cout << "Host:    " << chirp_msg.GetHostHash().to_string() << std::endl;
         std::cout << "Service: " << magic_enum::enum_name(chirp_msg.GetServiceIdentifier()) << std::endl;
         std::cout << "Port:    " << chirp_msg.GetPort() << std::endl;
     }

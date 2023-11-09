@@ -33,12 +33,12 @@ int main(int argc, char* argv[]) {
         if (group.size() == 0) {
             group = "cnstln1";
         }
-        // Name
-        std::string name {};
-        std::cout << "Name:    [satname] ";
-        std::getline(std::cin, name);
-        if (name.size() == 0) {
-            name = "satname";
+        // Host
+        std::string host {};
+        std::cout << "Host:    [satname] ";
+        std::getline(std::cin, host);
+        if (host.size() == 0) {
+            host = "satname";
         }
         // Service
         std::string service_s {};
@@ -52,9 +52,9 @@ int main(int argc, char* argv[]) {
         Port port = 23999;
         std::from_chars(port_s.data(), port_s.data() + port_s.size(), port);
 
-        auto chirp_msg = Message(type, group, name, service, port);
+        auto chirp_msg = Message(type, group, host, service, port);
         std::cout << "Group:   " << chirp_msg.GetGroupHash().to_string() << std::endl;
-        std::cout << "Name:    " << chirp_msg.GetNameHash().to_string() << std::endl;
+        std::cout << "Name:    " << chirp_msg.GetHostHash().to_string() << std::endl;
 
         auto asm_msg = chirp_msg.Assemble();
         sender.SendBroadcast(asm_msg.data(), asm_msg.size());

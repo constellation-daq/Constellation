@@ -28,8 +28,8 @@ bool RegisteredService::operator<(const RegisteredService& other) const {
 }
 
 bool DiscoveredService::operator<(const DiscoveredService& other) const {
-    // Ignore IP when sorting, we only care about the name
-    auto ord_md5 = name_hash <=> other.name_hash;
+    // Ignore IP when sorting, we only care about the host
+    auto ord_md5 = host_hash <=> other.host_hash;
     if (std::is_lt(ord_md5)) {
         return true;
     }
@@ -57,22 +57,22 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
         return false;
     }
     // Then after service identifier to listen to
-    auto ord_service = std::to_underlying(service) <=> std::to_underlying(other.service);
-    if (std::is_lt(ord_service)) {
+    auto ord_service_id = std::to_underlying(service_id) <=> std::to_underlying(other.service_id);
+    if (std::is_lt(ord_service_id)) {
         return true;
     }
-    if (std::is_gt(ord_service)) {
+    if (std::is_gt(ord_service_id)) {
         return false;
     }
     // Lastly after user_data address
     return reinterpret_cast<std::uintptr_t>(user_data) < reinterpret_cast<std::uintptr_t>(other.user_data);
 }
 
-Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view name)
-  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group)), name_hash_(MD5Hash(name)) {}
+Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group, std::string_view host)
+  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group)), host_hash_(MD5Hash(host)) {}
 
-Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view name)
-  : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group, name) {}
+Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group, std::string_view host)
+  : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group, host) {}
 
 Manager::~Manager() {
     // First stop Run function
@@ -89,7 +89,9 @@ void Manager::Start() {
     run_thread_ = std::jthread(std::bind_front(&Manager::Run, this));
 }
 
-bool Manager::RegisterService(RegisteredService service) {
+bool Manager::RegisterService(ServiceIdentifier service_id, Port port) {
+    RegisteredService service {service_id, port};
+
     std::unique_lock registered_services_lock {registered_services_mutex_};
     const auto insert_ret = registered_services_.insert(service);
     const bool actually_inserted = insert_ret.second;
@@ -102,16 +104,17 @@ bool Manager::RegisterService(RegisteredService service) {
     return actually_inserted;
 }
 
-bool Manager::UnregisterService(RegisteredService service) {
-    std::unique_lock registered_services_lock {registered_services_mutex_};
+bool Manager::UnregisterService(ServiceIdentifier service_id, Port port) {
+    RegisteredService service {service_id, port};
 
+    std::unique_lock registered_services_lock {registered_services_mutex_};
     const auto erase_ret = registered_services_.erase(service);
     bool actually_erased = erase_ret > 0 ? true : false;
 
     // Lock not needed anymore
     registered_services_lock.unlock();
     if (actually_erased) {
-        SendMessage(LEAVING, service);
+        SendMessage(DEPART, service);
     }
     return actually_erased;
 }
@@ -119,7 +122,7 @@ bool Manager::UnregisterService(RegisteredService service) {
 void Manager::UnregisterServices() {
     const std::lock_guard registered_services_lock {registered_services_mutex_};
     for (auto service : registered_services_) {
-        SendMessage(LEAVING, service);
+        SendMessage(DEPART, service);
     }
     registered_services_.clear();
 }
@@ -129,17 +132,17 @@ std::set<RegisteredService> Manager::GetRegisteredServices() {
     return registered_services_;
 }
 
-bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data) {
+bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto insert_ret = discover_callbacks_.emplace(callback, service, user_data);
+    const auto insert_ret = discover_callbacks_.emplace(callback, service_id, user_data);
 
     // Return if actually inserted
     return insert_ret.second;
 }
 
-bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service, void* user_data) {
+bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto erase_ret = discover_callbacks_.erase({callback, service, user_data});
+    const auto erase_ret = discover_callbacks_.erase({callback, service_id, user_data});
 
     // Return if actually erased
     return erase_ret > 0;
@@ -162,11 +165,11 @@ std::vector<DiscoveredService> Manager::GetDiscoveredServices() {
     return ret;
 }
 
-std::vector<DiscoveredService> Manager::GetDiscoveredServices(ServiceIdentifier service) {
+std::vector<DiscoveredService> Manager::GetDiscoveredServices(ServiceIdentifier service_id) {
     std::vector<DiscoveredService> ret {};
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     for (const auto& discovered_service : discovered_services_) {
-        if (discovered_service.identifier == service) {
+        if (discovered_service.identifier == service_id) {
             ret.push_back(discovered_service);
         }
     }
@@ -178,7 +181,7 @@ void Manager::SendRequest(ServiceIdentifier service) {
 }
 
 void Manager::SendMessage(MessageType type, RegisteredService service) {
-    const auto asm_msg = Message(type, group_hash_, name_hash_, service.identifier, service.port).Assemble();
+    const auto asm_msg = Message(type, group_hash_, host_hash_, service.identifier, service.port).Assemble();
     sender_.SendBroadcast(asm_msg.data(), asm_msg.size());
 }
 
@@ -199,12 +202,12 @@ void Manager::Run(std::stop_token stop_token) {
                 // Broadcast from different group, ignore
                 continue;
             }
-            if (chirp_msg.GetNameHash() == name_hash_) {
+            if (chirp_msg.GetHostHash() == host_hash_) {
                 // Broadcast from self, ignore
                 continue;
             }
 
-            DiscoveredService discovered_service {raw_msg.ip, chirp_msg.GetNameHash(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
+            DiscoveredService discovered_service {raw_msg.ip, chirp_msg.GetHostHash(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
 
             switch (chirp_msg.GetType()) {
             case REQUEST: {
@@ -229,14 +232,14 @@ void Manager::Run(std::stop_token stop_token) {
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
                     for (const auto& cb_entry : discover_callbacks_) {
-                        if (cb_entry.service == discovered_service.identifier) {
+                        if (cb_entry.service_id == discovered_service.identifier) {
                             std::thread(cb_entry.callback, discovered_service, false, cb_entry.user_data).detach();
                         }
                     }
                 }
                 break;
             }
-            case LEAVING: {
+            case DEPART: {
                 std::unique_lock discovered_services_lock {discovered_services_mutex_};
                 if (discovered_services_.contains(discovered_service)) {
                     discovered_services_.erase(discovered_service);
@@ -247,7 +250,7 @@ void Manager::Run(std::stop_token stop_token) {
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
                     for (const auto& cb_entry : discover_callbacks_) {
-                        if (cb_entry.service == discovered_service.identifier) {
+                        if (cb_entry.service_id == discovered_service.identifier) {
                             std::thread(cb_entry.callback, discovered_service, true, cb_entry.user_data).detach();
                         }
                     }

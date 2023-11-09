@@ -15,7 +15,7 @@ namespace CHIRP {
 enum class MessageType : std::uint8_t {
     REQUEST = '\x01',
     OFFER = '\x02',
-    LEAVING = '\x03',
+    DEPART = '\x03',
 };
 using enum MessageType;
 
@@ -45,13 +45,13 @@ public:
 
 class Message {
 public:
-    CHIRP_API Message(MessageType type, MD5Hash group_hash, MD5Hash name_hash, ServiceIdentifier service, Port port);
-    CHIRP_API Message(MessageType type, std::string_view group, std::string_view name, ServiceIdentifier service, Port port);
+    CHIRP_API Message(MessageType type, MD5Hash group_hash, MD5Hash host_hash, ServiceIdentifier service, Port port);
+    CHIRP_API Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service, Port port);
     CHIRP_API Message(const AssembledMessage& assembled_message);
 
     constexpr MessageType GetType() const { return type_; }
     constexpr MD5Hash GetGroupHash() const { return group_hash_; }
-    constexpr MD5Hash GetNameHash() const { return name_hash_; }
+    constexpr MD5Hash GetHostHash() const { return host_hash_; }
     constexpr ServiceIdentifier GetServiceIdentifier() const { return service_; }
     constexpr Port GetPort() const { return port_; }
 
@@ -60,7 +60,7 @@ public:
 private:
     MessageType type_;
     MD5Hash group_hash_;
-    MD5Hash name_hash_;
+    MD5Hash host_hash_;
     ServiceIdentifier service_;
     Port port_;
 };

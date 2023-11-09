@@ -29,13 +29,13 @@ enum class Command {
 };
 using enum Command;
 
-void discover_callback(DiscoveredService service, bool leaving, void*) {
+void discover_callback(DiscoveredService service, bool depart, void*) {
     std::cout << "Callback:\n"
               << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
               << " Port " << std::setw(5) << service.port
-              << " Name " << service.name_hash.to_string()
+              << " Host " << service.host_hash.to_string()
               << " IP " << std::left << std::setw(15) << service.ip.to_string()
-              << (leaving ? " LEAVING" : " OFFER")
+              << (depart ? " DEPART" : " OFFER")
               << std::endl;
 }
 
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
             for (const auto& service : discovered_services) {
                 std::cout << "\n Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
                           << " Port " << std::setw(5) << service.port
-                          << " Name " << service.name_hash.to_string()
+                          << " Host " << service.host_hash.to_string()
                           << " IP " << std::left << std::setw(15) << service.ip.to_string();
             }
             std::cout << std::endl;
@@ -132,14 +132,14 @@ int main(int argc, char* argv[]) {
                 std::from_chars(cmd_split[2].data(), cmd_split[2].data() + cmd_split[2].size(), port);
             }
             if (cmd == register_service) {
-                auto ret = manager.RegisterService({service, port});
+                auto ret = manager.RegisterService(service, port);
                 if (ret) {
                     std::cout << " Registered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
                               << " Port " << std::setw(5) << port << std::endl;
                 }
             }
             else {
-                auto ret = manager.UnregisterService({service, port});
+                auto ret = manager.UnregisterService(service, port);
                 if (ret) {
                     std::cout << " Unregistered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
                               << " Port " << std::setw(5) << port << std::endl;
