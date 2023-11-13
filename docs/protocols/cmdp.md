@@ -11,6 +11,21 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Goals
 
+This specification is intended to formally document the names and expected behaviour of the monitoring message distribution between hosts of the Constellation framework.
+This protocol specifies how CMDP hosts are
+
+* sending and receiving multicast messages with auxiliary status information to and from other CMDP hosts,
+* formatting message topics to allow identification of the message type as well as filtering, and
+* subscribing to specific message topics to reduce the number of transmitted messages and consequently the network load.
+
+This protocol defines two message types which differ in purpose and message syntax:
+
+* Log messages are intended for the distribution of informational logging messages from a CMDP host
+* Metrics data messages are intended for the distribution of machine-readable monitoring data from a CMDP host.
+
+Conforming implementations of this protocol SHOULD respect this specification, thus ensuring that applications can depend on predictable behavior.
+This specification is not transport specific, but not all behaviour will be reproducible on all transports.
+
 ### Related Specifications
 
 * [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP) defines the message transport protocol.
@@ -26,7 +41,7 @@ The message SHALL consist of the following frames, in this order:
 
 * The message topic
 * The header header
-* the message payload
+* The message payload
 
 ### Overall Behavior
 
@@ -35,12 +50,13 @@ The message SHALL consist of the following frames, in this order:
 * discard messages in congestion
 
 The first frame of the message SHALL consist of the message topic in order to allow outgoing message filtering as specified in [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
+The sending CMDP host SHALL only send a message if the receiving CMDP host has a subscription to the topic of the message.
 The topic MUST start either with prefix `LOG` or with prefix `STAT`.
-A host SHALL discard messages that it receives with a topic prefix different from these.
+A receiving CMDP host SHALL discard messages that it receives with a topic prefix different from these.
 
 ### Log Message Topic
 
-Messages which start with topic prefix `LOG`, hereafter referred to as ‘log messages’, SHALL be used for the distribution of informational messages from the program flow of the sending host.
+Messages which start with topic prefix `LOG`, hereafter referred to as ‘log messages’, SHALL be used for the distribution of informational messages from the program flow of the sending CMDP host.
 The `LOG` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a log level.
 The log level SHOULD be any of `ERROR`, `STATUS`, `WARNING`, `INFO`, `DEBUG` or `TRACE`.
 
