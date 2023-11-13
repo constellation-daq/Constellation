@@ -101,10 +101,10 @@ The following commands are available:
 ## Documentation
 
 ```bash
-sudo apt install libclang-dev  # note down version, e.g. 14.0.6
+sudo apt install libclang-dev  # note down version, e.g. 17.0.4
 python3 -m venv venv
 source venv/bin/active
 pip install clang=[VERSION]  # insert clang version
 pip install sphinx hawkmoth myst-parser sphinx_immaterial
-pip install hawkmoth @ git+https://github.com/stephanlachnit/hawkmoth.git@slachnit
+pip install hawkmoth@git+https://github.com/stephanlachnit/hawkmoth.git@constellation
 ```

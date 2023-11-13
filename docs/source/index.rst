@@ -9,10 +9,3 @@ CHIRP C++ documentation
    :caption: Contents:
 
    Developer API<dev_api>
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
