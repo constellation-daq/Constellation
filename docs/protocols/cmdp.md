@@ -19,11 +19,14 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Implementation
 
-message consists of three frames
+A CMDP message MUST consist of three frames and SHALL be sent as multipart message.
+The definitions of ‘frame’ and multipart message’ follow those defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
 
-* topic
-* header
-* message
+The message SHALL consist of the following frames, in this order:
+
+* The message topic
+* The header header
+* the message payload
 
 ### Overall Behavior
 
@@ -31,11 +34,11 @@ message consists of three frames
 * discard messages with invalid topic
 * discard messages in congestion
 
-### Topic (First Frame)
-
 The first frame of the message SHALL consist of the message topic in order to allow outgoing message filtering as specified in [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
 The topic MUST start either with prefix `LOG` or with prefix `STAT`.
 A host SHALL discard messages that it receives with a topic prefix different from these.
+
+### Log Message Topic
 
 Messages which start with topic prefix `LOG`, hereafter referred to as ‘log messages’, SHALL be used for the distribution of informational messages from the program flow of the sending host.
 The `LOG` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a log level.
@@ -53,10 +56,14 @@ The following lists provides guidance on the usage of these topics:
 The log message topic MAY be followed by a trailing slash `/` and a component identifier of the host program to allow further filtering of messages.
 An example for a log message topic with component identifier is `LOG/TRACE/NETWORKING`.
 
-Messages which start with topic prefix `STAT` SHALL be used for the distribution of monitoring data messages from the sending host.
-The `STAT` topic prefix MUST be followed by a variable name.
+### Monitoring Data Topic
 
-### Header (Second Frame)
+Messages which start with topic prefix `STAT` SHALL be used for the distribution of monitoring data messages from the sending host.
+The `STAT` topic prefix MUST be followed by a quantity name.
+
+
+
+### Header
 
 ### Payload (Third Frame)
 
