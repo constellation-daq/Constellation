@@ -82,6 +82,17 @@ An example for a valid metrics data message topic is `STAT/CPULOAD`.
 
 ### Header
 
+The message header frame SHALL contain a
+
+* Data type
+* Metrics type
+   `0x1` - LAST_VALUE: Updating the value of this metrics replaces the previous value, only the last value SHOULD be displayed.
+   `0x2` - ACCUMULATE: Every new value of this metrics SHOULD be added to the cached value.
+   `0x3` - AVERAG: The average value of the metrics SHOULD be calculated over a given time interval.
+   `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
+
+
+
 ### Payload (Third Frame)
 
 
