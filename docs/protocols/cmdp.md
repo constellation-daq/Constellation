@@ -56,7 +56,7 @@ A receiving CMDP host SHALL discard messages that it receives with a topic prefi
 
 ### Log Message Topic
 
-Messages which start with topic prefix `LOG`, hereafter referred to as ‘log messages’, SHALL be used for the distribution of informational messages from the program flow of the sending CMDP host.
+A message SHALL start with topic prefix `LOG`, hereafter referred to as ‘log messages’, if it distributes informational text from the program flow of the sending CMDP host.
 The `LOG` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a log level.
 The log level SHOULD be any of `ERROR`, `STATUS`, `WARNING`, `INFO`, `DEBUG` or `TRACE`.
 
@@ -74,8 +74,8 @@ An example for a valid log message topic with component identifier is `LOG/TRACE
 
 ### Metrics Data Topic
 
-Messages which start with topic prefix `STAT` SHALL be used for the distribution of metrics data messages from the sending host for the purpose of monitoring.
-The `STAT` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a metrics name which SHOULD be unique per sending host.
+A message SHALL start with topic prefix `STAT` if it distributes metrics data messages from the sending host for the purpose of monitoring.
+The `STAT` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a metrics name which SHOULD be unique per sending CMDP host.
 It is RECOMMENDED to use the same unique metrics name across different hosts for the same metrics data quantity.
 
 An example for a valid metrics data message topic is `STAT/CPULOAD`.
