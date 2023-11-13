@@ -35,12 +35,12 @@ This specification is not transport specific, but not all behaviour will be repr
 ## Implementation
 
 A CMDP message MUST consist of three frames and SHALL be sent as multipart message.
-The definitions of ‘frame’ and multipart message’ follow those defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
+The definitions of ‘frame’ and ‘multipart message’ follow those defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
 
 The message SHALL consist of the following frames, in this order:
 
 * The message topic
-* The header header
+* The message header
 * The message payload
 
 ### Overall Behavior
