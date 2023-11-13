@@ -1,5 +1,6 @@
 #pragma once
 
+#include <any>
 #include <mutex>
 #include <set>
 #include <string_view>
@@ -48,8 +49,12 @@ struct DiscoveredService {
     CHIRP_API bool operator<(const DiscoveredService& other) const;
 };
 
-// Function signature for user callback
-using DiscoverCallback = void(DiscoveredService service, bool depart, void* user_data);
+/**
+ * Function signature for user callback
+ *
+ * Note: the callback has to be thread-safe.
+*/
+using DiscoverCallback = void(DiscoveredService service, bool depart, std::any user_data);
 
 /**
  * Unique entry for a user callback for newly discovered and departing services
@@ -61,8 +66,8 @@ struct DiscoverCallbackEntry {
     /** Service identifier of the service for which callbacks should be received */
     ServiceIdentifier service_id;
 
-    /** Pointer to arbitrary user data passed to the callback function */
-    void* user_data;
+    /** Arbitrary user data passed to the callback function */
+    std::any user_data;
 
     CHIRP_API bool operator<(const DiscoverCallbackEntry& other) const;
 };
@@ -153,27 +158,25 @@ public:
     /**
      * Register a user callback for newly discovered or departing servies
      *
-     * Note that a callback function can be registered multiple times for different servies, and even the same service if the
-     * user data pointer points to a different address. The callback should also be thread-safe.
+     * Note that a callback function can be registered multiple times for different servies.
      *
      * @param callback Function pointer to a callback
      * @param service_id Service identifier of the service for which callbacks should be received
-     * @param user_data Pointer to arbitrary user data passed to the callback function
+     * @param user_data Arbitrary user data passed to the callback function
      * @retval true If the callback/service/user_data combination was registered
      * @retval false If the callback/service/user_data combination was already registered
     */
-    CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data);
+    CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data);
 
     /**
      * Unegister a previously registered callback for newly discovered or departing services
      *
      * @param callback Function pointer to the callback of registered callback entry
      * @param service_id Service identifier of registered callback entry
-     * @param user_data Pointer to user data of registered callback entry
      * @retval true If the callback entry was unregistered
      * @retval false If the callback entry was never registered
     */
-    CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data);
+    CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
 
     /**
      * Unregisteres all discovery callbacks registered in the manager

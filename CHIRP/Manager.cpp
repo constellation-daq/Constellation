@@ -57,15 +57,7 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
         return false;
     }
     // Then after service identifier to listen to
-    auto ord_service_id = std::to_underlying(service_id) <=> std::to_underlying(other.service_id);
-    if (std::is_lt(ord_service_id)) {
-        return true;
-    }
-    if (std::is_gt(ord_service_id)) {
-        return false;
-    }
-    // Lastly after user_data address
-    return reinterpret_cast<std::uintptr_t>(user_data) < reinterpret_cast<std::uintptr_t>(other.user_data);
+    return std::to_underlying(service_id) < std::to_underlying(other.service_id);
 }
 
 Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name)
@@ -132,7 +124,7 @@ std::set<RegisteredService> Manager::GetRegisteredServices() {
     return registered_services_;
 }
 
-bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data) {
+bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
     const auto insert_ret = discover_callbacks_.emplace(callback, service_id, user_data);
 
@@ -140,9 +132,9 @@ bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdenti
     return insert_ret.second;
 }
 
-bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, void* user_data) {
+bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto erase_ret = discover_callbacks_.erase({callback, service_id, user_data});
+    const auto erase_ret = discover_callbacks_.erase({callback, service_id, {}});
 
     // Return if actually erased
     return erase_ret > 0;

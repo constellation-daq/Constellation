@@ -1,3 +1,4 @@
+#include <any>
 #include <charconv>
 #include <iomanip>
 #include <iostream>
@@ -29,7 +30,7 @@ enum class Command {
 };
 using enum Command;
 
-void discover_callback(DiscoveredService service, bool depart, void*) {
+void discover_callback(DiscoveredService service, bool depart, std::any) {
     std::cout << "Callback:\n"
               << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
               << " Port " << std::setw(5) << service.port
@@ -159,7 +160,7 @@ int main(int argc, char* argv[]) {
                 }
             }
             else {
-                auto ret = manager.UnregisterDiscoverCallback(&discover_callback, service, nullptr);
+                auto ret = manager.UnregisterDiscoverCallback(&discover_callback, service);
                 if (ret) {
                     std::cout << " Unregistered Callback for " << magic_enum::enum_name(service) << std::endl;
                 }

@@ -1,3 +1,4 @@
+#include <any>
 #include <chrono>
 #include <iostream>
 #include <future>
@@ -51,19 +52,19 @@ int test_manager_sort_discovered_service() {
 int test_manager_sort_discover_callback_entry() {
     auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);
     auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);
-    auto* ud1 = reinterpret_cast<void*>(1);
-    auto* ud2 = reinterpret_cast<void*>(2);
+    auto ud1 = std::make_any<int>(1);
+    auto ud2 = std::make_any<int>(2);
     int fails = 0;
     // test self not smaller than self
     fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 1 : 0;
+    // test user data does not change sorting
+    fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}) ? 1 : 0;
+    fails += DiscoverCallbackEntry({cb1, DATA, ud2}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 1 : 0;
     // test callback address takes priority
     fails += DiscoverCallbackEntry({cb1, DATA, ud2}) < DiscoverCallbackEntry({cb2, CONTROL, ud1}) ? 0 : 1;
     fails += DiscoverCallbackEntry({cb2, CONTROL, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}) ? 1 : 0;
     // test service identifier takes priority if same callback address
     fails += DiscoverCallbackEntry({cb1, CONTROL, ud2}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 0 : 1;
-    fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, CONTROL, ud2}) ? 1 : 0;
-    // test user data takes priority if same callback address and service identifier
-    fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}) ? 0 : 1;
     return fails == 0 ? 0 : 1;
 }
 
@@ -96,7 +97,7 @@ int test_manager_register_service_logic() {
 int test_manager_register_callback_logic() {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
-    auto callback = [](DiscoveredService, bool, void*) {};
+    auto callback = [](DiscoveredService, bool, std::any) {};
 
     int fails = 0;
     // test that first register works
@@ -106,10 +107,10 @@ int test_manager_register_callback_logic() {
     auto regsitered_twice = manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
     fails += regsitered_twice ? 1 : 0;
     // test that unregistering works
-    auto unregistered = manager.UnregisterDiscoverCallback(callback, CONTROL, nullptr);
+    auto unregistered = manager.UnregisterDiscoverCallback(callback, CONTROL);
     fails +=  unregistered ? 0 : 1;
     // test that unregistering for not registered service does not work
-    auto unregistered_nonexist = manager.UnregisterDiscoverCallback(callback, CONTROL, nullptr);
+    auto unregistered_nonexist = manager.UnregisterDiscoverCallback(callback, CONTROL);
     fails += unregistered_nonexist ? 1 : 0;
     // coverage test for unregister all services
     manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
@@ -212,8 +213,8 @@ int test_manager_callbacks() {
 
     // Create a callback, use pointer to access test variable
     std::pair<bool, DiscoveredService> cb_departb_service {true, {}};
-    auto callback = [](DiscoveredService service, bool depart, void* cb_info) {
-        auto cb_departb_service_l = static_cast<std::pair<bool, DiscoveredService>*>(cb_info);
+    auto callback = [](DiscoveredService service, bool depart, std::any cb_info) {
+        auto* cb_departb_service_l = std::any_cast<std::pair<bool, DiscoveredService>*>(cb_info);
         cb_departb_service_l->first = depart;
         cb_departb_service_l->second = std::move(service);
     };
@@ -237,7 +238,7 @@ int test_manager_callbacks() {
     fails += cb_departb_service.first ? 0 : 1;
 
     // Unregister callback
-    manager2.UnregisterDiscoverCallback(callback, CONTROL, &cb_departb_service);
+    manager2.UnregisterDiscoverCallback(callback, CONTROL);
     // Register CONTROL service
     manager1.RegisterService(CONTROL, 50100);
     std::this_thread::sleep_for(5ms);
