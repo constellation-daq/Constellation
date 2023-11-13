@@ -54,14 +54,15 @@ The following lists provides guidance on the usage of these topics:
 * The topic `LOG/ERROR` SHOULD be used to notify the end user about critical events which require immediate attention and MAY have triggered an automated response by the host program or other hosts.
 
 The log message topic MAY be followed by a trailing slash `/` and a component identifier of the host program to allow further filtering of messages.
-An example for a log message topic with component identifier is `LOG/TRACE/NETWORKING`.
+An example for a valid log message topic with component identifier is `LOG/TRACE/NETWORKING`.
 
-### Monitoring Data Topic
+### Metrics Data Topic
 
-Messages which start with topic prefix `STAT` SHALL be used for the distribution of monitoring data messages from the sending host.
-The `STAT` topic prefix MUST be followed by a quantity name.
+Messages which start with topic prefix `STAT` SHALL be used for the distribution of metrics data messages from the sending host for the purpose of monitoring.
+The `STAT` topic prefix MUST be followed by a trailing slash `/`, which SHALL be followed by a metrics name which SHOULD be unique per sending host.
+It is RECOMMENDED to use the same unique metrics name across different hosts for the same metrics data quantity.
 
-
+An example for a valid metrics data message topic is `STAT/CPULOAD`.
 
 ### Header
 
