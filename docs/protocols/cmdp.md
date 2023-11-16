@@ -102,20 +102,26 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 ### Log Message Payload
 
-The payload of log messages SHALL consist of a message string.
+The log messages payload frame SHALL consist of a message string.
 
 ### Metrics Data Payload
 
-* Data type
-* Metrics type
-   `0x1` - LAST_VALUE: Updating the value of this metrics replaces the previous value, only the last value SHOULD be displayed.
-   `0x2` - ACCUMULATE: Every new value of this metrics SHOULD be added to the cached value.
-   `0x3` - AVERAG: The average value of the metrics SHOULD be calculated over a given time interval.
-   `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
+The metrics data payload frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+It SHALL contain, in this order
 
+* The description of the metrics, as string
+* The unit of the metrics, as string
+* The metric type
+* The metrics value, which MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
+The metrics type SHALL be encoded as 1-OCTET integer variable with the following possible values:
 
-### Payload (Third Frame)
+* `0x1` - LAST_VALUE: Updating the value of this metrics replaces the previous value, only the last value SHOULD be displayed.
+* `0x2` - ACCUMULATE: Every new value of this metrics SHOULD be added to the cached value.
+* `0x3` - AVERAG: The average value of the metrics SHOULD be calculated over a given time interval.
+* `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
+
+The metrics type MAY be implemented as enum type if appropriate.
 
 
 ### Subscription to Monitoring Messages
