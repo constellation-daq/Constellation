@@ -31,6 +31,7 @@ This specification is not transport specific, but not all behaviour will be repr
 * [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP) defines the message transport protocol.
 * [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB) defines the semantics of PUB, XPUB, SUB and XSUB sockets.
 * [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) defines the network discovery protocol and procedure.
+* [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) defines the encoding for data structures.
 
 ## Implementation
 
@@ -86,9 +87,24 @@ It is RECOMMENDED to use the same unique metrics name across different hosts for
 
 An example for a valid metrics data message topic is `STAT/1/CPULOAD`.
 
-### Header
+### Message Header
 
-The message header frame SHALL contain a
+The message header frame has the same format for metrics data and log messages and MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+It SHALL contain a string, followed by an unsigned 64-bit integer and a dictionary.
+
+The string SHOULD contain the name of the sending CMDP host.
+
+The 64-bit integer value SHALL contain a UNIX epoch timestamp in units of nanoseconds.
+Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CMDP host.
+
+The dictionary SHALL contain key-value pairs.
+The key MUST be of string-type and the values MAY be any of the types
+
+### Log Message Payload
+
+
+
+### Metrics Data Payload
 
 * Data type
 * Metrics type
