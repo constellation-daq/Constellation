@@ -51,7 +51,7 @@ The message SHALL consist of the following frames, in this order:
 
 The first frame of the message SHALL consist of the message topic in order to allow outgoing message filtering as specified in [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
 The sending CMDP host SHALL only send a message if the receiving CMDP host has a subscription to the topic of the message.
-The topic MUST start either with prefix `LOG` or with prefix `STAT`.
+The topic MUST start either with prefix `LOG` or with prefix `STAT` and SHOULD only contain upper case letters, slashes or digits.
 A receiving CMDP host SHALL discard messages that it receives with a topic prefix different from these.
 
 ### Log Message Topic
