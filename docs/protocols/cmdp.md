@@ -61,7 +61,7 @@ The `LOG` topic prefix MUST be followed by a trailing slash `/`, by the log mess
 This is hereafter referred to as ‘heading’.
 
 The heading SHALL be followed by a log level.
-The log level SHOULD be any of `ERROR`, `STATUS`, `WARNING`, `INFO`, `DEBUG` or `TRACE`.
+The log level SHOULD be any of `CRITICAL`, `STATUS`, `WARNING`, `INFO`, `DEBUG` or `TRACE`.
 
 The following lists provides guidance on the usage of these topics:
 
@@ -70,7 +70,7 @@ The following lists provides guidance on the usage of these topics:
 * The topic `LOG/1/INFO` SHOULD contain information on regular events intended for end users of the host program.
 * The topic `LOG/1/WARNING` SHOULD be used to notify the end user of the host program of unexpected events which require further investigation.
 * The topic `LOG/1/STATUS` SHOULD be used to communicate important information about the host program to the end user with low frequency.
-* The topic `LOG/1/ERROR` SHOULD be used to notify the end user about critical events which require immediate attention and MAY have triggered an automated response by the host program or other hosts.
+* The topic `LOG/1/CRITICAL` SHOULD be used to notify the end user about critical events which require immediate attention and MAY have triggered an automated response by the host program or other hosts.
 
 The log message topic MAY be followed by a trailing slash `/` and a component identifier of the host program to allow further filtering of messages.
 An example for a valid log message topic with component identifier is `LOG/1/TRACE/NETWORKING`.
