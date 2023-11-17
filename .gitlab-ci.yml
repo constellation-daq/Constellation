@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
+# SPDX-License-Identifier: EUPL-1.2
+
+stages:
+    - formatting
+
+fmt:reuse:
+    image:
+        name: registry.cern.ch/docker.io/fsfe/reuse:latest
+        entrypoint: [""]
+    stage: formatting
+    needs: []
+    dependencies: []
+    script:
+        - reuse lint
