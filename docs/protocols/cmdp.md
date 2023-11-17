@@ -46,14 +46,18 @@ The message SHALL consist of the following frames, in this order:
 
 ### Overall Behavior
 
-* Send only messages with topic that has subscribers, suppress others
-* discard messages with invalid topic
-* discard messages in congestion
+A CMDP service provider host SHALL advertise its CMDP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md).
+
+Upon service discovery through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md), a CMDP host MAY subscribe to one or multiple topics as defined by [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
 
 The first frame of the message SHALL consist of the message topic in order to allow outgoing message filtering as specified in [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
-The sending CMDP host SHALL only send a message if the receiving CMDP host has a subscription to the topic of the message.
+The sending CMDP host SHALL only send a message if the receiving CMDP host has a subscription to the topic of the message and SHALL discard all other messages.
+
 The topic MUST start either with prefix `LOG` or with prefix `STAT` and SHOULD only contain upper case letters, slashes or digits.
-A receiving CMDP host SHALL discard messages that it receives with a topic prefix different from these.
+
+A receiving CMDP host SHALL discard messages that it receives with an invalid topic or topic formatting.
+
+In case of network congestion, unsent messaged SHALL be discarded by the sending CMDP host.
 
 ### Log Message Topic
 
@@ -122,7 +126,4 @@ The metrics type SHALL be encoded as 1-OCTET integer variable with the following
 * `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
 
 The metrics type MAY be implemented as enum type if appropriate.
-
-
-### Subscription to Monitoring Messages
 
