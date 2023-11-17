@@ -12,7 +12,7 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 ## Goals
 
 This specification is intended to formally document the names and expected behaviour of the data message transmission between two hosts of the Constellation framework.
-This protocol specifies how CDTP hosts are sending and receiving messages with data payload to and from other CDTP hosts.
+This protocol specifies how CDTP hosts are sending and receiving messages with cargo payload to and from other CDTP hosts.
 
 This protocol defines the data message type and its syntax.
 
@@ -34,9 +34,9 @@ The definitions of ‘frame’ and ‘multipart message’ follow those defined 
 The message SHALL consist at least of the following frames, in this order:
 
 * The message header
-* The message payload
+* The message cargo payload
 
-OPTIONAL frames with additional message payload MAY be sent afterwards.
+OPTIONAL frames with additional cargo payload MAY be sent afterwards.
 
 ### Overall Behavior
 
@@ -63,6 +63,6 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 ### Message Payload
 
-The message payload frames MAY consist of any binary data.
+The message cargo payload frames MAY consist of any binary data.
 The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
 
