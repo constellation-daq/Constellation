@@ -62,7 +62,7 @@ In case of network congestion, unsent messaged SHALL be discarded by the sending
 ### Log Message Topic
 
 The message topic frame SHALL start with topic prefix `LOG`, hereafter referred to as ‘log messages’, if it distributes informational text from the program flow of the sending CMDP host.
-The `LOG` topic prefix MUST be followed by a trailing slash `/`, by the log message version number, which SHALL be %x01, and by another trailing slash `/`.
+The `LOG` topic prefix MUST be followed by a trailing slash `/`.
 This is hereafter referred to as ‘heading’.
 
 The heading SHALL be followed by a log level.
@@ -70,26 +70,26 @@ The log level SHOULD be any of `CRITICAL`, `STATUS`, `WARNING`, `INFO`, `DEBUG` 
 
 The following lists provides guidance on the usage of these topics:
 
-* The topic `LOG/1/TRACE` SHOULD be used for verbose information which allows to follow the call stack of the host program.
-* The topic `LOG/1/DEBUG` SHOULD be used for information relevant to developers for debugging the host program.
-* The topic `LOG/1/INFO` SHOULD contain information on regular events intended for end users of the host program.
-* The topic `LOG/1/WARNING` SHOULD be used to notify the end user of the host program of unexpected events which require further investigation.
-* The topic `LOG/1/STATUS` SHOULD be used to communicate important information about the host program to the end user with low frequency.
-* The topic `LOG/1/CRITICAL` SHOULD be used to notify the end user about critical events which require immediate attention and MAY have triggered an automated response by the host program or other hosts.
+* The topic `LOG/TRACE` SHOULD be used for verbose information which allows to follow the call stack of the host program.
+* The topic `LOG/DEBUG` SHOULD be used for information relevant to developers for debugging the host program.
+* The topic `LOG/INFO` SHOULD contain information on regular events intended for end users of the host program.
+* The topic `LOG/WARNING` SHOULD be used to notify the end user of the host program of unexpected events which require further investigation.
+* The topic `LOG/STATUS` SHOULD be used to communicate important information about the host program to the end user with low frequency.
+* The topic `LOG/CRITICAL` SHOULD be used to notify the end user about critical events which require immediate attention and MAY have triggered an automated response by the host program or other hosts.
 
 The log message topic MAY be followed by a trailing slash `/` and a component identifier of the host program to allow further filtering of messages.
-An example for a valid log message topic with component identifier is `LOG/1/TRACE/NETWORKING`.
+An example for a valid log message topic with component identifier is `LOG/TRACE/NETWORKING`.
 
 ### Metrics Data Topic
 
 The message topic frame SHALL start with topic prefix `STAT` if it distributes metrics data messages from the sending host for the purpose of monitoring.
-The `STAT` topic prefix MUST be followed by a trailing slash `/`, by the log message version number, which SHALL be %x01, and by another trailing slash `/`.
+The `STAT` topic prefix MUST be followed by a trailing slash `/`.
 This is hereafter referred to as ‘heading’.
 
 The heading SHALL be followed by a metrics name which SHOULD be unique per sending CMDP host.
 It is RECOMMENDED to use the same unique metrics name across different hosts for the same metrics data quantity.
 
-An example for a valid metrics data message topic is `STAT/1/CPULOAD`.
+An example for a valid metrics data message topic is `STAT/CPULOAD`.
 
 ### Message Header
 
