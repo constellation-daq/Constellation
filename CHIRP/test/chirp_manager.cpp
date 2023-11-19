@@ -13,6 +13,7 @@
 
 #include "CHIRP/Manager.hpp"
 #include "CHIRP/Message.hpp"
+#include "CHIRP/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::string_literals;
@@ -78,7 +79,7 @@ int main(int argc, char* argv[]) {
         std::string cmd_input {};
         std::getline(std::cin, cmd_input);
 
-        // Split in vector of string views
+        // Split command by spaces to vector of string views
         std::vector<std::string_view> cmd_split {};
         for (const auto word_range : std::ranges::views::split(cmd_input, " "sv)) {
             cmd_split.emplace_back(&*word_range.begin(), std::ranges::distance(word_range));

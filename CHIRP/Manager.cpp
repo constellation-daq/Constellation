@@ -61,7 +61,7 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
 }
 
 Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name)
-  : receiver_(any_address), sender_(brd_address), group_hash_(MD5Hash(group_name)), host_hash_(MD5Hash(host_name)) {}
+  : receiver_(any_address), sender_(brd_address), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)) {}
 
 Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
   : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group_name, host_name) {}
@@ -173,7 +173,7 @@ void Manager::SendRequest(ServiceIdentifier service) {
 }
 
 void Manager::SendMessage(MessageType type, RegisteredService service) {
-    const auto asm_msg = Message(type, group_hash_, host_hash_, service.identifier, service.port).Assemble();
+    const auto asm_msg = Message(type, group_id_, host_id_, service.identifier, service.port).Assemble();
     sender_.SendBroadcast(asm_msg.data(), asm_msg.size());
 }
 
@@ -190,16 +190,16 @@ void Manager::Run(std::stop_token stop_token) {
             const auto raw_msg = raw_msg_opt.value();
             auto chirp_msg = Message(AssembledMessage(raw_msg.content));
 
-            if (chirp_msg.GetGroupID() != group_hash_) {
+            if (chirp_msg.GetGroupID() != group_id_) {
                 // Broadcast from different group, ignore
                 continue;
             }
-            if (chirp_msg.GetHostID() == host_hash_) {
+            if (chirp_msg.GetHostID() == host_id_) {
                 // Broadcast from self, ignore
                 continue;
             }
 
-            DiscoveredService discovered_service {raw_msg.ip, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
+            DiscoveredService discovered_service {raw_msg.address, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
 
             switch (chirp_msg.GetType()) {
             case REQUEST: {

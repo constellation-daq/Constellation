@@ -31,16 +31,16 @@ int test_message_md5_sort() {
 int test_message_assemble() {
     std::vector<std::uint8_t> msg_data {};
     // Success on correct size
-    msg_data.resize(MESSAGE_LENGTH);
+    msg_data.resize(CHIRP_MESSAGE_LENGTH);
     AssembledMessage {msg_data};
     // Exception on incorrect size
-    msg_data.resize(MESSAGE_LENGTH + 1);
+    msg_data.resize(CHIRP_MESSAGE_LENGTH + 1);
     int ret = 1;
     try {
         AssembledMessage {msg_data};
     }
     catch (const DecodeError& error) {
-        if (std::strcmp(error.what(), ("Message length is not " + std::to_string(MESSAGE_LENGTH) + " bytes").c_str()) == 0) {
+        if (std::strcmp(error.what(), ("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes").c_str()) == 0) {
             ret = 0;
         }
     }

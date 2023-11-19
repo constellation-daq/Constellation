@@ -41,18 +41,18 @@ bool MD5Hash::operator<(const MD5Hash& other) const {
     return false;
 }
 
-AssembledMessage::AssembledMessage(const std::vector<std::uint8_t>& assembled_message) {
-    if (assembled_message.size() != MESSAGE_LENGTH) {
-        throw DecodeError("Message length is not " + std::to_string(MESSAGE_LENGTH) + " bytes");
+AssembledMessage::AssembledMessage(const std::vector<std::uint8_t>& byte_array) {
+    if (byte_array.size() != CHIRP_MESSAGE_LENGTH) {
+        throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
-    std::copy_n(assembled_message.cbegin(), MESSAGE_LENGTH, this->begin());
+    std::copy_n(byte_array.cbegin(), CHIRP_MESSAGE_LENGTH, this->begin());
 }
 
-Message::Message(MessageType type, MD5Hash group_hash, MD5Hash host_hash, ServiceIdentifier service, Port port)
-  : type_(type), group_hash_(std::move(group_hash)), host_hash_(std::move(host_hash)), service_(service), port_(port) {}
+Message::Message(MessageType type, MD5Hash group_id, MD5Hash host_id, ServiceIdentifier service_id, Port port)
+  : type_(type), group_id_(std::move(group_id)), host_id_(std::move(host_id)), service_id_(service_id), port_(port) {}
 
-Message::Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service, Port port)
-  : Message(type, MD5Hash(group), MD5Hash(host), service, port) {}
+Message::Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service_id, Port port)
+  : Message(type, MD5Hash(group), MD5Hash(host), service_id, port) {}
 
 Message::Message(const AssembledMessage& assembled_message) {
     // Header
@@ -70,20 +70,20 @@ Message::Message(const AssembledMessage& assembled_message) {
         throw DecodeError("Message Type invalid");
     }
     type_ = static_cast<MessageType>(assembled_message[6]);
-    // Group Hash
+    // Group ID
     for (std::uint8_t n = 0; n < 16; ++n) {
-        group_hash_[n] = assembled_message[7+n];
+        group_id_[n] = assembled_message[7+n];
     }
-    // Host Hash
+    // Host ID
     for (std::uint8_t n = 0; n < 16; ++n) {
-        host_hash_[n] = assembled_message[23+n];
+        host_id_[n] = assembled_message[23+n];
     }
     // Service Identifier
     if (assembled_message[39] < std::to_underlying(ServiceIdentifier::CONTROL) ||
         assembled_message[39] > std::to_underlying(ServiceIdentifier::DATA)) {
         throw DecodeError("Service Identifier invalid");
     }
-    service_ = static_cast<ServiceIdentifier>(assembled_message[39]);
+    service_id_ = static_cast<ServiceIdentifier>(assembled_message[39]);
     // Port
     port_ = assembled_message[40] + (static_cast<std::uint16_t>(assembled_message[41]) << 8);
 }
@@ -102,14 +102,14 @@ AssembledMessage Message::Assemble() const {
     ret[6] = std::to_underlying(type_);
     // Group Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        ret[7+n] = group_hash_[n];
+        ret[7+n] = group_id_[n];
     }
     // Host Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        ret[23+n] = host_hash_[n];
+        ret[23+n] = host_id_[n];
     }
     // Service Identifier
-    ret[39] = std::to_underlying(service_);
+    ret[39] = std::to_underlying(service_id_);
     // Port
     ret[40] = static_cast<std::uint8_t>(port_ & 0x00FF);
     ret[41] = static_cast<std::uint8_t>((port_ >> 8) & 0x00FF);

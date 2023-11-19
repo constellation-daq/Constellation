@@ -7,6 +7,7 @@
 
 #include "CHIRP/BroadcastSend.hpp"
 #include "CHIRP/Message.hpp"
+#include "CHIRP/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 

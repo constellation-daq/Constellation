@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 
     while(true) {
         auto message = receiver.RecvBroadcast();
-        std::cout << "recv message from " << message.ip.to_string() << ": " << message.content_to_string() << std::endl;
+        std::cout << "recv message from " << message.address.to_string() << ": " << message.content_to_string() << std::endl;
     }
 
     return 0;

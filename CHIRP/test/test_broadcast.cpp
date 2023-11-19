@@ -54,8 +54,8 @@ int test_broadcast_localhost_ip() {
     sender.SendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
-    // Compare IP
-    return msg.ip == asio::ip::make_address("0.0.0.0");
+    // Compare address
+    return msg.address == asio::ip::make_address("0.0.0.0");
 }
 
 int test_broadcast_send_async_recv() {

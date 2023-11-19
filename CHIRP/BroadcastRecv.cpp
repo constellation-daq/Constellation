@@ -38,7 +38,7 @@ BroadcastMessage BroadcastRecv::RecvBroadcast() {
     auto length = socket_.receive_from(asio::buffer(message.content), sender_endpoint);
 
     // Store IP address
-    message.ip = sender_endpoint.address();
+    message.address = sender_endpoint.address();
 
     // Resize content to actual message length
     message.content.resize(length);
@@ -65,7 +65,7 @@ std::optional<BroadcastMessage> BroadcastRecv::AsyncRecvBroadcast(std::chrono::s
         return std::nullopt;
     }
 
-    message.ip = sender_endpoint.address();
+    message.address = sender_endpoint.address();
     message.content.resize(length_future.get());
     return message;
 }

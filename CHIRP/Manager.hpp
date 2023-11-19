@@ -13,13 +13,12 @@
 #include "CHIRP/BroadcastRecv.hpp"
 #include "CHIRP/BroadcastSend.hpp"
 #include "CHIRP/Message.hpp"
+#include "CHIRP/protocol_info.hpp"
 
 namespace cnstln {
 namespace CHIRP {
 
-/**
- * A service offered by the host
-*/
+/** A service offered by the host and announced by the :cpp:class:`Manager` */
 struct RegisteredService {
     /** Service identifier of the offered service */
     ServiceIdentifier identifier;
@@ -30,9 +29,7 @@ struct RegisteredService {
     CHIRP_API bool operator<(const RegisteredService& other) const;
 };
 
-/**
- * A service discovered by the :cpp:class:`Manager`
- */
+/** A service discovered by the :cpp:class:`Manager` */
 struct DiscoveredService {
     /** Address of the discovered service */
     asio::ip::address address;
@@ -52,13 +49,17 @@ struct DiscoveredService {
 /**
  * Function signature for user callback
  *
- * Note: the callback has to be thread-safe.
-*/
+ * The first argument (``service``) contains the discovered service, the second argument is a bool (``depart``) that is false
+ * when the service is newly and true when the service is departing, and the third argument (``user_data``) is arbitrary user
+ * data passed to the callback (done via :cpp:func:`Manager::RegisterDiscoverCallback`).
+ *
+ * It is recommended to pass the user data wrapped in an atomic :cpp:class:`std::shared_ptr` since the callback is launched
+ * asynchronously in a detached :cpp:class:`std::thread`. If the data is modified, it is recommended to use atomic types
+ * when possible or a :cpp:class:`std::mutex` for locking to ensure thread-safe access.
+ */
 using DiscoverCallback = void(DiscoveredService service, bool depart, std::any user_data);
 
-/**
- * Unique entry for a user callback for newly discovered and departing services
-*/
+/** Entry for a user callback in the :cpp:class:`Manager` for newly discovered or departing services */
 struct DiscoverCallbackEntry {
     /** Function pointer to a callback */
     DiscoverCallback* callback;
@@ -66,15 +67,17 @@ struct DiscoverCallbackEntry {
     /** Service identifier of the service for which callbacks should be received */
     ServiceIdentifier service_id;
 
-    /** Arbitrary user data passed to the callback function */
+    /**
+     * Arbitrary user data passed to the callback function
+     *
+     * For information on lifetime and thread-safety see :cpp:type:`DiscoverCallback`.
+     */
     std::any user_data;
 
     CHIRP_API bool operator<(const DiscoverCallbackEntry& other) const;
 };
 
-/**
- * Manager for CHIRP broadcasting and receiving
- */
+/** Manager for CHIRP broadcasting and receiving */
 class Manager {
 public:
     /**
@@ -82,7 +85,7 @@ public:
      * @param any_address Any address for incoming broadcast messages
      * @param group_name Group name of the group to join
      * @param host_name Host name for outgoing messages
-    */
+     */
     CHIRP_API Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name);
 
     /**
@@ -90,29 +93,26 @@ public:
      * @param any_ip Any IP for incoming broadcast messages
      * @param group_name Group name of the group to join
      * @param host_name Host name for outgoing messages
-    */
+     */
     CHIRP_API Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name);
 
-    /** */
     CHIRP_API virtual ~Manager();
 
     /**
      * Get the group ID
      *
-     * @return MD5Hash of the group name
-    */
-    constexpr MD5Hash GetGroupID() const { return group_hash_; }
+     * @returns MD5Hash of the group name
+     */
+    constexpr MD5Hash GetGroupID() const { return group_id_; }
 
     /**
      * Get the host ID
      *
-     * @return MD5Hash of the host name
-    */
-    constexpr MD5Hash GetHostID() const { return host_hash_; }
+     * @returns MD5Hash of the host name
+     */
+    constexpr MD5Hash GetHostID() const { return host_id_; }
 
-    /**
-     * Start the background thread of the manager
-    */
+    /** Start the background thread of the manager */
     CHIRP_API void Start();
 
     /**
@@ -125,7 +125,7 @@ public:
      * @param port Port of the offered service
      * @retval true if the service was registered
      * @retval false if the service was already registered
-    */
+     */
     CHIRP_API bool RegisterService(ServiceIdentifier service_id, Port port);
 
     /**
@@ -138,21 +138,21 @@ public:
      * @param port Port of the previously offered service
      * @retval true If the service was unregistered
      * @retval false If the service was never registered
-    */
+     */
     CHIRP_API bool UnregisterService(ServiceIdentifier service_id, Port port);
 
     /**
      * Unregisteres all offered services registered in the manager
      *
      * Equivalent to calling :cpp:func:`UnregisterService` for every registered service.
-    */
+     */
     CHIRP_API void UnregisterServices();
 
     /**
      * Get the list of services currently registered in the manager
      *
-     * @return Set with all currently registered services
-    */
+     * @returns Set with all currently registered services
+     */
     CHIRP_API std::set<RegisteredService> GetRegisteredServices();
 
     /**
@@ -162,10 +162,10 @@ public:
      *
      * @param callback Function pointer to a callback
      * @param service_id Service identifier of the service for which callbacks should be received
-     * @param user_data Arbitrary user data passed to the callback function
+     * @param user_data Arbitrary user data passed to the callback function (see :cpp:type:`DiscoverCallback`)
      * @retval true If the callback/service/user_data combination was registered
      * @retval false If the callback/service/user_data combination was already registered
-    */
+     */
     CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data);
 
     /**
@@ -175,34 +175,32 @@ public:
      * @param service_id Service identifier of registered callback entry
      * @retval true If the callback entry was unregistered
      * @retval false If the callback entry was never registered
-    */
+     */
     CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
 
     /**
      * Unregisteres all discovery callbacks registered in the manager
      *
      * Equivalent to calling :cpp:func:`UnregisterDiscoverCallback` for every discovery callback.
-    */
+     */
     CHIRP_API void UnregisterDiscoverCallbacks();
 
-    /**
-     * Forgets all previously discovered services
-    */
+    /** Forgets all previously discovered services */
     CHIRP_API void ForgetDiscoveredServices();
 
     /**
      * Returns list of all discovered services
      *
-     * @return Vector with all discovered services
-    */
+     * @returns Vector with all discovered services
+     */
     CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices();
 
     /**
      * Returns list of all discovered services with a given service identifier
      *
      * @param service_id Service identifier for discovered services that should be listed
-     * @return Vector with all discovered services with the given service identifier
-    */
+     * @returns Vector with all discovered services with the given service identifier
+     */
     CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service_id);
 
     /**
@@ -214,7 +212,7 @@ public:
      * (see :cpp:func:`GetDiscoveredServices`).
      *
      * @param service_id Service identifier to send a request for
-    */
+     */
     CHIRP_API void SendRequest(ServiceIdentifier service_id);
 
 private:
@@ -223,7 +221,7 @@ private:
      *
      * @param type CHIRP broadcast message type
      * @param service Service with identifier and port
-    */
+     */
     void SendMessage(MessageType type, RegisteredService service);
 
     /**
@@ -234,18 +232,15 @@ private:
      * discovered services and calls the corresponding discovery callbacks.
      *
      * @param stop_token Token to stop loop via :cpp:class:`std::jthread`
-    */
+     */
     void Run(std::stop_token stop_token);
 
 private:
     BroadcastRecv receiver_;
     BroadcastSend sender_;
 
-    /** MD5 hash of the group name, representing the CHIRP group ID */
-    MD5Hash group_hash_;
-
-    /** MD5 hash of the host name, representing the CHIRP host ID */
-    MD5Hash host_hash_;
+    MD5Hash group_id_;
+    MD5Hash host_id_;
 
     /** Set of registered services */
     std::set<RegisteredService> registered_services_;
@@ -268,5 +263,5 @@ private:
     std::jthread run_thread_;
 };
 
-}
-}
+} // namespace CHIRP
+} // namespace cnstln
