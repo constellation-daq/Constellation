@@ -37,16 +37,16 @@ using enum MessageType;
 
 /** CHIRP service identifier */
 enum class ServiceIdentifier : std::uint8_t {
-    /** CONTROL (TODO) */
+    /** The CONTROL service identifier indicates a CSCP (Constellation Satellite Control Protocol) service */
     CONTROL = '\x01',
 
-    /** HEARTBEAT (TODO) */
+    /** The HEARTBEAT service identifier indicates a CHBP (Constellation Heartbeat Broadcasting Protocol) service */
     HEARTBEAT = '\x02',
 
-    /** The MONITORING service identifier indicates a CMDP service */
+    /** The MONITORING service identifier indicates a CMDP (Constellation Monitoring Distribution Protocol) service */
     MONITORING = '\x03',
 
-    /** DATA (TODO) */
+    /** The DATA service identifier indicates a CDTP (Constellation Data Transmission Protocol) service */
     DATA = '\x04',
 };
 using enum ServiceIdentifier;
