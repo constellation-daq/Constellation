@@ -94,7 +94,7 @@ An example for a valid metrics data message topic is `STAT/CPULOAD`.
 ### Message Header
 
 The message header frame has the same format for metrics data and log messages and MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-It SHALL contain two strings, followed by a 64-bit timestamp and an OPTIONAL map.
+It SHALL contain two strings, followed by a 64-bit timestamp and a map.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘M’, ‘D’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
 
@@ -103,7 +103,7 @@ The second string SHOULD contain the name of the sending CMDP host.
 The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
 Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CMDP host.
 
-The OPTIONAL map SHALL contain a sequence of key-value pairs.
+The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
 ### Log Message Payload
