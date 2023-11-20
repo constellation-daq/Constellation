@@ -51,7 +51,7 @@ In case of network congestion, unsent messaged SHALL be buffered by the sending 
 ### Message Header
 
 The message header frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-It SHALL contain two strings, followed by a 64-bit timestamp and an OPTIONAL map.
+It SHALL contain two strings, followed by a 64-bit timestamp and a map.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘D’, ‘T’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
 
@@ -60,7 +60,7 @@ The second string SHOULD contain the name of the sending CDTP host.
 The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
 Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CMDP host.
 
-The OPTIONAL map SHALL contain a sequence of key-value pairs.
+The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
 ### Message Payload
