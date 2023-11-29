@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2023 DESY and the Constellarion authors
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Constellation CHIRP library
 
 Implementation of the CHIRP protocol draft.
