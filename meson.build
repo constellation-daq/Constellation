@@ -11,4 +11,4 @@ magic_enum_dep = dependency('magic_enum')
 
 constellation_inc = include_directories('.')
 
-subdir('CHIRP')
+subdir('src/constellation/protocols/CHIRP')
