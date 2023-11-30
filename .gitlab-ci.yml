@@ -14,6 +14,8 @@ fmt:format:
     image:
         name: registry.cern.ch/docker.io/ubuntu:latest
     script:
+        # FIXME we need a proper base image...
+        - apt-get update && apt-get -y install git meson clang-format ninja-build
         - meson setup build
         - ninja -C build clang-format
 
