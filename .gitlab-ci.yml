@@ -4,6 +4,11 @@
 stages:
     - formatting
 
+fmt:format:
+    script:
+        - meson setup build
+        - ninja -C build clang-format
+
 fmt:reuse:
     image:
         name: registry.cern.ch/docker.io/fsfe/reuse:latest
