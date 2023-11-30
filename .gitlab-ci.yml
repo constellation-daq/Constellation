@@ -4,17 +4,23 @@
 stages:
     - formatting
 
+.format:
+    stage: formatting
+    needs: []
+    dependencies: []
+
 fmt:format:
+    extends: .format
+    image:
+        name: registry.cern.ch/docker.io/ubuntu:latest
     script:
         - meson setup build
         - ninja -C build clang-format
 
 fmt:reuse:
+    extends: .format
     image:
         name: registry.cern.ch/docker.io/fsfe/reuse:latest
         entrypoint: [""]
-    stage: formatting
-    needs: []
-    dependencies: []
     script:
         - reuse lint
