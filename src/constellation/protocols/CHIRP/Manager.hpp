@@ -9,11 +9,11 @@
 
 #include "asio.hpp"
 
-#include "CHIRP/config.hpp"
-#include "CHIRP/BroadcastRecv.hpp"
-#include "CHIRP/BroadcastSend.hpp"
-#include "CHIRP/Message.hpp"
-#include "CHIRP/protocol_info.hpp"
+#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
+#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 namespace cnstln {
 namespace CHIRP {

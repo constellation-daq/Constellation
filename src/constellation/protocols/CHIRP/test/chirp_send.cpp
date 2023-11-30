@@ -5,9 +5,9 @@
 #include "asio.hpp"
 #include "magic_enum.hpp"
 
-#include "CHIRP/BroadcastSend.hpp"
-#include "CHIRP/Message.hpp"
-#include "CHIRP/protocol_info.hpp"
+#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 

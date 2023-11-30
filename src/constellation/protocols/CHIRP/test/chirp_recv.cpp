@@ -3,8 +3,8 @@
 #include "asio.hpp"
 #include "magic_enum.hpp"
 
-#include "CHIRP/BroadcastRecv.hpp"
-#include "CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
 
 using namespace cnstln::CHIRP;
 

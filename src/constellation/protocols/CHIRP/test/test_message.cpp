@@ -3,8 +3,8 @@
 #include <iostream>
 #include <vector>
 
-#include "CHIRP/exceptions.hpp"
-#include "CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/exceptions.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
 
 using namespace cnstln::CHIRP;
 

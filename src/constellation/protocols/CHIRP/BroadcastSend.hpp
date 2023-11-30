@@ -4,7 +4,7 @@
 
 #include "asio.hpp"
 
-#include "CHIRP/config.hpp"
+#include "constellation/protocols/CHIRP/config.hpp"
 
 namespace cnstln {
 namespace CHIRP {

@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <utility>
 
-#include "CHIRP/exceptions.hpp"
-#include "CHIRP/external/md5.h"
+#include "constellation/protocols/CHIRP/exceptions.hpp"
+#include "constellation/protocols/CHIRP/external/md5.h"
 
 using namespace cnstln::CHIRP;
 

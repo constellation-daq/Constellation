@@ -6,8 +6,8 @@
 #include <string>
 #include <string_view>
 
-#include "CHIRP/config.hpp"
-#include "CHIRP/protocol_info.hpp"
+#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 namespace cnstln {
 namespace CHIRP {

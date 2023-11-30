@@ -1,6 +1,6 @@
 #include "BroadcastSend.hpp"
 
-#include "CHIRP/protocol_info.hpp"
+#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 

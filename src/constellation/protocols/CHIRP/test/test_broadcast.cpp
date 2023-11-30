@@ -6,8 +6,8 @@
 
 #include "asio.hpp"
 
-#include "CHIRP/BroadcastSend.hpp"
-#include "CHIRP/BroadcastRecv.hpp"
+#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;
