@@ -59,7 +59,7 @@ The first string MUST contain the protocol identifier, which SHALL consist of th
 The second string SHOULD contain the name of the sending CDTP host.
 
 The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
-Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CMDP host.
+Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CDTP host.
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
