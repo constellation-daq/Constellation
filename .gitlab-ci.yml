@@ -1,38 +1,157 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-License-Identifier: CC0-1.0
 
 stages:
-    - formatting
+  - build
+  - test
+  - lint
+  - format
+
+# templates
+
+.debian-clang:
+  image: gitlab.desy.de:5555/constellation/build-images:debian-clang
+  variables:
+    CXX: clang++
+    CXX_LD: mold
+
+.debian-gcc:
+  image: gitlab.desy.de:5555/constellation/build-images:debian-gcc
+  variables:
+    CXX: g++
+
+.ubuntu-22.04:
+  image: gitlab.desy.de:5555/constellation/build-images:ubuntu-22.04
+  variables:
+    CXX: g++
+
+.meson-wrap-cache:
+  cache:
+    key: meson-wrap-cache
+    paths:
+      - subprojects/packagecache/
+      - subprojects/asio-*/
+      - subprojects/magic_enum-*/
+
+# build stage
+
+.build:
+  stage: build
+  extends: .meson-wrap-cache
+  script:
+    - meson setup build ${BUILD_OPTIONS}
+    - meson compile -C build
+  artifacts:
+    paths:
+      - build
+
+build:debian-clang:
+  extends:
+    - .build
+    - .debian-clang
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+
+build:debian-gcc:
+  extends:
+    - .build
+    - .debian-gcc
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
+
+build:ubuntu-22.04:
+  extends:
+    - .build
+    - .ubuntu-22.04
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=release"
+
+# test stage
+
+.test:
+  stage: test
+  script:
+    - meson test -C build --no-rebuild
+  artifacts:
+    reports:
+      junit: build/meson-logs/testlog.junit.xml
+
+test:debian-clang:
+  extends:
+    - .test
+    - .debian-clang
+  needs:
+    - job: build:debian-clang
+      artifacts: true
+
+test:debian-gcc:
+  extends:
+    - .test
+    - .debian-gcc
+  needs:
+    - job: build:debian-gcc
+      artifacts: true
+  artifacts:
+    paths:
+      - build
+
+test:ubuntu-22.04:
+  extends:
+    - .test
+    - .ubuntu-22.04
+  needs:
+    - job: build:ubuntu-22.04
+      artifacts: true
+
+# lint stage
+
+.lint:
+  stage: lint
+  extends: .meson-wrap-cache
+
+lint:clang-tidy:
+  extends:
+    - .lint
+    - .debian-clang
+  needs:
+    - job: build:debian-clang
+      artifacts: true
+  script:
+    - ninja -C build clang-tidy
+
+lint:coverage:
+  extends:
+    - .lint
+    - .debian-gcc
+  needs:
+    - job: test:debian-gcc
+      artifacts: true
+  script:
+    - ninja -C build coverage-xml
+  coverage: '/^\s*lines:\s*\d+.\d+\%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: build/meson-logs/coverage.xml
+
+# format stage
 
 .format:
-    stage: formatting
-    needs: []
-    dependencies: []
+  stage: format
+  needs: []
 
-fmt:format:
-    extends: .format
-    image:
-        name: registry.cern.ch/docker.io/ubuntu:latest
-    script:
-        # FIXME we need a proper base image...
-        - apt-get update && apt-get -y install git meson clang-format ninja-build
-        - meson setup build
-        - ninja -C build clang-format
+format:clang-format:
+  extends:
+    - .format
+    - .debian-clang
+    - .meson-wrap-cache
+  script:
+    - meson setup build
+    - ninja -C build clang-format-check
 
-fmt:lint:
-    extends: .format
-    image:
-        name: registry.cern.ch/docker.io/ubuntu:latest
-    script:
-        # FIXME we need a proper base image...
-        - apt-get update && apt-get -y install git meson clang-tidy ninja-build
-        - meson setup build
-        - ninja -C build clang-tidy
-
-fmt:reuse:
-    extends: .format
-    image:
-        name: registry.cern.ch/docker.io/fsfe/reuse:latest
-        entrypoint: [""]
-    script:
-        - reuse lint
+format:reuse:
+  extends: .format
+  image: registry.cern.ch/docker.io/fsfe/reuse:latest
+  script:
+    - reuse lint
