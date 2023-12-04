@@ -123,8 +123,14 @@ Commands and acknowledgement verb SHALL be parsed and interpreted case-insensiti
 
 ### Request Payload
 
-The CSCP request message payload frame MAY consist of any binary data.
-The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
+The CSCP request message payload frame MAY consist of either a single value or a map.
+
+The value MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+
+The map MAY contain a sequence of key-value pairs.
+The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+
+The interpretation of this data is not part of this protocol and left to user code implementations.
 
 
 ### Reply Payload
