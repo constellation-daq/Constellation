@@ -6,5 +6,9 @@ project('constellation', 'cpp',
   license: 'EUPL-1.2',
 )
 
+asio_dep = dependency('asio')
+magic_enum_dep = dependency('magic_enum')
+
 constellation_inc = include_directories('.')
 
+subdir('src/constellation/protocols/CHIRP')

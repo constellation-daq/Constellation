@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 CERN and the Constellation authors
+# SPDX-FileCopyrightText: 2023 CERN and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
 root = true
@@ -12,6 +12,10 @@ insert_final_newline = true
 [*.{h,hpp,cpp,tpp,C,py}]
 indent_style = space
 indent_size = 4
+
+[meson.build]
+indent_style = space
+indent_size = 2
 
 [*.md]
 indent_style = space

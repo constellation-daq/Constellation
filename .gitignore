@@ -1,6 +1,14 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+/subprojects/packagecache/
+/subprojects/asio-*/
+/subprojects/magic_enum-*/
+
+
+/venv/
+/docs/build/
+
 # Data files do not belong into the repository
 *.pdf
 *.log
