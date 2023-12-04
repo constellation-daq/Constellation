@@ -104,19 +104,21 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 ### Message Verb
 
-The message verb SHALL contain an octet and a string.
+The message verb SHALL contain an octet and a string, encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
-The octet MUST contain the message type, which SHALL be %x01 for requests and %x02 for replies.
+The octet MUST contain the message type, which SHALL be %x00 for requests and SHALL be any of the following acknowledgement codes for replies:
+
+* %x01 for acknowledgement verb `SUCCESS`: The command was successfully received and is executed.
+* %x02 for acknowledgement verb `NOTIMPLEMENTED`: The command is an optional feature or transition that is not implemented by the replying satellite host.
+* %x03 for acknowledgement verb `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
+* %x04 for acknowledgement verb `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state.
+* %x05 for acknowledgement verb `UNKNOWN`: The command is entirely unknown.
 
 For request messages, the second string SHALL contain the command.
 
-For reply messages, the second string SHALL contain the acknowledgement, which MAY be either of
+For reply messages, the second string SHOULD contain the acknowledgement verb.
 
-* `SUCCESS`: The command was successfully received and is executed.
-* `NOTIMPLEMENTED`: The command is an optional feature or transition that is not implemented by the replying satellite host.
-* `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
-* `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state.
-* `UNKNOWN`: The command is entirely unknown.
+Commands and acknowledgement verb SHALL be parsed and interpreted case-insensitive.
 
 
 ### Request Payload
