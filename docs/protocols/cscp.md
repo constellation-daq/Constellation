@@ -113,9 +113,10 @@ For request messages, the second string SHALL contain the command.
 For reply messages, the second string SHALL contain the acknowledgement, which MAY be either of
 
 * `SUCCESS`: The command was successfully received and is executed.
-* `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state or the command is entirely unknown.
 * `NOTIMPLEMENTED`: The command is an optional feature or transition that is not implemented by the replying satellite host.
 * `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
+* `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state.
+* `UNKNOWN`: The command is entirely unknown.
 
 
 ### Request Payload
