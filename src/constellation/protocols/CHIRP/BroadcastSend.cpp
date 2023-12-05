@@ -7,7 +7,7 @@ using namespace cnstln::CHIRP;
 BroadcastSend::BroadcastSend(asio::ip::address brd_address)
   : io_context_(), endpoint_(std::move(brd_address), asio::ip::port_type(CHIRP_PORT)),
     socket_(io_context_, endpoint_.protocol()) {
-    // Set reuseable address and broadcast socket options
+    // Set reusable address and broadcast socket options
     socket_.set_option(asio::socket_base::reuse_address(true));
     socket_.set_option(asio::socket_base::broadcast(true));
     // Set broadcast address for use in send() function

@@ -142,7 +142,7 @@ public:
     CHIRP_API bool UnregisterService(ServiceIdentifier service_id, Port port);
 
     /**
-     * Unregisteres all offered services registered in the manager
+     * Unregisters all offered services registered in the manager
      *
      * Equivalent to calling :cpp:func:`UnregisterService` for every registered service.
      */
@@ -156,9 +156,9 @@ public:
     CHIRP_API std::set<RegisteredService> GetRegisteredServices();
 
     /**
-     * Register a user callback for newly discovered or departing servies
+     * Register a user callback for newly discovered or departing services
      *
-     * Note that a callback function can be registered multiple times for different servies.
+     * Note that a callback function can be registered multiple times for different services.
      *
      * @param callback Function pointer to a callback
      * @param service_id Service identifier of the service for which callbacks should be received
@@ -179,7 +179,7 @@ public:
     CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
 
     /**
-     * Unregisteres all discovery callbacks registered in the manager
+     * Unregisters all discovery callbacks registered in the manager
      *
      * Equivalent to calling :cpp:func:`UnregisterDiscoverCallback` for every discovery callback.
      */
@@ -228,7 +228,7 @@ private:
      * Run loop listening and responding to incoming CHIRP broadcasts
      *
      * The run loop responds to incoming CHIRP broadcasts with REQUEST type by sending CHIRP broadcasts with OFFER type for
-     * all registered servies. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list of
+     * all registered services. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list of
      * discovered services and calls the corresponding discovery callbacks.
      *
      * @param stop_token Token to stop loop via :cpp:class:`std::jthread`
