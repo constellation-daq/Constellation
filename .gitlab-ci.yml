@@ -155,3 +155,10 @@ format:reuse:
   image: registry.cern.ch/docker.io/fsfe/reuse:latest
   script:
     - reuse lint
+
+format:codespell:
+  extends:
+    - .format
+    - .debian-gcc
+  script:
+    - codespell --ignore-words .ci/codespell_ignored_words.txt --quiet-level 2 --skip ".git,.ci,subprojects,AUTHORS.md"
