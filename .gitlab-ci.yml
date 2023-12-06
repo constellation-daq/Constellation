@@ -6,6 +6,8 @@ stages:
   - test
   - lint
   - format
+  - docs
+  - deploy
 
 # templates
 
@@ -24,6 +26,11 @@ stages:
   image: gitlab.desy.de:5555/constellation/build-images:ubuntu-22.04
   variables:
     CXX: g++
+
+.debian-hawkmoth:
+  image: gitlab.desy.de:5555/constellation/build-images:debian-hawkmoth
+  before_script:
+    - source /venv/bin/activate
 
 .meson-wrap-cache:
   cache:
@@ -162,3 +169,31 @@ format:codespell:
     - .debian-gcc
   script:
     - codespell --ignore-words .ci/codespell_ignored_words.txt --quiet-level 2 --skip ".git,.ci,subprojects,AUTHORS.md"
+
+# docs stage
+
+.docs:
+  stage: docs
+  needs: []
+
+docs:html:
+  extends:
+    - .docs
+    - .debian-hawkmoth
+  needs:
+    - job: build:debian-gcc
+      artifacts: true
+  script:
+    - make -C docs html
+  artifacts:
+    paths:
+      - docs/build
+
+# deploy stage
+
+deploy:docs:
+  stage: deploy
+  needs:
+    - job: docs:html
+  trigger:
+    project: constellation/constellation.pages.desy.de

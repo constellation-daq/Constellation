@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Stephan Lachnit <stephanlachnit@debian.org>
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
 
 import json
 import pathlib
@@ -13,9 +13,9 @@ repodir = docsdir.parent
 srcdir = repodir
 
 # metadata
-project = 'CHIRP'
-project_copyright = '2023 Stephan Lachnit, CC-BY-SA-4.0'
-author = 'Stephan Lachnit'
+project = 'Constellation'
+project_copyright = '2023 DESY and the Constellation authors, CC-BY-4.0'
+author = 'DESY and the Constellation authors'
 version = '0'
 release = '0'
 
@@ -80,7 +80,7 @@ hawkmoth_transform_default = 'javadoc'
 hawkmoth_clang = ['-std=c++23']
 
 # add include dirs from meson
-meson_intro_dep = repodir.joinpath('builddir', 'meson-info', 'intro-dependencies.json')
+meson_intro_dep = repodir.joinpath('build', 'meson-info', 'intro-dependencies.json')
 if meson_intro_dep.exists():
     with open(meson_intro_dep, mode='rt', encoding='utf-8') as meson_intro_dep_file:
         intro_dep = json.load(meson_intro_dep_file)
@@ -90,7 +90,7 @@ if meson_intro_dep.exists():
                     hawkmoth_clang.append(f'-I{path}')
 else:
     logger = logging.getLogger(__name__)
-    logger.warn(f'Could not find valid "builddir" in {repodir.as_posix()} to extract include directories from meson')
+    logger.warn(f'Could not find valid "build" in {repodir.as_posix()} to extract include directories from meson')
 
 # asio symbols
 external_cpp_references = {
