@@ -8,12 +8,12 @@
 #include <string_view>
 #include <vector>
 
-#include "asio.hpp"
-#include "magic_enum.hpp"
+#include <asio.hpp>
+#include <magic_enum.hpp>
 
-#include "CHIRP/Manager.hpp"
-#include "CHIRP/Message.hpp"
-#include "CHIRP/protocol_info.hpp"
+#include "constellation/protocols/CHIRP/Manager.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::string_literals;

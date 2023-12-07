@@ -2,13 +2,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('constellation', 'cpp',
-  default_options: ['warning_level=3', 'cpp_std=c++20'],
+  default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20'],
   license: 'EUPL-1.2',
 )
 
-asio_dep = dependency('asio')
-magic_enum_dep = dependency('magic_enum')
-
-constellation_inc = include_directories('.')
-
-subdir('src/constellation/protocols/CHIRP')
+# C++ implementation
+subdir('src/constellation')

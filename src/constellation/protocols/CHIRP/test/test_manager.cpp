@@ -5,12 +5,12 @@
 #include <thread>
 #include <utility>
 
-#include "asio.hpp"
+#include <asio.hpp>
 
-#include "CHIRP/BroadcastRecv.hpp"
-#include "CHIRP/BroadcastSend.hpp"
-#include "CHIRP/Manager.hpp"
-#include "CHIRP/Message.hpp"
+#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
+#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/protocols/CHIRP/Manager.hpp"
+#include "constellation/protocols/CHIRP/Message.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;

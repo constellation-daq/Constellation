@@ -2,9 +2,9 @@
 
 #include <string_view>
 
-#include "asio.hpp"
+#include <asio.hpp>
 
-#include "CHIRP/config.hpp"
+#include "constellation/protocols/CHIRP/config.hpp"
 
 namespace cnstln {
 namespace CHIRP {

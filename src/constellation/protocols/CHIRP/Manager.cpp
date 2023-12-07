@@ -9,7 +9,7 @@
 
 #include <iostream>
 
-#include "CHIRP/exceptions.hpp"
+#include "constellation/protocols/CHIRP/exceptions.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;
