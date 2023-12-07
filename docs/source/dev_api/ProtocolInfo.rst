@@ -1,4 +1,4 @@
 Protocol Info
 =============
 
-.. cpp:autodoc:: CHIRP/protocol_info.hpp
+.. cpp:autodoc:: src/constellation/protocols/CHIRP/protocol_info.hpp
