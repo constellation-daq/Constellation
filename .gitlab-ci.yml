@@ -29,6 +29,12 @@ stages:
 
 .debian-hawkmoth:
   image: gitlab.desy.de:5555/constellation/build-images:debian-hawkmoth
+  variables:
+    SPHINX_IMMATERIAL_EXTERNAL_RESOURCE_CACHE_DIR: $CI_PROJECT_DIR/.sphinx_immaterial_cache
+  cache:
+    key: sphinx-immaterial-cache
+    paths:
+      - $CI_PROJECT_DIR/.sphinx_immaterial_cache
   before_script:
     - source /venv/bin/activate
 
