@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
 chirp_src = files(
   'BroadcastRecv.cpp',
   'BroadcastSend.cpp',
@@ -10,14 +13,13 @@ chirp_lib = library('CHIRP',
   include_directories: constellation_inc,
   dependencies: asio_dep,
   gnu_symbol_visibility: 'hidden',
-  cpp_args: ['-DASIO_STANDALONE=1', '-DCHIRP_BUILDLIB=1'],
+  cpp_args: ['-DCHIRP_BUILDLIB=1'],
 )
 
 chirp_dep = declare_dependency(
   link_with: chirp_lib,
   include_directories: constellation_inc,
   dependencies: asio_dep,
-  compile_args: ['-DASIO_STANDALONE=1'],
 )
 
 subdir('test')
