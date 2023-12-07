@@ -77,7 +77,7 @@ Manager::~Manager() {
 }
 
 void Manager::Start() {
-    // jthread immediatly starts on construction
+    // jthread immediately starts on construction
     run_thread_ = std::jthread(std::bind_front(&Manager::Run, this));
 }
 

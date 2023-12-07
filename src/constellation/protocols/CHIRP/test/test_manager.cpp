@@ -307,7 +307,7 @@ int test_manager_recv_request() {
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(5ms);
 
-    // If everything worked, the lines should be marked as exectued such in coverage
+    // If everything worked, the lines should be marked as executed such in coverage
     return 0;
 }
 
@@ -324,7 +324,7 @@ int test_manager_decode_error() {
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(5ms);
 
-    // If everything worked, the lines should be marked as exectued such in coverage
+    // If everything worked, the lines should be marked as executed such in coverage
     return 0;
 }
 
