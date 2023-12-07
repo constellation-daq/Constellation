@@ -1,38 +1,16 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-/subprojects/packagecache/
-/subprojects/asio-*/
-/subprojects/magic_enum-*/
+# NOTE: For editor specific paths use .git/info/exclude
 
+# Build directories
+/build*/
 
+# Python virtual environment
 /venv/
+
+# Documentation build directory
 /docs/build/
 
-# Data files do not belong into the repository
-*.pdf
-*.log
-*.dat
-*.ps
-*.wrl
-*.png
-
-# ignore backup files of any sort of editor:
-~*
-*~
-.*
-\#*
-
-# Some exceptions for the doc folder
-!/doc/**/*.png
-!/doc/**/.gitignore
-
-# ignore python byte code
-*.pyc
-
-# Ignore Doxygen's SQlite3 databases:
-*.db
-
-# Ignore merge conflict original copies
+# Merge conflict original copies
 *.orig
-
