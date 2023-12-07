@@ -8,8 +8,8 @@
 #include <string_view>
 #include <vector>
 
-#include "asio.hpp"
-#include "magic_enum.hpp"
+#include <asio.hpp>
+#include <magic_enum.hpp>
 
 #include "constellation/protocols/CHIRP/Manager.hpp"
 #include "constellation/protocols/CHIRP/Message.hpp"
