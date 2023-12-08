@@ -37,7 +37,7 @@ source_suffix = {
 
 # HTML settings
 html_theme = 'sphinx_immaterial'
-html_logo = docsdir.joinpath('logo.png').as_uri()
+html_logo = docsdir.joinpath('logo.png').as_posix()
 html_theme_options = {
     'globaltoc_collapse': True,
     'features': [
