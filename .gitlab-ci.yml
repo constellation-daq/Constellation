@@ -201,5 +201,7 @@ deploy:docs:
   stage: deploy
   needs:
     - job: docs:html
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
   trigger:
     project: constellation/constellation.pages.desy.de
