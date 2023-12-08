@@ -1,3 +1,12 @@
+/**
+ * @file
+ * @brief Implementation of the CHIRP broadcast sender
+ *
+ * @copyright Copyright (c) 2023 DESY and the Constellation authors.
+ * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
 #include "BroadcastSend.hpp"
 
 #include "constellation/protocols/CHIRP/protocol_info.hpp"

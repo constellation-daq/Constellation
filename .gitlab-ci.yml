@@ -6,6 +6,8 @@ stages:
   - test
   - lint
   - format
+  - docs
+  - deploy
 
 # templates
 
@@ -24,6 +26,17 @@ stages:
   image: gitlab.desy.de:5555/constellation/build-images:ubuntu-22.04
   variables:
     CXX: g++
+
+.debian-hawkmoth:
+  image: gitlab.desy.de:5555/constellation/build-images:debian-hawkmoth
+  variables:
+    SPHINX_IMMATERIAL_EXTERNAL_RESOURCE_CACHE_DIR: $CI_PROJECT_DIR/.sphinx_immaterial_cache
+  cache:
+    key: sphinx-immaterial-cache
+    paths:
+      - $CI_PROJECT_DIR/.sphinx_immaterial_cache
+  before_script:
+    - source /venv/bin/activate
 
 .meson-wrap-cache:
   cache:
@@ -162,3 +175,33 @@ format:codespell:
     - .debian-gcc
   script:
     - codespell --ignore-words .ci/codespell_ignored_words.txt --quiet-level 2 --skip ".git,.ci,subprojects,AUTHORS.md"
+
+# docs stage
+
+.docs:
+  stage: docs
+  needs: []
+
+docs:html:
+  extends:
+    - .docs
+    - .debian-hawkmoth
+  needs:
+    - job: build:debian-gcc
+      artifacts: true
+  script:
+    - make -C docs html
+  artifacts:
+    paths:
+      - docs/build
+
+# deploy stage
+
+deploy:docs:
+  stage: deploy
+  needs:
+    - job: docs:html
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  trigger:
+    project: constellation/constellation.pages.desy.de

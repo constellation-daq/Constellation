@@ -2,5 +2,5 @@ Discovered Service
 ==================
 
 .. cpp:autostruct:: DiscoveredService
-   :file: CHIRP/Manager.hpp
+   :file: src/constellation/protocols/CHIRP/Manager.hpp
    :members:

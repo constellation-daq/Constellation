@@ -2,5 +2,5 @@ Broadcast Message
 =================
 
 .. cpp:autostruct:: BroadcastMessage
-   :file: CHIRP/BroadcastRecv.hpp
+   :file: src/constellation/protocols/CHIRP/BroadcastRecv.hpp
    :members:
