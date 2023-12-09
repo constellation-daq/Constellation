@@ -241,7 +241,7 @@ private:
      *
      * @param stop_token Token to stop loop via :cpp:class:`std::jthread`
      */
-    void Run(std::stop_token stop_token);
+    void Run(const std::stop_token& stop_token);
 
 private:
     BroadcastRecv receiver_;

@@ -90,7 +90,7 @@ void Manager::Start() {
 }
 
 bool Manager::RegisterService(ServiceIdentifier service_id, Port port) {
-    RegisteredService service {service_id, port};
+    const RegisteredService service {service_id, port};
 
     std::unique_lock registered_services_lock {registered_services_mutex_};
     const auto insert_ret = registered_services_.insert(service);
@@ -105,11 +105,11 @@ bool Manager::RegisterService(ServiceIdentifier service_id, Port port) {
 }
 
 bool Manager::UnregisterService(ServiceIdentifier service_id, Port port) {
-    RegisteredService service {service_id, port};
+    const RegisteredService service {service_id, port};
 
     std::unique_lock registered_services_lock {registered_services_mutex_};
     const auto erase_ret = registered_services_.erase(service);
-    bool actually_erased = erase_ret > 0 ? true : false;
+    const bool actually_erased = erase_ret > 0;
 
     // Lock not needed anymore
     registered_services_lock.unlock();
@@ -134,7 +134,7 @@ std::set<RegisteredService> Manager::GetRegisteredServices() {
 
 bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
-    const auto insert_ret = discover_callbacks_.emplace(callback, service_id, user_data);
+    const auto insert_ret = discover_callbacks_.emplace(callback, service_id, std::move(user_data));
 
     // Return if actually inserted
     return insert_ret.second;
@@ -185,7 +185,7 @@ void Manager::SendMessage(MessageType type, RegisteredService service) {
     sender_.SendBroadcast(asm_msg.data(), asm_msg.size());
 }
 
-void Manager::Run(std::stop_token stop_token) {
+void Manager::Run(const std::stop_token& stop_token) {
     while (!stop_token.stop_requested()) {
         try {
             const auto raw_msg_opt = receiver_.AsyncRecvBroadcast(100ms);
@@ -195,7 +195,7 @@ void Manager::Run(std::stop_token stop_token) {
                 continue;
             }
 
-            const auto raw_msg = raw_msg_opt.value();
+            const auto& raw_msg = raw_msg_opt.value();
             auto chirp_msg = Message(AssembledMessage(raw_msg.content));
 
             if (chirp_msg.GetGroupID() != group_id_) {
@@ -207,7 +207,7 @@ void Manager::Run(std::stop_token stop_token) {
                 continue;
             }
 
-            DiscoveredService discovered_service {raw_msg.address, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
+            const DiscoveredService discovered_service {raw_msg.address, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
 
             switch (chirp_msg.GetType()) {
             case REQUEST: {
