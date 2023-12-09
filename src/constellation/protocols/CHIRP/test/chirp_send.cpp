@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
         // Service
         std::string service_s {};
         std::cout << "Service: [CONTROL] ";
-        std::getline(std::cin, type_s);
-        auto service = magic_enum::enum_cast<ServiceIdentifier>(type_s).value_or(CONTROL);
+        std::getline(std::cin, service_s);
+        auto service = magic_enum::enum_cast<ServiceIdentifier>(service_s).value_or(CONTROL);
         // Port
         std::string port_s {};
         std::cout << "Port:    [23999]   ";
