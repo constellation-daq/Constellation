@@ -79,7 +79,7 @@ int test_broadcast_send_async_recv() {
     // Receive message
     auto msg_opt = msg_opt_future.get();
     // Check that a message was returneed
-    if (!msg_opt.has_value()) {
+    if(!msg_opt.has_value()) {
         return 1;
     }
     // Check that message is correct
@@ -130,10 +130,9 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    if (ret == 0) {
+    if(ret == 0) {
         std::cout << "\nAll tests passed" << std::endl;
-    }
-    else {
+    } else {
         std::cout << "\n" << ret << " tests failed" << std::endl;
     }
     return ret;

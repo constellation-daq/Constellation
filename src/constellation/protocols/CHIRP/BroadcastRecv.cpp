@@ -25,16 +25,14 @@ std::string BroadcastMessage::content_to_string() const {
 }
 
 BroadcastRecv::BroadcastRecv(const asio::ip::address& any_address)
-  : endpoint_(any_address, static_cast<asio::ip::port_type>(CHIRP_PORT)),
-    socket_(io_context_, endpoint_.protocol()) {
+    : endpoint_(any_address, static_cast<asio::ip::port_type>(CHIRP_PORT)), socket_(io_context_, endpoint_.protocol()) {
     // Set reusable address socket option
     socket_.set_option(asio::socket_base::reuse_address(true));
     // Bind socket on receiving side
     socket_.bind(endpoint_);
 }
 
-BroadcastRecv::BroadcastRecv(std::string_view any_ip)
-  : BroadcastRecv(asio::ip::make_address(any_ip)) {}
+BroadcastRecv::BroadcastRecv(std::string_view any_ip) : BroadcastRecv(asio::ip::make_address(any_ip)) {}
 
 BroadcastMessage BroadcastRecv::RecvBroadcast() {
     BroadcastMessage message {};
@@ -68,7 +66,7 @@ std::optional<BroadcastMessage> BroadcastRecv::AsyncRecvBroadcast(std::chrono::s
     io_context_.run_for(timeout);
 
     // If IO context not stopped, then no message received
-    if (!io_context_.stopped()) {
+    if(!io_context_.stopped()) {
         // Cancel async operations
         socket_.cancel();
         return std::nullopt;

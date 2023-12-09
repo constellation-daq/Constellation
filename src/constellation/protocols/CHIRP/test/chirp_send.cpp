@@ -23,13 +23,13 @@ using namespace cnstln::CHIRP;
 int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline
     asio::ip::address brd_address = asio::ip::address_v4::broadcast();
-    if (argc >= 2) {
+    if(argc >= 2) {
         brd_address = asio::ip::make_address(argv[1]);
     }
 
     BroadcastSend sender {brd_address};
 
-    while (true) {
+    while(true) {
         std::cout << "-----------------------------------------" << std::endl;
         // Type
         std::string type_s {};
@@ -40,14 +40,14 @@ int main(int argc, char* argv[]) {
         std::string group {};
         std::cout << "Group:   [cnstln1] ";
         std::getline(std::cin, group);
-        if (group.empty()) {
+        if(group.empty()) {
             group = "cnstln1";
         }
         // Host
         std::string host {};
         std::cout << "Host:    [satname] ";
         std::getline(std::cin, host);
-        if (host.empty()) {
+        if(host.empty()) {
             host = "satname";
         }
         // Service
