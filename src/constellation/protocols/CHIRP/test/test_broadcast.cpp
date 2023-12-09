@@ -64,7 +64,7 @@ int test_broadcast_localhost_ip() {
     // Receive message
     auto msg = msg_future.get();
     // Compare address
-    return msg.address == asio::ip::make_address("0.0.0.0");
+    return msg.address == asio::ip::make_address("127.0.0.1") ? 0 : 1;
 }
 
 int test_broadcast_send_async_recv() {
