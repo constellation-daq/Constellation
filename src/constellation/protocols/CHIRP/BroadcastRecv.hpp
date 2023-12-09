@@ -20,8 +20,7 @@
 
 #include "constellation/core/config.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** Incoming broadcast message */
 struct BroadcastMessage {
@@ -73,5 +72,4 @@ private:
     asio::ip::udp::socket socket_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

@@ -12,8 +12,7 @@
 #include <exception>
 #include <string>
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** Error thrown when a CHIRP message was not decoded successfully */
 class DecodeError : public std::exception {
@@ -32,5 +31,4 @@ protected:
     std::string error_message_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

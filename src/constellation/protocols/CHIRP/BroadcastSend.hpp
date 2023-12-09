@@ -15,8 +15,7 @@
 
 #include "constellation/core/config.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** Broadcast sender for outgoing CHIRP broadcasts on :cpp:var:`CHIRP_PORT` */
 class BroadcastSend {
@@ -56,5 +55,4 @@ private:
     asio::ip::udp::socket socket_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

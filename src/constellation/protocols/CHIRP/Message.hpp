@@ -18,8 +18,7 @@
 #include "constellation/core/config.hpp"
 #include "constellation/protocols/CHIRP/protocol_info.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** MD5 hash stored as array with 16 bytes */
 class MD5Hash : public std::array<std::uint8_t, 16> {
@@ -117,5 +116,4 @@ private:
     Port port_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

@@ -24,8 +24,7 @@
 #include "constellation/protocols/CHIRP/Message.hpp"
 #include "constellation/protocols/CHIRP/protocol_info.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** A service offered by the host and announced by the :cpp:class:`Manager` */
 struct RegisteredService {
@@ -272,5 +271,4 @@ private:
     std::jthread run_thread_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP
