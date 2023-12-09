@@ -106,6 +106,12 @@ public:
 
     CHIRP_API virtual ~Manager();
 
+    // No copy/move constructor/assignment
+    Manager(Manager& other) = delete;
+    Manager& operator=(Manager other) = delete;
+    Manager(Manager&& other) = delete;
+    Manager& operator=(Manager&& other) = delete;
+
     /**
      * Get the group ID
      *
