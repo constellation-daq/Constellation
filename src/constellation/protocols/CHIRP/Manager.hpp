@@ -18,14 +18,13 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 #include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
 #include "constellation/protocols/CHIRP/BroadcastSend.hpp"
 #include "constellation/protocols/CHIRP/Message.hpp"
 #include "constellation/protocols/CHIRP/protocol_info.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** A service offered by the host and announced by the :cpp:class:`Manager` */
 struct RegisteredService {
@@ -95,7 +94,7 @@ public:
      * @param group_name Group name of the group to join
      * @param host_name Host name for outgoing messages
      */
-    CHIRP_API Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name);
+    CHIRP_API Manager(const asio::ip::address& brd_address, const asio::ip::address& any_address, std::string_view group_name, std::string_view host_name);
 
     /**
      * @param brd_ip Broadcast IP for outgoing broadcast messages
@@ -106,6 +105,12 @@ public:
     CHIRP_API Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name);
 
     CHIRP_API virtual ~Manager();
+
+    // No copy/move constructor/assignment
+    Manager(Manager& other) = delete;
+    Manager& operator=(Manager other) = delete;
+    Manager(Manager&& other) = delete;
+    Manager& operator=(Manager&& other) = delete;
 
     /**
      * Get the group ID
@@ -242,7 +247,7 @@ private:
      *
      * @param stop_token Token to stop loop via :cpp:class:`std::jthread`
      */
-    void Run(std::stop_token stop_token);
+    void Run(const std::stop_token& stop_token);
 
 private:
     BroadcastRecv receiver_;
@@ -272,5 +277,4 @@ private:
     std::jthread run_thread_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

@@ -13,10 +13,9 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** Broadcast sender for outgoing CHIRP broadcasts on :cpp:var:`CHIRP_PORT` */
 class BroadcastSend {
@@ -26,7 +25,7 @@ public:
      *
      * @param brd_address Broadcast address for outgoing broadcasts
      */
-    CHIRP_API BroadcastSend(asio::ip::address brd_address = asio::ip::address_v4::any());
+    CHIRP_API BroadcastSend(const asio::ip::address& brd_address = asio::ip::address_v4::broadcast());
 
     /**
      * Construct broadcast sender using human readable IP address
@@ -56,5 +55,4 @@ private:
     asio::ip::udp::socket socket_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

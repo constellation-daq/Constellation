@@ -40,21 +40,21 @@ int main(int argc, char* argv[]) {
         std::string group {};
         std::cout << "Group:   [cnstln1] ";
         std::getline(std::cin, group);
-        if (group.size() == 0) {
+        if (group.empty()) {
             group = "cnstln1";
         }
         // Host
         std::string host {};
         std::cout << "Host:    [satname] ";
         std::getline(std::cin, host);
-        if (host.size() == 0) {
+        if (host.empty()) {
             host = "satname";
         }
         // Service
         std::string service_s {};
         std::cout << "Service: [CONTROL] ";
-        std::getline(std::cin, type_s);
-        auto service = magic_enum::enum_cast<ServiceIdentifier>(type_s).value_or(CONTROL);
+        std::getline(std::cin, service_s);
+        auto service = magic_enum::enum_cast<ServiceIdentifier>(service_s).value_or(CONTROL);
         // Port
         std::string port_s {};
         std::cout << "Port:    [23999]   ";

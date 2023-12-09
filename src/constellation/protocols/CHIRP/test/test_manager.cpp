@@ -9,8 +9,8 @@
 
 #include <any>
 #include <chrono>
-#include <iostream>
 #include <future>
+#include <iostream>
 #include <thread>
 #include <utility>
 
@@ -59,8 +59,8 @@ int test_manager_sort_discovered_service() {
 }
 
 int test_manager_sort_discover_callback_entry() {
-    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);
-    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);
+    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto ud1 = std::make_any<int>(1);
     auto ud2 = std::make_any<int>(2);
     int fails = 0;
@@ -98,7 +98,7 @@ int test_manager_register_service_logic() {
     manager.RegisterService(CONTROL, 24000);
     fails += manager.GetRegisteredServices().size() == 2 ? 0 : 1;
     manager.UnregisterServices();
-    fails += manager.GetRegisteredServices().size() == 0 ? 0 : 1;
+    fails += manager.GetRegisteredServices().empty() ? 0 : 1;
 
     return fails == 0 ? 0 : 1;
 }
@@ -106,6 +106,7 @@ int test_manager_register_service_logic() {
 int test_manager_register_callback_logic() {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
+    // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
     auto callback = [](DiscoveredService, bool, std::any) {};
 
     int fails = 0;
@@ -145,7 +146,7 @@ int test_manager_ignore_other_group() {
     const auto asm_msg = Message(OFFER, "group2", "sat2", CONTROL, 23999).Assemble();
     sender.SendBroadcast(asm_msg.data(), asm_msg.size());
 
-    return manager.GetDiscoveredServices().size() == 0 ? 0 : 1;
+    return manager.GetDiscoveredServices().empty() ? 0 : 1;
 }
 
 int test_manager_ignore_self() {
@@ -156,7 +157,7 @@ int test_manager_ignore_self() {
     const auto asm_msg = Message(OFFER, "group1", "sat1", CONTROL, 23999).Assemble();
     sender.SendBroadcast(asm_msg.data(), asm_msg.size());
 
-    return manager.GetDiscoveredServices().size() == 0 ? 0 : 1;
+    return manager.GetDiscoveredServices().empty() ? 0 : 1;
 }
 
 int test_manager_discovery() {
@@ -197,7 +198,7 @@ int test_manager_discovery() {
     fails += manager2.GetDiscoveredServices(HEARTBEAT).size() == 1 ? 0 : 1;
     // Test that we can forget services
     manager2.ForgetDiscoveredServices();
-    fails += manager2.GetDiscoveredServices().size() == 0 ? 0 : 1;
+    fails += manager2.GetDiscoveredServices().empty() ? 0 : 1;
 
     // Register new services
     manager1.UnregisterServices();
@@ -210,7 +211,7 @@ int test_manager_discovery() {
     manager1.UnregisterServices();
     std::this_thread::sleep_for(5ms);
     // Test that we discovered DEPART messages
-    fails += manager2.GetDiscoveredServices().size() == 0 ? 0 : 1;
+    fails += manager2.GetDiscoveredServices().empty() ? 0 : 1;
 
     return fails == 0 ? 0 : 1;
 }

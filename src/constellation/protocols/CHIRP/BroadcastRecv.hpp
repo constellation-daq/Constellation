@@ -18,10 +18,9 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /** Incoming broadcast message */
 struct BroadcastMessage {
@@ -43,7 +42,7 @@ public:
      *
      * @param any_address Address for incoming broadcasts
      */
-    CHIRP_API BroadcastRecv(asio::ip::address any_address = asio::ip::address_v4::any());
+    CHIRP_API BroadcastRecv(const asio::ip::address& any_address = asio::ip::address_v4::any());
 
     /**
      * Construct broadcast receiver using human readable IP address
@@ -73,5 +72,4 @@ private:
     asio::ip::udp::socket socket_;
 };
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP

@@ -11,8 +11,7 @@
 
 #include <cstdint>
 
-namespace cnstln {
-namespace CHIRP {
+namespace cnstln::CHIRP {
 
 /**
  * Port number for a network connection
@@ -60,5 +59,4 @@ enum class ServiceIdentifier : std::uint8_t {
 };
 using enum ServiceIdentifier;
 
-} // namespace CHIRP
-} // namespace cnstln
+} // namespace cnstln::CHIRP
