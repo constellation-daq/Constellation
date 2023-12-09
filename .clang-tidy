@@ -8,14 +8,14 @@ Checks:  '-*,
           cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-bounds-pointer-arithmetic,
           google-*,-google-build-using-namespace,-google-explicit-constructor,
           hicpp-*,-hicpp-explicit-conversions,
-          llvm-*,-llvm-header-guard,
+          llvm-*,-llvm-header-guard,-llvm-include-order,
           misc-*,
           modernize-*,-modernize-use-nodiscard,-modernize-use-trailing-return-type,
           performance-*,
           portability-*,
           readability-*,-readability-identifier-length,-readability-function-cognitive-complexity,-readability-magic-numbers,-readability-redundant-access-specifiers,
          '
-WarningsAsErrors: '*,-bugprone-exception-escape,-llvm-include-order'
+WarningsAsErrors: '*,-bugprone-exception-escape'
 HeaderFilterRegex: '*.h *.hpp'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'

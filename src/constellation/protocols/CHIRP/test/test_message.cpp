@@ -20,6 +20,7 @@ using namespace cnstln::CHIRP;
 int test_message_md5_hash() {
     int fails = 0;
     // Test values from RFC 1321 reference implementation
+    // clang-format off
     fails += MD5Hash("").to_string() == "d41d8cd98f00b204e9800998ecf8427e" ? 0 : 1;
     fails += MD5Hash("a").to_string() == "0cc175b9c0f1b6a831c399e269772661" ? 0 : 1;
     fails += MD5Hash("abc").to_string() == "900150983cd24fb0d6963f7d28e17f72" ? 0 : 1;
@@ -27,6 +28,7 @@ int test_message_md5_hash() {
     fails += MD5Hash("abcdefghijklmnopqrstuvwxyz").to_string() == "c3fcd3d76192e4007dfb496cca67e13b" ? 0 : 1;
     fails += MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").to_string() == "d174ab98d277d9f5a5611c2c9f419d9f" ? 0 : 1;
     fails += MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890").to_string() == "57edf4a22be3c955ac49da2e2107b67a" ? 0 : 1;
+    // clang-format on
     return fails == 0 ? 0 : 1;
 }
 
@@ -47,9 +49,9 @@ int test_message_assemble() {
     int ret = 1;
     try {
         AssembledMessage {msg_data};
-    }
-    catch (const DecodeError& error) {
-        if (std::strcmp(error.what(), ("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes").c_str()) == 0) {
+    } catch(const DecodeError& error) {
+        const auto error_what_expected = "Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes";
+        if(std::strcmp(error.what(), error_what_expected.c_str()) == 0) {
             ret = 0;
         }
     }
@@ -76,9 +78,8 @@ int test_message_construct_invalid_chirpv1() {
     int ret = 1;
     try {
         Message {asm_msg};
-    }
-    catch (const DecodeError& error) {
-        if (std::strcmp(error.what(), "Not a CHIRP v1 broadcast") == 0) {
+    } catch(const DecodeError& error) {
+        if(std::strcmp(error.what(), "Not a CHIRP v1 broadcast") == 0) {
             ret = 0;
         }
     }
@@ -91,9 +92,8 @@ int test_message_construct_invalid_type() {
     int ret = 1;
     try {
         Message {asm_msg};
-    }
-    catch (const DecodeError& error) {
-        if (std::strcmp(error.what(), "Message Type invalid") == 0) {
+    } catch(const DecodeError& error) {
+        if(std::strcmp(error.what(), "Message Type invalid") == 0) {
             ret = 0;
         }
     }
@@ -106,9 +106,8 @@ int test_message_construct_invalid_service() {
     int ret = 1;
     try {
         Message {asm_msg};
-    }
-    catch (const DecodeError& error) {
-        if (std::strcmp(error.what(), "Service Identifier invalid") == 0) {
+    } catch(const DecodeError& error) {
+        if(std::strcmp(error.what(), "Service Identifier invalid") == 0) {
             ret = 0;
         }
     }
@@ -161,10 +160,9 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    if (ret == 0) {
+    if(ret == 0) {
         std::cout << "\nAll tests passed" << std::endl;
-    }
-    else {
+    } else {
         std::cout << "\n" << ret << " tests failed" << std::endl;
     }
     return ret;

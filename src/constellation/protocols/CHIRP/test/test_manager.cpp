@@ -59,8 +59,8 @@ int test_manager_sort_discovered_service() {
 }
 
 int test_manager_sort_discover_callback_entry() {
-    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto ud1 = std::make_any<int>(1);
     auto ud2 = std::make_any<int>(2);
     int fails = 0;
@@ -89,7 +89,7 @@ int test_manager_register_service_logic() {
     fails += regsitered_twice ? 1 : 0;
     // test that unregistering works
     auto unregistered = manager.UnregisterService(CONTROL, 23999);
-    fails +=  unregistered ? 0 : 1;
+    fails += unregistered ? 0 : 1;
     // test that unregistering for not registered service does not work
     auto unregistered_nonexist = manager.UnregisterService(CONTROL, 23999);
     fails += unregistered_nonexist ? 1 : 0;
@@ -118,7 +118,7 @@ int test_manager_register_callback_logic() {
     fails += regsitered_twice ? 1 : 0;
     // test that unregistering works
     auto unregistered = manager.UnregisterDiscoverCallback(callback, CONTROL);
-    fails +=  unregistered ? 0 : 1;
+    fails += unregistered ? 0 : 1;
     // test that unregistering for not registered service does not work
     auto unregistered_nonexist = manager.UnregisterDiscoverCallback(callback, CONTROL);
     fails += unregistered_nonexist ? 1 : 0;
@@ -172,14 +172,13 @@ int test_manager_discovery() {
     std::this_thread::sleep_for(5ms);
     // Test that we discovered the service
     const auto services_1 = manager2.GetDiscoveredServices();
-    if (services_1.size() == 1) {
+    if(services_1.size() == 1) {
         // Test that message is correct
         fails += services_1[0].host_id == manager1.GetHostID() ? 0 : 1;
         fails += services_1[0].address == asio::ip::make_address("127.0.0.1") ? 0 : 1;
         fails += services_1[0].identifier == DATA ? 0 : 1;
         fails += services_1[0].port == 24000 ? 0 : 1;
-    }
-    else {
+    } else {
         fails += 1;
     }
 
@@ -420,10 +419,9 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    if (ret == 0) {
+    if(ret == 0) {
         std::cout << "\nAll tests passed" << std::endl;
-    }
-    else {
+    } else {
         std::cout << "\n" << ret << " tests failed" << std::endl;
     }
     return ret;

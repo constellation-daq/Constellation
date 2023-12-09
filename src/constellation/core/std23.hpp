@@ -17,21 +17,20 @@
 #ifndef __cpp_lib_to_underlying
 #include <type_traits>
 namespace std {
-template <typename E>
-constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
-    return static_cast<typename std::underlying_type<E>::type>(e);
-}
+    template <typename E> constexpr typename std::underlying_type<E>::type to_underlying(E e) noexcept {
+        return static_cast<typename std::underlying_type<E>::type>(e);
+    }
 } // namespace std
 #endif
 
 // std::unreachable
 #ifndef __cpp_lib_unreachable
 namespace std {
-[[noreturn]] inline void unreachable() {
-    #ifdef __GNUC__
-    __builtin_unreachable();
-    #endif
-}
+    [[noreturn]] inline void unreachable() {
+#ifdef __GNUC__
+        __builtin_unreachable();
+#endif
+    }
 } // namespace std
 #endif
 
