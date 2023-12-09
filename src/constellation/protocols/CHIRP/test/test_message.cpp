@@ -132,7 +132,7 @@ int main() {
     ret += ret_test;
 
     // test_message_assemble
-    std::cout << "test_message_assemble...                    " << std::flush;
+    std::cout << "test_message_assemble...                     " << std::flush;
     ret_test = test_message_assemble();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
