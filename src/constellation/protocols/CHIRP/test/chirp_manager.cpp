@@ -37,6 +37,7 @@ enum class Command {
     unregister_callback,
     request,
     reset,
+    quit,
 };
 using enum Command;
 
@@ -84,8 +85,7 @@ int main(int argc, char* argv[]) {
               << std::endl;
     manager.Start();
 
-    bool quit = false;
-    while (!quit) {
+    while (true) {
         std::string cmd_input {};
         std::getline(std::cin, cmd_input);
 
@@ -115,9 +115,10 @@ int main(int argc, char* argv[]) {
                           << " Port " << std::setw(5) << service.port;
             }
             std::cout << std::endl;
+            continue;
         }
         // List discovered services
-        else if (cmd == list_discovered_services) {
+        if (cmd == list_discovered_services) {
             std::optional<ServiceIdentifier> service_opt {std::nullopt};
             if (cmd_split.size() >= 2) {
                 service_opt = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]);
@@ -132,9 +133,10 @@ int main(int argc, char* argv[]) {
                           << " IP " << std::left << std::setw(15) << service.address.to_string();
             }
             std::cout << std::endl;
+            continue;
         }
         // Register or unregister a service
-        else if (cmd == register_service || cmd == unregister_service) {
+        if (cmd == register_service || cmd == unregister_service) {
             ServiceIdentifier service {CONTROL};
             if (cmd_split.size() >= 2) {
                 service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
@@ -157,9 +159,10 @@ int main(int argc, char* argv[]) {
                               << " Port " << std::setw(5) << port << std::endl;
                 }
             }
+            continue;
         }
         // Register of unregister callback
-        else if (cmd == register_callback || cmd == unregister_callback) {
+        if (cmd == register_callback || cmd == unregister_callback) {
             ServiceIdentifier service {CONTROL};
             if (cmd_split.size() >= 2) {
                 service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
@@ -176,21 +179,28 @@ int main(int argc, char* argv[]) {
                     std::cout << " Unregistered Callback for " << magic_enum::enum_name(service) << std::endl;
                 }
             }
+            continue;
         }
         // Send CHIRP request
-        else if (cmd == request) {
+        if (cmd == request) {
             ServiceIdentifier service {CONTROL};
             if (cmd_split.size() >= 2) {
                 service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
             }
             manager.SendRequest(service);
             std::cout << " Sent Request for " << magic_enum::enum_name(service) << std::endl;
+            continue;
         }
         // Reset
-        else {
+        if (cmd == reset) {
             manager.UnregisterDiscoverCallbacks();
             manager.UnregisterServices();
             manager.ForgetDiscoveredServices();
+            continue;
+        }
+        // Quit
+        if (cmd == quit) {
+            break;
         }
     }
 }
