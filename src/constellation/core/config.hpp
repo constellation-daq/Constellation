@@ -9,7 +9,7 @@
 
 #pragma once
 
-#if (defined _WIN32 && !defined __CYGWIN__)
+#if(defined _WIN32 && !defined __CYGWIN__)
 #if CHIRP_BUILDLIB
 #define CHIRP_API __declspec(dllexport)
 #else
