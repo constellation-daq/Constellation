@@ -15,7 +15,7 @@
 #include <string>
 #include <string_view>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 #include "constellation/protocols/CHIRP/protocol_info.hpp"
 
 namespace cnstln {

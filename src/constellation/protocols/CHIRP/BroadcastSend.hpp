@@ -13,7 +13,7 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 
 namespace cnstln {
 namespace CHIRP {

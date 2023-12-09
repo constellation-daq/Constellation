@@ -18,7 +18,7 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/config.hpp"
+#include "constellation/core/config.hpp"
 #include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
 #include "constellation/protocols/CHIRP/BroadcastSend.hpp"
 #include "constellation/protocols/CHIRP/Message.hpp"
