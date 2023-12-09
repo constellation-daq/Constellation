@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
         }
 
         // If not a command, continue
-        if (cmd_split.size() < 1) {
+        if (cmd_split.empty()) {
             continue;
         }
         auto cmd_opt = magic_enum::enum_cast<Command>(cmd_split[0]);

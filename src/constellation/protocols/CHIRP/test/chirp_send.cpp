@@ -40,14 +40,14 @@ int main(int argc, char* argv[]) {
         std::string group {};
         std::cout << "Group:   [cnstln1] ";
         std::getline(std::cin, group);
-        if (group.size() == 0) {
+        if (group.empty()) {
             group = "cnstln1";
         }
         // Host
         std::string host {};
         std::cout << "Host:    [satname] ";
         std::getline(std::cin, host);
-        if (host.size() == 0) {
+        if (host.empty()) {
             host = "satname";
         }
         // Service
