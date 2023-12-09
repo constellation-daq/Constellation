@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2022-2023 Stephan Lachnit
-# SPDX-License-Identifier: EUPL-1.2
+# SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
 
 CoreLogging_src = files(
   'Logger.cpp',
