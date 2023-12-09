@@ -23,7 +23,7 @@ namespace cnstln::CHIRP {
 /** MD5 hash stored as array with 16 bytes */
 class MD5Hash : public std::array<std::uint8_t, 16> {
 public:
-    constexpr MD5Hash() {}
+    constexpr MD5Hash() = default;
 
     /**
      * Construct MD5 hash from a string
@@ -45,7 +45,7 @@ public:
 /** CHIRP message assembled to array of bytes */
 class AssembledMessage : public std::array<std::uint8_t, CHIRP_MESSAGE_LENGTH> {
 public:
-    constexpr AssembledMessage() {}
+    constexpr AssembledMessage() = default;
 
     /**
      * Construct message from byte array with arbitrary length
