@@ -14,4 +14,4 @@ namespace Constellation {
         CRITICAL = 5,
         OFF = 6,
     };
-}
+} // namespace Constellation

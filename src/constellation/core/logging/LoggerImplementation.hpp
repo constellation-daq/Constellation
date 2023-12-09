@@ -15,8 +15,7 @@ namespace Constellation {
     // Actual Logger implementation
     class LoggerImplementation {
     public:
-        LoggerImplementation(std::string topic)
-        :  topic_(std::move(topic)) {
+        LoggerImplementation(std::string topic) : topic_(std::move(topic)) {
             // Create logger from global sinks
             spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
         }
@@ -29,19 +28,16 @@ namespace Constellation {
 
         // Enables backtrace and enables TRACE messages over ZeroMQ sink
         void enableTrace(bool enable) {
-            if (enable) {
+            if(enable) {
                 spdlog_logger_->set_level(spdlog::level::level_enum::trace);
                 spdlog_logger_->enable_backtrace(BACKTRACE_MESSAGES);
-            }
-            else {
+            } else {
                 spdlog_logger_->set_level(spdlog::level::level_enum::debug);
                 spdlog_logger_->disable_backtrace();
             }
         }
 
-        bool shouldLog(LogLevel level) {
-            return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level));
-        }
+        bool shouldLog(LogLevel level) { return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level)); }
 
         void log(LogLevel level, std::string message) {
             spdlog_logger_->log(static_cast<spdlog::level::level_enum>(level), message);
@@ -52,4 +48,4 @@ namespace Constellation {
         std::string topic_;
         std::shared_ptr<spdlog::logger> spdlog_logger_;
     };
-}
+} // namespace Constellation

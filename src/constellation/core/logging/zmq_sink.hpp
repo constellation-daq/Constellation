@@ -11,8 +11,7 @@
 // TODO implement
 
 namespace Constellation {
-    template<typename Mutex>
-    class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
+    template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
     public:
         zmq_sink() {}
 
@@ -33,4 +32,4 @@ namespace Constellation {
     // TODO: mt even needed? ZeroMQ should be thread safe...
     using zmq_sink_mt = zmq_sink<std::mutex>;
     using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
-}
+} // namespace Constellation

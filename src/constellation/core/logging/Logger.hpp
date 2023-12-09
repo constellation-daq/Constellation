@@ -39,4 +39,4 @@ namespace Constellation {
         std::ostringstream os_;
     };
 
-}
+} // namespace Constellation

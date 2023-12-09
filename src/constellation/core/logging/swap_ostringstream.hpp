@@ -19,4 +19,4 @@ namespace Constellation {
     private:
         Logger* logger_;
     };
-}
+} // namespace Constellation
