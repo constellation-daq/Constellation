@@ -11,7 +11,9 @@ thread_dep = dependency('threads')
 
 magic_enum_dep = dependency('magic_enum')
 
-spdlog_dep = dependency('spdlog')
+spdlog_dep = dependency('spdlog',
+  default_options: ['tests=False']
+)
 
 constellation_inc = include_directories('..')
 
