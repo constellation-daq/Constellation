@@ -27,7 +27,7 @@ public:
      */
     const char* what() const noexcept final { return error_message_.c_str(); }
 
-protected:
+private:
     std::string error_message_;
 };
 
