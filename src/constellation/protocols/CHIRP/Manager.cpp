@@ -56,7 +56,7 @@ bool DiscoveredService::operator<(const DiscoveredService& other) const {
 }
 
 bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const {
-    // First sort after callback address
+    // First sort after callback address NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     auto ord_callback = reinterpret_cast<std::uintptr_t>(callback) <=> reinterpret_cast<std::uintptr_t>(other.callback);
     if (std::is_lt(ord_callback)) {
         return true;

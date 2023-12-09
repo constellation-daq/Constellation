@@ -59,8 +59,8 @@ int test_manager_sort_discovered_service() {
 }
 
 int test_manager_sort_discover_callback_entry() {
-    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);
-    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);
+    auto* cb1 = reinterpret_cast<DiscoverCallback*>(1);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    auto* cb2 = reinterpret_cast<DiscoverCallback*>(2);  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto ud1 = std::make_any<int>(1);
     auto ud2 = std::make_any<int>(2);
     int fails = 0;
