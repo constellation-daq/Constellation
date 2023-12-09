@@ -42,7 +42,7 @@ public:
      *
      * @param any_address Address for incoming broadcasts
      */
-    CHIRP_API BroadcastRecv(asio::ip::address any_address = asio::ip::address_v4::any());
+    CHIRP_API BroadcastRecv(const asio::ip::address& any_address = asio::ip::address_v4::any());
 
     /**
      * Construct broadcast receiver using human readable IP address

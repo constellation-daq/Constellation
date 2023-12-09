@@ -24,8 +24,8 @@ std::string BroadcastMessage::content_to_string() const {
     return ret;
 }
 
-BroadcastRecv::BroadcastRecv(asio::ip::address any_address)
-  : io_context_(), endpoint_(std::move(any_address), asio::ip::port_type(CHIRP_PORT)),
+BroadcastRecv::BroadcastRecv(const asio::ip::address& any_address)
+  : endpoint_(any_address, static_cast<asio::ip::port_type>(CHIRP_PORT)),
     socket_(io_context_, endpoint_.protocol()) {
     // Set reusable address socket option
     socket_.set_option(asio::socket_base::reuse_address(true));

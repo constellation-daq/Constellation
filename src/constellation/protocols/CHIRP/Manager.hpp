@@ -94,7 +94,7 @@ public:
      * @param group_name Group name of the group to join
      * @param host_name Host name for outgoing messages
      */
-    CHIRP_API Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name);
+    CHIRP_API Manager(const asio::ip::address& brd_address, const asio::ip::address& any_address, std::string_view group_name, std::string_view host_name);
 
     /**
      * @param brd_ip Broadcast IP for outgoing broadcast messages

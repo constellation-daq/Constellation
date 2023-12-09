@@ -68,7 +68,7 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return std::to_underlying(service_id) < std::to_underlying(other.service_id);
 }
 
-Manager::Manager(asio::ip::address brd_address, asio::ip::address any_address, std::string_view group_name, std::string_view host_name)
+Manager::Manager(const asio::ip::address& brd_address, const asio::ip::address& any_address, std::string_view group_name, std::string_view host_name)
   : receiver_(any_address), sender_(brd_address), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)) {}
 
 Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)

@@ -25,7 +25,7 @@ public:
      *
      * @param brd_address Broadcast address for outgoing broadcasts
      */
-    CHIRP_API BroadcastSend(asio::ip::address brd_address = asio::ip::address_v4::any());
+    CHIRP_API BroadcastSend(const asio::ip::address& brd_address = asio::ip::address_v4::broadcast());
 
     /**
      * Construct broadcast sender using human readable IP address
