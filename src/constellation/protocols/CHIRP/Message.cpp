@@ -33,11 +33,11 @@ std::string MD5Hash::to_string() const {
     ret.resize(2 * this->size());
     for (std::uint8_t n = 0; n < this->size(); ++n) {
         // First character of byte hex representation
-        const auto hash_upper = static_cast<char>((this->at(n) & 0xF0) >> 4);
-        ret.at(2*n) = (hash_upper < 10) ? (hash_upper + '0') : (hash_upper - 10 + 'a');
+        const auto hash_upper = (this->at(n) & 0xF0U) >> 4U;
+        ret.at(2*n) = static_cast<char>(hash_upper < 10 ? hash_upper + '0' : hash_upper - 10 + 'a');
         // Second character of byte hex representation
-        const auto hash_lower = static_cast<char>(this->at(n) & 0x0F);
-        ret.at(2*n+1) = (hash_lower < 10) ? (hash_lower + '0') : (hash_lower - 10 + 'a');
+        const auto hash_lower = this->at(n) & 0x0FU;
+        ret.at(2*n+1) = static_cast<char>(hash_lower < 10 ? hash_lower + '0' : hash_lower - 10 + 'a');
     }
     return ret;
 }
@@ -95,7 +95,7 @@ Message::Message(const AssembledMessage& assembled_message) {
     }
     service_id_ = static_cast<ServiceIdentifier>(assembled_message[39]);
     // Port
-    port_ = assembled_message[40] + (static_cast<std::uint16_t>(assembled_message[41]) << 8);
+    port_ = assembled_message[40] + static_cast<std::uint16_t>(assembled_message[41] << 8U);
 }
 
 AssembledMessage Message::Assemble() const {
@@ -121,8 +121,8 @@ AssembledMessage Message::Assemble() const {
     // Service Identifier
     ret[39] = std::to_underlying(service_id_);
     // Port
-    ret[40] = static_cast<std::uint8_t>(port_ & 0x00FF);
-    ret[41] = static_cast<std::uint8_t>((port_ >> 8) & 0x00FF);
+    ret[40] = static_cast<std::uint8_t>(port_ & 0x00FFU);
+    ret[41] = static_cast<std::uint8_t>(static_cast<unsigned int>(port_ >> 8U) & 0x00FFU);
 
     return ret;
 }
