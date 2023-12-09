@@ -40,7 +40,8 @@ enum class Command {
 };
 using enum Command;
 
-void discover_callback(DiscoveredService service, bool depart, std::any) {
+// DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
+void discover_callback(DiscoveredService service, bool depart, std::any /* user_data */) {
     std::cout << "Callback:\n"
               << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier)
               << " Port " << std::setw(5) << service.port

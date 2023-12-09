@@ -106,6 +106,7 @@ int test_manager_register_service_logic() {
 int test_manager_register_callback_logic() {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
+    // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
     auto callback = [](DiscoveredService, bool, std::any) {};
 
     int fails = 0;
