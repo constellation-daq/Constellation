@@ -10,10 +10,10 @@
 #pragma once
 
 #include <array>
-#include <vector>
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "constellation/core/config.hpp"
 #include "constellation/protocols/CHIRP/protocol_info.hpp"

@@ -10,8 +10,8 @@
 #include "Manager.hpp"
 
 #include <algorithm>
-#include <cstdint>
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <iterator>
 #include <utility>

@@ -8,15 +8,15 @@
  */
 
 #include <chrono>
-#include <iostream>
 #include <future>
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
 #include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
+#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;
