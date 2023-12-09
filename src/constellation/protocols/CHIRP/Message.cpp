@@ -32,7 +32,7 @@ std::string MD5Hash::to_string() const {
     std::string ret {};
     // Resize string to twice the hash length as two character needed per byte
     ret.resize(2 * this->size());
-    for (std::uint8_t n = 0; n < this->size(); ++n) {
+    for (std::size_t n = 0; n < this->size(); ++n) {
         // First character of byte hex representation
         const auto hash_upper = (this->at(n) & 0xF0U) >> 4U;
         ret.at(2*n) = static_cast<char>(hash_upper < 10 ? hash_upper + '0' : hash_upper - 10 + 'a');
@@ -44,8 +44,8 @@ std::string MD5Hash::to_string() const {
 }
 
 bool MD5Hash::operator<(const MD5Hash& other) const {
-    for (std::uint8_t n = 0; n < this->size(); ++n) {
-        if (this->at(n) < other[n]) {
+    for (std::size_t n = 0; n < this->size(); ++n) {
+        if (this->at(n) < other.at(n)) {
             return true;
         }
     }
@@ -85,11 +85,11 @@ Message::Message(const AssembledMessage& assembled_message)
     type_ = static_cast<MessageType>(assembled_message[6]);
     // Group ID
     for (std::uint8_t n = 0; n < 16; ++n) {
-        group_id_[n] = assembled_message[7+n];
+        group_id_.at(n) = assembled_message.at(7+n);
     }
     // Host ID
     for (std::uint8_t n = 0; n < 16; ++n) {
-        host_id_[n] = assembled_message[23+n];
+        host_id_.at(n) = assembled_message.at(23+n);
     }
     // Service Identifier
     if (assembled_message[39] < std::to_underlying(ServiceIdentifier::CONTROL) ||
@@ -115,11 +115,11 @@ AssembledMessage Message::Assemble() const {
     ret[6] = std::to_underlying(type_);
     // Group Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        ret[7+n] = group_id_[n];
+        ret.at(7+n) = group_id_.at(n);
     }
     // Host Hash
     for (std::uint8_t n = 0; n < 16; ++n) {
-        ret[23+n] = host_id_[n];
+        ret.at(23+n) = host_id_.at(n);
     }
     // Service Identifier
     ret[39] = std::to_underlying(service_id_);
