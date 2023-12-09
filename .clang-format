@@ -5,11 +5,12 @@
 Language: Cpp
 Standard: c++20
 BasedOnStyle: LLVM
-SortIncludes: true
+SortIncludes: CaseInsensitive
 AccessModifierOffset: -4
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AllowShortIfStatementsOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
 BinPackParameters: false
 BinPackArguments: false
@@ -18,20 +19,21 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: false
 DerivePointerAlignment: false
 ExperimentalAutoDetectBinPacking: false
 IncludeCategories:
-  - Regex:           '^<.*'
+  - Regex:           '^<.*>'
     Priority:        1
   - Regex:           '^<.*\.h*>'
     Priority:        2
   - Regex:           '.*'
     Priority:        3
-IncludeIsMainRegex: '([-_](test|unittest))?$'
 IndentCaseLabels: false
 NamespaceIndentation: All
 PointerAlignment: Left
 SpaceBeforeParens: Never
 Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: true
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
 ContinuationIndentWidth: 4
+PenaltyReturnTypeOnItsOwnLine: 100
 ...
