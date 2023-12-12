@@ -12,23 +12,23 @@ stages:
 # templates
 
 .debian-clang:
-  image: gitlab.desy.de:5555/constellation/build-images:debian-clang
+  image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
   variables:
     CXX: clang++
     CXX_LD: mold
 
 .debian-gcc:
-  image: gitlab.desy.de:5555/constellation/build-images:debian-gcc
+  image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
   variables:
     CXX: g++
 
 .ubuntu-22.04:
-  image: gitlab.desy.de:5555/constellation/build-images:ubuntu-22.04
+  image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
     CXX: g++
 
 .debian-hawkmoth:
-  image: gitlab.desy.de:5555/constellation/build-images:debian-hawkmoth
+  image: gitlab.desy.de:5555/constellation/build-images/debian-hawkmoth:latest
   variables:
     SPHINX_IMMATERIAL_EXTERNAL_RESOURCE_CACHE_DIR: $CI_PROJECT_DIR/.sphinx_immaterial_cache
   cache:
