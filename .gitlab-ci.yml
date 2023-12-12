@@ -57,6 +57,7 @@ stages:
   artifacts:
     paths:
       - build
+    expire_in: 24 hour
 
 build:debian-clang:
   extends:
@@ -88,6 +89,7 @@ build:ubuntu-22.04:
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
+    expire_in: 1 week
 
 test:debian-clang:
   extends:
@@ -194,6 +196,7 @@ docs:html:
   artifacts:
     paths:
       - docs/build
+    expire_in: 24 hours
 
 # deploy stage
 
