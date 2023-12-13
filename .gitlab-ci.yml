@@ -109,6 +109,7 @@ test:debian-gcc:
   artifacts:
     paths:
       - build
+    expire_in: 24 hour
 
 test:ubuntu-22.04:
   extends:
