@@ -36,7 +36,8 @@ namespace Constellation {
         void sink_it_(const spdlog::details::log_msg& msg) override {
 
             // Send topic
-            auto topic = "LOG/" + magic_enum::enum_name(msg.level) + "/" + msg.logger_name;
+            // std::string logger = msg.logger_name;
+            std::string topic = "LOG/" + std::string(magic_enum::enum_name(msg.level)) + "/";
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
             // Pack and send message header
@@ -47,15 +48,15 @@ namespace Constellation {
 
             // Pack and send message
             std::map<std::string, msgpack::type::variant> payload;
-            payload["msg"] = log_msg.payload;
-            payload["thread"] = log_msg.thread_id;
-            payload["filename"] = log_msg.source_loc.filename;
-            payload["lineno"] = log_msg.source_loc.line;
-            payload["funcname"] = log_msg.source_loc.funcname;
+            // payload["msg"] = std::string(msg.payload);
+            payload["thread"] = msg.thread_id;
+            payload["filename"] = msg.source.filename;
+            payload["lineno"] = msg.source.line;
+            payload["funcname"] = msg.source.funcname;
             msgpack::sbuffer mbuf {};
             msgpack::pack(mbuf, payload);
-            zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
-            publisher_.send(payload_frame);
+            zmq::message_t payload_frame{mbuf.data(), mbuf.size()};
+            publisher_.send(payload_frame, zmq::send_flags::none);
         }
 
         void flush_() override {}
