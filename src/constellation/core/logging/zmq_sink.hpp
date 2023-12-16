@@ -10,6 +10,7 @@
 #pragma once
 
 #include <mutex>
+#include <string_view>
 
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
@@ -18,7 +19,6 @@
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
-
 #include "MessageHeader.hpp"
 
 namespace Constellation {
@@ -27,16 +27,13 @@ namespace Constellation {
         zmq_sink() {
             // FIXME get ephemeral port, publish port to CHIRP
             publisher_.bind("tcp://*:5556");
-
-            // FIXME we need to make sure to pass everything to ZMQ for logging
-            this->set_level(spdlog::level::trace);
         }
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
 
             // Send topic
-            // std::string logger = msg.logger_name;
+            // auto logger = std::string(msg.logger_name);
             std::string topic = "LOG/" + std::string(magic_enum::enum_name(msg.level)) + "/";
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
