@@ -23,6 +23,8 @@ constexpr std::string_view CMDP1_PROTOCOL = "CMDP\01"sv;
 // Note: we might want to have the protocol as a template argument for the class if we reuse it for CDTP as well
 
 class MessageHeader {
+    using dictionary_t = std::map<std::string, std::variant<size_t, int, float, std::string>>;
+
 public:
     MessageHeader(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
     MessageHeader(std::string_view sender) : sender_(sender), time_(std::chrono::system_clock::now()) {}
@@ -32,7 +34,7 @@ public:
 
     std::chrono::system_clock::time_point getTime() const { return time_; }
     std::string_view getSender() const { return sender_; }
-    std::map<std::string, msgpack::type::variant> getTags() const { return tags_; }
+    dictionary_t getTags() const { return tags_; }
 
     template <typename T> T getTag(const std::string& key) const { return tags_.at(key); }
 
@@ -45,5 +47,5 @@ public:
 private:
     std::string sender_;
     std::chrono::system_clock::time_point time_;
-    std::map<std::string, msgpack::type::variant> tags_;
+    dictionary_t tags_;
 };

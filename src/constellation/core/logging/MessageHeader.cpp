@@ -33,7 +33,7 @@ MessageHeader::MessageHeader(void* data, std::size_t size) {
 
     // Unpack tags
     const auto msgpack_tags = msgpack::unpack(static_cast<char*>(data), size, offset);
-    tags_ = msgpack_tags->as<std::map<std::string, msgpack::type::variant>>();
+    tags_ = msgpack_tags->as<dictionary_t>();
 }
 
 msgpack::sbuffer MessageHeader::assemble() const {
@@ -61,7 +61,9 @@ void MessageHeader::print() const {
               << "Tags:\n";
     for(const auto& entry : tags_) {
         // TODO: second part should probably be in a try / catch block?
-        std::cout << " " << entry.first << ": " << entry.second.as_string() << "\n";
+        std::cout << " " << entry.first << ": ";
+        std::visit([](auto&& arg){ std::cout << arg; }, entry.second);
+        std::cout << "\n";
     }
     std::cout << std::flush;
 }
