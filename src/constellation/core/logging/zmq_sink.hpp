@@ -11,6 +11,7 @@
 
 #include <mutex>
 #include <string_view>
+#include <variant>
 
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
@@ -44,7 +45,7 @@ namespace Constellation {
             publisher_.send(header_frame, zmq::send_flags::sndmore);
 
             // Pack and send message
-            std::map<std::string, msgpack::type::variant> payload;
+            std::map<std::string, std::variant<size_t, int, float, std::string>> payload;
             // payload["msg"] = std::string(msg.payload);
             payload["thread"] = msg.thread_id;
             payload["filename"] = msg.source.filename;
