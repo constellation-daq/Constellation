@@ -15,9 +15,9 @@
 #include "spdlog/sinks/base_sink.h"
 
 #include <asio/ip/host_name.hpp>
-#include <zmq.hpp>
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
+#include <zmq.hpp>
 
 #include "MessageHeader.hpp"
 
@@ -55,14 +55,15 @@ namespace Constellation {
             payload["funcname"] = msg.source.funcname;
             msgpack::sbuffer mbuf {};
             msgpack::pack(mbuf, payload);
-            zmq::message_t payload_frame{mbuf.data(), mbuf.size()};
+            zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
             publisher_.send(payload_frame, zmq::send_flags::none);
         }
 
         void flush_() override {}
+
     private:
-        zmq::context_t context_{};
-        zmq::socket_t publisher_{context_, zmq::socket_type::pub};
+        zmq::context_t context_ {};
+        zmq::socket_t publisher_ {context_, zmq::socket_type::pub};
     };
 
     // TODO: mt even needed? ZeroMQ should be thread safe...

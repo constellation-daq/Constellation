@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
- #include "MessageHeader.hpp"
+#include "MessageHeader.hpp"
 
 #include <iostream>
 
@@ -18,7 +18,7 @@ MessageHeader::MessageHeader(void* data, std::size_t size) {
     // Unpack protocol
     const auto msgpack_protocol = msgpack::unpack(static_cast<char*>(data), size, offset);
     const auto protocol = msgpack_protocol->as<std::string>();
-    if (protocol != CMDP1_PROTOCOL) {
+    if(protocol != CMDP1_PROTOCOL) {
         // Not CMDP version 1 message
         // TODO: throw
     }
@@ -59,7 +59,7 @@ void MessageHeader::print() const {
               << "Sender: " << sender_ << "\n"
               << "Time:   " << time_ << "\n"
               << "Tags:\n";
-    for (const auto& entry : tags_) {
+    for(const auto& entry : tags_) {
         // TODO: second part should probably be in a try / catch block?
         std::cout << " " << entry.first << ": " << entry.second.as_string() << "\n";
     }

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
- #pragma once
+#pragma once
 
 #include <chrono>
 #include <map>
@@ -34,11 +34,9 @@ public:
     std::string_view getSender() const { return sender_; }
     std::map<std::string, msgpack::type::variant> getTags() const { return tags_; }
 
-    template<typename T>
-    T getTag(const std::string& key) const { return tags_.at(key); }
+    template <typename T> T getTag(const std::string& key) const { return tags_.at(key); }
 
-    template<typename T>
-    void setTag(const std::string& key, T value) { tags_[key] = value; }
+    template <typename T> void setTag(const std::string& key, T value) { tags_[key] = value; }
 
     msgpack::sbuffer assemble() const;
 
