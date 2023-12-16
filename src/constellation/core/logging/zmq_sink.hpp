@@ -27,6 +27,9 @@ namespace Constellation {
         zmq_sink() {
             // FIXME get ephemeral port, publish port to CHIRP
             publisher_.bind("tcp://*:5556");
+
+            // FIXME we need to make sure to pass everything to ZMQ for logging
+            this->set_level(spdlog::level::trace);
         }
 
     protected:
