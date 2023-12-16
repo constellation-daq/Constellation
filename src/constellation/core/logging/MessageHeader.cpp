@@ -1,4 +1,13 @@
-#include "MessageHeader.hpp"
+/**
+ * @file
+ * @brief Implementation of CMDP Message Header
+ *
+ * @copyright Copyright (c) 2023 DESY and the Constellation authors.
+ * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+ #include "MessageHeader.hpp"
 
 #include <iostream>
 
