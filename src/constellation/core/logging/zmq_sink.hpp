@@ -14,7 +14,7 @@
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
 
-#include <asio/ip/host_name.hpp>
+#include <asio.hpp>
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
