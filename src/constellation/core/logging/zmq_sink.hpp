@@ -14,25 +14,51 @@
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
 
-// TODO implement
+#include <asio/ip/host_name.hpp>
+#include <zmq.hpp>
+#include <magic_enum.hpp>
+#include <msgpack.hpp>
+
+#include "MessageHeader.hpp"
 
 namespace Constellation {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
     public:
-        zmq_sink() {}
+        zmq_sink() {
+            // FIXME get ephemeral port, publish port to CHIRP
+            publisher_.bind("tcp://*:5556");
+        }
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
-            // Format log message
-            spdlog::memory_buf_t formatted {};
-            spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
-            auto msg_fmt = fmt::to_string(formatted);
 
-            // Send msg_fmt over ZeroMQ
-            // TODO
+            // Send topic
+            auto topic = "LOG/" + magic_enum::enum_name(msg.level) + "/" + msg.logger_name;
+            publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
+
+            // Pack and send message header
+            auto msghead = MessageHeader(asio::ip::host_name(), msg.time);
+            const auto sbuf = msghead.assemble();
+            zmq::message_t header_frame {sbuf.data(), sbuf.size()};
+            publisher_.send(header_frame, zmq::send_flags::sndmore);
+
+            // Pack and send message
+            std::map<std::string, msgpack::type::variant> payload;
+            payload["msg"] = log_msg.payload;
+            payload["thread"] = log_msg.thread_id;
+            payload["filename"] = log_msg.source_loc.filename;
+            payload["lineno"] = log_msg.source_loc.line;
+            payload["funcname"] = log_msg.source_loc.funcname;
+            msgpack::sbuffer mbuf {};
+            msgpack::pack(mbuf, payload);
+            zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
+            publisher_.send(payload_frame);
         }
 
         void flush_() override {}
+    private:
+        zmq::context_t context_{};
+        zmq::socket_t publisher_{context_, zmq::socket_type::pub};
     };
 
     // TODO: mt even needed? ZeroMQ should be thread safe...
