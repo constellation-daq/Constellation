@@ -19,6 +19,19 @@ msgpack_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',
   default_options: ['boost=disabled', 'tests=disabled'])
 
+# Embedded libzmq to ensure draft API is available
+libzmq_dep = dependency('libzmq',
+  default_options: [
+    'drafts=true',
+    'websockets=disabled',
+    'curve=false',
+    'tls=disabled',
+    'nss=disabled',
+    'openpgm=disabled',
+    'norm=disabled',
+    'warning_level=0',
+])
+
 cppzmq_dep = dependency('cppzmq')
 
 constellation_inc = include_directories('..')
