@@ -17,7 +17,7 @@ spdlog_dep = dependency('spdlog',
 
 msgpack_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',
-  default_options: ['boost=enabled', 'tests=disabled'])
+  default_options: ['boost=disabled', 'tests=disabled'])
 
 cppzmq_dep = dependency('cppzmq')
 
