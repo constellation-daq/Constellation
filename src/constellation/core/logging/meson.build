@@ -10,7 +10,7 @@ CoreLogging_src = files(
 CoreLogging_lib = static_library(
   'ConstellationCoreLogging',
   sources: CoreLogging_src,
-  include_directories: Constellation_inc,
-  dependencies: [spdlog_dep],
+  include_directories: constellation_inc,
+  dependencies: [spdlog_dep, magic_enum_dep, msgpack_dep, cppzmq_dep],
   install: false,
 )
