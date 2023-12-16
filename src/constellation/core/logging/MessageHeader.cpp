@@ -62,7 +62,7 @@ void MessageHeader::print() const {
     for(const auto& entry : tags_) {
         // TODO: second part should probably be in a try / catch block?
         std::cout << " " << entry.first << ": ";
-        std::visit([](auto&& arg){ std::cout << arg; }, entry.second);
+        std::visit([](auto&& arg) { std::cout << arg; }, entry.second);
         std::cout << "\n";
     }
     std::cout << std::flush;
