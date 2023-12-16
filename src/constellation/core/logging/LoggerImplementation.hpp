@@ -14,8 +14,8 @@
 
 #include <spdlog/spdlog.h>
 
-#include "Constellation/core/logging/LogLevel.hpp"
-#include "Constellation/core/logging/LogSinkManager.hpp"
+#include "constellation/core/logging/LogLevel.hpp"
+#include "constellation/core/logging/LogSinkManager.hpp"
 
 namespace Constellation {
     // Actual Logger implementation

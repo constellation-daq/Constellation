@@ -9,7 +9,7 @@
 
 #include "Logger.hpp"
 
-#include "Constellation/core/logging/LoggerImplementation.hpp"
+#include "constellation/core/logging/LoggerImplementation.hpp"
 
 using namespace Constellation;
 

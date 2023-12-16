@@ -15,7 +15,7 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-#include "Constellation/core/logging/zmq_sink.hpp"
+#include "constellation/core/logging/zmq_sink.hpp"
 
 namespace Constellation {
     // Global manager for sinks

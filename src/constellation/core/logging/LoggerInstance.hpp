@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "Constellation/core/logging/log.hpp"
-#include "Constellation/core/logging/Logger.hpp"
+#include "constellation/core/logging/log.hpp"
+#include "constellation/core/logging/Logger.hpp"
 
 #define GEN_LOGGER_INSTANCE(class_name, logger_topic)                                                                       \
     class class_name : public Constellation::Logger {                                                                       \

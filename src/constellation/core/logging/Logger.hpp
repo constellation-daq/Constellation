@@ -12,8 +12,8 @@
 #include <memory>
 #include <string>
 
-#include "Constellation/core/logging/LogLevel.hpp"
-#include "Constellation/core/logging/swap_ostringstream.hpp"
+#include "constellation/core/logging/LogLevel.hpp"
+#include "constellation/core/logging/swap_ostringstream.hpp"
 
 namespace Constellation {
     // Forward declaration of spdlog implementation class

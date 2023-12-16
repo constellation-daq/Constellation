@@ -9,7 +9,7 @@
 
 #include "swap_ostringstream.hpp"
 
-#include "Constellation/core/logging/Logger.hpp"
+#include "constellation/core/logging/Logger.hpp"
 
 using namespace Constellation;
 
