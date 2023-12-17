@@ -21,10 +21,10 @@ using namespace std::literals::string_view_literals;
 constexpr std::string_view CMDP1_PROTOCOL = "CMDP\01"sv;
 
 // Note: we might want to have the protocol as a template argument for the class if we reuse it for CDTP as well
+using dictionary_t =
+    std::map<std::string, std::variant<size_t, bool, int, float, std::string, std::chrono::system_clock::time_point>>;
 
 class MessageHeader {
-    using dictionary_t =
-        std::map<std::string, std::variant<size_t, bool, int, float, std::string, std::chrono::system_clock::time_point>>;
 
 public:
     MessageHeader(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
