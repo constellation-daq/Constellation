@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include <algorithm>
 #include <mutex>
+#include <string>
 #include <string_view>
 #include <variant>
 
@@ -34,8 +36,10 @@ namespace Constellation {
         void sink_it_(const spdlog::details::log_msg& msg) override {
 
             // Send topic
-            // auto logger = std::string(msg.logger_name);
-            std::string topic = "LOG/" + std::string(magic_enum::enum_name(msg.level)) + "/";
+            // auto logger =  + "/" + std::string(msg.logger_name);
+            auto level = std::string(magic_enum::enum_name(msg.level));
+            std::transform(level.begin(), level.end(), level.begin(), ::toupper);
+            std::string topic = "LOG/" + level;
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
             // Pack and send message header
