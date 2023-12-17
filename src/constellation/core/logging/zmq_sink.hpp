@@ -49,12 +49,17 @@ namespace Constellation {
             publisher_.send(header_frame, zmq::send_flags::sndmore);
 
             // Pack and send message
-            std::map<std::string, std::variant<size_t, int, float, std::string>> payload;
+            dictionary_t payload;
             // payload["msg"] = std::string(msg.payload);
             payload["thread"] = msg.thread_id;
-            payload["filename"] = msg.source.filename;
-            payload["lineno"] = msg.source.line;
-            payload["funcname"] = msg.source.funcname;
+
+            // Add log source if not empty
+            if(!msg.source.empty()) {
+                payload["filename"] = msg.source.filename;
+                payload["lineno"] = msg.source.line;
+                payload["funcname"] = msg.source.funcname;
+            }
+
             msgpack::sbuffer mbuf {};
             msgpack::pack(mbuf, payload);
             zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
