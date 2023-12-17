@@ -22,6 +22,8 @@
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
+
+#include "LogLevel.hpp"
 #include "MessageHeader.hpp"
 
 namespace Constellation {
@@ -34,10 +36,9 @@ namespace Constellation {
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
-
             // Send topic
             // auto logger =  + "/" + std::string(msg.logger_name);
-            auto level = std::string(magic_enum::enum_name(msg.level));
+            auto level = std::string(magic_enum::enum_name(static_cast<Constellation::LogLevel>(msg.level)));
             std::transform(level.begin(), level.end(), level.begin(), ::toupper);
             std::string topic = "LOG/" + level;
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
