@@ -9,6 +9,9 @@
 
 #pragma once
 
+#define SPDLOG_LEVEL_NAMES { "TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL", "OFF" }
+#define SPDLOG_SHORT_LEVEL_NAMES { "T", "D", "I", "W", "S", "C", "O" }
+
 namespace Constellation {
     // log levels, allows direct casting to spdlog::level::level_enum
     enum class LogLevel : int {
