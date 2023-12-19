@@ -14,7 +14,7 @@
 using namespace Constellation;
 
 Logger::Logger(std::string topic)
-    : logger_impl_(std::make_unique<LoggerImplementation>(std::move(topic))), os_level_(LogLevel::OFF), os_() {}
+    : logger_impl_(std::make_unique<LoggerImplementation>(std::move(topic))), os_level_(LogLevel::OFF) {}
 
 void Logger::setConsoleLogLevel(LogLevel level) {
     logger_impl_->setConsoleLogLevel(level);

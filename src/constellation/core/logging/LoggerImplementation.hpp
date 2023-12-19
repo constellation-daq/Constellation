@@ -26,7 +26,7 @@ namespace Constellation {
             spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
         }
 
-        void setConsoleLogLevel(LogLevel level) {
+        static void setConsoleLogLevel(LogLevel level) {
             // The logger itself forwards all debug messages to sinks by default,
             // console output controlled by the corresponding sink
             LogSinkManager::getInstance().getConsoleSink()->set_level(static_cast<spdlog::level::level_enum>(level));
@@ -45,7 +45,7 @@ namespace Constellation {
 
         bool shouldLog(LogLevel level) { return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level)); }
 
-        void log(LogLevel level, std::string message) {
+        void log(LogLevel level, const std::string& message) {
             spdlog_logger_->log(static_cast<spdlog::level::level_enum>(level), message);
         }
 

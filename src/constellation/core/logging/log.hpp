@@ -21,8 +21,8 @@ using enum Constellation::LogLevel;
 #define CONCAT(x, y) CONCAT_IMPL(x, y)
 
 // Generate a unique log var (contains the line number in the variable name)
-#define GENERATE_LOG_VAR(count)                                                                                            \
-    static std::atomic_uint CONCAT(_LOG_VAR_L, __LINE__) {                                                                 \
+#define GENERATE_LOG_VAR(count)                                                                                             \
+    static std::atomic_uint CONCAT(_LOG_VAR_L, __LINE__) {                                                                  \
         count                                                                                                               \
     }
 
@@ -45,9 +45,9 @@ using enum Constellation::LogLevel;
 
 // Log message at most N times
 #define LOG_N(level, count)                                                                                                 \
-    GENERATE_LOG_VAR(count);                                                                                               \
+    GENERATE_LOG_VAR(count);                                                                                                \
     IFLOG(level)                                                                                                            \
-    if(GET_LOG_VAR() > 0)                                                                                                  \
+    if(GET_LOG_VAR() > 0)                                                                                                   \
     LOGGER.getStream(level) << ((--GET_LOG_VAR() == 0) ? "[further messages suppressed] " : "")
 
 // Log message at most one time
