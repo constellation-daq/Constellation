@@ -21,12 +21,12 @@ LogSinkManager::LogSinkManager() {
     spdlog::init_thread_pool(1000, 1);
 
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-    console_sink_->set_level(spdlog::level::level_enum::info);
-    console_sink_->set_color(spdlog::level::level_enum::err, "\x1B[32;1m"sv);
-    console_sink_->set_color(spdlog::level::level_enum::info, "\x1B[36;1m"sv);
-    console_sink_->set_color(spdlog::level::level_enum::debug, ""sv);
-    console_sink_->set_color(spdlog::level::level_enum::trace, "\x1B[90m"sv);
+    console_sink_->set_level(spdlog::level::info);
+    console_sink_->set_color(spdlog::level::err, "\x1B[32;1m"sv);
+    console_sink_->set_color(spdlog::level::info, "\x1B[36;1m"sv);
+    console_sink_->set_color(spdlog::level::debug, ""sv);
+    console_sink_->set_color(spdlog::level::trace, "\x1B[90m"sv);
 
     zmq_sink_ = std::make_shared<zmq_sink_mt>();
-    zmq_sink_->set_level(spdlog::level::level_enum::trace);
+    zmq_sink_->set_level(spdlog::level::trace);
 }
