@@ -11,12 +11,12 @@
 
 #include <iostream>
 
-MessageHeader::MessageHeader(void* data, std::size_t size) {
+MessageHeader::MessageHeader(std::span<char> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
     // Unpack protocol
-    const auto msgpack_protocol = msgpack::unpack(static_cast<char*>(data), size, offset);
+    const auto msgpack_protocol = msgpack::unpack(data.data(), data.size(), offset);
     const auto protocol = msgpack_protocol->as<std::string>();
     if(protocol != CMDP1_PROTOCOL) {
         // Not CMDP version 1 message
@@ -24,15 +24,15 @@ MessageHeader::MessageHeader(void* data, std::size_t size) {
     }
 
     // Unpack sender
-    const auto msgpack_sender = msgpack::unpack(static_cast<char*>(data), size, offset);
+    const auto msgpack_sender = msgpack::unpack(data.data(), data.size(), offset);
     sender_ = msgpack_sender->as<std::string>();
 
     // Unpack time
-    const auto msgpack_time = msgpack::unpack(static_cast<char*>(data), size, offset);
+    const auto msgpack_time = msgpack::unpack(data.data(), data.size(), offset);
     time_ = msgpack_time->as<std::chrono::system_clock::time_point>();
 
     // Unpack tags
-    const auto msgpack_tags = msgpack::unpack(static_cast<char*>(data), size, offset);
+    const auto msgpack_tags = msgpack::unpack(data.data(), data.size(), offset);
     tags_ = msgpack_tags->as<dictionary_t>();
 }
 

@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <map>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -31,7 +32,7 @@ public:
     MessageHeader(std::string_view sender) : sender_(sender), time_(std::chrono::system_clock::now()) {}
 
     // Reconstruct from bytes
-    MessageHeader(void* data, std::size_t size);
+    MessageHeader(std::span<char> data);
 
     std::chrono::system_clock::time_point getTime() const { return time_; }
     std::string_view getSender() const { return sender_; }
