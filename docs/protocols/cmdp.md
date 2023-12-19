@@ -108,7 +108,15 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 ### Log Message Payload
 
-The log messages payload frame SHALL consist of a message string.
+The log message payload frame SHALL consist of a map and MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+The map SHALL contain one or more key-value pairs.
+The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+
+The map SHALL contain a key-value pair with key `msg` and a string-type value containing the log message.
+
+If the log level is `TRACE`, the map SHOULD contain key-value pairs with keys `thread`, `filename`, `lineno`, and `funcname` containing the values for the thread ID as integer, the filename as string, the line number as integer and the function name as string of the source code location of the CMDP sending host emitting the log message.
+
+The map MAY contain additional key-value pairs.
 
 ### Metrics Data Payload
 
