@@ -24,7 +24,7 @@
 #include <zmq.hpp>
 
 #include "LogLevel.hpp"
-#include "MessageHeader.hpp"
+#include "constellation/core/message/Header.hpp"
 
 namespace Constellation {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
@@ -44,7 +44,7 @@ namespace Constellation {
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
             // Pack and send message header
-            auto msghead = MessageHeader(asio::ip::host_name(), msg.time);
+            auto msghead = Message::Header(asio::ip::host_name(), msg.time);
             const auto sbuf = msghead.assemble();
             zmq::message_t header_frame {sbuf.data(), sbuf.size()};
             publisher_.send(header_frame, zmq::send_flags::sndmore);

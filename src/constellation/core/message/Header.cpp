@@ -7,14 +7,14 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "MessageHeader.hpp"
+#include "Header.hpp"
 #include "constellation/core/std23.hpp"
 
 #include <iostream>
 
-using namespace Constellation;
+using namespace Constellation::Message;
 
-MessageHeader::MessageHeader(std::span<char> data) {
+Header::Header(std::span<char> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
@@ -39,7 +39,7 @@ MessageHeader::MessageHeader(std::span<char> data) {
     tags_ = msgpack_tags->as<dictionary_t>();
 }
 
-msgpack::sbuffer MessageHeader::assemble() const {
+msgpack::sbuffer Header::assemble() const {
     msgpack::sbuffer sbuf {};
     msgpack::packer<msgpack::sbuffer> packer {&sbuf};
 
@@ -57,7 +57,7 @@ msgpack::sbuffer MessageHeader::assemble() const {
 }
 
 // TODO: we probably want this as a stream
-void MessageHeader::print() const {
+void Header::print() const {
     std::cout << "Header: CMDP1\n"
               << "Sender: " << sender_ << "\n"
               << "Time:   " << time_ << "\n"

@@ -5,7 +5,7 @@ log_src = files(
   'Logger.cpp',
   'LogSinkManager.cpp',
   'swap_ostringstream.cpp',
-  'MessageHeader.cpp',
+  '../message/Header.cpp',
 )
 
 log_lib = static_library(
