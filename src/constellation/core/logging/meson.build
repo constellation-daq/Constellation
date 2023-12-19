@@ -13,6 +13,7 @@ log_lib = static_library(
   sources: log_src,
   include_directories: constellation_inc,
   dependencies: [asio_dep, spdlog_dep, magic_enum_dep, msgpack_dep, cppzmq_dep],
+  cpp_args: ['-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE'],
   install: false,
 )
 
