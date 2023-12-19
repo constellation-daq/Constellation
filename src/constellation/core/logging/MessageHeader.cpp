@@ -12,6 +12,8 @@
 
 #include <iostream>
 
+using namespace Constellation;
+
 MessageHeader::MessageHeader(std::span<char> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
