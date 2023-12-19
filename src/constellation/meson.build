@@ -17,7 +17,7 @@ spdlog_dep = dependency('spdlog',
 
 msgpack_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',
-  default_options: ['boost=disabled', 'tests=disabled'])
+  default_options: ['boost=disabled', 'tests=disabled', 'std_variant=true'])
 
 # Embedded libzmq to ensure draft API is available
 libzmq_dep = dependency('libzmq',
