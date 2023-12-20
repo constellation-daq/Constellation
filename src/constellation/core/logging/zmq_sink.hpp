@@ -23,8 +23,8 @@
 #include <msgpack.hpp>
 #include <zmq.hpp>
 
-#include "LogLevel.hpp"
 #include "constellation/core/message/Header.hpp"
+#include "LogLevel.hpp"
 
 namespace Constellation {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
@@ -37,10 +37,9 @@ namespace Constellation {
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
             // Send topic
-            // auto logger =  + "/" + std::string(msg.logger_name);
-            auto level = std::string(magic_enum::enum_name(static_cast<Constellation::LogLevel>(msg.level)));
-            std::transform(level.begin(), level.end(), level.begin(), ::toupper);
-            std::string topic = "LOG/" + level;
+            auto topic = "LOG/" + std::string(magic_enum::enum_name(static_cast<Constellation::LogLevel>(msg.level))) + "/" +
+                         std::string(msg.logger_name.data(), msg.logger_name.size());
+            std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
             // Pack and send message header
