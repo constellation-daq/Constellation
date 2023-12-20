@@ -50,9 +50,9 @@ namespace Constellation {
 
             // Pack and send message
             dictionary_t payload;
-            // payload["msg"] = std::string(msg.payload);
-            payload["thread"] = msg.thread_id;
+            payload["msg"] = std::string(msg.payload.data(), msg.payload.size());
 
+            payload["thread"] = msg.thread_id;
             // Add log source if not empty
             if(!msg.source.empty()) {
                 payload["filename"] = msg.source.filename;
