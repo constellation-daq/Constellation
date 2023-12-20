@@ -53,4 +53,4 @@ namespace Constellation::Message {
         dictionary_t tags_;
     };
 
-} // namespace Constellation
+} // namespace Constellation::Message
