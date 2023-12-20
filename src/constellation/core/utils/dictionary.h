@@ -16,5 +16,5 @@
 
 namespace Constellation {
     using dictionary_t =
-    std::map<std::string, std::variant<size_t, bool, int, double, std::string, std::chrono::system_clock::time_point>>;
+    std::map<std::string, std::variant<bool, std::int64_t, std::uint64_t, double, std::string, std::chrono::system_clock::time_point>>;
 }
