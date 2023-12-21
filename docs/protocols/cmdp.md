@@ -132,7 +132,7 @@ The metrics type SHALL be encoded as 1-OCTET integer variable with the following
 
 * `0x1` - LAST_VALUE: Updating the value of this metrics replaces the previous value, only the last value SHOULD be displayed.
 * `0x2` - ACCUMULATE: Every new value of this metrics SHOULD be added to the cached value.
-* `0x3` - AVERAG: The average value of the metrics SHOULD be calculated over a given time interval.
+* `0x3` - AVERAGE: The average value of the metrics SHOULD be calculated over a given time interval.
 * `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
 
 The metrics type MAY be implemented as enum type if appropriate.
