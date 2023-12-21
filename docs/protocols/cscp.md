@@ -111,9 +111,9 @@ The message verb SHALL contain an octet and a string, encoded according to the [
 The octet MUST contain the message type, which SHALL be %x00 for requests and SHALL be any of the following acknowledgement codes for replies:
 
 * %x01 for acknowledgement verb `SUCCESS`: The command was successfully received and is executed.
-* %x02 for acknowledgement verb `NOTIMPLEMENTED`: The command is an optional feature or transition that is not implemented by the replying satellite host.
+* %x02 for acknowledgement verb `NOTIMPLEMENTED`: The command is valid but not implemented by the replying satellite host.
 * %x03 for acknowledgement verb `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
-* %x04 for acknowledgement verb `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state.
+* %x04 for acknowledgement verb `INVALID`: The command is invalid for the current state of the replying satellite host, e.g. it does not represent a valid transition out of its current state
 * %x05 for acknowledgement verb `UNKNOWN`: The command is entirely unknown.
 
 For request messages, the string SHALL contain the command.
