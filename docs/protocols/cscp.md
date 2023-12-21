@@ -114,23 +114,12 @@ The octet MUST contain the message type, which SHALL be %x00 for requests and SH
 * %x04 for acknowledgement verb `INVALID`: The command is invalid, e.g. it does not represent a valid transition out of the current state.
 * %x05 for acknowledgement verb `UNKNOWN`: The command is entirely unknown.
 
-For request messages, the second string SHALL contain the command.
+For request messages, the string SHALL contain the command.
+Commands SHALL be parsed and interpreted case-insensitive.
 
-For reply messages, the second string SHOULD contain the acknowledgement verb.
-
-Commands and acknowledgement verb SHALL be parsed and interpreted case-insensitive.
+For reply messages, the string SHALL provide additional information on the acknowledgement.
 
 
 ### Message Payload
 
-The CSCP request and reply message payload frame MAY consist of either a single value or a map.
-
-The value MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-For CSCP reply messages, it is RECOMMENDED that this value consists of a message string, which MAY provide additional information on the acknowledgement.
-
-
-The map MAY contain a sequence of key-value pairs.
-The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-
-The interpretation of this data is not part of this protocol and left to user code implementations.
-
+The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
