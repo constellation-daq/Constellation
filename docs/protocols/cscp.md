@@ -42,7 +42,7 @@ General behavior:
 
 For processing outgoing messages:
 
-* SHALL block on sending, or return a suitable error, when it has no connected satellites.
+* SHALL return a suitable error, when it has no connected satellites.
 * SHALL NOT discard messages that it cannot send to a connected satellite.
 
 For processing incoming messages:
