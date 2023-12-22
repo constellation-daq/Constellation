@@ -1,10 +1,13 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-project('constellation', 'cpp',
+project('constellation',
   default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20'],
   license: 'EUPL-1.2',
 )
 
 # C++ implementation
-subdir('src/constellation')
+impl_cpp = add_languages('cpp', required: get_option('impl_cpp'))
+if impl_cpp
+  subdir('src/constellation')
+endif
