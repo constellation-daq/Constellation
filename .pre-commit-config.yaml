@@ -30,3 +30,8 @@ repos:
     hooks:
       - id: black
         language_version: python3
+
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: v2.1.0
+    hooks:
+      - id: reuse
