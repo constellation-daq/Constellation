@@ -7,8 +7,16 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1'] ,
 )
 
+thread_dep = dependency('threads')
+
 magic_enum_dep = dependency('magic_enum')
 
 constellation_inc = include_directories('..')
+
+install_headers(
+  'core/config.hpp',
+  'core/std23.hpp',
+  subdir : 'constellation/core'
+)
 
 subdir('protocols/CHIRP')
