@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Implementation of CMDP Message Header
+ * @brief Implementation of Message Header
  *
  * @copyright Copyright (c) 2023 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -8,43 +8,67 @@
  */
 
 #include "Header.hpp"
+
+#include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/std23.hpp"
+#include "constellation/core/utils/stdbyte_casts.hpp"
 
-#include <iostream>
+#include <sstream>
+#include <string_view>
 
-using namespace Constellation::Message;
+using namespace constellation::message;
+using namespace std::literals::string_view_literals;
 
-Header::Header(std::span<char> data) {
+/**
+ * Get protocol identifier string for CSCP, CMDP and CDTP protocols
+ *
+ * @param protocol Protocol
+ * @return Protocol identifier string in message header
+ */
+constexpr std::string_view get_protocol_identifier(Protocol protocol) {
+    switch(protocol) {
+    case CSCP1: return "CSCP\01"sv;
+    case CMDP1: return "CMDP\01"sv;
+    case CDTP1: return "CDTP\01"sv;
+    default: std::unreachable();
+    }
+}
+
+template <Protocol P>
+Header<P>::Header(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
+
+template <Protocol P> Header<P>::Header(std::string_view sender) : Header(sender, std::chrono::system_clock::now()) {}
+
+template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
     // Unpack protocol
-    const auto msgpack_protocol = msgpack::unpack(data.data(), data.size(), offset);
-    const auto protocol = msgpack_protocol->as<std::string>();
-    if(protocol != CMDP1_PROTOCOL) {
-        // Not CMDP version 1 message
-        // TODO: throw
+    const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+    const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
+    if(protocol_identifier != get_protocol_identifier(P)) {
+        // TODO(stephan.lachnit): throw
     }
 
     // Unpack sender
-    const auto msgpack_sender = msgpack::unpack(data.data(), data.size(), offset);
+    const auto msgpack_sender = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     sender_ = msgpack_sender->as<std::string>();
 
     // Unpack time
-    const auto msgpack_time = msgpack::unpack(data.data(), data.size(), offset);
+    const auto msgpack_time = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     time_ = msgpack_time->as<std::chrono::system_clock::time_point>();
 
     // Unpack tags
-    const auto msgpack_tags = msgpack::unpack(data.data(), data.size(), offset);
+    const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     tags_ = msgpack_tags->as<dictionary_t>();
 }
 
-msgpack::sbuffer Header::assemble() const {
+template <Protocol P> msgpack::sbuffer Header<P>::assemble() const {
     msgpack::sbuffer sbuf {};
     msgpack::packer<msgpack::sbuffer> packer {&sbuf};
 
     // first pack version
-    packer.pack(CMDP1_PROTOCOL);
+    packer.pack(get_protocol_identifier(P));
     // then sender
     packer.pack(sender_);
     // then time
@@ -56,17 +80,24 @@ msgpack::sbuffer Header::assemble() const {
     return sbuf;
 }
 
-// TODO: we probably want this as a stream
-void Header::print() const {
-    std::cout << "Header: CMDP1\n"
-              << "Sender: " << sender_ << "\n"
-              << "Time:   " << time_ << "\n"
-              << "Tags:\n";
+template <Protocol P> std::string Header<P>::to_string() const {
+    std::ostringstream out {};
+    out << "Header: " << get_protocol_identifier(P) << "\n"
+        << "Sender: " << sender_ << "\n"
+        << "Time:   " << time_ << "\n"
+        << "Tags:\n";
     for(const auto& entry : tags_) {
-        // TODO: second part should probably be in a try / catch block?
-        std::cout << " " << entry.first << ": ";
-        std::visit([](auto&& arg) { std::cout << arg; }, entry.second);
-        std::cout << "\n";
+        // TODO(stephan.lachnit): second entry evaluation should be in a try / catch block
+        out << " " << entry.first << ": ";
+        std::visit([&](auto&& arg) { out << arg; }, entry.second);
+        out << "\n";
     }
-    std::cout << std::flush;
+    return out.str();
 }
+
+// Export symbols in shared library
+namespace constellation::message {
+    template class Header<CSCP1>;
+    template class Header<CMDP1>;
+    template class Header<CDTP1>;
+} // namespace constellation::message

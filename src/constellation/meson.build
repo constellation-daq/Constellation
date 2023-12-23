@@ -9,17 +9,14 @@ asio_dep = declare_dependency(
 
 thread_dep = dependency('threads')
 
-magic_enum_dep = dependency('magic_enum')
+magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 
-spdlog_dep = dependency('spdlog',
-  default_options: ['tests=False']
-)
+spdlog_dep = dependency('spdlog', default_options: ['tests=False'])
 
-msgpack_dep = dependency('msgpack-cxx',
+msgpackc_cxx_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',
-  default_options: ['boost=disabled', 'tests=disabled', 'std_variant=true'])
+  default_options: ['boost=disabled', 'std_variant=true', 'tests=disabled'])
 
-# Embedded libzmq to ensure draft API is available
 libzmq_dep = dependency('libzmq',
   default_options: [
     'drafts=true',
@@ -38,4 +35,3 @@ constellation_inc = include_directories('..')
 
 subdir('core')
 subdir('chirp')
-subdir('core/logging')

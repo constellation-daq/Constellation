@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief CMDP Message Header
+ * @brief Message Header for CMDP, CDTP and CSCP
  *
  * @copyright Copyright (c) 2023 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -10,42 +10,63 @@
 #pragma once
 
 #include <chrono>
-#include <map>
+#include <cstddef>
 #include <span>
-#include <string>
 #include <string_view>
 
-#include <msgpack.hpp> // https://github.com/msgpack/msgpack-c/blob/cpp_master/
+#include <msgpack.hpp>
 
-#include "constellation/core/utils/dictionary.h"
+#include "constellation/core/config.hpp"
+#include "constellation/core/message/Protocol.hpp"
+#include "constellation/core/utils/dictionary.hpp"
 
-using namespace std::literals::string_view_literals;
+namespace constellation::message {
 
-constexpr std::string_view CMDP1_PROTOCOL = "CMDP\01"sv;
-
-namespace Constellation::Message {
-
-    // Note: we might want to have the protocol as a template argument for the class if we reuse it for CDTP as well
-    class Header {
-
+    /** Message Header */
+    template <Protocol P> class Header {
     public:
-        Header(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
-        Header(std::string_view sender) : sender_(sender), time_(std::chrono::system_clock::now()) {}
+        /**
+         * Construct new message header
+         *
+         * @param sender Sender name
+         * @param time Message time
+         */
+        CNSTLN_API Header(std::string_view sender, std::chrono::system_clock::time_point time);
 
-        // Reconstruct from bytes
-        Header(std::span<char> data);
+        /**
+         * Construct new message header using current time
+         *
+         * @param sender Sender name
+         */
+        CNSTLN_API Header(std::string_view sender);
 
-        std::chrono::system_clock::time_point getTime() const { return time_; }
-        std::string_view getSender() const { return sender_; }
-        dictionary_t getTags() const { return tags_; }
+        /**
+         * Construct new message header from bytes
+         *
+         * @param data View to byte data
+         */
+        CNSTLN_API Header(std::span<std::byte> data);
 
-        template <typename T> T getTag(const std::string& key) const { return tags_.at(key); }
+        /** Return message time */
+        constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
 
-        template <typename T> void setTag(const std::string& key, T value) { tags_[key] = value; }
+        /** Return message sender */
+        constexpr std::string_view getSender() const { return sender_; }
 
-        msgpack::sbuffer assemble() const;
+        /** Return message tags */
+        CNSTLN_API dictionary_t getTags() const { return tags_; }
 
-        void print() const;
+        /** Return message tag */
+        template <typename T> T constexpr getTag(const std::string& key) const { return tags_.at(key); }
+
+        /** Set message tag */
+        template <typename T> constexpr void setTag(const std::string& key, T value) { tags_[key] = value; }
+
+        /** Assemble message header to bytes */
+        CNSTLN_API msgpack::sbuffer assemble() const;
+
+        /** Print message header to std::cout */
+        CNSTLN_API std::string to_string() const;
 
     private:
         std::string sender_;
@@ -53,4 +74,13 @@ namespace Constellation::Message {
         dictionary_t tags_;
     };
 
-} // namespace Constellation::Message
+    /** CSCP1 Header */
+    using CSCP1Header = Header<CSCP1>;
+
+    /** CMDP1 Header */
+    using CMDP1Header = Header<CMDP1>;
+
+    /** CDTP1 Header */
+    using CDTP1Header = Header<CDTP1>;
+
+} // namespace constellation::message
