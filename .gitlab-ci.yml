@@ -27,6 +27,12 @@ stages:
   variables:
     CXX: g++
 
+.alma9-cern:
+  image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
+  variables:
+    CXX: clang++
+    CXX_LD: lld
+
 .debian-hawkmoth:
   image: gitlab.desy.de:5555/constellation/build-images/debian-hawkmoth:latest
   variables:
@@ -52,7 +58,7 @@ stages:
   stage: build
   extends: .meson-wrap-cache
   script:
-    - meson setup build ${BUILD_OPTIONS}
+    - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
   artifacts:
     paths:
@@ -79,6 +85,13 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
+
+build:alma9-cern:
+  extends:
+    - .build
+    - .alma9-cern
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=release -Db_lto=true -Db_lto_mode=thin"
 
 # test stage
 
@@ -117,6 +130,14 @@ test:ubuntu-22.04:
     - .ubuntu-22.04
   needs:
     - job: build:ubuntu-22.04
+      artifacts: true
+
+test:alma9-cern:
+  extends:
+    - .test
+    - .alma9-cern
+  needs:
+    - job: build:alma9-cern
       artifacts: true
 
 # lint stage
@@ -163,7 +184,7 @@ format:clang-format:
     - .debian-clang
     - .meson-wrap-cache
   script:
-    - meson setup build
+    - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check
 
 format:reuse:
