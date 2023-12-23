@@ -58,7 +58,7 @@ stages:
   stage: build
   extends: .meson-wrap-cache
   script:
-    - meson setup build ${BUILD_OPTIONS}
+    - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
   artifacts:
     paths:
@@ -184,7 +184,7 @@ format:clang-format:
     - .debian-clang
     - .meson-wrap-cache
   script:
-    - meson setup build
+    - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check
 
 format:reuse:
