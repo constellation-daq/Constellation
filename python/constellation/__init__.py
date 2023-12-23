@@ -3,8 +3,9 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-# Try to get setuptools_scm generated version (package must be installed)
+# Try to get version from installation
 try:
-    from ._version import version as __version__
-except ImportError:
-    __version__ = "0.0+unknown"
+    import importlib.metadata
+    __version__ = importlib.metadata.version('pyconstellation') # module name
+except:
+    __version__ = 'unknown'
