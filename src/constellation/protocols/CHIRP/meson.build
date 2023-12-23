@@ -14,7 +14,7 @@ chirp_lib = library('CHIRP',
   dependencies: [asio_dep, thread_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCHIRP_BUILDLIB=1'],
-  install : true,
+  install: true,
 )
 
 install_headers(
@@ -24,7 +24,7 @@ install_headers(
   'Manager.hpp',
   'Message.hpp',
   'protocol_info.hpp',
-  subdir : 'constellation/protocols/CHIRP'
+  subdir: 'constellation/protocols/CHIRP',
 )
 
 chirp_dep = declare_dependency(

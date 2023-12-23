@@ -16,7 +16,7 @@ constellation_inc = include_directories('..')
 install_headers(
   'core/config.hpp',
   'core/std23.hpp',
-  subdir : 'constellation/core'
+  subdir: 'constellation/core',
 )
 
 subdir('protocols/CHIRP')
