@@ -31,7 +31,7 @@ namespace constellation::chirp {
         asio::ip::address address;
 
         /** Convert the content of the broadcast message to a string */
-        CHIRP_API std::string content_to_string() const;
+        CNSTLN_API std::string content_to_string() const;
     };
 
     /** Broadcast receiver for incoming CHIRP broadcasts on :cpp:var:`CHIRP_PORT` */
@@ -43,7 +43,7 @@ namespace constellation::chirp {
          * @param any_address Address for incoming broadcasts (e.g. :cpp:func:`asio::ip::address_v4::any()`)
          * @param port Port for outgoing broadcasts
          */
-        CHIRP_API BroadcastRecv(const asio::ip::address& any_address, asio::ip::port_type port);
+        CNSTLN_API BroadcastRecv(const asio::ip::address& any_address, asio::ip::port_type port);
 
         /**
          * Construct broadcast receiver using human readable IP address
@@ -51,14 +51,14 @@ namespace constellation::chirp {
          * @param any_ip String containing the IP for incoming broadcasts (e.g. `0.0.0.0`)
          * @param port Port for outgoing broadcasts
          */
-        CHIRP_API BroadcastRecv(std::string_view any_ip, asio::ip::port_type port);
+        CNSTLN_API BroadcastRecv(std::string_view any_ip, asio::ip::port_type port);
 
         /**
          * Receive broadcast message (blocking)
          *
          * @return Received broadcast message
          */
-        CHIRP_API BroadcastMessage RecvBroadcast();
+        CNSTLN_API BroadcastMessage RecvBroadcast();
 
         /**
          * Receive broadcast message (asynchronously)
@@ -66,7 +66,7 @@ namespace constellation::chirp {
          * @param timeout Duration for which to block function call
          * @return Broadcast message if received
          */
-        CHIRP_API std::optional<BroadcastMessage> AsyncRecvBroadcast(std::chrono::steady_clock::duration timeout);
+        CNSTLN_API std::optional<BroadcastMessage> AsyncRecvBroadcast(std::chrono::steady_clock::duration timeout);
 
     private:
         asio::io_context io_context_;

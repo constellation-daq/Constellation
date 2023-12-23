@@ -30,16 +30,16 @@ namespace constellation::chirp {
          *
          * @param string String from which to create the MD5 hash
          */
-        CHIRP_API MD5Hash(std::string_view string);
+        CNSTLN_API MD5Hash(std::string_view string);
 
         /**
          * Convert MD5 hash to an human readable string
          *
          * @returns String containing a lowercase hex representation of the MD5 hash
          */
-        CHIRP_API std::string to_string() const;
+        CNSTLN_API std::string to_string() const;
 
-        CHIRP_API bool operator<(const MD5Hash& other) const;
+        CNSTLN_API bool operator<(const MD5Hash& other) const;
     };
 
     /** CHIRP message assembled to array of bytes */
@@ -57,7 +57,7 @@ namespace constellation::chirp {
          * @param service_id
          * @param port
          */
-        CHIRP_API Message(MessageType type, MD5Hash group_id, MD5Hash host_id, ServiceIdentifier service_id, Port port);
+        CNSTLN_API Message(MessageType type, MD5Hash group_id, MD5Hash host_id, ServiceIdentifier service_id, Port port);
 
         /**
          * Construct new CHIRP message using strings for group and host ID
@@ -68,7 +68,7 @@ namespace constellation::chirp {
          * @param service_id
          * @param port
          */
-        CHIRP_API
+        CNSTLN_API
         Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service_id, Port port);
 
         /**
@@ -78,7 +78,7 @@ namespace constellation::chirp {
          * @throws :cpp:class:`DecodeError` If the message header does not match the CHIRP specification, or if the message
          * has an unknown :cpp:enum:`MessageType` or :cpp:enum:`ServiceIdentifier`
          */
-        CHIRP_API Message(std::span<const std::uint8_t> assembled_message);
+        CNSTLN_API Message(std::span<const std::uint8_t> assembled_message);
 
         /** Return the message type */
         constexpr MessageType GetType() const { return type_; }
@@ -96,7 +96,7 @@ namespace constellation::chirp {
         constexpr Port GetPort() const { return port_; }
 
         /** Assemble message to byte array */
-        CHIRP_API AssembledMessage Assemble() const;
+        CNSTLN_API AssembledMessage Assemble() const;
 
     private:
         MessageType type_;

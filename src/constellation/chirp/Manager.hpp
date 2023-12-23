@@ -34,7 +34,7 @@ namespace constellation::chirp {
         /** Port of the offered service */
         Port port;
 
-        CHIRP_API bool operator<(const RegisteredService& other) const;
+        CNSTLN_API bool operator<(const RegisteredService& other) const;
     };
 
     /** A service discovered by the :cpp:class:`Manager` */
@@ -51,7 +51,7 @@ namespace constellation::chirp {
         /** Port of the discovered service */
         Port port;
 
-        CHIRP_API bool operator<(const DiscoveredService& other) const;
+        CNSTLN_API bool operator<(const DiscoveredService& other) const;
     };
 
     /**
@@ -82,7 +82,7 @@ namespace constellation::chirp {
          */
         std::any user_data;
 
-        CHIRP_API bool operator<(const DiscoverCallbackEntry& other) const;
+        CNSTLN_API bool operator<(const DiscoverCallbackEntry& other) const;
     };
 
     /** Manager for CHIRP broadcasting and receiving */
@@ -94,10 +94,10 @@ namespace constellation::chirp {
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
-        CHIRP_API Manager(const asio::ip::address& brd_address,
-                          const asio::ip::address& any_address,
-                          std::string_view group_name,
-                          std::string_view host_name);
+        CNSTLN_API Manager(const asio::ip::address& brd_address,
+                           const asio::ip::address& any_address,
+                           std::string_view group_name,
+                           std::string_view host_name);
 
         /**
          * @param brd_ip Broadcast IP for outgoing broadcast messages
@@ -105,10 +105,10 @@ namespace constellation::chirp {
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
-        CHIRP_API
+        CNSTLN_API
         Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name);
 
-        CHIRP_API virtual ~Manager();
+        CNSTLN_API virtual ~Manager();
 
         // No copy/move constructor/assignment
         Manager(Manager& other) = delete;
@@ -131,7 +131,7 @@ namespace constellation::chirp {
         constexpr MD5Hash GetHostID() const { return host_id_; }
 
         /** Start the background thread of the manager */
-        CHIRP_API void Start();
+        CNSTLN_API void Start();
 
         /**
          * Register a service offered by the host in the manager
@@ -144,7 +144,7 @@ namespace constellation::chirp {
          * @retval true if the service was registered
          * @retval false if the service was already registered
          */
-        CHIRP_API bool RegisterService(ServiceIdentifier service_id, Port port);
+        CNSTLN_API bool RegisterService(ServiceIdentifier service_id, Port port);
 
         /**
          * Unregister a previously registered service offered by the host in the manager
@@ -157,21 +157,21 @@ namespace constellation::chirp {
          * @retval true If the service was unregistered
          * @retval false If the service was never registered
          */
-        CHIRP_API bool UnregisterService(ServiceIdentifier service_id, Port port);
+        CNSTLN_API bool UnregisterService(ServiceIdentifier service_id, Port port);
 
         /**
          * Unregisters all offered services registered in the manager
          *
          * Equivalent to calling :cpp:func:`UnregisterService` for every registered service.
          */
-        CHIRP_API void UnregisterServices();
+        CNSTLN_API void UnregisterServices();
 
         /**
          * Get the list of services currently registered in the manager
          *
          * @returns Set with all currently registered services
          */
-        CHIRP_API std::set<RegisteredService> GetRegisteredServices();
+        CNSTLN_API std::set<RegisteredService> GetRegisteredServices();
 
         /**
          * Register a user callback for newly discovered or departing services
@@ -184,9 +184,9 @@ namespace constellation::chirp {
          * @retval true If the callback/service/user_data combination was registered
          * @retval false If the callback/service/user_data combination was already registered
          */
-        CHIRP_API bool RegisterDiscoverCallback(DiscoverCallback* callback,
-                                                ServiceIdentifier service_id,
-                                                std::any user_data);
+        CNSTLN_API bool RegisterDiscoverCallback(DiscoverCallback* callback,
+                                                 ServiceIdentifier service_id,
+                                                 std::any user_data);
 
         /**
          * Unegister a previously registered callback for newly discovered or departing services
@@ -196,24 +196,24 @@ namespace constellation::chirp {
          * @retval true If the callback entry was unregistered
          * @retval false If the callback entry was never registered
          */
-        CHIRP_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
+        CNSTLN_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
 
         /**
          * Unregisters all discovery callbacks registered in the manager
          *
          * Equivalent to calling :cpp:func:`UnregisterDiscoverCallback` for every discovery callback.
          */
-        CHIRP_API void UnregisterDiscoverCallbacks();
+        CNSTLN_API void UnregisterDiscoverCallbacks();
 
         /** Forgets all previously discovered services */
-        CHIRP_API void ForgetDiscoveredServices();
+        CNSTLN_API void ForgetDiscoveredServices();
 
         /**
          * Returns list of all discovered services
          *
          * @returns Vector with all discovered services
          */
-        CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices();
+        CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices();
 
         /**
          * Returns list of all discovered services with a given service identifier
@@ -221,7 +221,7 @@ namespace constellation::chirp {
          * @param service_id Service identifier for discovered services that should be listed
          * @returns Vector with all discovered services with the given service identifier
          */
-        CHIRP_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service_id);
+        CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service_id);
 
         /**
          * Send a discovery request for a specific service identifier
@@ -233,7 +233,7 @@ namespace constellation::chirp {
          *
          * @param service_id Service identifier to send a request for
          */
-        CHIRP_API void SendRequest(ServiceIdentifier service_id);
+        CNSTLN_API void SendRequest(ServiceIdentifier service_id);
 
     private:
         /**

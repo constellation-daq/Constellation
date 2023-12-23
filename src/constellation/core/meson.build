@@ -10,7 +10,7 @@ core_lib = library('ConstellationCore',
   include_directories: constellation_inc,
   dependencies: [msgpackc_cxx_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: ['-DCHIRP_BUILDLIB=1'],
+  cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
 )
 
