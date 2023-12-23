@@ -13,5 +13,12 @@ if impl_cpp
   subdir('src/constellation')
 endif
 
+# Python implementation
+py = import('python').find_installation(required: get_option('impl_py'))
+impl_py = py.found()
+if impl_py
+  subdir('src/pyconstellation')
+endif
+
 # Tests
 subdir('tests')
