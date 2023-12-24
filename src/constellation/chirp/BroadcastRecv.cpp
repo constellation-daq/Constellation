@@ -9,8 +9,6 @@
 
 #include "BroadcastRecv.hpp"
 
-#include "constellation/chirp/protocol_info.hpp"
-
 using namespace constellation::chirp;
 
 constexpr std::size_t MESSAGE_BUFFER = 1024;
@@ -24,15 +22,16 @@ std::string BroadcastMessage::content_to_string() const {
     return ret;
 }
 
-BroadcastRecv::BroadcastRecv(const asio::ip::address& any_address)
-    : endpoint_(any_address, static_cast<asio::ip::port_type>(CHIRP_PORT)), socket_(io_context_, endpoint_.protocol()) {
+BroadcastRecv::BroadcastRecv(const asio::ip::address& any_address, asio::ip::port_type port)
+    : endpoint_(any_address, port), socket_(io_context_, endpoint_.protocol()) {
     // Set reusable address socket option
     socket_.set_option(asio::socket_base::reuse_address(true));
     // Bind socket on receiving side
     socket_.bind(endpoint_);
 }
 
-BroadcastRecv::BroadcastRecv(std::string_view any_ip) : BroadcastRecv(asio::ip::make_address(any_ip)) {}
+BroadcastRecv::BroadcastRecv(std::string_view any_ip, asio::ip::port_type port)
+    : BroadcastRecv(asio::ip::make_address(any_ip), port) {}
 
 BroadcastMessage BroadcastRecv::RecvBroadcast() {
     BroadcastMessage message {};

@@ -7,22 +7,29 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <charconv>
+#include <cstring>
 #include <iostream>
 
 #include <asio.hpp>
 
 #include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
 using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
-    // Specify any address via cmdline
+    // Specify any address and port via cmdline
     asio::ip::address any_address = asio::ip::address_v4::any();
+    asio::ip::port_type port = CHIRP_PORT;
     if(argc >= 2) {
         any_address = asio::ip::make_address(argv[1]);
     }
+    if(argc >= 3) {
+        std::from_chars(argv[2], argv[2] + std::strlen(argv[2]), port);
+    }
 
-    BroadcastRecv receiver {any_address};
+    BroadcastRecv receiver {any_address, port};
 
     while(true) {
         auto message = receiver.RecvBroadcast();

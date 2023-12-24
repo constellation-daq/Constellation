@@ -14,6 +14,7 @@
 
 #include "constellation/chirp/BroadcastRecv.hpp"
 #include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
 using namespace constellation::chirp;
 
@@ -24,7 +25,7 @@ int main(int argc, char* argv[]) {
         any_address = asio::ip::make_address(argv[1]);
     }
 
-    BroadcastRecv receiver {any_address};
+    BroadcastRecv receiver {any_address, CHIRP_PORT};
 
     while(true) {
         // Receive message

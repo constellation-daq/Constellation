@@ -23,8 +23,8 @@ using namespace std::literals::chrono_literals;
 using namespace std::literals::string_literals;
 
 int test_broadcast_send_recv_string() {
-    BroadcastRecv receiver {"0.0.0.0"};
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", 49152};
+    BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -38,8 +38,8 @@ int test_broadcast_send_recv_string() {
 }
 
 int test_broadcast_send_recv_array() {
-    BroadcastRecv receiver {"0.0.0.0"};
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", 49152};
+    BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -53,8 +53,8 @@ int test_broadcast_send_recv_array() {
 }
 
 int test_broadcast_localhost_ip() {
-    BroadcastRecv receiver {"0.0.0.0"};
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", 49152};
+    BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -68,8 +68,8 @@ int test_broadcast_localhost_ip() {
 }
 
 int test_broadcast_send_async_recv() {
-    BroadcastRecv receiver {"0.0.0.0"};
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", 49152};
+    BroadcastSend sender {"0.0.0.0", 49152};
 
     // Try receiving new message
     auto msg_opt_future = std::async(&BroadcastRecv::AsyncRecvBroadcast, &receiver, 10ms);
@@ -87,7 +87,7 @@ int test_broadcast_send_async_recv() {
 }
 
 int test_broadcast_async_recv_timeout() {
-    BroadcastRecv receiver {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", 49152};
 
     // Try receiving new message
     auto msg_opt = receiver.AsyncRecvBroadcast(10ms);

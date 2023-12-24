@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "constellation/chirp/exceptions.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 #include "constellation/core/std23.hpp"
 
 using namespace constellation::chirp;
@@ -72,7 +73,8 @@ Manager::Manager(const asio::ip::address& brd_address,
                  const asio::ip::address& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
-    : receiver_(any_address), sender_(brd_address), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)) {}
+    : receiver_(any_address, CHIRP_PORT), sender_(brd_address, CHIRP_PORT), group_id_(MD5Hash(group_name)),
+      host_id_(MD5Hash(host_name)) {}
 
 Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
     : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group_name, host_name) {}

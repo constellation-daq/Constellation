@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         brd_address = asio::ip::make_address(argv[1]);
     }
 
-    BroadcastSend sender {brd_address};
+    BroadcastSend sender {brd_address, CHIRP_PORT};
 
     while(true) {
         std::cout << "-----------------------------------------" << std::endl;
