@@ -292,7 +292,7 @@ int test_manager_send_request() {
     manager.SendRequest(CONTROL);
     // Receive message
     const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = Message(AssembledMessage(raw_msg.content));
+    auto msg_from_manager = Message(raw_msg.content);
     // Check message
     int fails = 0;
     fails += msg_from_manager.GetType() == REQUEST ? 0 : 1;

@@ -9,7 +9,6 @@
 
 #include "Message.hpp"
 
-#include <algorithm>
 #include <utility>
 
 #include "constellation/chirp/exceptions.hpp"
@@ -51,20 +50,17 @@ bool MD5Hash::operator<(const MD5Hash& other) const {
     return false;
 }
 
-AssembledMessage::AssembledMessage(const std::vector<std::uint8_t>& byte_array) : array() {
-    if(byte_array.size() != CHIRP_MESSAGE_LENGTH) {
-        throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
-    }
-    std::copy_n(byte_array.cbegin(), CHIRP_MESSAGE_LENGTH, this->begin());
-}
-
 Message::Message(MessageType type, MD5Hash group_id, MD5Hash host_id, ServiceIdentifier service_id, Port port)
     : type_(type), group_id_(group_id), host_id_(host_id), service_id_(service_id), port_(port) {}
 
 Message::Message(MessageType type, std::string_view group, std::string_view host, ServiceIdentifier service_id, Port port)
     : Message(type, MD5Hash(group), MD5Hash(host), service_id, port) {}
 
-Message::Message(const AssembledMessage& assembled_message) : group_id_(), host_id_() {
+Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(), host_id_() {
+    // Check size
+    if(assembled_message.size() != CHIRP_MESSAGE_LENGTH) {
+        throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
+    }
     // Header
     if(assembled_message[0] != 'C' || assembled_message[1] != 'H' || assembled_message[2] != 'I' ||
        assembled_message[3] != 'R' || assembled_message[4] != 'P' || assembled_message[5] != CHIRP_VERSION) {
@@ -78,11 +74,11 @@ Message::Message(const AssembledMessage& assembled_message) : group_id_(), host_
     type_ = static_cast<MessageType>(assembled_message[6]);
     // Group ID
     for(std::uint8_t n = 0; n < 16; ++n) {
-        group_id_.at(n) = assembled_message.at(7 + n);
+        group_id_.at(n) = assembled_message[7 + n];
     }
     // Host ID
     for(std::uint8_t n = 0; n < 16; ++n) {
-        host_id_.at(n) = assembled_message.at(23 + n);
+        host_id_.at(n) = assembled_message[23 + n];
     }
     // Service Identifier
     if(assembled_message[39] < std::to_underlying(ServiceIdentifier::CONTROL) ||

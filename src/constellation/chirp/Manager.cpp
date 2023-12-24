@@ -201,7 +201,7 @@ void Manager::Run(const std::stop_token& stop_token) {
             }
 
             const auto& raw_msg = raw_msg_opt.value();
-            auto chirp_msg = Message(AssembledMessage(raw_msg.content));
+            auto chirp_msg = Message(raw_msg.content);
 
             if(chirp_msg.GetGroupID() != group_id_) {
                 // Broadcast from different group, ignore

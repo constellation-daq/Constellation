@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         auto brd_msg = receiver.RecvBroadcast();
 
         // Build message from message
-        auto chirp_msg = Message(AssembledMessage(brd_msg.content));
+        auto chirp_msg = Message(brd_msg.content);
 
         std::cout << "-----------------------------------------" << std::endl;
         std::cout << "Type:    " << magic_enum::enum_name(chirp_msg.GetType()) << std::endl;
