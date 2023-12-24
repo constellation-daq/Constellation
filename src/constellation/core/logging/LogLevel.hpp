@@ -9,7 +9,7 @@
 
 #pragma once
 
-namespace Constellation {
+namespace constellation {
     // log levels, allows direct casting to spdlog::level::level_enum
     enum class LogLevel : int {
         TRACE = 0,
@@ -20,4 +20,4 @@ namespace Constellation {
         CRITICAL = 5,
         OFF = 6,
     };
-} // namespace Constellation
+} // namespace constellation

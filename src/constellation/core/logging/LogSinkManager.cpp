@@ -9,7 +9,10 @@
 
 #include "LogSinkManager.hpp"
 
-using namespace Constellation;
+#include <string_view>
+
+using namespace constellation;
+using namespace std::literals::string_view_literals;
 
 LogSinkManager& LogSinkManager::getInstance() {
     static LogSinkManager instance {};

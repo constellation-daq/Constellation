@@ -17,7 +17,7 @@
 
 #include "constellation/core/logging/zmq_sink.hpp"
 
-namespace Constellation {
+namespace constellation {
     // Global manager for sinks
     class LogSinkManager {
     public:
@@ -43,4 +43,4 @@ namespace Constellation {
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<zmq_sink_mt> zmq_sink_;
     };
-} // namespace Constellation
+} // namespace constellation

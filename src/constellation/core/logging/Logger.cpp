@@ -11,7 +11,7 @@
 
 #include "constellation/core/logging/LoggerImplementation.hpp"
 
-using namespace Constellation;
+using namespace constellation;
 
 Logger::Logger(std::string topic)
     : logger_impl_(std::make_unique<LoggerImplementation>(std::move(topic))), os_level_(LogLevel::OFF) {}

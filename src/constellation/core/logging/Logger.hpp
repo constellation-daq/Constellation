@@ -15,7 +15,7 @@
 #include "constellation/core/logging/LogLevel.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
 
-namespace Constellation {
+namespace constellation {
     // Forward declaration of spdlog implementation class
     class LoggerImplementation;
 
@@ -45,4 +45,4 @@ namespace Constellation {
         std::ostringstream os_;
     };
 
-} // namespace Constellation
+} // namespace constellation

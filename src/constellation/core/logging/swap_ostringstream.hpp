@@ -11,7 +11,7 @@
 
 #include <sstream>
 
-namespace Constellation {
+namespace constellation {
     // Forward declaration of Logger class
     class Logger;
 
@@ -25,4 +25,4 @@ namespace Constellation {
     private:
         Logger* logger_;
     };
-} // namespace Constellation
+} // namespace constellation

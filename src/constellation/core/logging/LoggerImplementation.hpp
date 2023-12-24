@@ -17,7 +17,7 @@
 #include "constellation/core/logging/LogLevel.hpp"
 #include "constellation/core/logging/LogSinkManager.hpp"
 
-namespace Constellation {
+namespace constellation {
     // Actual Logger implementation
     class LoggerImplementation {
     public:
@@ -54,4 +54,4 @@ namespace Constellation {
         std::string topic_;
         std::shared_ptr<spdlog::logger> spdlog_logger_;
     };
-} // namespace Constellation
+} // namespace constellation

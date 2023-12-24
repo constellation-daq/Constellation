@@ -26,7 +26,7 @@
 #include "constellation/core/message/Header.hpp"
 #include "LogLevel.hpp"
 
-namespace Constellation {
+namespace constellation {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
     public:
         zmq_sink() {
@@ -37,13 +37,13 @@ namespace Constellation {
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
             // Send topic
-            auto topic = "LOG/" + std::string(magic_enum::enum_name(static_cast<Constellation::LogLevel>(msg.level))) + "/" +
+            auto topic = "LOG/" + std::string(magic_enum::enum_name(static_cast<LogLevel>(msg.level))) + "/" +
                          std::string(msg.logger_name.data(), msg.logger_name.size());
             std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
             // Pack and send message header
-            auto msghead = Message::Header(asio::ip::host_name(), msg.time);
+            auto msghead = message::CMDP1Header(asio::ip::host_name(), msg.time);
             const auto sbuf = msghead.assemble();
             zmq::message_t header_frame {sbuf.data(), sbuf.size()};
             publisher_.send(header_frame, zmq::send_flags::sndmore);
@@ -79,4 +79,4 @@ namespace Constellation {
     // TODO: mt even needed? ZeroMQ should be thread safe...
     using zmq_sink_mt = zmq_sink<std::mutex>;
     using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
-} // namespace Constellation
+} // namespace constellation
