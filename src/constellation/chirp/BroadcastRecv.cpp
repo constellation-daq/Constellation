@@ -11,7 +11,7 @@
 
 #include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 constexpr std::size_t MESSAGE_BUFFER = 1024;
 

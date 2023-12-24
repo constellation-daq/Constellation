@@ -14,7 +14,7 @@
 
 #include "constellation/chirp/BroadcastSend.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify brd address via cmdline

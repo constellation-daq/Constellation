@@ -13,7 +13,7 @@
 
 #include "constellation/chirp/BroadcastRecv.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify any address via cmdline

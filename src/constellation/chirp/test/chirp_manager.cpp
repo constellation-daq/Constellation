@@ -24,7 +24,7 @@
 #include "constellation/chirp/Message.hpp"
 #include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 

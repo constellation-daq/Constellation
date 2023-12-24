@@ -15,7 +15,7 @@
 #include "constellation/chirp/exceptions.hpp"
 #include "constellation/chirp/Message.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int test_message_md5_hash() {
     int fails = 0;

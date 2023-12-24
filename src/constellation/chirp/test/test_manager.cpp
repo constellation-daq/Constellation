@@ -21,7 +21,7 @@
 #include "constellation/chirp/Manager.hpp"
 #include "constellation/chirp/Message.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 
 int test_manager_sort_registered_service() {

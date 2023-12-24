@@ -19,7 +19,7 @@
 #include "constellation/chirp/exceptions.hpp"
 #include "constellation/core/std23.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {

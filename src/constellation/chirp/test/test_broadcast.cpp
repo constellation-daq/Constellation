@@ -18,7 +18,7 @@
 #include "constellation/chirp/BroadcastRecv.hpp"
 #include "constellation/chirp/BroadcastSend.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 using namespace std::literals::string_literals;
 

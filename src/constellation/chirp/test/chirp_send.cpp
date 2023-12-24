@@ -18,7 +18,7 @@
 #include "constellation/chirp/Message.hpp"
 #include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline

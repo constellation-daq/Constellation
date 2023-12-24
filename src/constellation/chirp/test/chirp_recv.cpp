@@ -15,7 +15,7 @@
 #include "constellation/chirp/BroadcastRecv.hpp"
 #include "constellation/chirp/Message.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify any address via cmdline

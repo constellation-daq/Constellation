@@ -16,7 +16,7 @@
 #include "constellation/chirp/external/md5.h"
 #include "constellation/core/std23.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 MD5Hash::MD5Hash(std::string_view string) : array() {
     auto hasher = Chocobo1::MD5();

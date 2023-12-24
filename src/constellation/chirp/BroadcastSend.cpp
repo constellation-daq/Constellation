@@ -11,7 +11,7 @@
 
 #include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 BroadcastSend::BroadcastSend(const asio::ip::address& brd_address)
     : endpoint_(brd_address, static_cast<asio::ip::port_type>(CHIRP_PORT)), socket_(io_context_, endpoint_.protocol()) {
