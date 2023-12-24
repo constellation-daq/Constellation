@@ -18,7 +18,7 @@
 
 #include "constellation/chirp/exceptions.hpp"
 #include "constellation/chirp/protocol_info.hpp"
-#include "constellation/core/std23.hpp"
+#include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;

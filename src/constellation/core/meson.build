@@ -16,7 +16,6 @@ core_lib = library('ConstellationCore',
 
 install_headers(
   'config.hpp',
-  'std23.hpp',
   subdir: 'constellation/core',
 )
 
@@ -28,6 +27,7 @@ install_headers(
 
 install_headers(
   'utils/dictionary.hpp',
+  'utils/std23.hpp',
   'utils/stdbyte_casts.hpp',
   subdir: 'constellation/core/utils',
 )
