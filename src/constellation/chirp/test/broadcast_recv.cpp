@@ -11,7 +11,7 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
+#include "constellation/chirp/BroadcastRecv.hpp"
 
 using namespace cnstln::CHIRP;
 

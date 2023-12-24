@@ -2,5 +2,5 @@ Registered Service
 ==================
 
 .. cpp:autostruct:: RegisteredService
-   :file: src/constellation/protocols/CHIRP/Manager.hpp
+   :file: src/constellation/chirp/Manager.hpp
    :members:

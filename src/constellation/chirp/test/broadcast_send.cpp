@@ -12,7 +12,7 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/chirp/BroadcastSend.hpp"
 
 using namespace cnstln::CHIRP;
 

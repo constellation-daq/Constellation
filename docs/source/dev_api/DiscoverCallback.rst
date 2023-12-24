@@ -2,8 +2,8 @@ Discover Callback
 =================
 
 .. cpp:autotype:: DiscoverCallback
-   :file: src/constellation/protocols/CHIRP/Manager.hpp
+   :file: src/constellation/chirp/Manager.hpp
 
 .. cpp:autostruct:: DiscoverCallbackEntry
-   :file: src/constellation/protocols/CHIRP/Manager.hpp
+   :file: src/constellation/chirp/Manager.hpp
    :members:

@@ -15,8 +15,8 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
+#include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/BroadcastSend.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;

@@ -9,7 +9,7 @@
 
 #include "BroadcastRecv.hpp"
 
-#include "constellation/protocols/CHIRP/protocol_info.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 

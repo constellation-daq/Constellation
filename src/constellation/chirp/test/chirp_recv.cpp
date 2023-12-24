@@ -12,8 +12,8 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/Message.hpp"
 
 using namespace cnstln::CHIRP;
 

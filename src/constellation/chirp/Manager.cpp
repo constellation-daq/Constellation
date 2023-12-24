@@ -16,8 +16,8 @@
 #include <iterator>
 #include <utility>
 
+#include "constellation/chirp/exceptions.hpp"
 #include "constellation/core/std23.hpp"
-#include "constellation/protocols/CHIRP/exceptions.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::chrono_literals;

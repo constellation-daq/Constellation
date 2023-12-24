@@ -20,9 +20,9 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/protocols/CHIRP/Manager.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
-#include "constellation/protocols/CHIRP/protocol_info.hpp"
+#include "constellation/chirp/Manager.hpp"
+#include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
 using namespace cnstln::CHIRP;
 using namespace std::literals::string_literals;

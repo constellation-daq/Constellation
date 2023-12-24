@@ -12,9 +12,9 @@
 #include <algorithm>
 #include <utility>
 
+#include "constellation/chirp/exceptions.hpp"
+#include "constellation/chirp/external/md5.h"
 #include "constellation/core/std23.hpp"
-#include "constellation/protocols/CHIRP/exceptions.hpp"
-#include "constellation/protocols/CHIRP/external/md5.h"
 
 using namespace cnstln::CHIRP;
 
