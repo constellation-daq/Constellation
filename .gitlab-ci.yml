@@ -50,7 +50,10 @@ stages:
     paths:
       - subprojects/packagecache/
       - subprojects/asio-*/
+      - subprojects/cppzmq-*/
       - subprojects/magic_enum-*/
+      - subprojects/msgpack-cxx-*/
+      - subprojects/spdlog-*/
 
 # build stage
 
