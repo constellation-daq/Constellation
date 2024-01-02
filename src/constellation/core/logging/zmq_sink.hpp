@@ -54,7 +54,7 @@ namespace constellation {
 
             // Add source and thread information only at TRACE level:
             if(msg.level <= spdlog::level::trace) {
-                payload["thread"] = msg.thread_id;
+                payload["thread"] = static_cast<std::int64_t>(msg.thread_id);
                 // Add log source if not empty
                 if(!msg.source.empty()) {
                     payload["filename"] = msg.source.filename;
