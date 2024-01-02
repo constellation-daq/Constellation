@@ -9,6 +9,7 @@
 
 #include "Message.hpp"
 
+#include <cstring>
 #include <utility>
 
 #include "constellation/chirp/exceptions.hpp"
@@ -62,8 +63,7 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
         throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
     // Header
-    if(assembled_message[0] != 'C' || assembled_message[1] != 'H' || assembled_message[2] != 'I' ||
-       assembled_message[3] != 'R' || assembled_message[4] != 'P' || assembled_message[5] != CHIRP_VERSION) {
+    if(std::memcmp(assembled_message.data(), CHIRP_VERSION.data(), 6) != 0) {
         throw DecodeError("Not a CHIRP v1 broadcast");
     }
     // Message Type
@@ -94,12 +94,7 @@ AssembledMessage Message::Assemble() const {
     AssembledMessage ret {};
 
     // Header
-    ret[0] = 'C';
-    ret[1] = 'H';
-    ret[2] = 'I';
-    ret[3] = 'R';
-    ret[4] = 'P';
-    ret[5] = CHIRP_VERSION;
+    std::memcpy(ret.data(), CHIRP_VERSION.data(), 6);
     // Message Type
     ret[6] = std::to_underlying(type_);
     // Group Hash

@@ -22,7 +22,7 @@ namespace constellation::chirp {
     using Port = std::uint16_t;
 
     /** Version of CHIRP protocol */
-    constexpr std::uint8_t CHIRP_VERSION = '\x01';
+    constexpr std::string CHIRP_VERSION = "CHIRP\x01";
 
     /** Port number of the CHIRP protocol */
     constexpr Port CHIRP_PORT = 7123;
