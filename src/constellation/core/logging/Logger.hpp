@@ -12,37 +12,64 @@
 #include <memory>
 #include <string>
 
+#include <spdlog/spdlog.h>
+
 #include "constellation/core/logging/LogLevel.hpp"
+#include "constellation/core/logging/LogSinkManager.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
 
 namespace constellation {
-    // Forward declaration of spdlog implementation class
-    class LoggerImplementation;
-
-    // Logger class
+    // Actual Logger implementation
     class Logger {
     public:
-        Logger(std::string topic);
+        Logger(std::string topic) : os_level_(LogLevel::OFF), topic_(std::move(topic)) {
+            // Create logger from global sinks
+            spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
+        }
 
-        void setConsoleLogLevel(LogLevel level);
+        static void setConsoleLogLevel(LogLevel level) {
+            // The logger itself forwards all debug messages to sinks by default,
+            // console output controlled by the corresponding sink
+            LogSinkManager::getInstance().getConsoleSink()->set_level(static_cast<spdlog::level::level_enum>(level));
+        }
 
-        // Enable backtrace and sending trace messages over ZeroMQ
-        void enableTrace(bool enable = true);
+        // Enables backtrace and enables TRACE messages over ZeroMQ sink
+        void enableTrace(bool enable = true) {
+            if(enable) {
+                spdlog_logger_->set_level(spdlog::level::level_enum::trace);
+                spdlog_logger_->enable_backtrace(BACKTRACE_MESSAGES);
+            } else {
+                spdlog_logger_->set_level(spdlog::level::level_enum::debug);
+                spdlog_logger_->disable_backtrace();
+            }
+        }
 
-        bool shouldLog(LogLevel level);
+        bool shouldLog(LogLevel level) { return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level)); }
 
         swap_ostringstream getStream(LogLevel level) {
             os_level_ = level;
             return swap_ostringstream(this);
         }
 
+        void log(LogLevel level, const std::string& message) {
+            spdlog_logger_->log(static_cast<spdlog::level::level_enum>(level), message);
+        }
+
     private:
         friend swap_ostringstream;
-        void flush();
+        void flush() {
+            // Actually execute logging, needs string copy since this might be async
+            spdlog_logger_->log(static_cast<spdlog::level::level_enum>(os_level_), os_.str());
 
-        std::shared_ptr<LoggerImplementation> logger_impl_;
+            // Clear the stream by creating a new one
+            os_ = std::ostringstream();
+        }
+
         LogLevel os_level_;
         std::ostringstream os_;
-    };
 
+        static constexpr size_t BACKTRACE_MESSAGES {10};
+        std::string topic_;
+        std::shared_ptr<spdlog::logger> spdlog_logger_;
+    };
 } // namespace constellation

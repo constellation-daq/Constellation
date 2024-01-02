@@ -12,7 +12,7 @@
 #include "constellation/core/logging/LogLevel.hpp"
 
 // Forward enum definitions
-using enum Constellation::LogLevel;
+using enum constellation::LogLevel;
 
 // Nested concatenation to support __LINE__, see https://stackoverflow.com/a/19666216/17555746
 #define CONCAT_IMPL(x, y) x##y

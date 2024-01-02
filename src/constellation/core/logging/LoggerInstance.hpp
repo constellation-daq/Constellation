@@ -13,7 +13,7 @@
 #include "constellation/core/logging/Logger.hpp"
 
 #define GEN_LOGGER_INSTANCE(class_name, logger_topic)                                                                       \
-    class class_name : public Constellation::Logger {                                                                       \
+    class class_name : public constellation::Logger {                                                                       \
     public:                                                                                                                 \
         static class_name& getInstance() {                                                                                  \
             static class_name instance {};                                                                                  \
@@ -23,7 +23,7 @@
         class_name& operator=(class_name const&) = delete;                                                                  \
                                                                                                                             \
     private:                                                                                                                \
-        class_name() : Constellation::Logger(logger_topic) {                                                                \
+        class_name() : constellation::Logger(logger_topic) {                                                                \
             /* debug settings for now*/                                                                                     \
             enableTrace();                                                                                                  \
             setConsoleLogLevel(TRACE);                                                                                      \
