@@ -65,12 +65,10 @@ General behavior:
 For processing incoming messages:
 
 * SHALL receive incoming messages from its CSCP controller peers.
-* SHALL pass the CSCP message to its calling application.
 
 For processing outgoing messages:
 
-* SHALL wait for a single reply message from its calling application.
-* SHALL deliver this message back to the originating CSCP controller host.
+* SHALL deliver a single reply message back to the originating CSCP controller host.
 * SHALL silently discard the reply, or return an error, if the originating CSCP controller host is no longer connected.
 * SHALL not block on sending.
 
