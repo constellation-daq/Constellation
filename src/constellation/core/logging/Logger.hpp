@@ -46,8 +46,9 @@ namespace constellation {
 
         bool shouldLog(LogLevel level) { return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level)); }
 
-        swap_ostringstream getStream(LogLevel level) {
+        swap_ostringstream getStream(spdlog::source_loc src_loc, LogLevel level) {
             os_level_ = level;
+            source_loc_ = src_loc;
             return swap_ostringstream(this);
         }
 
@@ -59,7 +60,7 @@ namespace constellation {
         friend swap_ostringstream;
         void flush() {
             // Actually execute logging, needs string copy since this might be async
-            spdlog_logger_->log(static_cast<spdlog::level::level_enum>(os_level_), os_.str());
+            spdlog_logger_->log(source_loc_, static_cast<spdlog::level::level_enum>(os_level_), os_.str());
 
             // Clear the stream by creating a new one
             os_ = std::ostringstream();
@@ -67,6 +68,7 @@ namespace constellation {
 
         LogLevel os_level_;
         std::ostringstream os_;
+        spdlog::source_loc source_loc_;
 
         static constexpr size_t BACKTRACE_MESSAGES {10};
         std::string topic_;
