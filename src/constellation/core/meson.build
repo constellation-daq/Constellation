@@ -2,15 +2,18 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
+  'logging/Logger.cpp',
+  'logging/LogSinkManager.cpp',
+  'logging/swap_ostringstream.cpp',
   'message/Header.cpp',
 )
 
 core_lib = library('ConstellationCore',
   sources: core_src,
   include_directories: constellation_inc,
-  dependencies: [msgpackc_cxx_dep],
+  dependencies: [asio_dep, spdlog_dep, magic_enum_dep, msgpackc_cxx_dep, cppzmq_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: ['-DCNSTLN_BUILDLIB=1','-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE'],
   install: true,
 )
 
@@ -32,4 +35,7 @@ install_headers(
   subdir: 'constellation/core/utils',
 )
 
-subdir('logging')
+core_dep = declare_dependency(
+  link_with: core_lib,
+  include_directories: constellation_inc,
+)
