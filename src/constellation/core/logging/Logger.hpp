@@ -22,7 +22,7 @@ namespace constellation {
     // Actual Logger implementation
     class Logger {
     public:
-        Logger(std::string topic) : os_level_(LogLevel::OFF), topic_(std::move(topic)) {
+        Logger(std::string topic) : topic_(std::move(topic)) {
             // Create logger from global sinks
             spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
         }
@@ -49,7 +49,7 @@ namespace constellation {
         swap_ostringstream getStream(spdlog::source_loc src_loc, LogLevel level) {
             os_level_ = level;
             source_loc_ = src_loc;
-            return swap_ostringstream(this);
+            return {this};
         }
 
         void log(LogLevel level, const std::string& message) {
@@ -66,7 +66,7 @@ namespace constellation {
             os_ = std::ostringstream();
         }
 
-        LogLevel os_level_;
+        LogLevel os_level_ {LogLevel::OFF};
         std::ostringstream os_;
         spdlog::source_loc source_loc_;
 
