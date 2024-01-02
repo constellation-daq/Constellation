@@ -35,20 +35,20 @@ using enum constellation::LogLevel;
 // Log message
 #define LOG(level)                                                                                                          \
     IFLOG(level)                                                                                                            \
-    LOGGER.getStream(spdlog::source_loc {__FILE__, __LINE__, SPDLOG_FUNCTION}, level)
+    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)
 
 // Log message if condition is met
 #define LOG_IF(level, condition)                                                                                            \
     IFLOG(level)                                                                                                            \
     if(condition)                                                                                                           \
-    LOGGER.getStream(spdlog::source_loc {__FILE__, __LINE__, SPDLOG_FUNCTION}, level)
+    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)
 
 // Log message at most N times
 #define LOG_N(level, count)                                                                                                 \
     GENERATE_LOG_VAR(count);                                                                                                \
     IFLOG(level)                                                                                                            \
     if(GET_LOG_VAR() > 0)                                                                                                   \
-    LOGGER.getStream(spdlog::source_loc {__FILE__, __LINE__, SPDLOG_FUNCTION}, level)                                       \
+    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)                                  \
         << ((--GET_LOG_VAR() == 0) ? "[further messages suppressed] " : "")
 
 // Log message at most one time
