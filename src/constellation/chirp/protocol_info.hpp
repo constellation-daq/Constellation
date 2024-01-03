@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 namespace constellation::chirp {
 
