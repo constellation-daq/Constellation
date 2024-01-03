@@ -20,7 +20,7 @@ namespace constellation {
     public:
         swap_ostringstream(Logger* logger) : logger_(logger) {}
 
-        virtual ~swap_ostringstream();
+        ~swap_ostringstream() override;
 
     private:
         Logger* logger_;
