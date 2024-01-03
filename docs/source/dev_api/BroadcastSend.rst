@@ -2,5 +2,5 @@ Broadcast Sender
 ================
 
 .. cpp:autoclass:: BroadcastSend
-   :file: src/constellation/protocols/CHIRP/BroadcastSend.hpp
+   :file: src/constellation/chirp/BroadcastSend.hpp
    :members:

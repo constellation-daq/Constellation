@@ -2,5 +2,5 @@ Broadcast Receiver
 ==================
 
 .. cpp:autoclass:: BroadcastRecv
-   :file: src/constellation/protocols/CHIRP/BroadcastRecv.hpp
+   :file: src/constellation/chirp/BroadcastRecv.hpp
    :members:

@@ -16,10 +16,11 @@
 #include <iterator>
 #include <utility>
 
+#include "constellation/chirp/exceptions.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 #include "constellation/core/std23.hpp"
-#include "constellation/protocols/CHIRP/exceptions.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {
@@ -72,7 +73,8 @@ Manager::Manager(const asio::ip::address& brd_address,
                  const asio::ip::address& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
-    : receiver_(any_address), sender_(brd_address), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)) {}
+    : receiver_(any_address, CHIRP_PORT), sender_(brd_address, CHIRP_PORT), group_id_(MD5Hash(group_name)),
+      host_id_(MD5Hash(host_name)) {}
 
 Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
     : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group_name, host_name) {}
@@ -199,7 +201,7 @@ void Manager::Run(const std::stop_token& stop_token) {
             }
 
             const auto& raw_msg = raw_msg_opt.value();
-            auto chirp_msg = Message(AssembledMessage(raw_msg.content));
+            auto chirp_msg = Message(raw_msg.content);
 
             if(chirp_msg.GetGroupID() != group_id_) {
                 // Broadcast from different group, ignore

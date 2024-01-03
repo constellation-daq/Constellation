@@ -14,11 +14,11 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
-#include "constellation/protocols/CHIRP/protocol_info.hpp"
+#include "constellation/chirp/BroadcastSend.hpp"
+#include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
         brd_address = asio::ip::make_address(argv[1]);
     }
 
-    BroadcastSend sender {brd_address};
+    BroadcastSend sender {brd_address, CHIRP_PORT};
 
     while(true) {
         std::cout << "-----------------------------------------" << std::endl;

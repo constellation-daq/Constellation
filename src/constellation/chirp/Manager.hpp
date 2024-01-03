@@ -18,13 +18,13 @@
 
 #include <asio.hpp>
 
+#include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/BroadcastSend.hpp"
+#include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 #include "constellation/core/config.hpp"
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
-#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
-namespace cnstln::CHIRP {
+namespace constellation::chirp {
 
     /** A service offered by the host and announced by the :cpp:class:`Manager` */
     struct RegisteredService {
@@ -283,4 +283,4 @@ namespace cnstln::CHIRP {
         std::jthread run_thread_;
     };
 
-} // namespace cnstln::CHIRP
+} // namespace constellation::chirp

@@ -16,12 +16,13 @@
 
 #include <asio.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
-#include "constellation/protocols/CHIRP/BroadcastSend.hpp"
-#include "constellation/protocols/CHIRP/Manager.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/BroadcastSend.hpp"
+#include "constellation/chirp/Manager.hpp"
+#include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 
 int test_manager_sort_registered_service() {
@@ -139,7 +140,7 @@ int test_manager_async_timeout() {
 }
 
 int test_manager_ignore_other_group() {
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
 
@@ -150,7 +151,7 @@ int test_manager_ignore_other_group() {
 }
 
 int test_manager_ignore_self() {
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
 
@@ -281,7 +282,7 @@ int test_manager_callbacks() {
 
 int test_manager_send_request() {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastRecv receiver {"0.0.0.0"};
+    BroadcastRecv receiver {"0.0.0.0", CHIRP_PORT};
     // Note: it seems we have to construct receiver after manager, else we do not receive messages
     // Wwhy? we can only have one working recv binding to the same socket per process unfortunately :/
 
@@ -291,7 +292,7 @@ int test_manager_send_request() {
     manager.SendRequest(CONTROL);
     // Receive message
     const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = Message(AssembledMessage(raw_msg.content));
+    auto msg_from_manager = Message(raw_msg.content);
     // Check message
     int fails = 0;
     fails += msg_from_manager.GetType() == REQUEST ? 0 : 1;
@@ -302,7 +303,7 @@ int test_manager_send_request() {
 
 int test_manager_recv_request() {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
 
     // Register service
@@ -321,7 +322,7 @@ int test_manager_recv_request() {
 }
 
 int test_manager_decode_error() {
-    BroadcastSend sender {"0.0.0.0"};
+    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
 

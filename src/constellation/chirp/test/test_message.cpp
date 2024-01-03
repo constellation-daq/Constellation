@@ -12,10 +12,10 @@
 #include <iostream>
 #include <vector>
 
-#include "constellation/protocols/CHIRP/exceptions.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/chirp/exceptions.hpp"
+#include "constellation/chirp/Message.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int test_message_md5_hash() {
     int fails = 0;
@@ -39,25 +39,6 @@ int test_message_md5_sort() {
     return fails == 0 ? 0 : 1;
 }
 
-int test_message_assemble() {
-    std::vector<std::uint8_t> msg_data {};
-    // Success on correct size
-    msg_data.resize(CHIRP_MESSAGE_LENGTH);
-    AssembledMessage {msg_data};
-    // Exception on incorrect size
-    msg_data.resize(CHIRP_MESSAGE_LENGTH + 1);
-    int ret = 1;
-    try {
-        AssembledMessage {msg_data};
-    } catch(const DecodeError& error) {
-        const auto error_what_expected = "Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes";
-        if(std::strcmp(error.what(), error_what_expected.c_str()) == 0) {
-            ret = 0;
-        }
-    }
-    return ret;
-}
-
 int test_message_reconstructed() {
     auto msg = Message(OFFER, "group", "host", CONTROL, 47890);
     auto asm_msg = msg.Assemble();
@@ -69,6 +50,21 @@ int test_message_reconstructed() {
     fails += msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier() ? 0 : 1;
     fails += msg.GetPort() == msg_reconstructed.GetPort() ? 0 : 1;
     return fails == 0 ? 0 : 1;
+}
+
+int test_message_construct_invalid_length() {
+    std::vector<std::uint8_t> msg_data {};
+    msg_data.resize(CHIRP_MESSAGE_LENGTH + 1);
+    int ret = 1;
+    try {
+        Message {msg_data};
+    } catch(const DecodeError& error) {
+        const auto error_what_expected = "Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes";
+        if(std::strcmp(error.what(), error_what_expected.c_str()) == 0) {
+            ret = 0;
+        }
+    }
+    return ret;
 }
 
 int test_message_construct_invalid_chirpv1() {
@@ -130,15 +126,15 @@ int main() {
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
-    // test_message_assemble
-    std::cout << "test_message_assemble...                     " << std::flush;
-    ret_test = test_message_assemble();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
     // test_message_reconstructed
     std::cout << "test_message_reconstructed...                " << std::flush;
     ret_test = test_message_reconstructed();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_message_construct_invalid_length
+    std::cout << "test_message_construct_invalid_length...     " << std::flush;
+    ret_test = test_message_construct_invalid_length();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 

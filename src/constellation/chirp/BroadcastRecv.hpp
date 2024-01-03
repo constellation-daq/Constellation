@@ -20,7 +20,7 @@
 
 #include "constellation/core/config.hpp"
 
-namespace cnstln::CHIRP {
+namespace constellation::chirp {
 
     /** Incoming broadcast message */
     struct BroadcastMessage {
@@ -40,16 +40,18 @@ namespace cnstln::CHIRP {
         /**
          * Construct broadcast receiver
          *
-         * @param any_address Address for incoming broadcasts
+         * @param any_address Address for incoming broadcasts (e.g. :cpp:func:`asio::ip::address_v4::any()`)
+         * @param port Port for outgoing broadcasts
          */
-        CHIRP_API BroadcastRecv(const asio::ip::address& any_address = asio::ip::address_v4::any());
+        CHIRP_API BroadcastRecv(const asio::ip::address& any_address, asio::ip::port_type port);
 
         /**
          * Construct broadcast receiver using human readable IP address
          *
-         * @param any_ip String containing the IP for incoming broadcasts
+         * @param any_ip String containing the IP for incoming broadcasts (e.g. `0.0.0.0`)
+         * @param port Port for outgoing broadcasts
          */
-        CHIRP_API BroadcastRecv(std::string_view any_ip);
+        CHIRP_API BroadcastRecv(std::string_view any_ip, asio::ip::port_type port);
 
         /**
          * Receive broadcast message (blocking)
@@ -72,4 +74,4 @@ namespace cnstln::CHIRP {
         asio::ip::udp::socket socket_;
     };
 
-} // namespace cnstln::CHIRP
+} // namespace constellation::chirp

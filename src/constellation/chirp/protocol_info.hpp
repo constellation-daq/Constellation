@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-namespace cnstln::CHIRP {
+namespace constellation::chirp {
 
     /**
      * Port number for a network connection
@@ -59,4 +59,4 @@ namespace cnstln::CHIRP {
     };
     using enum ServiceIdentifier;
 
-} // namespace cnstln::CHIRP
+} // namespace constellation::chirp

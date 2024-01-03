@@ -24,7 +24,7 @@ install_headers(
   'Manager.hpp',
   'Message.hpp',
   'protocol_info.hpp',
-  subdir: 'constellation/protocols/CHIRP',
+  subdir: 'constellation/chirp',
 )
 
 chirp_dep = declare_dependency(

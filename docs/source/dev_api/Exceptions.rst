@@ -1,4 +1,4 @@
 Exceptions
 ==========
 
-.. cpp:autodoc:: src/constellation/protocols/CHIRP/exceptions.hpp
+.. cpp:autodoc:: src/constellation/chirp/exceptions.hpp

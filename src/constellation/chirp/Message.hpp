@@ -11,14 +11,14 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <string_view>
-#include <vector>
 
+#include "constellation/chirp/protocol_info.hpp"
 #include "constellation/core/config.hpp"
-#include "constellation/protocols/CHIRP/protocol_info.hpp"
 
-namespace cnstln::CHIRP {
+namespace constellation::chirp {
 
     /** MD5 hash stored as array with 16 bytes */
     class MD5Hash : public std::array<std::uint8_t, 16> {
@@ -43,18 +43,7 @@ namespace cnstln::CHIRP {
     };
 
     /** CHIRP message assembled to array of bytes */
-    class AssembledMessage : public std::array<std::uint8_t, CHIRP_MESSAGE_LENGTH> {
-    public:
-        constexpr AssembledMessage() = default;
-
-        /**
-         * Construct message from byte array with arbitrary length
-         *
-         * @param byte_array Reference to byte array from which the message will be copied
-         * @throws :cpp:class:`DecodeError` When the byte array has a different length than :cpp:var:`CHIRP_MESSAGE_LENGTH`
-         */
-        CHIRP_API AssembledMessage(const std::vector<std::uint8_t>& byte_array);
-    };
+    using AssembledMessage = std::array<std::uint8_t, CHIRP_MESSAGE_LENGTH>;
 
     /** CHIRP message */
     class Message {
@@ -85,11 +74,11 @@ namespace cnstln::CHIRP {
         /**
          * Constructor for a CHIRP message from an assembled message
          *
-         * @param assembled_message Reference to assembled message
+         * @param assembled_message View of assembled message
          * @throws :cpp:class:`DecodeError` If the message header does not match the CHIRP specification, or if the message
          * has an unknown :cpp:enum:`MessageType` or :cpp:enum:`ServiceIdentifier`
          */
-        CHIRP_API Message(const AssembledMessage& assembled_message);
+        CHIRP_API Message(std::span<const std::uint8_t> assembled_message);
 
         /** Return the message type */
         constexpr MessageType GetType() const { return type_; }
@@ -117,4 +106,4 @@ namespace cnstln::CHIRP {
         Port port_;
     };
 
-} // namespace cnstln::CHIRP
+} // namespace constellation::chirp

@@ -12,10 +12,11 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/protocols/CHIRP/BroadcastRecv.hpp"
-#include "constellation/protocols/CHIRP/Message.hpp"
+#include "constellation/chirp/BroadcastRecv.hpp"
+#include "constellation/chirp/Message.hpp"
+#include "constellation/chirp/protocol_info.hpp"
 
-using namespace cnstln::CHIRP;
+using namespace constellation::chirp;
 
 int main(int argc, char* argv[]) {
     // Specify any address via cmdline
@@ -24,14 +25,14 @@ int main(int argc, char* argv[]) {
         any_address = asio::ip::make_address(argv[1]);
     }
 
-    BroadcastRecv receiver {any_address};
+    BroadcastRecv receiver {any_address, CHIRP_PORT};
 
     while(true) {
         // Receive message
         auto brd_msg = receiver.RecvBroadcast();
 
         // Build message from message
-        auto chirp_msg = Message(AssembledMessage(brd_msg.content));
+        auto chirp_msg = Message(brd_msg.content);
 
         std::cout << "-----------------------------------------" << std::endl;
         std::cout << "Type:    " << magic_enum::enum_name(chirp_msg.GetType()) << std::endl;
