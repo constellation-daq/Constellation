@@ -338,85 +338,93 @@ int test_manager_decode_error() {
     return 0;
 }
 
+int run_test(int (*fun)()) {
+    try {
+        return (*fun)();
+    } catch(...) {
+        return 1;
+    }
+}
+
 int main() {
     int ret = 0;
     int ret_test = 0;
 
     // test_manager_sort_registered_service
     std::cout << "test_manager_sort_registered_service...      " << std::flush;
-    ret_test = test_manager_sort_registered_service();
+    ret_test = run_test(test_manager_sort_registered_service);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_sort_discovered_service
     std::cout << "test_manager_sort_discovered_service...      " << std::flush;
-    ret_test = test_manager_sort_discovered_service();
+    ret_test = run_test(test_manager_sort_discovered_service);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_sort_discover_callback_entry
     std::cout << "test_manager_sort_discover_callback_entry... " << std::flush;
-    ret_test = test_manager_sort_discover_callback_entry();
+    ret_test = run_test(test_manager_sort_discover_callback_entry);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_register_service_logic
     std::cout << "test_manager_register_service_logic...       " << std::flush;
-    ret_test = test_manager_register_service_logic();
+    ret_test = run_test(test_manager_register_service_logic);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_register_callback_logic
     std::cout << "test_manager_register_callback_logic...      " << std::flush;
-    ret_test = test_manager_register_callback_logic();
+    ret_test = run_test(test_manager_register_callback_logic);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_async_timeout
     std::cout << "test_manager_async_timeout...                " << std::flush;
-    ret_test = test_manager_async_timeout();
+    ret_test = run_test(test_manager_async_timeout);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_ignore_other_group
     std::cout << "test_manager_ignore_other_group...           " << std::flush;
-    ret_test = test_manager_ignore_other_group();
+    ret_test = run_test(test_manager_ignore_other_group);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_ignore_self
     std::cout << "test_manager_ignore_self...                  " << std::flush;
-    ret_test = test_manager_ignore_self();
+    ret_test = run_test(test_manager_ignore_self);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_discovery
     std::cout << "test_manager_discovery...                    " << std::flush;
-    ret_test = test_manager_discovery();
+    ret_test = run_test(test_manager_discovery);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_callbacks
     std::cout << "test_manager_callbacks...                    " << std::flush;
-    ret_test = test_manager_callbacks();
+    ret_test = run_test(test_manager_callbacks);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_send_request
     std::cout << "test_manager_send_request...                 " << std::flush;
-    ret_test = test_manager_send_request();
+    ret_test = run_test(test_manager_send_request);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_recv_request
     std::cout << "test_manager_recv_request...                 " << std::flush;
-    ret_test = test_manager_recv_request();
+    ret_test = run_test(test_manager_recv_request);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
     // test_manager_decode_error
     std::cout << "test_manager_decode_error...                 " << std::flush;
-    ret_test = test_manager_decode_error();
+    ret_test = run_test(test_manager_decode_error);
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
