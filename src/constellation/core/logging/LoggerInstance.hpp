@@ -12,6 +12,8 @@
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 
+// NOLINTBEGIN(bugprone-macro-parentheses)
+
 #define GEN_LOGGER_INSTANCE(class_name, logger_topic)                                                                       \
     class class_name : public constellation::Logger {                                                                       \
     public:                                                                                                                 \
@@ -29,3 +31,5 @@
             setConsoleLogLevel(TRACE);                                                                                      \
         }                                                                                                                   \
     }
+
+// NOLINTEND(bugprone-macro-parentheses)
