@@ -20,6 +20,11 @@ namespace constellation {
     public:
         swap_ostringstream(Logger* logger) : logger_(logger) {}
 
+        swap_ostringstream(swap_ostringstream const&) = delete;
+        swap_ostringstream& operator=(swap_ostringstream const&) = delete;
+        swap_ostringstream(swap_ostringstream&&) = delete;
+        swap_ostringstream& operator=(swap_ostringstream&&) = delete;
+
         ~swap_ostringstream() override;
 
     private:
