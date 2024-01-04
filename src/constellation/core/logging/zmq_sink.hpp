@@ -76,7 +76,7 @@ namespace constellation {
         zmq::socket_t publisher_ {context_, zmq::socket_type::pub};
     };
 
-    // TODO: mt even needed? ZeroMQ should be thread safe...
+    // Note: ZeroMQ sockets are not thread-safe, so the mt version should be used with async loggers
     using zmq_sink_mt = zmq_sink<std::mutex>;
     using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
 } // namespace constellation
