@@ -52,7 +52,7 @@ namespace constellation {
             return {this};
         }
 
-        void log(LogLevel level, const std::string& message) {
+        void log(LogLevel level, std::string_view message) {
             spdlog_logger_->log(static_cast<spdlog::level::level_enum>(level), message);
         }
 
