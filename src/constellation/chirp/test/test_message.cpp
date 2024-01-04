@@ -67,10 +67,25 @@ int test_message_construct_invalid_length() {
     return ret;
 }
 
-int test_message_construct_invalid_chirpv1() {
+int test_message_construct_invalid_identifier() {
     auto msg = Message(REQUEST, "group", "host", HEARTBEAT, 0);
     auto asm_msg = msg.Assemble();
     asm_msg[0] = 'X';
+    int ret = 1;
+    try {
+        Message {asm_msg};
+    } catch(const DecodeError& error) {
+        if(std::strcmp(error.what(), "Not a CHIRP broadcast") == 0) {
+            ret = 0;
+        }
+    }
+    return ret;
+}
+
+int test_message_construct_invalid_chirpv1() {
+    auto msg = Message(REQUEST, "group", "host", HEARTBEAT, 0);
+    auto asm_msg = msg.Assemble();
+    asm_msg[5] = '2';
     int ret = 1;
     try {
         Message {asm_msg};
@@ -135,6 +150,12 @@ int main() {
     // test_message_construct_invalid_length
     std::cout << "test_message_construct_invalid_length...     " << std::flush;
     ret_test = test_message_construct_invalid_length();
+    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
+    ret += ret_test;
+
+    // test_message_construct_invalid_identifier
+    std::cout << "test_message_construct_invalid_identifier... " << std::flush;
+    ret_test = test_message_construct_invalid_identifier();
     std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
     ret += ret_test;
 
