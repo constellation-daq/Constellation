@@ -10,7 +10,7 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
+#include <string_view>
 
 namespace constellation::chirp {
 
@@ -22,8 +22,11 @@ namespace constellation::chirp {
      */
     using Port = std::uint16_t;
 
+    /** Protocol identifier for CHIRP */
+    constexpr std::string_view CHIRP_IDENTIFIER = "CHIRP";
+
     /** Version of CHIRP protocol */
-    constexpr std::string CHIRP_VERSION = "CHIRP\x01";
+    constexpr std::uint8_t CHIRP_VERSION = '\x01';
 
     /** Port number of the CHIRP protocol */
     constexpr Port CHIRP_PORT = 7123;

@@ -9,6 +9,7 @@
 
 #include "Message.hpp"
 
+#include <algorithm>
 #include <cstring>
 #include <utility>
 
@@ -62,8 +63,12 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
     if(assembled_message.size() != CHIRP_MESSAGE_LENGTH) {
         throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
-    // Header
-    if(std::memcmp(assembled_message.data(), CHIRP_VERSION.data(), 6) != 0) {
+    // Check protocol identifier
+    if(std::memcmp(assembled_message.data(), CHIRP_IDENTIFIER.data(), 5) != 0) {
+        throw DecodeError("Not a CHIRP broadcast");
+    }
+    // Check the protocol version
+    if(assembled_message[5] != CHIRP_VERSION) {
         throw DecodeError("Not a CHIRP v1 broadcast");
     }
     // Message Type
@@ -93,8 +98,10 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
 AssembledMessage Message::Assemble() const {
     AssembledMessage ret {};
 
-    // Header
-    std::memcpy(ret.data(), CHIRP_VERSION.data(), 6);
+    // Protocol identifier
+    std::copy_n(CHIRP_IDENTIFIER.begin(), 5, ret.begin());
+    // Protocol version
+    ret[5] = CHIRP_VERSION;
     // Message Type
     ret[6] = std::to_underlying(type_);
     // Group Hash
