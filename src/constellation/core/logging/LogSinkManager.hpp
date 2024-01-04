@@ -25,6 +25,9 @@ namespace constellation {
 
         LogSinkManager(LogSinkManager const&) = delete;
         LogSinkManager& operator=(LogSinkManager const&) = delete;
+        LogSinkManager(LogSinkManager&&) = default;
+        LogSinkManager& operator=(LogSinkManager&&) = default;
+        ~LogSinkManager() = default;
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> getConsoleSink() { return console_sink_; }
 
