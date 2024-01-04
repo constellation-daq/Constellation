@@ -14,6 +14,8 @@
 // Forward enum definitions
 using enum constellation::LogLevel;
 
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
+
 // Nested concatenation to support __LINE__, see https://stackoverflow.com/a/19666216/17555746
 #define CONCAT_IMPL(x, y) x##y
 
@@ -53,3 +55,5 @@ using enum constellation::LogLevel;
 
 // Log message at most one time
 #define LOG_ONCE(level) LOG_N(level, 1)
+
+// NOLINTEND(cppcoreguidelines-macro-usage)

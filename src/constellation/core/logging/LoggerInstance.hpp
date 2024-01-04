@@ -14,6 +14,7 @@
 
 // NOLINTBEGIN(bugprone-macro-parentheses)
 
+// NOLINTNEXTLINE
 #define GEN_LOGGER_INSTANCE(class_name, logger_topic)                                                                       \
     class class_name : public constellation::Logger {                                                                       \
     public:                                                                                                                 \
