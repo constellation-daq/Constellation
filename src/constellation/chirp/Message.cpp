@@ -9,6 +9,7 @@
 
 #include "Message.hpp"
 
+#include <algorithm>
 #include <utility>
 
 #include "constellation/chirp/exceptions.hpp"
@@ -61,9 +62,12 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
     if(assembled_message.size() != CHIRP_MESSAGE_LENGTH) {
         throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
-    // Header
-    if(assembled_message[0] != 'C' || assembled_message[1] != 'H' || assembled_message[2] != 'I' ||
-       assembled_message[3] != 'R' || assembled_message[4] != 'P' || assembled_message[5] != CHIRP_VERSION) {
+    // Check protocol identifier
+    if(!std::equal(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), assembled_message.begin())) {
+        throw DecodeError("Not a CHIRP broadcast");
+    }
+    // Check the protocol version
+    if(assembled_message[5] != CHIRP_VERSION) {
         throw DecodeError("Not a CHIRP v1 broadcast");
     }
     // Message Type
@@ -93,12 +97,9 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
 AssembledMessage Message::Assemble() const {
     AssembledMessage ret {};
 
-    // Header
-    ret[0] = 'C';
-    ret[1] = 'H';
-    ret[2] = 'I';
-    ret[3] = 'R';
-    ret[4] = 'P';
+    // Protocol identifier
+    std::copy(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), ret.begin());
+    // Protocol version
     ret[5] = CHIRP_VERSION;
     // Message Type
     ret[6] = std::to_underlying(type_);

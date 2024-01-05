@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string_view>
 
 namespace constellation::chirp {
 
@@ -20,6 +21,9 @@ namespace constellation::chirp {
      * reserved by the IANA for dynamic allocation or temporary use (see also https://en.wikipedia.org/wiki/Ephemeral_port).
      */
     using Port = std::uint16_t;
+
+    /** Protocol identifier for CHIRP */
+    constexpr std::string_view CHIRP_IDENTIFIER = "CHIRP";
 
     /** Version of CHIRP protocol */
     constexpr std::uint8_t CHIRP_VERSION = '\x01';
