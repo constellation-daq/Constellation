@@ -10,7 +10,6 @@
 #include "Message.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <utility>
 
 #include "constellation/chirp/exceptions.hpp"
@@ -64,7 +63,7 @@ Message::Message(std::span<const std::uint8_t> assembled_message) : group_id_(),
         throw DecodeError("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
     // Check protocol identifier
-    if(std::memcmp(assembled_message.data(), CHIRP_IDENTIFIER.data(), 5) != 0) {
+    if(!std::equal(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), assembled_message.begin())) {
         throw DecodeError("Not a CHIRP broadcast");
     }
     // Check the protocol version
@@ -99,7 +98,7 @@ AssembledMessage Message::Assemble() const {
     AssembledMessage ret {};
 
     // Protocol identifier
-    std::copy_n(CHIRP_IDENTIFIER.begin(), 5, ret.begin());
+    std::copy(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), ret.begin());
     // Protocol version
     ret[5] = CHIRP_VERSION;
     // Message Type
