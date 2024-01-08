@@ -21,7 +21,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/message/Header.hpp"
-#include "LogLevel.hpp"
+#include "level.h"
 
 namespace constellation {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {

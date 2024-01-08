@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "LogSinkManager.hpp"
+#include "SinkManager.hpp"
 
 #include <string_view>
 

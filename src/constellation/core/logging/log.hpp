@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "constellation/core/logging/LogLevel.hpp"
+#include "constellation/core/logging/level.h"
 
 // Forward enum definitions
 using enum constellation::LogLevel;

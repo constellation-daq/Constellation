@@ -36,4 +36,8 @@ namespace constellation {
         CRITICAL = 5,
         OFF = 6,
     };
+
+    constexpr spdlog::level::level_enum to_spdlog_level(LogLevel level) {
+        return static_cast<spdlog::level::level_enum>(level);
+    }
 } // namespace constellation
