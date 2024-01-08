@@ -37,6 +37,6 @@ SinkManager::SinkManager() {
     console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m"sv);      // Cyan
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m"sv);      // Grey
 
-    zmq_sink_ = std::make_shared<zmq_sink_mt>();
-    zmq_sink_->set_level(spdlog::level::trace);
+    cmdp_sink_ = std::make_shared<CMDP1Sink_mt>();
+    cmdp_sink_->set_level(spdlog::level::trace);
 }

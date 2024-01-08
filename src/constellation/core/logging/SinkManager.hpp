@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include "constellation/core/logging/zmq_sink.hpp"
+#include "constellation/core/logging/CMDP1Sink.hpp"
 
 namespace constellation::log {
     // Global manager for sinks
@@ -28,11 +28,11 @@ namespace constellation::log {
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> getConsoleSink() { return console_sink_; }
 
-        std::shared_ptr<zmq_sink_mt> getZeroMQSink() { return zmq_sink_; }
+        std::shared_ptr<CMDP1Sink_mt> getCMDPSink() { return cmdp_sink_; }
 
         std::shared_ptr<spdlog::async_logger> createLogger(std::string logger_name) {
             auto logger = std::make_shared<spdlog::async_logger>(std::move(logger_name),
-                                                                 spdlog::sinks_init_list({console_sink_, zmq_sink_}),
+                                                                 spdlog::sinks_init_list({console_sink_, cmdp_sink_}),
                                                                  spdlog::thread_pool(),
                                                                  spdlog::async_overflow_policy::overrun_oldest);
             logger->set_level(spdlog::level::level_enum::debug);
@@ -43,6 +43,6 @@ namespace constellation::log {
         SinkManager();
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
-        std::shared_ptr<zmq_sink_mt> zmq_sink_;
+        std::shared_ptr<CMDP1Sink_mt> cmdp_sink_;
     };
 } // namespace constellation::log

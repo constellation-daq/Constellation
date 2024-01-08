@@ -24,9 +24,9 @@
 #include "level.h"
 
 namespace constellation::log {
-    template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
+    template <typename Mutex> class CMDP1Sink : public spdlog::sinks::base_sink<Mutex> {
     public:
-        zmq_sink() {
+        CMDP1Sink() {
             // FIXME get ephemeral port, publish port to CHIRP
             publisher_.bind("tcp://*:5556");
         }
@@ -74,6 +74,6 @@ namespace constellation::log {
     };
 
     // Note: ZeroMQ sockets are not thread-safe, so the mt version should be used with async loggers
-    using zmq_sink_mt = zmq_sink<std::mutex>;
-    using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
+    using CMDP1Sink_mt = CMDP1Sink<std::mutex>;
+    using CMDP1Sink_st = CMDP1Sink<spdlog::details::null_mutex>;
 } // namespace constellation::log
