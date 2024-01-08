@@ -12,9 +12,6 @@
 #include <memory>
 #include <string>
 
-#include <spdlog/async.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-
 #include "constellation/core/logging/zmq_sink.hpp"
 
 namespace constellation {

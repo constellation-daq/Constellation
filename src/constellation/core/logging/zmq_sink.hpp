@@ -15,9 +15,6 @@
 #include <string_view>
 #include <variant>
 
-#include "spdlog/details/null_mutex.h"
-#include "spdlog/sinks/base_sink.h"
-
 #include <asio.hpp>
 #include <magic_enum.hpp>
 #include <msgpack.hpp>

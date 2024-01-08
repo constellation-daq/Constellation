@@ -12,8 +12,6 @@
 #include <memory>
 #include <string>
 
-#include <spdlog/spdlog.h>
-
 #include "constellation/core/logging/LogLevel.hpp"
 #include "constellation/core/logging/LogSinkManager.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
