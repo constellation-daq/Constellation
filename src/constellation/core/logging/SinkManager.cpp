@@ -26,6 +26,9 @@ SinkManager::SinkManager() {
 
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
 
+    // Set formatting
+    console_sink_->set_pattern("|%H:%M:%S.%e| %^%8l%$ [%n] %v");
+
     // Set colors of console sink
     console_sink_->set_color(to_spdlog_level(CRITICAL), "\x1B[31;1m"sv); // Bold red
     console_sink_->set_color(to_spdlog_level(STATUS), "\x1B[32;1m"sv);   // Bold green
