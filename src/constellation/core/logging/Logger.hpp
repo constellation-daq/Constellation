@@ -16,7 +16,7 @@
 #include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
 
-namespace constellation {
+namespace constellation::log {
     // Actual Logger implementation
     class Logger {
     public:
@@ -70,4 +70,4 @@ namespace constellation {
         std::string topic_;
         std::shared_ptr<spdlog::logger> spdlog_logger_;
     };
-} // namespace constellation
+} // namespace constellation::log

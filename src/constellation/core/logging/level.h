@@ -25,7 +25,7 @@
 #include "spdlog/details/null_mutex.h"
 #include "spdlog/sinks/base_sink.h"
 
-namespace constellation {
+namespace constellation::log {
     // log levels, allows direct casting to spdlog::level::level_enum
     enum class Level : int {
         TRACE = 0,
@@ -40,4 +40,4 @@ namespace constellation {
     constexpr spdlog::level::level_enum to_spdlog_level(Level level) {
         return static_cast<spdlog::level::level_enum>(level);
     }
-} // namespace constellation
+} // namespace constellation::log

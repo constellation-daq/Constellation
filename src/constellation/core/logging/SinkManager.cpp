@@ -11,7 +11,8 @@
 
 #include <string_view>
 
-using namespace constellation;
+using namespace constellation::log;
+using enum constellation::log::Level;
 using namespace std::literals::string_view_literals;
 
 SinkManager& SinkManager::getInstance() {

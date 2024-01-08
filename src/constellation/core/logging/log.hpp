@@ -12,7 +12,7 @@
 #include "constellation/core/logging/level.h"
 
 // Forward enum definitions
-using enum constellation::LogLevel;
+using enum constellation::log::Level;
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 

@@ -23,7 +23,7 @@
 #include "constellation/core/message/Header.hpp"
 #include "level.h"
 
-namespace constellation {
+namespace constellation::log {
     template <typename Mutex> class zmq_sink : public spdlog::sinks::base_sink<Mutex> {
     public:
         zmq_sink() {
@@ -76,4 +76,4 @@ namespace constellation {
     // Note: ZeroMQ sockets are not thread-safe, so the mt version should be used with async loggers
     using zmq_sink_mt = zmq_sink<std::mutex>;
     using zmq_sink_st = zmq_sink<spdlog::details::null_mutex>;
-} // namespace constellation
+} // namespace constellation::log

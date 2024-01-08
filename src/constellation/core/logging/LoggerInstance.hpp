@@ -16,7 +16,7 @@
 
 // NOLINTNEXTLINE
 #define GEN_LOGGER_INSTANCE(class_name, logger_topic)                                                                       \
-    class class_name : public constellation::Logger {                                                                       \
+    class class_name : public constellation::log::Logger {                                                                  \
     public:                                                                                                                 \
         static class_name& getInstance() {                                                                                  \
             static class_name instance {};                                                                                  \
@@ -26,7 +26,7 @@
         class_name& operator=(class_name const&) = delete;                                                                  \
                                                                                                                             \
     private:                                                                                                                \
-        class_name() : constellation::Logger(logger_topic) {                                                                \
+        class_name() : constellation::log::Logger(logger_topic) {                                                           \
             /* debug settings for now*/                                                                                     \
             enableTrace();                                                                                                  \
             setConsoleLogLevel(TRACE);                                                                                      \

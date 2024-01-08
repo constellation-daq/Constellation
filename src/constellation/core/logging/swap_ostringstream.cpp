@@ -11,7 +11,7 @@
 
 #include "constellation/core/logging/Logger.hpp"
 
-using namespace constellation;
+using namespace constellation::log;
 
 swap_ostringstream::~swap_ostringstream() {
     swap(logger_->os_);
