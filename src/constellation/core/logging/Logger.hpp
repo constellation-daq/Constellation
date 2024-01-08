@@ -22,13 +22,13 @@ namespace constellation {
     public:
         Logger(std::string topic) : topic_(std::move(topic)) {
             // Create logger from global sinks
-            spdlog_logger_ = LogSinkManager::getInstance().createLogger(topic_);
+            spdlog_logger_ = SinkManager::getInstance().createLogger(topic_);
         }
 
-        static void setConsoleLogLevel(LogLevel level) {
+        static void setConsoleLogLevel(Level level) {
             // The logger itself forwards all debug messages to sinks by default,
             // console output controlled by the corresponding sink
-            LogSinkManager::getInstance().getConsoleSink()->set_level(static_cast<spdlog::level::level_enum>(level));
+            SinkManager::getInstance().getConsoleSink()->set_level(to_spdlog_level(level));
         }
 
         // Enables backtrace and enables TRACE messages over ZeroMQ sink
@@ -42,29 +42,27 @@ namespace constellation {
             }
         }
 
-        bool shouldLog(LogLevel level) { return spdlog_logger_->should_log(static_cast<spdlog::level::level_enum>(level)); }
+        bool shouldLog(Level level) { return spdlog_logger_->should_log(to_spdlog_level(level)); }
 
-        swap_ostringstream getStream(spdlog::source_loc src_loc, LogLevel level) {
+        swap_ostringstream getStream(spdlog::source_loc src_loc, Level level) {
             os_level_ = level;
             source_loc_ = src_loc;
             return {this};
         }
 
-        void log(LogLevel level, std::string_view message) {
-            spdlog_logger_->log(static_cast<spdlog::level::level_enum>(level), message);
-        }
+        void log(Level level, std::string_view message) { spdlog_logger_->log(to_spdlog_level(level), message); }
 
     private:
         friend swap_ostringstream;
         void flush() {
             // Actually execute logging, needs string copy since this might be async
-            spdlog_logger_->log(source_loc_, static_cast<spdlog::level::level_enum>(os_level_), os_.str());
+            spdlog_logger_->log(source_loc_, to_spdlog_level(os_level_), os_.str());
 
             // Clear the stream by creating a new one
             os_ = std::ostringstream();
         }
 
-        LogLevel os_level_ {LogLevel::OFF};
+        Level os_level_ {Level::OFF};
         std::ostringstream os_;
         spdlog::source_loc source_loc_;
 

@@ -16,15 +16,15 @@
 
 namespace constellation {
     // Global manager for sinks
-    class LogSinkManager {
+    class SinkManager {
     public:
-        static LogSinkManager& getInstance();
+        static SinkManager& getInstance();
 
-        LogSinkManager(LogSinkManager const&) = delete;
-        LogSinkManager& operator=(LogSinkManager const&) = delete;
-        LogSinkManager(LogSinkManager&&) = default;
-        LogSinkManager& operator=(LogSinkManager&&) = default;
-        ~LogSinkManager() = default;
+        SinkManager(SinkManager const&) = delete;
+        SinkManager& operator=(SinkManager const&) = delete;
+        SinkManager(SinkManager&&) = default;
+        SinkManager& operator=(SinkManager&&) = default;
+        ~SinkManager() = default;
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> getConsoleSink() { return console_sink_; }
 
@@ -38,7 +38,7 @@ namespace constellation {
         }
 
     private:
-        LogSinkManager();
+        SinkManager();
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<zmq_sink_mt> zmq_sink_;

@@ -14,12 +14,12 @@
 using namespace constellation;
 using namespace std::literals::string_view_literals;
 
-LogSinkManager& LogSinkManager::getInstance() {
-    static LogSinkManager instance {};
+SinkManager& SinkManager::getInstance() {
+    static SinkManager instance {};
     return instance;
 }
 
-LogSinkManager::LogSinkManager() {
+SinkManager::SinkManager() {
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
 

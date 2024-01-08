@@ -27,7 +27,7 @@
 
 namespace constellation {
     // log levels, allows direct casting to spdlog::level::level_enum
-    enum class LogLevel : int {
+    enum class Level : int {
         TRACE = 0,
         DEBUG = 1,
         INFO = 2,
@@ -37,7 +37,7 @@ namespace constellation {
         OFF = 6,
     };
 
-    constexpr spdlog::level::level_enum to_spdlog_level(LogLevel level) {
+    constexpr spdlog::level::level_enum to_spdlog_level(Level level) {
         return static_cast<spdlog::level::level_enum>(level);
     }
 } // namespace constellation
