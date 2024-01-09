@@ -31,6 +31,13 @@ using enum constellation::log::Level;
 // Get the unique log variable
 #define GET_LOG_VAR() CONCAT(_LOG_VAR_L, __LINE__)
 
+#ifndef __FILE_NAME__
+/**
+ *  @brief Base name of the file without the directory
+ */
+#define __FILE_NAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#endif
+
 // If message with level should be logged
 #define IFLOG(level) if(LOGGER.shouldLog(level))
 
