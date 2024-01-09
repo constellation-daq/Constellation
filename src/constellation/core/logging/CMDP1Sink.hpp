@@ -34,7 +34,7 @@ namespace constellation::log {
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
             // Send topic
-            auto topic = "LOG/" + std::string(magic_enum::enum_name(static_cast<Level>(msg.level))) + "/" +
+            auto topic = "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" +
                          std::string(msg.logger_name.data(), msg.logger_name.size());
             std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
             publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);

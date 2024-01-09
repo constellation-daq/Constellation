@@ -40,4 +40,8 @@ namespace constellation::log {
     constexpr spdlog::level::level_enum to_spdlog_level(Level level) {
         return static_cast<spdlog::level::level_enum>(level);
     }
+
+    constexpr Level from_spdlog_level(spdlog::level::level_enum level) {
+        return static_cast<Level>(level);
+    }
 } // namespace constellation::log
