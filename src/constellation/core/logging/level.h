@@ -20,10 +20,10 @@
 
 // Specify all required spdlog headers here, do not include spdlog headers elsewhere
 #include <spdlog/async.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
 #include <spdlog/details/null_mutex.h>
 #include <spdlog/sinks/base_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/spdlog.h>
 
 namespace constellation::log {
     // log levels, allows direct casting to spdlog::level::level_enum
