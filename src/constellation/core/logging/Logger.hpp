@@ -17,50 +17,70 @@
 #include "constellation/core/logging/swap_ostringstream.hpp"
 
 namespace constellation::log {
-    // Actual Logger implementation
+    /**
+     * \class Logger
+     * \brief Wrapper class for spdlog logger
+     *
+     * \details This class implements a wrapper around the spdlog logger and provides additional features such as the
+     * the possibility to log using ostringstreams (with << syntax rather than enclosing the log message in parentheses)
+     */
     class Logger {
     public:
-        Logger(std::string topic) : topic_(std::move(topic)) {
-            // Create logger from global sinks
-            spdlog_logger_ = SinkManager::getInstance().createLogger(topic_);
-        }
+        /**
+         * \brief Constructor
+         * \details This creates a new Logger object and registers the spdlog logger with the static SinkManager
+         *
+         * \param topic Name (topic) of the logger
+         */
+        Logger(std::string topic);
 
-        static void setConsoleLogLevel(Level level) {
-            // The logger itself forwards all debug messages to sinks by default,
-            // console output controlled by the corresponding sink
-            SinkManager::getInstance().getConsoleSink()->set_level(to_spdlog_level(level));
-        }
+        /**
+         * \brief Set logging level for console
+         *
+         * \param level Log level for console
+         */
+        static void setConsoleLogLevel(Level level);
 
-        // Enables backtrace and enables TRACE messages over ZeroMQ sink
-        void enableTrace(bool enable = true) {
-            if(enable) {
-                spdlog_logger_->set_level(spdlog::level::level_enum::trace);
-                spdlog_logger_->enable_backtrace(BACKTRACE_MESSAGES);
-            } else {
-                spdlog_logger_->set_level(spdlog::level::level_enum::debug);
-                spdlog_logger_->disable_backtrace();
-            }
-        }
+        /**
+         * \brief Enable or disable TRACE-level messages and backtrace
+         * \param enable Boolean to enable TRACE messages
+         */
+        void enableTrace(bool enable = true);
 
-        bool shouldLog(Level level) { return spdlog_logger_->should_log(to_spdlog_level(level)); }
+        /**
+         * \brief Wrapper around spdlog's should_log to check if a message should be logged given the currently configured
+         * log level of the logger
+         *
+         * \param level Log level to be tested against the logger configuration
+         * \return Boolean indicating if the message should be logged
+         */
+        bool shouldLog(Level level);
 
-        swap_ostringstream getStream(spdlog::source_loc src_loc, Level level) {
-            os_level_ = level;
-            source_loc_ = src_loc;
-            return {this};
-        }
+        /**
+         * \brief Helper method returning the output stream of the logger
+         *
+         * \param src_loc Source code location from which the log message emitted
+         * \param level Log level of the emitted log message
+         *
+         * \return swap_ostringstream object
+         */
+        swap_ostringstream getStream(spdlog::source_loc src_loc, Level level);
 
-        void log(Level level, std::string_view message) { spdlog_logger_->log(to_spdlog_level(level), message); }
+        /**
+         * \brief Wrapper around the spdlog logger's log method
+         *
+         * \param level Level of the log message
+         * \param message Log message
+         */
+        void log(Level level, std::string_view message);
 
     private:
         friend swap_ostringstream;
-        void flush() {
-            // Actually execute logging, needs string copy since this might be async
-            spdlog_logger_->log(source_loc_, to_spdlog_level(os_level_), os_.str());
 
-            // Clear the stream by creating a new one
-            os_ = std::ostringstream();
-        }
+        /**
+         * \brief Helper method to flush the swap_ostringstream content to the spdlog logger
+         */
+        void flush();
 
         Level os_level_ {Level::OFF};
         std::ostringstream os_;
