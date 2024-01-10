@@ -30,14 +30,7 @@ namespace constellation::log {
 
         std::shared_ptr<CMDP1Sink_mt> getCMDPSink() { return cmdp_sink_; }
 
-        std::shared_ptr<spdlog::async_logger> createLogger(std::string logger_name) {
-            auto logger = std::make_shared<spdlog::async_logger>(std::move(logger_name),
-                                                                 spdlog::sinks_init_list({console_sink_, cmdp_sink_}),
-                                                                 spdlog::thread_pool(),
-                                                                 spdlog::async_overflow_policy::overrun_oldest);
-            logger->set_level(spdlog::level::level_enum::debug);
-            return logger;
-        }
+        std::shared_ptr<spdlog::async_logger> createLogger(std::string logger_name);
 
     private:
         SinkManager();
