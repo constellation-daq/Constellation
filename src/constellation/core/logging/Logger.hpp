@@ -54,7 +54,7 @@ namespace constellation::log {
          * \param level Log level to be tested against the logger configuration
          * \return Boolean indicating if the message should be logged
          */
-        bool shouldLog(Level level);
+        bool shouldLog(Level level) const;
 
         /**
          * \brief Helper method returning the output stream of the logger

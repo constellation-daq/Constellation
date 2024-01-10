@@ -33,7 +33,9 @@ void Logger::enableTrace(bool enable) {
     }
 }
 
-bool Logger::shouldLog(Level level) { return spdlog_logger_->should_log(to_spdlog_level(level)); }
+bool Logger::shouldLog(Level level) const {
+    return spdlog_logger_->should_log(to_spdlog_level(level));
+}
 
 swap_ostringstream Logger::getStream(spdlog::source_loc src_loc, Level level) {
     os_level_ = level;
@@ -41,7 +43,9 @@ swap_ostringstream Logger::getStream(spdlog::source_loc src_loc, Level level) {
     return {this};
 }
 
-void Logger::log(Level level, std::string_view message) { spdlog_logger_->log(to_spdlog_level(level), message); }
+void Logger::log(Level level, std::string_view message) {
+    spdlog_logger_->log(to_spdlog_level(level), message);
+}
 
 void Logger::flush() {
     // Actually execute logging, needs string copy since this might be async
