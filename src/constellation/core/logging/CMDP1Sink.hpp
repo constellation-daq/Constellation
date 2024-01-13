@@ -21,15 +21,23 @@
 #include <zmq.hpp>
 
 #include "constellation/core/message/Header.hpp"
+#include "constellation/core/utils/ports.hpp"
 #include "level.h"
 
 namespace constellation::log {
     template <typename Mutex> class CMDP1Sink : public spdlog::sinks::base_sink<Mutex> {
     public:
         CMDP1Sink() {
-            // FIXME get ephemeral port, publish port to CHIRP
-            publisher_.bind("tcp://*:5556");
+            // Bind to ephemeral port:
+            port_ = bind_ephemeral_port(publisher_);
         }
+
+        /**
+         * Get ephemeral port this logger sink is bound to
+         *
+         * @return Port number
+         */
+        Port getPort() const { return port_; }
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
@@ -69,6 +77,7 @@ namespace constellation::log {
         void flush_() override {}
 
     private:
+        Port port_;
         zmq::context_t context_ {};
         zmq::socket_t publisher_ {context_, zmq::socket_type::pub};
     };
