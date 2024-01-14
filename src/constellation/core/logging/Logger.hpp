@@ -12,7 +12,7 @@
 #include <memory>
 #include <string>
 
-#include "constellation/core/logging/level.h"
+#include "constellation/core/logging/Level.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
 

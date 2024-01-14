@@ -22,7 +22,7 @@
 
 #include "constellation/core/message/Header.hpp"
 #include "constellation/core/utils/ports.hpp"
-#include "level.h"
+#include "Level.hpp"
 
 namespace constellation::log {
     template <typename Mutex> class CMDP1Sink : public spdlog::sinks::base_sink<Mutex> {
