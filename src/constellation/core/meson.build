@@ -13,7 +13,7 @@ core_lib = library('ConstellationCore',
   include_directories: constellation_inc,
   dependencies: [asio_dep, spdlog_dep, magic_enum_dep, msgpackc_cxx_dep, cppzmq_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: ['-DCNSTLN_BUILDLIB=1','-DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE'],
+  cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
 )
 
