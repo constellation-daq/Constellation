@@ -50,6 +50,7 @@ When a CHIRP host receives a beacon of type ‘OFFER’ from a host with the sam
 When a CHIRP host sends a beacon with type ‘REQUEST’, the port number SHOULD be zero.
 
 When a CHIRP host receives a beacon with type ‘REQUEST’ from any host with the same sender group, and it offers the requested service, it SHALL ignore the port number of the received beacon and it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service, providing the port number for this service.
+The CHIRP host MAY respond directly to the remote IP address the beacon of type ‘REQUEST’ was received from instead of broadcasting the response.
 
 When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host with the same sender group, with a non-zero port number, it SHALL disconnect from the service offered by this peer on the provided port number. A host SHALL discard beacons of type ‘DEPART‘ from unknown hosts.
 
