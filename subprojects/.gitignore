@@ -3,4 +3,7 @@
 
 /packagecache/
 /asio-*/
+/cppzmq-*/
 /magic_enum-*/
+/msgpack-cxx-*/
+/spdlog-*/

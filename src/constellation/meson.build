@@ -9,7 +9,27 @@ asio_dep = declare_dependency(
 
 thread_dep = dependency('threads')
 
-magic_enum_dep = dependency('magic_enum')
+magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
+
+spdlog_dep = dependency('spdlog', default_options: ['tests=False'])
+
+msgpackc_cxx_dep = dependency('msgpack-cxx',
+  version: '>=6.1.0',
+  default_options: ['boost=disabled', 'std_variant=true', 'tests=disabled'])
+
+libzmq_dep = dependency('libzmq',
+  default_options: [
+    'drafts=true',
+    'websockets=disabled',
+    'curve=false',
+    'tls=disabled',
+    'nss=disabled',
+    'openpgm=disabled',
+    'norm=disabled',
+    'warning_level=0',
+])
+
+cppzmq_dep = dependency('cppzmq')
 
 constellation_inc = include_directories('..')
 

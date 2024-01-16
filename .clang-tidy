@@ -6,7 +6,7 @@ Checks:  '-*,
           cert-*,
           concurrency-*,
           cppcoreguidelines-*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-bounds-pointer-arithmetic,
-          google-*,-google-build-using-namespace,-google-explicit-constructor,
+          google-*,-google-build-using-namespace,-google-explicit-constructor,-google-readability-casting,
           hicpp-*,-hicpp-explicit-conversions,
           llvm-*,-llvm-header-guard,-llvm-include-order,
           misc-*,
@@ -15,7 +15,7 @@ Checks:  '-*,
           portability-*,
           readability-*,-readability-identifier-length,-readability-function-cognitive-complexity,-readability-magic-numbers,-readability-redundant-access-specifiers,
          '
-WarningsAsErrors: '*,-bugprone-exception-escape'
+WarningsAsErrors: '*'
 HeaderFilterRegex: '*.h *.hpp'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
