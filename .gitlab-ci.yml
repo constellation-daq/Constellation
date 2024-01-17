@@ -50,6 +50,7 @@ stages:
     paths:
       - subprojects/packagecache/
       - subprojects/asio-*/
+      - subprojects/Catch2-*/
       - subprojects/cppzmq-*/
       - subprojects/libzmq-*/
       - subprojects/magic_enum-*/

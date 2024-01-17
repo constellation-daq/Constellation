@@ -3,6 +3,7 @@
 
 /packagecache/
 /asio-*/
+/Catch2-*/
 /cppzmq-*/
 /libzmq-*/
 /magic_enum-*/
