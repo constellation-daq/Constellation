@@ -106,7 +106,6 @@ build:alma9-cern:
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
-    expire_in: 1 week
 
 test:debian-clang:
   extends:
