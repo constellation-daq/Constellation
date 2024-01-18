@@ -11,7 +11,7 @@ thread_dep = dependency('threads')
 
 magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 
-spdlog_dep = dependency('spdlog', default_options: ['tests=False'])
+spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
 msgpackc_cxx_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',
