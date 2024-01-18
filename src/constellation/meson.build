@@ -29,7 +29,7 @@ libzmq_dep = dependency('libzmq',
     'warning_level=0',
 ])
 
-cppzmq_dep = dependency('cppzmq')
+cppzmq_dep = dependency('cppzmq', default_options: ['catch2=disabled'])
 
 constellation_inc = include_directories('..')
 
