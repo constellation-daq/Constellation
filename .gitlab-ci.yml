@@ -51,6 +51,7 @@ stages:
       - subprojects/packagecache/
       - subprojects/asio-*/
       - subprojects/cppzmq-*/
+      - subprojects/libzmq-*/
       - subprojects/magic_enum-*/
       - subprojects/msgpack-cxx-*/
       - subprojects/spdlog-*/
