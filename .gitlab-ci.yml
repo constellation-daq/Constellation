@@ -102,11 +102,10 @@ build:alma9-cern:
 .test:
   stage: test
   script:
-    - meson test -C build --no-rebuild
+    - meson test -C build --suite Constellation --no-rebuild --print-errorlogs
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
-    expire_in: 1 week
 
 test:debian-clang:
   extends:
