@@ -9,20 +9,25 @@
 
 #include <chrono>
 #include <future>
-#include <iostream>
 #include <string>
 #include <vector>
 
 #include <asio.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/chirp/BroadcastRecv.hpp"
 #include "constellation/chirp/BroadcastSend.hpp"
 
+using namespace Catch::Matchers;
 using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 using namespace std::literals::string_literals;
 
-int test_broadcast_send_recv_string() {
+// NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
+
+TEST_CASE("Send and receive broadcast containing a string", "[chirp][broadcast]") {
     BroadcastRecv receiver {"0.0.0.0", 49152};
     BroadcastSend sender {"0.0.0.0", 49152};
 
@@ -33,11 +38,11 @@ int test_broadcast_send_recv_string() {
     sender.SendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
-    // Convert to string and compare
-    return msg.content_to_string() == msg_content ? 0 : 1;
+
+    REQUIRE_THAT(msg.content_to_string(), Equals(msg_content));
 }
 
-int test_broadcast_send_recv_array() {
+TEST_CASE("Send and receive broadcast containing binary content", "[chirp][broadcast]") {
     BroadcastRecv receiver {"0.0.0.0", 49152};
     BroadcastSend sender {"0.0.0.0", 49152};
 
@@ -48,11 +53,11 @@ int test_broadcast_send_recv_array() {
     sender.SendBroadcast(msg_content.data(), msg_content.size());
     // Receive message
     auto msg = msg_future.get();
-    // Compare
-    return msg.content == msg_content ? 0 : 1;
+
+    REQUIRE_THAT(msg.content, RangeEquals(msg_content));
 }
 
-int test_broadcast_localhost_ip() {
+TEST_CASE("Get IP address of broadcast from localhost", "[chirp][broadcast]") {
     BroadcastRecv receiver {"0.0.0.0", 49152};
     BroadcastSend sender {"0.0.0.0", 49152};
 
@@ -63,11 +68,11 @@ int test_broadcast_localhost_ip() {
     sender.SendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
-    // Compare address
-    return msg.address == asio::ip::make_address("127.0.0.1") ? 0 : 1;
+
+    REQUIRE(msg.address == asio::ip::make_address("127.0.0.1"));
 }
 
-int test_broadcast_send_async_recv() {
+TEST_CASE("Send and receive broadcast asynchronously", "[chirp][broadcast]") {
     BroadcastRecv receiver {"0.0.0.0", 49152};
     BroadcastSend sender {"0.0.0.0", 49152};
 
@@ -78,62 +83,24 @@ int test_broadcast_send_async_recv() {
     sender.SendBroadcast(msg_content);
     // Receive message
     auto msg_opt = msg_opt_future.get();
-    // Check that a message was returneed
-    if(!msg_opt.has_value()) {
-        return 1;
-    }
-    // Check that message is correct
-    return msg_opt.value().content_to_string() == msg_content ? 0 : 1;
+
+    // Check that a message was received
+    REQUIRE(msg_opt.has_value());
+
+    // Get message
+    auto msg = msg_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
+
+    REQUIRE_THAT(msg.content_to_string(), Equals(msg_content));
 }
 
-int test_broadcast_async_recv_timeout() {
+TEST_CASE("Get timeout on asynchronous broadcast receive", "[chirp][broadcast]") {
     BroadcastRecv receiver {"0.0.0.0", 49152};
 
     // Try receiving new message
     auto msg_opt = receiver.AsyncRecvBroadcast(10ms);
 
-    // No message send, thus check for a timeout
-    return msg_opt.has_value() ? 1 : 0;
+    // No message send, thus check for timeout that there is no message
+    REQUIRE_FALSE(msg_opt.has_value());
 }
 
-int main() {
-    int ret = 0;
-    int ret_test = 0;
-
-    // test_broadcast_send_recv_string
-    std::cout << "test_broadcast_send_recv_string...           " << std::flush;
-    ret_test = test_broadcast_send_recv_string();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_broadcast_send_recv_array
-    std::cout << "test_broadcast_send_recv_array...            " << std::flush;
-    ret_test = test_broadcast_send_recv_array();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_broadcast_localhost_ip
-    std::cout << "test_broadcast_localhost_ip...               " << std::flush;
-    ret_test = test_broadcast_localhost_ip();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_broadcast_send_async_recv
-    std::cout << "test_broadcast_send_async_recv...            " << std::flush;
-    ret_test = test_broadcast_send_async_recv();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_broadcast_async_recv_timeout
-    std::cout << "test_broadcast_async_recv_timeout...         " << std::flush;
-    ret_test = test_broadcast_async_recv_timeout();
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    if(ret == 0) {
-        std::cout << "\nAll tests passed" << std::endl;
-    } else {
-        std::cout << "\n" << ret << " tests failed" << std::endl;
-    }
-    return ret;
-}
+// NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

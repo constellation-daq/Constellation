@@ -10,11 +10,11 @@
 #include <any>
 #include <chrono>
 #include <future>
-#include <iostream>
 #include <thread>
 #include <utility>
 
 #include <asio.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include "constellation/chirp/BroadcastRecv.hpp"
 #include "constellation/chirp/BroadcastSend.hpp"
@@ -25,121 +25,105 @@
 using namespace constellation::chirp;
 using namespace std::literals::chrono_literals;
 
-int test_manager_sort_registered_service() {
-    int fails = 0;
+// NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
+
+TEST_CASE("Sorting of registered services", "[chirp]") {
     // test self not smaller than self
-    fails += RegisteredService({DATA, 0}) < RegisteredService({DATA, 0}) ? 1 : 0;
+    REQUIRE_FALSE(RegisteredService({DATA, 0}) < RegisteredService({DATA, 0}));
     // test service identifier takes priority over port
-    fails += RegisteredService({CONTROL, 1}) < RegisteredService({DATA, 0}) ? 0 : 1;
-    fails += RegisteredService({DATA, 0}) < RegisteredService({CONTROL, 1}) ? 1 : 0;
+    REQUIRE(RegisteredService({CONTROL, 1}) < RegisteredService({DATA, 0}));
+    REQUIRE_FALSE(RegisteredService({DATA, 0}) < RegisteredService({CONTROL, 1}));
     // test sort after port if service identifier the same
-    fails += RegisteredService({DATA, 0}) < RegisteredService({DATA, 1}) ? 0 : 1;
-    return fails == 0 ? 0 : 1;
+    REQUIRE(RegisteredService({DATA, 0}) < RegisteredService({DATA, 1}));
 }
 
-int test_manager_sort_discovered_service() {
-    auto nh_s = MD5Hash("a");
-    auto nh_l = MD5Hash("b");
-    auto ip_1 = asio::ip::make_address("1.2.3.4");
-    auto ip_2 = asio::ip::make_address("4.3.2.1");
-    int fails = 0;
+TEST_CASE("Sorting of discovered services", "[chirp]") {
+    auto id1 = MD5Hash("a");
+    auto id2 = MD5Hash("b");
+    auto ip1 = asio::ip::make_address("1.2.3.4");
+    auto ip2 = asio::ip::make_address("4.3.2.1");
+
     // test self not smaller than self
-    fails += DiscoveredService({ip_1, nh_s, DATA, 0}) < DiscoveredService({ip_1, nh_s, DATA, 0}) ? 1 : 0;
+    REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 0}));
     // test ip does not change sorting
-    fails += DiscoveredService({ip_1, nh_s, DATA, 0}) < DiscoveredService({ip_2, nh_s, DATA, 0}) ? 1 : 0;
-    fails += DiscoveredService({ip_2, nh_s, DATA, 0}) < DiscoveredService({ip_1, nh_s, DATA, 0}) ? 1 : 0;
+    REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip2, id1, DATA, 0}));
+    REQUIRE_FALSE(DiscoveredService({ip2, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 0}));
     // test host takes priority
-    fails += DiscoveredService({ip_1, nh_s, DATA, 1}) < DiscoveredService({ip_1, nh_l, CONTROL, 0}) ? 0 : 1;
-    fails += DiscoveredService({ip_1, nh_l, CONTROL, 0}) < DiscoveredService({ip_1, nh_s, DATA, 1}) ? 1 : 0;
+    REQUIRE(DiscoveredService({ip1, id1, DATA, 1}) < DiscoveredService({ip1, id2, CONTROL, 0}));
+    REQUIRE_FALSE(DiscoveredService({ip1, id2, CONTROL, 0}) < DiscoveredService({ip1, id1, DATA, 1}));
     // test service identifier takes priority if same host
-    fails += DiscoveredService({ip_1, nh_s, CONTROL, 1}) < DiscoveredService({ip_1, nh_s, DATA, 0}) ? 0 : 1;
-    fails += DiscoveredService({ip_1, nh_s, DATA, 0}) < DiscoveredService({ip_1, nh_s, CONTROL, 1}) ? 1 : 0;
+    REQUIRE(DiscoveredService({ip1, id1, CONTROL, 1}) < DiscoveredService({ip1, id1, DATA, 0}));
+    REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, CONTROL, 1}));
     // test port takes priority if same host and service identifier
-    fails += DiscoveredService({ip_1, nh_s, DATA, 0}) < DiscoveredService({ip_1, nh_s, DATA, 1}) ? 0 : 1;
-    return fails == 0 ? 0 : 1;
+    REQUIRE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 1}));
 }
 
-int test_manager_sort_discover_callback_entry() {
+TEST_CASE("Sorting of discover callbacks", "[chirp]") {
     auto* cb1 = reinterpret_cast<DiscoverCallback*>(1); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto* cb2 = reinterpret_cast<DiscoverCallback*>(2); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
     auto ud1 = std::make_any<int>(1);
     auto ud2 = std::make_any<int>(2);
-    int fails = 0;
+
     // test self not smaller than self
-    fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 1 : 0;
+    REQUIRE_FALSE(DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}));
     // test user data does not change sorting
-    fails += DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}) ? 1 : 0;
-    fails += DiscoverCallbackEntry({cb1, DATA, ud2}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 1 : 0;
+    REQUIRE_FALSE(DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}));
+    REQUIRE_FALSE(DiscoverCallbackEntry({cb1, DATA, ud2}) < DiscoverCallbackEntry({cb1, DATA, ud1}));
     // test callback address takes priority
-    fails += DiscoverCallbackEntry({cb1, DATA, ud2}) < DiscoverCallbackEntry({cb2, CONTROL, ud1}) ? 0 : 1;
-    fails += DiscoverCallbackEntry({cb2, CONTROL, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud2}) ? 1 : 0;
+    REQUIRE(DiscoverCallbackEntry({cb1, DATA, ud1}) < DiscoverCallbackEntry({cb2, CONTROL, ud1}));
+    REQUIRE_FALSE(DiscoverCallbackEntry({cb2, CONTROL, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}));
     // test service identifier takes priority if same callback address
-    fails += DiscoverCallbackEntry({cb1, CONTROL, ud2}) < DiscoverCallbackEntry({cb1, DATA, ud1}) ? 0 : 1;
-    return fails == 0 ? 0 : 1;
+    REQUIRE(DiscoverCallbackEntry({cb1, CONTROL, ud1}) < DiscoverCallbackEntry({cb1, DATA, ud1}));
 }
 
-int test_manager_register_service_logic() {
+TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
-    int fails = 0;
     // test that first register works
-    auto registered = manager.RegisterService(CONTROL, 23999);
-    fails += registered ? 0 : 1;
+    REQUIRE(manager.RegisterService(CONTROL, 23999));
     // test that second register does not work
-    auto regsitered_twice = manager.RegisterService(CONTROL, 23999);
-    fails += regsitered_twice ? 1 : 0;
+    REQUIRE_FALSE(manager.RegisterService(CONTROL, 23999));
     // test that unregistering works
-    auto unregistered = manager.UnregisterService(CONTROL, 23999);
-    fails += unregistered ? 0 : 1;
+    REQUIRE(manager.UnregisterService(CONTROL, 23999));
     // test that unregistering for not registered service does not work
-    auto unregistered_nonexist = manager.UnregisterService(CONTROL, 23999);
-    fails += unregistered_nonexist ? 1 : 0;
+    REQUIRE_FALSE(manager.UnregisterService(CONTROL, 23999));
     // test unregister all services
     manager.RegisterService(CONTROL, 23999);
     manager.RegisterService(CONTROL, 24000);
-    fails += manager.GetRegisteredServices().size() == 2 ? 0 : 1;
+    REQUIRE(manager.GetRegisteredServices().size() == 2);
     manager.UnregisterServices();
-    fails += manager.GetRegisteredServices().empty() ? 0 : 1;
-
-    return fails == 0 ? 0 : 1;
+    REQUIRE(manager.GetRegisteredServices().empty());
 }
 
-int test_manager_register_callback_logic() {
+TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
     // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
     auto callback = [](DiscoveredService, bool, std::any) {};
 
-    int fails = 0;
     // test that first register works
-    auto registered = manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
-    fails += registered ? 0 : 1;
+    REQUIRE(manager.RegisterDiscoverCallback(callback, CONTROL, nullptr));
     // test that second register does not work
-    auto regsitered_twice = manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
-    fails += regsitered_twice ? 1 : 0;
+    REQUIRE_FALSE(manager.RegisterDiscoverCallback(callback, CONTROL, nullptr));
     // test that unregistering works
-    auto unregistered = manager.UnregisterDiscoverCallback(callback, CONTROL);
-    fails += unregistered ? 0 : 1;
+    REQUIRE(manager.UnregisterDiscoverCallback(callback, CONTROL));
     // test that unregistering for not registered service does not work
-    auto unregistered_nonexist = manager.UnregisterDiscoverCallback(callback, CONTROL);
-    fails += unregistered_nonexist ? 1 : 0;
+    REQUIRE_FALSE(manager.UnregisterDiscoverCallback(callback, CONTROL));
+
     // coverage test for unregister all services
     manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
     manager.RegisterDiscoverCallback(callback, HEARTBEAT, nullptr);
     manager.UnregisterDiscoverCallbacks();
-
-    return fails == 0 ? 0 : 1;
 }
 
-int test_manager_async_timeout() {
+TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
     // This is purely a coverage test to ensure that the async receive works
     std::this_thread::sleep_for(105ms);
-    return 0;
 }
 
-int test_manager_ignore_other_group() {
+TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
@@ -147,10 +131,10 @@ int test_manager_ignore_other_group() {
     const auto asm_msg = Message(OFFER, "group2", "sat2", CONTROL, 23999).Assemble();
     sender.SendBroadcast(asm_msg.data(), asm_msg.size());
 
-    return manager.GetDiscoveredServices().empty() ? 0 : 1;
+    REQUIRE(manager.GetDiscoveredServices().empty());
 }
 
-int test_manager_ignore_self() {
+TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
@@ -158,47 +142,45 @@ int test_manager_ignore_self() {
     const auto asm_msg = Message(OFFER, "group1", "sat1", CONTROL, 23999).Assemble();
     sender.SendBroadcast(asm_msg.data(), asm_msg.size());
 
-    return manager.GetDiscoveredServices().empty() ? 0 : 1;
+    REQUIRE(manager.GetDiscoveredServices().empty());
 }
 
-int test_manager_discovery() {
+TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
     manager2.Start();
 
-    int fails = 0;
     // Register service, should send OFFER
     manager1.RegisterService(DATA, 24000);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(5ms);
     // Test that we discovered the service
     const auto services_1 = manager2.GetDiscoveredServices();
-    if(services_1.size() == 1) {
-        // Test that message is correct
-        fails += services_1[0].host_id == manager1.GetHostID() ? 0 : 1;
-        fails += services_1[0].address == asio::ip::make_address("127.0.0.1") ? 0 : 1;
-        fails += services_1[0].identifier == DATA ? 0 : 1;
-        fails += services_1[0].port == 24000 ? 0 : 1;
-    } else {
-        fails += 1;
-    }
+    REQUIRE(services_1.size() == 1);
+
+    // Test that message is correct
+    REQUIRE(services_1[0].host_id == manager1.GetHostID());
+    REQUIRE(services_1[0].address == asio::ip::make_address("127.0.0.1"));
+    REQUIRE(services_1[0].identifier == DATA);
+    REQUIRE(services_1[0].port == 24000);
 
     // Register other services
     manager1.RegisterService(MONITORING, 65000);
     manager1.RegisterService(HEARTBEAT, 65001);
     std::this_thread::sleep_for(5ms);
+
     // Test that we discovered the services
-    fails += manager2.GetDiscoveredServices().size() == 3 ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices().size() == 3);
     // Unregister a service
     manager1.UnregisterService(MONITORING, 65000);
     std::this_thread::sleep_for(5ms);
     // Test that we discovered DEPART message
-    fails += manager2.GetDiscoveredServices().size() == 2 ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices().size() == 2);
     // Now test that we can filter a service category
-    fails += manager2.GetDiscoveredServices(HEARTBEAT).size() == 1 ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices(HEARTBEAT).size() == 1);
     // Test that we can forget services
     manager2.ForgetDiscoveredServices();
-    fails += manager2.GetDiscoveredServices().empty() ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices().empty());
 
     // Register new services
     manager1.UnregisterServices();
@@ -206,17 +188,15 @@ int test_manager_discovery() {
     manager1.RegisterService(DATA, 40002);
     std::this_thread::sleep_for(5ms);
     // Test that we discovered services
-    fails += manager2.GetDiscoveredServices().size() == 2 ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices().size() == 2);
     // Unregister all services
     manager1.UnregisterServices();
     std::this_thread::sleep_for(5ms);
     // Test that we discovered DEPART messages
-    fails += manager2.GetDiscoveredServices().empty() ? 0 : 1;
-
-    return fails == 0 ? 0 : 1;
+    REQUIRE(manager2.GetDiscoveredServices().empty());
 }
 
-int test_manager_callbacks() {
+TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
     manager2.Start();
@@ -229,7 +209,6 @@ int test_manager_callbacks() {
         cb_departb_service_l->second = std::move(service);
     };
 
-    int fails = 0;
     // Register callback for CONTROL
     manager2.RegisterDiscoverCallback(callback, CONTROL, &cb_departb_service);
     // Register CONTROL service
@@ -237,15 +216,15 @@ int test_manager_callbacks() {
     // Wait a bit ensure the callback is executed
     std::this_thread::sleep_for(5ms);
     // Test that we correct OFFER callback
-    fails += cb_departb_service.first ? 1 : 0;
-    fails += cb_departb_service.second.identifier == CONTROL ? 0 : 1;
-    fails += cb_departb_service.second.port == 50100 ? 0 : 1;
+    REQUIRE_FALSE(cb_departb_service.first);
+    REQUIRE(cb_departb_service.second.identifier == CONTROL);
+    REQUIRE(cb_departb_service.second.port == 50100);
 
     // Unregister service
     manager1.UnregisterService(CONTROL, 50100);
     std::this_thread::sleep_for(5ms);
     // Test that we got DEPART callback
-    fails += cb_departb_service.first ? 0 : 1;
+    REQUIRE(cb_departb_service.first);
 
     // Unregister callback
     manager2.UnregisterDiscoverCallback(callback, CONTROL);
@@ -253,7 +232,7 @@ int test_manager_callbacks() {
     manager1.RegisterService(CONTROL, 50100);
     std::this_thread::sleep_for(5ms);
     // Test that we did not get an OFFER callback but still are at DEPART from before
-    fails += cb_departb_service.first ? 0 : 1;
+    REQUIRE(cb_departb_service.first);
 
     // Register callback for HEARTBEAT and MONITORING
     manager2.RegisterDiscoverCallback(callback, HEARTBEAT, &cb_departb_service);
@@ -262,12 +241,12 @@ int test_manager_callbacks() {
     manager1.RegisterService(HEARTBEAT, 50200);
     std::this_thread::sleep_for(5ms);
     // Test that we got HEARTBEAT callback
-    fails += cb_departb_service.second.identifier == HEARTBEAT ? 0 : 1;
+    REQUIRE(cb_departb_service.second.identifier == HEARTBEAT);
     // Register MONITORING service
     manager1.RegisterService(MONITORING, 50300);
     std::this_thread::sleep_for(5ms);
     // Test that we got MONITORING callback
-    fails += cb_departb_service.second.identifier == MONITORING ? 0 : 1;
+    REQUIRE(cb_departb_service.second.identifier == MONITORING);
 
     // Unregister all callback
     manager2.UnregisterDiscoverCallbacks();
@@ -275,16 +254,14 @@ int test_manager_callbacks() {
     manager1.UnregisterServices();
     std::this_thread::sleep_for(5ms);
     // Test that we did not get a DEPART callback but still are at OFFER from before
-    fails += cb_departb_service.first ? 1 : 0;
-
-    return fails == 0 ? 0 : 1;
+    REQUIRE_FALSE(cb_departb_service.first);
 }
 
-int test_manager_send_request() {
+TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     BroadcastRecv receiver {"0.0.0.0", CHIRP_PORT};
     // Note: it seems we have to construct receiver after manager, else we do not receive messages
-    // Wwhy? we can only have one working recv binding to the same socket per process unfortunately :/
+    // Why? we can only have one working recv binding to the same socket per process unfortunately :/
 
     // Start listening for request message
     auto raw_msg_fut = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
@@ -294,14 +271,12 @@ int test_manager_send_request() {
     const auto raw_msg = raw_msg_fut.get();
     auto msg_from_manager = Message(raw_msg.content);
     // Check message
-    int fails = 0;
-    fails += msg_from_manager.GetType() == REQUEST ? 0 : 1;
-    fails += msg_from_manager.GetServiceIdentifier() == CONTROL ? 0 : 1;
-    fails += msg_from_manager.GetPort() == 0 ? 0 : 1;
-    return fails == 0 ? 0 : 1;
+    REQUIRE(msg_from_manager.GetType() == REQUEST);
+    REQUIRE(msg_from_manager.GetServiceIdentifier() == CONTROL);
+    REQUIRE(msg_from_manager.GetPort() == 0);
 }
 
-int test_manager_recv_request() {
+TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
@@ -317,11 +292,10 @@ int test_manager_recv_request() {
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(5ms);
 
-    // If everything worked, the lines should be marked as executed such in coverage
-    return 0;
+    // If everything worked, the corresponding lines should be marked as executed in coverage
 }
 
-int test_manager_decode_error() {
+TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
@@ -334,104 +308,7 @@ int test_manager_decode_error() {
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(5ms);
 
-    // If everything worked, the lines should be marked as executed such in coverage
-    return 0;
+    // If everything worked, the corresponding lines should be marked as executed in coverage
 }
 
-int run_test(int (*fun)()) {
-    try {
-        return (*fun)();
-    } catch(...) {
-        return 1;
-    }
-}
-
-int main() {
-    int ret = 0;
-    int ret_test = 0;
-
-    // test_manager_sort_registered_service
-    std::cout << "test_manager_sort_registered_service...      " << std::flush;
-    ret_test = run_test(test_manager_sort_registered_service);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_sort_discovered_service
-    std::cout << "test_manager_sort_discovered_service...      " << std::flush;
-    ret_test = run_test(test_manager_sort_discovered_service);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_sort_discover_callback_entry
-    std::cout << "test_manager_sort_discover_callback_entry... " << std::flush;
-    ret_test = run_test(test_manager_sort_discover_callback_entry);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_register_service_logic
-    std::cout << "test_manager_register_service_logic...       " << std::flush;
-    ret_test = run_test(test_manager_register_service_logic);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_register_callback_logic
-    std::cout << "test_manager_register_callback_logic...      " << std::flush;
-    ret_test = run_test(test_manager_register_callback_logic);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_async_timeout
-    std::cout << "test_manager_async_timeout...                " << std::flush;
-    ret_test = run_test(test_manager_async_timeout);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_ignore_other_group
-    std::cout << "test_manager_ignore_other_group...           " << std::flush;
-    ret_test = run_test(test_manager_ignore_other_group);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_ignore_self
-    std::cout << "test_manager_ignore_self...                  " << std::flush;
-    ret_test = run_test(test_manager_ignore_self);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_discovery
-    std::cout << "test_manager_discovery...                    " << std::flush;
-    ret_test = run_test(test_manager_discovery);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_callbacks
-    std::cout << "test_manager_callbacks...                    " << std::flush;
-    ret_test = run_test(test_manager_callbacks);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_send_request
-    std::cout << "test_manager_send_request...                 " << std::flush;
-    ret_test = run_test(test_manager_send_request);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_recv_request
-    std::cout << "test_manager_recv_request...                 " << std::flush;
-    ret_test = run_test(test_manager_recv_request);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    // test_manager_decode_error
-    std::cout << "test_manager_decode_error...                 " << std::flush;
-    ret_test = run_test(test_manager_decode_error);
-    std::cout << (ret_test == 0 ? " passed" : " failed") << std::endl;
-    ret += ret_test;
-
-    if(ret == 0) {
-        std::cout << "\nAll tests passed" << std::endl;
-    } else {
-        std::cout << "\n" << ret << " tests failed" << std::endl;
-    }
-    return ret;
-}
+// NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

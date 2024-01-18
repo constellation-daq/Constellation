@@ -9,6 +9,10 @@ asio_dep = declare_dependency(
 
 thread_dep = dependency('threads')
 
+catch2_dep = dependency('catch2-with-main',
+  version: '>=3.0.0',
+  default_options: ['tests=false'])
+
 magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])

@@ -19,3 +19,4 @@ WarningsAsErrors: '*'
 HeaderFilterRegex: '*.h *.hpp'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
+  cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
