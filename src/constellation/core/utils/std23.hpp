@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include <chrono>
-#include <iomanip>
 #include <version>
 
 // NOLINTBEGIN(cert-dcl58-cpp)
@@ -37,6 +35,7 @@ namespace std {
 #endif
 
 #ifndef __cpp_lib_format
+#include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <time.h>
