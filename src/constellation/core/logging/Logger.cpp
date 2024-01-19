@@ -34,27 +34,3 @@ void Logger::enableTrace(bool enable) {
         spdlog_logger_->disable_backtrace();
     }
 }
-
-bool Logger::shouldLog(Level level) const {
-    return spdlog_logger_->should_log(to_spdlog_level(level));
-}
-
-swap_ostringstream Logger::log(Level level, std::source_location src_loc) {
-    os_level_ = level;
-    source_loc_ = src_loc;
-    return {this};
-}
-
-void Logger::log(Level level, std::string_view message) {
-    spdlog_logger_->log(to_spdlog_level(level), message);
-}
-
-void Logger::flush() {
-    // Actually execute logging, needs string copy since this might be async
-    spdlog_logger_->log({source_loc_.file_name(), static_cast<int>(source_loc_.line()), source_loc_.function_name()},
-                        to_spdlog_level(os_level_),
-                        os_.str());
-
-    // Clear the stream by creating a new one
-    os_ = std::ostringstream();
-}

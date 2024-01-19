@@ -4,7 +4,6 @@
 core_src = files(
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
-  'logging/swap_ostringstream.cpp',
   'message/Header.cpp',
 )
 
