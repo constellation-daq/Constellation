@@ -27,6 +27,7 @@ install_headers(
   'logging/Level.hpp',
   'logging/log.hpp',
   'logging/Logger.hpp',
+  'logging/ProxySink.hpp',
   'logging/SinkManager.hpp',
   subdir: 'constellation/logging',
 )
