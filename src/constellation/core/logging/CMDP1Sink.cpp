@@ -10,6 +10,7 @@
 #include "CMDP1Sink.hpp"
 
 #include <algorithm>
+#include <filesystem>
 #include <string>
 
 #include <asio.hpp>
@@ -22,10 +23,28 @@
 #include "constellation/core/utils/dictionary.hpp"
 
 using namespace constellation::log;
+using namespace std::literals::string_literals;
 
 // Convert from spdlog::string_view_t to std::string
 inline std::string to_string(spdlog::string_view_t spdlog_sv) {
     return {spdlog_sv.data(), spdlog_sv.size()};
+}
+
+// Find path relative to src/, otherwise path without any parent
+std::string get_rel_file_path(std::string file_path) {
+    const auto src_dir = std::filesystem::path::preferred_separator + "src"s + std::filesystem::path::preferred_separator;
+    const auto src_dir_pos = file_path.find(src_dir);
+    if(src_dir_pos != std::string::npos) {
+        // found /src/, start path after pattern
+        file_path = file_path.substr(src_dir_pos + src_dir.length());
+    } else {
+        // try to find last / for filename
+        const auto file_pos = file_path.find_last_of(std::filesystem::path::preferred_separator);
+        if(file_pos != std::string::npos) {
+            file_path = file_path.substr(file_pos + 1);
+        }
+    }
+    return file_path;
 }
 
 // Bind socket to ephemeral port on construction
@@ -53,7 +72,7 @@ void CMDP1Sink::sink_it_(const spdlog::details::log_msg& msg) {
         payload["thread"] = static_cast<std::int64_t>(msg.thread_id);
         // Add log source if not empty
         if(!msg.source.empty()) {
-            payload["filename"] = msg.source.filename;
+            payload["filename"] = get_rel_file_path(msg.source.filename);
             payload["lineno"] = msg.source.line;
             payload["funcname"] = msg.source.funcname;
         }
