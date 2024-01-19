@@ -15,12 +15,15 @@
 #include <string_view>
 
 using namespace constellation::log;
-using enum constellation::log::Level;
 using namespace std::literals::string_view_literals;
 
 SinkManager& SinkManager::getInstance() {
     static SinkManager instance {};
     return instance;
+}
+
+void SinkManager::setGlobalConsoleLevel(Level level) const {
+    console_sink_->set_level(to_spdlog_level(level));
 }
 
 SinkManager::SinkManager() {
@@ -44,11 +47,10 @@ SinkManager::SinkManager() {
     cmdp_sink_->set_level(spdlog::level::trace);
 }
 
-std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string logger_name) {
-    auto logger = std::make_shared<spdlog::async_logger>(std::move(logger_name),
+std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topic) {
+    auto logger = std::make_shared<spdlog::async_logger>(std::move(topic),
                                                          spdlog::sinks_init_list({console_sink_, cmdp_sink_}),
                                                          spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::overrun_oldest);
-    logger->set_level(spdlog::level::level_enum::debug);
     return logger;
 }
