@@ -9,6 +9,8 @@
 
 #include "Logger.hpp"
 
+#include "constellation/core/logging/SinkManager.hpp"
+
 using namespace constellation::log;
 
 Logger::Logger(std::string topic) : topic_(std::move(topic)) {

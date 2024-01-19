@@ -9,6 +9,9 @@
 
 #include "SinkManager.hpp"
 
+#include <spdlog/async.h>
+#include <spdlog/spdlog.h>
+
 #include <string_view>
 
 using namespace constellation::log;

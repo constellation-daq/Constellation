@@ -18,6 +18,7 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
+#include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
 #include "constellation/core/message/Header.hpp"

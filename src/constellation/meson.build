@@ -15,7 +15,15 @@ catch2_dep = dependency('catch2-with-main',
 
 magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 
-spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
+spdlog_raw_dep = dependency('spdlog', default_options: ['tests=disabled'])
+spdlog_dep = declare_dependency(
+  dependencies: spdlog_raw_dep,
+  compile_args: [
+    '-DSPDLOG_LEVEL_NAMES={"TRACE","DEBUG","INFO","WARNING","STATUS","CRITICAL","OFF"}',
+    '-DSPDLOG_SHORT_LEVEL_NAMES={"T","D","I","S","W","C","O"}',
+    '-DSPDLOG_DISABLE_DEFAULT_LOGGER',
+  ],
+)
 
 msgpackc_cxx_dep = dependency('msgpack-cxx',
   version: '>=6.1.0',

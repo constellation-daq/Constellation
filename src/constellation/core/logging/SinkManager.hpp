@@ -12,6 +12,9 @@
 #include <memory>
 #include <string>
 
+#include <spdlog/async_logger.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include "constellation/core/logging/CMDP1Sink.hpp"
 
 namespace constellation::log {

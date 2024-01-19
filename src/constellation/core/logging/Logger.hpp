@@ -13,8 +13,9 @@
 #include <source_location>
 #include <string>
 
+#include <spdlog/logger.h>
+
 #include "constellation/core/logging/Level.hpp"
-#include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/logging/swap_ostringstream.hpp"
 
 namespace constellation::log {
