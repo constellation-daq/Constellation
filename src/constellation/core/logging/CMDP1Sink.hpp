@@ -9,81 +9,41 @@
 
 #pragma once
 
-#include <algorithm>
 #include <mutex>
-#include <string>
-#include <string_view>
-#include <variant>
 
-#include <asio.hpp>
-#include <magic_enum.hpp>
-#include <msgpack.hpp>
 #include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
-#include "constellation/core/message/Header.hpp"
 #include "constellation/core/utils/ports.hpp"
-#include "Level.hpp"
 
 namespace constellation::log {
-    template <typename Mutex> class CMDP1Sink : public spdlog::sinks::base_sink<Mutex> {
+    /**
+     * Sink log messages via CMDP1
+     *
+     * Note that ZeroMQ sockets are not thread-safe, meaning that the sink requires a mutex.
+     */
+    class CMDP1Sink : public spdlog::sinks::base_sink<std::mutex> {
     public:
-        CMDP1Sink() {
-            // Bind to ephemeral port:
-            port_ = bind_ephemeral_port(publisher_);
-        }
+        /**
+         * Construct a new CMDP1Sink
+         */
+        CMDP1Sink();
 
         /**
          * Get ephemeral port this logger sink is bound to
          *
          * @return Port number
          */
-        Port getPort() const { return port_; }
+        constexpr Port getPort() const { return port_; }
 
     protected:
-        void sink_it_(const spdlog::details::log_msg& msg) override {
-            // Send topic
-            auto topic = "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" +
-                         std::string(msg.logger_name.data(), msg.logger_name.size());
-            std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
-            publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
-
-            // Pack and send message header
-            auto msghead = message::CMDP1Header(asio::ip::host_name(), msg.time);
-            const auto sbuf = msghead.assemble();
-            zmq::message_t header_frame {sbuf.data(), sbuf.size()};
-            publisher_.send(header_frame, zmq::send_flags::sndmore);
-
-            // Pack and send message
-            dictionary_t payload;
-            payload["msg"] = std::string(msg.payload.data(), msg.payload.size());
-
-            // Add source and thread information only at TRACE level:
-            if(msg.level <= spdlog::level::trace) {
-                payload["thread"] = static_cast<std::int64_t>(msg.thread_id);
-                // Add log source if not empty
-                if(!msg.source.empty()) {
-                    payload["filename"] = msg.source.filename;
-                    payload["lineno"] = msg.source.line;
-                    payload["funcname"] = msg.source.funcname;
-                }
-            }
-
-            msgpack::sbuffer mbuf {};
-            msgpack::pack(mbuf, payload);
-            zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
-            publisher_.send(payload_frame, zmq::send_flags::none);
-        }
-
-        void flush_() override {}
+        void sink_it_(const spdlog::details::log_msg& msg) final;
+        void flush_() final {}
 
     private:
+        zmq::context_t context_;
+        zmq::socket_t publisher_;
         Port port_;
-        zmq::context_t context_ {};
-        zmq::socket_t publisher_ {context_, zmq::socket_type::pub};
     };
 
-    // Note: ZeroMQ sockets are not thread-safe, so the mt version should be used with async loggers
-    using CMDP1Sink_mt = CMDP1Sink<std::mutex>;
-    using CMDP1Sink_st = CMDP1Sink<spdlog::details::null_mutex>;
 } // namespace constellation::log

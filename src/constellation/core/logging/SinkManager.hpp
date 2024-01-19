@@ -17,6 +17,7 @@
 
 #include "constellation/core/config.hpp"
 #include "constellation/core/logging/CMDP1Sink.hpp"
+#include "constellation/core/logging/Level.hpp"
 
 namespace constellation::log {
     /**
@@ -53,6 +54,6 @@ namespace constellation::log {
         SinkManager();
 
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
-        std::shared_ptr<CMDP1Sink_mt> cmdp_sink_;
+        std::shared_ptr<CMDP1Sink> cmdp1_sink_;
     };
 } // namespace constellation::log

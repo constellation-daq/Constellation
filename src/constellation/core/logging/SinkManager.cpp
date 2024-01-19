@@ -43,13 +43,13 @@ SinkManager::SinkManager() {
     console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m"sv);      // Cyan
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m"sv);      // Grey
 
-    cmdp_sink_ = std::make_shared<CMDP1Sink_mt>();
-    cmdp_sink_->set_level(spdlog::level::trace);
+    cmdp1_sink_ = std::make_shared<CMDP1Sink>();
+    cmdp1_sink_->set_level(spdlog::level::trace);
 }
 
 std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topic) {
     auto logger = std::make_shared<spdlog::async_logger>(std::move(topic),
-                                                         spdlog::sinks_init_list({console_sink_, cmdp_sink_}),
+                                                         spdlog::sinks_init_list({console_sink_, cmdp1_sink_}),
                                                          spdlog::thread_pool(),
                                                          spdlog::async_overflow_policy::overrun_oldest);
     return logger;

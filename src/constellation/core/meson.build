@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
+  'logging/CMDP1Sink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
   'message/Header.cpp',
