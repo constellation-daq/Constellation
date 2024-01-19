@@ -10,6 +10,7 @@
 #pragma once
 
 #include <memory>
+#include <source_location>
 #include <string>
 
 #include "constellation/core/logging/Level.hpp"
@@ -64,7 +65,7 @@ namespace constellation::log {
          *
          * \return swap_ostringstream object
          */
-        swap_ostringstream getStream(spdlog::source_loc src_loc, Level level);
+        swap_ostringstream log(Level level, std::source_location loc = std::source_location::current());
 
         /**
          * \brief Wrapper around the spdlog logger's log method
@@ -84,7 +85,7 @@ namespace constellation::log {
 
         Level os_level_ {Level::OFF};
         std::ostringstream os_;
-        spdlog::source_loc source_loc_;
+        std::source_location source_loc_;
 
         static constexpr size_t BACKTRACE_MESSAGES {10};
         std::string topic_;
