@@ -15,15 +15,15 @@
 
 #include <spdlog/async_logger.h>
 
+#include "constellation/core/config.hpp"
 #include "constellation/core/logging/Level.hpp"
 
 namespace constellation::log {
     /**
-     * \class Logger
-     * \brief Wrapper class for spdlog logger
+     * Logger class that to log messages via CMDP1 and to the console
      *
-     * \details This class implements a wrapper around the spdlog logger and provides additional features such as the
-     * the possibility to log using ostringstreams (with << syntax rather than enclosing the log message in parentheses)
+     * This class implements a wrapper around the spdlog logger and provides additional features such as the possibility to
+     * perform logging using streams (with << syntax rather than enclosing the log message in parentheses)
      */
     class Logger {
     public:
@@ -49,25 +49,11 @@ namespace constellation::log {
 
     public:
         /**
-         * \brief Constructor
-         * \details This creates a new Logger object and registers the spdlog logger with the static SinkManager
+         * Constructor a new logger
          *
-         * \param topic Name (topic) of the logger
+         * @param topic Name (topic) of the logger
          */
-        Logger(std::string topic);
-
-        /**
-         * \brief Set logging level for console
-         *
-         * \param level Log level for console
-         */
-        static void setConsoleLogLevel(Level level);
-
-        /**
-         * \brief Enable or disable TRACE-level messages and backtrace
-         * \param enable Boolean to enable TRACE messages
-         */
-        void enableTrace(bool enable = true);
+        CNSTLN_API Logger(std::string topic);
 
         /**
          * Check if a message should be logged given the currently configured log level
@@ -104,8 +90,6 @@ namespace constellation::log {
         }
 
     private:
-        static constexpr size_t BACKTRACE_MESSAGES {10};
-        std::string topic_;
         std::shared_ptr<spdlog::async_logger> spdlog_logger_;
     };
 } // namespace constellation::log
