@@ -10,6 +10,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <source_location>
 #include <string>
 
@@ -52,8 +53,9 @@ namespace constellation::log {
          * Constructor a new logger
          *
          * @param topic Name (topic) of the logger
+         * @param console_level Optional log level for console output to overwrite global level
          */
-        CNSTLN_API Logger(std::string topic);
+        CNSTLN_API Logger(std::string topic, std::optional<Level> console_level = std::nullopt);
 
         /**
          * Check if a message should be logged given the currently configured log level
