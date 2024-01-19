@@ -10,7 +10,7 @@ core_src = files(
 core_lib = library('ConstellationCore',
   sources: core_src,
   include_directories: constellation_inc,
-  dependencies: [asio_dep, spdlog_dep, magic_enum_dep, msgpackc_cxx_dep, cppzmq_dep],
+  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpackc_cxx_dep, spdlog_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
@@ -19,6 +19,15 @@ core_lib = library('ConstellationCore',
 install_headers(
   'config.hpp',
   subdir: 'constellation/core',
+)
+
+install_headers(
+  'logging/CMDP1Sink.hpp',
+  'logging/Level.hpp',
+  'logging/log.hpp',
+  'logging/Logger.hpp',
+  'logging/SinkManager.hpp',
+  subdir: 'constellation/logging',
 )
 
 install_headers(
@@ -37,4 +46,5 @@ install_headers(
 core_dep = declare_dependency(
   link_with: core_lib,
   include_directories: constellation_inc,
+  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpackc_cxx_dep, spdlog_dep],
 )
