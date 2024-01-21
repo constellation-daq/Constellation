@@ -50,3 +50,12 @@ core_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpackc_cxx_dep, spdlog_dep],
 )
+
+# logging tests
+
+test_log = executable('test_log',
+  sources: 'logging/test/test_log.cpp',
+  dependencies: [core_dep, catch2_dep])
+test('Logging test', test_log,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false)
