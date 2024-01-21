@@ -10,8 +10,10 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <map>
 #include <string>
+#include <variant>
 
 namespace constellation {
     using dictionary_t =
