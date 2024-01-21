@@ -51,11 +51,17 @@ core_dep = declare_dependency(
   dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpackc_cxx_dep, spdlog_dep],
 )
 
-# logging tests
+# logging test tools
+executable('cmdp_log_send',
+  sources: 'logging/test/cmdp_log_send.cpp',
+  dependencies: core_dep,
+)
 
+# logging tests
 test_log = executable('test_log',
   sources: 'logging/test/test_log.cpp',
-  dependencies: [core_dep, catch2_dep])
+  dependencies: [core_dep, catch2_dep],
+)
 test('Logging test', test_log,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   is_parallel: false)
