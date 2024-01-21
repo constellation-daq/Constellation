@@ -54,7 +54,7 @@ namespace constellation::message {
         constexpr std::string_view getSender() const { return sender_; }
 
         /** Return message tags */
-        CNSTLN_API dictionary_t getTags() const { return tags_; }
+        dictionary_t getTags() const { return tags_; }
 
         /** Return message tag */
         template <typename T> T constexpr getTag(const std::string& key) const { return tags_.at(key); }
