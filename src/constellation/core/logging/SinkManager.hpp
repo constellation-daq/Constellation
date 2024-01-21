@@ -22,6 +22,7 @@
 #include "constellation/core/config.hpp"
 #include "constellation/core/logging/CMDP1Sink.hpp"
 #include "constellation/core/logging/Level.hpp"
+#include "constellation/core/utils/ports.hpp"
 
 namespace constellation::log {
     /**
@@ -45,6 +46,13 @@ namespace constellation::log {
          * @param level Log level for console output
          */
         CNSTLN_API void setGlobalConsoleLevel(Level level);
+
+        /**
+         * Get the ephemeral port to which the CMDP1 sink is bound to
+         *
+         * @return Port number
+         */
+        Port getCMDP1Port() const { return cmdp1_sink_->getPort(); }
 
         /**
          * Create a new asynchronous spglog logger
