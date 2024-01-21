@@ -91,6 +91,11 @@ namespace constellation::log {
                                 message);
         }
 
+        /**
+         * Flush each spdlog sink (synchronously)
+         */
+        CNSTLN_API void flush();
+
     private:
         std::shared_ptr<spdlog::async_logger> spdlog_logger_;
     };

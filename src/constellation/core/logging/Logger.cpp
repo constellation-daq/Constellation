@@ -15,3 +15,9 @@ using namespace constellation::log;
 
 Logger::Logger(std::string topic, std::optional<Level> console_level)
     : spdlog_logger_(SinkManager::getInstance().createLogger(std::move(topic), console_level)) {}
+
+void Logger::flush() {
+    for(auto& sink : spdlog_logger_->sinks()) {
+        sink->flush();
+    }
+}
