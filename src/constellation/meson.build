@@ -4,7 +4,7 @@
 asio_raw_dep = dependency('asio')
 asio_dep = declare_dependency(
   dependencies: asio_raw_dep,
-  compile_args: ['-DASIO_STANDALONE=1'] ,
+  compile_args: ['-DASIO_STANDALONE=1'],
 )
 
 thread_dep = dependency('threads')
