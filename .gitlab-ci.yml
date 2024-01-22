@@ -176,6 +176,27 @@ lint:coverage:
         coverage_format: cobertura
         path: build/meson-logs/coverage.xml
 
+lint:clang-scan-build:
+  extends:
+    - .lint
+    - .debian-clang
+  needs:
+    - job: build:debian-clang
+      artifacts: false
+  variables:
+    CCC_CC: clang
+    CCC_CXX: clang++
+  script:
+    - meson setup build -Dimpl_cpp=enabled -Dbuildtype=debug
+    - ninja -C build scan-build
+    - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
+  artifacts:
+    paths:
+      - build/meson-logs/scanbuild
+    when: on_failure
+    expose_as: 'clang-scan-build'
+    expire_in: 1 week
+
 # format stage
 
 .format:
