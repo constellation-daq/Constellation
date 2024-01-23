@@ -20,7 +20,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/logging/CMDP1Sink.hpp"
+#include "constellation/core/logging/CMDPSink.hpp"
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/utils/ports.hpp"
 
@@ -28,7 +28,7 @@ namespace constellation::log {
     /**
      * Global sink manager
      *
-     * This class manager the console and CMDP1 sinks and can creates new spdlog loggers.
+     * This class manager the console and CMDP sinks and can creates new spdlog loggers.
      */
     class SinkManager {
     public:
@@ -48,11 +48,11 @@ namespace constellation::log {
         CNSTLN_API void setGlobalConsoleLevel(Level level);
 
         /**
-         * Get the ephemeral port to which the CMDP1 sink is bound to
+         * Get the ephemeral port to which the CMDP sink is bound to
          *
          * @return Port number
          */
-        Port getCMDP1Port() const { return cmdp1_sink_->getPort(); }
+        Port getCMDPPort() const { return cmdp_sink_->getPort(); }
 
         /**
          * Create a new asynchronous spglog logger
@@ -80,7 +80,7 @@ namespace constellation::log {
 
     private:
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
-        std::shared_ptr<CMDP1Sink> cmdp1_sink_;
+        std::shared_ptr<CMDPSink> cmdp_sink_;
 
         std::vector<std::shared_ptr<spdlog::async_logger>> loggers_;
 

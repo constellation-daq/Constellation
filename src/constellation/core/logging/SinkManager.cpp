@@ -53,8 +53,8 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m"sv);      // Grey
 
     // CMDP sink, log level always TRACE since only accessed via ProxySink
-    cmdp1_sink_ = std::make_shared<CMDP1Sink>();
-    cmdp1_sink_->set_level(to_spdlog_level(TRACE));
+    cmdp_sink_ = std::make_shared<CMDPSink>();
+    cmdp_sink_->set_level(to_spdlog_level(TRACE));
 
     // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
     cmdp_global_level_ = TRACE; // NOLINT(cppcoreguidelines-prefer-member-initializer)
@@ -62,7 +62,7 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
 
 std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topic, std::optional<Level> console_level) {
     // Create proxy for CMDP sink so that we can set CMDP log level separate from console log level
-    auto cmdp_proxy_sink = std::make_shared<ProxySink>(cmdp1_sink_);
+    auto cmdp_proxy_sink = std::make_shared<ProxySink>(cmdp_sink_);
 
     // Create proxy for console sink if custom log level was provided
     std::shared_ptr<spdlog::sinks::sink> console_sink {};

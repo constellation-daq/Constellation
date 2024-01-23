@@ -21,7 +21,7 @@
 
 namespace constellation::log {
     /**
-     * Logger class that to log messages via CMDP1 and to the console
+     * Logger class that to log messages via CMDP and to the console
      *
      * This class implements a wrapper around the spdlog logger and provides additional features such as the possibility to
      * perform logging using streams (with << syntax rather than enclosing the log message in parentheses)

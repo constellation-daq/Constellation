@@ -18,16 +18,16 @@
 
 namespace constellation::log {
     /**
-     * Sink log messages via CMDP1
+     * Sink log messages via CMDP
      *
      * Note that ZeroMQ sockets are not thread-safe, meaning that the sink requires a mutex.
      */
-    class CMDP1Sink : public spdlog::sinks::base_sink<std::mutex> {
+    class CMDPSink : public spdlog::sinks::base_sink<std::mutex> {
     public:
         /**
-         * Construct a new CMDP1Sink
+         * Construct a new CMDPSink
          */
-        CMDP1Sink();
+        CMDPSink();
 
         /**
          * Get ephemeral port this logger sink is bound to

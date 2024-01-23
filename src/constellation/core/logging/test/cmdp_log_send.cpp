@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
     SinkManager::getInstance().setCMDPLevelsCustom(TRACE);
 
     Logger logger {topic};
-    std::cout << "Starting logging on port " << SinkManager::getInstance().getCMDP1Port() << std::endl;
+    std::cout << "Starting logging on port " << SinkManager::getInstance().getCMDPPort() << std::endl;
 
     while(true) {
         std::string message;

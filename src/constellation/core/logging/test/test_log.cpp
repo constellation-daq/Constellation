@@ -93,9 +93,9 @@ TEST_CASE("Log levels", "[logging]") {
     REQUIRE(logger.shouldLog(TRACE));
 }
 
-TEST_CASE("Ephemeral CMDP1 port", "[logging]") {
+TEST_CASE("Ephemeral CMDP port", "[logging]") {
     // Port number of ephemeral port should always be >=1024 on all OSes
-    auto port_number = SinkManager::getInstance().getCMDP1Port();
+    auto port_number = SinkManager::getInstance().getCMDPPort();
     REQUIRE(port_number >= 1024);
 }
 

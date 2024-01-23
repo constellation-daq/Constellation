@@ -1,13 +1,13 @@
 /**
  * @file
- * @brief Implementation of CMDP1Sink
+ * @brief Implementation of CMDPSink
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "CMDP1Sink.hpp"
+#include "CMDPSink.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -48,9 +48,9 @@ std::string get_rel_file_path(std::string file_path) {
 }
 
 // Bind socket to ephemeral port on construction
-CMDP1Sink::CMDP1Sink() : publisher_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(publisher_)) {}
+CMDPSink::CMDPSink() : publisher_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(publisher_)) {}
 
-void CMDP1Sink::sink_it_(const spdlog::details::log_msg& msg) {
+void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
     // Send topic
     auto topic =
         "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" + to_string(msg.logger_name);
