@@ -197,6 +197,28 @@ lint:clang-scan-build:
     expose_as: 'clang-scan-build'
     expire_in: 1 week
 
+lint:coverity-scan:
+  extends:
+    - .lint
+    - .ubuntu-22.04
+  needs:
+    - job: build:ubuntu-22.04
+      artifacts: false
+  script:
+    - curl -s https://scan.coverity.com/download/linux64 -o /tmp/cov-analysis-linux64.tgz
+        --form project=$COVERITY_SCAN_PROJECT_NAME --form token=$COVERITY_SCAN_TOKEN
+    - tar -xzf /tmp/cov-analysis-linux64.tgz
+    - rm -r /tmp/cov-analysis-linux64.tgz
+    - meson setup build -Dimpl_cpp=enabled -Dbuildtype=debug
+    - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja -C build
+    - tar -czf cov-int.tgz cov-int
+    - curl -s https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
+        --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
+        --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
+        --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE=="schedule"
+
 # format stage
 
 .format:
