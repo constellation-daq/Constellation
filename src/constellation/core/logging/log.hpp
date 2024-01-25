@@ -9,58 +9,57 @@
 
 #pragma once
 
+#include <atomic>
+#include <string_view>
+
 #include "constellation/core/logging/Level.hpp"
 
-// Forward enum definitions
-using enum constellation::log::Level;
+using enum constellation::log::Level;                // Forward log level enum
+using namespace std::literals::string_view_literals; // NOLINT(google-global-names-in-headers)
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
-// Nested concatenation to support __LINE__, see https://stackoverflow.com/a/19666216/17555746
-#define CONCAT_IMPL(x, y) x##y
+/** Define a new token by concatenation */
+#define LOG_CONCAT(x, y) x##y
 
-// Define new token by concatenation with macro support
-#define CONCAT(x, y) CONCAT_IMPL(x, y)
-
-// Generate a unique log var (contains the line number in the variable name)
-#define GENERATE_LOG_VAR(count)                                                                                             \
-    static std::atomic_uint CONCAT(_LOG_VAR_L, __LINE__) {                                                                  \
-        count                                                                                                               \
-    }
-
-// Get the unique log variable
-#define GET_LOG_VAR() CONCAT(_LOG_VAR_L, __LINE__)
-
-#ifndef __FILE_NAME__
-/**
- *  @brief Base name of the file without the directory
+/** Define new token by concatenation with support for nesting
+ *
+ * Nesting means that the parameters itself can be a macro. For example,`__LINE__` is a macro and `_VAR_NAME_L##__LINE__`
+ * returns `_VAR_NAME_L__LINE__` instead of `_VAR_NAME_LXX`. See also https://stackoverflow.com/a/19666216.
  */
-#define __FILE_NAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
-#endif
+#define LOG_CONCAT_NESTED(x, y) LOG_CONCAT(x, y)
 
-// If message with level should be logged
-#define IFLOG(level) if(LOGGER.shouldLog(level))
+/** Defines a token for a unique log variable named `LOG_VAR_LXX` where `XX` is the line number */
+#define LOG_VAR LOG_CONCAT_NESTED(LOG_VAR_L, __LINE__)
 
-// Log message
+/** Returns whether message with certain level be logged */
+#define SHOULD_LOG(level) LOGGER.shouldLog(level)
+
+/**
+ * Logs a message for a given level
+ *
+ * The stream expression is only evaluated if logging should take place.
+ */
 #define LOG(level)                                                                                                          \
-    IFLOG(level)                                                                                                            \
-    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)
+    if(LOGGER.shouldLog(level))                                                                                             \
+    LOGGER.log(level)
 
-// Log message if condition is met
+/**
+ * Logs a message if a given condition is true
+ *
+ * The given condition is evaluated after it was determined if logging should take place.
+ */
 #define LOG_IF(level, condition)                                                                                            \
-    IFLOG(level)                                                                                                            \
-    if(condition)                                                                                                           \
-    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)
+    if(LOGGER.shouldLog(level) && (condition))                                                                              \
+    LOGGER.log(level)
 
-// Log message at most N times
+/** Logs a message at most N times */
 #define LOG_N(level, count)                                                                                                 \
-    GENERATE_LOG_VAR(count);                                                                                                \
-    IFLOG(level)                                                                                                            \
-    if(GET_LOG_VAR() > 0)                                                                                                   \
-    LOGGER.getStream(spdlog::source_loc {__FILE_NAME__, __LINE__, SPDLOG_FUNCTION}, level)                                  \
-        << ((--GET_LOG_VAR() == 0) ? "[further messages suppressed] " : "")
+    static std::atomic_int LOG_VAR {count};                                                                                 \
+    if(LOG_VAR > 0 && LOGGER.shouldLog(level))                                                                              \
+    LOGGER.log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
 
-// Log message at most one time
+/** Logs a message at most one time */
 #define LOG_ONCE(level) LOG_N(level, 1)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

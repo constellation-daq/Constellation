@@ -9,21 +9,9 @@
 
 #pragma once
 
-// Overwrite default log level names
-#define SPDLOG_LEVEL_NAMES                                                                                                  \
-    { "TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL", "OFF" }
-#define SPDLOG_SHORT_LEVEL_NAMES                                                                                            \
-    { "T", "D", "I", "W", "S", "C", "O" }
+#include "constellation/core/utils/std23.hpp"
 
-// Disable default logger
-#define SPDLOG_DISABLE_DEFAULT_LOGGER
-
-// Specify all required spdlog headers here, do not include spdlog headers elsewhere
-#include <spdlog/async.h>
-#include <spdlog/details/null_mutex.h>
-#include <spdlog/sinks/base_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
+#include <spdlog/common.h>
 
 namespace constellation::log {
     // log levels, allows direct casting to spdlog::level::level_enum
@@ -36,6 +24,7 @@ namespace constellation::log {
         CRITICAL = 5,
         OFF = 6,
     };
+    using enum Level;
 
     constexpr spdlog::level::level_enum to_spdlog_level(Level level) {
         return static_cast<spdlog::level::level_enum>(level);
@@ -43,5 +32,9 @@ namespace constellation::log {
 
     constexpr Level from_spdlog_level(spdlog::level::level_enum level) {
         return static_cast<Level>(level);
+    }
+
+    template <typename LevelL, typename LevelR> constexpr Level min_level(LevelL lhs, LevelR rhs) {
+        return static_cast<Level>(std::min(std::to_underlying(lhs), std::to_underlying(rhs)));
     }
 } // namespace constellation::log
