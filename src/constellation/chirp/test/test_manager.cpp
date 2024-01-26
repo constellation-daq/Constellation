@@ -8,6 +8,7 @@
  */
 
 #include <any>
+#include <atomic>
 #include <chrono>
 #include <future>
 #include <thread>
@@ -120,7 +121,7 @@ TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
     // This is purely a coverage test to ensure that the async receive works
-    std::this_thread::sleep_for(105ms);
+    std::this_thread::sleep_for(110ms);
 }
 
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
@@ -153,7 +154,7 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     // Register service, should send OFFER
     manager1.RegisterService(DATA, 24000);
     // Wait a bit ensure we received the message
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
     // Test that we discovered the service
     const auto services_1 = manager2.GetDiscoveredServices();
     REQUIRE(services_1.size() == 1);
@@ -167,13 +168,13 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     // Register other services
     manager1.RegisterService(MONITORING, 65000);
     manager1.RegisterService(HEARTBEAT, 65001);
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
 
     // Test that we discovered the services
     REQUIRE(manager2.GetDiscoveredServices().size() == 3);
     // Unregister a service
     manager1.UnregisterService(MONITORING, 65000);
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
     // Test that we discovered DEPART message
     REQUIRE(manager2.GetDiscoveredServices().size() == 2);
     // Now test that we can filter a service category
@@ -186,12 +187,12 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     manager1.UnregisterServices();
     manager1.RegisterService(CONTROL, 40001);
     manager1.RegisterService(DATA, 40002);
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
     // Test that we discovered services
     REQUIRE(manager2.GetDiscoveredServices().size() == 2);
     // Unregister all services
     manager1.UnregisterServices();
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
     // Test that we discovered DEPART messages
     REQUIRE(manager2.GetDiscoveredServices().empty());
 }
@@ -201,60 +202,86 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
     manager2.Start();
 
+    // Callback test struct to test if callback was properly executed
+    struct CBTest {
+        bool depart {};
+        DiscoveredService service {};
+        std::atomic_bool executed {false};
+    };
+    CBTest cb_test_data {};
+
     // Create a callback, use pointer to access test variable
-    std::pair<bool, DiscoveredService> cb_departb_service {true, {}};
     auto callback = [](DiscoveredService service, bool depart, std::any cb_info) {
-        auto* cb_departb_service_l = std::any_cast<std::pair<bool, DiscoveredService>*>(cb_info);
-        cb_departb_service_l->first = depart;
-        cb_departb_service_l->second = std::move(service);
+        auto* cb_test_data_p = std::any_cast<CBTest*>(cb_info);
+        cb_test_data_p->depart = depart;
+        cb_test_data_p->service = std::move(service);
+        // Set callback as executed
+        cb_test_data_p->executed = true;
     };
 
     // Register callback for CONTROL
-    manager2.RegisterDiscoverCallback(callback, CONTROL, &cb_departb_service);
+    manager2.RegisterDiscoverCallback(callback, CONTROL, &cb_test_data);
     // Register CONTROL service
     manager1.RegisterService(CONTROL, 50100);
-    // Wait a bit ensure the callback is executed
-    std::this_thread::sleep_for(5ms);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
     // Test that we correct OFFER callback
-    REQUIRE_FALSE(cb_departb_service.first);
-    REQUIRE(cb_departb_service.second.identifier == CONTROL);
-    REQUIRE(cb_departb_service.second.port == 50100);
+    REQUIRE_FALSE(cb_test_data.depart);
+    REQUIRE(cb_test_data.service.identifier == CONTROL);
+    REQUIRE(cb_test_data.service.port == 50100);
 
     // Unregister service
     manager1.UnregisterService(CONTROL, 50100);
-    std::this_thread::sleep_for(5ms);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
     // Test that we got DEPART callback
-    REQUIRE(cb_departb_service.first);
+    REQUIRE(cb_test_data.depart);
 
     // Unregister callback
     manager2.UnregisterDiscoverCallback(callback, CONTROL);
     // Register CONTROL service
     manager1.RegisterService(CONTROL, 50100);
-    std::this_thread::sleep_for(5ms);
-    // Test that we did not get an OFFER callback but still are at DEPART from before
-    REQUIRE(cb_departb_service.first);
+    // Wait a bit to check for execution of callback
+    std::this_thread::sleep_for(10ms);
+    // Test that callback was not executed
+    REQUIRE_FALSE(cb_test_data.executed);
 
     // Register callback for HEARTBEAT and MONITORING
-    manager2.RegisterDiscoverCallback(callback, HEARTBEAT, &cb_departb_service);
-    manager2.RegisterDiscoverCallback(callback, MONITORING, &cb_departb_service);
+    manager2.RegisterDiscoverCallback(callback, HEARTBEAT, &cb_test_data);
+    manager2.RegisterDiscoverCallback(callback, MONITORING, &cb_test_data);
     // Register HEARTBEAT service
     manager1.RegisterService(HEARTBEAT, 50200);
-    std::this_thread::sleep_for(5ms);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
     // Test that we got HEARTBEAT callback
-    REQUIRE(cb_departb_service.second.identifier == HEARTBEAT);
+    REQUIRE(cb_test_data.service.identifier == HEARTBEAT);
     // Register MONITORING service
     manager1.RegisterService(MONITORING, 50300);
-    std::this_thread::sleep_for(5ms);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
     // Test that we got MONITORING callback
-    REQUIRE(cb_departb_service.second.identifier == MONITORING);
+    REQUIRE(cb_test_data.service.identifier == MONITORING);
 
-    // Unregister all callback
+    // Unregister all callbacks
     manager2.UnregisterDiscoverCallbacks();
     // Unregister all services
     manager1.UnregisterServices();
-    std::this_thread::sleep_for(5ms);
-    // Test that we did not get a DEPART callback but still are at OFFER from before
-    REQUIRE_FALSE(cb_departb_service.first);
+    // Wait a bit to check for execution of callback
+    std::this_thread::sleep_for(10ms);
+    // Test that callback was not executed
+    REQUIRE_FALSE(cb_test_data.executed);
 }
 
 TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
@@ -290,7 +317,7 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
     sender.SendBroadcast(asm_msg_a.data(), asm_msg_a.size());
     sender.SendBroadcast(asm_msg_b.data(), asm_msg_b.size());
     // Wait a bit ensure we received the message
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
 
     // If everything worked, the corresponding lines should be marked as executed in coverage
 }
@@ -306,7 +333,7 @@ TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::man
     // Send message
     sender.SendBroadcast(asm_msg.data(), asm_msg.size());
     // Wait a bit ensure we received the message
-    std::this_thread::sleep_for(5ms);
+    std::this_thread::sleep_for(10ms);
 
     // If everything worked, the corresponding lines should be marked as executed in coverage
 }
