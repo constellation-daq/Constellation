@@ -193,7 +193,7 @@ void Manager::SendMessage(MessageType type, RegisteredService service) {
 void Manager::Run(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         try {
-            const auto raw_msg_opt = receiver_.AsyncRecvBroadcast(100ms);
+            const auto raw_msg_opt = receiver_.AsyncRecvBroadcast(50ms);
 
             // Check for timeout
             if(!raw_msg_opt.has_value()) {

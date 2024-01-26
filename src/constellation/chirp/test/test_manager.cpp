@@ -121,7 +121,7 @@ TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.Start();
     // This is purely a coverage test to ensure that the async receive works
-    std::this_thread::sleep_for(110ms);
+    std::this_thread::sleep_for(10ms);
 }
 
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
