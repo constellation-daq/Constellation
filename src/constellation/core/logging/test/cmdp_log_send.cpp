@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     SinkManager::getInstance().setGlobalConsoleLevel(OFF);
     SinkManager::getInstance().setCMDPLevelsCustom(TRACE);
 
-    Logger logger {topic};
+    Logger logger {std::move(topic)};
     std::cout << "Starting logging on port " << SinkManager::getInstance().getCMDPPort() << std::endl;
 
     while(true) {
