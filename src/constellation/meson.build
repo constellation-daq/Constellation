@@ -25,9 +25,7 @@ spdlog_dep = declare_dependency(
   ],
 )
 
-msgpackc_cxx_dep = dependency('msgpack-cxx',
-  version: '>=6.1.0',
-  default_options: ['boost=disabled', 'std_variant=true', 'tests=disabled'])
+msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 'tests=disabled'])
 
 libzmq_dep = dependency('libzmq',
   default_options: [
