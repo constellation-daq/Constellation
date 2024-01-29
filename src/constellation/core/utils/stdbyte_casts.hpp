@@ -25,4 +25,14 @@ namespace constellation {
         return reinterpret_cast<void*>(data);
     }
 
+    inline std::byte* to_byte_ptr(char* data) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<std::byte*>(data);
+    }
+
+    inline std::byte* to_byte_ptr(void* data) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<std::byte*>(data);
+    }
+
 } // namespace constellation
