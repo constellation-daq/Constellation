@@ -14,11 +14,12 @@
 #include <span>
 #include <string_view>
 
-#include <msgpack.hpp>
+#include <msgpack/pack_decl.hpp>
+#include <msgpack/sbuffer_decl.hpp>
 
 #include "constellation/core/config.hpp"
+#include "constellation/core/message/Dictionary.hpp"
 #include "constellation/core/message/Protocol.hpp"
-#include "constellation/core/utils/dictionary.hpp"
 
 namespace constellation::message {
 
@@ -54,24 +55,24 @@ namespace constellation::message {
         constexpr std::string_view getSender() const { return sender_; }
 
         /** Return message tags */
-        dictionary_t getTags() const { return tags_; }
+        constexpr const Dictionary& getTags() const { return tags_; }
 
         /** Return message tag */
-        template <typename T> T constexpr getTag(const std::string& key) const { return tags_.at(key); }
+        constexpr DictionaryValue getTag(const std::string& key) const { return tags_.at(key); }
 
         /** Set message tag */
-        template <typename T> constexpr void setTag(const std::string& key, T value) { tags_[key] = value; }
+        constexpr void setTag(const std::string& key, DictionaryValue value) { tags_[key] = std::move(value); }
 
-        /** Assemble message header to bytes */
-        CNSTLN_API msgpack::sbuffer assemble() const;
-
-        /** Print message header to std::cout */
+        /** Convert message header to human readable string */
         CNSTLN_API std::string to_string() const;
+
+        /** Pack message header with msgpack */
+        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
 
     private:
         std::string sender_;
         std::chrono::system_clock::time_point time_;
-        dictionary_t tags_;
+        Dictionary tags_;
     };
 
     /** CSCP1 Header */

@@ -20,7 +20,6 @@
 
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/message/Header.hpp"
-#include "constellation/core/utils/dictionary.hpp"
 
 using namespace constellation::log;
 using namespace std::literals::string_literals;
@@ -57,29 +56,24 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
     std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
     publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
-    // Pack and send message header
+    // Fill message header
     auto msghead = message::CMDP1Header(asio::ip::host_name(), msg.time);
-    const auto sbuf = msghead.assemble();
+    // Add source and thread information only at TRACE level:
+    if(msg.level <= spdlog::level::trace) {
+        msghead.setTag("thread", static_cast<std::int64_t>(msg.thread_id));
+        // Add log source if not empty
+        if(!msg.source.empty()) {
+            msghead.setTag("filename", get_rel_file_path(msg.source.filename));
+            msghead.setTag("lineno", static_cast<std::int64_t>(msg.source.line));
+            msghead.setTag("funcname", msg.source.funcname);
+        }
+    }
+    // Send message header
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, msghead);
     zmq::message_t header_frame {sbuf.data(), sbuf.size()};
     publisher_.send(header_frame, zmq::send_flags::sndmore);
 
     // Pack and send message
-    dictionary_t payload;
-    payload["msg"] = to_string(msg.payload);
-
-    // Add source and thread information only at TRACE level:
-    if(msg.level <= spdlog::level::trace) {
-        payload["thread"] = static_cast<std::int64_t>(msg.thread_id);
-        // Add log source if not empty
-        if(!msg.source.empty()) {
-            payload["filename"] = get_rel_file_path(msg.source.filename);
-            payload["lineno"] = msg.source.line;
-            payload["funcname"] = msg.source.funcname;
-        }
-    }
-
-    msgpack::sbuffer mbuf {};
-    msgpack::pack(mbuf, payload);
-    zmq::message_t payload_frame {mbuf.data(), mbuf.size()};
-    publisher_.send(payload_frame, zmq::send_flags::none);
+    publisher_.send(zmq::const_buffer(msg.payload.data(), msg.payload.size()), zmq::send_flags::none);
 }

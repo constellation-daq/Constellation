@@ -5,6 +5,7 @@ core_src = files(
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
+  'message/Dictionary.cpp',
   'message/Header.cpp',
 )
 
@@ -33,13 +34,13 @@ install_headers(
 )
 
 install_headers(
+  'message/Dictionary.hpp',
   'message/Header.hpp',
   'message/Protocol.hpp',
   subdir: 'constellation/core/message',
 )
 
 install_headers(
-  'utils/dictionary.hpp',
   'utils/std23.hpp',
   'utils/stdbyte_casts.hpp',
   subdir: 'constellation/core/utils',
@@ -50,6 +51,14 @@ core_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
 )
+
+# message tests
+test_message_header = executable('test_header',
+  sources: 'message/test/test_header.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Message Header test', test_message_header,
+  args: ['--durations', 'yes', '--verbosity', 'high'])
 
 # logging test tools
 executable('cmdp_log_send',

@@ -9,14 +9,20 @@
 
 #include "Header.hpp"
 
+#include <ios>
+#include <sstream>
+#include <string>
+#include <string_view>
+
+#include <magic_enum.hpp>
+#include <msgpack.hpp>
+
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/std23.hpp"
 #include "constellation/core/utils/stdbyte_casts.hpp"
 
-#include <sstream>
-#include <string_view>
-
 using namespace constellation::message;
+using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
 /**
@@ -25,11 +31,11 @@ using namespace std::literals::string_view_literals;
  * @param protocol Protocol
  * @return Protocol identifier string in message header
  */
-constexpr std::string_view get_protocol_identifier(Protocol protocol) {
+inline std::string get_protocol_identifier(Protocol protocol) {
     switch(protocol) {
-    case CSCP1: return "CSCP\01"sv;
-    case CMDP1: return "CMDP\01"sv;
-    case CDTP1: return "CDTP\01"sv;
+    case CSCP1: return "CSCP\01"s;
+    case CMDP1: return "CMDP\01"s;
+    case CDTP1: return "CDTP\01"s;
     default: std::unreachable();
     }
 }
@@ -60,37 +66,34 @@ template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
 
     // Unpack tags
     const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    tags_ = msgpack_tags->as<dictionary_t>();
+    tags_ = msgpack_tags->as<Dictionary>();
 }
 
-template <Protocol P> msgpack::sbuffer Header<P>::assemble() const {
-    msgpack::sbuffer sbuf {};
-    msgpack::packer<msgpack::sbuffer> packer {&sbuf};
-
+template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     // first pack version
-    packer.pack(get_protocol_identifier(P));
+    msgpack_packer.pack(get_protocol_identifier(P));
     // then sender
-    packer.pack(sender_);
+    msgpack_packer.pack(sender_);
     // then time
-    packer.pack(time_);
+    msgpack_packer.pack(time_);
     // then tags
-    packer.pack(tags_);
-
-    // content can be accessed via .data() and .size()
-    return sbuf;
+    msgpack_packer.pack(tags_);
 }
 
 template <Protocol P> std::string Header<P>::to_string() const {
+    // Make protocol identifier version human readable
+    auto protocol = get_protocol_identifier(P);
+    protocol.back() = static_cast<char>(protocol.back() + '0');
+    // Stream message
     std::ostringstream out {};
-    out << "Header: " << get_protocol_identifier(P) << "\n"
-        << "Sender: " << sender_ << "\n"
-        << "Time:   " << time_ << "\n"
-        << "Tags:\n";
+    std::boolalpha(out);
+    out << "Header: "sv << protocol << '\n' //
+        << "Sender: "sv << sender_ << '\n'  //
+        << "Time:   "sv << time_ << '\n'    //
+        << "Tags:"sv;
     for(const auto& entry : tags_) {
-        // TODO(stephan.lachnit): second entry evaluation should be in a try / catch block
-        out << " " << entry.first << ": ";
+        out << "\n "sv << entry.first << ": "sv;
         std::visit([&](auto&& arg) { out << arg; }, entry.second);
-        out << "\n";
     }
     return out.str();
 }
