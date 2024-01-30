@@ -9,6 +9,7 @@
 
 #include <charconv>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 
 #include <asio.hpp>
@@ -23,7 +24,12 @@ int main(int argc, char* argv[]) {
     asio::ip::address any_address = asio::ip::address_v4::any();
     asio::ip::port_type port = CHIRP_PORT;
     if(argc >= 2) {
-        any_address = asio::ip::make_address(argv[1]);
+        try {
+            any_address = asio::ip::make_address(argv[1]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use any address " << std::quoted(argv[1]) << ", using "
+                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+        }
     }
     if(argc >= 3) {
         std::from_chars(argv[2], argv[2] + std::strlen(argv[2]), port);
@@ -33,7 +39,8 @@ int main(int argc, char* argv[]) {
 
     while(true) {
         auto message = receiver.RecvBroadcast();
-        std::cout << "recv message from " << message.address.to_string() << ": " << message.content_to_string() << std::endl;
+        std::cout << "Received message from " << message.address.to_string() << ": " << message.content_to_string()
+                  << std::endl;
     }
 
     return 0;

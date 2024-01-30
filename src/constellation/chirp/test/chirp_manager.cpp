@@ -49,7 +49,7 @@ void discover_callback(DiscoveredService service, bool depart, std::any /* user_
               << " Host " << service.host_id.to_string()                                                //
               << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
               << (depart ? " DEPART" : " OFFER")                                                        //
-              << std::endl;
+              << std::right << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -62,13 +62,23 @@ int main(int argc, char* argv[]) {
         name = argv[1];
     }
     if(argc >= 3) {
-        brd_address = asio::ip::make_address(argv[2]);
+        try {
+            brd_address = asio::ip::make_address(argv[2]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use broadcast address " << std::quoted(argv[2]) << ", using "
+                      << std::quoted(brd_address.to_string()) << " instead" << std::endl;
+        }
     }
     if(argc >= 4) {
         group = argv[3];
     }
     if(argc >= 5) {
-        any_address = asio::ip::make_address(argv[4]);
+        try {
+            any_address = asio::ip::make_address(argv[4]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use any address " << std::quoted(argv[4]) << ", using "
+                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+        }
     }
 
     Manager manager {brd_address, any_address, group, name};
@@ -116,7 +126,7 @@ int main(int argc, char* argv[]) {
                               << " Port " << std::setw(5) << service.port                                               //
                               << "\n";
                 }
-                std::cout << std::flush;
+                std::cout << std::right << std::flush;
                 continue;
             }
             // List discovered services
@@ -135,7 +145,7 @@ int main(int argc, char* argv[]) {
                               << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
                               << "\n";
                 }
-                std::cout << std::flush;
+                std::cout << std::right << std::flush;
                 continue;
             }
             // Register or unregister a service
@@ -152,13 +162,13 @@ int main(int argc, char* argv[]) {
                     auto ret = manager.RegisterService(service, port);
                     if(ret) {
                         std::cout << " Registered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::endl;
+                                  << " Port " << std::setw(5) << port << std::right << std::endl;
                     }
                 } else {
                     auto ret = manager.UnregisterService(service, port);
                     if(ret) {
                         std::cout << " Unregistered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::endl;
+                                  << " Port " << std::setw(5) << port << std::right << std::endl;
                     }
                 }
                 continue;

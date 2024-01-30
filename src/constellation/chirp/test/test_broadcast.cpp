@@ -88,7 +88,7 @@ TEST_CASE("Send and receive broadcast asynchronously", "[chirp][broadcast]") {
     REQUIRE(msg_opt.has_value());
 
     // Get message
-    auto msg = msg_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
+    const auto& msg = msg_opt.value(); // NOLINT(bugprone-unchecked-optional-access)
 
     REQUIRE_THAT(msg.content_to_string(), Equals(msg_content));
 }

@@ -73,10 +73,11 @@ std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topi
         console_sink = console_sink_;
     }
 
-    auto logger = std::make_shared<spdlog::async_logger>(std::move(topic),
-                                                         spdlog::sinks_init_list({console_sink, cmdp_proxy_sink}),
-                                                         spdlog::thread_pool(),
-                                                         spdlog::async_overflow_policy::overrun_oldest);
+    auto logger = std::make_shared<spdlog::async_logger>(
+        std::move(topic),
+        spdlog::sinks_init_list({std::move(console_sink), std::move(cmdp_proxy_sink)}),
+        spdlog::thread_pool(),
+        spdlog::async_overflow_policy::overrun_oldest);
     loggers_.push_back(logger);
 
     // Calculate level of CMDP sink and logger
