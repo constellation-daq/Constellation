@@ -8,6 +8,7 @@
  */
 
 #include <charconv>
+#include <iomanip>
 #include <iostream>
 #include <string>
 
@@ -24,7 +25,12 @@ int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline
     asio::ip::address brd_address = asio::ip::address_v4::broadcast();
     if(argc >= 2) {
-        brd_address = asio::ip::make_address(argv[1]);
+        try {
+            brd_address = asio::ip::make_address(argv[1]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use broadcast address " << std::quoted(argv[1]) << ", using "
+                      << std::quoted(brd_address.to_string()) << " instead" << std::endl;
+        }
     }
 
     BroadcastSend sender {brd_address, CHIRP_PORT};

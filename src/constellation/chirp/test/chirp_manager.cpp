@@ -62,13 +62,23 @@ int main(int argc, char* argv[]) {
         name = argv[1];
     }
     if(argc >= 3) {
-        brd_address = asio::ip::make_address(argv[2]);
+        try {
+            brd_address = asio::ip::make_address(argv[2]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use broadcast address " << std::quoted(argv[2]) << ", using "
+                      << std::quoted(brd_address.to_string()) << " instead" << std::endl;
+        }
     }
     if(argc >= 4) {
         group = argv[3];
     }
     if(argc >= 5) {
-        any_address = asio::ip::make_address(argv[4]);
+        try {
+            any_address = asio::ip::make_address(argv[4]);
+        } catch(const asio::system_error& error) {
+            std::cerr << "Unable to use any address " << std::quoted(argv[4]) << ", using "
+                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+        }
     }
 
     Manager manager {brd_address, any_address, group, name};
