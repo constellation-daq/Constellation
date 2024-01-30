@@ -22,6 +22,12 @@ stages:
   variables:
     CXX: g++
 
+.fedora-latest:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-latest:latest
+  variables:
+    CXX: clang++
+    CXX_LD: mold
+
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
@@ -77,6 +83,13 @@ build:debian-clang:
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
+build:fedora-latest:
+  extends:
+    - .build
+    - .fedora-latest
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+
 build:debian-gcc:
   extends:
     - .build
@@ -127,6 +140,14 @@ test:debian-gcc:
     paths:
       - build
     expire_in: 24 hour
+
+test:fedora-latest:
+  extends:
+    - .test
+    - .fedora-latest
+  needs:
+    - job: build:fedora-latest
+      artifacts: true
 
 test:ubuntu-22.04:
   extends:
