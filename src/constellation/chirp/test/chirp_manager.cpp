@@ -49,7 +49,7 @@ void discover_callback(DiscoveredService service, bool depart, std::any /* user_
               << " Host " << service.host_id.to_string()                                                //
               << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
               << (depart ? " DEPART" : " OFFER")                                                        //
-              << std::endl;
+              << std::right << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
                               << " Port " << std::setw(5) << service.port                                               //
                               << "\n";
                 }
-                std::cout << std::flush;
+                std::cout << std::right << std::flush;
                 continue;
             }
             // List discovered services
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
                               << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
                               << "\n";
                 }
-                std::cout << std::flush;
+                std::cout << std::right << std::flush;
                 continue;
             }
             // Register or unregister a service
@@ -152,13 +152,13 @@ int main(int argc, char* argv[]) {
                     auto ret = manager.RegisterService(service, port);
                     if(ret) {
                         std::cout << " Registered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::endl;
+                                  << " Port " << std::setw(5) << port << std::right << std::endl;
                     }
                 } else {
                     auto ret = manager.UnregisterService(service, port);
                     if(ret) {
                         std::cout << " Unregistered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::endl;
+                                  << " Port " << std::setw(5) << port << std::right << std::endl;
                     }
                 }
                 continue;
