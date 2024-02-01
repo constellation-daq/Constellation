@@ -45,7 +45,7 @@ namespace std {
         const auto tt = Clock::to_time_t(time_point);
         std::tm tm {};
         localtime_r(&tt, &tm); // there is no thread-safe std::locatime
-        return stream << std::put_time(&tm, "%c");
+        return stream << std::put_time(&tm, "%F %T.000000000");
     }
 } // namespace std
 #endif
