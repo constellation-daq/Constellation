@@ -5,15 +5,19 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
-      - id: trailing-whitespace
-      - id: check-json
-      - id: trailing-whitespace
-        args: [--markdown-linebreak-ext=md]
-      - id: mixed-line-ending
-      - id: check-byte-order-marker
       - id: check-executables-have-shebangs
       - id: check-merge-conflict
+      - id: check-shebang-scripts-are-executable
       - id: check-symlinks
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: no-commit-to-branch
+        args: [--branch=main]
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.6
