@@ -1,42 +1,4 @@
-Implementation of the CHIRP protocol draft.
-
-## Requirements
-
-- Meson 1.0.0 or newer
-- GCC 12 or newer
-
-Optional:
-- Gcovr, for coverage report
-
-## Building
-
-Build tools in `builddir` directory:
-```sh
-meson setup builddir
-meson compile -C builddir
-```
-
-## Unit tests
-
-First build in a new directory with coverage enabled:
-```sh
-meson setup builddir_coverage -Db_coverage=true
-meson compile -C builddir_coverage
-```
-
-Then run tests and create coverage report:
-```sh
-meson test -C builddir_coverage
-ninja -C builddir coverage-html
-```
-
-## Pre-commit hooks
-
-If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
-
-Install [pre-commit](https://pre-commit.com/#1-install-pre-commit) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
-
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
+# Notes on CHIRP
 
 ## Notes on sockets
 
@@ -53,36 +15,35 @@ To opposite to the broadcast address is the "any" address, which accepts incomin
 If no network (with DHCP) is available, the default broadcast address (255.255.255.255) does not work. As a workaround, the default any address (0.0.0.0) can be used to broadcast over localhost.
 
 TODO:
-- [ ] Test if default broadcast IP (255.255.255.255) works with DHCP
 - [ ] Look up if it is possible to find the broadcast IP from network interface platform independently
 
 ## Broadcasting
 
 To receive broadcasts:
 ```sh
-./builddir/CHIRP/test/broadcast_recv
+./build/src/constellation/chirp/test/broadcast_recv [ANY_IP] [ANY_PORT]
 ```
 
 To send broadcasts:
 ```sh
-./builddir/CHIRP/test/broadcast_send [BRD_IP]
+./build/src/constellation/chirp/test/broadcast_send [BRD_IP] [BRD_PORT]
 ```
 
-The broadcast IP can be specified optionally. See [above](#notes-on-broadcast-addresses) for details.
+See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
 
 ## CHIRP Messages
 
 To receive CHIRP messages:
 ```sh
-./builddir/CHIRP/test/chirp_recv
+./build/src/constellation/chirp/test/chirp_recv [ANY_IP]
 ```
 
 To send CHIRP messages:
 ```sh
-./builddir/CHIRP/test/chirp_send [BRD_IP]
+./build/src/constellation/chirp/test/chirp_send [BRD_IP]
 ```
 
-The broadcast IP can be specified optionally. See [above](#notes-on-broadcast-addresses) for details.
+See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
 
 TODO:
 - [ ] Mention MD5 hashing and service identifiers somewhere - in CHIRP itself or other RFC?
@@ -91,7 +52,7 @@ TODO:
 
 To run the CHIRP manager, run:
 ```sh
-./builddir/CHIRP/test/chirp_manager
+./build/src/constellation/chirp/test/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
 ```
 
 The following commands are available:
@@ -103,14 +64,4 @@ The following commands are available:
 - `unregister_service [SERVICE] [PORT]`: unregister a service in the manager
 - `unregister_callback [SERVICE]`: unregister a discover callback for a service
 - `reset`: unregister all services and callbacks, and forget discovered services
-
-## Documentation
-
-```bash
-sudo apt install libclang-dev  # note down version, e.g. 17.0.4
-python3 -m venv venv
-source venv/bin/active
-pip install clang=[VERSION]  # insert clang version
-pip install sphinx hawkmoth myst-parser sphinx_immaterial
-pip install hawkmoth@git+https://github.com/stephanlachnit/hawkmoth.git@constellation
-```
+- `quit`
