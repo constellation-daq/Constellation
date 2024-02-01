@@ -3,7 +3,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
       - id: check-json
@@ -21,17 +21,17 @@ repos:
       - id: clang-format
 
   - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
+    rev: 7.0.0
     hooks:
       - id: flake8
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 24.1.1
     hooks:
       - id: black
         language_version: python3
 
   - repo: https://github.com/fsfe/reuse-tool
-    rev: v2.1.0
+    rev: v3.0.1
     hooks:
       - id: reuse
