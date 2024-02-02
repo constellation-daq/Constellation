@@ -41,9 +41,8 @@ inline std::string get_protocol_identifier(Protocol protocol) {
 }
 
 template <Protocol P>
-Header<P>::Header(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
-
-template <Protocol P> Header<P>::Header(std::string_view sender) : Header(sender, std::chrono::system_clock::now()) {}
+Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
+    : sender_(std::move(sender)), time_(time) {}
 
 template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
     // Offset since we decode four separate msgpack objects
