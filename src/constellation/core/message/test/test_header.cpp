@@ -78,7 +78,7 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     msgpack::pack(sbuf, cdtp1_header);
 
     // Unpack header
-    const CDTP1Header cdtp1_header_unpacked {std::span<std::byte>(to_byte_ptr(sbuf.data()), sbuf.size())};
+    const CDTP1Header cdtp1_header_unpacked {{to_byte_ptr(sbuf.data()), sbuf.size()}};
 
     // Compare unpacked header
     REQUIRE(cdtp1_header_unpacked.getTags().size() == 5);

@@ -15,24 +15,19 @@
 
 namespace constellation {
 
-    inline char* to_char_ptr(std::byte* data) {
+    inline const char* to_char_ptr(const std::byte* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<char*>(data);
+        return reinterpret_cast<const char*>(data);
     }
 
-    inline void* to_void_ptr(std::byte* data) {
+    inline const void* to_void_ptr(const std::byte* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<void*>(data);
+        return reinterpret_cast<const void*>(data);
     }
 
-    inline std::byte* to_byte_ptr(char* data) {
+    template <typename T> inline const std::byte* to_byte_ptr(T* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<std::byte*>(data);
-    }
-
-    inline std::byte* to_byte_ptr(void* data) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<std::byte*>(data);
+        return reinterpret_cast<const std::byte*>(data);
     }
 
 } // namespace constellation

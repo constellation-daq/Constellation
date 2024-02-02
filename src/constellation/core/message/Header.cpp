@@ -44,7 +44,7 @@ template <Protocol P>
 Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
     : sender_(std::move(sender)), time_(time) {}
 
-template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
+template <Protocol P> Header<P>::Header(std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 

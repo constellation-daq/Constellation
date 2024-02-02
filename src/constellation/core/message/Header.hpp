@@ -39,7 +39,7 @@ namespace constellation::message {
          *
          * @param data View to byte data
          */
-        CNSTLN_API Header(std::span<std::byte> data);
+        CNSTLN_API Header(std::span<const std::byte> data);
 
         /** Return message time */
         constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
