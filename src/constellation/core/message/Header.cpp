@@ -18,8 +18,8 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/message/Protocol.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/stdbyte_casts.hpp"
 
 using namespace constellation::message;
 using namespace std::literals::string_literals;

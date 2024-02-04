@@ -20,15 +20,12 @@
 
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/message/Header.hpp"
+#include "constellation/core/utils/casts.hpp"
 
+using namespace constellation;
 using namespace constellation::log;
 using namespace std::literals::string_literals;
 using namespace std::literals::chrono_literals;
-
-// Convert from spdlog::string_view_t to std::string
-inline std::string to_string(spdlog::string_view_t spdlog_sv) {
-    return {spdlog_sv.data(), spdlog_sv.size()};
-}
 
 // Find path relative to src/, otherwise path without any parent
 std::string get_rel_file_path(std::string file_path) {
@@ -58,7 +55,7 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
 
     // Send topic
     auto topic =
-        "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" + to_string(msg.logger_name);
+        "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" + sv_to_string(msg.logger_name);
     std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
     publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 

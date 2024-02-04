@@ -7,14 +7,13 @@
 #include <chrono>
 #include <ctime>
 #include <string>
-#include <string_view>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/core/message/Header.hpp"
-#include "constellation/core/utils/stdbyte_casts.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation;
@@ -23,16 +22,12 @@ using namespace std::literals::string_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-inline std::string to_string(std::string_view sv) {
-    return {sv.begin(), sv.end()};
-}
-
 TEST_CASE("Basic Header Functions", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     const CSCP1Header cscp1_header {"senderCSCP", tp};
 
-    REQUIRE_THAT(to_string(cscp1_header.getSender()), Equals("senderCSCP"));
+    REQUIRE_THAT(sv_to_string(cscp1_header.getSender()), Equals("senderCSCP"));
     REQUIRE(cscp1_header.getTime() == tp);
     REQUIRE(cscp1_header.getTags().empty());
     REQUIRE_THAT(cscp1_header.to_string(), ContainsSubstring("CSCP1"));

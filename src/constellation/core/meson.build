@@ -41,8 +41,8 @@ install_headers(
 )
 
 install_headers(
+  'utils/casts.hpp',
   'utils/std23.hpp',
-  'utils/stdbyte_casts.hpp',
   subdir: 'constellation/core/utils',
 )
 
