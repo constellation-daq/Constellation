@@ -44,6 +44,7 @@ namespace constellation::log {
         zmq::context_t context_;
         zmq::socket_t publisher_;
         Port port_;
+        std::once_flag setup_flag_;
     };
 
 } // namespace constellation::log

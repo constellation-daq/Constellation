@@ -23,6 +23,7 @@
 
 using namespace constellation::log;
 using namespace std::literals::string_literals;
+using namespace std::literals::chrono_literals;
 
 // Convert from spdlog::string_view_t to std::string
 inline std::string to_string(spdlog::string_view_t spdlog_sv) {
@@ -50,6 +51,11 @@ std::string get_rel_file_path(std::string file_path) {
 CMDPSink::CMDPSink() : publisher_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(publisher_)) {}
 
 void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
+
+    // At the very beginning we wait 500ms before starting the async logging.
+    // This way the socket can fetch already pending subscriptions
+    std::call_once(setup_flag_, []() { std::this_thread::sleep_for(500ms); });
+
     // Send topic
     auto topic =
         "LOG/" + std::string(magic_enum::enum_name(from_spdlog_level(msg.level))) + "/" + to_string(msg.logger_name);
