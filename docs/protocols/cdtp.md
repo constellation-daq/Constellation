@@ -52,14 +52,16 @@ Upon reaching the high-water mark of buffered messages, the user MUST be notifie
 ### Message Header
 
 The message header frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-It SHALL contain two strings, followed by a 64-bit timestamp and a map.
+It SHALL contain two strings, followed by a 64-bit timestamp, a 64-bit integer and a map.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘D’, ‘T’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
 
 The second string SHOULD contain the name of the sending CDTP host.
 
-The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
-Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CDTP host.
+The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit timestamp in units of nanoseconds.
+Possible values MAY be the time since the start of the measurement or the current time of the UNIX epoch when sending the message or generating of the payload at the sending CDTP host.
+
+The 64-bit integer SHALL contain the message sequence number of the sender, i.e. a monotonically incremented number that represents the number of messages sent since the beginning of the measurement.
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
@@ -68,4 +70,3 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 The message cargo payload frames MAY consist of any binary data.
 The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
-
