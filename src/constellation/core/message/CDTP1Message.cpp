@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Implementation of CSCP1 message type
+ * @brief Implementation of CDTP1 message type
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -33,10 +33,11 @@ zmq::multipart_t CDTP1Message::assemble() {
     frames.addmem(sbuf_header.data(), sbuf_header.size());
 
     // Second frame until Nth frame: payload
-    for(size_t i = 0; i < payload_frames_.size(); i++) {
-        if(!payload_frames_.at(i)->empty()) {
-            frames.add(zmq::message_t());
-            frames.at(i + 1).swap(*payload_frames_.at(i));
+    for(auto& frame : payload_frames_) {
+        if(!frame->empty()) {
+            zmq::message_t new_frame {};
+            new_frame.swap(*frame);
+            frames.add(std::move(new_frame));
         }
     }
 
@@ -51,12 +52,14 @@ CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
     // Decode header
     const CDTP1Header header {{to_byte_ptr(frames.at(0).data()), frames.at(0).size()}};
 
-    // Create message
+    // Create message, reversing space for frames
     auto cdtp_message = CDTP1Message(header, frames.size() - 1);
 
     // Swap payload
-    for(size_t i = 1; i < frames.size(); i++) {
-        frames.at(i).swap(*cdtp_message.payload_frames_.at(i - 1));
+    for(auto& frame : frames) {
+        auto new_frame = std::make_shared<zmq::message_t>();
+        new_frame->swap(frame);
+        cdtp_message.addPayload(std::move(new_frame));
     }
 
     return cdtp_message;
