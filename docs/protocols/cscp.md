@@ -50,7 +50,6 @@ For processing incoming messages:
 * SHALL accept an incoming message only from the last satellite that it sent a request to.
 * SHALL discard silently any messages received from other satellites.
 
-
 ### Satellite Host
 
 The satellite host SHALL implement a REP socket as defined by [28/REQREP](http://rfc.zeromq.org/spec:28/REQREP) and SHALL act as service for a set of CSCP controller hosts, receiving requests and sending replies back to the requesting CSCP controller host.
@@ -72,7 +71,6 @@ For processing outgoing messages:
 * SHALL silently discard the reply, or return an error, if the originating CSCP controller host is no longer connected.
 * SHALL not block on sending.
 
-
 ### CSCP Message
 
 A CSCP message SHALL be sent as multipart message and MUST consist of at least two frames and MAY consist of one additional frame.
@@ -84,7 +82,6 @@ The message SHALL consist at least of the following frames, in this order:
 * The message verb
 
 One OPTIONAL frame with payload MAY be sent afterwards.
-
 
 ### Message Header
 
@@ -100,7 +97,6 @@ Possible values MAY be the time of sending the message or the time of generation
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-
 
 ### Message Verb
 
@@ -118,7 +114,6 @@ For request messages, the string SHALL contain the command.
 Commands SHALL be parsed and interpreted case-insensitive.
 
 For reply messages, the string SHALL provide additional information on the acknowledgement.
-
 
 ### Message Payload
 

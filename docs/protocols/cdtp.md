@@ -68,4 +68,3 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 The message cargo payload frames MAY consist of any binary data.
 The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
-

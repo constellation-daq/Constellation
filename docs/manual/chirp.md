@@ -15,16 +15,19 @@ To opposite to the broadcast address is the "any" address, which accepts incomin
 If no network (with DHCP) is available, the default broadcast address (255.255.255.255) does not work. As a workaround, the default any address (0.0.0.0) can be used to broadcast over localhost.
 
 TODO:
+
 - [ ] Look up if it is possible to find the broadcast IP from network interface platform independently
 
 ## Broadcasting
 
 To receive broadcasts:
+
 ```sh
 ./build/src/constellation/chirp/test/broadcast_recv [ANY_IP] [ANY_PORT]
 ```
 
 To send broadcasts:
+
 ```sh
 ./build/src/constellation/chirp/test/broadcast_send [BRD_IP] [BRD_PORT]
 ```
@@ -34,11 +37,13 @@ See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
 ## CHIRP Messages
 
 To receive CHIRP messages:
+
 ```sh
 ./build/src/constellation/chirp/test/chirp_recv [ANY_IP]
 ```
 
 To send CHIRP messages:
+
 ```sh
 ./build/src/constellation/chirp/test/chirp_send [BRD_IP]
 ```
@@ -46,16 +51,19 @@ To send CHIRP messages:
 See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
 
 TODO:
+
 - [ ] Mention MD5 hashing and service identifiers somewhere - in CHIRP itself or other RFC?
 
 ## CHIRP Manager
 
 To run the CHIRP manager, run:
+
 ```sh
 ./build/src/constellation/chirp/test/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
 ```
 
 The following commands are available:
+
 - `list_registered_services`: list of services registered by the user in the manager
 - `list_discovered_services [SERVICE]`: list of services discovered by the manager and are in the same group
 - `register_service [SERVICE] [PORT]`: register a service in the manager
