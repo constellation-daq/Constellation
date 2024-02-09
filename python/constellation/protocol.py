@@ -12,6 +12,49 @@ from enum import Enum
 PROTOCOL_IDENTIFIER = "CDTP%x01"
 
 
+class MessageHeader:
+    """Class implementing a Constellation message header."""
+
+    def __init__(self, host: str = None):
+        if not host:
+            host = platform.node()
+        self.host = host
+
+    def send(self, socket: zmq.Socket, flags: int = zmq.SNDMORE, meta: dict = None):
+        """Send a message header via socket.
+
+        Returns: return value from socket.send()."""
+        return socket.send(self.encode(meta), flags)
+
+    def recv(self, socket: zmq.Socket, flags: int = 0):
+        """Receive header from socket and return all decoded fields."""
+        return self.decode(self.queue.recv())
+
+    def decode(self, header):
+        """Decode header string and return host, timestamp and meta map."""
+        if not header[0] == PROTOCOL_IDENTIFIER:
+            raise RuntimeError(
+                f"Received message with malformed CDTP header: {header}!"
+            )
+        header = msgpack.unpackb(header)
+        host = header[1]
+        timestamp = header[2]
+        meta = header[3]
+        return host, timestamp, meta
+
+    def encode(self, meta: dict = None):
+        """Generate and return a header as list."""
+        if not meta:
+            meta = {}
+        header = [
+            PROTOCOL_IDENTIFIER,
+            self.host,
+            msgpack.Timestamp.from_unix_nano(time.time_ns()),
+            meta,
+        ]
+        return msgpack.packb(header)
+
+
 class DataTransmitter:
     """Base class for sending Constellation data packets via ZMQ."""
 
@@ -318,14 +361,49 @@ class MetricsTransmitter:
         self._socket.close()
 
 
-class SatelliteResponse(Enum):
-    """Defines the response codes of a Satellite.
+class MessageType(Enum):
+    """Defines the message types of the CSCP.
 
-    Part of the Constellation Command Protocol.
+    Part of the Constellation Satellite Control Protocol.
 
     """
 
-    SUCCESS = 0
-    INVALID = 1
-    NOTIMPLEMENTED = 2
-    INCOMPLETE = 3
+    REQUEST = 0x0
+    SUCCESS = 0x1
+    NOTIMPLEMENTED = 0x2
+    INCOMPLETE = 0x3
+    INVALID = 0x4
+    UNKNOWN = 0x5
+
+
+class CommandTransmitter:
+    """Class implementing Constellation Satellite Control Protocol."""
+
+    def __init__(self, name: str, socket: zmq.Socket):
+        self.msghead = MessageHeader(name)
+        self.socket = socket
+
+    def send_request(self, command, payload=None):
+        """Send a command request to a Satellite with an optional payload."""
+        self._dispatch(command, MessageType.REQUEST, flags=zmq.NOBLOCK)
+
+    def send_reply(self, response, msgtype: MessageType, payload=None):
+        """Send a reply to a previous command."""
+        self._dispatch(response, msgtype, payload, flags=zmq.NOBLOCK)
+
+    def get_request(self):
+        cmdmsg = self.socket.recv_multipart(flags=zmq.NOBLOCK)
+        host, timestamp, meta = self.msgheader.decode(cmdmsg[0])
+        # TODO CONTINUE HERE!!
+
+    def _dispatch(self, msg: str, msgtype: MessageType, payload=None, flags: int = 0):
+        flags = zmq.SNDMORE | flags
+        self.msghead.send(self.socket, flags=flags)
+        if not payload:
+            flags = flags
+        self.socket.send(
+            msgpack.packb(f"%x{msgtype.value:02o}{msg}"),
+            flags=flags,
+        )
+        if payload:
+            self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
