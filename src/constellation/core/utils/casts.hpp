@@ -12,27 +12,27 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
 namespace constellation {
 
-    inline char* to_char_ptr(std::byte* data) {
+    template <typename T> inline const char* to_char_ptr(T* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<char*>(data);
+        return reinterpret_cast<const char*>(data);
     }
 
-    inline void* to_void_ptr(std::byte* data) {
+    template <typename T> inline const void* to_void_ptr(T* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<void*>(data);
+        return reinterpret_cast<const void*>(data);
     }
 
-    inline std::byte* to_byte_ptr(char* data) {
+    template <typename T> inline const std::byte* to_byte_ptr(T* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<std::byte*>(data);
+        return reinterpret_cast<const std::byte*>(data);
     }
 
-    inline std::byte* to_byte_ptr(void* data) {
-        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-        return reinterpret_cast<std::byte*>(data);
+    template <typename T> inline std::string sv_to_string(T string_view) {
+        return {string_view.data(), string_view.size()};
     }
 
 } // namespace constellation

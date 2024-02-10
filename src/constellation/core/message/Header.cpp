@@ -18,8 +18,8 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/message/Protocol.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/stdbyte_casts.hpp"
 
 using namespace constellation::message;
 using namespace std::literals::string_literals;
@@ -41,11 +41,10 @@ inline std::string get_protocol_identifier(Protocol protocol) {
 }
 
 template <Protocol P>
-Header<P>::Header(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
+Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
+    : sender_(std::move(sender)), time_(time) {}
 
-template <Protocol P> Header<P>::Header(std::string_view sender) : Header(sender, std::chrono::system_clock::now()) {}
-
-template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
+template <Protocol P> Header<P>::Header(std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 

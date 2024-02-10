@@ -30,23 +30,16 @@ namespace constellation::message {
          * Construct new message header
          *
          * @param sender Sender name
-         * @param time Message time
+         * @param time Message time (defaults to current time)
          */
-        CNSTLN_API Header(std::string_view sender, std::chrono::system_clock::time_point time);
-
-        /**
-         * Construct new message header using current time
-         *
-         * @param sender Sender name
-         */
-        CNSTLN_API Header(std::string_view sender);
+        CNSTLN_API Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now());
 
         /**
          * Construct new message header from bytes
          *
          * @param data View to byte data
          */
-        CNSTLN_API Header(std::span<std::byte> data);
+        CNSTLN_API Header(std::span<const std::byte> data);
 
         /** Return message time */
         constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
