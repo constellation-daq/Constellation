@@ -24,9 +24,9 @@
 
 namespace constellation::message {
 
-    class CDTPMessage {
+    class CDTP1Message {
     public:
-        CNSTLN_API CDTPMessage(CDTP1Header header, size_t frames = 1);
+        CNSTLN_API CDTP1Message(CDTP1Header header, size_t frames = 1);
 
         constexpr const CDTP1Header& getHeader() const { return header_; }
 
@@ -46,7 +46,7 @@ namespace constellation::message {
          *
          * This function moves the payload frames
          */
-        CNSTLN_API static CDTPMessage disassemble(zmq::multipart_t& frames);
+        CNSTLN_API static CDTP1Message disassemble(zmq::multipart_t& frames);
 
     private:
         CDTP1Header header_;
