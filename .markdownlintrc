@@ -3,3 +3,4 @@
 
 default = true
 line-length = false
+MD041 = false
