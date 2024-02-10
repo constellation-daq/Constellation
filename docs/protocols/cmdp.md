@@ -130,4 +130,3 @@ The metrics type SHALL be encoded as 1-OCTET integer variable with the following
 * `0x4` - RATE: The rate of the metrics SHOULD be calculate over a given time interval.
 
 The metrics type MAY be implemented as enum type if appropriate.
-

@@ -8,6 +8,7 @@
 ## Building
 
 To build, simply run:
+
 ```sh
 meson setup build
 meson compile -C build
@@ -16,11 +17,13 @@ meson compile -C build
 ## Unit tests
 
 Unit tests can be run with:
+
 ```sh
 meson test -C build
 ```
 
 To create a coverage reports with [`gcvor`](https://gcovr.com), run:
+
 ```sh
 meson setup build_cov -Db_coverage=true
 meson test -C build_cov
@@ -38,6 +41,7 @@ You will also need to install the validation tools, such as `black` and `flake8`
 ## Documentation
 
 To build the documentation, run:
+
 ```bash
 sudo apt install libclang-dev  # note down version, e.g. 17.0.4
 python3 -m venv venv

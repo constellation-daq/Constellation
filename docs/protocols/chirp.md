@@ -29,7 +29,7 @@ CHIRP uses UDP IPv4 beacon broadcasts to discover hosts. Each CHIRP host SHALL l
 
 The CHIRP beacon consists of one 42-octet UDP message with this format:
 
-```
+```text
 +---+---+---+---+---+------+  +------+------------+-----------+---------+------+
 | C | H | I | R | P | %x01 |  | type | group UUID | host UUID | service | port |
 +---+---+---+---+---+------+  +------+------------+-----------+---------+------+
