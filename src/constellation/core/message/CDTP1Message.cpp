@@ -40,7 +40,7 @@ zmq::multipart_t CDTP1Message::assemble() {
             frames.add(std::move(new_frame));
         }
     }
-
+    payload_frames_.clear();
     return frames;
 }
 
