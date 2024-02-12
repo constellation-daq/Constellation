@@ -1,8 +1,11 @@
-CHIRP C++ documentation
-=======================
+===========================
+Constellation documentation
+===========================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :caption: Contents:
 
-   Developer API<dev_api/index.rst>
+   manual/index
+   protocols/index
+   cpp_dev_api/index

@@ -1,10 +1,7 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-import json
 import pathlib
-
-from sphinx.util import logging
 
 # set directories
 docssrcdir = pathlib.Path(__file__).resolve().parent
@@ -17,16 +14,15 @@ project = "Constellation"
 project_copyright = "2023 DESY and the Constellation authors, CC-BY-4.0"
 author = "DESY and the Constellation authors"
 version = "0"
-release = "0"
+release = "v" + version
 
 # extensions
 extensions = [
     "myst_parser",
-    "hawkmoth",
-    "hawkmoth.ext.javadoc",
     "sphinx_immaterial",
     "sphinx_immaterial.apidoc.cpp.cppreference",
     "sphinx_immaterial.apidoc.cpp.external_cpp_references",
+    "breathe",
 ]
 
 # general settings
@@ -34,6 +30,9 @@ source_suffix = {
     ".rst": "restructuredtext",
     ".md": "markdown",
 }
+
+# myst settings
+myst_heading_anchors = 3
 
 # HTML settings
 html_theme = "sphinx_immaterial"
@@ -74,27 +73,13 @@ html_theme_options = {
     # 'repo_name': 'Constellation',
 }
 
-# hawkmoth settings
-hawkmoth_root = srcdir
-hawkmoth_transform_default = "javadoc"
-hawkmoth_clang = ["-std=c++23"]
+# breathe settings
+breathe_projects = {
+    "Constellation": docsdir.joinpath("doxygen").joinpath("xml"),
+}
+breathe_default_project = "Constellation"
 
-# add include dirs from meson
-meson_intro_dep = repodir.joinpath("build", "meson-info", "intro-dependencies.json")
-if meson_intro_dep.exists():
-    with open(meson_intro_dep, mode="rt", encoding="utf-8") as meson_intro_dep_file:
-        intro_dep = json.load(meson_intro_dep_file)
-        for dep in intro_dep:
-            if "include_directories" in dep:
-                for path in dep["include_directories"]:
-                    hawkmoth_clang.append(f"-I{path}")
-else:
-    logger = logging.getLogger(__name__)
-    logger.warn(
-        f'Could not find valid "build" in {repodir.as_posix()} to extract include directories from meson'
-    )
-
-# asio symbols
+# external symbols
 external_cpp_references = {
     "asio::ip::address": {
         "url": "https://think-async.com/Asio/asio-1.28.0/doc/asio/reference/ip__address.html",
