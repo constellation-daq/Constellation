@@ -8,9 +8,11 @@ import time
 import platform
 import logging
 from enum import Enum
-from typing import Optional
+
 
 PROTOCOL_IDENTIFIER = "CDTP%x01"  # TODO: Change PROTOCOL_IDENTIFIER to include all other protocols and change all methods in file to check for correct protocol
+CHIRP_PORT = 7123
+CHIRP_HEADER = "CHIRP%x01"
 
 
 class MessageHeader:
@@ -441,6 +443,10 @@ def get_ip_address():
     try:
         # Create a socket object to get the local machine's IP address
         # TODO: Check if this works correctly
+        # NOTE: this only returns IP from one interface -- could be local host!
+        # To get all interfaces and all used IPs:
+        # interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
+        # allips = [ip[-1][0] for ip in interfaces]
         host_name = socket.gethostname()
         ip_address = socket.gethostbyname(host_name)
         return ip_address
@@ -449,13 +455,11 @@ def get_ip_address():
         return None
 
 
-# NOTE: protocol isn't completely followed by this class. Some of its conditions are fulfilled in broadcastmanager.py.
 class SatelliteBeacon:
     def __init__(
         self,
         hostid: str = None,
         group: str = None,
-        context: Optional[zmq.Context] = None,
     ) -> None:
         """Create beacon to broadcast and listen in on."""
         if not hostid:
@@ -463,69 +467,68 @@ class SatelliteBeacon:
         self._hostid = hostid
         self._group = group
         self._address = get_ip_address()
-        ctx = context or zmq.Context()
 
-        # Create broadcasting socket
-        self._pub_socket = ctx.socket(
-            zmq.PUB
-        )  # NOTE: PUB/SUB sockets are not thread safe according to documentation.
-        # We could fix this by running RADIO/DISH sockets instead but that would require
-        # building libzmq with draft support which could be unstable. These seem to be the only sockets
-        # to support UDP also.
-        # https://pyzmq.readthedocs.io/en/v19.0.0/draft.html
-
-        # Bind to port as dictated by protocol
-        self._pub_socket.connect(
-            "tcp://192.168.10.169:7123"
-        )  # TODO: This should be generalized further using libraries: socket, netifaces, ipaddress
-
-        # Create listening socket
-        self._sub_socket = ctx.socket(zmq.SUB)
-
-        # Subscribe to all messages
-        self._sub_socket.setsockopt_string(zmq.SUBSCRIBE, "")
-
-        # Bind to port as dictated by protocol
-        self._sub_socket.connect("tcp://192.168.7.169:7123")
+        # Create UPP broadcasting socket
+        #
+        # NOTE: Socket options are often OS-specific; the ones below were chosen
+        # for supporting Linux-based systems.
+        #
+        self._sock = socket.socket(
+            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
+        )
+        # on socket layer (SOL_SOCKET), enable re-using address in case
+        # already bound (REUSEPORT)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        # enable broadcasting
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        # non-blocking (i.e. a timeout of 0.0 seconds for recv calls)
+        self._sock.setblocking(0)
+        # bind to all interfaces to listen to incoming broadcast.
+        #
+        # NOTE: this only works for IPv4
+        #
+        # TODO: consider to only bind the interface matching a given IP used in
+        # the header! Otherwise, we are announcing unreachable services
+        self._sock.bind(("", CHIRP_PORT))
 
     def broadcast_service(
         self,
+        # TODO consider to remove the default values here if not suggested by the spec
         serviceid: ServiceIdentifier = None,
-        type: MessageType = None,
+        msgtype: MessageType = None,
         port: int = 0,
-        flags: int = 0,
     ):
         """Broadcast service."""
-        # message header
-        header = [
-            PROTOCOL_IDENTIFIER,
-        ]
         # message body
-        body = [type, self._group, self._hostid, serviceid, port, self._address]
-        self._pub_socket.send(msgpack.packb(header), zmq.SNDMORE)
-        self._pub_socket.send(msgpack.packb(body), flags=flags)
+        msg = [
+            CHIRP_HEADER,
+            msgtype,
+            self._group,
+            self._hostid,
+            serviceid,
+            port,
+            self._address,
+        ]
+        self._sock.sendto(msgpack.packb(msg), ("<broadcast>", CHIRP_PORT))
 
-    def listen(self, flags: int = 0):
+    def listen(self):
         """Listen in on CHIRP port after new beacon"""
-        print("Listening")  # TODO: remove
-        msg = self._sub_socket.recv_multipart(flags=flags)
-        print("Found something")
+        try:
+            msg, from_address = self._sock.recvfrom(2048)
+        except BlockingIOError:
+            # no data waiting for us
+            return None
 
-        if not msgpack.unpackb(msg[0]) == PROTOCOL_IDENTIFIER:
+        if not msgpack.unpackb(msg)[0] == CHIRP_HEADER:
             raise RuntimeError(
-                f"Received message with malformed CDTP header: {msgpack.unpackb(msg[0])}!"
+                f"Received message with malformed CHIRP header: {msgpack.unpackb(msg)}!"
             )
 
-        # Unpack body
-        type = msgpack.unpackb(msg[1])
-        group = msgpack.unpackb(msg[2])
-        hostid = msgpack.unpackb(msg[3])
-        serviceid = msgpack.unpackb(msg[4])
-        port = msgpack.unpackb(msg[5])
-        address = msgpack.unpackb(msg[6])
-        return type, group, hostid, serviceid, port, address
+        # Unpack msg
+        _header, msgtype, group, hostid, serviceid, port, address = msgpack.unpackb(msg)
+        # TODO decide and document what to return here
+        return msgtype, group, hostid, serviceid, port, address, from_address[0]
 
     def close(self):
         """Close the socket."""
-        self._pub_socket.close()
-        self._sub_socket.close()
+        self._sock.close()
