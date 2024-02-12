@@ -26,6 +26,10 @@ namespace constellation::message {
 
     class CDTP1Message {
     public:
+        /**
+         * @param header CDTP1 header of the message
+         * @param frames Number of payload frames to reserve
+         */
         CNSTLN_API CDTP1Message(CDTP1Header header, size_t frames = 1);
 
         constexpr const CDTP1Header& getHeader() const { return header_; }
