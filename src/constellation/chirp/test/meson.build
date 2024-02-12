@@ -24,29 +24,3 @@ executable('chirp_manager',
   sources: 'chirp_manager.cpp',
   dependencies: [chirp_dep, magic_enum_dep],
 )
-
-# unit tests for broadcast code
-test_broadcast = executable('test_broadcast',
-  sources: 'test_broadcast.cpp',
-  dependencies: [chirp_dep, catch2_dep],
-)
-test('CHIRP broadcast test', test_broadcast,
-  args: ['--durations', 'yes', '--verbosity', 'high'],
-  is_parallel: false)
-
-# unit tests for CHIRP message code
-test_message = executable('test_message',
-  sources: 'test_message.cpp',
-  dependencies: [chirp_dep, catch2_dep],
-)
-test('CHIRP message test', test_message,
-  args: ['--durations', 'yes', '--verbosity', 'high'])
-
-# unit tests for CHIRP manager code
-test_manager = executable('test_manager',
-  sources: 'test_manager.cpp',
-  dependencies: [chirp_dep, catch2_dep],
-)
-test('CHIRP manager test', test_manager,
-  args: ['--durations', 'yes', '--verbosity', 'high'],
-  is_parallel: false)

@@ -12,3 +12,6 @@ impl_cpp = add_languages('cpp', required: get_option('impl_cpp'))
 if impl_cpp
   subdir('src/constellation')
 endif
+
+# Tests
+subdir('tests')

@@ -99,4 +99,6 @@ TEST_CASE("Ephemeral CMDP port", "[logging]") {
     REQUIRE(port_number >= 1024);
 }
 
+// TODO(stephan.lachnit): test log message decoding
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
