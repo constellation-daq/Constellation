@@ -55,9 +55,3 @@ core_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
 )
-
-# logging test tools
-executable('cmdp_log_send',
-  sources: 'logging/test/cmdp_log_send.cpp',
-  dependencies: core_dep,
-)
