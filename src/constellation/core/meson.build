@@ -55,26 +55,3 @@ core_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
 )
-
-# message tests
-test_message_header = executable('test_header',
-  sources: 'message/test/test_header.cpp',
-  dependencies: [core_dep, catch2_dep],
-)
-test('Message Header test', test_message_header,
-  args: ['--durations', 'yes', '--verbosity', 'high'])
-
-# logging test tools
-executable('cmdp_log_send',
-  sources: 'logging/test/cmdp_log_send.cpp',
-  dependencies: core_dep,
-)
-
-# logging tests
-test_log = executable('test_log',
-  sources: 'logging/test/test_log.cpp',
-  dependencies: [core_dep, catch2_dep],
-)
-test('Logging test', test_log,
-  args: ['--durations', 'yes', '--verbosity', 'high'],
-  is_parallel: false)
