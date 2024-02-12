@@ -281,6 +281,8 @@ docs:html:
   needs:
     - job: build:debian-gcc
       artifacts: true
+  variables:
+    SPHINXOPTS: -W
   script:
     - make -C docs html
   artifacts:
