@@ -68,6 +68,7 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
 
     // Swap payload if available
     if(frames.size() == 3) {
+        cscp1_message.payload_ = std::make_shared<zmq::message_t>();
         frames.at(2).swap(*cscp1_message.payload_);
     }
 

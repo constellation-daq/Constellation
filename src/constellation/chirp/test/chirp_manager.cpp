@@ -41,15 +41,23 @@ enum class Command {
 };
 using enum Command;
 
+template <typename T> std::string pad_str_right(T&& string, std::size_t width) {
+    std::string out {string.data(), string.size()};
+    while(out.size() < width) {
+        out += ' ';
+    }
+    return out;
+}
+
 // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
 void discover_callback(DiscoveredService service, bool depart, std::any /* user_data */) {
     std::cout << "Callback:\n"
-              << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier) //
-              << " Port " << std::setw(5) << service.port                                               //
-              << " Host " << service.host_id.to_string()                                                //
-              << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
-              << (depart ? " DEPART" : " OFFER")                                                        //
-              << std::right << std::endl;
+              << " Service " << pad_str_right(magic_enum::enum_name(service.identifier), 10) //
+              << " Port " << std::setw(5) << service.port                                    //
+              << " Host " << service.host_id.to_string()                                     //
+              << " IP " << pad_str_right(service.address.to_string(), 15)                    //
+              << (depart ? " DEPART" : " OFFER")                                             //
+              << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -65,8 +73,8 @@ int main(int argc, char* argv[]) {
         try {
             brd_address = asio::ip::make_address(argv[2]);
         } catch(const asio::system_error& error) {
-            std::cerr << "Unable to use broadcast address " << std::quoted(argv[2]) << ", using "
-                      << std::quoted(brd_address.to_string()) << " instead" << std::endl;
+            std::cerr << "Unable to use specified broadcast address " << std::quoted(argv[2]) << ", using default instead"
+                      << std::endl;
         }
     }
     if(argc >= 4) {
@@ -76,8 +84,8 @@ int main(int argc, char* argv[]) {
         try {
             any_address = asio::ip::make_address(argv[4]);
         } catch(const asio::system_error& error) {
-            std::cerr << "Unable to use any address " << std::quoted(argv[4]) << ", using "
-                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+            std::cerr << "Unable to use specified any address " << std::quoted(argv[4]) << ", using default instead"
+                      << std::endl;
         }
     }
 
@@ -122,11 +130,11 @@ int main(int argc, char* argv[]) {
                 auto registered_services = manager.GetRegisteredServices();
                 std::cout << " Registered Services:\n";
                 for(const auto& service : registered_services) {
-                    std::cout << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier) //
-                              << " Port " << std::setw(5) << service.port                                               //
+                    std::cout << " Service " << pad_str_right(magic_enum::enum_name(service.identifier), 10) //
+                              << " Port " << std::setw(5) << service.port                                    //
                               << "\n";
                 }
-                std::cout << std::right << std::flush;
+                std::cout << std::flush;
                 continue;
             }
             // List discovered services
@@ -139,13 +147,13 @@ int main(int argc, char* argv[]) {
                                                                    : manager.GetDiscoveredServices();
                 std::cout << " Discovered Services:\n";
                 for(const auto& service : discovered_services) {
-                    std::cout << " Service " << std::left << std::setw(10) << magic_enum::enum_name(service.identifier) //
-                              << " Port " << std::setw(5) << service.port                                               //
-                              << " Host " << service.host_id.to_string()                                                //
-                              << " IP " << std::left << std::setw(15) << service.address.to_string()                    //
+                    std::cout << " Service " << pad_str_right(magic_enum::enum_name(service.identifier), 15) //
+                              << " Port " << std::setw(5) << service.port                                    //
+                              << " Host " << service.host_id.to_string()                                     //
+                              << " IP " << pad_str_right(service.address.to_string(), 15)                    //
                               << "\n";
                 }
-                std::cout << std::right << std::flush;
+                std::cout << std::flush;
                 continue;
             }
             // Register or unregister a service
@@ -161,14 +169,14 @@ int main(int argc, char* argv[]) {
                 if(cmd == register_service) {
                     auto ret = manager.RegisterService(service, port);
                     if(ret) {
-                        std::cout << " Registered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::right << std::endl;
+                        std::cout << " Registered Service " << pad_str_right(magic_enum::enum_name(service), 10) //
+                                  << " Port " << std::setw(5) << port << std::endl;
                     }
                 } else {
                     auto ret = manager.UnregisterService(service, port);
                     if(ret) {
-                        std::cout << " Unregistered Service " << std::left << std::setw(10) << magic_enum::enum_name(service)
-                                  << " Port " << std::setw(5) << port << std::right << std::endl;
+                        std::cout << " Unregistered Service " << pad_str_right(magic_enum::enum_name(service), 10) //
+                                  << " Port " << std::setw(5) << port << std::endl;
                     }
                 }
                 continue;

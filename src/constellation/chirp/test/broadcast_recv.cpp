@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
         try {
             any_address = asio::ip::make_address(argv[1]);
         } catch(const asio::system_error& error) {
-            std::cerr << "Unable to use any address " << std::quoted(argv[1]) << ", using "
-                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+            std::cerr << "Unable to use specified any address " << std::quoted(argv[1]) << ", using default instead"
+                      << std::endl;
         }
     }
     if(argc >= 3) {
