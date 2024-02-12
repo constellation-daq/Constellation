@@ -73,8 +73,8 @@ int main(int argc, char* argv[]) {
         try {
             brd_address = asio::ip::make_address(argv[2]);
         } catch(const asio::system_error& error) {
-            std::cerr << "Unable to use broadcast address " << std::quoted(argv[2]) << ", using "
-                      << std::quoted(brd_address.to_string()) << " instead" << std::endl;
+            std::cerr << "Unable to use specified broadcast address " << std::quoted(argv[2]) << ", using default instead"
+                      << std::endl;
         }
     }
     if(argc >= 4) {
@@ -84,8 +84,8 @@ int main(int argc, char* argv[]) {
         try {
             any_address = asio::ip::make_address(argv[4]);
         } catch(const asio::system_error& error) {
-            std::cerr << "Unable to use any address " << std::quoted(argv[4]) << ", using "
-                      << std::quoted(any_address.to_string()) << " instead" << std::endl;
+            std::cerr << "Unable to use specified any address " << std::quoted(argv[4]) << ", using default instead"
+                      << std::endl;
         }
     }
 
