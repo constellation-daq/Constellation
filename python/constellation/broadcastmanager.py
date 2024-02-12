@@ -1,11 +1,10 @@
 import logging
 import threading
 
-import zmq
 import time
 import yaml
 
-from typing import Optional, Callable
+from typing import Callable
 from .protocol import ServiceIdentifier, MessageType, SatelliteBeacon
 
 # from .fsm import SatelliteState
@@ -65,20 +64,17 @@ class BroadcastManager:
         host=None,
         config_file=None,
         group: str = "Default",
-        registered_services: RegisteredService = [],
-        discovered_services: DiscoveredService = [],
-        discover_callbacks: DiscoverCallback = {},
-        *args,
-        context: Optional[zmq.Context] = None,
-        **kwargs,
+        registered_services: RegisteredService = None,
+        discovered_services: DiscoveredService = None,
+        discover_callbacks: DiscoverCallback = None,
     ):
-        super().__init__(*args, **kwargs)
         self.host = host
         self._stop_broadcasting = threading.Event()
         self.group = group
-        self.discovered_services = discovered_services
-        self.context = context or zmq.Context()
-        self.beacon = SatelliteBeacon(self.host, self.group, self.context)
+        self.discovered_services = (
+            [] if not discovered_services else discovered_services
+        )
+        self.beacon = SatelliteBeacon(self.host, self.group)
 
         # Set up threads and depart events for callbacks
         self._callback_lock = threading.Lock()
@@ -86,10 +82,12 @@ class BroadcastManager:
         self._depart_events = {}
 
         # Register callbacks for services
-        self.discover_callbacks = discover_callbacks
+        self.discover_callbacks = {} if not discover_callbacks else discover_callbacks
 
         # Register offered services
-        self.registered_services = registered_services
+        self.registered_services = (
+            [] if not registered_services else registered_services
+        )
         for new_service in self.registered_services:
             self.beacon.broadcast_service(
                 new_service._serviceid, MessageType.OFFER, new_service._port
