@@ -41,6 +41,10 @@ It is assumed that
 * there are no malicious actors on the subnet.
 * the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard configuration.
 
+All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml), which is why no privileged user account
+is required for running a constellation host - unless the controlled hardware requires so. If in such a case the Constellation host
+requires elevated privileges for running, this is clearly documented in the respective component documentation.
+
 It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration - chosen for user convenience - is to bind to all available network interfaces of the host.
 
 
