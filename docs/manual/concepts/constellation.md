@@ -7,7 +7,7 @@ and easy integration of new sensors, detectors and other devices. The components
 multiple machines across a local IP-based network, and allow to distribute commands, record data and collect monitoring and
 logging information from its different constituents.
 
-## Naming Things
+### Naming Things
 
 In software, "naming things" is often among the most difficult tasks as names both need to be "speaking" (describe what they
 refer to and what it does) and easy to remember (and type).
@@ -24,13 +24,25 @@ physics:
   finite state machine into the 'RUN' state and out of it.
 * ...
 
-## Design Approach & Architecture Goals
+### Design Approach & Architecture Goals
 
 * make use of modern frameworks for message queuing
 * implement a solid finite state machine.
 * ...
 
 * The framework would come with few dependencies only, be lightweight and would provide a simple interface to allow for fast integration of new satellite applications. Graphical user interfaces should be made available to steer the command-and-control server and/or some of the satellite applications.
+
+### Limitations & Threat Model Considerations
+
+In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as "subnets".
+It is assumed that
+
+* the subnet and all connected hosts can be trusted.
+* there are no malicious actors on the subnet.
+* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard configuration.
+
+It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration - chosen for user convenience - is to bind to all available network interfaces of the host.
+
 
 
 ## Components of a Constellation
