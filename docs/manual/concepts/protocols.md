@@ -26,9 +26,10 @@ While some established protocols exist for the purpose of finding services on a 
 downsides such as missing standard implementations, being limited to individual platforms, or a large and complex set of features not required for the
 purpose of Constellation.
 
-Hence, the Constellation Host Identification & Reconnaissance Protocol (CHIRP) has been devised which uses a set of defined beacons sent as
-broadcasts over UDP/IP to announce or request services. The beacon message contains a unique identified for the host and its Constellation group,
-the relevant service as well as IP address and port of the service. Three such beacons exist:
+Hence, the Constellation Host Identification & Reconnaissance Protocol (CHIRP) has been devised. It is a IPv4 protocol intended to be used on local
+networks only which uses a set of defined beacons sent as broadcasts over UDP/IP to announce or request services.
+The beacon message contains a unique identified for the host and its Constellation group, the relevant service as well as IP address and port of the service.
+Three such beacons exist:
 
 * `OFFER`: A beacon of this type indicates that the sending host is offering the service at the provided endpoint.
 * `REQUEST`: This beacon solicits offers of the respective service from other hosts.
