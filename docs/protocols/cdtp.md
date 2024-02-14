@@ -58,13 +58,15 @@ The first string MUST contain the protocol identifier, which SHALL consist of th
 
 The second string SHOULD contain the name of the sending CDTP host.
 
-The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit timestamp in units of nanoseconds.
-Possible values MAY be the time since the start of the measurement or the current time of the UNIX epoch when sending the message or generating of the payload at the sending CDTP host.
+The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
+Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CDTP host.
 
 The 64-bit integer SHALL contain the message sequence number of the sender, i.e. a monotonically incremented number that represents the number of messages sent since the beginning of the measurement.
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+
+If the CDTP sender host provides the relevant information, the map SHOULD contain key-value pairs with keys `timestamp_begin` and `timestamp_end`, containing integer values with the timestamps in picoseconds counted since the start of the measurement marking the begin and end of this data block, respectively.
 
 ### Message Payload
 
