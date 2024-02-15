@@ -65,7 +65,7 @@ The first string MUST contain the protocol identifier, which SHALL consist of th
 
 The second string SHOULD contain the name of the sending CDTP host.
 
-The message type identifier SHALL be either %x01 (dubbed ‘BOR’ for begin-of-run), %x02 (dubbed ‘EOR’ for end-of-run) or %x03 (dubbed ‘DAT‘ for data).
+The message type identifier SHALL be either %x00 (dubbed ‘DAT‘ for data), %x01 (dubbed ‘BOR’ for begin-of-run), or %x02 (dubbed ‘EOR’ for end-of-run).
 
 The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
 Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CDTP host.
