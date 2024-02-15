@@ -45,7 +45,7 @@ template <Protocol P>
 Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
     : sender_(std::move(sender)), time_(time) {}
 
-template <Protocol P> Header<P>::Header(std::span<const std::byte> data) {
+template <Protocol P> Header<P> Header<P>::disassemble(std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
@@ -58,15 +58,21 @@ template <Protocol P> Header<P>::Header(std::span<const std::byte> data) {
 
     // Unpack sender
     const auto msgpack_sender = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    sender_ = msgpack_sender->as<std::string>();
+    const auto sender = msgpack_sender->as<std::string>();
 
     // Unpack time
     const auto msgpack_time = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    time_ = msgpack_time->as<std::chrono::system_clock::time_point>();
+    const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
 
     // Unpack tags
     const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    tags_ = msgpack_tags->as<Dictionary>();
+    const auto tags = msgpack_tags->as<Dictionary>();
+
+    // Construct header
+    auto header = Header<P>(sender, time);
+    header.tags_ = tags;
+
+    return header;
 }
 
 template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {

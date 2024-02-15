@@ -34,13 +34,6 @@ namespace constellation::message {
          */
         CNSTLN_API Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now());
 
-        /**
-         * Construct new message header from bytes
-         *
-         * @param data View to byte data
-         */
-        CNSTLN_API Header(std::span<const std::byte> data);
-
         /** Return message time */
         constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
 
@@ -61,6 +54,13 @@ namespace constellation::message {
 
         /** Pack message header with msgpack */
         CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+
+        /**
+         * Disassemble message from from bytes
+         *
+         * @param data View to byte data
+         */
+        CNSTLN_API static Header disassemble(std::span<const std::byte> data);
 
     private:
         std::string sender_;

@@ -54,7 +54,7 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
     }
 
     // Decode header
-    const CSCP1Header header {{to_byte_ptr(frames.at(0).data()), frames.at(0).size()}};
+    const auto header = CSCP1Header::disassemble({to_byte_ptr(frames.at(0).data()), frames.at(0).size()});
 
     // Decode body
     std::size_t offset = 0;
