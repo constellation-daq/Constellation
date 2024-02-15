@@ -67,10 +67,7 @@ template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuf
 }
 
 template <Protocol P> std::string Header<P>::to_string() const {
-    // Make protocol identifier version human readable
-    auto protocol = get_protocol_identifier(P);
-    protocol.back() = static_cast<char>(protocol.back() + '0');
-    // Stream message
+    const auto protocol = get_hr_protocol_identifier(P);
     std::ostringstream out {};
     std::boolalpha(out);
     out << "Header: "sv << protocol << '\n' //
