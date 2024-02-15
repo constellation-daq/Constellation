@@ -17,7 +17,28 @@ into the different failure modes.
 
 In regular operation, i.e. without unexpected incidents in the Constellation, the satellite FSM will transition between four
 steady states. Steady here indicates that the satellite will remain in this state until either a transition is initiated by
-a controller, or a failure mode is activated.
+a controller, or a failure mode is activated. The simplified state diagram for normal operation mode can be drawn like this:
+
+```plantuml
+@startuml
+hide empty description
+
+State NEW : Satellite started
+State INIT : Satellite initialized
+State ORBIT : Satellite powered
+State RUN : Satellite taking data
+
+NEW -right[#blue,bold]-> INIT : initialize
+INIT -right[#blue,bold]-> ORBIT : launch
+ORBIT -left[#blue,bold]-> INIT : land
+ORBIT -[#blue,bold]-> RUN : start
+ORBIT -[#blue,bold]-> ORBIT : reconfigure
+RUN -left[#blue,bold]-> ORBIT : stop
+@enduml
+```
+
+The individual states of the satellite correspond to well-defined states of the attached instrument hardware as well as the
+satellite communication with the rest of the Constellation:
 
 * The `NEW` state is the initial state of any satellite.
 
@@ -31,9 +52,13 @@ a controller, or a failure mode is activated.
 
 * The `ORBIT` state signals that the satellite is ready for data taking.
 
-  When the satellite enters this state, all instrument hardware has been configured
+  When the satellite enters this state, all instrument hardware has been configured, is powered up and is ready for entering a
+  measurement run.
 
-* RUN
+* The `RUN` state represents the data acquisition mode of the satellite.
+
+  In this state, the instrument is active and queried for data, the satellite handles measurement data, i.e. obtains data from
+  the instrument and sends it across the Constellation, or receives data and stores it to file.
 
 ### Changing States - Transitions
 
