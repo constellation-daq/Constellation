@@ -7,6 +7,8 @@ and easy integration of new sensors, detectors and other devices. The components
 multiple machines across a local IP-based network, and allow to distribute commands, record data and collect monitoring and
 logging information from its different constituents.
 
+## General Considerations
+
 ### Naming Things
 
 In software, "naming things" is often among the most difficult tasks as names both need to be "speaking" (describe what they
@@ -29,7 +31,6 @@ physics:
   physical measurement such as the passage of a particle. Sometimes however it is also used when referring to the smallest portion
   of data produced by a given device.
 
-
 ### Design Approach & Architecture Goals
 
 * make use of modern frameworks for message queuing
@@ -45,6 +46,7 @@ It is assumed that
 
 * the subnet and all connected hosts can be trusted.
 * there are no malicious actors on the subnet.
+* the transmitted information is non-confidential to any actor on the subset.
 * the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard configuration.
 
 All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml), which is why no privileged user account
@@ -53,7 +55,7 @@ requires elevated privileges for running, this is clearly documented in the resp
 
 It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration - chosen for user convenience - is to bind to all available network interfaces of the host.
 
-
+In general, users are required to satisfy their personal threat model by external means such as firewalls, physical isolation and virtualization on the edges of the subnet Constellation runs on.
 
 ## Components of a Constellation
 
@@ -62,22 +64,22 @@ have a different purpose and can or cannot partake in interactions. The componen
 
 ### Satellite
 
-- has finite state machine
-- listens to transition commands from controller(s)
-- broadcasts its current state via heartbeat channel
-- goes into the `safe state` if heartbeat from other satellite goes missing
-- possibility to ignore missing heartbeats from other satellites via their importance from configuration list
+* has finite state machine
+* listens to transition commands from controller(s)
+* broadcasts its current state via heartbeat channel
+* goes into the `safe state` if heartbeat from other satellite goes missing
+* possibility to ignore missing heartbeats from other satellites via their importance from configuration list
 
 ### Controller
 
-- is stateless
-- sends commands to satellite fsms to initiate transitions (remote procedure calls)
-- can go offline without affecting constellation run
-- only a controller can reset the safe state of satellites
-- distributes the configuration & importance list
+* is stateless
+* sends commands to satellite fsms to initiate transitions (remote procedure calls)
+* can go offline without affecting constellation run
+* only a controller can reset the safe state of satellites
+* distributes the configuration & importance list
 
 ### Listener
 
-- is stateless
-- passive component of the constellation, can only consume information, receive info
-- examples could be Grafana dashboard, logger display, alarm recipient?
+* is stateless
+* passive component of the constellation, can only consume information, receive info
+* examples could be Grafana dashboard, logger display, alarm recipient?
