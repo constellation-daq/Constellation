@@ -53,6 +53,9 @@ A CDTP receiver host SHALL notify the user about messages that it receives with 
 In case of network congestion, unsent messaged SHALL be buffered by the sending CDTP host and sent at a later time.
 Upon reaching the high-water mark of buffered messages, the user MUST be notified and further sending of messages SHALL be blocked until action has been taken.
 
+Any data message must be enclosed by the begin-of-run message and end-of-run message of the current measurement.
+If a CDTP host receives a data message before the begin-of-run message, or if it receives a data message after the end-of-run message, the user MUST be notified and further reception of messages SHALL be blocked until action has been taken.
+
 ### Message Header
 
 The message header frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
