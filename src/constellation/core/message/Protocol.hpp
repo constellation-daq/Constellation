@@ -9,6 +9,11 @@
 
 #pragma once
 
+#include <string>
+#include <utility>
+
+#include "constellation/core/utils/std23.hpp"
+
 namespace constellation::message {
 
     /** Protocol Enum (excluding CHIRP) */
@@ -21,5 +26,20 @@ namespace constellation::message {
         CDTP1,
     };
     using enum Protocol;
+
+    /**
+     * Get protocol identifier string for CSCP, CMDP and CDTP protocols
+     *
+     * @param protocol Protocol
+     * @return Protocol identifier string in message header
+     */
+    inline std::string get_protocol_identifier(Protocol protocol) {
+        switch(protocol) {
+        case CSCP1: return {"CSCP\01"};
+        case CMDP1: return {"CMDP\01"};
+        case CDTP1: return {"CDTP\01"};
+        default: std::unreachable();
+        }
+    }
 
 } // namespace constellation::message

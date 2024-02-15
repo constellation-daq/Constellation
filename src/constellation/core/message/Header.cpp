@@ -23,23 +23,7 @@
 
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
-
-/**
- * Get protocol identifier string for CSCP, CMDP and CDTP protocols
- *
- * @param protocol Protocol
- * @return Protocol identifier string in message header
- */
-inline std::string get_protocol_identifier(Protocol protocol) {
-    switch(protocol) {
-    case CSCP1: return "CSCP\01"s;
-    case CMDP1: return "CMDP\01"s;
-    case CDTP1: return "CDTP\01"s;
-    default: std::unreachable();
-    }
-}
 
 template <Protocol P>
 Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
