@@ -4,8 +4,6 @@ The central components of a Constellation network are satellites. A satellite is
 is built around a finite state machine. It is the only component in a Constellation which partakes in all Constellation
 protocols. In the following, the main features of the Constellation Satellite are described.
 
-* importance?
-
 ## The Finite State Machine
 
 The finite state machine (FSM) controls the behavior of the satellite and guarantees that the system is always in a defined state.
@@ -15,7 +13,7 @@ internal state changes in case of errors.
 In the following, the different states and their transitions are introduced, starting from regular operations and extending
 into the different failure modes.
 
-### Normal Operation
+### Normal Operation - Steady States
 
 In regular operation, i.e. without unexpected incidents in the Constellation, the satellite FSM will transition between four
 steady states. Steady here indicates that the satellite will remain in this state until either a transition is initiated by
@@ -37,11 +35,11 @@ a controller, or a failure mode is activated.
 
 * RUN
 
-Instrument code of the individual satellites is called in so-called transitional states. They differ from steady states in
-that they are entered by a state transition initiated through CSCP or a failure mode, but exited automatically upon completion
-of the action.
+### Changing States - Transitions
 
-A simple example is shown below:
+Instrument code of the individual satellites is executed in so-called transitional states. They differ from steady states in
+that they are entered by a state transition initiated through CSCP or a failure mode, but exited automatically upon completion
+of the action. Such a transition diagram is shown below:
 
 ```plantuml
 @startuml
@@ -73,52 +71,46 @@ In addition, the optional `reconfiguring` transitional state enables quick confi
 without having to pass through the `INIT` state. A typical example for reconfiguration is a high-voltage power supply unit,
 which is slowly ramped up to its target voltage in the `launching` state. Between runs, the applied voltage is supposed to be
 changed by a few volts - and instead of the time-consuming operation ramping down via the `landing` transition and ramping up again,
-the voltage is ramped directly from its current value to the target value in the `reconfigure` transitional state.
+the voltage is ramped directly from its current value to the target value in the `reconfigure` transitional state:
+
+```plantuml
+@startuml
+hide empty description
+
+State INIT : Satellite initialized
+State launching #lightblue
+State landing #lightblue
+State ORBIT : Satellite orbiting
+State reconfiguring #lightblue##[dotted]
+
+INIT -right[#blue,bold]-> launching : launch
+launching -down[dotted]-> ORBIT
+ORBIT -left[#blue,bold]-> landing : land
+landing -up[dotted]-> INIT : land
+
+ORBIT -[#blue,bold]down-> reconfiguring : reconfigure
+reconfiguring -[dotted]up-> ORBIT
+@enduml
+```
+
 This transition needs to be specifically implemented in individual satellites in order to make this transition available in the FSM.
 
 ### Failure Modes & Safe State
 
+Satellites operate autonomously in the Constellation, and no central controller instance is required to run. Controllers are
+only required to initiate state transitions out of steady satellite states as described above.
+This situation implies that a mechanism should be in place to deal with unexpected events occurring in the operation of a single
+satellite, but also within the entire Constellation. For this purpose, the satellite FSM knows two additional steady states:
+
+The `ERROR` state is entered whenever an unexpected event occurs within the instrument control or the data transfer. This
+state can only be left by a manual intervention via a controller by resetting the satellite back into its `INIT` state.
+
+The `SAFE` state on the other hand, is entered by the satellite when detecting an issue with *another* satellite in the
+Constellation.
+
 * provide examples (HV power supply, ramping)
 * mention heartbeating, safe mode
-
-### Transitions & Transitional States
-
-```plantuml
-@startuml
-State NEW : Satellite started,\nno configuration received,\nawaiting connection
-State Anomaly {
-State ERROR : System powered down,\nmanual intervention required
-State SAFE: Satellite in safe mode\nsystem powered down
-}
-State Operation {
-State INIT : connection initialized,\nconfiguration received
-State ORBIT : hardware configured\nsystem powered\nready for data acquisition
-State RUN : Satellite taking data
-}
-
-'Entry/Exit'
-[*] --> NEW
-NEW --> [*]
-NEW --> INIT : initialize
-NEW -[#red,dashed]-> ERROR
-ORBIT --> INIT : land
-INIT --> ORBIT : launch
-INIT -[#red,dashed]-> ERROR
-INIT -> [*]
-ORBIT -[#blue]-> ORBIT : reconfigure
-ORBIT -[#red,dashed]-> ERROR
-RUN --> ORBIT : stop
-ORBIT --> RUN : start
-ORBIT -[#red]-> SAFE : interrupt
-RUN -[#red,dashed]-> ERROR
-RUN -[#red]-> SAFE : interrupt
-SAFE -[#indigo,bold]-> INIT : recover
-SAFE -[#red,dashed]-> ERROR
-SAFE --> [*]
-ERROR -[#indigo,bold]-> INIT : initialize
-ERROR --> [*]
-@enduml
-```
+* importance?
 
 ## Commands
 
