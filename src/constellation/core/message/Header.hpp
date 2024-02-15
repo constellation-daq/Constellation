@@ -30,10 +30,11 @@ namespace constellation::message {
          * Construct new message header
          *
          * @param sender Sender name
-         * @param time Message time (defaults to current time)
+         * @param time Message time
+         * @param tags Message tags (defaults to empty dictionary)
          */
-        Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : sender_(std::move(sender)), time_(time) {}
+        Header(std::string sender, std::chrono::system_clock::time_point time, Dictionary tags = {})
+            : sender_(std::move(sender)), time_(time), tags_(std::move(tags)) {}
 
         /** Return message time */
         constexpr std::chrono::system_clock::time_point getTime() const { return time_; }

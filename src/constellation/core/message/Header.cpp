@@ -49,10 +49,7 @@ template <Protocol P> Header<P> Header<P>::disassemble(std::span<const std::byte
     const auto tags = msgpack_tags->as<Dictionary>();
 
     // Construct header
-    auto header = Header<P>(sender, time);
-    header.tags_ = tags;
-
-    return header;
+    return Header<P>(sender, time, tags);
 }
 
 template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
