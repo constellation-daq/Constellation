@@ -25,10 +25,6 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
-template <Protocol P>
-Header<P>::Header(std::string sender, std::chrono::system_clock::time_point time)
-    : sender_(std::move(sender)), time_(time) {}
-
 template <Protocol P> Header<P> Header<P>::disassemble(std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;

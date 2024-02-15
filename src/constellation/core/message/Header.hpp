@@ -32,7 +32,8 @@ namespace constellation::message {
          * @param sender Sender name
          * @param time Message time (defaults to current time)
          */
-        CNSTLN_API Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now());
+        Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
+            : sender_(std::move(sender)), time_(time) {}
 
         /** Return message time */
         constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
