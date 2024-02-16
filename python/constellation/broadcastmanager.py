@@ -2,10 +2,14 @@ import logging
 import threading
 
 import time
-import yaml
+from uuid import UUID
 
 from typing import Callable
-from .protocol import ServiceIdentifier, MessageType, SatelliteBeacon
+from constellation.protocol import (
+    CHIRPServiceIdentifier,
+    CHIRPMessageType,
+    CHIRPBeaconTransmitter,
+)
 
 # from .fsm import SatelliteState
 
@@ -19,12 +23,12 @@ class RegisteredService:
 
     def __init__(
         self,
-        port,
-        serviceid: ServiceIdentifier = None,
+        serviceid: CHIRPServiceIdentifier,
+        port: int,
     ):
         """Initialize variables."""
-        self._port = port
-        self._serviceid = serviceid
+        self.port = port
+        self.serviceid = serviceid
 
 
 class DiscoveredService:
@@ -32,16 +36,16 @@ class DiscoveredService:
 
     def __init__(
         self,
-        hostid,
+        host_uuid: UUID,
+        serviceid: CHIRPServiceIdentifier,
         address,
-        port,
-        serviceid: ServiceIdentifier = None,
+        port: int,
     ):
         """Initialize variables."""
-        self._hostid = hostid
-        self._address = address
-        self._port = port
-        self._serviceid = serviceid
+        self.host_uuid = host_uuid
+        self.address = address
+        self.port = port
+        self.serviceid = serviceid
 
 
 class DiscoverCallback:
@@ -49,32 +53,34 @@ class DiscoverCallback:
 
     def __init__(
         self,
+        serviceid: CHIRPServiceIdentifier,
         callback: Callable,
-        serviceid: ServiceIdentifier,
     ):
-        self._callback = callback
-        self._serviceid = serviceid
+        self.callback = callback
+        self.serviceid = serviceid
 
 
 class BroadcastManager:
-    """Broadcast services and listen in on the network."""
+    """Manages service discovery and broadcast via the CHIRP protocol."""
 
     def __init__(
         self,
-        host=None,
-        config_file=None,
-        group: str = "Default",
-        registered_services: RegisteredService = None,
-        discovered_services: DiscoveredService = None,
-        discover_callbacks: DiscoverCallback = None,
+        host_uuid: UUID,
+        group_uuid: UUID,
     ):
-        self.host = host
+        """Initialize parameters.
+
+        :param host: name of the host the BroadcastManager represents
+        :type host: string
+        :param config: the configuration to be used.
+        :type config:
+        :param group:
+        """
+        self.host_uuid = host_uuid
         self._stop_broadcasting = threading.Event()
-        self.group = group
-        self.discovered_services = (
-            [] if not discovered_services else discovered_services
-        )
-        self.beacon = SatelliteBeacon(self.host, self.group)
+        self.group_uuid = group_uuid
+        self.discovered_services = []
+        self._beacon = CHIRPBeaconTransmitter(self.host_uuid, self.group_uuid)
 
         # Set up threads and depart events for callbacks
         self._callback_lock = threading.Lock()
@@ -82,25 +88,10 @@ class BroadcastManager:
         self._depart_events = {}
 
         # Register callbacks for services
-        self.discover_callbacks = {} if not discover_callbacks else discover_callbacks
+        self._discover_callbacks = {}
 
         # Register offered services
-        self.registered_services = (
-            [] if not registered_services else registered_services
-        )
-        for new_service in self.registered_services:
-            self.beacon.broadcast_service(
-                new_service._serviceid, MessageType.OFFER, new_service._port
-            )
-            time.sleep(1)
-
-        # Option for configuring which units are allowed to be discovered
-        self.config_file = config_file
-
-        if self.config_file:
-            with open(self.config_file, "r") as configFile:
-                self.yaml_config = yaml.safe_load(configFile)
-                self.whitelist = self.yaml_config["Whitelist"]
+        self._registered_services = []
 
     def start(self):
         """Start broadcast manager."""
@@ -113,144 +104,175 @@ class BroadcastManager:
 
     def get_serviceid(self):
         """Returns a list of all serviceid from offered services."""
-        return [service._serviceid for service in self.registered_services]
+        return [service.serviceid for service in self._registered_services]
 
     def find_registered_callback(self, serviceid):
         """Find the registered callback if it exists."""
-        for callback in self.discover_callbacks:
-            if serviceid == callback._serviceid:
+        for callback in self._discover_callbacks:
+            if serviceid == callback.serviceid:
                 return callback
-        logging.info("Could not find callback")
+        logging.info(f"Could not find callback for service with ID {serviceid}")
 
     def find_registered_service(self, serviceid):
         """Find the registered service if it exists."""
-        for service in self.registered_services:
-            if serviceid == service._serviceid:
+        for service in self._registered_services:
+            if serviceid == service.serviceid:
                 return service
-        logging.info("Could not find service")
+        logging.info(f"Could not find service with ID {serviceid}")
 
-    def find_discovered_service(self, hostid, host_addr, port, serviceid):
-        service = DiscoveredService(hostid, host_addr, port, serviceid)
+    def find_discovered_service(
+        self, host_uuid: UUID, serviceid: CHIRPServiceIdentifier, host_addr, port: int
+    ):
+        service = DiscoveredService(host_uuid, serviceid, host_addr, port)
         for discovered_service in self.discovered_services:
             if service == discovered_service:
                 return discovered_service
 
     def broadcast_all(self):
         """Broadcast all registered services."""
-        for service in self.registered_services:
+        for service in self._registered_services:
             try:
-                self.beacon.broadcast_service(
-                    service._serviceid, MessageType.OFFER, service._port
+                self._beacon.broadcast_service(
+                    service.serviceid, CHIRPMessageType.OFFER, service.port
                 )
-                time.sleep(1)
+                time.sleep(0.1)
             except RuntimeError:
                 pass
 
-    def register_callback(self, serviceid, callback):
+    def register_callback(self, serviceid: CHIRPServiceIdentifier, callback: callable):
         """Register new callback for ServiceIdentifier."""
-        if serviceid in self.discover_callbacks.keys():
+        if serviceid in self._discover_callbacks.keys():
             logging.info("Overwriting callback")
-        self.discover_callbacks[serviceid] = callback
+        self._discover_callbacks[serviceid] = callback
 
-    def register_service(self, port, serviceid):
+    def register_service(self, serviceid: CHIRPServiceIdentifier, port: int):
         """Register new offered service or overwrite existing service."""
-        if serviceid in [service._serviceid for service in self.registered_services]:
-            logging.info("Overwriting service")
-        self.registered_services.append(RegisteredService(port, serviceid))
-        self.beacon.broadcast_service(serviceid, MessageType.OFFER, port)
+        if serviceid in [service.serviceid for service in self._registered_services]:
+            logging.info(f"Replacing registration for service ID {serviceid}")
+        self._registered_services.append(RegisteredService(serviceid, port))
+        self._beacon.broadcast_service(serviceid, CHIRPMessageType.OFFER, port)
 
-    def discover_service(self, hostid, address, port, serviceid):
+    def discover_service(
+        self, host_uuid: UUID, serviceid: CHIRPServiceIdentifier, host_addr, port: int
+    ):
         """Add newly discovered service to internal list and return a DiscoveredService."""
-        new_service = DiscoveredService(hostid, address, port, serviceid)
+        new_service = DiscoveredService(host_uuid, serviceid, host_addr, port)
         if new_service in self.discovered_services:
             logging.info("Service already discovered")
         else:
-            self.discovered_services.append()
+            self.discovered_services.append(new_service)
         return new_service
 
-    def forget_service(self, hostid, address, port, serviceid):
+    def forget_service(
+        self, host_uuid: UUID, serviceid: CHIRPServiceIdentifier, host_addr, port: int
+    ):
         """Forget discovered service."""
         self.discovered_services.remove(
-            DiscoveredService(hostid, address, port, serviceid)
+            DiscoveredService(host_uuid, serviceid, host_addr, port)
         )
 
     def request_service(self, serviceid):
         """Request service of type ServiceIdentifier."""
-        if serviceid not in self.discover_callbacks.keys():
+        if serviceid not in self._discover_callbacks.keys():
             logging.warn("Serviceid does not have a registered callback")
-        self.beacon.broadcast_service(serviceid, MessageType.REQUEST)
+        self._beacon.broadcast_service(serviceid, CHIRPMessageType.REQUEST)
 
     def run(self):
         """Start listening in on broadcast"""
 
         while not self._stop_broadcasting.is_set():
-            try:
-                print("Doing stuff")  # TODO: remove
-                msg = self.beacon.listen()
-                print("Found stuff")
-                if not msg:
-                    continue
+            msg = self._beacon.listen()
+            if not msg:
+                time.sleep(0.1)
+                continue
 
-                type, group, hostid, serviceid, port, host_addr = msg
+            if msg.group_uuid != self.group_uuid:
+                continue
 
-                if group != self.group:
-                    continue
-
-                # Check Message Type
-                if type == MessageType.REQUEST:
-                    registered_service = self.find_registered_service(serviceid)
-                    if registered_service:
-                        self.beacon.broadcast_service(
-                            registered_service._serviceid,
-                            MessageType.OFFER,
-                            registered_service._port,
-                        )
-                        logging.info(
-                            f"Broadcasting service {registered_service._serviceid}"
-                        )
-                    continue
-
-                if type == MessageType.OFFER and hostid in self.whitelist:
-                    discovered_service = self.discover_service(
-                        hostid, host_addr, port, serviceid
+            # Check Message Type
+            if msg.msgtype == CHIRPMessageType.REQUEST:
+                registered_service = self.find_registered_service(msg.serviceid)
+                if registered_service:
+                    self._beacon.broadcast_service(
+                        registered_service._serviceid,
+                        CHIRPMessageType.OFFER,
+                        registered_service._port,
                     )
-                    logging.info(f"Received OFFER for service: {serviceid}")
-                    registered_callback = self.find_registered_callback(serviceid)
-                    if registered_callback:
-                        with self._callback_lock:
-                            try:
-                                depart_event = threading.Event()
-                                self._callback_threads[
-                                    discovered_service
-                                ] = threading.Thread(
-                                    target=registered_callback._callback,
-                                    args=(host_addr, port, depart_event),
-                                    daemon=True,
-                                )
-                                self._callback_threads[discovered_service].start()
-                                self._depart_events[discovered_service] = depart_event
-                                logging.info("Found and started callback for service")
-                            except Exception:
-                                logging.error(
-                                    f"Could not issue callback for service: {serviceid} on host with id: {hostid}"
-                                )
-                    continue
-
-                if (
-                    type == MessageType.DEPART
-                    and port != 0
-                    and (
-                        depart_service := self.find_discovered_service(
-                            hostid, host_addr, port, serviceid
-                        )
+                    logging.info(
+                        f"Broadcasting service {registered_service._serviceid}"
                     )
-                    in self.discovered_services
-                ):
-                    self.forget_service(hostid, port)
-                    self._depart_events[depart_service].set()
-                    self._callback_threads[depart_service].join()
-                    continue
+                continue
 
-            except RuntimeError:
-                # nothing to process
-                pass
+            if msg.msgtype == CHIRPMessageType.OFFER:
+                discovered_service = self.discover_service(
+                    msg.host_uuid, msg.serviceid, msg.from_address, msg.port
+                )
+                logging.info(f"Received OFFER for service: {msg.serviceid}")
+                registered_callback = self.find_registered_callback(msg.serviceid)
+                if registered_callback:
+                    with self._callback_lock:
+                        try:
+                            depart_event = threading.Event()
+                            self._callback_threads[
+                                discovered_service
+                            ] = threading.Thread(
+                                target=registered_callback._callback,
+                                args=(msg.from_address, msg.port, depart_event),
+                                daemon=True,
+                            )
+                            self._callback_threads[discovered_service].start()
+                            self._depart_events[discovered_service] = depart_event
+                            logging.info("Found and started callback for service")
+                        except Exception:
+                            logging.error(
+                                f"Could not issue callback for service: {msg.serviceid} on host with id: {msg.host_uuid}"
+                            )
+                continue
+
+            if (
+                msg.msgtype == CHIRPMessageType.DEPART
+                and msg.port != 0
+                and (
+                    depart_service := self.find_discovered_service(
+                        msg.host_uuid, msg.from_address, msg.port, msg.serviceid
+                    )
+                )
+                in self.discovered_services
+            ):
+                self.forget_service(msg.host_uuid, msg.port)
+                self._depart_events[depart_service].set()
+                self._callback_threads[depart_service].join()
+                continue
+
+
+def main(args=None):
+    """Start a broadcast manager service."""
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--log-level", default="info")
+
+    args = parser.parse_args(args)
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        level=args.log_level.upper(),
+    )
+
+    import uuid
+
+    # start server with remaining args
+    s = BroadcastManager(
+        host_uuid=uuid.uuid4(),
+        group_uuid=uuid.uuid4(),
+    )
+
+    s.start()
+    s.register_service(CHIRPServiceIdentifier.HEARTBEAT, 50000)
+    s.register_service(CHIRPServiceIdentifier.CONTROL, 50001)
+    print("Services registered, sleeping...")
+    time.sleep(10)
+    s.stop()
+
+
+if __name__ == "__main__":
+    main()
