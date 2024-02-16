@@ -572,6 +572,10 @@ class CHIRPBeaconTransmitter:
             raise RuntimeError(
                 f"Received malformed message by host {from_address}: {e}"
             )
+
+        if self._host_uuid == msg.host_uuid:
+            # ignore msg from this (our) host
+            return None
         msg.from_address = from_address[0]
         # TODO decide and document what to return here
         return msg
