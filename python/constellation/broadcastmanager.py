@@ -207,7 +207,9 @@ class BroadcastManager:
                 discovered_service = self.discover_service(
                     msg.host_uuid, msg.serviceid, msg.from_address, msg.port
                 )
-                logging.info(f"Received OFFER for service: {msg.serviceid}")
+                logging.info(
+                    f"Received OFFER for service: {msg.serviceid} on host {msg.from_address}"
+                )
                 registered_callback = self.find_registered_callback(msg.serviceid)
                 if registered_callback:
                     with self._callback_lock:

@@ -3,16 +3,56 @@
 import pytest
 import uuid
 
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from constellation.protocol import (
     CHIRPBeaconTransmitter,
     CHIRPServiceIdentifier,
     CHIRPMessageType,
+    CHIRP_PORT,
 )
 
+mock_packet_queue = []
 
-def test_chirp_beacon_send_recv():
+
+# SIDE EFFECTS
+def mock_sock_sendto(buf, addr):
+    """Append buf to queue."""
+    mock_packet_queue.append(buf)
+
+
+def mock_sock_recvfrom(bufsize):
+    """Pop entry from queue."""
+    try:
+        return mock_packet_queue.pop(0), ["somehost", CHIRP_PORT]
+    except IndexError:
+        raise BlockingIOError("no mock data")
+
+
+# FIXTURES
+@pytest.fixture
+def mock_socket():
+    with patch("constellation.protocol.socket.socket") as mock:
+        mock = mock.return_value
+        mock.connected = MagicMock(return_value=True)
+        mock.sendto = MagicMock(side_effect=mock_sock_sendto)
+        mock.recvfrom = MagicMock(side_effect=mock_sock_recvfrom)
+        yield mock
+
+
+@pytest.fixture
+def mock_transmitter(mock_socket):
+    host = uuid.uuid5(uuid.NAMESPACE_DNS, "mock_sender")
+    group = uuid.uuid5(uuid.NAMESPACE_DNS, "mockstellation")
+    t = CHIRPBeaconTransmitter(
+        host,
+        group,
+    )
+    yield t, host, group
+
+
+def test_chirp_beacon_send_recv(mock_socket):
+    """Test interplay between two transmitters (sender/receiver)."""
     sender = CHIRPBeaconTransmitter(
         uuid.uuid5(uuid.NAMESPACE_DNS, "mock_sender"),
         uuid.uuid5(uuid.NAMESPACE_DNS, "mockstellation"),
@@ -53,3 +93,11 @@ def test_chirp_beacon_send_recv():
         assert "malformed CHIRP header" in str(
             e.value
         ), "Wrong chirp header did not trigger expected exception message."
+
+
+def test_filter_same_host(mock_transmitter):
+    """Check that same-host packets are dropped."""
+    t, host, group = mock_transmitter
+    t.broadcast_service(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
+    res = t.listen()
+    assert not res, "Received packet despite same-host filter."

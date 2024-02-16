@@ -558,6 +558,10 @@ class CHIRPBeaconTransmitter:
             # no data waiting for us
             return None
 
+        if from_address[1] != CHIRP_PORT:
+            # NOTE: not sure this can happen with the way the socket is set up
+            return None
+
         header = msgpack.unpackb(buf)[0]
         if not header == CHIRP_HEADER:
             raise RuntimeError(
