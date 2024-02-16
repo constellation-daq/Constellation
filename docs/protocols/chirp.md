@@ -37,11 +37,11 @@ The CHIRP beacon consists of one 42-octet UDP message with this format:
            Header                                    Body
 ```
 
-The header SHALL consist of the letters ‘C’, ‘H’, ‘I’, ‘R’ and ‘P’, followed by the beacon version number, which SHALL be %x01.
+The header SHALL consist of the letters ‘C’, ‘H’, ‘I’, ‘R’ and ‘P’, followed by the beacon version number, which SHALL be `%x01`.
 
 The body SHALL consist of the one-byte beacon type identifier, followed by the 16-octet UUID of the sender group, the 16-octet UUID of the sender host, a one-byte service descriptor, and a two-byte port number in network byte order. If the port is non-zero this signals that the peer will accept ZeroMQ TCP connections on that port number.
 
-The type SHALL be either %x01 (dubbed ‘REQUEST’), %x02 (dubbed ‘OFFER’), %x03 (dubbed ‘DEPART‘).
+The type SHALL be either `%x01` (dubbed ‘REQUEST’), `%x02` (dubbed ‘OFFER’), `%x03` (dubbed ‘DEPART‘).
 
 A valid beacon SHALL use a recognized header and a body of the correct size. A host that receives an invalid beacon SHALL discard it silently. A host MAY log the sender IP address for the purposes of debugging. A host SHALL discard beacons that it receives from itself. A host SHALL discard beacons that it receives from hosts with a sender group different from its own sender group.
 
