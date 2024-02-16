@@ -25,14 +25,14 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
-template <Protocol P> Header<P> Header<P>::disassemble(std::span<const std::byte> data) {
+Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
     // Unpack protocol
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-    if(protocol_identifier != get_protocol_identifier(P)) {
+    if(protocol_identifier != get_protocol_identifier(protocol)) {
         // TODO(stephan.lachnit): throw
     }
 
@@ -49,12 +49,12 @@ template <Protocol P> Header<P> Header<P>::disassemble(std::span<const std::byte
     const auto tags = msgpack_tags->as<Dictionary>();
 
     // Construct header
-    return Header<P>(sender, time, tags);
+    return {protocol, sender, time, tags};
 }
 
-template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+void Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     // first pack version
-    msgpack_packer.pack(get_protocol_identifier(P));
+    msgpack_packer.pack(get_protocol_identifier(protocol_));
     // then sender
     msgpack_packer.pack(sender_);
     // then time
@@ -63,13 +63,12 @@ template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuf
     msgpack_packer.pack(tags_);
 }
 
-template <Protocol P> std::string Header<P>::to_string() const {
-    const auto protocol = get_hr_protocol_identifier(P);
+std::string Header::to_string() const {
     std::ostringstream out {};
     std::boolalpha(out);
-    out << "Header: "sv << protocol << '\n' //
-        << "Sender: "sv << sender_ << '\n'  //
-        << "Time:   "sv << time_ << '\n'    //
+    out << "Header: "sv << get_hr_protocol_identifier(protocol_) << '\n' //
+        << "Sender: "sv << sender_ << '\n'                               //
+        << "Time:   "sv << time_ << '\n'                                 //
         << "Tags:"sv;
     for(const auto& entry : tags_) {
         out << "\n "sv << entry.first << ": "sv;
@@ -77,10 +76,3 @@ template <Protocol P> std::string Header<P>::to_string() const {
     }
     return out.str();
 }
-
-// Export symbols in shared library
-namespace constellation::message {
-    template class Header<CSCP1>;
-    template class Header<CMDP1>;
-    template class Header<CDTP1>;
-} // namespace constellation::message

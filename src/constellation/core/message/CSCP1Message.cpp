@@ -13,7 +13,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/CSCP1Header.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 

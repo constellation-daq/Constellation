@@ -20,7 +20,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/CDTP1Header.hpp"
 
 namespace constellation::message {
 

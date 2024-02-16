@@ -12,7 +12,9 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/CDTP1Header.hpp"
+#include "constellation/core/message/CMDP1Header.hpp"
+#include "constellation/core/message/CSCP1Header.hpp"
 #include "constellation/core/utils/casts.hpp"
 
 using namespace Catch::Matchers;
