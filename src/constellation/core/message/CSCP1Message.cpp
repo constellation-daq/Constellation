@@ -17,8 +17,8 @@
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
-using namespace constellation;
 using namespace constellation::message;
+using namespace constellation::utils;
 
 CSCP1Message::CSCP1Message(CSCP1Header header, std::pair<CSCP1Type, std::string> verb)
     : header_(std::move(header)), verb_(std::move(verb)) {}

@@ -22,8 +22,8 @@
 #include "constellation/core/message/Header.hpp"
 #include "constellation/core/utils/casts.hpp"
 
-using namespace constellation;
 using namespace constellation::log;
+using namespace constellation::utils;
 using namespace std::literals::string_literals;
 using namespace std::literals::chrono_literals;
 

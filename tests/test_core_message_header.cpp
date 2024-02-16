@@ -16,8 +16,8 @@
 #include "constellation/core/utils/casts.hpp"
 
 using namespace Catch::Matchers;
-using namespace constellation;
 using namespace constellation::message;
+using namespace constellation::utils;
 using namespace std::literals::string_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
