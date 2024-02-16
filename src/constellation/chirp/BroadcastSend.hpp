@@ -23,7 +23,7 @@ namespace constellation::chirp {
         /**
          * Construct broadcast sender
          *
-         * @param brd_address Broadcast address for outgoing broadcasts (e.g. :cpp:func:`asio::ip::address_v4::broadcast()`)
+         * @param brd_address Broadcast address for outgoing broadcasts (e.g. `asio::ip::address_v4::broadcast()`)
          * @param port Port for outgoing broadcasts
          */
         CNSTLN_API BroadcastSend(const asio::ip::address& brd_address, asio::ip::port_type port);

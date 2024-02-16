@@ -35,7 +35,7 @@ namespace constellation::chirp {
         /**
          * Convert MD5 hash to an human readable string
          *
-         * @returns String containing a lowercase hex representation of the MD5 hash
+         * @return String containing a lowercase hex representation of the MD5 hash
          */
         CNSTLN_API std::string to_string() const;
 
@@ -63,8 +63,8 @@ namespace constellation::chirp {
          * Construct new CHIRP message using strings for group and host ID
          *
          * @param type
-         * @param group Name of the group (converted to group ID using :cpp:class:`MD5Hash`)
-         * @param host Name of the host (converted to host ID using :cpp:class:`MD5Hash`)
+         * @param group Name of the group (converted to group ID using `MD5Hash`)
+         * @param host Name of the host (converted to host ID using `MD5Hash`)
          * @param service_id
          * @param port
          */
@@ -75,8 +75,8 @@ namespace constellation::chirp {
          * Constructor for a CHIRP message from an assembled message
          *
          * @param assembled_message View of assembled message
-         * @throws :cpp:class:`DecodeError` If the message header does not match the CHIRP specification, or if the message
-         * has an unknown :cpp:enum:`MessageType` or :cpp:enum:`ServiceIdentifier`
+         * @throw DecodeError If the message header does not match the CHIRP specification, or if the message
+         * has an unknown `ServiceIdentifier`
          */
         CNSTLN_API Message(std::span<const std::uint8_t> assembled_message);
 

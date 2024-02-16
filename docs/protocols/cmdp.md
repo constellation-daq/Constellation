@@ -96,7 +96,7 @@ An example for a valid metrics data message topic is `STAT/CPULOAD`.
 The message header frame has the same format for metrics data and log messages and MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 It SHALL contain two strings, followed by a 64-bit timestamp and a map.
 
-The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘M’, ‘D’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
+The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘M’, ‘D’ and ‘P’, followed by the protocol version number, which SHALL be `%x01`.
 
 The second string SHOULD contain the name of the sending CMDP host.
 

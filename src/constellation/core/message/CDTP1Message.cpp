@@ -17,8 +17,8 @@
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
-using namespace constellation;
 using namespace constellation::message;
+using namespace constellation::utils;
 
 CDTP1Message::CDTP1Message(CDTP1Header header, size_t frames) : header_(std::move(header)) {
     payload_frames_.reserve(frames);

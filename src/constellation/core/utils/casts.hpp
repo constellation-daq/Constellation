@@ -14,7 +14,7 @@
 #include <cstddef>
 #include <string>
 
-namespace constellation {
+namespace constellation::utils {
 
     template <typename T> inline const char* to_char_ptr(T* data) {
         // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -35,4 +35,4 @@ namespace constellation {
         return {string_view.data(), string_view.size()};
     }
 
-} // namespace constellation
+} // namespace constellation::utils

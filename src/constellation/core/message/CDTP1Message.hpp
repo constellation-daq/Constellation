@@ -24,6 +24,7 @@
 
 namespace constellation::message {
 
+    /** Class representing a CDTP1 message */
     class CDTP1Message {
     public:
         /**

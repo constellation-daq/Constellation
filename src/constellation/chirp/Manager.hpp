@@ -26,7 +26,7 @@
 
 namespace constellation::chirp {
 
-    /** A service offered by the host and announced by the :cpp:class:`Manager` */
+    /** A service offered by the host and announced by the `Manager` */
     struct RegisteredService {
         /** Service identifier of the offered service */
         ServiceIdentifier identifier;
@@ -37,7 +37,7 @@ namespace constellation::chirp {
         CNSTLN_API bool operator<(const RegisteredService& other) const;
     };
 
-    /** A service discovered by the :cpp:class:`Manager` */
+    /** A service discovered by the `Manager` */
     struct DiscoveredService {
         /** Address of the discovered service */
         asio::ip::address address;
@@ -59,15 +59,15 @@ namespace constellation::chirp {
      *
      * The first argument (``service``) contains the discovered service, the second argument is a bool (``depart``) that is
      * false when the service is newly and true when the service is departing, and the third argument (``user_data``) is
-     * arbitrary user data passed to the callback (done via :cpp:func:`Manager::RegisterDiscoverCallback`).
+     * arbitrary user data passed to the callback (done via `Manager::RegisterDiscoverCallback`).
      *
-     * It is recommended to pass the user data wrapped in an atomic :cpp:class:`std::shared_ptr` since the callback is
-     * launched asynchronously in a detached :cpp:class:`std::thread`. If the data is modified, it is recommended to use
-     * atomic types when possible or a :cpp:class:`std::mutex` for locking to ensure thread-safe access.
+     * It is recommended to pass the user data wrapped in an atomic `std::shared_ptr` since the callback is
+     * launched asynchronously in a detached `std::thread`. If the data is modified, it is recommended to use
+     * atomic types when possible or a `std::mutex` for locking to ensure thread-safe access.
      */
     using DiscoverCallback = void(DiscoveredService service, bool depart, std::any user_data);
 
-    /** Entry for a user callback in the :cpp:class:`Manager` for newly discovered or departing services */
+    /** Entry for a user callback in the `Manager` for newly discovered or departing services */
     struct DiscoverCallbackEntry {
         /** Function pointer to a callback */
         DiscoverCallback* callback;
@@ -78,7 +78,7 @@ namespace constellation::chirp {
         /**
          * Arbitrary user data passed to the callback function
          *
-         * For information on lifetime and thread-safety see :cpp:type:`DiscoverCallback`.
+         * For information on lifetime and thread-safety see `DiscoverCallback`.
          */
         std::any user_data;
 
@@ -119,14 +119,14 @@ namespace constellation::chirp {
         /**
          * Get the group ID
          *
-         * @returns MD5Hash of the group name
+         * @return MD5Hash of the group name
          */
         constexpr MD5Hash GetGroupID() const { return group_id_; }
 
         /**
          * Get the host ID
          *
-         * @returns MD5Hash of the host name
+         * @return MD5Hash of the host name
          */
         constexpr MD5Hash GetHostID() const { return host_id_; }
 
@@ -150,7 +150,7 @@ namespace constellation::chirp {
          * Unregister a previously registered service offered by the host in the manager
          *
          * Calling this function sends a CHIRP broadcast with DEPART type and removes the service from manager. See also
-         * :cpp:func:`RegisterService`.
+         * `RegisterService`.
          *
          * @param service_id Service identifier of the previously offered service
          * @param port Port of the previously offered service
@@ -162,14 +162,14 @@ namespace constellation::chirp {
         /**
          * Unregisters all offered services registered in the manager
          *
-         * Equivalent to calling :cpp:func:`UnregisterService` for every registered service.
+         * Equivalent to calling `UnregisterService` for every registered service.
          */
         CNSTLN_API void UnregisterServices();
 
         /**
          * Get the list of services currently registered in the manager
          *
-         * @returns Set with all currently registered services
+         * @return Set with all currently registered services
          */
         CNSTLN_API std::set<RegisteredService> GetRegisteredServices();
 
@@ -180,7 +180,7 @@ namespace constellation::chirp {
          *
          * @param callback Function pointer to a callback
          * @param service_id Service identifier of the service for which callbacks should be received
-         * @param user_data Arbitrary user data passed to the callback function (see :cpp:type:`DiscoverCallback`)
+         * @param user_data Arbitrary user data passed to the callback function (see `DiscoverCallback`)
          * @retval true If the callback/service/user_data combination was registered
          * @retval false If the callback/service/user_data combination was already registered
          */
@@ -201,7 +201,7 @@ namespace constellation::chirp {
         /**
          * Unregisters all discovery callbacks registered in the manager
          *
-         * Equivalent to calling :cpp:func:`UnregisterDiscoverCallback` for every discovery callback.
+         * Equivalent to calling `UnregisterDiscoverCallback` for every discovery callback.
          */
         CNSTLN_API void UnregisterDiscoverCallbacks();
 
@@ -211,7 +211,7 @@ namespace constellation::chirp {
         /**
          * Returns list of all discovered services
          *
-         * @returns Vector with all discovered services
+         * @return Vector with all discovered services
          */
         CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices();
 
@@ -219,7 +219,7 @@ namespace constellation::chirp {
          * Returns list of all discovered services with a given service identifier
          *
          * @param service_id Service identifier for discovered services that should be listed
-         * @returns Vector with all discovered services with the given service identifier
+         * @return Vector with all discovered services with the given service identifier
          */
         CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service_id);
 
@@ -228,8 +228,8 @@ namespace constellation::chirp {
          *
          * This sends a CHIRP broadcast with a REQUEST type and a given service identifier. Other hosts might reply with a
          * CHIRP broadcast with OFFER type for the given service identifier. These can be retrieved either by registering a
-         * user callback (see :cpp:func:`RegisterDiscoverCallback`) or by getting the list of discovered services shortly
-         * after (see :cpp:func:`GetDiscoveredServices`).
+         * user callback (see `RegisterDiscoverCallback`) or by getting the list of discovered services shortly
+         * after (see `GetDiscoveredServices`).
          *
          * @param service_id Service identifier to send a request for
          */
@@ -251,7 +251,7 @@ namespace constellation::chirp {
          * for all registered services. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list
          * of discovered services and calls the corresponding discovery callbacks.
          *
-         * @param stop_token Token to stop loop via :cpp:class:`std::jthread`
+         * @param stop_token Token to stop loop via `std::jthread`
          */
         void Run(const std::stop_token& stop_token);
 
@@ -265,19 +265,19 @@ namespace constellation::chirp {
         /** Set of registered services */
         std::set<RegisteredService> registered_services_;
 
-        /** Mutex for thread-safe access to :cpp:member:`registered_services_` */
+        /** Mutex for thread-safe access to `registered_services_` */
         std::mutex registered_services_mutex_;
 
         /** Set of discovered services */
         std::set<DiscoveredService> discovered_services_;
 
-        /** Mutex for thread-safe access to :cpp:member:`discovered_services_` */
+        /** Mutex for thread-safe access to `discovered_services_` */
         std::mutex discovered_services_mutex_;
 
         /** Set of discovery callbacks */
         std::set<DiscoverCallbackEntry> discover_callbacks_;
 
-        /** Mutex for thread-safe access to :cpp:member:`discover_callbacks_` */
+        /** Mutex for thread-safe access to `discover_callbacks_` */
         std::mutex discover_callbacks_mutex_;
 
         std::jthread run_thread_;

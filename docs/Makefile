@@ -16,6 +16,10 @@ help:
 clean:
 	@$(PYTHON) -Bc "import shutil; shutil.rmtree('$(BUILDDIR)', ignore_errors=True)"
 
+.PHONY: doxygen
+doxygen:
+	doxygen
+
 .PHONY: Makefile
 %: Makefile
 	@$(PYTHON) -m sphinx -M $@ $(SOURCEDIR) $(BUILDDIR) $(SPHINXOPTS) $(O)
