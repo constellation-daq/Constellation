@@ -7,6 +7,7 @@ import socket
 import time
 import platform
 import logging
+from uuid import UUID
 from enum import Enum
 
 
@@ -364,10 +365,11 @@ class MetricsTransmitter:
         self._socket.close()
 
 
-class MessageType(Enum):
+class CSCPMessageVerb(Enum):
     """Defines the message types of the CSCP.
 
-    Part of the Constellation Satellite Control Protocol.
+    Part of the Constellation Satellite Control Protocol, see
+    docs/protocols/cscp.md for details.
 
     """
 
@@ -388,9 +390,9 @@ class CommandTransmitter:
 
     def send_request(self, command, payload=None):
         """Send a command request to a Satellite with an optional payload."""
-        self._dispatch(command, MessageType.REQUEST, flags=zmq.NOBLOCK)
+        self._dispatch(command, CSCPMessageVerb.REQUEST, flags=zmq.NOBLOCK)
 
-    def send_reply(self, response, msgtype: MessageType, payload=None):
+    def send_reply(self, response, msgtype: CSCPMessageVerb, payload=None):
         """Send a reply to a previous command."""
         self._dispatch(response, msgtype, payload, flags=zmq.NOBLOCK)
 
@@ -399,7 +401,9 @@ class CommandTransmitter:
         host, timestamp, meta = self.msgheader.decode(cmdmsg[0])
         # TODO CONTINUE HERE!!
 
-    def _dispatch(self, msg: str, msgtype: MessageType, payload=None, flags: int = 0):
+    def _dispatch(
+        self, msg: str, msgtype: CSCPMessageVerb, payload=None, flags: int = 0
+    ):
         flags = zmq.SNDMORE | flags
         self.msghead.send(self.socket, flags=flags)
         if not payload:
@@ -412,61 +416,105 @@ class CommandTransmitter:
             self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
 
 
-class ServiceIdentifier(str, Enum):
-    """The CONTROL service identifier indicates a CSCP (Constellation Satellite Control Protocol) service"""
+class CHIRPServiceIdentifier(Enum):
+    """Identifies the type of service.
 
-    CONTROL = ("\x01",)
+    The CONTROL service identifier indicates a CSCP (Constellation Satellite
+    Control Protocol) service.
 
-    """ The HEARTBEAT service identifier indicates a CHBP (Constellation Heartbeat Broadcasting Protocol) service """
-    HEARTBEAT = ("\x02",)
+    The HEARTBEAT service identifier indicates a CHBP (Constellation Heartbeat
+    Broadcasting Protocol) service.
 
-    """ The MONITORING service identifier indicates a CMDP (Constellation Monitoring Distribution Protocol) service """
-    MONITORING = ("\x03",)
+    The MONITORING service identifier indicates a CMDP (Constellation Monitoring
+    Distribution Protocol) service.
 
-    """ The DATA service identifier indicates a CDTP (Constellation Data Transmission Protocol) service """
-    DATA = ("\x04",)
+    The DATA service identifier indicates a CDTP (Constellation Data
+    Transmission Protocol) service.
 
+    """
 
-class MessageType(str, Enum):
-    """A message with REQUEST type indicates that CHIRP hosts should reply with an OFFER"""
-
-    REQUEST = "\x01"
-
-    """ A message with OFFER type indicates that service is available """
-    OFFER = "\x02"
-
-    """ A message with DEPART type indicates that a service is no longer available """
-    DEPART = "\x03"
+    CONTROL = 0x1
+    HEARTBEAT = 0x2
+    MONITORING = 0x3
+    DATA = 0x4
 
 
-def get_ip_address():
-    try:
-        # Create a socket object to get the local machine's IP address
-        # TODO: Check if this works correctly
-        # NOTE: this only returns IP from one interface -- could be local host!
-        # To get all interfaces and all used IPs:
-        # interfaces = socket.getaddrinfo(host=socket.gethostname(), port=None, family=socket.AF_INET)
-        # allips = [ip[-1][0] for ip in interfaces]
-        host_name = socket.gethostname()
-        ip_address = socket.gethostbyname(host_name)
-        return ip_address
-    except socket.error as e:
-        print(f"Error: {e}")
-        return None
+class CHIRPMessageType(Enum):
+    """Identifies the type of message sent or received via the CHIRP protocol.
+
+    See docs/protocols/chirp.md for details.
+
+    REQUEST: A message with REQUEST type indicates that CHIRP hosts should reply
+    with an OFFER
+
+    OFFER: A message with OFFER type indicates that service is available
+
+    DEPART: A message with DEPART type indicates that a service is no longer
+    available
+
+    """
+
+    REQUEST = 0x1
+    OFFER = 0x2
+    DEPART = 0x3
 
 
-class SatelliteBeacon:
+class CHIRPMessage:
+    """Class to hold a CHIRP message."""
+
     def __init__(
         self,
-        hostid: str = None,
-        group: str = None,
+        msgtype: CHIRPMessageType = None,
+        group_uuid: UUID = None,
+        host_uuid: UUID = None,
+        serviceid: CHIRPServiceIdentifier = None,
+        port: int = 0,
+    ):
+        """Initialize attributes."""
+        self.msgtype = msgtype
+        self.group_uuid = group_uuid
+        self.host_uuid = host_uuid
+        self.serviceid = serviceid
+        self.port = port
+        self.from_address = None
+
+    def pack(self):
+        """Serialize message using msgpack.packb()."""
+        msg = [
+            CHIRP_HEADER,
+            self.msgtype.value,
+            self.group_uuid.bytes,
+            self.host_uuid.bytes,
+            self.serviceid.value,
+            self.port,
+        ]
+        return msgpack.packb(msg)
+
+    def unpack(self, msg):
+        """Unpack and decode binary msg using msgpack.unpackb()."""
+        _header, msgtype, group, host, service, port = msgpack.unpackb(msg)
+        self.msgtype = CHIRPMessageType(msgtype)
+        self.group_uuid = UUID(bytes=group)
+        self.host_uuid = UUID(bytes=host)
+        self.serviceid = CHIRPServiceIdentifier(service)
+        self.port = port
+
+
+class CHIRPBeaconTransmitter:
+    """Class for broadcasting CHRIP messages.
+
+    See docs/protocols/chirp.md for details.
+
+    """
+
+    def __init__(
+        self,
+        host_uuid: UUID,
+        group_uuid: UUID,
     ) -> None:
-        """Create beacon to broadcast and listen in on."""
-        if not hostid:
-            hostid = platform.node()
-        self._hostid = hostid
-        self._group = group
-        self._address = get_ip_address()
+        """Initialize attributes and open broadcast socket."""
+        self._host_uuid = host_uuid
+        self._group_uuid = group_uuid
 
         # Create UPP broadcasting socket
         #
@@ -487,47 +535,46 @@ class SatelliteBeacon:
         #
         # NOTE: this only works for IPv4
         #
-        # TODO: consider to only bind the interface matching a given IP used in
-        # the header! Otherwise, we are announcing unreachable services
+        # TODO: consider to only bind the interface matching a given IP!
+        # Otherwise, we risk announcing services that do not bind to the
+        # interface they are announced on.
         self._sock.bind(("", CHIRP_PORT))
 
     def broadcast_service(
         self,
-        # TODO consider to remove the default values here if not suggested by the spec
-        serviceid: ServiceIdentifier = None,
-        msgtype: MessageType = None,
+        serviceid: CHIRPServiceIdentifier,
+        msgtype: CHIRPMessageType,
         port: int = 0,
     ):
-        """Broadcast service."""
-        # message body
-        msg = [
-            CHIRP_HEADER,
-            msgtype,
-            self._group,
-            self._hostid,
-            serviceid,
-            port,
-            self._address,
-        ]
-        self._sock.sendto(msgpack.packb(msg), ("<broadcast>", CHIRP_PORT))
+        """Broadcast a given service."""
+        msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
+        self._sock.sendto(msg.pack(), ("<broadcast>", CHIRP_PORT))
 
     def listen(self):
-        """Listen in on CHIRP port after new beacon"""
+        """Listen in on CHIRP port and return message if data was received."""
         try:
-            msg, from_address = self._sock.recvfrom(2048)
+            buf, from_address = self._sock.recvfrom(1024)
         except BlockingIOError:
             # no data waiting for us
             return None
 
-        if not msgpack.unpackb(msg)[0] == CHIRP_HEADER:
+        header = msgpack.unpackb(buf)[0]
+        if not header == CHIRP_HEADER:
             raise RuntimeError(
-                f"Received message with malformed CHIRP header: {msgpack.unpackb(msg)}!"
+                f"Received malformed CHIRP header by host {from_address}: {header}!"
             )
 
         # Unpack msg
-        _header, msgtype, group, hostid, serviceid, port, address = msgpack.unpackb(msg)
+        msg = CHIRPMessage()
+        try:
+            msg.unpack(buf)
+        except Exception as e:
+            raise RuntimeError(
+                f"Received malformed message by host {from_address}: {e}"
+            )
+        msg.from_address = from_address[0]
         # TODO decide and document what to return here
-        return msgtype, group, hostid, serviceid, port, address, from_address[0]
+        return msg
 
     def close(self):
         """Close the socket."""
