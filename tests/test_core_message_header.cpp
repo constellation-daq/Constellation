@@ -59,16 +59,45 @@ TEST_CASE("String Output", "[core][core::message]") {
     REQUIRE_THAT(string_out, ContainsSubstring("test_t: 1970-01-01 00:00:00.000000000"));
 }
 
+TEST_CASE("String Output (CDTP1)", "[core][core::message]") {
+    const CDTP1Header cdtp1_header {"senderCMDP", 1234, DATA};
+
+    const auto string_out = cdtp1_header.to_string();
+
+    REQUIRE_THAT(string_out, ContainsSubstring("Type:   DATA"));
+    REQUIRE_THAT(string_out, ContainsSubstring("Seq No: 1234"));
+}
+
 TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    CDTP1Header cdtp1_header {"senderCDTP", tp};
+    CSCP1Header cscp1_header {"senderCSCP", tp};
 
-    cdtp1_header.setTag("test_b", true);
-    cdtp1_header.setTag("test_i", std::numeric_limits<std::int64_t>::max());
-    cdtp1_header.setTag("test_d", std::numbers::pi);
-    cdtp1_header.setTag("test_s", "String"s);
-    cdtp1_header.setTag("test_t", tp);
+    cscp1_header.setTag("test_b", true);
+    cscp1_header.setTag("test_i", std::numeric_limits<std::int64_t>::max());
+    cscp1_header.setTag("test_d", std::numbers::pi);
+    cscp1_header.setTag("test_s", "String"s);
+    cscp1_header.setTag("test_t", tp);
+
+    // Pack header
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, cscp1_header);
+
+    // Unpack header
+    const auto cscp1_header_unpacked = CSCP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
+
+    // Compare unpacked header
+    REQUIRE(cscp1_header_unpacked.getTags().size() == 5);
+    REQUIRE(std::get<bool>(cscp1_header_unpacked.getTag("test_b")));
+    REQUIRE(std::get<std::int64_t>(cscp1_header_unpacked.getTag("test_i")) == std::numeric_limits<std::int64_t>::max());
+    REQUIRE(std::get<double>(cscp1_header_unpacked.getTag("test_d")) == std::numbers::pi);
+    REQUIRE_THAT(std::get<std::string>(cscp1_header_unpacked.getTag("test_s")), Equals("String"));
+    REQUIRE(std::get<std::chrono::system_clock::time_point>(cscp1_header_unpacked.getTag("test_t")) == tp);
+}
+
+TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
+    constexpr std::uint64_t seq_no = 1234;
+    const CDTP1Header cdtp1_header {"senderCDTP", seq_no, EOR};
 
     // Pack header
     msgpack::sbuffer sbuf {};
@@ -78,12 +107,8 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     const auto cdtp1_header_unpacked = CDTP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
 
     // Compare unpacked header
-    REQUIRE(cdtp1_header_unpacked.getTags().size() == 5);
-    REQUIRE(std::get<bool>(cdtp1_header_unpacked.getTag("test_b")));
-    REQUIRE(std::get<std::int64_t>(cdtp1_header_unpacked.getTag("test_i")) == std::numeric_limits<std::int64_t>::max());
-    REQUIRE(std::get<double>(cdtp1_header_unpacked.getTag("test_d")) == std::numbers::pi);
-    REQUIRE_THAT(std::get<std::string>(cdtp1_header_unpacked.getTag("test_s")), Equals("String"));
-    REQUIRE(std::get<std::chrono::system_clock::time_point>(cdtp1_header_unpacked.getTag("test_t")) == tp);
+    REQUIRE(cdtp1_header_unpacked.getType() == EOR);
+    REQUIRE(cdtp1_header_unpacked.getSequenceNumber() == seq_no);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -24,8 +24,14 @@
 namespace constellation::message {
 
     /** Message Header Base Class */
-    class Header {
+    class CNSTLN_API Header {
     public:
+        virtual ~Header() = default;
+        Header(const Header&) = default;
+        Header(Header&&) = default;
+        Header& operator=(const Header&) = delete;
+        Header& operator=(Header&&) = delete;
+
         /** Return message protocol */
         constexpr Protocol getProtocol() const { return protocol_; }
 
@@ -45,10 +51,10 @@ namespace constellation::message {
         void setTag(const std::string& key, DictionaryValue value) { tags_[key] = std::move(value); }
 
         /** Convert message header to human readable string */
-        CNSTLN_API std::string to_string() const;
+        CNSTLN_API virtual std::string to_string() const;
 
         /** Pack message header with msgpack */
-        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+        CNSTLN_API virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
 
     protected:
         /**

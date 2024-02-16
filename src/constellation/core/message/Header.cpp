@@ -25,6 +25,7 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
+// Similar to CDTP1Header::disassemble in CDTP1Header.cpp, check when modifying
 Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
