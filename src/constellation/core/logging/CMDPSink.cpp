@@ -19,7 +19,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/logging/Level.hpp"
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/CMDP1Header.hpp"
 #include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::log;

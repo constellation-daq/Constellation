@@ -13,7 +13,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/CDTP1Header.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
@@ -51,7 +51,7 @@ CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
     }
 
     // Decode header
-    const CDTP1Header header {{to_byte_ptr(frames.at(0).data()), frames.at(0).size()}};
+    const auto header = CDTP1Header::disassemble({to_byte_ptr(frames.at(0).data()), frames.at(0).size()});
 
     // Create message, reversing space for frames
     auto cdtp_message = CDTP1Message(header, frames.size() - 1);
