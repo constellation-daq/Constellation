@@ -177,10 +177,20 @@ The `ERROR` state is entered whenever an unexpected event occurs within the inst
 state can only be left by a manual intervention via a controller by resetting the satellite back into its `INIT` state.
 
 The `SAFE` state on the other hand, is entered by the satellite when detecting an issue with *another* satellite in the
-Constellation.
+Constellation. This awareness of the Constellation status is achieved with the help of CHP. Each satellite in the
+Constellation transmits its current state as a heartbeat via the CHP protocol at regular intervals. This allows other
+satellites to react if the communicated status contains the `ERROR` state - or if the heartbeat is absent for a defined
+period of time.
+The `SAFE` state resembles that of an uncrewed spacecraft, where all non-essential systems are shut down and only essential
+functions such as communication and attitude control are active. For a Constellation satellite this could encompass powering
+down instruments or switching off voltages. Also this state can only be left by a manual intervention via a controller, and
+the satellite will transfer back to its `INIT` state.
 
-* provide examples (HV power supply, ramping)
-* mention heartbeating, safe mode
+The main difference between the two failure states is the possible statement about the condition of the respective satellite.
+The `SAFE` state is achieved via a controlled shutdown of components and is a well-defined procedure, while the `ERROR` state
+is entered, for example, through a lack of control or communication with the instrument and therefore does not allow any
+statement to be made about the condition of attached hardware.
+
 * importance?
 
 ## Commands
