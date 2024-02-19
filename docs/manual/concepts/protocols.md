@@ -17,6 +17,24 @@ The five Constellation communication protocols are described in the following, o
 
 ## Data Transmission
 
+Data are transferred within a Constellation network using the Constellation Data Transmission Protocol. It uses point-to-point
+connections via TCP/IP, which allow the bandwidth of the network connection to be utilized as efficiently as possible.
+The message format transmitted via CDTP is a lightweight combination of a header frame with metadata, a message sequence
+number and optional tags, as well as payload frames which differ depending on the message type. CDTP knows three different
+message types, indicated by a flag in the header frame:
+
+* `BOR` - Begin of Run: This message is sent automatically at the start of a new measurement, i.e. upon entering the `RUN`
+  state of the finite state machine of the sending satellite. It marks the start of a measurement in time and its payload
+  frame contains the entire satellite configuration as well as other metadata such as the current run ID. The message
+  sequence ID of the `BOR` message is always 0, representing the first message of a new run.
+* `DATA`: This is the standard message type of CDTP which consists of the header frame and any number of payload frames
+  containing undecoded raw data of the respective instrument. The message sequence counts up with every message, providing
+  additional possibility for checking data integrity offline.
+* `EOR` - End of Run: This message is sent automatically at the end of a measurement, i.e. upon leaving of the `RUN` state
+  by the sending satellite.
+
+Only `DATA` messages can be transmitted by satellite implementations, both `BOR` and `EOR` messages are handled automatically.
+
 ## Monitoring
 
 The distribution of log messages and performance metrics within Constellation is handled by the Constellation Monitoring Distribution Protocol (CMDP).
@@ -41,7 +59,6 @@ subscribing to the topic `TRACE/NETWORKING`.
 
 Apart from log messages, CMDP is also used to transmit performance metrics such as the current trigger rate, the number of recorded events, temperature or CPU loads.
 These messages are published under their respective topics and subscribers can choose the variables they want to follow.
-
 
 ## Network Discovery
 
