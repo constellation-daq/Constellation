@@ -60,6 +60,52 @@ satellite communication with the rest of the Constellation:
   In this state, the instrument is active and queried for data, the satellite handles measurement data, i.e. obtains data from
   the instrument and sends it across the Constellation, or receives data and stores it to file.
 
+### Operating the Instrument - The `RUN` State
+
+The `RUN` state is special in that this is where the operation of the satellite takes place, data is collected and passed on and statistical metrics are distributed.
+Constellation provides two different ways for satellite implementations to interact with the `RUN` state:
+
+* An inheritance of the `run_sequence` function is the simplest method of implementing instrument code. The function is
+  called repeatedly by the satellite until a transition out of the RUN state is requested either by a controller or by a failure mode.
+
+  ```plantuml
+  @startuml
+  hide empty description
+
+  State RUN {
+      State start <<entryPoint>>
+      State stop <<exitPoint>>
+      State c <<choice>>
+      State run_sequence
+      start -right-> c
+      c -[dotted]down-> run_sequence : run
+      c -[dotted]right-> stop
+      run_sequence -up[dotted]-> c : loop
+  }
+
+  @enduml
+  ```
+
+* An inheritance of the `run_loop` function provides some more freedom in implementing device code. The method is just called
+  once upon entering the `RUN` state, and should exit as soon as a state change is requested either by a controller or by a
+  failure mode. In contrast to an inheritance of the `run_sequence` method, this function requires the implemented code to
+  implement this behavior.
+
+  ```plantuml
+  @startuml
+  hide empty description
+
+  State RUN {
+      State start <<entryPoint>>
+      State stop <<exitPoint>>
+      State run_loop
+      start -right[dotted]-> run_loop
+      run_loop -right[dotted]-> stop
+  }
+
+  @enduml
+  ```
+
 ### Changing States - Transitions
 
 Instrument code of the individual satellites is executed in so-called transitional states. They differ from steady states in
