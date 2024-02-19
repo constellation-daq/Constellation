@@ -190,13 +190,3 @@ The main difference between the two failure states is the possible statement abo
 The `SAFE` state is achieved via a controlled shutdown of components and is a well-defined procedure, while the `ERROR` state
 is entered, for example, through a lack of control or communication with the instrument and therefore does not allow any
 statement to be made about the condition of attached hardware.
-
-* importance?
-
-## Commands
-
-* commands comprise fsm transitions and more
-* getters to get additional information on satellite
-* fsm states: send CSCP message with type `REQUEST` and command string `transit::<state>` (e.g. transition to initialized state: `REQUEST "transit::init`)
-* obtaining additional information via `REQUEST` and command string `get::<cmd>`
-* a list of available commands shall be returned with `REQUEST "get::commands`

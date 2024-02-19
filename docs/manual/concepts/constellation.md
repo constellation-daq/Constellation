@@ -31,14 +31,6 @@ physics:
   physical measurement such as the passage of a particle. Sometimes however it is also used when referring to the smallest portion
   of data produced by a given device.
 
-### Design Approach & Architecture Goals
-
-* make use of modern frameworks for message queuing
-* implement a solid finite state machine.
-* ...
-
-* The framework would come with few dependencies only, be lightweight and would provide a simple interface to allow for fast integration of new satellite applications. Graphical user interfaces should be made available to steer the command-and-control server and/or some of the satellite applications.
-
 ### Limitations & Threat Model Considerations
 
 In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as "subnets".
@@ -61,25 +53,3 @@ In general, users are required to satisfy their personal threat model by externa
 
 The Constellation framework knows three different types of components; Satellites, controllers and listeners. Each of them
 have a different purpose and can or cannot partake in interactions. The components are described in the subsequent sections.
-
-### Satellite
-
-* has finite state machine
-* listens to transition commands from controller(s)
-* broadcasts its current state via heartbeat channel
-* goes into the `safe state` if heartbeat from other satellite goes missing
-* possibility to ignore missing heartbeats from other satellites via their importance from configuration list
-
-### Controller
-
-* is stateless
-* sends commands to satellite fsms to initiate transitions (remote procedure calls)
-* can go offline without affecting constellation run
-* only a controller can reset the safe state of satellites
-* distributes the configuration & importance list
-
-### Listener
-
-* is stateless
-* passive component of the constellation, can only consume information, receive info
-* examples could be Grafana dashboard, logger display, alarm recipient?
