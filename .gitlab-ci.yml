@@ -274,26 +274,19 @@ format:codespell:
   stage: docs
   needs: []
 
-docs:html:
+docs:doxygen:
   extends:
     - .docs
     - .fedora-sphinx
-  variables:
-    SPHINXOPTS: -W
   script:
     - make -C docs doxygen
-    - make -C docs html
-  artifacts:
-    paths:
-      - docs/build
-    expire_in: 24 hours
 
 # deploy stage
 
 deploy:docs:
   stage: deploy
   needs:
-    - job: docs:html
+    - job: docs:doxygen
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   trigger:
