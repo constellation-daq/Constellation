@@ -6,7 +6,7 @@ Protocols
    :maxdepth: 1
    :caption: Content:
 
-   chirp
-   cscp
-   cmdp
-   cdtp
+   CHIRP <chirp>
+   CSCP <cscp>
+   CMDP <cmdp>
+   CDTP <cdtp>
