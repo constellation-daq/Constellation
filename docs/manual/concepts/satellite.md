@@ -157,7 +157,7 @@ State reconfiguring #lightblue##[dotted]
 INIT -right[#blue,bold]-> launching : launch
 launching -down[dotted]-> ORBIT
 ORBIT -left[#blue,bold]-> landing : land
-landing -up[dotted]-> INIT : land
+landing -up[dotted]-> INIT
 
 ORBIT -[#blue,bold]down-> reconfiguring : reconfigure
 reconfiguring -[dotted]up-> ORBIT
