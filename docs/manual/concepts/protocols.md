@@ -17,7 +17,7 @@ The five Constellation communication protocols are described in the following, o
 
 ## Data Transmission
 
-Data are transferred within a Constellation network using the Constellation Data Transmission Protocol. It uses point-to-point
+Data are transferred within a Constellation network using the Constellation Data Transmission Protocol (CDTP). It uses point-to-point
 connections via TCP/IP, which allow the bandwidth of the network connection to be utilized as efficiently as possible.
 The message format transmitted via CDTP is a lightweight combination of a header frame with metadata, a message sequence
 number and optional tags, as well as payload frames which differ depending on the message type. CDTP knows three different
@@ -48,7 +48,7 @@ The same protocol is used for log messages and performance metrics. The followin
 
 * `TRACE` messages are be used for very verbose information which allows to follow the program flow for development purposes. This concerns, for example, low-level code for network communication or internal states of the finite state machine. The messages of this level also contain additional information about the code location of the program where the message has been logged from.
 * `DEBUG` messages contain information mostly relevant to developers for debugging the program.
-* `INFO` messages are of interest to end users and should contain information on the program flow of the component from a functional perspective. THis comprises, e.g. reports on the progress of configuring devices.
+* `INFO` messages are of interest to end users and should contain information on the program flow of the component from a functional perspective. This comprises, e.g. reports on the progress of configuring devices.
 * `WARNING` messages indicate unexpected events which require further investigation by the user.
 * `STATUS` messages are used communicate important information on a low frequency such as successful state transitions.
 * `CRITICAL` messages notify the end user about critical events which require immediate attention. These events may also have triggered an automated response and state change by the sending host.
