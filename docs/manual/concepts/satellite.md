@@ -19,7 +19,7 @@ In regular operation, i.e. without unexpected incidents in the Constellation, th
 steady states. Steady here indicates that the satellite will remain in this state until either a transition is initiated by
 a controller, or a failure mode is activated. The simplified state diagram for normal operation mode can be drawn like this:
 
-```plantuml
+```uml
 @startuml
 hide empty description
 
@@ -68,7 +68,7 @@ Constellation provides two different ways for satellite implementations to inter
 * An inheritance of the `run_sequence` function is the simplest method of implementing instrument code. The function is
   called repeatedly by the satellite until a transition out of the RUN state is requested either by a controller or by a failure mode.
 
-  ```plantuml
+  ```uml
   @startuml
   hide empty description
 
@@ -91,7 +91,7 @@ Constellation provides two different ways for satellite implementations to inter
   failure mode. In contrast to an inheritance of the `run_sequence` method, this function requires the implemented code to
   implement this behavior.
 
-  ```plantuml
+  ```uml
   @startuml
   hide empty description
 
@@ -112,7 +112,7 @@ Instrument code of the individual satellites is executed in so-called transition
 that they are entered by a state transition initiated through CSCP or a failure mode, but exited automatically upon completion
 of the action. Such a transition diagram is shown below:
 
-```plantuml
+```uml
 @startuml
 hide empty description
 
@@ -144,7 +144,7 @@ which is slowly ramped up to its target voltage in the `launching` state. Betwee
 changed by a few volts - and instead of the time-consuming operation ramping down via the `landing` transition and ramping up again,
 the voltage is ramped directly from its current value to the target value in the `reconfigure` transitional state:
 
-```plantuml
+```uml
 @startuml
 hide empty description
 
