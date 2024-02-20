@@ -79,5 +79,5 @@ Three such beacons exist:
 Each service the participating Constellation host offers is registered with its CHIRP service. Upon startup of the program, a `OFFER` beacon is sent
 for each of the registered services.
 The `REQUEST` beacon allows hosts to join late, i.e. after the initial `OFFER` beacons have been distributed. This means that at any time of the
-framework operation, new hosts can join and request information on a particular service from the already running COnstellation participants.
+framework operation, new hosts can join and request information on a particular service from the already running Constellation participants.
 A clean shutdown of services is possible with the `DEPART` beacon which will prompt other hosts to disconnect.
