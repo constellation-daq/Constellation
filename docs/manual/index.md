@@ -29,6 +29,7 @@ satellite
 
 ```{toctree}
 :caption: Appendix
+:maxdepth: 2
 
 chirp
 ../protocols/index
