@@ -8,8 +8,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "constellation"
 authors = [
-    {name = "Hanno Perrey", email = "hanno.perrey@dvel.se"},
-    # TODO add other authors!
+    {name = "Constellation Authors"},
 ]
 description = "Constellation DAQ/SCADA implementation in Python."
 readme = "README.md"
