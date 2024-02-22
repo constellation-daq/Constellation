@@ -17,7 +17,7 @@ from .heartbeatchecker import HeartbeatChecker
 from .broadcastmanager import BroadcastManager
 from .log_and_stats import getLoggerAndStats
 from ._version import version
-from .protocol import SatelliteResponse, ServiceIdentifier
+from .protocol import SatelliteResponse, CHIRPServiceIdentifier
 
 
 def handle_error(func):
@@ -94,13 +94,19 @@ class Satellite:
         # register broadcast manager
         self.broadcast_manager = BroadcastManager()
         self.broadcast_manager.start()
-        self.broadcast_manager.register_service(cmd_port, ServiceIdentifier.CONTROL)
+        self.broadcast_manager.register_service(
+            cmd_port, CHIRPServiceIdentifier.CONTROL
+        )
         self.logger.info("Satellite broadcasting CONTROL service")
         time.sleep(1)  # Sleep to ensure every satellite has time to recieve broadcast
-        self.broadcast_manager.register_service(hb_port, ServiceIdentifier.HEARTBEAT)
+        self.broadcast_manager.register_service(
+            hb_port, CHIRPServiceIdentifier.HEARTBEAT
+        )
         self.logger.info("Satellite broadcasting HEARTBEAT service")
         time.sleep(1)  # Sleep to ensure every satellite has time to recieve broadcast
-        self.broadcast_manager.register_service(log_port, ServiceIdentifier.MONITORING)
+        self.broadcast_manager.register_service(
+            log_port, CHIRPServiceIdentifier.MONITORING
+        )
         self.logger.info("Satellite broadcasting MONITORING service")
         # acquisition thread
         self._stop_running = None

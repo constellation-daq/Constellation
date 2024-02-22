@@ -6,7 +6,7 @@ import time
 import readline
 
 from .fsm import SatelliteFSM
-from .protocol import ServiceIdentifier
+from .protocol import CHIRPServiceIdentifier
 from .broadcastmanager import BroadcastManager
 
 
@@ -29,9 +29,9 @@ class TrivialController:
 
         self.broadcast_manager = BroadcastManager()
         self.broadcast_manager.register_callback(
-            ServiceIdentifier.CONTROL, self.add_sat
+            CHIRPServiceIdentifier.CONTROL, self.add_sat
         )
-        self.broadcast_manager.request_service(ServiceIdentifier.CONTROL)
+        self.broadcast_manager.request_service(CHIRPServiceIdentifier.CONTROL)
 
     def add_sat(self, host, port: int = None):
         """Add satellite socket to controller on port."""

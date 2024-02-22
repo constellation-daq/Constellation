@@ -540,7 +540,7 @@ class CHIRPBeaconTransmitter:
         # interface they are announced on.
         self._sock.bind(("", CHIRP_PORT))
 
-    def broadcast_service(
+    def broadcast(
         self,
         serviceid: CHIRPServiceIdentifier,
         msgtype: CHIRPMessageType,

@@ -15,7 +15,7 @@ import re
 import zmq
 
 from .satellite import Satellite
-from .protocol import DataTransmitter, ServiceIdentifier
+from .protocol import DataTransmitter, CHIRPServiceIdentifier
 from .datasender import DataBlock
 from .fsm import SatelliteState
 
@@ -98,9 +98,9 @@ class DataReceiver(Satellite):
         self._pull_interfaces = {}
         self._puller_threads = list[PullThread]()
         self.broadcast_manager.register_callback(
-            ServiceIdentifier.DATA, self.data_callback
+            CHIRPServiceIdentifier.DATA, self.data_callback
         )
-        self.broadcast_manager.request_service(ServiceIdentifier.DATA)
+        self.broadcast_manager.request_service(CHIRPServiceIdentifier.DATA)
 
     def recv_from(self, host: str, port: int) -> None:
         """Adds an interface (host, port) to receive data from."""
@@ -401,7 +401,7 @@ class H5DataReceiverWriter(DataReceiver):
 
 
 def main(args=None):
-    """Start the Lecroy oscilloscope device server."""
+    """Start the Constellation data receiver satellite."""
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -425,9 +425,6 @@ def main(args=None):
         filename="test_data_{date}.h5",
     )
 
-    # s.recv_from("169.254.45.216", 55557)
-    # s.recv_from("192.168.1.66", 55557)
-    # s.recv_from("localhost", 55557)
     s.run_satellite()
 
 
