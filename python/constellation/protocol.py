@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Module implementing the Constellation communication protocols."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+Module implementing the Constellation communication protocols.
+"""
 
 import msgpack
 import zmq

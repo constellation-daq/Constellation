@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""A base module for a Constellation Satellite that sends data."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+A base module for a Constellation Satellite that sends data.
+"""
 
 import time
 import datetime

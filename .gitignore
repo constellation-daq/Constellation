@@ -9,8 +9,5 @@
 # Python virtual environment
 /venv/
 
-# Documentation build directory
-/docs/build/
-
 # Merge conflict original copies
 *.orig

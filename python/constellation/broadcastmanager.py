@@ -1,5 +1,10 @@
-"""BroadcastManger module provides classes for managing CHIRP broadcasts within
-Constellation Satellites."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+BroadcastManger module provides classes for managing CHIRP broadcasts within
+Constellation Satellites.
+"""
 
 import logging
 import threading
@@ -35,7 +40,7 @@ class DiscoveredService:
         self.alive = alive
 
     def __eq__(self, other):
-        """Comparison operator for network-related properites."""
+        """Comparison operator for network-related properties."""
         return self.address == other.address and self.port == other.port
 
 

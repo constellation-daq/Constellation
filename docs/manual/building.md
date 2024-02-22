@@ -8,6 +8,7 @@
 ## Building
 
 To build, simply run:
+
 ```sh
 meson setup build
 meson compile -C build
@@ -16,11 +17,13 @@ meson compile -C build
 ## Unit tests
 
 Unit tests can be run with:
+
 ```sh
 meson test -C build
 ```
 
 To create a coverage reports with [`gcvor`](https://gcovr.com), run:
+
 ```sh
 meson setup build_cov -Db_coverage=true
 meson test -C build_cov
@@ -37,14 +40,19 @@ You will also need to install the validation tools, such as `black` and `flake8`
 
 ## Documentation
 
-To build the documentation, run:
-```bash
-sudo apt install libclang-dev  # note down version, e.g. 17.0.4
+Building the documentation requires doxygen and some Python packages, which can be installed via:
+
+```sh
 python3 -m venv venv
 source venv/bin/active
-pip install clang=[VERSION]  # insert clang version
-pip install sphinx hawkmoth myst-parser sphinx_immaterial
-pip install hawkmoth@git+https://github.com/stephanlachnit/hawkmoth.git@constellation
+pip install sphinx myst-parser sphinx_immaterial breathe
 ```
 
-Note: this currently requires LLVM 18.
+Finally run:
+
+```sh
+make -C docs/ doxygen
+make -C docs/ html
+```
+
+The resulting webpage can be accessed via `docs/build/html/index.html`.

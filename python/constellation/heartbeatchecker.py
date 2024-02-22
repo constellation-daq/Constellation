@@ -1,3 +1,8 @@
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+"""
+
 import logging
 import threading
 
@@ -7,7 +12,7 @@ import msgpack
 from typing import Optional, Callable
 from .fsm import SatelliteState
 
-HB_INIT_LIFES = 3
+HB_INIT_LIVES = 3
 HB_PERIOD = 1000
 
 
@@ -17,7 +22,7 @@ class HeartbeatChecker:
     Individual heartbeat checks run in separate threads. In case of a failure
     (either the Satellite is in ERROR/SAFE state or has missed several
     heartbeats) the corresponding thread will set a `failed` event.
-    Alternativly, an action can be triggered via a callback.
+    Alternatively, an action can be triggered via a callback.
 
     """
 
@@ -47,7 +52,7 @@ class HeartbeatChecker:
         self, name: str, socket: zmq.Socket, fail_evt: threading.Event
     ) -> None:
         logging.info(f"Thread {name} starting heartbeat check")
-        lifes = HB_INIT_LIFES
+        lives = HB_INIT_LIVES
         while not self._stop_threads.is_set():
             try:
                 message_bin = socket.recv()
@@ -59,13 +64,13 @@ class HeartbeatChecker:
                     fail_evt.set()
                     self._interrupt(name)
                     break
-                lifes = HB_INIT_LIFES
+                lives = HB_INIT_LIVES
             except zmq.error.Again:
-                # no message after 1.5s, substract life
-                lifes -= 1
-                logging.debug(f"Thread {name} removed life, now {lifes}")
-                if lifes <= 0:
-                    # no lifes left, interrupt
+                # no message after 1.5s, subtract life
+                lives -= 1
+                logging.debug(f"Thread {name} removed life, now {lives}")
+                if lives <= 0:
+                    # no lives left, interrupt
                     fail_evt.set()
                     self._interrupt(name)
                     break

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Base module for Constellation Satellites that receive data."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+Base module for Constellation Satellites that receive data.
+"""
 
 import threading
 import os
@@ -172,7 +177,7 @@ class DataReceiver(Satellite):
         raise NotImplementedError
 
     def _stop_pull_threads(self, timeout=None) -> None:
-        """Stop any runnning threads that pull data."""
+        """Stop any running threads that pull data."""
         # check that the Event for stopping exists
         if self._stop_pulling:
             # stop any running threads

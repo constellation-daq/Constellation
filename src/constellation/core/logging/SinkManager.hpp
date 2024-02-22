@@ -52,7 +52,7 @@ namespace constellation::log {
          *
          * @return Port number
          */
-        Port getCMDPPort() const { return cmdp_sink_->getPort(); }
+        utils::Port getCMDPPort() const { return cmdp_sink_->getPort(); }
 
         /**
          * Create a new asynchronous spglog logger

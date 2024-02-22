@@ -23,7 +23,7 @@ namespace constellation::chirp {
         DecodeError(std::string error_message) : error_message_(std::move(error_message)) {}
 
         /**
-         * @returns Error message
+         * @return Error message
          */
         const char* what() const noexcept final { return error_message_.c_str(); }
 

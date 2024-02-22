@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""This module provides a base class for a Constellation Satellite."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+This module provides a base class for a Constellation Satellite.
+"""
 
 from functools import wraps
 import traceback
@@ -98,12 +103,12 @@ class Satellite:
             cmd_port, CHIRPServiceIdentifier.CONTROL
         )
         self.logger.info("Satellite broadcasting CONTROL service")
-        time.sleep(1)  # Sleep to ensure every satellite has time to recieve broadcast
+        time.sleep(1)  # Sleep to ensure every satellite has time to receive broadcast
         self.broadcast_manager.register_service(
             hb_port, CHIRPServiceIdentifier.HEARTBEAT
         )
         self.logger.info("Satellite broadcasting HEARTBEAT service")
-        time.sleep(1)  # Sleep to ensure every satellite has time to recieve broadcast
+        time.sleep(1)  # Sleep to ensure every satellite has time to receive broadcast
         self.broadcast_manager.register_service(
             log_port, CHIRPServiceIdentifier.MONITORING
         )

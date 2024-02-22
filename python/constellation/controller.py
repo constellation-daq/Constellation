@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+"""
+
 import zmq
 import logging
 import msgpack
@@ -146,8 +152,10 @@ class TrivialController:
                     self._logger.error(f"No host with ID {idx}")
                 self.remove_sat(self.sockets[idx])
             else:
-                self.command(user_input, idx, socket) if socket else self.command(
-                    user_input
+                (
+                    self.command(user_input, idx, socket)
+                    if socket
+                    else self.command(user_input)
                 )
                 socket = None
 

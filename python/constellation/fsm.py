@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+"""
+
 from enum import Enum, auto
 from statemachine import StateMachine
 from statemachine.states import States
