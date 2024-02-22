@@ -516,6 +516,9 @@ class CHIRPBeaconTransmitter:
         self._host_uuid = host_uuid
         self._group_uuid = group_uuid
 
+        # whether or not to filter broadcasts on group
+        self._filter_group = True
+
         # Create UPP broadcasting socket
         #
         # NOTE: Socket options are often OS-specific; the ones below were chosen
@@ -540,17 +543,37 @@ class CHIRPBeaconTransmitter:
         # interface they are announced on.
         self._sock.bind(("", CHIRP_PORT))
 
+    @property
+    def host(self) -> UUID:
+        """Get the UUID of the host this transmitter was set up for."""
+        return self._host_uuid
+
+    @property
+    def group(self) -> UUID:
+        """Get the UUID of the Constellation group of this transmitter."""
+        return self._group_uuid
+
+    @property
+    def filter(self) -> bool:
+        """Whether or not incoming broadcasts are filtered on group."""
+        return self._filter_group
+
+    @filter.setter
+    def filter(self, val: bool):
+        """Whether or not incoming broadcasts are filtered on group."""
+        self._filter_group = val
+
     def broadcast(
         self,
         serviceid: CHIRPServiceIdentifier,
         msgtype: CHIRPMessageType,
         port: int = 0,
-    ):
+    ) -> None:
         """Broadcast a given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
         self._sock.sendto(msg.pack(), ("<broadcast>", CHIRP_PORT))
 
-    def listen(self):
+    def listen(self) -> CHIRPMessage:
         """Listen in on CHIRP port and return message if data was received."""
         try:
             buf, from_address = self._sock.recvfrom(1024)
@@ -577,11 +600,15 @@ class CHIRPBeaconTransmitter:
                 f"Received malformed message by host {from_address}: {e}"
             )
 
+        # ignore msg from this (our) host
         if self._host_uuid == msg.host_uuid:
-            # ignore msg from this (our) host
-            return None
+            return
+
+        # optionally drop messages from other groups
+        if self._filter_group and not self._group_uuid == msg.group_uuid:
+            return
+
         msg.from_address = from_address[0]
-        # TODO decide and document what to return here
         return msg
 
     def close(self):
