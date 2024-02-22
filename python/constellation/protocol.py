@@ -262,6 +262,7 @@ class LogTransmitter:
         record["msg"] = socket.recv().decode("utf-8")
         record["created"] = time.to_datetime().timestamp()
         record["name"] = sender
+        record["levelname"] = topic.split("/")[1]
         return logging.makeLogRecord(record)
 
     def closed(self) -> bool:
