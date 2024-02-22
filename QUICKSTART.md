@@ -6,6 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 # Quick Start into Constellation
 
 ## Python
+
 To install the package, run the following command inside the root of the cloned repository:
 
     pip install -e .
