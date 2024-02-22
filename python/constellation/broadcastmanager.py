@@ -40,7 +40,7 @@ class DiscoveredService:
         self.alive = alive
 
     def __eq__(self, other):
-        """Comparison operator for network-related properites."""
+        """Comparison operator for network-related properties."""
         return self.address == other.address and self.port == other.port
 
 
