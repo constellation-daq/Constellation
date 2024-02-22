@@ -1,4 +1,4 @@
-# Notes on CHIRP
+# CHIRP Library
 
 ## Notes on sockets
 
@@ -14,11 +14,9 @@ To opposite to the broadcast address is the "any" address, which accepts incomin
 
 If no network (with DHCP) is available, the default broadcast address (255.255.255.255) does not work. As a workaround, the default any address (0.0.0.0) can be used to broadcast over localhost.
 
-TODO:
+## Tools for Testing CHRIP
 
-- [ ] Look up if it is possible to find the broadcast IP from network interface platform independently
-
-## Broadcasting
+### Broadcasting
 
 To receive broadcasts:
 
@@ -34,7 +32,7 @@ To send broadcasts:
 
 See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
 
-## CHIRP Messages
+### CHIRP Messages
 
 To receive CHIRP messages:
 
@@ -54,7 +52,7 @@ TODO:
 
 - [ ] Mention MD5 hashing and service identifiers somewhere - in CHIRP itself or other RFC?
 
-## CHIRP Manager
+### CHIRP Manager
 
 To run the CHIRP manager, run:
 
@@ -73,3 +71,11 @@ The following commands are available:
 - `unregister_callback [SERVICE]`: unregister a discover callback for a service
 - `reset`: unregister all services and callbacks, and forget discovered services
 - `quit`
+
+## The CHIRP Namespace
+
+```{doxygennamespace} constellation::chirp
+:members:
+:protected-members:
+:undoc-members:
+```
