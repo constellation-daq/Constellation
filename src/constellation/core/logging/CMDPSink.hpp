@@ -34,7 +34,7 @@ namespace constellation::log {
          *
          * @return Port number
          */
-        constexpr Port getPort() const { return port_; }
+        constexpr utils::Port getPort() const { return port_; }
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) final;
@@ -43,7 +43,7 @@ namespace constellation::log {
     private:
         zmq::context_t context_;
         zmq::socket_t publisher_;
-        Port port_;
+        utils::Port port_;
         std::once_flag setup_flag_;
     };
 

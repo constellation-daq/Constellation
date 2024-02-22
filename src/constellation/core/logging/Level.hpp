@@ -14,14 +14,29 @@
 #include <spdlog/common.h>
 
 namespace constellation::log {
-    // log levels, allows direct casting to spdlog::level::level_enum
+    /** Log levels for framework
+     *
+     * The chosen values allows for direct casting to spdlog::level::level_enum
+     */
     enum class Level : int {
+        /** */
         TRACE = 0,
+
+        /** */
         DEBUG = 1,
+
+        /** */
         INFO = 2,
+
+        /** */
         WARNING = 3,
+
+        /** */
         STATUS = 4,
+
+        /** */
         CRITICAL = 5,
+
         OFF = 6,
     };
     using enum Level;

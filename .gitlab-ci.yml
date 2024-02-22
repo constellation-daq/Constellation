@@ -39,8 +39,8 @@ stages:
     CXX: clang++
     CXX_LD: lld
 
-.debian-hawkmoth:
-  image: gitlab.desy.de:5555/constellation/build-images/debian-hawkmoth:latest
+.fedora-sphinx:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
   variables:
     SPHINX_IMMATERIAL_EXTERNAL_RESOURCE_CACHE_DIR: $CI_PROJECT_DIR/.sphinx_immaterial_cache
   cache:
@@ -274,26 +274,19 @@ format:codespell:
   stage: docs
   needs: []
 
-docs:html:
+docs:doxygen:
   extends:
     - .docs
-    - .debian-hawkmoth
-  needs:
-    - job: build:debian-gcc
-      artifacts: true
+    - .fedora-sphinx
   script:
-    - make -C docs html
-  artifacts:
-    paths:
-      - docs/build
-    expire_in: 24 hours
+    - make -C docs doxygen
 
 # deploy stage
 
 deploy:docs:
   stage: deploy
   needs:
-    - job: docs:html
+    - job: docs:doxygen
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
   trigger:

@@ -32,5 +32,3 @@ chirp_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [asio_dep, thread_dep],
 )
-
-subdir('test')

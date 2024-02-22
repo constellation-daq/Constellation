@@ -34,13 +34,13 @@ namespace constellation::chirp {
         CNSTLN_API std::string content_to_string() const;
     };
 
-    /** Broadcast receiver for incoming CHIRP broadcasts on :cpp:var:`CHIRP_PORT` */
+    /** Broadcast receiver for incoming CHIRP broadcasts on `CHIRP_PORT` */
     class BroadcastRecv {
     public:
         /**
          * Construct broadcast receiver
          *
-         * @param any_address Address for incoming broadcasts (e.g. :cpp:func:`asio::ip::address_v4::any()`)
+         * @param any_address Address for incoming broadcasts (e.g. `asio::ip::address_v4::any()`)
          * @param port Port for outgoing broadcasts
          */
         CNSTLN_API BroadcastRecv(const asio::ip::address& any_address, asio::ip::port_type port);

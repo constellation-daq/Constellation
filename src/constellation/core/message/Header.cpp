@@ -18,60 +18,44 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/message/Protocol.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/stdbyte_casts.hpp"
 
 using namespace constellation::message;
-using namespace std::literals::string_literals;
+using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
-/**
- * Get protocol identifier string for CSCP, CMDP and CDTP protocols
- *
- * @param protocol Protocol
- * @return Protocol identifier string in message header
- */
-inline std::string get_protocol_identifier(Protocol protocol) {
-    switch(protocol) {
-    case CSCP1: return "CSCP\01"s;
-    case CMDP1: return "CMDP\01"s;
-    case CDTP1: return "CDTP\01"s;
-    default: std::unreachable();
-    }
-}
-
-template <Protocol P>
-Header<P>::Header(std::string_view sender, std::chrono::system_clock::time_point time) : sender_(sender), time_(time) {}
-
-template <Protocol P> Header<P>::Header(std::string_view sender) : Header(sender, std::chrono::system_clock::now()) {}
-
-template <Protocol P> Header<P>::Header(std::span<std::byte> data) {
+// Similar to CDTP1Header::disassemble in CDTP1Header.cpp, check when modifying
+Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
     // Unpack protocol
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-    if(protocol_identifier != get_protocol_identifier(P)) {
+    if(protocol_identifier != get_protocol_identifier(protocol)) {
         // TODO(stephan.lachnit): throw
     }
 
     // Unpack sender
     const auto msgpack_sender = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    sender_ = msgpack_sender->as<std::string>();
+    const auto sender = msgpack_sender->as<std::string>();
 
     // Unpack time
     const auto msgpack_time = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    time_ = msgpack_time->as<std::chrono::system_clock::time_point>();
+    const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
 
     // Unpack tags
     const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    tags_ = msgpack_tags->as<Dictionary>();
+    const auto tags = msgpack_tags->as<Dictionary>();
+
+    // Construct header
+    return {protocol, sender, time, tags};
 }
 
-template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+void Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     // first pack version
-    msgpack_packer.pack(get_protocol_identifier(P));
+    msgpack_packer.pack(get_protocol_identifier(protocol_));
     // then sender
     msgpack_packer.pack(sender_);
     // then time
@@ -80,16 +64,12 @@ template <Protocol P> void Header<P>::msgpack_pack(msgpack::packer<msgpack::sbuf
     msgpack_packer.pack(tags_);
 }
 
-template <Protocol P> std::string Header<P>::to_string() const {
-    // Make protocol identifier version human readable
-    auto protocol = get_protocol_identifier(P);
-    protocol.back() = static_cast<char>(protocol.back() + '0');
-    // Stream message
+std::string Header::to_string() const {
     std::ostringstream out {};
     std::boolalpha(out);
-    out << "Header: "sv << protocol << '\n' //
-        << "Sender: "sv << sender_ << '\n'  //
-        << "Time:   "sv << time_ << '\n'    //
+    out << "Header: "sv << get_hr_protocol_identifier(protocol_) << '\n' //
+        << "Sender: "sv << sender_ << '\n'                               //
+        << "Time:   "sv << time_ << '\n'                                 //
         << "Tags:"sv;
     for(const auto& entry : tags_) {
         out << "\n "sv << entry.first << ": "sv;
@@ -97,10 +77,3 @@ template <Protocol P> std::string Header<P>::to_string() const {
     }
     return out.str();
 }
-
-// Export symbols in shared library
-namespace constellation::message {
-    template class Header<CSCP1>;
-    template class Header<CMDP1>;
-    template class Header<CDTP1>;
-} // namespace constellation::message
