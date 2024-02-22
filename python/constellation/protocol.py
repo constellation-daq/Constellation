@@ -12,7 +12,7 @@ import socket
 import time
 import platform
 import logging
-from uuid import UUID
+from uuid import UUID, uuid5, NAMESPACE_DNS
 from enum import Enum
 
 
@@ -514,12 +514,12 @@ class CHIRPBeaconTransmitter:
 
     def __init__(
         self,
-        host_uuid: UUID,
-        group_uuid: UUID,
+        name: str,
+        group: str,
     ) -> None:
         """Initialize attributes and open broadcast socket."""
-        self._host_uuid = host_uuid
-        self._group_uuid = group_uuid
+        self._host_uuid = uuid5(NAMESPACE_DNS, name)
+        self._group_uuid = uuid5(NAMESPACE_DNS, group)
 
         # whether or not to filter broadcasts on group
         self._filter_group = True

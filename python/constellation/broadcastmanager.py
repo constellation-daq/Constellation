@@ -49,21 +49,21 @@ class BroadcastManager:
 
     def __init__(
         self,
-        host_uuid: UUID,
-        group_uuid: UUID,
+        name: str,
+        group: str,
         callback_queue: Queue,
     ):
         """Initialize parameters.
 
-        :param host: UUID of the Satellite name the BroadcastManager represents
-        :type host: UUID
-        :param group: UUID of the group the Satellite belongs to
-        :type group: UUID
+        :param host: Satellite name the BroadcastManager represents
+        :type host: str
+        :param group: group the Satellite belongs to
+        :type group: str
         :param callback_queue: The queue in which discovery callbacks will be placed.
         :type callback_queue: Queue
         """
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(host_uuid, group_uuid)
+        self._beacon = CHIRPBeaconTransmitter(name, group)
 
         # Register callbacks for services
         self._callbacks = {}
@@ -232,13 +232,11 @@ def main(args=None):
         level=args.log_level.upper(),
     )
 
-    import uuid
-
     q = Queue()
     # start server with remaining args
     s = BroadcastManager(
-        host_uuid=uuid.uuid4(),
-        group_uuid=uuid.uuid4(),
+        name="broadcast_test",
+        group="Constellation",
         callback_queue=q,
     )
     s.register_offer(CHIRPServiceIdentifier.HEARTBEAT, 50000)
