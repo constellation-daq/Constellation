@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # Quick Start into Constellation
 
 ## Python
@@ -47,4 +52,3 @@ Satellite to connect to. Multiple Satellites can be specified by adding further
 `--satellite` arguments.
 
 The Controller gives a short summary, what commands are supported.
-

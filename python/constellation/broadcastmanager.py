@@ -1,5 +1,10 @@
-"""BroadcastManger module provides classes for managing CHIRP broadcasts within
-Constellation Satellites."""
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+
+BroadcastManger module provides classes for managing CHIRP broadcasts within
+Constellation Satellites.
+"""
 
 import logging
 import threading

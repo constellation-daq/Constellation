@@ -1,3 +1,8 @@
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
+"""
+
 # Try to get setuptools_scm generated version (package must be installed)
 try:
     from ._version import version as __version__
