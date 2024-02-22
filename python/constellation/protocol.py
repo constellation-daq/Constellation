@@ -239,7 +239,7 @@ class LogTransmitter:
         # use default socket if none was specified
         if not socket:
             socket = self._socket
-        topic = msgpack.unpackb(self.queue.recv())
+        topic = msgpack.unpackb(socket.recv())
         # NOTE it is currently not possible to receive both STATS and LOG on the
         # same socket as the respective classes do not handle the other.
         # TODO : refactorize LogTransmitter to allow to transparently receive logs and stats
@@ -247,12 +247,12 @@ class LogTransmitter:
             raise RuntimeError(
                 f"LogTransmitter cannot decode messages of topic '{topic}'"
             )
-        header = msgpack.unpackb(self.queue.recv())
+        header = msgpack.unpackb(socket.recv())
         if not header[0] == PROTOCOL_IDENTIFIER:
             raise RuntimeError(
                 f"Received message with malformed CDTP header: {header}!"
             )
-        record = msgpack.unpackb(self.queue.recv())
+        record = msgpack.unpackb(socket.recv())
         return logging.makeLogRecord(record)
 
     def closed(self) -> bool:
