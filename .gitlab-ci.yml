@@ -9,6 +9,12 @@ stages:
   - docs
   - deploy
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - when: always
+
 # templates
 
 .debian-clang:
@@ -180,6 +186,21 @@ lint:clang-tidy:
       artifacts: true
   script:
     - ninja -C build clang-tidy
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
+lint:clang-tidy-diff:
+  extends:
+    - .lint
+    - .debian-clang
+  needs:
+    - job: build:debian-clang
+      artifacts: true
+  script:
+    - git fetch origin
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 lint:coverage:
   extends:
