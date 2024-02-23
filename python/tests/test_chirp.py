@@ -5,11 +5,10 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import pytest
-import uuid
 
 from unittest.mock import patch, MagicMock
 
-from constellation.protocol import (
+from constellation.chirp import (
     CHIRPBeaconTransmitter,
     CHIRPServiceIdentifier,
     CHIRPMessageType,
@@ -36,7 +35,7 @@ def mock_sock_recvfrom(bufsize):
 # FIXTURES
 @pytest.fixture
 def mock_socket():
-    with patch("constellation.protocol.socket.socket") as mock:
+    with patch("constellation.chirp.socket.socket") as mock:
         mock = mock.return_value
         mock.connected = MagicMock(return_value=True)
         mock.sendto = MagicMock(side_effect=mock_sock_sendto)
@@ -46,24 +45,22 @@ def mock_socket():
 
 @pytest.fixture
 def mock_transmitter(mock_socket):
-    host = uuid.uuid5(uuid.NAMESPACE_DNS, "mock_sender")
-    group = uuid.uuid5(uuid.NAMESPACE_DNS, "mockstellation")
     t = CHIRPBeaconTransmitter(
-        host,
-        group,
+        "mock_sender",
+        "mockstellation",
     )
-    yield t, host, group
+    yield t
 
 
 def test_chirp_beacon_send_recv(mock_socket):
     """Test interplay between two transmitters (sender/receiver)."""
     sender = CHIRPBeaconTransmitter(
-        uuid.uuid5(uuid.NAMESPACE_DNS, "mock_sender"),
-        uuid.uuid5(uuid.NAMESPACE_DNS, "mockstellation"),
+        "mock_sender",
+        "mockstellation",
     )
     receiver = CHIRPBeaconTransmitter(
-        uuid.uuid5(uuid.NAMESPACE_DNS, "mock_receiver"),
-        uuid.uuid5(uuid.NAMESPACE_DNS, "mockstellation"),
+        "mock_receiver",
+        "mockstellation",
     )
     sender.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = receiver.listen()
@@ -91,7 +88,7 @@ def test_chirp_beacon_send_recv(mock_socket):
 
     # send package, then let the test for header fail
     sender.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
-    with patch("constellation.protocol.CHIRP_HEADER"):
+    with patch("constellation.chirp.CHIRP_HEADER"):
         with pytest.raises(RuntimeError) as e:
             res = receiver.listen()
         assert "malformed CHIRP header" in str(
@@ -101,7 +98,7 @@ def test_chirp_beacon_send_recv(mock_socket):
 
 def test_filter_same_host(mock_transmitter):
     """Check that same-host packets are dropped."""
-    t, host, group = mock_transmitter
+    t = mock_transmitter
     t.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = t.listen()
     assert not res, "Received packet despite same-host filter."
