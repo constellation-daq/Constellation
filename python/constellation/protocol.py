@@ -12,24 +12,31 @@ import zmq
 import time
 import platform
 import logging
-from enum import Enum
+from enum import Enum, StrEnum
 
 
-PROTOCOL_IDENTIFIER = "CDTP%x01"  # TODO: Change PROTOCOL_IDENTIFIER to include all other protocols and change all methods in file to check for correct protocol
+class Protocol(StrEnum):
+    CDTP = "CDTP%x01"
+    CSCP = "CDTP%x01"
+    CMDP = "CMDP\01"
 
 
 class MessageHeader:
     """Class implementing a Constellation message header."""
 
-    def __init__(self, host: str = None):
-        if not host:
-            host = platform.node()
-        self.host = host
+    def __init__(self, name: str, protocol: Protocol):
+        self.name = name
+        self.protocol = protocol
 
     def send(self, socket: zmq.Socket, flags: int = zmq.SNDMORE, meta: dict = None):
         """Send a message header via socket.
 
-        Returns: return value from socket.send()."""
+        meta is an optional dictionary that is sent as a map of string/value
+        pairs with the header.
+
+        Returns: return value from socket.send().
+
+        """
         return socket.send(self.encode(meta), flags)
 
     def recv(self, socket: zmq.Socket, flags: int = 0):
@@ -38,11 +45,11 @@ class MessageHeader:
 
     def decode(self, header):
         """Decode header string and return host, timestamp and meta map."""
-        if not header[0] == PROTOCOL_IDENTIFIER:
-            raise RuntimeError(
-                f"Received message with malformed CDTP header: {header}!"
-            )
         header = msgpack.unpackb(header)
+        if not header[0] == self.protocol.value:
+            raise RuntimeError(
+                f"Received message with malformed {self.protocol.name} header: {header}!"
+            )
         host = header[1]
         timestamp = header[2]
         meta = header[3]
@@ -53,8 +60,8 @@ class MessageHeader:
         if not meta:
             meta = {}
         header = [
-            PROTOCOL_IDENTIFIER,
-            self.host,
+            self.protocol.value,
+            self.name,
             msgpack.Timestamp.from_unix_nano(time.time_ns()),
             meta,
         ]
@@ -104,7 +111,7 @@ class DataTransmitter:
             socket = self._socket
         flags = zmq.SNDMORE | flags
         # message header
-        socket.send(msgpack.packb(PROTOCOL_IDENTIFIER), flags=flags)
+        socket.send(msgpack.packb(Protocol.CDTP), flags=flags)
         socket.send(msgpack.packb(self.host), flags=flags)
         socket.send(msgpack.packb(time.time_ns()), flags=flags)
         socket.send(msgpack.packb(meta), flags=flags)
@@ -133,7 +140,7 @@ class DataTransmitter:
             raise RuntimeError(
                 f"Received message with wrong length of {len(msg)} parts!"
             )
-        if not msgpack.unpackb(msg[0]) == PROTOCOL_IDENTIFIER:
+        if not msgpack.unpackb(msg[0]) == Protocol.CDTP:
             raise RuntimeError(
                 f"Received message with malformed CDTP header: {msgpack.unpackb(msg[0])}!"
             )
@@ -183,7 +190,7 @@ class LogTransmitter:
             socket = self._socket
         topic = f"LOG/{record.levelname}/{record.name}"
         header = [
-            PROTOCOL_IDENTIFIER,
+            Protocol.CMDP,
             self.host,
             msgpack.Timestamp.from_unix_nano(time.time_ns()),
             {},
@@ -249,9 +256,9 @@ class LogTransmitter:
         unpacker_header = msgpack.Unpacker()
         unpacker_header.feed(socket.recv())
         protocol = unpacker_header.unpack()
-        if not protocol == "CMDP\01":
+        if not protocol == Protocol.CMDP:
             raise RuntimeError(
-                f"Received message with malformed CDTP header: {protocol}!"
+                f"Received message with malformed CMDP header: {protocol}!"
             )
         sender = unpacker_header.unpack()
         time = unpacker_header.unpack()
@@ -328,7 +335,7 @@ class MetricsTransmitter:
             socket = self._socket
         topic = "STATS/" + metric.name
         header = [
-            PROTOCOL_IDENTIFIER,
+            Protocol.CMDP,
             self.host,
             msgpack.Timestamp.from_unix_nano(time.time_ns()),
             {},
@@ -365,7 +372,7 @@ class MetricsTransmitter:
             )
         name = topic.split("/")[1]
         header = msgpack.unpackb(self.queue.recv())
-        if not header[0] == PROTOCOL_IDENTIFIER:
+        if not header[0] == Protocol.CMDP:
             raise RuntimeError(
                 f"Received message with malformed CDTP header: '{header}'!"
             )
@@ -375,54 +382,3 @@ class MetricsTransmitter:
     def close(self):
         """Close the socket."""
         self._socket.close()
-
-
-class CSCPMessageVerb(Enum):
-    """Defines the message types of the CSCP.
-
-    Part of the Constellation Satellite Control Protocol, see
-    docs/protocols/cscp.md for details.
-
-    """
-
-    REQUEST = 0x0
-    SUCCESS = 0x1
-    NOTIMPLEMENTED = 0x2
-    INCOMPLETE = 0x3
-    INVALID = 0x4
-    UNKNOWN = 0x5
-
-
-class CommandTransmitter:
-    """Class implementing Constellation Satellite Control Protocol."""
-
-    def __init__(self, name: str, socket: zmq.Socket):
-        self.msghead = MessageHeader(name)
-        self.socket = socket
-
-    def send_request(self, command, payload=None):
-        """Send a command request to a Satellite with an optional payload."""
-        self._dispatch(command, CSCPMessageVerb.REQUEST, flags=zmq.NOBLOCK)
-
-    def send_reply(self, response, msgtype: CSCPMessageVerb, payload=None):
-        """Send a reply to a previous command."""
-        self._dispatch(response, msgtype, payload, flags=zmq.NOBLOCK)
-
-    def get_request(self):
-        cmdmsg = self.socket.recv_multipart(flags=zmq.NOBLOCK)
-        host, timestamp, meta = self.msgheader.decode(cmdmsg[0])
-        # TODO CONTINUE HERE!!
-
-    def _dispatch(
-        self, msg: str, msgtype: CSCPMessageVerb, payload=None, flags: int = 0
-    ):
-        flags = zmq.SNDMORE | flags
-        self.msghead.send(self.socket, flags=flags)
-        if not payload:
-            flags = flags
-        self.socket.send(
-            msgpack.packb(f"%x{msgtype.value:02o}{msg}"),
-            flags=flags,
-        )
-        if payload:
-            self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
