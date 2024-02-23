@@ -74,6 +74,9 @@ class BroadcastManager:
         self.discovered_services = []
         self._listener_thread = None
 
+        # set up logging
+        self._logger = logging.getLogger(name + ".broadcast")
+
     def start(self) -> None:
         """Start broadcast manager."""
         self._listener_thread = threading.Thread(target=self._run, daemon=True)
@@ -100,13 +103,13 @@ class BroadcastManager:
     ) -> None:
         """Register new callback for ServiceIdentifier."""
         if serviceid in self._callbacks:
-            logging.info("Overwriting callback")
+            self._logger.info("Overwriting callback")
         self._callbacks[serviceid] = callback
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
         if port in self._registered_services:
-            logging.warning("Replacing service registration for port %d", port)
+            self._logger.warning("Replacing service registration for port %d", port)
         self._registered_services[port] = serviceid
 
     def request(self, serviceid: CHIRPServiceIdentifier) -> None:
@@ -117,7 +120,7 @@ class BroadcastManager:
 
         """
         if serviceid not in self._callbacks:
-            logging.warning(
+            self._logger.warning(
                 "Serviceid %s does not have a registered callback", serviceid
             )
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
@@ -130,19 +133,19 @@ class BroadcastManager:
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                logging.debug("Broadcasting service OFFER on %d for %s", port, sid)
+                self._logger.debug("Broadcasting service OFFER on %d for %s", port, sid)
                 self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
         for serviceid in self._callbacks:
-            logging.debug("Broadcasting service REQUEST for %s", serviceid)
+            self._logger.debug("Broadcasting service REQUEST for %s", serviceid)
             self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
     def broadcast_depart(self) -> None:
         """Broadcast DEPART for all registered services."""
         for port, sid in self._registered_services.items():
-            logging.debug("Broadcasting service DEPART on %d for %s", port, sid)
+            self._logger.debug("Broadcasting service DEPART on %d for %s", port, sid)
             self._beacon.broadcast(sid, CHIRPMessageType.DEPART, port)
 
     def _discover_service(self, msg: CHIRPMessage) -> None:
@@ -151,14 +154,14 @@ class BroadcastManager:
             msg.host_uuid, msg.serviceid, msg.from_address, msg.port
         )
         if service in self.discovered_services:
-            logging.info(
+            self._logger.info(
                 "Service already discovered: %s on host %s",
                 msg.serviceid,
                 msg.from_address,
             )
         else:
             # add service to internal list and queue callback (if registered)
-            logging.info(
+            self._logger.info(
                 "Received new OFFER for service: %s on host %s",
                 msg.serviceid,
                 msg.from_address,
@@ -167,7 +170,7 @@ class BroadcastManager:
                 callback = self._callbacks[msg.serviceid]
                 self._callback_queue.put((callback, service))
             except KeyError:
-                logging.debug("No callback for service %s set up.", msg.serviceid)
+                self._logger.debug("No callback for service %s set up.", msg.serviceid)
             self.discovered_services.append(service)
 
     def _depart_service(self, msg: CHIRPMessage) -> None:
@@ -177,7 +180,7 @@ class BroadcastManager:
                 msg.host_uuid, msg.serviceid, msg.from_addr, msg.port
             )
             self.discovered_services.remove(service)
-            logging.debug(
+            self._logger.debug(
                 "Received depart for service %s on host %s: Removed.",
                 msg.serviceid,
                 msg.from_address,
@@ -188,9 +191,9 @@ class BroadcastManager:
                 callback = self._callbacks[msg.serviceid]
                 self._callback_queue.put((callback, service))
             except KeyError:
-                logging.debug("No callback for service %s set up.", msg.serviceid)
+                self._logger.debug("No callback for service %s set up.", msg.serviceid)
         except ValueError:
-            logging.debug(
+            self._logger.debug(
                 "Received depart for service %s on host %s: Not in use.",
                 msg.serviceid,
                 msg.from_address,
