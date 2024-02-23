@@ -13,7 +13,7 @@ import time
 from uuid import UUID
 from queue import Queue
 
-from constellation.protocol import (
+from constellation.chirp import (
     CHIRPServiceIdentifier,
     CHIRPMessage,
     CHIRPMessageType,
@@ -51,8 +51,19 @@ class DiscoveredService:
         )
 
 
-class CHIRPBroadcaster:
-    """Manages service discovery and broadcast via the CHIRP protocol."""
+class CHIRPBroadcastManager:
+    """Manages service discovery and broadcast via the CHIRP protocol.
+
+    Listening and reacting to CHIRP broadcasts is implemented in a dedicated
+    thread that can be started after the class has been instantiated.
+
+    Discovered services are added to a callback queue if a request for the
+    service type has been added.
+
+    Offered services can be registered and are announced on incoming request
+    broadcasts.
+
+    """
 
     def __init__(
         self,
@@ -89,9 +100,10 @@ class CHIRPBroadcaster:
         self._chirp_thread = threading.Thread(target=self._run, daemon=True)
         self._chirp_thread.start()
 
-    def stop(self) -> None:
+    def stop(self, depart: bool = True) -> None:
         """Indicate broadcast manager to stop."""
-        self.broadcast_depart()
+        if depart:
+            self.broadcast_depart()
         self._stop_broadcasting.set()
         self._chirp_thread.join()
 
@@ -250,7 +262,7 @@ def main(args=None):
 
     q = Queue()
     # start server with remaining args
-    bcst = CHIRPBroadcaster(
+    bcst = CHIRPBroadcastManager(
         name="broadcast_test",
         group="Constellation",
         callback_queue=q,
