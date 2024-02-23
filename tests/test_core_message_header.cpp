@@ -29,7 +29,7 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
 
     const CSCP1Header cscp1_header {"senderCSCP", tp};
 
-    REQUIRE_THAT(sv_to_string(cscp1_header.getSender()), Equals("senderCSCP"));
+    REQUIRE_THAT(to_string(cscp1_header.getSender()), Equals("senderCSCP"));
     REQUIRE(cscp1_header.getTime() == tp);
     REQUIRE(cscp1_header.getTags().empty());
     REQUIRE_THAT(cscp1_header.to_string(), ContainsSubstring("CSCP1"));
