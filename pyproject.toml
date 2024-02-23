@@ -12,7 +12,7 @@ authors = [
 ]
 description = "Constellation DAQ/SCADA implementation in Python."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["DAQ", "SCADA", "experimental control"]
 license = {text = "EUPL"}
 classifiers = [
