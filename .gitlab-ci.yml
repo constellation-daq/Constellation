@@ -42,7 +42,7 @@ workflow:
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
   variables:
-    CXX: clang++
+    CXX: ccache clang++
     CXX_LD: lld
 
 .fedora-sphinx:
@@ -62,12 +62,18 @@ workflow:
     - subprojects/msgpack-cxx-*/
     - subprojects/spdlog-*/
 
+.ccache: &ccache
+  key: ccache-$CI_JOB_IMAGE
+  paths:
+    - $CCACHE_DIR
+
 # build stage
 
 .build:
   stage: build
   cache:
     - *meson-wrap-cache
+    - *ccache
   script:
     - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
