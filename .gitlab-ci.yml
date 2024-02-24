@@ -61,6 +61,7 @@ workflow:
     - subprojects/magic_enum-*/
     - subprojects/msgpack-cxx-*/
     - subprojects/spdlog-*/
+  policy: pull
 
 .ccache: &ccache
   key: ccache-$CI_JOB_IMAGE
@@ -73,7 +74,6 @@ workflow:
   stage: build
   cache:
     - *meson-wrap-cache
-    - *ccache
   script:
     - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
@@ -114,6 +114,10 @@ build:alma9-cern:
   extends:
     - .build
     - .alma9-cern
+  cache:
+    - <<: *meson-wrap-cache
+      policy: pull-push
+    - *ccache
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release -Db_lto=true -Db_lto_mode=thin"
 
