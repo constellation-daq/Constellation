@@ -50,24 +50,24 @@ workflow:
   before_script:
     - source /venv/bin/activate
 
-.meson-wrap-cache:
-  cache:
-    key: meson-wrap-cache
-    paths:
-      - subprojects/packagecache/
-      - subprojects/asio-*/
-      - subprojects/Catch2-*/
-      - subprojects/cppzmq-*/
-      - subprojects/libzmq-*/
-      - subprojects/magic_enum-*/
-      - subprojects/msgpack-cxx-*/
-      - subprojects/spdlog-*/
+.meson-wrap-cache: &meson-wrap-cache
+  key: meson-wrap-cache
+  paths:
+    - subprojects/packagecache/
+    - subprojects/asio-*/
+    - subprojects/Catch2-*/
+    - subprojects/cppzmq-*/
+    - subprojects/libzmq-*/
+    - subprojects/magic_enum-*/
+    - subprojects/msgpack-cxx-*/
+    - subprojects/spdlog-*/
 
 # build stage
 
 .build:
   stage: build
-  extends: .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
@@ -169,7 +169,8 @@ test:alma9-cern:
 
 .lint:
   stage: lint
-  extends: .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
 
 lint:clang-tidy:
   extends:
@@ -265,7 +266,8 @@ format:clang-format:
   extends:
     - .format
     - .debian-clang
-    - .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check
