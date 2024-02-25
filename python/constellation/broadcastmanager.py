@@ -13,7 +13,7 @@ import time
 from uuid import UUID
 from queue import Queue
 
-from constellation.chirp import (
+from .chirp import (
     CHIRPServiceIdentifier,
     CHIRPMessage,
     CHIRPMessageType,

@@ -17,7 +17,7 @@ endif
 py = import('python').find_installation(required: get_option('impl_py'))
 impl_py = py.found()
 if impl_py
-  subdir('src/pyconstellation')
+  subdir('python/constellation')
 endif
 
 # Tests
