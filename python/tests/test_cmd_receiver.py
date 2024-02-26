@@ -11,7 +11,7 @@ import zmq
 
 from constellation.cscp import CSCPMessageVerb, CommandTransmitter
 
-from constellation.commandmanager import requestable, BaseCommandReceiver
+from constellation.commandmanager import cscp_requestable, BaseCommandReceiver
 
 
 mock_packet_queue_recv = []
@@ -76,18 +76,18 @@ def mock_transmitter(mock_socket_sender):
 @pytest.fixture
 def mock_cmdreceiver(mock_socket_recv):
     class CommandReceiver(BaseCommandReceiver):
-        @requestable
+        @cscp_requestable
         def get_state(self, msg):
             return "state", "good", None
 
-        @requestable
+        @cscp_requestable
         def fcnallowed(self, msg):
             return "allowed", "allowed passed", None
 
         def _fcnallowed_is_allowed(self, msg):
             return True
 
-        @requestable
+        @cscp_requestable
         def fcnnotallowed(self, msg):
             return "notallowed", "yes", None
 
@@ -119,6 +119,7 @@ def test_command_receiver(mock_cmdreceiver, mock_transmitter):
     # give the thread a chance to receive the message
     time.sleep(0.2)
     rep = mock_transmitter.get_message()
+    assert rep.msg_verb == CSCPMessageVerb.SUCCESS
     assert rep.payload == "good"
 
     # cmd w/ '_is_allowed' method: always returns True
@@ -126,6 +127,7 @@ def test_command_receiver(mock_cmdreceiver, mock_transmitter):
     # give the thread a chance to receive the message
     time.sleep(0.2)
     rep = mock_transmitter.get_message()
+    assert rep.msg_verb == CSCPMessageVerb.SUCCESS
     assert rep.payload == "allowed passed"
 
     # cmd w/ '_is_allowed' method: always returns False
@@ -134,3 +136,4 @@ def test_command_receiver(mock_cmdreceiver, mock_transmitter):
     time.sleep(0.2)
     rep = mock_transmitter.get_message()
     assert rep.msg_verb == CSCPMessageVerb.INVALID
+    assert not rep.payload

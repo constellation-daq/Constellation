@@ -16,7 +16,7 @@ from .cscp import CommandTransmitter, CSCPMessageVerb
 COMMANDS = dict()
 
 
-def requestable(func):
+def cscp_requestable(func):
     """Register a function as a supported command for CSCP."""
     COMMANDS[func.__name__] = func
     return func
@@ -30,7 +30,8 @@ class BaseCommandReceiver:
 
     def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
 
-    Inheriting classes need to decorate command methods with '@requestable'.
+    Inheriting classes need to decorate such command methods with
+    '@cscp_requestable' to make them callable through CSCP requests.
 
     If a method
 
