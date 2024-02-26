@@ -11,7 +11,7 @@ import threading
 import time
 import zmq
 from .cscp import CommandTransmitter, CSCPMessageVerb
-from .satellite import BaseSatelliteFrame
+from .base import BaseSatelliteFrame
 
 COMMANDS = dict()
 
@@ -42,16 +42,15 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name, port, **kwds):
+    def __init__(self, name, cmd_port, **kwds):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
         super().__init__(name)
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)
-        sock.bind(f"tcp://*:{port}")
-        self.log.info(f"Satellite listening on command port {port}")
+        sock.bind(f"tcp://*:{cmd_port}")
+        self.log.info(f"Satellite listening on command port {cmd_port}")
         self._cmd_tm = CommandTransmitter(name, sock)
-        self._add_com_thread()
 
     def _add_com_thread(self):
         """Add the command receiver thread to the communication thread pool."""
@@ -95,15 +94,15 @@ class CommandReceiver(BaseSatelliteFrame):
             # perform the actual callback
             try:
                 res, payload, meta = callback(self, req)
-            except AttributeError as e:
+            except (AttributeError, ValueError, TypeError) as e:
                 self.log.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
-                    "AttributeError", CSCPMessageVerb.NOTIMPLEMENTED
+                    "WrongImplementation", CSCPMessageVerb.NOTIMPLEMENTED, repr(e)
                 )
                 continue
             except Exception as e:
                 self.log.error("Command not allowed: %s", req)
-                self._cmd_tm.send_reply(f"Exception {repr(e)}", CSCPMessageVerb.INVALID)
+                self._cmd_tm.send_reply("Exception", CSCPMessageVerb.INVALID, repr(e))
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if not res:

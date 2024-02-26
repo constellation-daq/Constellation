@@ -98,10 +98,11 @@ def mock_cmdreceiver(mock_socket_recv):
         mock_context = MagicMock()
         mock_context.socket.return_value = mock_socket_recv
         mock.return_value = mock_context
-        cr = MockCommandReceiver("mock_satellite", port=1111)
+        cr = MockCommandReceiver("mock_satellite", cmd_port=1111)
+        cr._add_com_thread()
         cr._start_com_threads()
         # give the thread a chance to start
-        time.sleep(0.1)
+        time.sleep(0.5)
         yield cr
 
 
@@ -118,6 +119,17 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
     req = sender.get_message()
     assert req.msg == "no"
     assert "make your" in req.payload
+
+
+def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_recv):
+    """Test that commands are received case insensitive (i.e. lower)."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    receiver = CommandTransmitter("mock_receiver", mock_socket_recv)
+    # send a request
+    sender.send_request("MAKE", "Sandwich")
+    req = receiver.get_message()
+    assert req.msg == "make"
+    assert req.payload == "Sandwich"
 
 
 @pytest.mark.forked

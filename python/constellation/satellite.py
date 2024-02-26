@@ -3,130 +3,46 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-This module provides a base class for a Constellation Satellite.
+This module provides the class for a Constellation Satellite.
 """
 
-from functools import wraps
 import traceback
 import time
 import threading
+from queue import Queue, Empty
 import logging
-
-import zmq
-import msgpack
-from statemachine.exceptions import TransitionNotAllowed
 
 from .fsm import SatelliteFSM
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
 
-from .cscp import CSCPMessageVerb
+from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcastManager
+from .commandmanager import CommandReceiver, cscp_requestable
 from .log_and_stats import getLoggerAndStats
+from .error import debug_log, handle_error
 from ._version import version
-
-
-def handle_error(func):
-    """Catch and handle exceptions in function calls."""
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        try:
-            return func(self, *args, **kwargs)
-        except TransitionNotAllowed as exc:
-            err_msg = f"Unable to execute {func.__name__} to {exc.event}: "
-            err_msg += f"Not possible in {exc.state.name} state."
-            raise RuntimeError(err_msg) from exc
-        except Exception as exc:
-            err_msg = f"Unable to execute {func.__name__}: {exc}"
-            # set the FSM into failure
-            self.fsm.failure(err_msg)
-            self.logger.error(err_msg + traceback.format_exc())
-            raise RuntimeError(err_msg) from exc
-
-    return wrapper
-
-
-def debug_log(func):
-    """Add debug messages to function call."""
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        self.logger.debug(f"-> Entering {func.__name__} with args: {args}")
-        output = func(self, *args, **kwargs)
-        self.logger.debug(f"<- Exiting {func.__name__} with output: {output}")
-        return output
-
-    return wrapper
-
-
-class BaseSatelliteFrame:
-    """Base class for all Satellite components to inherit from.
-
-    Provides the basic internal Satellite infrastructure related to logging, ZMQ
-    and threading that all Satellite components (i.e. mixin classes) share.
-
-    """
-
-    def __init__(self, name):
-        self.name = name
-        self.log = logging.getLogger(name)
-        self.context = zmq.Context()
-
-        # dict to keep references to all communication threads usually running
-        # in the background
-        self._com_thread_pool: dict(str, threading.Thread) = {}
-        # Event to indicate to communication threads to stop
-        self._com_thread_evt: threading.Event = None
-
-    def _add_com_thread(self):
-        """Method to add a background communication thread to the pool.
-
-        Does nothing in the base class.
-
-        """
-        self.log.debug("Satellite Base class _add_thread called")
-        pass
-
-    def _start_com_threads(self):
-        """Start all background communication threads."""
-        self._com_thread_evt = threading.Event()
-        for component, thread in self._com_thread_pool.items():
-            self.log.debug("Starting thread for %s communication", component)
-            thread.start()
-
-    def _stop_com_threads(self, timeout: int = 1):
-        """Stop all background communication threads within timeout [s]."""
-        if self._com_thread_evt:
-            self._com_thread_evt.set()
-            for component, thread in self._com_thread_pool.items():
-                if thread.is_alive():
-                    thread.join(timeout)
-                    # check if thread is still alive
-                    if thread.is_alive():
-                        self.log.error(
-                            "Could not join background communication thread for {} within timeout",
-                            component,
-                        )
-                        raise RuntimeError(
-                            f"Could not join running thread for {component} within timeout of {timeout}s!"
-                        )
-        self._com_thread_evt = None
-        self._com_thread_pool = {}
 
 
 class IncompleteCommand(Exception):
     pass
 
 
-class Satellite:
+class Satellite(CommandReceiver):
     """Base class for a Constellation Satellite."""
 
-    def __init__(self, name: str, cmd_port: int, hb_port: int, log_port: int):
+    def __init__(
+        self, name: str, group: str, cmd_port: int, hb_port: int, log_port: int
+    ):
         """Set up class attributes."""
-        self.name = name
-        self.context = zmq.Context()
+        super().__init__(
+            name=name,
+            group=group,
+            cmd_port=cmd_port,
+            hb_port=hb_port,
+            log_port=log_port,
+        )
 
         # set up python logging
         self.log, self.stats = getLoggerAndStats(self.name, self.context, log_port)
@@ -139,10 +55,15 @@ class Satellite:
         # have performed all necessary steps.
         self.fsm.add_observer(self)
 
-        # set up the command channel
-        self.cmd_sock = self.context.socket(zmq.REP)
-        self.cmd_sock.bind(f"tcp://*:{cmd_port}")
-        self.log.info(f"Satellite listening on command port {cmd_port}")
+        # Set up a queue for handling tasks related to incoming requests via
+        # CSCP or offers via CHIRP. This makes sure that these can be performed
+        # thread-safe.
+        self.task_queue = Queue()
+
+        # set up background communication threads
+        # NOTE should be a late part of the initialization, as it starts communication
+        super()._add_com_thread()
+        super()._start_com_threads()
 
         # register and start heartbeater
         self.heartbeater = Heartbeater(
@@ -154,7 +75,7 @@ class Satellite:
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.broadcast_manager = CHIRPBroadcastManager()
+        self.broadcast_manager = CHIRPBroadcastManager(name, group, self.task_queue)
         self.broadcast_manager.start()
         self.broadcast_manager.register_offer(cmd_port, CHIRPServiceIdentifier.CONTROL)
         self.log.info("Satellite broadcasting CONTROL service")
@@ -180,87 +101,58 @@ class Satellite:
         # greet
         self.log.info(f"Satellite {self.name}, version {self.version} ready to launch!")
 
+    def _transition_is_allowed(self, request: CSCPMessage):
+        """Determine whether a requested transition is allowed.
+
+        This method will be called by the CommandReceiver to determine whether
+        to complete a request by a call to transition() or to deny the request.
+
+        """
+        args = request.payload.split()
+        transition_target = args[0].lower()
+        # is transition allowed?
+        if not getattr(self.fsm, transition_target) in self.fsm.allowed_events:
+            return False
+        # TODO check that we are not transitioning away from a transitional state (not allowed)
+        return True
+
+    @cscp_requestable
+    def transition(self, request: CSCPMessage):
+        """Queue a state transition via a CSCP request."""
+        args = request.payload.split()
+        transition_target = args[0].capitalize()
+        callback = getattr(self, transition_target)
+        # add to the task queue
+        self.task_queue.put((callback, args[1:]))
+        return "transitioning", transition_target, None
+
+    @cscp_requestable
+    def register(self, request: CSCPMessage):
+        """Register a heartbeat via CSCP request."""
+        name, ip, port = request.payload.split()
+        callback = self.hb_checker.register
+        # add to the task queue
+        self.task_queue.put((callback, [name, f"tcp://{ip}:{port}", self.context]))
+        return "registering", name, None
+
     def run_satellite(self):
-        """Main event loop with command handler-routine"""
+        """Main event loop with task handler-routine"""
         while True:
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
-            try:
-                cmdmsg = self.cmd_sock.recv_multipart(flags=zmq.NOBLOCK)
-            except zmq.ZMQError:
-                time.sleep(0.1)
-                continue
-            except KeyboardInterrupt:
-                break
 
-            class SatelliteResponse(CSCPMessageVerb):
+            try:
+                # blocking call but with timeout to prevent deadlocks
+                task = self.task_queue.get(block=True, timeout=0.5)
+                callback = task[0]
+                args = task[1]
+                try:
+                    callback(*args)
+                except Exception as e:
+                    # TODO consider whether to go into error state if anything goes wrong here
+                    self.log.error("Caught exception handling task: %s", repr(e))
+            except Empty:
+                # nothing to process
                 pass
-
-            # prepare response header:
-            rhead = {"time": time.time(), "sender": "FIXME"}
-            rd = msgpack.packb(rhead)
-
-            try:
-                cmd = cmdmsg[0].decode("UTF-8")
-                self.log.info(f'Received CMD "{cmd}"')
-
-                header = msgpack.unpackb(cmdmsg[1])
-                self.log.info(f"Header: {header}")
-
-                if cmd.lower() == "get_state":
-                    self.cmd_sock.send_string(
-                        str(SatelliteResponse.SUCCESS), flags=zmq.SNDMORE
-                    )
-                    self.cmd_sock.send(rd, flags=zmq.SNDMORE)
-                    self.cmd_sock.send(msgpack.packb({"state": self.get_state()}))
-
-                elif cmd.lower().startswith("transition"):
-                    target = cmd.split()[1].capitalize()
-                    # try to call the corresponding state change method
-                    # NOTE: this even allows to change state to Failure
-                    try:
-                        if len(cmdmsg) <= 2:
-                            getattr(self, target)()
-                        else:
-                            # TODO unpack/parse the remaining parameters, if needed
-                            getattr(self, target)(cmdmsg[2:])
-                    except AttributeError:
-                        raise RuntimeError(f"Unknown state '{target}'")
-                    except Exception as e:
-                        raise RuntimeError(
-                            f"State change to '{target}' with {len(cmdmsg)-1} arguments caused exception {e}"
-                        )
-                    self.cmd_sock.send_string(
-                        str(SatelliteResponse.SUCCESS), flags=zmq.SNDMORE
-                    )
-                    self.cmd_sock.send(rd)
-                elif cmd.lower().startswith("register"):
-                    try:
-                        _, name, ip, port = cmd.split()
-                        self.hb_checker.register(
-                            name, f"tcp://{ip}:{port}", self.context
-                        )
-                        self.cmd_sock.send_string("OK")
-                    except Exception as exc:
-                        err_msg = f"Unable to register heartbeat in '{cmd}': {exc}"
-                        self.cmd_sock.send_string(err_msg)
-                else:
-                    raise RuntimeError(f"Unknown command '{cmd}'")
-
-            except IncompleteCommand as err:
-                self.cmd_sock.send_string(
-                    str(SatelliteResponse.INCOMPLETE), flags=zmq.SNDMORE
-                )
-                self.cmd_sock.send(rd, flags=zmq.SNDMORE)
-                self.cmd_sock.send(msgpack.packb({"message": f"{err}"}))
-
-            except Exception as exc:
-                self.cmd_sock.send_string(
-                    str(SatelliteResponse.INVALID), flags=zmq.SNDMORE
-                )
-                self.cmd_sock.send(rd, flags=zmq.SNDMORE)
-                self.cmd_sock.send(
-                    msgpack.packb({"message": f"Unable to execute {cmd}: {exc}"})
-                )
 
             time.sleep(1)
         # TODO add a 'finally:' which closes zmq context via .term() and cleans up other things
@@ -507,16 +399,18 @@ class Satellite:
     # ----- device methods ----- #
     # -------------------------- #
 
-    def get_state(self) -> str:
-        return self.fsm.current_state.id
+    @cscp_requestable
+    def get_state(self, _request: CSCPMessage = None) -> str:
+        return self.fsm.current_state.id, None, None
 
-    def get_status(self) -> str:
-        return self.fsm.status
+    @cscp_requestable
+    def get_status(self, _request: CSCPMessage = None) -> str:
+        return self.fsm.status, None, None
 
-    @property
-    def version(self):
+    @cscp_requestable
+    def version(self, _request: CSCPMessage = None):
         """Get Constellation version."""
-        return version
+        return version, None, None
 
 
 # -------------------------------------------------------------------------
@@ -532,6 +426,7 @@ def main(args=None):
     parser.add_argument("--log-port", type=int, default=5556)  # Should be 55556?
     parser.add_argument("--hb-port", type=int, default=61234)
     parser.add_argument("--name", type=str, default="satellite_demo")
+    parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
 
     # set up logging
@@ -550,7 +445,7 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Satellite(args.name, args.cmd_port, args.hb_port, args.log_port)
+    s = Satellite(args.name, args.group, args.cmd_port, args.hb_port, args.log_port)
     s.run_satellite()
 
 
