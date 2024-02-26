@@ -6,12 +6,12 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import pytest
 import time
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import zmq
 
 from constellation.cscp import CSCPMessageVerb, CommandTransmitter
 
-from constellation.commandmanager import cscp_requestable, BaseCommandReceiver
+from constellation.commandmanager import cscp_requestable, CommandReceiver
 
 
 mock_packet_queue_recv = []
@@ -75,7 +75,7 @@ def mock_transmitter(mock_socket_sender):
 
 @pytest.fixture
 def mock_cmdreceiver(mock_socket_recv):
-    class CommandReceiver(BaseCommandReceiver):
+    class MockCommandReceiver(CommandReceiver):
         @cscp_requestable
         def get_state(self, msg):
             return "state", "good", None
@@ -94,14 +94,22 @@ def mock_cmdreceiver(mock_socket_recv):
         def _fcnnotallowed_is_allowed(self, msg):
             return False
 
-    cr = CommandReceiver("mock_satellite", mock_socket_recv)
-    yield cr
+    with patch("constellation.commandmanager.zmq.Context") as mock:
+        mock_context = MagicMock()
+        mock_context.socket.return_value = mock_socket_recv
+        mock.return_value = mock_context
+        cr = MockCommandReceiver("mock_satellite", port=1111)
+        cr._start_com_threads()
+        # give the thread a chance to start
+        time.sleep(0.1)
+        yield cr
 
 
-def test_chirp_beacon_send_recv(mock_socket_sender, mock_socket_recv):
+def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
     """Test self-concistency between two transmitters (sender/receiver)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
     receiver = CommandTransmitter("mock_receiver", mock_socket_recv)
+    # send a request
     sender.send_request("make", "sandwich")
     req = receiver.get_message()
     assert req.msg == "make"
@@ -112,6 +120,7 @@ def test_chirp_beacon_send_recv(mock_socket_sender, mock_socket_recv):
     assert "make your" in req.payload
 
 
+@pytest.mark.forked
 def test_command_receiver(mock_cmdreceiver, mock_transmitter):
     """Test sending cmds and retrieving answers."""
     # cmd w/o '_is_allowed' method: always allowed
@@ -137,3 +146,17 @@ def test_command_receiver(mock_cmdreceiver, mock_transmitter):
     rep = mock_transmitter.get_message()
     assert rep.msg_verb == CSCPMessageVerb.INVALID
     assert not rep.payload
+
+
+@pytest.mark.forked
+def test_thread_shutdown(mock_cmdreceiver, mock_transmitter):
+    """Test that receiver thread shuts down properly"""
+    # shut down the thread
+    mock_cmdreceiver._stop_com_threads()
+    # send a request
+    mock_transmitter.send_request("get_state")
+    time.sleep(0.2)
+    rep = mock_transmitter.get_message()
+    # reply should be missing
+    assert not rep
+    assert not mock_cmdreceiver._com_thread_evt

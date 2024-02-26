@@ -19,10 +19,12 @@ from statemachine.exceptions import TransitionNotAllowed
 from .fsm import SatelliteFSM
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
-from .broadcastmanager import BroadcastManager
+
+from .cscp import CSCPMessageVerb
+from .chirp import CHIRPServiceIdentifier
+from .broadcastmanager import CHIRPBroadcastManager
 from .log_and_stats import getLoggerAndStats
 from ._version import version
-from .protocol import SatelliteResponse, CHIRPServiceIdentifier
 
 
 def handle_error(func):
@@ -59,6 +61,61 @@ def debug_log(func):
     return wrapper
 
 
+class BaseSatelliteFrame:
+    """Base class for all Satellite components to inherit from.
+
+    Provides the basic internal Satellite infrastructure related to logging, ZMQ
+    and threading that all Satellite components (i.e. mixin classes) share.
+
+    """
+
+    def __init__(self, name):
+        self.name = name
+        self.log = logging.getLogger(name)
+        self.context = zmq.Context()
+
+        # dict to keep references to all communication threads usually running
+        # in the background
+        self._com_thread_pool: dict(str, threading.Thread) = {}
+        # Event to indicate to communication threads to stop
+        self._com_thread_evt: threading.Event = None
+
+    def _add_com_thread(self):
+        """Method to add a background communication thread to the pool.
+
+        Does nothing in the base class.
+
+        """
+        self.log.debug("Satellite Base class _add_thread called")
+        pass
+
+    def _start_com_threads(self):
+        """Start all background communication threads."""
+        self._com_thread_evt = threading.Event()
+        for component, thread in self._com_thread_pool.items():
+            self.log.debug("Starting thread for %s communication", component)
+            thread.start()
+
+    def _stop_com_threads(self, timeout: int = 1):
+        """Stop all background communication threads within timeout [s]."""
+        if self._com_thread_evt:
+            self._com_thread_evt.set()
+            for component, thread in self._com_thread_pool.items():
+                if thread.is_alive():
+                    thread.join(timeout)
+                    # check if thread is still alive
+                    if thread.is_alive():
+                        self.log.error(
+                            "Could not join background communication thread for {} within timeout",
+                            component,
+                        )
+                        raise RuntimeError(
+                            f"Could not join running thread for {component} within timeout of {timeout}s!"
+                        )
+        self._com_thread_evt = None
+        self._com_thread_pool = {}
+
+
 class IncompleteCommand(Exception):
     pass
 
@@ -76,7 +133,7 @@ class Satellite:
 
         # state machine
         self.fsm = SatelliteFSM()
-        # Adding this class as observer allows class-internal methods such as
+        # Adding this class as observer to the FSM allows class-internal methods such as
         # on_start to be Actions to be performed on a Transition of the state
         # machine. This will ensure that the state does not change before we
         # have performed all necessary steps.
@@ -97,19 +154,13 @@ class Satellite:
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.broadcast_manager = BroadcastManager()
+        self.broadcast_manager = CHIRPBroadcastManager()
         self.broadcast_manager.start()
-        self.broadcast_manager.register_service(
-            cmd_port, CHIRPServiceIdentifier.CONTROL
-        )
+        self.broadcast_manager.register_offer(cmd_port, CHIRPServiceIdentifier.CONTROL)
         self.logger.info("Satellite broadcasting CONTROL service")
-        time.sleep(1)  # Sleep to ensure every satellite has time to receive broadcast
-        self.broadcast_manager.register_service(
-            hb_port, CHIRPServiceIdentifier.HEARTBEAT
-        )
+        self.broadcast_manager.register_offer(hb_port, CHIRPServiceIdentifier.HEARTBEAT)
         self.logger.info("Satellite broadcasting HEARTBEAT service")
-        time.sleep(1)  # Sleep to ensure every satellite has time to receive broadcast
-        self.broadcast_manager.register_service(
+        self.broadcast_manager.register_offer(
             log_port, CHIRPServiceIdentifier.MONITORING
         )
         self.logger.info("Satellite broadcasting MONITORING service")
@@ -142,6 +193,9 @@ class Satellite:
                 continue
             except KeyboardInterrupt:
                 break
+
+            class SatelliteResponse(CSCPMessageVerb):
+                pass
 
             # prepare response header:
             rhead = {"time": time.time(), "sender": "FIXME"}
@@ -214,6 +268,7 @@ class Satellite:
         # TODO add a 'finally:' which closes zmq context via .term() and cleans up other things
         # on exit: stop heartbeater
         self.heartbeater.stop()
+        # TODO : shutdown broadcast manager and depart
 
     # --------------------------- #
     # ----- satellite commands ----- #
@@ -482,7 +537,7 @@ def main(args=None):
     args = parser.parse_args(args)
 
     # set up logging
-    logger = logging.getLogger()
+    logger = logging.getLogger()  # get root logger
     formatter = logging.Formatter(
         "%(asctime)s | %(name)s |  %(levelname)s: %(message)s"
     )

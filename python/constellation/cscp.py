@@ -50,12 +50,13 @@ class CSCPMessage:
 
     def __str__(self):
         """Pretty-print request."""
-        s = "Command {} from {} received {} {} payload and meta {}."
+        s = "Command {} from {} received {} at {} {} payload and meta {}."
         return s.format(
             self.msg,
             self.from_host,
+            self.msg_verb,
             self.timestamp,
-            "with" if self.payload else "without",
+            "with a" if self.payload else "without a",
             self.header_meta,
         )
 

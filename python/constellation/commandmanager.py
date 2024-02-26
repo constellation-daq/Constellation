@@ -7,11 +7,11 @@ This module provides classes for managing CSCP requests/replies within
 Constellation Satellites.
 """
 
-import logging
 import threading
 import time
+import zmq
 from .cscp import CommandTransmitter, CSCPMessageVerb
-
+from .satellite import BaseSatelliteFrame
 
 COMMANDS = dict()
 
@@ -22,8 +22,8 @@ def cscp_requestable(func):
     return func
 
 
-class BaseCommandReceiver:
-    """Base class for handling incoming CSCP requests.
+class CommandReceiver(BaseSatelliteFrame):
+    """Class for handling incoming CSCP requests.
 
     Commands will call specific methods of the inheriting class which should
     have the following signature:
@@ -42,23 +42,34 @@ class BaseCommandReceiver:
 
     """
 
-    def __init__(self, name, socket):
-        self._cmd_tm = CommandTransmitter(name, socket)
-        self._logger = logging.getLogger(name)
-        self._stop_cmd_recv = threading.Event()
-        self._cmd_thread = threading.Thread(target=self._recv_cmds, daemon=True)
-        self._cmd_thread.start()
+    def __init__(self, name, port, **kwds):
+        """Initialize the Receiver and set up a ZMQ REP socket on given port."""
+        super().__init__(name)
+
+        # set up the command channel
+        sock = self.context.socket(zmq.REP)
+        sock.bind(f"tcp://*:{port}")
+        self.log.info(f"Satellite listening on command port {port}")
+        self._cmd_tm = CommandTransmitter(name, sock)
+        self._add_com_thread()
+
+    def _add_com_thread(self):
+        """Add the command receiver thread to the communication thread pool."""
+        self._com_thread_pool["cmd_receiver"] = threading.Thread(
+            target=self._recv_cmds, daemon=True
+        )
+        self.log.debug("Command receiver thread prepared and added to the pool.")
 
     def _recv_cmds(self):
         """Request receive loop."""
-        while not self._stop_cmd_recv.is_set():
+        while not self._com_thread_evt.is_set():
             req = self._cmd_tm.get_message()
             if not req:
                 time.sleep(0.1)
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:
-                self._logger.error(
+                self.log.error(
                     f"Received malformed request with msg verb: {req.msg_verb}"
                 )
                 self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.INVALID)
@@ -68,7 +79,7 @@ class BaseCommandReceiver:
             try:
                 callback = COMMANDS[req.msg]
             except KeyError:
-                self._logger.error("Unknown command: %s", req)
+                self.log.error("Unknown command: %s", req)
                 self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.UNKNOWN)
                 continue
             # test whether callback is allowed by calling the
@@ -76,7 +87,7 @@ class BaseCommandReceiver:
             try:
                 is_allowed = getattr(self, f"_{req.msg}_is_allowed")(req)
                 if not is_allowed:
-                    self._logger.error("Command not allowed: %s", req)
+                    self.log.error("Command not allowed: %s", req)
                     self._cmd_tm.send_reply("Not allowed", CSCPMessageVerb.INVALID)
                     continue
             except AttributeError:
@@ -85,22 +96,22 @@ class BaseCommandReceiver:
             try:
                 res, payload, meta = callback(self, req)
             except AttributeError as e:
-                self._logger.error("Command failed with %s: %s", e, req)
+                self.log.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
                     "AttributeError", CSCPMessageVerb.NOTIMPLEMENTED
                 )
                 continue
             except Exception as e:
-                self._logger.error("Command not allowed: %s", req)
+                self.log.error("Command not allowed: %s", req)
                 self._cmd_tm.send_reply(f"Exception {repr(e)}", CSCPMessageVerb.INVALID)
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if not res:
-                self._logger.error("Command returned nothing: %s", req)
+                self.log.error("Command returned nothing: %s", req)
                 self._cmd_tm.send_reply(
                     "Command returned nothing", CSCPMessageVerb.INCOMPLETE
                 )
                 continue
             # finally, assemble a proper response!
-            self._logger.debug("Command succeeded with '%s': %s", res, req)
+            self.log.debug("Command succeeded with '%s': %s", res, req)
             self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
