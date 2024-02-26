@@ -115,6 +115,8 @@ class CommandTransmitter:
             raise RuntimeError(
                 f"Received invalid request with msg verb: {msg.msg_verb}"
             )
+        # convert to lower case:
+        msg.msg = msg.msg.lower()
         try:
             msg.payload = msgpack.unpackb(cmdmsg[2])
         except IndexError:
