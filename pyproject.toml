@@ -28,8 +28,9 @@ dependencies = [
 dynamic = ["version"]
 
 [project.optional-dependencies]
-#pdf = ["ReportLab>=1.2", "RXP"]
-#rest = ["docutils>=0.3", "pack ==1.1, ==1.3"]
+test = [
+    "pytest-forked",
+]
 
 [tool.setuptools_scm]
 version_file = "python/constellation/_version.py"
