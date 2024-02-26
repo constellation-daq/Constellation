@@ -15,6 +15,9 @@ workflow:
       when: never
     - when: always
 
+variables:
+  CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+
 # templates
 
 .debian-clang:
@@ -66,7 +69,7 @@ workflow:
 .ccache: &ccache
   key: ccache-$CI_JOB_IMAGE
   paths:
-    - $CCACHE_DIR
+    - $CCACHE_DIR/
 
 # build stage
 
