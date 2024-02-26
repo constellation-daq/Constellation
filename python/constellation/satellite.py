@@ -129,7 +129,7 @@ class Satellite:
         self.context = zmq.Context()
 
         # set up python logging
-        self.logger, self.stats = getLoggerAndStats(self.name, self.context, log_port)
+        self.log, self.stats = getLoggerAndStats(self.name, self.context, log_port)
 
         # state machine
         self.fsm = SatelliteFSM()
@@ -142,7 +142,7 @@ class Satellite:
         # set up the command channel
         self.cmd_sock = self.context.socket(zmq.REP)
         self.cmd_sock.bind(f"tcp://*:{cmd_port}")
-        self.logger.info(f"Satellite listening on command port {cmd_port}")
+        self.log.info(f"Satellite listening on command port {cmd_port}")
 
         # register and start heartbeater
         self.heartbeater = Heartbeater(
@@ -157,13 +157,13 @@ class Satellite:
         self.broadcast_manager = CHIRPBroadcastManager()
         self.broadcast_manager.start()
         self.broadcast_manager.register_offer(cmd_port, CHIRPServiceIdentifier.CONTROL)
-        self.logger.info("Satellite broadcasting CONTROL service")
+        self.log.info("Satellite broadcasting CONTROL service")
         self.broadcast_manager.register_offer(hb_port, CHIRPServiceIdentifier.HEARTBEAT)
-        self.logger.info("Satellite broadcasting HEARTBEAT service")
+        self.log.info("Satellite broadcasting HEARTBEAT service")
         self.broadcast_manager.register_offer(
             log_port, CHIRPServiceIdentifier.MONITORING
         )
-        self.logger.info("Satellite broadcasting MONITORING service")
+        self.log.info("Satellite broadcasting MONITORING service")
         # acquisition thread
         self._stop_running = None
         self._running_thread = None
@@ -178,9 +178,7 @@ class Satellite:
         # will fail with pytest.
         threading.excepthook = self._thread_exception
         # greet
-        self.logger.info(
-            f"Satellite {self.name}, version {self.version} ready to launch!"
-        )
+        self.log.info(f"Satellite {self.name}, version {self.version} ready to launch!")
 
     def run_satellite(self):
         """Main event loop with command handler-routine"""
@@ -203,10 +201,10 @@ class Satellite:
 
             try:
                 cmd = cmdmsg[0].decode("UTF-8")
-                self.logger.info(f'Received CMD "{cmd}"')
+                self.log.info(f'Received CMD "{cmd}"')
 
                 header = msgpack.unpackb(cmdmsg[1])
-                self.logger.info(f"Header: {header}")
+                self.log.info(f"Header: {header}")
 
                 if cmd.lower() == "get_state":
                     self.cmd_sock.send_string(
@@ -283,7 +281,7 @@ class Satellite:
         as long as the transition is allowed.
         """
         self.fsm.initialize("Satellite initialized.")
-        self.logger.info("Satellite Initialized.")
+        self.log.info("Satellite Initialized.")
 
     @handle_error
     def on_initialize(self):
@@ -309,7 +307,7 @@ class Satellite:
         self.fsm.launch("Satellite launched.")
         self.hb_checker.start()
 
-        self.logger.info("Satellite Prepared. Acquistion ready.")
+        self.log.info("Satellite Prepared. Acquistion ready.")
 
     @handle_error
     def on_launch(self):
@@ -326,7 +324,7 @@ class Satellite:
         """
         self.fsm.land("Satellite landed.")
         self.hb_checker.stop()
-        self.logger.info("Satellite landed.")
+        self.log.info("Satellite landed.")
 
     @handle_error
     def on_land(self):
@@ -347,7 +345,7 @@ class Satellite:
         self._stop_running = threading.Event()
         self._running_thread = threading.Thread(target=self.do_run, daemon=True)
         self._running_thread.start()
-        self.logger.info("Satellite Running. Acquistion taking place.")
+        self.log.info("Satellite Running. Acquistion taking place.")
 
     @handle_error
     def on_start(self):
@@ -367,7 +365,7 @@ class Satellite:
         """
         self.fsm.stop("Acquisition stopped.")
         self._stop_daq_thread()
-        self.logger.info("Satellite stopped Acquistion.")
+        self.log.info("Satellite stopped Acquistion.")
 
     @handle_error
     def on_stop(self):
@@ -411,7 +409,7 @@ class Satellite:
         which is called automatically whenever a failure occurs.
 
         """
-        self.logger.error(f"Failure action was triggered with reason given: {message}.")
+        self.log.error(f"Failure action was triggered with reason given: {message}.")
         self.fsm.failure(message)
 
     def on_failure(self):
@@ -428,7 +426,7 @@ class Satellite:
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
         except Exception as e:
-            self.logger.exception(e)
+            self.log.exception(e)
 
     @handle_error
     @debug_log
@@ -439,7 +437,7 @@ class Satellite:
         aslong as the transition is allowed.
         """
         self.fsm.interrupt(message)
-        self.logger.warning("Transitioned to Safe state.")
+        self.log.warning("Transitioned to Safe state.")
 
     @handle_error
     def on_interrupt(self):
@@ -458,7 +456,7 @@ class Satellite:
         aslong as the transition is allowed.
         """
         self.fsm.recover("Recovered from Safe state.")
-        self.logger.info("Recovered from Safe state.")
+        self.log.info("Recovered from Safe state.")
 
     @handle_error
     def on_recover(self):
@@ -492,7 +490,7 @@ class Satellite:
 
         """
         tb = "".join(traceback.format_tb(args.exc_traceback))
-        self.logger.fatal(
+        self.log.fatal(
             f"caught {args.exc_type} with value \
             {args.exc_value} in thread {args.thread} and traceback {tb}."
         )
