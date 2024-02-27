@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 from collections.abc import MutableMapping
 
-import toml
+import tomllib
 
 
 def flatten_dict(dictionary, parent_key="", separator="."):
@@ -23,8 +23,9 @@ def flatten_dict(dictionary, parent_key="", separator="."):
 def read_config(config_path: str):
     """Get config contents as a flat dict"""
     try:
-        config_dict = toml.load(config_path)
+        with open(config_path, "rb") as f:
+            config_dict = tomllib.load(f)
         return flatten_dict(config_dict)
-    #   TODO: Handle errors FileNotFoundError, TypeError, TomlDecodeError
-    except toml.TomlDecodeError:
+    # TODO: Handle errors FileNotFoundError, TypeError, tomllibDecodeError
+    except tomllib.TOMLDecodeError:
         raise
