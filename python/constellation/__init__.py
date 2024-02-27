@@ -9,4 +9,4 @@ try:
 
     __version__ = importlib.metadata.version("constellation")  # module name
 except:
-    __version__ = "unknown"
+    __version__ = "0+unknown"
