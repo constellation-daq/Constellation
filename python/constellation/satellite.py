@@ -16,12 +16,12 @@ import zmq
 import msgpack
 from statemachine.exceptions import TransitionNotAllowed
 
+from . import __version__
 from .fsm import SatelliteFSM
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
 from .broadcastmanager import BroadcastManager
 from .log_and_stats import getLoggerAndStats
-from ._version import version
 from .protocol import SatelliteResponse, CHIRPServiceIdentifier
 
 
@@ -463,7 +463,7 @@ class Satellite:
     @property
     def version(self):
         """Get Constellation version."""
-        return version
+        return __version__
 
 
 # -------------------------------------------------------------------------
