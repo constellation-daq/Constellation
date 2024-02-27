@@ -24,6 +24,16 @@ class SatelliteState(Enum):
     SAFE = auto()
     # Error state if something went wrong
     ERROR = auto()
+    #
+    #  TRANSITIONAL STATES
+    #
+    initializing = auto()
+    launching = auto()
+    landing = auto()
+    reconfiguring = auto()
+    starting = auto()
+    stopping = auto()
+    interrupting = auto()
 
 
 class SatelliteFSM(StateMachine):
@@ -34,23 +44,49 @@ class SatelliteFSM(StateMachine):
 
     # Define transitions
     # - NEW <=> INIT
-    initialize = states.NEW.to(states.INIT) | states.INIT.to(states.INIT)
-    initialize |= states.ERROR.to(states.INIT)
+    initialize = states.NEW.to(states.initializing) | states.INIT.to(
+        states.initializing
+    )
+    initialize |= states.ERROR.to(states.initializing)
+
+    initialized = states.initializing.to(states.INIT)
 
     # - INIT <=> ORBIT
-    launch = states.INIT.to(states.ORBIT)
-    land = states.ORBIT.to(states.INIT)
+    launch = states.INIT.to(states.launching)
+    launched = states.launching.to(states.ORBIT)
+
+    land = states.ORBIT.to(states.landing)
+    landed = states.landing.to(states.INIT)
+
     # - ORBIT <=> RUN
-    start = states.ORBIT.to(states.RUN)
-    stop = states.RUN.to(states.ORBIT)
-    reconfigure = states.ORBIT.to(states.ORBIT)
+    start = states.ORBIT.to(states.starting)
+    started = states.starting.to(states.RUN)
+
+    stop = states.RUN.to(states.stopping)
+    stopped = states.stopping.to(states.ORBIT)
+
+    reconfigure = states.ORBIT.to(states.reconfiguring)
+    reconfigured = states.reconfiguring.to(states.ORBIT)
+
     # - safe
-    interrupt = states.ORBIT.to(states.SAFE) | states.RUN.to(states.SAFE)
+    interrupt = states.ORBIT.to(states.interrupting) | states.RUN.to(
+        states.interrupting
+    )
+    interrupted = states.interrupting.to(states.SAFE)
+
     recover = states.SAFE.to(states.INIT)
     # - error
     failure = states.RUN.to(states.ERROR) | states.ORBIT.to(states.ERROR)
     failure |= states.INIT.to(states.ERROR) | states.SAFE.to(states.ERROR)
     failure |= states.ERROR.to(states.ERROR) | states.NEW.to(states.ERROR)
+
+    failure |= states.initializing.to(states.ERROR)
+    failure |= states.launching.to(states.ERROR)
+    failure |= states.landing.to(states.ERROR)
+    failure |= states.reconfiguring.to(states.ERROR)
+    failure |= states.starting.to(states.ERROR)
+    failure |= states.stopping.to(states.ERROR)
+    failure |= states.interrupting.to(states.ERROR)
 
     def __init__(self):
         self.status = "Satellite not initialized yet."
