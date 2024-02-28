@@ -22,6 +22,14 @@ class Config:
             if self.config[key]:
                 self.config[key] = value
 
+        if None in self.config.values():
+            msg = "All config values not set!"
+            raise IncompleteConfigError(msg)
+
+
+class IncompleteConfigError(Exception):
+    pass
+
 
 def unpack_config(dictionary, base, separator="."):
     """Unpack config dict from flat dict"""
