@@ -11,6 +11,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def unpack_config(dictionary, base, separator="."):
+    """Unpack config dict from flat dict"""
+    result = dict()
+    for key, value in dictionary.items():
+        # Split key into each separate part
+        parts = key.split(separator)
+
+        # Parse key parts and either add key to items
+        # or create new dict for the part
+        d = result
+        for part in parts[:-1]:
+            if part not in d:
+                d[part] = dict()
+            d = d[part]
+        d[parts[-1]] = value
+    return result
+
+
 def pack_config(dictionary, parent_key="", separator="."):
     """Pack config dict into a flat dict"""
     items = []
