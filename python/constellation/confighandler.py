@@ -15,12 +15,12 @@ class Config:
     def __init__(self, config: dict):
         self.config = config
 
-    def set_config(self, config: dict, separator="."):
-        """Set corresponding key/value pairs of args in config"""
+    def set_config(self, new_config: dict, separator="."):
+        """Set corresponding key/value pairs of new_config in config"""
 
-        for key, value in config.items():
-            if config[key]:
-                config[key] = value
+        for key, value in new_config.items():
+            if self.config[key]:
+                self.config[key] = value
 
 
 def unpack_config(dictionary, base, separator="."):
