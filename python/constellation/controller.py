@@ -5,22 +5,23 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import zmq
 import logging
-import msgpack
-import time
 import readline
+import time
 
-from .fsm import SatelliteFSM
-from .protocol import CHIRPServiceIdentifier
-from .broadcastmanager import BroadcastManager
+import msgpack
+import zmq
+
+from .broadcastmanager import CHIRPBroadcastManager
+from .chirp import CHIRPServiceIdentifier
 from .cscp import CommandTransmitter
+from .fsm import SatelliteFSM
 
 
 class TrivialController:
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, hosts):
+    def __init__(self, name, group, hosts):
         """Initialize values.
 
         Arguments:
@@ -33,11 +34,11 @@ class TrivialController:
         for host in hosts:
             self.add_sat(host)
 
-        self.broadcast_manager = BroadcastManager()
-        self.broadcast_manager.register_callback(
+        self.broadcast_manager = CHIRPBroadcastManager(name, group, None)
+        self.broadcast_manager.register_request(
             CHIRPServiceIdentifier.CONTROL, self.add_sat
         )
-        self.broadcast_manager.request_service(CHIRPServiceIdentifier.CONTROL)
+        self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
 
     def add_sat(self, host, port: int = None):
         """Add satellite socket to controller on port."""
