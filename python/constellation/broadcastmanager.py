@@ -8,10 +8,13 @@ Constellation Satellites.
 
 import logging
 import threading
+from functools import wraps
 
 import time
 from uuid import UUID
 from queue import Queue
+
+from .base import BaseSatelliteFrame
 
 from constellation.chirp import (
     CHIRPServiceIdentifier,
@@ -19,6 +22,23 @@ from constellation.chirp import (
     CHIRPMessageType,
     CHIRPBeaconTransmitter,
 )
+
+
+CALLBACKS = dict()
+
+
+def chirp_callback(request_service: CHIRPServiceIdentifier):
+    """Register a function as a callback for CHIRP service requests."""
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        CALLBACKS[request_service] = func
+        return wrapper
+
+    return decorator
 
 
 class DiscoveredService:
@@ -51,17 +71,20 @@ class DiscoveredService:
         )
 
 
-class CHIRPBroadcastManager:
+class CHIRPBroadcaster(BaseSatelliteFrame):
     """Manages service discovery and broadcast via the CHIRP protocol.
 
     Listening and reacting to CHIRP broadcasts is implemented in a dedicated
     thread that can be started after the class has been instantiated.
 
-    Discovered services are added to a callback queue if a request for the
-    service type has been added.
+    Discovered services are added to an internal cache. Callback methods can be
+    registered either by calling register_request() or by using the
+    @chirp_callback() decorator. The callback will be added to the satellite's
+    internal task queue once the corresponding service has been offered by other
+    satellites via broadcast.
 
-    Offered services can be registered and are announced on incoming request
-    broadcasts.
+    Offered services can be registered via register_offer() and are announced on
+    incoming request broadcasts or via broadcast_offers().
 
     """
 
@@ -69,7 +92,7 @@ class CHIRPBroadcastManager:
         self,
         name: str,
         group: str,
-        callback_queue: Queue,
+        **kwds,
     ):
         """Initialize parameters.
 
@@ -77,15 +100,10 @@ class CHIRPBroadcastManager:
         :type host: str
         :param group: group the Satellite belongs to
         :type group: str
-        :param callback_queue: The queue in which discovery callbacks will be placed.
-        :type callback_queue: Queue
         """
+        super().__init__(name, **kwds)
         self._stop_broadcasting = threading.Event()
         self._beacon = CHIRPBeaconTransmitter(name, group)
-
-        # Keep registered callbacks for services
-        self._chirp_callbacks = {}
-        self._chirp_callbacks_q = callback_queue
 
         # Offered and discovered services
         self._registered_services = {}
@@ -95,17 +113,13 @@ class CHIRPBroadcastManager:
         # set up logging
         self._logger = logging.getLogger(name + ".broadcast")
 
-    def start(self) -> None:
-        """Start broadcast manager."""
-        self._chirp_thread = threading.Thread(target=self._run, daemon=True)
-        self._chirp_thread.start()
-
-    def stop(self, depart: bool = True) -> None:
-        """Indicate broadcast manager to stop."""
-        if depart:
-            self.broadcast_depart()
-        self._stop_broadcasting.set()
-        self._chirp_thread.join()
+    def _add_com_thread(self):
+        """Add the command receiver thread to the communication thread pool."""
+        super()._add_com_thread()
+        self._com_thread_pool["chirp_broadcaster"] = threading.Thread(
+            target=self._run, daemon=True
+        )
+        self.log.debug("CHIRP broadcaster thread prepared and added to the pool.")
 
     def get_discovered(
         self, serviceid: CHIRPServiceIdentifier
@@ -121,12 +135,12 @@ class CHIRPBroadcastManager:
         self, serviceid: CHIRPServiceIdentifier, callback: callable
     ) -> None:
         """Register new callback for ServiceIdentifier."""
-        if serviceid in self._chirp_callbacks:
+        if serviceid in CALLBACKS:
             self._logger.info("Overwriting callback")
-        self._chirp_callbacks[serviceid] = callback
+        CALLBACKS[serviceid] = callback
         # make a callback if a service has already been discovered
         for known in self.get_discovered(serviceid):
-            self._chirp_callbacks_q.put((callback, known))
+            self.task_queue.put((callback, known))
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
@@ -141,7 +155,7 @@ class CHIRPBroadcastManager:
         any incoming OFFERS will go unnoticed.
 
         """
-        if serviceid not in self._chirp_callbacks:
+        if serviceid not in CALLBACKS:
             self._logger.warning(
                 "Serviceid %s does not have a registered callback", serviceid
             )
@@ -155,12 +169,12 @@ class CHIRPBroadcastManager:
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self._logger.debug("Broadcasting service OFFER on %d for %s", port, sid)
+                self._logger.debug("Broadcasting service OFFER on %s for %s", port, sid)
                 self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
-        for serviceid in self._chirp_callbacks:
+        for serviceid in CALLBACKS:
             self._logger.debug("Broadcasting service REQUEST for %s", serviceid)
             self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
@@ -192,8 +206,8 @@ class CHIRPBroadcastManager:
                 msg.from_address,
             )
             try:
-                callback = self._chirp_callbacks[msg.serviceid]
-                self._chirp_callbacks_q.put((callback, service))
+                callback = CALLBACKS[msg.serviceid]
+                self.task_queue.put((callback, [self, service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
             self.discovered_services.append(service)
@@ -213,8 +227,8 @@ class CHIRPBroadcastManager:
             # indicate that service is no longer with us
             service.alive = False
             try:
-                callback = self._chirp_callbacks[msg.serviceid]
-                self._chirp_callbacks_q.put((callback, service))
+                callback = CALLBACKS[msg.serviceid]
+                self.task_queue.put((callback, service))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
         except ValueError:
@@ -227,7 +241,7 @@ class CHIRPBroadcastManager:
     def _run(self) -> None:
         """Start listening in on broadcast"""
 
-        while not self._stop_broadcasting.is_set():
+        while not self._com_thread_evt.is_set():
             msg = self._beacon.listen()
             if not msg:
                 time.sleep(0.1)
@@ -262,7 +276,7 @@ def main(args=None):
 
     q = Queue()
     # start server with remaining args
-    bcst = CHIRPBroadcastManager(
+    bcst = CHIRPBroadcaster(
         name="broadcast_test",
         group="Constellation",
         callback_queue=q,

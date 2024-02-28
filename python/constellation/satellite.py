@@ -18,7 +18,7 @@ from .heartbeatchecker import HeartbeatChecker
 
 from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
-from .broadcastmanager import CHIRPBroadcastManager
+from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
 from .log_and_stats import getLoggerAndStats
 from .error import debug_log, handle_error
@@ -29,7 +29,7 @@ class IncompleteCommand(Exception):
     pass
 
 
-class Satellite(CommandReceiver, SatelliteStateHandler):
+class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     """Base class for a Constellation Satellite."""
 
     def __init__(
@@ -62,22 +62,13 @@ class Satellite(CommandReceiver, SatelliteStateHandler):
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.broadcast_manager = CHIRPBroadcastManager(name, group, self.task_queue)
-        self.broadcast_manager.start()
-        self.broadcast_manager.register_offer(cmd_port, CHIRPServiceIdentifier.CONTROL)
-        self.log.info("Satellite broadcasting CONTROL service")
-        self.broadcast_manager.register_offer(hb_port, CHIRPServiceIdentifier.HEARTBEAT)
-        self.log.info("Satellite broadcasting HEARTBEAT service")
-        self.broadcast_manager.register_offer(
-            log_port, CHIRPServiceIdentifier.MONITORING
-        )
-        self.log.info("Satellite broadcasting MONITORING service")
-        # acquisition thread
-        self._stop_running = None
-        self._running_thread = None
+        self.register_offer(CHIRPServiceIdentifier.CONTROL, cmd_port)
+        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, hb_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, log_port)
+        self.broadcast_offers()
 
         # Add exception handling via threading.excepthook to allow the state
-        # machine to reflect exceptions in the receiver thread.
+        # machine to reflect exceptions in the communication services threads.
         #
         # NOTE: This approach using a global state hook does not play well e.g.
         # with the default pytest configuration, however (see

@@ -20,7 +20,7 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name):
+    def __init__(self, name, **_kwds):
         self.name = name
         self.log = logging.getLogger(name)
         self.context = zmq.Context()
