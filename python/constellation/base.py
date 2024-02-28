@@ -8,13 +8,15 @@ This module provides a base class for Constellation Satellite modules.
 import zmq
 import threading
 import logging
+from queue import Queue
 
 
 class BaseSatelliteFrame:
     """Base class for all Satellite components to inherit from.
 
     Provides the basic internal Satellite infrastructure related to logging, ZMQ
-    and threading that all Satellite components (i.e. mixin classes) share.
+    and threading that all Satellite communication service components (i.e.
+    mixin classes) share.
 
     """
 
@@ -23,14 +25,22 @@ class BaseSatelliteFrame:
         self.log = logging.getLogger(name)
         self.context = zmq.Context()
 
-        # dict to keep references to all communication threads usually running
-        # in the background
+        # Set up a queue for handling tasks related to incoming requests via
+        # CSCP or offers via CHIRP. This makes sure that these can be performed
+        # thread-safe from the main thread of the Satellite. A 'task' consists
+        # of a tuple consisting of a callback method and an object passed as
+        # argument (DiscoveredService and CSCPMessage for CHIRP and CSCP,
+        # respectively).
+        self.task_queue = Queue()
+
+        # dict to keep references to all communication service threads usually
+        # running in the background
         self._com_thread_pool: dict(str, threading.Thread) = {}
-        # Event to indicate to communication threads to stop
+        # Event to indicate to communication service threads to stop
         self._com_thread_evt: threading.Event = None
 
     def _add_com_thread(self):
-        """Method to add a background communication thread to the pool.
+        """Method to add a background communication service thread to the pool.
 
         Does nothing in the base class.
 

@@ -55,11 +55,6 @@ class Satellite(CommandReceiver):
         # have performed all necessary steps.
         self.fsm.add_observer(self)
 
-        # Set up a queue for handling tasks related to incoming requests via
-        # CSCP or offers via CHIRP. This makes sure that these can be performed
-        # thread-safe.
-        self.task_queue = Queue()
-
         # set up background communication threads
         # NOTE should be a late part of the initialization, as it starts communication
         super()._add_com_thread()
