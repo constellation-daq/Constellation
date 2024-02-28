@@ -27,8 +27,7 @@ def read_config(config_path: str):
     """Get config contents as a flat dict"""
     try:
         with open(config_path, "rb") as f:
-            config_dict = tomllib.load(f)
-        return flatten_dict(config_dict)
+            return tomllib.load(f)
     # TODO: Handle errors FileNotFoundError, TypeError, tomllibDecodeError
     except tomllib.TOMLDecodeError:
         raise
