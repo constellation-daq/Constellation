@@ -77,7 +77,9 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         # will fail with pytest.
         threading.excepthook = self._thread_exception
         # greet
-        self.log.info(f"Satellite {self.name}, version {self.version} ready to launch!")
+        self.log.info(
+            f"Satellite {self.name}, version {self.version()[0]} ready to launch!"
+        )
 
     @debug_log
     @cscp_requestable
@@ -119,7 +121,8 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     # --------------------------- #
 
     @handle_error
-    def on_initialize(self):
+    @debug_log
+    def on_initialize(self, payload: any):
         """Callback method for the 'initialize' transition of the FSM.
 
         Set and check config, maybe initialize device.
@@ -131,12 +134,12 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         # into ERROR state.
 
     @handle_error
-    def on_launch(self):
+    def on_launch(self, payload: any):
         """Prepare Satellite for data acquistions."""
         self.hb_checker.start()
 
     @handle_error
-    def on_land(self):
+    def on_land(self, payload: any):
         """Land transition of the FSM: Return Satellite to Initialized state."""
         self.hb_checker.stop()
 

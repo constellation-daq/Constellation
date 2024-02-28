@@ -13,7 +13,7 @@ import readline
 
 from .fsm import SatelliteFSM
 from .protocol import CHIRPServiceIdentifier
-from .broadcastmanager import BroadcastManager
+from .broadcastmanager import CHIRPBroadcaster
 
 
 class TrivialController:
@@ -33,7 +33,7 @@ class TrivialController:
         for host in hosts:
             self.add_sat(host)
 
-        self.broadcast_manager = BroadcastManager()
+        self.broadcast_manager = CHIRPBroadcaster()
         self.broadcast_manager.register_callback(
             CHIRPServiceIdentifier.CONTROL, self.add_sat
         )

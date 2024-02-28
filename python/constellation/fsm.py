@@ -7,12 +7,13 @@ SPDX-License-Identifier: CC-BY-4.0
 from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum, auto
-from statemachine import StateMachine, TransitionNotAllowed
+from statemachine import StateMachine
+from statemachine.exceptions import TransitionNotAllowed
 from statemachine.states import States
 
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
-from .base import SatelliteBaseFrame
+from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
 
 
@@ -116,7 +117,7 @@ class SatelliteFSM(StateMachine):
         dot.write_png(filename)
 
 
-class SatelliteStateHandler(SatelliteBaseFrame):
+class SatelliteStateHandler(BaseSatelliteFrame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -137,7 +138,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("initialize", request, thread=False)
+        return self._transition("initialize", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -148,7 +149,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("launch", request, thread=False)
+        return self._transition("launch", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -159,7 +160,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("land", request, thread=False)
+        return self._transition("land", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -170,7 +171,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("start", request, thread=True)
+        return self._transition("start", request, thread=True)
 
     @debug_log
     @cscp_requestable
@@ -181,7 +182,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("stop", request, thread=False)
+        return self._transition("stop", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -194,7 +195,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         """
         if not hasattr(self, "on_reconfigure"):
             raise NotImplementedError("Reconfigure not supported")
-        self._transition("reconfigure", request, thread=False)
+        return self._transition("reconfigure", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -205,7 +206,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("interrupt", request, thread=False)
+        return self._transition("interrupt", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -216,7 +217,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         the FSM.
 
         """
-        self._transition("recover", request, thread=False)
+        return self._transition("recover", request, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -227,7 +228,7 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         normal operation.
 
         """
-        self._transition("failure", request, thread=False)
+        return self._transition("failure", request, thread=False)
 
     def _transition(self, target: str, request: CSCPMessage, thread: bool):
         """Prepare and enqeue a transition task.
@@ -250,13 +251,14 @@ class SatelliteStateHandler(SatelliteBaseFrame):
         if thread:
             # task will be run in a separate thread
             self.task_queue.put(
-                (self._start_transition_thread, (transit_fcn, request.payload))
+                (self._start_transition_thread, [transit_fcn, request.payload])
             )
         else:
             # task will be executed within the main satellite thread
-            self.task_queue.put((transit_fcn, request.payload))
+            self.task_queue.put((transit_fcn, [request.payload]))
         return "transitioning", target, None
 
+    @debug_log
     def _start_transition(self, fcn: callable, payload: any):
         """Start a transition and advance FSM for transitional states."""
         res = fcn(payload)

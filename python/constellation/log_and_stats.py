@@ -41,7 +41,12 @@ class LogLevels(Enum):
 
 
 def getLoggerAndStats(name: str, context: zmq.Context, port: int):
-    """Set up and return a logger and statistics object."""
+    """Set up and return a logger and statistics object.
+
+    Note that the returned Logger object is a singleton and that the setup is
+    only necessary once.
+
+    """
     # Create socket and bind wildcard
     socket = context.socket(zmq.PUB)
     socket.bind(f"tcp://*:{port}")
