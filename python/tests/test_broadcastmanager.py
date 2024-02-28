@@ -5,13 +5,10 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import pytest
-from queue import Queue
 import time
 from unittest.mock import patch, MagicMock
 
-from constellation.broadcastmanager import (
-    CHIRPBroadcastManager,
-)
+from constellation.broadcastmanager import CHIRPBroadcaster, chirp_callback, CALLBACKS
 
 from constellation.chirp import CHIRPServiceIdentifier, CHIRP_PORT
 
@@ -50,44 +47,100 @@ def mock_socket():
 @pytest.fixture
 def mock_bm(mock_socket):
     """Create mock BroadcastManager."""
-    q = Queue()
-    bm = CHIRPBroadcastManager(
+    bm = CHIRPBroadcaster(
         name="mock-satellite",
         group="mockstellation",
-        callback_queue=q,
     )
-    yield bm, q
+    bm._add_com_thread()
+    bm._start_com_threads()
+    yield bm
 
 
+@pytest.fixture
+def mock_bm_parent(mock_socket):
+    """Create mock class inheriting from BroadcastManager."""
+
+    class MockBroadcaster(CHIRPBroadcaster):
+        callback_triggered = False
+
+        @chirp_callback(CHIRPServiceIdentifier.DATA)
+        def service_callback(self, service):
+            self.callback_triggered = True
+
+    bm = MockBroadcaster(
+        name="mock-satellite",
+        group="mockstellation",
+    )
+    bm._add_com_thread()
+    bm._start_com_threads()
+    yield bm
+
+
+@pytest.mark.forked
 def test_manager_register(mock_bm):
     """Test registering services."""
-    bm, q = mock_bm
-
-    bm.register_offer(CHIRPServiceIdentifier.HEARTBEAT, 50000)
-    bm.register_offer(CHIRPServiceIdentifier.CONTROL, 50001)
-    bm.broadcast_offers()
+    mock_bm.register_offer(CHIRPServiceIdentifier.HEARTBEAT, 50000)
+    mock_bm.register_offer(CHIRPServiceIdentifier.CONTROL, 50001)
+    mock_bm.broadcast_offers()
     assert len(mock_packet_queue) == 2
 
     # broadcast only one of the services
-    bm.broadcast_offers(CHIRPServiceIdentifier.CONTROL)
+    mock_bm.broadcast_offers(CHIRPServiceIdentifier.CONTROL)
     assert len(mock_packet_queue) == 3
 
 
+@pytest.mark.forked
 def test_manager_discover(mock_bm):
     """Test discovering services."""
-    bm, q = mock_bm
-
-    bm.start()
     mock_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
-    bm.stop()
+    mock_bm._stop_com_threads()
     assert len(mock_packet_queue) == 0
-    assert len(bm.discovered_services) == 1
+    assert len(mock_bm.discovered_services) == 1
     # check late callback queuing
     mock = MagicMock()
-    assert q.empty()
-    bm.register_request(CHIRPServiceIdentifier.DATA, mock.callback)
-    assert not q.empty()
+    assert mock_bm.task_queue.empty()
+    mock_bm.register_request(CHIRPServiceIdentifier.DATA, mock.callback)
+    assert not mock_bm.task_queue.empty()
     # no actual callback happens (only queued)
     assert mock.callback.call_count == 0
+
+
+@pytest.mark.forked
+def test_manager_callback_runtime(mock_bm):
+    """Test callback when discovering services registered during rumtime."""
+    # create callback
+    mock = MagicMock()
+    assert mock_bm.task_queue.empty()
+    mock_bm.register_request(CHIRPServiceIdentifier.DATA, mock.callback)
+    mock_packet_queue.append(offer_data_666)
+    # thread running in background listening to "socket"
+    time.sleep(0.5)
+    assert len(mock_packet_queue) == 0
+    assert len(mock_bm.discovered_services) == 1
+    # callback queued but not performed (no worker thread)
+    assert not mock_bm.task_queue.empty()
+    assert mock.callback.call_count == 0
+    fcn, arg = mock_bm.task_queue.get()
+    fcn(mock_bm, arg)
+    assert mock.callback.call_count == 1
+
+
+@pytest.mark.forked
+def test_manager_callback_decorator(mock_bm_parent):
+    """Test callback when discovering services registered via decorator."""
+    # create callback
+    assert mock_bm_parent.task_queue.empty()
+    assert len(CALLBACKS) == 1
+    mock_packet_queue.append(offer_data_666)
+    # thread running in background listening to "socket"
+    time.sleep(0.5)
+    assert len(mock_packet_queue) == 0
+    assert len(mock_bm_parent.discovered_services) == 1
+    # callback queued but not performed (no worker thread)
+    assert not mock_bm_parent.task_queue.empty()
+    assert not mock_bm_parent.callback_triggered
+    fcn, arg = mock_bm_parent.task_queue.get()
+    fcn(mock_bm_parent, arg)
+    assert mock_bm_parent.callback_triggered

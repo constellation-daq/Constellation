@@ -5,7 +5,6 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import pytest
-
 from unittest.mock import patch, MagicMock
 
 from constellation.chirp import (
@@ -52,6 +51,7 @@ def mock_transmitter(mock_socket):
     yield t
 
 
+@pytest.mark.forked
 def test_chirp_beacon_send_recv(mock_socket):
     """Test interplay between two transmitters (sender/receiver)."""
     sender = CHIRPBeaconTransmitter(
@@ -96,6 +96,7 @@ def test_chirp_beacon_send_recv(mock_socket):
         ), "Wrong chirp header did not trigger expected exception message."
 
 
+@pytest.mark.forked
 def test_filter_same_host(mock_transmitter):
     """Check that same-host packets are dropped."""
     t = mock_transmitter
