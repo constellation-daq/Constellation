@@ -16,7 +16,7 @@ from queue import Queue
 
 from .base import BaseSatelliteFrame
 
-from constellation.chirp import (
+from .chirp import (
     CHIRPServiceIdentifier,
     CHIRPMessage,
     CHIRPMessageType,

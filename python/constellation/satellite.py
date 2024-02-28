@@ -13,6 +13,7 @@ import threading
 import traceback
 
 from .fsm import SatelliteStateHandler
+from . import __version__
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
 
@@ -22,7 +23,6 @@ from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
 from .log_and_stats import getLoggerAndStats
 from .error import debug_log, handle_error
-from ._version import version
 
 
 class IncompleteCommand(Exception):
@@ -77,9 +77,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         # will fail with pytest.
         threading.excepthook = self._thread_exception
         # greet
-        self.log.info(
-            f"Satellite {self.name}, version {self.version()[0]} ready to launch!"
-        )
+        self.log.info(f"Satellite {self.name}, version {__version__} ready to launch!")
 
     @debug_log
     @cscp_requestable
@@ -252,7 +250,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     @cscp_requestable
     def version(self, _request: CSCPMessage = None):
         """Get Constellation version."""
-        return version, None, None
+        return __version__, None, None
 
 
 # -------------------------------------------------------------------------

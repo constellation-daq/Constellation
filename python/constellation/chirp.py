@@ -2,8 +2,7 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-BroadcastManger module provides classes for managing CHIRP broadcasts within
-Constellation Satellites.
+Module implementing the Constellation Host Identification and Reconnaissance Protocol (CHIRP).
 """
 
 import socket
