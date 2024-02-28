@@ -58,3 +58,17 @@ and virtualization on the edges of the subnet Constellation runs on.
 
 The Constellation framework knows three different types of components; Satellites, controllers and listeners. Each of them
 have a different purpose and can or cannot partake in interactions. The components are described in the subsequent sections.
+
+### The Satellite
+
+Satellites are the main actors in a Constellation. They implement instrument controlling code as well as data receivers and
+any other component that should follow the Constellation operation synchronously.
+
+Satellites are stateful and are implemented around a well-defined finite state machine which governs their behavior and
+possible actions. Satellites are partaking in all Constellation communication protocols: They react to commands from
+controllers over [CSCP](/manual/protocols#cscp), listen to other satellite's heartbeat messages via
+[CHBP](/manual/protocols#chbp), distribute log messages with [CMDP](/manual/protocols#cmdp) and transmit their recorded
+instrument data over [CDTP](/manual/protocols#cdtp).
+
+A detailed description of the satellite structure, its features and possibilities to interact with are provided in
+[a dedicated chapter](/manual/satellite) in this user guide.
