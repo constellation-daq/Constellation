@@ -6,25 +6,20 @@ SPDX-License-Identifier: CC-BY-4.0
 from collections.abc import MutableMapping
 
 import tomllib
-import logging
-
-logger = logging.getLogger(__name__)
 
 
-class Config:
-    def __init__(self, config: dict):
-        self.config = config
+class ConfigReceiver:
+    def __init__(self):
+        self.config = {}
 
-    def set_config(self, new_config: dict, separator="."):
+    def update_config(self, new_config: dict):
         """Set corresponding key/value pairs of new_config in config"""
-
         for key, value in new_config.items():
-            if self.config[key]:
-                self.config[key] = value
+            self.config[key] = value
 
-        if None in self.config.values():
-            msg = "All config values not set!"
-            raise IncompleteConfigError(msg)
+    def set_config(self):
+        """Set parameter values based on self.config"""
+        raise NotImplementedError
 
 
 class IncompleteConfigError(Exception):
