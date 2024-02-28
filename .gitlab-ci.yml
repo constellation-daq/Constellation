@@ -206,7 +206,9 @@ lint:clang-tidy-diff:
       artifacts: true
   script:
     - git fetch origin
-    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc) | tee clang-tidy-diff.log
+    - | # Until LLVM 18 we need to check the output for errors
+      grep -qzv ": error: " clang-tidy-diff.log
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
