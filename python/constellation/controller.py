@@ -14,6 +14,7 @@ import readline
 from .fsm import SatelliteFSM
 from .protocol import CHIRPServiceIdentifier
 from .broadcastmanager import BroadcastManager
+from .cscp import CommandTransmitter
 
 
 class TrivialController:
@@ -27,8 +28,7 @@ class TrivialController:
         """
         self._logger = logging.getLogger(__name__)
 
-        self.sockets = []
-
+        self.transmitters = {}
         self.context = zmq.Context()
         for host in hosts:
             self.add_sat(host)
@@ -47,13 +47,12 @@ class TrivialController:
             host = host + ":" + port
         socket = self.context.socket(zmq.REQ)
         socket.connect(host)
-        self.sockets.append(socket)
-        self._logger.info(f"connecting to {host}, ID {len(self.sockets)-1}...")
-
-    def remove_sat(self, socket):
-        socket.close()
-        self.sockets.remove(socket)
-        self._logger.info("Removed socket")
+        self.transmitters[host] = CommandTransmitter(str(host), socket)
+        self._logger.info(
+            "connecting to %s, ID %s...",
+            host,
+            len(self.transmitters) - 1,
+        )
 
     def receive(self, socket):
         """Receive and parse data."""
