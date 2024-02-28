@@ -1,4 +1,4 @@
-# Protocols & Communication Channels
+# Communication Protocols
 
 Constellation is built around a set of communication protocols among its constituents. These protocols are well-defined and have been defined
 early on and serve as platform- and implementation-independent architecture of the framework, meaning that new implementations of e.g. a satellite can be written in any language.
