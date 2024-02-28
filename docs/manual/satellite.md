@@ -1,4 +1,4 @@
-# The Constellation Satellite
+# The Satellite
 
 The central components of a Constellation network are satellites. A satellite is a program for controlling an instrument and
 is built around a finite state machine. It is the only component in a Constellation which partakes in all Constellation
@@ -189,7 +189,7 @@ following transitional states are defined in the Constellation FSM:
 * The `initializing` state
 * The `launching` state
 * The `landing` state
-* The `staring` state
+* The `starting` state
 * The `stopping` state
 
 In addition, the optional `reconfiguring` transitional state enables quick configuration updates of satellites in `ORBIT` state
