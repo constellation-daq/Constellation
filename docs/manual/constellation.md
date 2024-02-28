@@ -83,3 +83,15 @@ Controllers do not possess a state, i.e. they are not a satellite of the Constel
 is that controllers can be closed and reopened by the operator, or can even crash, without affecting the Constellation.
 
 The functionality of the controller in Constellation is described in detail in [this chapter](/manual/controller).
+
+### The Listener
+
+The listener is the least powerful type of component. As the name suggests, this program only listens to protocol
+communications of other components, typically via the [CMDP](/manual/protocols#cmdp), and is entirely passive otherwise.
+Consequently, listeners are stateless  and the Constellation is not affected by them appearing or disappearing during
+operations.
+
+A typical example would be a log message interface which subscribes to log streams for any satellite in the Constellation.
+
+Possible use-cases, the functionality and limitations of listeners in Constellation are described in
+[this chapter](/manual/listener).
