@@ -65,7 +65,7 @@ class BaseSatelliteFrame:
                     # check if thread is still alive
                     if thread.is_alive():
                         self.log.error(
-                            "Could not join background communication thread for {} within timeout",
+                            "Could not join background communication thread for %s within timeout",
                             component,
                         )
                         raise RuntimeError(
