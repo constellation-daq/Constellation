@@ -88,6 +88,10 @@ class SatelliteFSM(StateMachine):
     failure |= states.stopping.to(states.ERROR)
     failure |= states.interrupting.to(states.ERROR)
 
+    # complete a transitional state
+    complete = initialized | launched | landed | started
+    complete |= stopped | reconfigured | interrupted
+
     def __init__(self):
         self.status = "Satellite not initialized yet."
         super().__init__()
