@@ -424,6 +424,10 @@ class Satellite(CommandReceiver):
         return self.fsm.status, None, None
 
     @cscp_requestable
+    def get_config(self, _request: CSCPMessage = None) -> str:
+        return self.config, None, None
+
+    @cscp_requestable
     def version(self, _request: CSCPMessage = None):
         """Get Constellation version."""
         return version, None, None
