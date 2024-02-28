@@ -33,23 +33,28 @@ physics:
 
 ### Limitations & Threat Model Considerations
 
-In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as "subnets".
-It is assumed that
+In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as
+"subnets". It is assumed that
 
 * the subnet and all connected hosts can be trusted.
 * there are no malicious actors on the subnet.
 * the transmitted information is non-confidential to any actor on the subset.
-* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard configuration.
+* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard
+  configuration.
 
-All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml), which is why no privileged user account
-is required for running a constellation host - unless the controlled hardware requires so. If in such a case the Constellation host
-requires elevated privileges for running, this is clearly documented in the respective component documentation.
+All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml),
+which is why no privileged user account
+is required for running a constellation host - unless the controlled hardware requires so. If in such a case the
+Constellation host requires elevated privileges for running, this is clearly documented in the respective component
+documentation.
 
-It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration - chosen for user convenience - is to bind to all available network interfaces of the host.
+It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration -
+chosen for user convenience - is to bind to all available network interfaces of the host.
 
-In general, users are required to satisfy their personal threat model by external means such as firewalls, physical isolation and virtualization on the edges of the subnet Constellation runs on.
+In general, users are required to satisfy their personal threat model by external means such as firewalls, physical isolation
+and virtualization on the edges of the subnet Constellation runs on.
 
-## Components of a Constellation
+## Component Types
 
 The Constellation framework knows three different types of components; Satellites, controllers and listeners. Each of them
 have a different purpose and can or cannot partake in interactions. The components are described in the subsequent sections.
