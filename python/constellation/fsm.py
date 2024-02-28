@@ -96,39 +96,7 @@ class SatelliteFSM(StateMachine):
         self.status = "Satellite not initialized yet."
         super().__init__()
 
-    def before_initialize(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_launch(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_land(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_start(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_stop(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_reconfigure(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_interrupt(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_recover(self, status):
-        """Set status before the state change."""
-        self.status = status
-
-    def before_failure(self, status):
+    def before_transition(self, status):
         """Set status before the state change."""
         self.status = status
 
@@ -139,3 +107,12 @@ class SatelliteFSM(StateMachine):
         graph = DotGraphMachine(self)
         dot = graph()
         dot.write_png(filename)
+
+
+
+
+
+
+
+
+
