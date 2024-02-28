@@ -72,3 +72,14 @@ instrument data over [CDTP](/manual/protocols#cdtp).
 
 A detailed description of the satellite structure, its features and possibilities to interact with are provided in
 [a dedicated chapter](/manual/satellite) in this user guide.
+
+### The Controller
+
+Controllers are the main user interface to a Constellation. They represent the nodes which are capable of sending commands
+to satellites via the [CSCP protocols](/manual/protocols#cscp). The main code for parsing and interpreting configuration
+files resides in the controller, and graphical or command-line user interfaces typically are implemented as controllers.
+
+Controllers do not possess a state, i.e. they are not a satellite of the Constellation. The main advantage of this approach
+is that controllers can be closed and reopened by the operator, or can even crash, without affecting the Constellation.
+
+The functionality of the controller in Constellation is described in detail in [this chapter](/manual/controller).
