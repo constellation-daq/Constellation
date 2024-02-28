@@ -3,6 +3,5 @@
 
 default = true
 line-length = false
-MD022 = false
-MD041 = false
-MD051 = false
+blanks-around-headings = false
+link-fragments = false
