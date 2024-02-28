@@ -127,6 +127,22 @@ class Satellite(CommandReceiver):
         return "transitioning", transition_target, None
 
     @cscp_requestable
+    def configure(self, request: CSCPMessage):
+        """Update configuration via CSCP request."""
+        config = request.payload
+        callback = self.update_config
+        # add to the task queue
+        self.task_queue.put((callback, config))
+        return "configuring", None, None
+
+    @cscp_requestable
+    def reload(self, request: CSCPMessage):
+        """Reload configuration."""
+        callback = self.set_config
+        self.task_queue.put((callback, None))
+        return "reloading", None, None
+
+    @cscp_requestable
     def register(self, request: CSCPMessage):
         """Register a heartbeat via CSCP request."""
         name, ip, port = request.payload.split()
