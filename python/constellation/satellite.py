@@ -6,13 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 
-import traceback
 import time
-import threading
-from queue import Queue, Empty
+from queue import Empty
 import logging
+import threading
+import traceback
 
-from .fsm import SatelliteFSM
+from .fsm import SatelliteStateHandler
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
 
@@ -29,7 +29,7 @@ class IncompleteCommand(Exception):
     pass
 
 
-class Satellite(CommandReceiver):
+class Satellite(CommandReceiver, SatelliteStateHandler):
     """Base class for a Constellation Satellite."""
 
     def __init__(
@@ -46,14 +46,6 @@ class Satellite(CommandReceiver):
 
         # set up python logging
         self.log, self.stats = getLoggerAndStats(self.name, self.context, log_port)
-
-        # state machine
-        self.fsm = SatelliteFSM()
-        # Adding this class as observer to the FSM allows class-internal methods such as
-        # on_start to be Actions to be performed on a Transition of the state
-        # machine. This will ensure that the state does not change before we
-        # have performed all necessary steps.
-        self.fsm.add_observer(self)
 
         # set up background communication threads
         # NOTE should be a late part of the initialization, as it starts communication
@@ -96,31 +88,7 @@ class Satellite(CommandReceiver):
         # greet
         self.log.info(f"Satellite {self.name}, version {self.version} ready to launch!")
 
-    def _transition_is_allowed(self, request: CSCPMessage):
-        """Determine whether a requested transition is allowed.
-
-        This method will be called by the CommandReceiver to determine whether
-        to complete a request by a call to transition() or to deny the request.
-
-        """
-        args = request.payload.split()
-        transition_target = args[0].lower()
-        # is transition allowed?
-        if not getattr(self.fsm, transition_target) in self.fsm.allowed_events:
-            return False
-        # TODO check that we are not transitioning away from a transitional state (not allowed)
-        return True
-
-    @cscp_requestable
-    def transition(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request."""
-        args = request.payload.split()
-        transition_target = args[0].capitalize()
-        callback = getattr(self, transition_target)
-        # add to the task queue
-        self.task_queue.put((callback, args[1:]))
-        return "transitioning", transition_target, None
-
+    @debug_log
     @cscp_requestable
     def register(self, request: CSCPMessage):
         """Register a heartbeat via CSCP request."""
@@ -160,17 +128,6 @@ class Satellite(CommandReceiver):
     # --------------------------- #
 
     @handle_error
-    @debug_log
-    def Initialize(self):
-        """Initialize.
-
-        Actual actions will be performed by the callback method 'on_load'
-        as long as the transition is allowed.
-        """
-        self.fsm.initialize("Satellite initialized.")
-        self.log.info("Satellite Initialized.")
-
-    @handle_error
     def on_initialize(self):
         """Callback method for the 'initialize' transition of the FSM.
 
@@ -181,88 +138,33 @@ class Satellite(CommandReceiver):
         # Verify that there are no running threads left. If there are and the
         # timeout is exceeded joining them, the raised exception will take us
         # into ERROR state.
-        self._stop_daq_thread(10.0)
-
-    @handle_error
-    @debug_log
-    def Launch(self):
-        """Prepare Satellite for data acquistions.
-
-        Actual actions will be performed by the callback method 'on_launch'
-        aslong as the transition is allowed.
-        """
-        self.fsm.launch("Satellite launched.")
-        self.hb_checker.start()
-
-        self.log.info("Satellite Prepared. Acquistion ready.")
 
     @handle_error
     def on_launch(self):
-        """Callback method for the 'launch' transition of the FSM."""
-        pass
-
-    @handle_error
-    @debug_log
-    def Land(self):
-        """Return Satellite to Initialized state.
-
-        Actual actions will be performed by the callback method 'on_land'
-        aslong as the transition is allowed.
-        """
-        self.fsm.land("Satellite landed.")
-        self.hb_checker.stop()
-        self.log.info("Satellite landed.")
+        """Prepare Satellite for data acquistions."""
+        self.hb_checker.start()
 
     @handle_error
     def on_land(self):
-        """Callback method for the 'unprepare' transition of the FSM."""
-        pass
+        """Land transition of the FSM: Return Satellite to Initialized state."""
+        self.hb_checker.stop()
 
     @handle_error
-    @debug_log
-    def Start(self):
-        """Start command to begin data acquisition.
-
-        Actual Satellite-specific actions will be performed by the callback
-        method 'on_start' as long as the transition is allowed.
-
-        """
-        self.fsm.start("Acquisition started.")
-        # start thread running during acquistion
-        self._stop_running = threading.Event()
-        self._running_thread = threading.Thread(target=self.do_run, daemon=True)
-        self._running_thread.start()
-        self.log.info("Satellite Running. Acquistion taking place.")
+    def on_start(self, payload: any):
+        """Method for the 'start' transition of the FSM."""
+        self.do_run(payload)
+        return "Acquisition finished."
 
     @handle_error
-    def on_start(self):
-        """Callback method for the 'start_run' transition of the FSM.
+    def on_stop(self, payload: any):
+        """Method for the 'stop' transition of the FSM."""
+        # indicate to the thread to stop
+        if self._state_thread_evt:
+            self._state_thread_evt.set()
+        # wait for result, will raise TimeoutError if not successful
+        self._state_thread_fut.result(timeout=10)
 
-        Is called *before* the 'do_run' thread is started.
-        """
-        pass
-
-    @handle_error
-    @debug_log
-    def Stop(self):
-        """Stop command stopping data acquisition.
-
-        Actual actions will be performed by the callback method 'on_stop_run'
-        aslong as the transition is allowed.
-        """
-        self.fsm.stop("Acquisition stopped.")
-        self._stop_daq_thread()
-        self.log.info("Satellite stopped Acquistion.")
-
-    @handle_error
-    def on_stop(self):
-        """Callback method for the 'stop_run' transition of the FSM.
-
-        This method is called *before* the 'do_run' is stopped.
-        """
-        pass
-
-    def do_run(self):
+    def do_run(self, payload: any):
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
@@ -282,91 +184,42 @@ class Satellite(CommandReceiver):
         """
         # the stop_running Event will be set from outside the thread when it is
         # time to close down.
-        while not self._stop_running.is_set():
+        while not self._state_thread_evt.is_set():
             time.sleep(0.2)
 
-    @handle_error
-    @debug_log
-    def Failure(self, message: str = None):
-        """Trigger a failure on Satellite.
-
-        This is a "command" and will only be called by user action.
-
-        Actual actions will be performed by the callback method 'on_failure'
-        which is called automatically whenever a failure occurs.
-
-        """
-        self.log.error(f"Failure action was triggered with reason given: {message}.")
-        self.fsm.failure(message)
-
     def on_failure(self):
-        """Callback method for the 'on_failure' transition of the FSM
+        """Failure transition of the FSM.
 
         This method should implement Satellite-specific actions in case of
         failure.
 
         """
         try:
-            self._stop_daq_thread(10.0)
             # Stop heartbeat checking
             self.hb_checker.stop()
+            # stop state thread
+            if self._state_thread_evt:
+                self._state_thread_evt.set()
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
         except Exception as e:
             self.log.exception(e)
 
     @handle_error
-    @debug_log
-    def Interrupt(self, message: str = None):
-        """Interrupt data acquisition and move to Safe state.
-
-        Actual actions will be performed by the callback method 'on_interrupt'
-        aslong as the transition is allowed.
-        """
-        self.fsm.interrupt(message)
-        self.log.warning("Transitioned to Safe state.")
-
-    @handle_error
     def on_interrupt(self):
-        """Callback method for the 'on_interrupt' transition of the FSM.
+        """Interrupt data acquisition and move to Safe state.
 
         Defaults to calling on_failure().
         """
         self.on_failure()
 
     @handle_error
-    @debug_log
-    def Recover(self):
-        """Transition to Initialized state.
-
-        Actual actions will be performed by the callback method 'on_recover'
-        aslong as the transition is allowed.
-        """
-        self.fsm.recover("Recovered from Safe state.")
-        self.log.info("Recovered from Safe state.")
-
-    @handle_error
     def on_recover(self):
-        """Callback method for the 'on_recover' transition of the FSM.
+        """Transition to Initialized state.
 
         Defaults to on_initialize().
         """
         self.on_initialize()
-
-    def _stop_daq_thread(self, timeout: float = 30.0):
-        """Stop the acquisition thread.
-
-        Raises RuntimeError if thread is not stopped within timeout."""
-        if self._running_thread and self._running_thread.is_alive():
-            self._stop_running.set()
-            self._running_thread.join(timeout)
-        # check if thread is still alive
-        if self._running_thread and self._running_thread.is_alive():
-            raise RuntimeError(
-                f"Could not join running thread within timeout of {timeout}s!"
-            )
-        self._running_thread = None
-        self._stop_running = None
 
     def _thread_exception(self, args):
         """Handle exceptions in threads.
