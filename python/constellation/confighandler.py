@@ -11,6 +11,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class Config:
+    def __init__(self, config: dict):
+        self.config = config
+
+    def set_config(self, config: dict, separator="."):
+        """Set corresponding key/value pairs of args in config"""
+
+        for key, value in config.items():
+            if config[key]:
+                config[key] = value
+
+
 def unpack_config(dictionary, base, separator="."):
     """Unpack config dict from flat dict"""
     result = dict()
