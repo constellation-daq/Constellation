@@ -4,6 +4,7 @@
 
 Since CHIRP requires a fixed port and we might have multiple programs running CHIRP on one machine, it is important to ensure that the port is not blocked by one program. Networking libraries like ZeroMQ and NNG do this by default when binding to a wildcard address. To ensure that a socket can be used by more than one program, the `SO_REUSEADDR` socket option has to be enabled. Further, to send broadcasts the `SO_BROADCAST` socket option has to be enabled.
 
+(notes-broadcast)=
 ## Notes on broadcast addresses
 
 CHIRP uses an UDP broadcast over port 7123, which means that it send a message to all participants in a network. However, "all" in this context depends the broadcast address.
@@ -30,7 +31,7 @@ To send broadcasts:
 ./build/src/constellation/tools/broadcast_send [BRD_IP] [BRD_PORT]
 ```
 
-See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
+See [above](#notes-broadcast) for details on the broadcast address.
 
 ### CHIRP Messages
 
@@ -46,7 +47,7 @@ To send CHIRP messages:
 ./build/src/constellation/tools/chirp_send [BRD_IP]
 ```
 
-See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
+See [above](#notes-broadcast) for details on the broadcast address.
 
 TODO:
 
