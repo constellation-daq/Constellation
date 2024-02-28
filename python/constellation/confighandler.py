@@ -6,6 +6,9 @@ SPDX-License-Identifier: CC-BY-4.0
 from collections.abc import MutableMapping
 
 import tomllib
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def flatten_dict(dictionary, parent_key="", separator="."):
