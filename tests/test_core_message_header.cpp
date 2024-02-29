@@ -112,7 +112,7 @@ TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") 
 TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    const CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
+    CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
     auto frames = cscp1_message.assemble();
 
     // Attach additional frames:

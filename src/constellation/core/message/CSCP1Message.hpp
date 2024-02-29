@@ -28,7 +28,7 @@ namespace constellation::message {
     class CSCP1Message {
     public:
         /** Enum describing the type of CSCP1 message */
-        enum class CNSTLN_API Type : std::uint8_t {
+        enum class Type : std::uint8_t {
             /** Request with a command */
             REQUEST = '\x00',
 
@@ -94,7 +94,7 @@ namespace constellation::message {
          *
          * @return Message assembled to ZeroMQ frames
          */
-        CNSTLN_API zmq::multipart_t assemble() const;
+        CNSTLN_API zmq::multipart_t assemble();
 
         /**
          * Disassemble message from ZeroMQ frames

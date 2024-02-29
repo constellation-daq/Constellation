@@ -23,7 +23,7 @@ using namespace constellation::utils;
 CSCP1Message::CSCP1Message(CSCP1Message::Header header, std::pair<Type, std::string> verb)
     : header_(std::move(header)), verb_(std::move(verb)) {}
 
-zmq::multipart_t CSCP1Message::assemble() const {
+zmq::multipart_t CSCP1Message::assemble() {
     zmq::multipart_t frames {};
 
     // First frame: header
