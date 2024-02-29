@@ -3,6 +3,8 @@
 
 satellite_src = files(
   'CSCPHandler.cpp',
+  'FSM.cpp',
+  'Satellite.cpp',
 )
 
 satellite_lib = library('ConstellationSatellite',
@@ -14,7 +16,16 @@ satellite_lib = library('ConstellationSatellite',
   install: true,
 )
 
+satellite_dep = declare_dependency(
+  link_with: satellite_lib,
+  include_directories: constellation_inc,
+  dependencies: [core_dep, cppzmq_dep, magic_enum_dep],
+)
+
 install_headers(
   'CSCPHandler.hpp',
+  'FSM.hpp',
+  'fsm_definitions.hpp',
+  'Satellite.hpp',
   subdir: 'constellation/satellite',
 )

@@ -54,3 +54,13 @@ test_core_message_header = executable('test_core_message_header',
 test('Core message header test', test_core_message_header,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
+
+# Satellite
+
+test_satellite_fsm = executable('test_satellite_fsm',
+  sources: 'test_satellite_fsm.cpp',
+  dependencies: [satellite_dep, catch2_dep],
+)
+test('Satellite FSM test', test_satellite_fsm,
+     args: ['--durations', 'yes', '--verbosity', 'high'],
+)
