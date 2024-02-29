@@ -15,6 +15,7 @@
 #include "constellation/core/message/CDTP1Header.hpp"
 #include "constellation/core/message/CMDP1Header.hpp"
 #include "constellation/core/message/CSCP1Header.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
 
 using namespace Catch::Matchers;
@@ -93,6 +94,19 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     REQUIRE(std::get<double>(cscp1_header_unpacked.getTag("test_d")) == std::numbers::pi);
     REQUIRE_THAT(std::get<std::string>(cscp1_header_unpacked.getTag("test_s")), Equals("String"));
     REQUIRE(std::get<std::chrono::system_clock::time_point>(cscp1_header_unpacked.getTag("test_t")) == tp);
+}
+
+TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
+
+    CSCP1Header cscp1_header {"senderCSCP", tp};
+
+    // Pack header
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, cscp1_header);
+
+    // Check for wrong protocol to be picked up
+    REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
 }
 
 TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
