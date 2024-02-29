@@ -14,7 +14,6 @@
 
 #include "constellation/core/message/CDTP1Header.hpp"
 #include "constellation/core/message/CMDP1Header.hpp"
-#include "constellation/core/message/CSCP1Header.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
@@ -29,7 +28,7 @@ using namespace std::literals::string_literals;
 TEST_CASE("Basic Header Functions", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    const CSCP1Header cscp1_header {"senderCSCP", tp};
+    const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
 
     REQUIRE_THAT(to_string(cscp1_header.getSender()), Equals("senderCSCP"));
     REQUIRE(cscp1_header.getTime() == tp);
@@ -41,7 +40,7 @@ TEST_CASE("String Output", "[core][core::message]") {
     // Get fixed timepoint (unix epoch)
     auto tp = std::chrono::system_clock::from_time_t(std::time_t(0));
 
-    CMDP1Header cmdp1_header {"senderCMDP", tp};
+    CSCP1Message::Header cmdp1_header {"senderCMDP", tp};
 
     cmdp1_header.setTag("test_b", true);
     cmdp1_header.setTag("test_i", 7);
@@ -73,7 +72,7 @@ TEST_CASE("String Output (CDTP1)", "[core][core::message]") {
 TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    CSCP1Header cscp1_header {"senderCSCP", tp};
+    CSCP1Message::Header cscp1_header {"senderCSCP", tp};
 
     cscp1_header.setTag("test_b", true);
     cscp1_header.setTag("test_i", std::numeric_limits<std::int64_t>::max());
@@ -86,7 +85,7 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     msgpack::pack(sbuf, cscp1_header);
 
     // Unpack header
-    const auto cscp1_header_unpacked = CSCP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
+    const auto cscp1_header_unpacked = CSCP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
 
     // Compare unpacked header
     REQUIRE(cscp1_header_unpacked.getTags().size() == 5);
@@ -100,7 +99,7 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
 TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    const CSCP1Header cscp1_header {"senderCSCP", tp};
+    const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
 
     // Pack header
     msgpack::sbuffer sbuf {};
@@ -113,7 +112,7 @@ TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") 
 TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    const CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Type::SUCCESS, ""}};
+    const CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
     auto frames = cscp1_message.assemble();
 
     // Attach additional frames:
