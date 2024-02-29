@@ -99,7 +99,7 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
 TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    CSCP1Header cscp1_header {"senderCSCP", tp};
+    const CSCP1Header cscp1_header {"senderCSCP", tp};
 
     // Pack header
     msgpack::sbuffer sbuf {};

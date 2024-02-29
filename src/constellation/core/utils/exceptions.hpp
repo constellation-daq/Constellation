@@ -15,7 +15,7 @@
 #pragma once
 
 #include <exception>
-#include <string_view>
+#include <string>
 
 namespace constellation::utils {
 
@@ -29,7 +29,7 @@ namespace constellation::utils {
          * @brief Creates exception with the specified problem
          * @param what_arg Text describing the problem
          */
-        explicit Exception(std::string_view what_arg) : error_message_(std::move(what_arg)) {}
+        explicit Exception(const std::string& what_arg) : error_message_(std::move(what_arg)) {}
 
         /**
          * @brief Return the error message
@@ -58,7 +58,7 @@ namespace constellation::utils {
          * @brief Creates exception with the given runtime problem
          * @param what_arg Text describing the problem
          */
-        explicit RuntimeError(std::string_view what_arg) : Exception(std::move(what_arg)) {}
+        explicit RuntimeError(const std::string& what_arg) : Exception(std::move(what_arg)) {}
 
     protected:
         /**
@@ -78,7 +78,7 @@ namespace constellation::utils {
          * @brief Creates exception with the given logical problem
          * @param what_arg Text describing the problem
          */
-        explicit LogicError(std::string_view what_arg) : Exception(std::move(what_arg)) {}
+        explicit LogicError(const std::string& what_arg) : Exception(std::move(what_arg)) {}
 
     protected:
         /**

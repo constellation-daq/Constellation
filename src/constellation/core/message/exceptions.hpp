@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <string>
 #include <string_view>
 
 #include "constellation/core/utils/exceptions.hpp"
@@ -22,7 +23,7 @@ namespace constellation::message {
      */
     class MessageDecodingError : public utils::RuntimeError {
     public:
-        explicit MessageDecodingError(std::string_view msg) {
+        explicit MessageDecodingError(const std::string& msg) {
             error_message_ = "Error in decoding message ";
             error_message_ += msg;
         }
@@ -36,7 +37,7 @@ namespace constellation::message {
      */
     class InvalidProtocolError : public utils::RuntimeError {
     public:
-        explicit InvalidProtocolError(std::string_view protocol) {
+        explicit InvalidProtocolError(const std::string& protocol) {
             error_message_ = "Invalid protocol identifier \"";
             error_message_ += protocol;
             error_message_ += "\"";
@@ -51,7 +52,7 @@ namespace constellation::message {
      */
     class UnexpectedProtocolError : public utils::RuntimeError {
     public:
-        explicit UnexpectedProtocolError(std::string_view prot_recv, std::string_view prot_exp) {
+        explicit UnexpectedProtocolError(const std::string& prot_recv, const std::string_view prot_exp) {
             error_message_ = "Received protocol \"";
             error_message_ += prot_recv;
             error_message_ += "\" does not match expected identifier \"";
