@@ -48,7 +48,7 @@ TEST_CASE("String Output", "[core][core::message]") {
     // Get fixed timepoint (unix epoch)
     auto tp = std::chrono::system_clock::from_time_t(std::time_t(0));
 
-    CSCP1Message::Header cmdp1_header {"senderCMDP", tp};
+    CMDP1Header cmdp1_header {"senderCMDP", tp};
 
     cmdp1_header.setTag("test_b", true);
     cmdp1_header.setTag("test_i", 7);
