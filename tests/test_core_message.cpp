@@ -133,6 +133,27 @@ TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
     REQUIRE(cscp1_msg2.getVerb().first == CSCP1Message::Type::SUCCESS);
 }
 
+TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
+
+    CSCP1Message cscp1_msg {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
+
+    // Add payload frame
+    msgpack::sbuffer sbuf_header {};
+    msgpack::pack(sbuf_header, "this is fine");
+    auto payload = std::make_shared<zmq::message_t>(sbuf_header.data(), sbuf_header.size());
+    cscp1_msg.addPayload(payload);
+
+    // Assemble and disassemble message
+    auto frames = cscp1_msg.assemble();
+    auto cscp1_msg2 = CSCP1Message::disassemble(frames);
+
+    // Retrieve payload
+    auto data = cscp1_msg2.getPayload();
+    auto py_string = msgpack::unpack(to_char_ptr(data->data()), data->size());
+    REQUIRE_THAT(py_string->as<std::string>(), Equals("this is fine"));
+}
+
 TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
