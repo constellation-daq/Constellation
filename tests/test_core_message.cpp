@@ -34,6 +34,10 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
     REQUIRE(cscp1_header.getTime() == tp);
     REQUIRE(cscp1_header.getTags().empty());
     REQUIRE_THAT(cscp1_header.to_string(), ContainsSubstring("CSCP1"));
+}
+
+TEST_CASE("Basic Header Functions (CDTP1)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
 
     const CDTP1Message::Header cdtp1_header {"senderCDTP", 0, CDTP1Message::Type::BOR, tp};
 
@@ -44,7 +48,7 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
     REQUIRE_THAT(cdtp1_header.to_string(), ContainsSubstring("CDTP1"));
 }
 
-TEST_CASE("String Output", "[core][core::message]") {
+TEST_CASE("Header String Output", "[core][core::message]") {
     // Get fixed timepoint (unix epoch)
     auto tp = std::chrono::system_clock::from_time_t(std::time_t(0));
 
@@ -68,7 +72,7 @@ TEST_CASE("String Output", "[core][core::message]") {
     REQUIRE_THAT(string_out, ContainsSubstring("test_t: 1970-01-01 00:00:00.000000000"));
 }
 
-TEST_CASE("String Output (CDTP1)", "[core][core::message]") {
+TEST_CASE("Header String Output (CDTP1)", "[core][core::message]") {
     const CDTP1Message::Header cdtp1_header {"senderCMDP", 1234, CDTP1Message::Type::DATA};
 
     const auto string_out = cdtp1_header.to_string();
@@ -77,7 +81,7 @@ TEST_CASE("String Output (CDTP1)", "[core][core::message]") {
     REQUIRE_THAT(string_out, ContainsSubstring("Seq No: 1234"));
 }
 
-TEST_CASE("Packing / Unpacking", "[core][core::message]") {
+TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     CSCP1Message::Header cscp1_header {"senderCSCP", tp};
@@ -104,7 +108,7 @@ TEST_CASE("Packing / Unpacking", "[core][core::message]") {
     REQUIRE(std::get<std::chrono::system_clock::time_point>(cscp1_header_unpacked.getTag("test_t")) == tp);
 }
 
-TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
+TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
@@ -115,6 +119,18 @@ TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") 
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+}
+
+TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
+
+    CSCP1Message cscp1_msg {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
+    auto frames = cscp1_msg.assemble();
+
+    auto cscp1_msg2 = CSCP1Message::disassemble(frames);
+
+    REQUIRE_THAT(cscp1_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCSCP"));
+    REQUIRE(cscp1_msg2.getVerb().first == CSCP1Message::Type::SUCCESS);
 }
 
 TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
