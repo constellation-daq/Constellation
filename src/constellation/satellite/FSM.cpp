@@ -83,7 +83,8 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
     return true;
 }
 
-std::pair<CSCP1Type, std::string> FSM::reactCSCP(CSCPTransition cscp_transition, std::shared_ptr<zmq::message_t> payload) {
+std::pair<CSCP1Message::Type, std::string> FSM::reactCSCP(CSCPTransition cscp_transition,
+                                                          std::shared_ptr<zmq::message_t> payload) {
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(cscp_transition);
     // Check if command is a valid transition for the current state
@@ -91,17 +92,17 @@ std::pair<CSCP1Type, std::string> FSM::reactCSCP(CSCPTransition cscp_transition,
     try {
         transition_function = findTransitionFunction(transition);
     } catch(const FSMError& error) {
-        return {CSCP1Type::INVALID, error.what()};
+        return {CSCP1Message::Type::INVALID, error.what()};
     }
     // Check if reconfigure command is implemented in case it is requested
     if(transition == Transition::reconfigure && !satellite_->supportsReconfigure()) {
-        return {CSCP1Type::NOTIMPLEMENTED, "Transition reconfigure is not implemented by this satellite"};
+        return {CSCP1Message::Type::NOTIMPLEMENTED, "Transition reconfigure is not implemented by this satellite"};
     }
     // Check if payload only in initialize, reconfigure, and start
     auto should_have_payload =
         (transition == Transition::initialize || transition == Transition::reconfigure || transition == Transition::start);
     if(should_have_payload && !payload) {
-        return {CSCP1Type::INCOMPLETE, "Transition " + to_string(transition) + " requires a payload frame"};
+        return {CSCP1Message::Type::INCOMPLETE, "Transition " + to_string(transition) + " requires a payload frame"};
     }
     // If there is a payload, but it is not used add a note in the reply
     const std::string payload_note = (!should_have_payload && payload) ? " (payload frame is ignored)"s : ""s;
@@ -109,7 +110,7 @@ std::pair<CSCP1Type, std::string> FSM::reactCSCP(CSCPTransition cscp_transition,
     // Execute transition function
     state_ = (this->*transition_function)(std::move(payload));
     // Return that command is being executed
-    return {CSCP1Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
+    return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
 
 template <typename Func, typename... Args>

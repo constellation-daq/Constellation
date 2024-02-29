@@ -19,49 +19,63 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/message/CSCP1Header.hpp"
+#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
 
-    /** Enum describing the type of CSCP1 message */
-    enum class CSCP1Type : std::uint8_t {
-        /** Request with a command */
-        REQUEST = '\x00',
-
-        /** Command is being executed */
-        SUCCESS = '\x01',
-
-        /** Command is valid but not implemented */
-        NOTIMPLEMENTED = '\x02',
-
-        /** Command is valid but mandatory payload information is missing or incorrectly formatted */
-        INCOMPLETE = '\x03',
-
-        /** Command is invalid for the current state */
-        INVALID = '\x04',
-
-        /** Command is entirely unknown */
-        UNKNOWN = '\x05',
-    };
-
     /** Class representing a CSCP1 message */
     class CSCP1Message {
+    public:
+        /** Enum describing the type of CSCP1 message */
+        enum class CNSTLN_API Type : std::uint8_t {
+            /** Request with a command */
+            REQUEST = '\x00',
+
+            /** Command is being executed */
+            SUCCESS = '\x01',
+
+            /** Command is valid but not implemented */
+            NOTIMPLEMENTED = '\x02',
+
+            /** Command is valid but mandatory payload information is missing or incorrectly formatted */
+            INCOMPLETE = '\x03',
+
+            /** Command is invalid for the current state */
+            INVALID = '\x04',
+
+            /** Command is entirely unknown */
+            UNKNOWN = '\x05',
+        };
+
+        /** CSCP1 Header */
+        class CNSTLN_API Header final : public BaseHeader {
+        public:
+            Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
+                : BaseHeader(CSCP1, std::move(sender), time) {}
+
+            static Header disassemble(std::span<const std::byte> data) { return {BaseHeader::disassemble(CSCP1, data)}; }
+
+        private:
+            Header(BaseHeader&& base_header) : BaseHeader(std::move(base_header)) {}
+        };
+
     public:
         /**
          * @param header CSCP1 header of the message
          * @param verb Message verb containing the type and the command/reply string
          */
-        CNSTLN_API CSCP1Message(CSCP1Header header, std::pair<CSCP1Type, std::string> verb);
+        CNSTLN_API CSCP1Message(Header header, std::pair<Type, std::string> verb);
 
         /**
          * @return CSCP1 header of the message
          */
-        constexpr const CSCP1Header& getHeader() const { return header_; }
+        constexpr const Header& getHeader() const { return header_; }
 
         /**
          * @return Message verb containing the type and the command/reply string
          */
-        std::pair<CSCP1Type, std::string_view> getVerb() const { return verb_; }
+        std::pair<Type, std::string_view> getVerb() const { return verb_; }
 
         /**
          * @return Message payload
@@ -93,8 +107,8 @@ namespace constellation::message {
         CNSTLN_API static CSCP1Message disassemble(zmq::multipart_t& frames);
 
     private:
-        CSCP1Header header_;
-        std::pair<CSCP1Type, std::string> verb_;
+        Header header_;
+        std::pair<Type, std::string> verb_;
         std::shared_ptr<zmq::message_t> payload_;
     };
 

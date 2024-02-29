@@ -40,7 +40,6 @@ install_headers(
   'message/CDTP1Header.hpp',
   'message/CDTP1Message.hpp',
   'message/CMDP1Header.hpp',
-  'message/CSCP1Header.hpp',
   'message/CSCP1Message.hpp',
   'message/Dictionary.hpp',
   'message/Header.hpp',
