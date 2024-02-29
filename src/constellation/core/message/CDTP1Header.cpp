@@ -82,7 +82,7 @@ std::string CDTP1Header::to_string() const {
            << "\nSeq No: "sv << seq_;                        //
 
     // Insert before tags (at least 59 chars after string begin)
-    auto out = Header::to_string();
+    auto out = BaseHeader::to_string();
     auto pos = out.find("\nTags:", 59);
     out.insert(pos, insert.str());
 

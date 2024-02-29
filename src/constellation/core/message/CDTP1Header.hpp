@@ -28,13 +28,13 @@ namespace constellation::message {
     };
     using enum CDTP1Type;
 
-    class CNSTLN_API CDTP1Header final : public Header {
+    class CNSTLN_API CDTP1Header final : public BaseHeader {
     public:
         CDTP1Header(std::string sender,
                     std::uint64_t seq,
                     CDTP1Type type,
                     std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : Header(CDTP1, std::move(sender), time), seq_(seq), type_(type) {}
+            : BaseHeader(CDTP1, std::move(sender), time), seq_(seq), type_(type) {}
 
         constexpr std::uint64_t getSequenceNumber() const { return seq_; }
 
@@ -52,7 +52,7 @@ namespace constellation::message {
                     Dictionary tags,
                     std::uint64_t seq,
                     CDTP1Type type)
-            : Header(CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
+            : BaseHeader(CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
 
     private:
         std::uint64_t seq_;
