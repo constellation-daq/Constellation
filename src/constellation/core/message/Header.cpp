@@ -17,6 +17,7 @@
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
@@ -34,7 +35,7 @@ Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
     if(protocol_identifier != get_protocol_identifier(protocol)) {
-        // TODO(stephan.lachnit): throw
+        throw UnexpectedProtocolError(protocol_identifier, get_protocol_identifier(protocol));
     }
 
     // Unpack sender
