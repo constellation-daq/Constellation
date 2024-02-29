@@ -18,8 +18,6 @@ using namespace std::literals::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-#define LOGGER logger
-
 TEST_CASE("Create sink manager", "[logging]") {
     // Used to create sink manager in separate test for better timing analysis
     SinkManager::getInstance();
@@ -29,14 +27,14 @@ TEST_CASE("Basic logging", "[logging]") {
     auto logger = constellation::log::Logger("BasicLogging");
 
     SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
-    REQUIRE(SHOULD_LOG(TRACE));
+    REQUIRE(logger.shouldLog(TRACE));
 
-    LOG(TRACE) << "trace"sv;
-    LOG(DEBUG) << "debug"sv;
-    LOG(INFO) << "info"sv;
-    LOG(STATUS) << "status"sv;
-    LOG(WARNING) << "warning"sv;
-    LOG(CRITICAL) << "critical"sv;
+    LOG(logger, TRACE) << "trace"sv;
+    LOG(logger, DEBUG) << "debug"sv;
+    LOG(logger, INFO) << "info"sv;
+    LOG(logger, STATUS) << "status"sv;
+    LOG(logger, WARNING) << "warning"sv;
+    LOG(logger, CRITICAL) << "critical"sv;
 
     // Wait for logging to be flushed for proper output with Catch2
     logger.flush();
@@ -53,9 +51,9 @@ TEST_CASE("Logging macros", "[logging]") {
     int count_if {0};
 
     for(int i = 0; i < 5; ++i) {
-        LOG_ONCE(STATUS) << "log once, i="sv << i << ", count "sv << ++count_once;
-        LOG_N(STATUS, 3) << "log n, i="sv << i << ", count "sv << ++count_n;
-        LOG_IF(STATUS, i % 2 == 1) << "log if, i=" << i << ", count "sv << ++count_if;
+        LOG_ONCE(logger, STATUS) << "log once, i="sv << i << ", count "sv << ++count_once;
+        LOG_N(logger, STATUS, 3) << "log n, i="sv << i << ", count "sv << ++count_n;
+        LOG_IF(logger, STATUS, i % 2 == 1) << "log if, i=" << i << ", count "sv << ++count_if;
     }
 
     REQUIRE(count_once == 1);

@@ -33,49 +33,46 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 #define LOG_VAR LOG_CONCAT_NESTED(LOG_VAR_L, __LINE__)
 
 /**
- * Returns whether message with certain level be logged
- *
- * @param level Log level to be evaluated
- */
-#define SHOULD_LOG(level) LOGGER.shouldLog(level)
-
-/**
  * Logs a message for a given level
  *
  * The stream expression is only evaluated if logging should take place.
  *
+ * @param logger Logger on which to log
  * @param level Log level on which to log
  */
-#define LOG(level)                                                                                                          \
-    if(LOGGER.shouldLog(level))                                                                                             \
-    LOGGER.log(level)
+#define LOG(logger, level)                                                                                                  \
+    if((logger).shouldLog(level))                                                                                           \
+    (logger).log(level)
 
 /**
  * Logs a message if a given condition is true
  *
  * The given condition is evaluated after it was determined if logging should take place.
  *
+ * @param logger Logger on which to log
  * @param level Log level on which to log
  * @param condition Condition to check before logging
  */
-#define LOG_IF(level, condition)                                                                                            \
-    if(LOGGER.shouldLog(level) && (condition))                                                                              \
-    LOGGER.log(level)
+#define LOG_IF(logger, level, condition)                                                                                    \
+    if((logger).shouldLog(level) && (condition))                                                                            \
+    (logger).log(level)
 
 /** Logs a message at most N times
  *
+ * @param logger Logger on which to log
  * @param level Log level on which to log
  * @param count Count how often to log message at most
  */
-#define LOG_N(level, count)                                                                                                 \
+#define LOG_N(logger, level, count)                                                                                         \
     static std::atomic_int LOG_VAR {count};                                                                                 \
-    if(LOG_VAR > 0 && LOGGER.shouldLog(level))                                                                              \
-    LOGGER.log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
+    if(LOG_VAR > 0 && (logger).shouldLog(level))                                                                            \
+    (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
 
 /** Logs a message at most one time
  *
+ * @param logger Logger on which to log
  * @param level Log level on which to log
  */
-#define LOG_ONCE(level) LOG_N(level, 1)
+#define LOG_ONCE(logger, level) LOG_N(logger, level, 1)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

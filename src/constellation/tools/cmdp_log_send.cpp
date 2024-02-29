@@ -16,8 +16,6 @@
 
 using namespace constellation::log;
 
-#define LOGGER logger
-
 int main(int argc, char* argv[]) {
     // Get topic via cmdline
     std::string topic = "test";
@@ -37,7 +35,7 @@ int main(int argc, char* argv[]) {
         std::cout << "send message: ";
         std::getline(std::cin, message);
 
-        LOG(TRACE) << message;
+        LOG(logger, TRACE) << message;
     }
 
     return 0;
