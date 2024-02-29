@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {

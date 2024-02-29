@@ -8,7 +8,7 @@ core_src = files(
   'message/CDTP1Message.cpp',
   'message/CSCP1Message.cpp',
   'message/Dictionary.cpp',
-  'message/Header.cpp',
+  'message/BaseHeader.cpp',
 )
 
 core_lib = library('ConstellationCore',
@@ -40,7 +40,7 @@ install_headers(
   'message/CMDP1Header.hpp',
   'message/CSCP1Message.hpp',
   'message/Dictionary.hpp',
-  'message/Header.hpp',
+  'message/BaseHeader.hpp',
   'message/Protocol.hpp',
   subdir: 'constellation/core/message',
 )

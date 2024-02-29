@@ -19,7 +19,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
