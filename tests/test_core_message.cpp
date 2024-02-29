@@ -34,6 +34,14 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
     REQUIRE(cscp1_header.getTime() == tp);
     REQUIRE(cscp1_header.getTags().empty());
     REQUIRE_THAT(cscp1_header.to_string(), ContainsSubstring("CSCP1"));
+
+    const CDTP1Message::Header cdtp1_header {"senderCDTP", 0, CDTP1Message::Type::BOR, tp};
+
+    REQUIRE_THAT(to_string(cdtp1_header.getSender()), Equals("senderCDTP"));
+    REQUIRE(cdtp1_header.getType() == CDTP1Message::Type::BOR);
+    REQUIRE(cdtp1_header.getTime() == tp);
+    REQUIRE(cdtp1_header.getTags().empty());
+    REQUIRE_THAT(cdtp1_header.to_string(), ContainsSubstring("CDTP1"));
 }
 
 TEST_CASE("String Output", "[core][core::message]") {
