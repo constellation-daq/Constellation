@@ -51,7 +51,7 @@ test_core_message = executable('test_core_message',
   sources: 'test_core_message.cpp',
   dependencies: [core_dep, catch2_dep],
 )
-test('Core message header test', test_core_message,
+test('Core message test', test_core_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
