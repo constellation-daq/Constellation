@@ -16,43 +16,41 @@
 
 using namespace constellation::satellite;
 
-#define LOGGER logger_
-
 Satellite::Satellite() : logger_("SATELLITE") {}
 
 void Satellite::initializing(const std::stop_token& /* stop_token */, const std::any& /* config */) {
-    LOG(INFO) << "Initializing - empty";
+    LOG(logger_, INFO) << "Initializing - empty";
 }
 
 void Satellite::launching(const std::stop_token& /* stop_token */) {
-    LOG(INFO) << "Launching - empty";
+    LOG(logger_, INFO) << "Launching - empty";
 }
 
 void Satellite::landing(const std::stop_token& /* stop_token */) {
-    LOG(INFO) << "Landing - empty";
+    LOG(logger_, INFO) << "Landing - empty";
 }
 
 void Satellite::reconfiguring(const std::stop_token& /* stop_token */, const std::any& /* partial_config */) {
     // TODO(stephan.lachnit): throw if not supported
-    LOG(INFO) << "Reconfiguring - empty";
+    LOG(logger_, INFO) << "Reconfiguring - empty";
 }
 
 void Satellite::starting(const std::stop_token& /* stop_token */, std::uint32_t run_number) {
-    LOG(INFO) << "Starting run " << run_number << " - empty";
+    LOG(logger_, INFO) << "Starting run " << run_number << " - empty";
 }
 
 void Satellite::stopping(const std::stop_token& /* stop_token */) {
-    LOG(INFO) << "Stopping - empty";
+    LOG(logger_, INFO) << "Stopping - empty";
 }
 
 void Satellite::running(const std::stop_token& /* stop_token */) {
-    LOG(INFO) << "Running - empty";
+    LOG(logger_, INFO) << "Running - empty";
 }
 
 void Satellite::interrupting(const std::stop_token& /* stop_token */, State /* previous_state */) {
-    LOG(INFO) << "Interrupting - empty";
+    LOG(logger_, INFO) << "Interrupting - empty";
 }
 
 void Satellite::on_failure(const std::stop_token& /* stop_token */, State /* previous_state */) {
-    LOG(INFO) << "Failure - empty";
+    LOG(logger_, INFO) << "Failure - empty";
 }
