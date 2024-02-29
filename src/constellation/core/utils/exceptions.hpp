@@ -29,7 +29,7 @@ namespace constellation::utils {
          * @brief Creates exception with the specified problem
          * @param what_arg Text describing the problem
          */
-        explicit Exception(const std::string& what_arg) : error_message_(what_arg) {}
+        explicit Exception(std::string what_arg) : error_message_(std::move(what_arg)) {}
 
         /**
          * @brief Return the error message
@@ -58,7 +58,7 @@ namespace constellation::utils {
          * @brief Creates exception with the given runtime problem
          * @param what_arg Text describing the problem
          */
-        explicit RuntimeError(const std::string& what_arg) : Exception(what_arg) {}
+        explicit RuntimeError(std::string what_arg) : Exception(std::move(what_arg)) {}
 
     protected:
         /**
@@ -78,7 +78,7 @@ namespace constellation::utils {
          * @brief Creates exception with the given logical problem
          * @param what_arg Text describing the problem
          */
-        explicit LogicError(const std::string& what_arg) : Exception(what_arg) {}
+        explicit LogicError(std::string what_arg) : Exception(std::move(what_arg)) {}
 
     protected:
         /**
