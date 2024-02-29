@@ -23,9 +23,9 @@ namespace constellation::message {
      */
     class MessageDecodingError : public utils::RuntimeError {
     public:
-        explicit MessageDecodingError(const std::string& msg) {
-            error_message_ = "Error in decoding message ";
-            error_message_ += msg;
+        explicit MessageDecodingError(const std::string& reason) {
+            error_message_ = "Error decoding message: ";
+            error_message_ += reason;
         }
     };
 

@@ -80,7 +80,7 @@ namespace constellation::message {
          *
          * @return Message assembled to ZeroMQ frames
          */
-        CNSTLN_API zmq::multipart_t assemble();
+        CNSTLN_API zmq::multipart_t assemble() const;
 
         /**
          * Disassemble message from ZeroMQ frames

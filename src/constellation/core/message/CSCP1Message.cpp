@@ -14,6 +14,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/message/CSCP1Header.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
@@ -23,7 +24,7 @@ using namespace constellation::utils;
 CSCP1Message::CSCP1Message(CSCP1Header header, std::pair<CSCP1Type, std::string> verb)
     : header_(std::move(header)), verb_(std::move(verb)) {}
 
-zmq::multipart_t CSCP1Message::assemble() {
+zmq::multipart_t CSCP1Message::assemble() const {
     zmq::multipart_t frames {};
 
     // First frame: header
@@ -50,7 +51,7 @@ zmq::multipart_t CSCP1Message::assemble() {
 
 CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
     if(frames.size() < 2 || frames.size() > 3) {
-        // TODO(stephan.lachnit): throw
+        throw MessageDecodingError("Incorrect number of message frames");
     }
 
     // Decode header
