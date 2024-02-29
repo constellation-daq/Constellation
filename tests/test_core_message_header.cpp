@@ -15,6 +15,7 @@
 #include "constellation/core/message/CDTP1Header.hpp"
 #include "constellation/core/message/CMDP1Header.hpp"
 #include "constellation/core/message/CSCP1Header.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
 
@@ -107,6 +108,22 @@ TEST_CASE("Packing / Unpacking (unexpected protocol)", "[core][core::message]") 
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+}
+
+TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
+
+    const CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Type::SUCCESS, ""}};
+    auto frames = cscp1_message.assemble();
+
+    // Attach additional frames:
+    msgpack::sbuffer sbuf_header {};
+    msgpack::pack(sbuf_header, "this is fine");
+    frames.addmem(sbuf_header.data(), sbuf_header.size());
+    frames.addmem(sbuf_header.data(), sbuf_header.size());
+
+    // Check for excess frame detection
+    REQUIRE_THROWS_AS(CSCP1Message::disassemble(frames), MessageDecodingError);
 }
 
 TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
