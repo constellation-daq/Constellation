@@ -12,7 +12,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
-#include "constellation/core/message/CDTP1Header.hpp"
+#include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CMDP1Header.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -61,7 +61,7 @@ TEST_CASE("String Output", "[core][core::message]") {
 }
 
 TEST_CASE("String Output (CDTP1)", "[core][core::message]") {
-    const CDTP1Header cdtp1_header {"senderCMDP", 1234, DATA};
+    const CDTP1Message::Header cdtp1_header {"senderCMDP", 1234, CDTP1Message::Type::DATA};
 
     const auto string_out = cdtp1_header.to_string();
 
@@ -127,17 +127,17 @@ TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
 
 TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
     constexpr std::uint64_t seq_no = 1234;
-    const CDTP1Header cdtp1_header {"senderCDTP", seq_no, EOR};
+    const CDTP1Message::Header cdtp1_header {"senderCDTP", seq_no, CDTP1Message::Type::EOR};
 
     // Pack header
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, cdtp1_header);
 
     // Unpack header
-    const auto cdtp1_header_unpacked = CDTP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
+    const auto cdtp1_header_unpacked = CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
 
     // Compare unpacked header
-    REQUIRE(cdtp1_header_unpacked.getType() == EOR);
+    REQUIRE(cdtp1_header_unpacked.getType() == CDTP1Message::Type::EOR);
     REQUIRE(cdtp1_header_unpacked.getSequenceNumber() == seq_no);
 }
 
