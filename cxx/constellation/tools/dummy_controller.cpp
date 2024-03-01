@@ -8,6 +8,7 @@
  */
 
 #include <iostream>
+#include <memory>
 #include <string>
 
 #include <zmq.hpp>
@@ -37,7 +38,12 @@ int main(int argc, char* argv[]) {
         std::getline(std::cin, command);
 
         // Send command
-        auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, std::move(command)});
+        auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
+        if(command == "initialize" || command == "reconfigure" || command == "start") {
+            // HACK: add payload if initialize, reconfigure, or start
+            send_msg.addPayload(std::make_shared<zmq::message_t>("this is a dummy payload"));
+            std::cout << "added payload " << send_msg.hasPayload() << std::endl;
+        }
         send_msg.assemble().send(req);
 
         // Receive reply
