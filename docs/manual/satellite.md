@@ -43,6 +43,7 @@ to implement:
 | Command        | Description
 | -------------- | -----------
 | `get_name`     | Returns the name of the queried satellite
+| `get_version`  | Returns the Constellation version identifier string the queried satellite has been built with
 | `get_commands` | Provides a full list of the available commands for the queried satellite
 | `get_state`    | Returns the [current state](#satellite-fsm) of the satellite
 | `get_status`   | Returns the current [status message](#satellite-status) of the satellite
