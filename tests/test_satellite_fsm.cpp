@@ -170,35 +170,35 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
 TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto satellite = std::make_shared<DummySatellite>();
     auto fsm = FSM(satellite);
-    using constellation::message::CSCP1Type;
+    using constellation::message::CSCP1Message;
 
     auto payload_frame = std::make_shared<zmq::message_t>();
-    auto ret = std::pair<constellation::message::CSCP1Type, std::string>();
+    auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame
     ret = fsm.reactCSCP(CSCPTransition::initialize, {});
-    REQUIRE(ret.first == CSCP1Type::INCOMPLETE);
+    REQUIRE(ret.first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(ret.second, Equals("Transition initialize requires a payload frame"));
     ret = fsm.reactCSCP(CSCPTransition::initialize, payload_frame);
-    REQUIRE(ret.first == CSCP1Type::SUCCESS);
+    REQUIRE(ret.first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(ret.second, Equals("Transition initialize is being initiated"));
 
     // INVALID when not allowed
     satellite->progress_fsm(fsm);
     ret = fsm.reactCSCP(CSCPTransition::start, {});
-    REQUIRE(ret.first == CSCP1Type::INVALID);
+    REQUIRE(ret.first == CSCP1Message::Type::INVALID);
     REQUIRE_THAT(ret.second, Equals("Transition start not allowed from INIT state"));
 
     // payload is ignored when not used
     ret = fsm.reactCSCP(CSCPTransition::launch, payload_frame);
-    REQUIRE(ret.first == CSCP1Type::SUCCESS);
+    REQUIRE(ret.first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(ret.second, Equals("Transition launch is being initiated (payload frame is ignored)"));
     satellite->progress_fsm(fsm);
 
     // NOTIMPLEMENTED if reconfigure not supported
     satellite->dummy_support_reconfigure(false);
     ret = fsm.reactCSCP(CSCPTransition::reconfigure, payload_frame);
-    REQUIRE(ret.first == CSCP1Type::NOTIMPLEMENTED);
+    REQUIRE(ret.first == CSCP1Message::Type::NOTIMPLEMENTED);
     REQUIRE_THAT(ret.second, Equals("Transition reconfigure is not implemented by this satellite"));
 }
 

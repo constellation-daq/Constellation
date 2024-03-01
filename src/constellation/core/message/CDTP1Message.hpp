@@ -20,20 +20,60 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/message/CDTP1Header.hpp"
+#include "constellation/core/message/BaseHeader.hpp"
+#include "constellation/core/message/Dictionary.hpp"
+#include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
 
     /** Class representing a CDTP1 message */
     class CDTP1Message {
     public:
+        enum class Type : std::uint8_t {
+            DATA = '\x00',
+            BOR = '\x01',
+            EOR = '\x02',
+        };
+
+        class CNSTLN_API Header final : public BaseHeader {
+        public:
+            Header(std::string sender,
+                   std::uint64_t seq,
+                   Type type,
+                   std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
+                : BaseHeader(CDTP1, std::move(sender), time), seq_(seq), type_(type) {}
+
+            constexpr std::uint64_t getSequenceNumber() const { return seq_; }
+
+            constexpr Type getType() const { return type_; }
+
+            CNSTLN_API std::string to_string() const final;
+
+            CNSTLN_API static Header disassemble(std::span<const std::byte> data);
+
+            CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const final;
+
+        private:
+            Header(std::string sender,
+                   std::chrono::system_clock::time_point time,
+                   Dictionary tags,
+                   std::uint64_t seq,
+                   Type type)
+                : BaseHeader(CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
+
+        private:
+            std::uint64_t seq_;
+            Type type_;
+        };
+
+    public:
         /**
          * @param header CDTP1 header of the message
          * @param frames Number of payload frames to reserve
          */
-        CNSTLN_API CDTP1Message(CDTP1Header header, size_t frames = 1);
+        CNSTLN_API CDTP1Message(Header header, size_t frames = 1);
 
-        constexpr const CDTP1Header& getHeader() const { return header_; }
+        constexpr const Header& getHeader() const { return header_; }
 
         std::vector<std::shared_ptr<zmq::message_t>> getPayload() const { return payload_frames_; }
 
@@ -54,7 +94,7 @@ namespace constellation::message {
         CNSTLN_API static CDTP1Message disassemble(zmq::multipart_t& frames);
 
     private:
-        CDTP1Header header_;
+        Header header_;
         std::vector<std::shared_ptr<zmq::message_t>> payload_frames_;
     };
 

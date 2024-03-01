@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "Header.hpp"
+#include "BaseHeader.hpp"
 
 #include <ios>
 #include <sstream>
@@ -17,6 +17,7 @@
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
@@ -26,7 +27,7 @@ using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
 // Similar to CDTP1Header::disassemble in CDTP1Header.cpp, check when modifying
-Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
+BaseHeader BaseHeader::disassemble(Protocol protocol, std::span<const std::byte> data) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
@@ -34,7 +35,7 @@ Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
     if(protocol_identifier != get_protocol_identifier(protocol)) {
-        // TODO(stephan.lachnit): throw
+        throw UnexpectedProtocolError(protocol_identifier, get_protocol_identifier(protocol));
     }
 
     // Unpack sender
@@ -53,7 +54,7 @@ Header Header::disassemble(Protocol protocol, std::span<const std::byte> data) {
     return {protocol, sender, time, tags};
 }
 
-void Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+void BaseHeader::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     // first pack version
     msgpack_packer.pack(get_protocol_identifier(protocol_));
     // then sender
@@ -64,7 +65,7 @@ void Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) con
     msgpack_packer.pack(tags_);
 }
 
-std::string Header::to_string() const {
+std::string BaseHeader::to_string() const {
     std::ostringstream out {};
     std::boolalpha(out);
     out << "Header: "sv << get_hr_protocol_identifier(protocol_) << '\n' //

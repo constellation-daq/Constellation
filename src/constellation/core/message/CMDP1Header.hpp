@@ -9,21 +9,21 @@
 
 #pragma once
 
-#include "constellation/core/message/Header.hpp"
+#include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
 
     /** CMDP1 Header */
-    class CMDP1Header final : public Header {
+    class CMDP1Header final : public BaseHeader {
     public:
         CMDP1Header(std::string sender, std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : Header(CMDP1, std::move(sender), time) {}
+            : BaseHeader(CMDP1, std::move(sender), time) {}
 
-        static CMDP1Header disassemble(std::span<const std::byte> data) { return {Header::disassemble(CMDP1, data)}; }
+        static CMDP1Header disassemble(std::span<const std::byte> data) { return {BaseHeader::disassemble(CMDP1, data)}; }
 
     private:
-        CMDP1Header(Header&& base_header) : Header(std::move(base_header)) {}
+        CMDP1Header(BaseHeader&& base_header) : BaseHeader(std::move(base_header)) {}
     };
 
 } // namespace constellation::message

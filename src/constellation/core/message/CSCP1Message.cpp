@@ -13,14 +13,14 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/message/CSCP1Header.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::message;
 using namespace constellation::utils;
 
-CSCP1Message::CSCP1Message(CSCP1Header header, std::pair<CSCP1Type, std::string> verb)
+CSCP1Message::CSCP1Message(CSCP1Message::Header header, std::pair<Type, std::string> verb)
     : header_(std::move(header)), verb_(std::move(verb)) {}
 
 zmq::multipart_t CSCP1Message::assemble() {
@@ -50,16 +50,16 @@ zmq::multipart_t CSCP1Message::assemble() {
 
 CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
     if(frames.size() < 2 || frames.size() > 3) {
-        // TODO(stephan.lachnit): throw
+        throw MessageDecodingError("Incorrect number of message frames");
     }
 
     // Decode header
-    const auto header = CSCP1Header::disassemble({to_byte_ptr(frames.at(0).data()), frames.at(0).size()});
+    const auto header = Header::disassemble({to_byte_ptr(frames.at(0).data()), frames.at(0).size()});
 
     // Decode body
     std::size_t offset = 0;
     const auto msgpack_type = msgpack::unpack(to_char_ptr(frames.at(1).data()), frames.at(1).size(), offset);
-    const auto type = static_cast<CSCP1Type>(msgpack_type->as<std::uint8_t>());
+    const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
     const auto msgpack_string = msgpack::unpack(to_char_ptr(frames.at(1).data()), frames.at(1).size(), offset);
     const auto string = msgpack_string->as<std::string>();
 

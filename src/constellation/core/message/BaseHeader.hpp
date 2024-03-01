@@ -24,13 +24,13 @@
 namespace constellation::message {
 
     /** Message Header Base Class */
-    class CNSTLN_API Header {
+    class CNSTLN_API BaseHeader {
     public:
-        virtual ~Header() = default;
-        Header(const Header&) = default;
-        Header(Header&&) = default;
-        Header& operator=(const Header&) = delete;
-        Header& operator=(Header&&) = delete;
+        virtual ~BaseHeader() = default;
+        BaseHeader(const BaseHeader&) = default;
+        BaseHeader(BaseHeader&&) = default;
+        BaseHeader& operator=(const BaseHeader&) = delete;
+        BaseHeader& operator=(BaseHeader&&) = delete;
 
         /** Return message protocol */
         constexpr Protocol getProtocol() const { return protocol_; }
@@ -65,7 +65,7 @@ namespace constellation::message {
          * @param time Message time
          * @param tags Message tags (defaults to empty dictionary)
          */
-        Header(Protocol protocol, std::string sender, std::chrono::system_clock::time_point time, Dictionary tags = {})
+        BaseHeader(Protocol protocol, std::string sender, std::chrono::system_clock::time_point time, Dictionary tags = {})
             : protocol_(protocol), sender_(std::move(sender)), time_(time), tags_(std::move(tags)) {}
 
         /**
@@ -74,7 +74,7 @@ namespace constellation::message {
          * @param protocol Protocol
          * @param data View to byte data
          */
-        CNSTLN_API static Header disassemble(Protocol protocol, std::span<const std::byte> data);
+        CNSTLN_API static BaseHeader disassemble(Protocol protocol, std::span<const std::byte> data);
 
     private:
         const Protocol protocol_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
