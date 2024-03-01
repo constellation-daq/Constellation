@@ -36,9 +36,9 @@ def debug_log(func):
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        self.log.debug(f"-> Entering {func.__name__} with args: {args}")
+        self.log.debug("-> Entering %s with args: %s", func.__name__, args)
         output = func(self, *args, **kwargs)
-        self.log.debug(f"<- Exiting {func.__name__} with output: {output}")
+        self.log.debug("<- Exiting %s with output: %s", func.__name__, output)
         return output
 
     return wrapper
