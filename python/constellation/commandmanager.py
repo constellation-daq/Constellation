@@ -66,7 +66,7 @@ class CommandReceiver(BaseSatelliteFrame):
         while not self._com_thread_evt.is_set():
             req = self._cmd_tm.get_message()
             if not req:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:

@@ -108,8 +108,10 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
                 # nothing to process
                 pass
 
-            time.sleep(1)
-        # TODO add a 'finally:' which closes zmq context via .term() and cleans up other things
+            time.sleep(0.05)
+        # TODO add a 'finally:' which closes zmq context via .term() and cleans
+        # up other things OR setup an atexit hook
+        #
         # on exit: stop heartbeater
         self.heartbeater.stop()
         # TODO : shutdown broadcast manager and depart
