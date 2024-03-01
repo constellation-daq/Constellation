@@ -33,23 +33,65 @@ physics:
 
 ### Limitations & Threat Model Considerations
 
-In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as "subnets".
-It is assumed that
+In its current version, Constellation is intended to run in closed internal networks only, in the following referred to as
+"subnets". It is assumed that
 
 * the subnet and all connected hosts can be trusted.
 * there are no malicious actors on the subnet.
 * the transmitted information is non-confidential to any actor on the subset.
-* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard configuration.
+* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard
+  configuration.
 
-All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml), which is why no privileged user account
-is required for running a constellation host - unless the controlled hardware requires so. If in such a case the Constellation host
-requires elevated privileges for running, this is clearly documented in the respective component documentation.
+All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml),
+which is why no privileged user account
+is required for running a constellation host - unless the controlled hardware requires so. If in such a case the
+Constellation host requires elevated privileges for running, this is clearly documented in the respective component
+documentation.
 
-It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration - chosen for user convenience - is to bind to all available network interfaces of the host.
+It is possible to configure Constellation hosts to bind to specific network interfaces only, but the default configuration -
+chosen for user convenience - is to bind to all available network interfaces of the host.
 
-In general, users are required to satisfy their personal threat model by external means such as firewalls, physical isolation and virtualization on the edges of the subnet Constellation runs on.
+In general, users are required to satisfy their personal threat model by external means such as firewalls, physical isolation
+and virtualization on the edges of the subnet Constellation runs on.
 
-## Components of a Constellation
+## Component Types
 
 The Constellation framework knows three different types of components; Satellites, controllers and listeners. Each of them
 have a different purpose and can or cannot partake in interactions. The components are described in the subsequent sections.
+
+### The Satellite
+
+Satellites are the main actors in a Constellation. They implement instrument controlling code as well as data receivers and
+any other component that should follow the Constellation operation synchronously.
+
+Satellites are stateful and are implemented around a well-defined finite state machine which governs their behavior and
+possible actions. Satellites are partaking in all Constellation communication protocols: They react to commands from
+controllers over [CSCP](/manual/protocols.md#cscp), listen to other satellite's heartbeat messages via
+[CHBP](/manual/protocols.md#chbp), distribute log messages with [CMDP](/manual/protocols.md#cmdp) and transmit their recorded
+instrument data over [CDTP](/manual/protocols.md#cdtp).
+
+A detailed description of the satellite structure, its features and possibilities to interact with are provided in
+[a dedicated chapter](/manual/satellite) in this user guide.
+
+### The Controller
+
+Controllers are the main user interface to a Constellation. They represent the nodes which are capable of sending commands
+to satellites via the [CSCP protocol](/manual/protocols.md#cscp). The main code for parsing and interpreting configuration
+files resides in the controller, and graphical or command-line user interfaces typically are implemented as controllers.
+
+Controllers do not possess a state, i.e. they are not a satellite of the Constellation. The main advantage of this approach
+is that controllers can be closed and reopened by the operator, or can even crash, without affecting the Constellation.
+
+The functionality of the controller in Constellation is described in detail in [this chapter](/manual/controller).
+
+### The Listener
+
+The listener is the least powerful type of component. As the name suggests, this program only listens to protocol
+communications of other components, typically via the [CMDP](/manual/protocols.md#cmdp), and is entirely passive otherwise.
+Consequently, listeners are stateless  and the Constellation is not affected by them appearing or disappearing during
+operations.
+
+A typical example would be a log message interface which subscribes to log streams for any satellite in the Constellation.
+
+Possible use-cases, the functionality and limitations of listeners in Constellation are described in
+[this chapter](/manual/listener).
