@@ -182,6 +182,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         the FSM.
 
         """
+        # NOTE This transition must not be threaded as it is intended to stop
+        # the acquisition thread (which does not stop on its own). If
+        # thread=True then it would be added as another worker thread and
+        # potentially never started.
         return self._transition("stop", request, thread=False)
 
     @debug_log
@@ -193,8 +197,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         the FSM.
 
         """
-        if not hasattr(self, "on_reconfigure"):
-            raise NotImplementedError("Reconfigure not supported")
+        if not hasattr(self, "do_reconfiguring"):
+            raise NotImplementedError(
+                "Reconfigure not supported: missing function 'do_reconfiguring'"
+            )
         return self._transition("reconfigure", request, thread=False)
 
     @debug_log
@@ -230,7 +236,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         """
         return self._transition("failure", request, thread=False)
 
-    def _transition(self, target: str, request: CSCPMessage, thread: bool):
+    def _transition(
+        self, target: str, request: CSCPMessage, thread: bool
+    ) -> tuple[str, str, None]:
         """Prepare and enqeue a transition task.
 
         The task consists of the respective transition method and the request
@@ -241,12 +249,13 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         a subsequent task such as 'RUN' can be stopped via the 'stop' command.
 
         Otherwise, the transition will be run in the main satellite thread and
-        subsequent tasks are queued until the original transition has finished.
+        subsequent tasks are queued and blocked until the original transition
+        has finished.
 
         """
         # call FSM transition, will throw if not allowed
         getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
-        transit_fcn = getattr(self, f"on_{target}")
+        transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
         if thread:
             # task will be run in a separate thread
@@ -274,7 +283,8 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             # operational state
             self.fsm.status = res
 
-    def _start_transition_thread(self, fcn: callable, payload: any):
+    @debug_log
+    def _start_transition_thread(self, fcn: callable, payload: any) -> None:
         """Start a transition thread with the given fcn and arguments."""
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
@@ -282,7 +292,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         self._state_thread_fut.add_done_callback(self._state_transition_thread_complete)
 
     @handle_error
-    def _state_transition_thread_complete(self, fut: Future):
+    def _state_transition_thread_complete(self, fut: Future) -> None:
         """Callback method when a transition thread is done."""
         self.log.debug("Transition completed and callback received.")
         # Get the thread's return value. This raises any exception thrown in the
@@ -293,6 +303,13 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         if not res:
             res = "Transition completed!"
         # try to advance the FSM for finishing transitional states
+        #
+        # TODO take into account that we might have cancelled the transition, so
+        # check whether the event is set here and abort if so
+        #
+        # TODO/NOTE the Event might also be set in case we are shutting down; then
+        # the abort FSM transition might not be allowed and we just want to
+        # close things down; take this case into account as well
         try:
             self.fsm.complete(res)
         except TransitionNotAllowed:
