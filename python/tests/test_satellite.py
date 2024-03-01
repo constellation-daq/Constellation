@@ -46,6 +46,9 @@ def mock_satellite():
         yield s
 
 
+KEEP_WAITING = True
+
+
 @pytest.fixture
 def mock_device_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
@@ -60,6 +63,12 @@ def mock_device_satellite(mock_chirp_socket):
         @chirp_callback(CHIRPServiceIdentifier.DATA)
         def callback_function(self, service):
             self.callback_triggered = service
+
+        def do_initializing(self, payload):
+            global KEEP_WAITING
+            while KEEP_WAITING:
+                time.sleep(0.01)
+            return "finished with mock initialization"
 
     with patch("constellation.base.zmq.Context") as mock:
         mock_context = MagicMock()
@@ -112,6 +121,70 @@ def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     req = sender.get_message()
     assert "init" in req.msg.lower()
     assert req.msg_verb == CSCPMessageVerb.SUCCESS
+
+
+@pytest.mark.forked
+def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_satellite):
+    """Test slow transitional states."""
+    global KEEP_WAITING
+    KEEP_WAITING = True
+    sender = mock_cmd_transmitter
+    # send a request to init
+    sender.send_request("initialize", "mock argument string")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert "transitioning" in req.msg.lower()
+    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    # check state
+    sender.send_request("get_state")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert "initializing" in req.msg.lower()
+    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    KEEP_WAITING = False
+    # check state again
+    sender.send_request("get_state")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert req.msg.lower() == "init"
+    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+
+
+@pytest.mark.forked
+def test_satellite_fsm_cannot_change_transitional(
+    mock_cmd_transmitter, mock_device_satellite
+):
+    """Test slow transitional states."""
+    global KEEP_WAITING
+    KEEP_WAITING = True
+    sender = mock_cmd_transmitter
+    # send a request to init
+    sender.send_request("initialize", "mock argument string")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert "transitioning" in req.msg.lower()
+    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    # check state
+    sender.send_request("get_state")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert "initializing" in req.msg.lower()
+    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    # send a request to init again
+    sender.send_request("initialize", "mock argument string")
+    time.sleep(0.1)
+    req = sender.get_message()
+    assert req.msg_verb == CSCPMessageVerb.INVALID
+    # send a request to finish translational state
+    sender.send_request("initialized")  # not a command
+    time.sleep(0.2)
+    req = sender.get_message()
+    assert req.msg_verb == CSCPMessageVerb.UNKNOWN
+    # send a request to move to next state before we are ready
+    sender.send_request("launch")  # not allowed
+    time.sleep(0.2)
+    req = sender.get_message()
+    assert req.msg_verb == CSCPMessageVerb.INVALID
 
 
 @pytest.mark.forked
