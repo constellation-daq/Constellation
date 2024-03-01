@@ -10,6 +10,8 @@ Constellation Satellites.
 import threading
 import time
 import zmq
+from statemachine.exceptions import TransitionNotAllowed
+
 from .cscp import CommandTransmitter, CSCPMessageVerb
 from .base import BaseSatelliteFrame
 
@@ -101,6 +103,12 @@ class CommandReceiver(BaseSatelliteFrame):
                 self.log.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
                     "WrongImplementation", CSCPMessageVerb.NOTIMPLEMENTED, repr(e)
+                )
+                continue
+            except TransitionNotAllowed:
+                self.log.error("Transition %s not allowed", req.msg)
+                self._cmd_tm.send_reply(
+                    "Transition not allowed", CSCPMessageVerb.INVALID, None
                 )
                 continue
             except Exception as e:
