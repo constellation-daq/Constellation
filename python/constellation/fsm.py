@@ -255,11 +255,13 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             )
         else:
             # task will be executed within the main satellite thread
-            self.task_queue.put((transit_fcn, [request.payload]))
+            self.task_queue.put(
+                (self._start_transition, [transit_fcn, request.payload])
+            )
         return "transitioning", target, None
 
     @debug_log
-    def _start_transition(self, fcn: callable, payload: any):
+    def _start_transition(self, fcn: callable, payload: any) -> None:
         """Start a transition and advance FSM for transitional states."""
         res = fcn(payload)
         if not res:
