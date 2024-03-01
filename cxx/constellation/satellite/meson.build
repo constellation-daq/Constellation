@@ -24,6 +24,7 @@ satellite_dep = declare_dependency(
 
 install_headers(
   'CSCPHandler.hpp',
+  'exceptions.hpp',
   'FSM.hpp',
   'fsm_definitions.hpp',
   'Satellite.hpp',
