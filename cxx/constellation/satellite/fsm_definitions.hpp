@@ -9,57 +9,17 @@
 
 #pragma once
 
-#include <cstdint>
-#include <type_traits>
-#include <utility>
-
-#include "constellation/core/utils/std23.hpp"
+#include "constellation/core/message/CSIG_definitions.hpp"
 
 namespace constellation::satellite {
-    /** Possible FSM states */
-    enum class State : std::uint8_t {
-        NEW,
-        initializing,
-        INIT,
-        launching,
-        landing,
-        ORBIT,
-        reconfiguring,
-        starting,
-        stopping,
-        RUN,
-        interrupting,
-        SAFE,
-        ERROR,
-    };
 
-    /** Possible FSM transitions */
-    enum class Transition : std::uint8_t {
-        initialize,
-        initialized,
-        launch,
-        launched,
-        land,
-        landed,
-        reconfigure,
-        reconfigured,
-        start,
-        started,
-        stop,
-        stopped,
-        interrupt,
-        interrupted,
-        failure,
-    };
+    // Forward possible FSM states
+    using message::State;
 
-    /** Possible transition commands via CSCP */
-    enum class CSCPTransition : std::underlying_type_t<Transition> {
-        initialize = std::to_underlying(Transition::initialize),
-        launch = std::to_underlying(Transition::launch),
-        land = std::to_underlying(Transition::land),
-        reconfigure = std::to_underlying(Transition::reconfigure),
-        start = std::to_underlying(Transition::start),
-        stop = std::to_underlying(Transition::stop),
-    };
+    // Forward possible FSM transitions
+    using message::Transition;
+
+    // Forward possible FSM transition commands
+    using message::TransitionCommand;
 
 } // namespace constellation::satellite

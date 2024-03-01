@@ -91,11 +91,11 @@ namespace constellation::satellite {
         /**
          * Perform a FSM transition via a CSCP message
          *
-         * @param cscp_transition Name of the transition (i.e. without the transition command)
+         * @param transition_command Transition command from CSCP
          * @param payload Payload frame from CSCP
          * @return Tuple containing the CSCP message type and a description
          */
-        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCSCP(CSCPTransition cscp_transition,
+        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCSCP(TransitionCommand transition_command,
                                                                                  std::shared_ptr<zmq::message_t> payload);
 
     private:
