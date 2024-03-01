@@ -83,6 +83,11 @@ namespace constellation::message {
         std::shared_ptr<zmq::message_t> getPayload() const { return payload_; }
 
         /**
+         * @return True if message has payload
+         */
+        bool hasPayload() const { return payload_ && !payload_->empty(); }
+
+        /**
          * @param payload Shared pointer to the ZeroMQ message to be used as payload
          */
         void addPayload(std::shared_ptr<zmq::message_t> payload) { payload_ = std::move(payload); }
