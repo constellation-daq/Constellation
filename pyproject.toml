@@ -34,6 +34,9 @@ dependencies = [
     "numpy",
 ]
 
+[project.scripts]
+Satellite = "constellation.satellite:main"
+
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
 Repository = "https://gitlab.desy.de/constellation/constellation"
