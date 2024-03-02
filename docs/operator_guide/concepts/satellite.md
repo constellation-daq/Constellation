@@ -211,6 +211,24 @@ reconfiguring -[dotted]up-> ORBIT
 
 This transition needs to be specifically implemented in individual satellites in order to make this transition available in the FSM.
 
+### Adding Conditions
+
+In some cases it can be required to launch, start or stop satellites in a specific order - they might for example depend on receiving a hardware clock from another satellite that is only available after initializing.
+
+For this purpose, Constellation provides [Autonomous Transition Orchestration](autonomy.md#autonomous-transition-orchestration), which enables defining
+a transition order using the `_require_<transition>_after` keywords provided via the satellite configuration:
+
+```toml
+[satellites.Sputnik.A]
+_require_starting_after = ["Sputnik.B"]
+```
+
+The satellite will evaluate these conditions upon entering respective transitional states. If, in the above example, Satellite `Sputnik.A` receives the condition
+`_require_starting_after Sputnik.B` it will enter the `starting` transitional states but wait until it receives the state `RUN` for satellite `Sputnik.B` before
+progressing through its own `starting` state.
+
+This method allows satellites to asynchronously progress from steady state to steady state without the necessity of a controller supervising the order of action.
+
 ### Failure Modes & Safe State
 
 Satellites operate autonomously in the Constellation, and no central controller instance is required to run. Controllers are
