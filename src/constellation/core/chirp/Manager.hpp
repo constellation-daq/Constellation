@@ -18,11 +18,12 @@
 
 #include <asio.hpp>
 
-#include "constellation/chirp/BroadcastRecv.hpp"
-#include "constellation/chirp/BroadcastSend.hpp"
-#include "constellation/chirp/Message.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastRecv.hpp"
+#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/utils/ports.hpp"
 
 namespace constellation::chirp {
 
@@ -32,7 +33,7 @@ namespace constellation::chirp {
         ServiceIdentifier identifier;
 
         /** Port of the offered service */
-        Port port;
+        utils::Port port;
 
         CNSTLN_API bool operator<(const RegisteredService& other) const;
     };
@@ -43,13 +44,13 @@ namespace constellation::chirp {
         asio::ip::address address;
 
         /** Host ID of the discovered service */
-        MD5Hash host_id;
+        message::MD5Hash host_id;
 
         /** Service identifier of the discovered service */
         ServiceIdentifier identifier;
 
         /** Port of the discovered service */
-        Port port;
+        utils::Port port;
 
         CNSTLN_API bool operator<(const DiscoveredService& other) const;
     };
@@ -117,21 +118,17 @@ namespace constellation::chirp {
         Manager& operator=(Manager&& other) = delete;
 
         /**
-         * Get the group ID
-         *
-         * @return MD5Hash of the group name
+         * @return Group ID (MD5Hash of the group name)
          */
-        constexpr MD5Hash GetGroupID() const { return group_id_; }
+        constexpr message::MD5Hash getGroupID() const { return group_id_; }
 
         /**
-         * Get the host ID
-         *
-         * @return MD5Hash of the host name
+         * @return Host ID (MD5Hash of the host name)
          */
-        constexpr MD5Hash GetHostID() const { return host_id_; }
+        constexpr message::MD5Hash getHostID() const { return host_id_; }
 
         /** Start the background thread of the manager */
-        CNSTLN_API void Start();
+        CNSTLN_API void start();
 
         /**
          * Register a service offered by the host in the manager
@@ -144,7 +141,7 @@ namespace constellation::chirp {
          * @retval true if the service was registered
          * @retval false if the service was already registered
          */
-        CNSTLN_API bool RegisterService(ServiceIdentifier service_id, Port port);
+        CNSTLN_API bool registerService(ServiceIdentifier service_id, utils::Port port);
 
         /**
          * Unregister a previously registered service offered by the host in the manager
@@ -157,21 +154,21 @@ namespace constellation::chirp {
          * @retval true If the service was unregistered
          * @retval false If the service was never registered
          */
-        CNSTLN_API bool UnregisterService(ServiceIdentifier service_id, Port port);
+        CNSTLN_API bool unregisterService(ServiceIdentifier service_id, utils::Port port);
 
         /**
          * Unregisters all offered services registered in the manager
          *
          * Equivalent to calling `UnregisterService` for every registered service.
          */
-        CNSTLN_API void UnregisterServices();
+        CNSTLN_API void unregisterServices();
 
         /**
          * Get the list of services currently registered in the manager
          *
          * @return Set with all currently registered services
          */
-        CNSTLN_API std::set<RegisteredService> GetRegisteredServices();
+        CNSTLN_API std::set<RegisteredService> getRegisteredServices();
 
         /**
          * Register a user callback for newly discovered or departing services
@@ -184,7 +181,7 @@ namespace constellation::chirp {
          * @retval true If the callback/service/user_data combination was registered
          * @retval false If the callback/service/user_data combination was already registered
          */
-        CNSTLN_API bool RegisterDiscoverCallback(DiscoverCallback* callback,
+        CNSTLN_API bool registerDiscoverCallback(DiscoverCallback* callback,
                                                  ServiceIdentifier service_id,
                                                  std::any user_data);
 
@@ -196,24 +193,24 @@ namespace constellation::chirp {
          * @retval true If the callback entry was unregistered
          * @retval false If the callback entry was never registered
          */
-        CNSTLN_API bool UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
+        CNSTLN_API bool unregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id);
 
         /**
          * Unregisters all discovery callbacks registered in the manager
          *
          * Equivalent to calling `UnregisterDiscoverCallback` for every discovery callback.
          */
-        CNSTLN_API void UnregisterDiscoverCallbacks();
+        CNSTLN_API void unregisterDiscoverCallbacks();
 
         /** Forgets all previously discovered services */
-        CNSTLN_API void ForgetDiscoveredServices();
+        CNSTLN_API void forgetDiscoveredServices();
 
         /**
          * Returns list of all discovered services
          *
          * @return Vector with all discovered services
          */
-        CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices();
+        CNSTLN_API std::vector<DiscoveredService> getDiscoveredServices();
 
         /**
          * Returns list of all discovered services with a given service identifier
@@ -221,7 +218,7 @@ namespace constellation::chirp {
          * @param service_id Service identifier for discovered services that should be listed
          * @return Vector with all discovered services with the given service identifier
          */
-        CNSTLN_API std::vector<DiscoveredService> GetDiscoveredServices(ServiceIdentifier service_id);
+        CNSTLN_API std::vector<DiscoveredService> getDiscoveredServices(ServiceIdentifier service_id);
 
         /**
          * Send a discovery request for a specific service identifier
@@ -233,7 +230,7 @@ namespace constellation::chirp {
          *
          * @param service_id Service identifier to send a request for
          */
-        CNSTLN_API void SendRequest(ServiceIdentifier service_id);
+        CNSTLN_API void sendRequest(ServiceIdentifier service_id);
 
     private:
         /**
@@ -242,10 +239,10 @@ namespace constellation::chirp {
          * @param type CHIRP broadcast message type
          * @param service Service with identifier and port
          */
-        void SendMessage(MessageType type, RegisteredService service);
+        void sendMessage(MessageType type, RegisteredService service);
 
         /**
-         * Run loop listening and responding to incoming CHIRP broadcasts
+         * Main loop listening and responding to incoming CHIRP broadcasts
          *
          * The run loop responds to incoming CHIRP broadcasts with REQUEST type by sending CHIRP broadcasts with OFFER type
          * for all registered services. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list
@@ -253,14 +250,14 @@ namespace constellation::chirp {
          *
          * @param stop_token Token to stop loop via `std::jthread`
          */
-        void Run(const std::stop_token& stop_token);
+        void main_loop(const std::stop_token& stop_token);
 
     private:
         BroadcastRecv receiver_;
         BroadcastSend sender_;
 
-        MD5Hash group_id_;
-        MD5Hash host_id_;
+        message::MD5Hash group_id_;
+        message::MD5Hash host_id_;
 
         /** Set of registered services */
         std::set<RegisteredService> registered_services_;
@@ -280,7 +277,7 @@ namespace constellation::chirp {
         /** Mutex for thread-safe access to `discover_callbacks_` */
         std::mutex discover_callbacks_mutex_;
 
-        std::jthread run_thread_;
+        std::jthread main_loop_thread_;
     };
 
 } // namespace constellation::chirp

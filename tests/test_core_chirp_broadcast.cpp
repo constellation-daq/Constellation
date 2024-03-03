@@ -17,8 +17,8 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "constellation/chirp/BroadcastRecv.hpp"
-#include "constellation/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/BroadcastRecv.hpp"
+#include "constellation/core/chirp/BroadcastSend.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::chirp;
@@ -32,10 +32,10 @@ TEST_CASE("Send and receive broadcast containing a string", "[chirp][broadcast]"
     BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
-    auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    auto msg_future = std::async(&BroadcastRecv::recvBroadcast, &receiver);
     // Send message (string)
     auto msg_content = "test message"s;
-    sender.SendBroadcast(msg_content);
+    sender.sendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
 
@@ -47,10 +47,10 @@ TEST_CASE("Send and receive broadcast containing binary content", "[chirp][broad
     BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
-    auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    auto msg_future = std::async(&BroadcastRecv::recvBroadcast, &receiver);
     // Send message (bytes)
     auto msg_content = std::vector<std::uint8_t>({'T', 'E', 'S', 'T'});
-    sender.SendBroadcast(msg_content.data(), msg_content.size());
+    sender.sendBroadcast(msg_content.data(), msg_content.size());
     // Receive message
     auto msg = msg_future.get();
 
@@ -62,10 +62,10 @@ TEST_CASE("Get IP address of broadcast from localhost", "[chirp][broadcast]") {
     BroadcastSend sender {"0.0.0.0", 49152};
 
     // Start receiving new message
-    auto msg_future = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    auto msg_future = std::async(&BroadcastRecv::recvBroadcast, &receiver);
     // Send message
     auto msg_content = "test message"s;
-    sender.SendBroadcast(msg_content);
+    sender.sendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
 
@@ -77,10 +77,10 @@ TEST_CASE("Send and receive broadcast asynchronously", "[chirp][broadcast]") {
     BroadcastSend sender {"0.0.0.0", 49152};
 
     // Try receiving new message
-    auto msg_opt_future = std::async(&BroadcastRecv::AsyncRecvBroadcast, &receiver, 10ms);
+    auto msg_opt_future = std::async(&BroadcastRecv::asyncRecvBroadcast, &receiver, 10ms);
     // Send message
     auto msg_content = "test message"s;
-    sender.SendBroadcast(msg_content);
+    sender.sendBroadcast(msg_content);
     // Receive message
     auto msg_opt = msg_opt_future.get();
 
@@ -97,7 +97,7 @@ TEST_CASE("Get timeout on asynchronous broadcast receive", "[chirp][broadcast]")
     BroadcastRecv receiver {"0.0.0.0", 49152};
 
     // Try receiving new message
-    auto msg_opt = receiver.AsyncRecvBroadcast(10ms);
+    auto msg_opt = receiver.asyncRecvBroadcast(10ms);
 
     // No message send, thus check for timeout that there is no message
     REQUIRE_FALSE(msg_opt.has_value());

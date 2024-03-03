@@ -11,14 +11,16 @@
 #include <iostream>
 
 #include <asio.hpp>
-#include <magic_enum.hpp>
 
-#include "constellation/chirp/BroadcastRecv.hpp"
-#include "constellation/chirp/exceptions.hpp"
-#include "constellation/chirp/Message.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastRecv.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::message;
+using namespace constellation::utils;
 
 int main(int argc, char* argv[]) {
     // Specify any address via cmdline
@@ -36,19 +38,19 @@ int main(int argc, char* argv[]) {
 
     while(true) {
         // Receive message
-        auto brd_msg = receiver.RecvBroadcast();
+        auto brd_msg = receiver.recvBroadcast();
 
         try {
             // Build message from message
-            auto chirp_msg = Message(brd_msg.content);
+            auto chirp_msg = CHIRPMessage::disassemble(brd_msg.content);
 
             std::cout << "-----------------------------------------" << std::endl;
-            std::cout << "Type:    " << magic_enum::enum_name(chirp_msg.GetType()) << std::endl;
-            std::cout << "Group:   " << chirp_msg.GetGroupID().to_string() << std::endl;
-            std::cout << "Host:    " << chirp_msg.GetHostID().to_string() << std::endl;
-            std::cout << "Service: " << magic_enum::enum_name(chirp_msg.GetServiceIdentifier()) << std::endl;
-            std::cout << "Port:    " << chirp_msg.GetPort() << std::endl;
-        } catch(const DecodeError& error) {
+            std::cout << "Type:    " << to_string(chirp_msg.getType()) << std::endl;
+            std::cout << "Group:   " << chirp_msg.getGroupID().to_string() << std::endl;
+            std::cout << "Host:    " << chirp_msg.getHostID().to_string() << std::endl;
+            std::cout << "Service: " << to_string(chirp_msg.getServiceIdentifier()) << std::endl;
+            std::cout << "Port:    " << chirp_msg.getPort() << std::endl;
+        } catch(const MessageDecodingError& error) {
             std::cerr << "-----------------------------------------" << std::endl;
             std::cerr << "Received invalid message: " << error.what() << std::endl;
         }

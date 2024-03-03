@@ -41,7 +41,7 @@ namespace constellation::chirp {
          *
          * @param message String with broadcast message
          */
-        CNSTLN_API void SendBroadcast(std::string_view message);
+        CNSTLN_API void sendBroadcast(std::string_view message);
 
         /**
          * Send broadcast message
@@ -49,7 +49,7 @@ namespace constellation::chirp {
          * @param data Pointer to message data
          * @param size Message length in bytes
          */
-        CNSTLN_API void SendBroadcast(const void* data, std::size_t size);
+        CNSTLN_API void sendBroadcast(const void* data, std::size_t size);
 
     private:
         asio::io_context io_context_;

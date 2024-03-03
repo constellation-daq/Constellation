@@ -44,6 +44,5 @@ cppzmq_dep = dependency('cppzmq', default_options: ['catch2=disabled'])
 constellation_inc = include_directories('..')
 
 subdir('core')
-subdir('chirp')
 subdir('satellite')
 subdir('tools')

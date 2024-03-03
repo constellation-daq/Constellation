@@ -15,11 +15,14 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/chirp/BroadcastSend.hpp"
-#include "constellation/chirp/Message.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/utils/ports.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::message;
+using namespace constellation::utils;
 
 int main(int argc, char* argv[]) {
     // Specify broadcast address via cmdline
@@ -68,12 +71,12 @@ int main(int argc, char* argv[]) {
         Port port = 23999;
         std::from_chars(port_s.data(), port_s.data() + port_s.size(), port);
 
-        auto chirp_msg = Message(type, group, host, service, port);
-        std::cout << "Group:   " << chirp_msg.GetGroupID().to_string() << std::endl;
-        std::cout << "Name:    " << chirp_msg.GetHostID().to_string() << std::endl;
+        auto chirp_msg = CHIRPMessage(type, group, host, service, port);
+        std::cout << "Group:   " << chirp_msg.getGroupID().to_string() << std::endl;
+        std::cout << "Name:    " << chirp_msg.getHostID().to_string() << std::endl;
 
-        auto asm_msg = chirp_msg.Assemble();
-        sender.SendBroadcast(asm_msg.data(), asm_msg.size());
+        auto asm_msg = chirp_msg.assemble();
+        sender.sendBroadcast(asm_msg.data(), asm_msg.size());
     }
 
     return 0;

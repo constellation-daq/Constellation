@@ -2,10 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
+  'chirp/BroadcastRecv.cpp',
+  'chirp/BroadcastSend.cpp',
+  'chirp/Manager.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
   'message/CDTP1Message.cpp',
+  'message/CHIRPMessage.cpp',
   'message/CSCP1Message.cpp',
   'message/Dictionary.cpp',
   'message/BaseHeader.cpp',
@@ -26,17 +30,31 @@ install_headers(
 )
 
 install_headers(
+  'chirp/BroadcastRecv.hpp',
+  'chirp/BroadcastSend.hpp',
+  'chirp/CHIRP_definitions.hpp',
+  'chirp/Manager.hpp',
+  subdir: 'constellation/core/chirp',
+)
+
+install_headers(
+  'external/md5.h',
+  subdir: 'constellation/core/external',
+)
+
+install_headers(
   'logging/CMDPSink.hpp',
   'logging/Level.hpp',
   'logging/log.hpp',
   'logging/Logger.hpp',
   'logging/ProxySink.hpp',
   'logging/SinkManager.hpp',
-  subdir: 'constellation/logging',
+  subdir: 'constellation/core/logging',
 )
 
 install_headers(
   'message/CDTP1Message.hpp',
+  'message/CHIRPMessage.hpp',
   'message/CMDP1Header.hpp',
   'message/CSCP1Message.hpp',
   'message/Dictionary.hpp',

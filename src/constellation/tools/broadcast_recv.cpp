@@ -14,8 +14,8 @@
 
 #include <asio.hpp>
 
-#include "constellation/chirp/BroadcastRecv.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastRecv.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 
 using namespace constellation::chirp;
 
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     BroadcastRecv receiver {any_address, port};
 
     while(true) {
-        auto message = receiver.RecvBroadcast();
+        auto message = receiver.recvBroadcast();
         std::cout << "Received message from " << message.address.to_string() << ": " << message.content_to_string()
                   << std::endl;
     }
