@@ -67,7 +67,7 @@ any other component that should follow the Constellation operation synchronously
 Satellites are stateful and are implemented around a well-defined finite state machine which governs their behavior and
 possible actions. Satellites are partaking in all Constellation communication protocols: They react to commands from
 controllers over [CSCP](/manual/protocols.md#cscp), listen to other satellite's heartbeat messages via
-[CHBP](/manual/protocols.md#chbp), distribute log messages with [CMDP](/manual/protocols.md#cmdp) and transmit their recorded
+[CHP](/manual/protocols.md#chp), distribute log messages with [CMDP](/manual/protocols.md#cmdp) and transmit their recorded
 instrument data over [CDTP](/manual/protocols.md#cdtp).
 
 A detailed description of the satellite structure, its features and possibilities to interact with are provided in

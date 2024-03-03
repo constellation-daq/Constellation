@@ -21,8 +21,8 @@ class CHIRPServiceIdentifier(Enum):
     The CONTROL service identifier indicates a CSCP (Constellation Satellite
     Control Protocol) service.
 
-    The HEARTBEAT service identifier indicates a CHBP (Constellation Heartbeat
-    Broadcasting Protocol) service.
+    The HEARTBEAT service identifier indicates a CHP (Constellation Heartbeat
+    Protocol) service.
 
     The MONITORING service identifier indicates a CMDP (Constellation Monitoring
     Distribution Protocol) service.
