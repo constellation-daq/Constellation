@@ -109,9 +109,7 @@ TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
 }
 
 TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
-
-    const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
+    const CSCP1Message::Header cscp1_header {"senderCSCP"};
 
     // Pack header
     msgpack::sbuffer sbuf {};
@@ -119,6 +117,17 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+}
+
+TEST_CASE("Header Packing / Unpacking (CDTP, unexpected protocol)", "[core][core::message]") {
+    const CSCP1Message::Header cscp1_header {"senderCSCP"};
+
+    // Pack header
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, cscp1_header);
+
+    // Check for wrong protocol to be picked up
+    REQUIRE_THROWS_AS(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -133,10 +142,22 @@ TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
     REQUIRE(cscp1_msg2.getVerb().first == CSCP1Message::Type::SUCCESS);
 }
 
+TEST_CASE("Message Assembly / Disassembly (CDTP1)", "[core][core::message]") {
+    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA}, 1};
+    REQUIRE(cdtp1_msg.getPayload().empty());
+
+    auto frames = cdtp1_msg.assemble();
+    auto cdtp1_msg2 = CDTP1Message::disassemble(frames);
+
+    REQUIRE_THAT(cdtp1_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCDTP"));
+    REQUIRE(cdtp1_msg2.getPayload().empty());
+}
+
 TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     CSCP1Message cscp1_msg {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
+    REQUIRE(cscp1_msg.getPayload() == nullptr);
 
     // Add payload frame
     msgpack::sbuffer sbuf_header {};
@@ -154,7 +175,7 @@ TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
     REQUIRE_THAT(py_string->as<std::string>(), Equals("this is fine"));
 }
 
-TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
+TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     CSCP1Message cscp1_message {{"senderCSCP", tp}, {CSCP1Message::Type::SUCCESS, ""}};
@@ -168,6 +189,31 @@ TEST_CASE("Packing / Unpacking (too many frames)", "[core][core::message]") {
 
     // Check for excess frame detection
     REQUIRE_THROWS_AS(CSCP1Message::disassemble(frames), MessageDecodingError);
+}
+
+TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {
+    auto tp = std::chrono::system_clock::now();
+
+    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA, tp}, 3};
+
+    // Add payload frame
+    for(int i = 0; i < 3; i++) {
+        msgpack::sbuffer sbuf_header {};
+        msgpack::pack(sbuf_header, "this is fine");
+        auto payload = std::make_shared<zmq::message_t>(sbuf_header.data(), sbuf_header.size());
+        cdtp1_msg.addPayload(payload);
+    }
+
+    // Assemble and disassemble message
+    auto frames = cdtp1_msg.assemble();
+    auto cdtp1_msg2 = CDTP1Message::disassemble(frames);
+
+    // Retrieve payload
+    auto data = cdtp1_msg2.getPayload();
+    REQUIRE(data.size() == 3);
+
+    auto py_string = msgpack::unpack(to_char_ptr(data.front()->data()), data.front()->size());
+    REQUIRE_THAT(py_string->as<std::string>(), Equals("this is fine"));
 }
 
 TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
