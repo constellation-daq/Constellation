@@ -50,7 +50,7 @@ variables:
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
-    CXX: g++
+    CXX: ccache g++
 
 .meson-wrap-cache: &meson-wrap-cache
   key: meson-wrap-cache
@@ -120,6 +120,9 @@ build:ubuntu-22.04:
   extends:
     - .build
     - .ubuntu-22.04
+  cache:
+    - *meson-wrap-cache
+    - *ccache
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
 
