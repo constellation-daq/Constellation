@@ -109,9 +109,7 @@ TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
 }
 
 TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
-
-    const CSCP1Message::Header cscp1_header {"senderCSCP", tp};
+    const CSCP1Message::Header cscp1_header {"senderCSCP"};
 
     // Pack header
     msgpack::sbuffer sbuf {};
@@ -119,6 +117,17 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+}
+
+TEST_CASE("Header Packing / Unpacking (CDTP, unexpected protocol)", "[core][core::message]") {
+    const CSCP1Message::Header cscp1_header {"senderCSCP"};
+
+    // Pack header
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, cscp1_header);
+
+    // Check for wrong protocol to be picked up
+    REQUIRE_THROWS_AS(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
