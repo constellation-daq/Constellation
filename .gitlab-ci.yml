@@ -41,7 +41,6 @@ variables:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-latest:latest
   variables:
     CXX: clang++
-    CXX_LD: mold
 
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
