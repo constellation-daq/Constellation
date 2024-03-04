@@ -119,16 +119,19 @@ CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
         // TODO(simonspa): throw
     }
 
+    auto frame_it = frames.begin();
+
     // Decode header
-    const auto header = Header::disassemble({to_byte_ptr(frames.at(0).data()), frames.at(0).size()});
+    const auto header = Header::disassemble({to_byte_ptr(frame_it->data()), frame_it->size()});
+    std::advance(frame_it, 1);
 
     // Create message, reversing space for frames
     auto cdtp_message = CDTP1Message(header, frames.size() - 1);
 
     // Swap payload
-    for(auto& frame : frames) {
+    for(; frame_it != frames.end(); frame_it++) {
         auto new_frame = std::make_shared<zmq::message_t>();
-        new_frame->swap(frame);
+        new_frame->swap(*frame_it);
         cdtp_message.addPayload(std::move(new_frame));
     }
 
