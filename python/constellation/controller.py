@@ -56,6 +56,8 @@ class TrivialController:
         )
 
     def _command_satellite(self, cmd, payload, meta, host_name=None):
+        """Send cmd and await response."""
+
         self.transmitters[host_name].send_request(
             cmd,
             payload,
@@ -80,8 +82,7 @@ class TrivialController:
             self._logger.error("Invalid satellite name.")
 
     def command(self, msg, host_name=None):
-        """Send cmd and await response."""
-
+        """Wrapper for _command_satellite function. Handle sending to all hosts"""
         if host_name:
             cmd, payload, meta = self._process_message(msg, host_name)
             msg = self._command_satellite(
@@ -104,6 +105,7 @@ class TrivialController:
                 )
 
     def _process_message(self, msg, host_name):
+        """Handle input commands and format into command message, payload and meta."""
         cmd = msg[0]
 
         if cmd == "initialize":
@@ -127,6 +129,7 @@ class TrivialController:
         return msg, payload, meta
 
     def process_command(self, user_input):
+        """Process input commands"""
         if user_input.startswith("target"):
             target = user_input.split(" ")[1]
             if target in self.transmitters.keys():
@@ -164,7 +167,7 @@ class TrivialController:
         config_path: str,
         trait: str | None = None,
     ):
-        """Get configuration to satellite. Specify trait to only send part of config."""
+        """Get configuration to satellite. Specify trait to only get part of config."""
         config = read_config(config_path)
 
         try:
