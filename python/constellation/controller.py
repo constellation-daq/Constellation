@@ -96,32 +96,24 @@ class TrivialController:
                 self.target_host = target
                 self._logger.info(f"target for next command: host {self.target_host}")
             else:
-                self._logger.error("No host...")
+                self._logger.error(f"No host {target}")
 
         elif user_input.startswith("add"):
-            socket_addr = str(user_input[1])
-            port = str(user_input[2])
-            host = socket_addr + ":" + port
-            self.control_reg(host)
+            satellite_info = user_input.split(" ")
+            host_name = str(satellite_info[1])
+            host_addr = str(satellite_info[2])
+            port = str(satellite_info[3])
+            self.add_satellite(host_name=host_name, host_addr=host_addr, port=port)
+
         elif user_input.startswith("remove"):
-            idx = int(user_input[1])
-            if idx >= len(self.sockets):
-                self._logger.error(f"No host with ID {idx}")
-            self.remove_sat(self.sockets[idx])
-        elif user_input.startswith("configure"):
-            # TODO: make split insensitive to " " in path/to/file
-            config_path = str(user_input[1])
-            try:
-                config = read_config(config_path)
-            except FileNotFoundError:
-                self._logger.warning("Configuration file not found")
-            if host:
-                self.command(pack_config(config), idx, host)
+            target = user_input.split(" ")[1]
+            if target in self.transmitters.keys():
+                self.transmitters.pop(target)
             else:
-                self._logger.warning("No satellite set for configuration")
+                self._logger.error(f"No host {target}")
         else:
-            if host:
-                self.command(user_input, idx, host)
+            if self.target_host:
+                self.command(user_input)
             else:
                 self.command(user_input)
 
