@@ -38,20 +38,20 @@ class TrivialController:
             CHIRPServiceIdentifier.CONTROL, self.add_satellite
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
+        self.target_host = None
 
-    def add_satellite(self, host, port: int = None):
+    def add_satellite(self, host_name, host_addr, port: int = None):
         """Add satellite socket to controller on port."""
-        host_addr = host
-        if "tcp://" not in host[:6]:
+        if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
         if port:
             host_addr = host_addr + ":" + port
         socket = self.context.socket(zmq.REQ)
         socket.connect(host_addr)
-        self.transmitters[host] = CommandTransmitter(host, socket)
+        self.transmitters[host_name] = CommandTransmitter(host_name, socket)
         self._logger.info(
             "connecting to %s, ID %s...",
-            host,
+            host_name,
             len(self.transmitters) - 1,
         )
 
