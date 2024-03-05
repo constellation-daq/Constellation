@@ -40,7 +40,7 @@ class TrivialController:
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
 
-    def add_satellite(self, host_name, host_addr, port: int = None):
+    def add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
