@@ -100,6 +100,9 @@ class TrivialController:
             else:
                 self._logger.error(f"No host {target}")
 
+        elif user_input.startswith("untarget"):
+            self.target_host = target
+
         elif user_input.startswith("add"):
             satellite_info = user_input.split(" ")
             host_name = str(satellite_info[1])
