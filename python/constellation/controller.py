@@ -55,13 +55,17 @@ class TrivialController:
             len(self.transmitters) - 1,
         )
 
-    def _command_satellite(self, cmd, idx=0, host=None):
-        self.transmitters[host].send_request(cmd)
-        self._logger.info("ID%s send command %s...", idx, cmd)
+    def _command_satellite(self, cmd, payload, meta, host_name=None):
+        self.transmitters[host_name].send_request(
+            cmd,
+            payload,
+            meta,
+        )
+        self._logger.info("Host %s send command %s...", host_name, cmd)
 
         try:
-            response, header, payload = self.transmitters[host].get_message()
-            self._logger.info("ID %sreceived response: %s", idx, response)
+            response, header, payload = self.transmitters[host_name].get_message()
+            self._logger.info("Host %s received response: %s", host_name, response)
             if header:
                 self._logger.info("    header: %s", header)
             if payload:
@@ -69,8 +73,8 @@ class TrivialController:
 
         except TimeoutError:
             self._logger.error(
-                "ID %s did not receive response. Command timed out.",
-                idx,
+                "Host %s did not receive response. Command timed out.",
+                host_name,
             )
         except KeyError:
             self._logger.error("Invalid satellite name.")
