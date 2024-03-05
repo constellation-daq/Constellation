@@ -33,7 +33,7 @@ class TrivialController:
         self.transmitters = {}
         self.context = zmq.Context()
         for host in hosts:
-            self.add_sat(host)
+            self.add_satellite(host)
 
         self.broadcast_manager = CHIRPBroadcaster()
         self.broadcast_manager.register_callback(
@@ -41,15 +41,16 @@ class TrivialController:
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
 
-    def add_sat(self, host, port: int = None):
+    def add_satellite(self, host, port: int = None):
         """Add satellite socket to controller on port."""
+        host_addr = host
         if "tcp://" not in host[:6]:
-            host = "tcp://" + host
+            host_addr = "tcp://" + host_addr
         if port:
-            host = host + ":" + port
+            host_addr = host_addr + ":" + port
         socket = self.context.socket(zmq.REQ)
-        socket.connect(host)
-        self.transmitters[host] = CommandTransmitter(str(host), socket)
+        socket.connect(host_addr)
+        self.transmitters[host] = CommandTransmitter(host, socket)
         self._logger.info(
             "connecting to %s, ID %s...",
             host,
