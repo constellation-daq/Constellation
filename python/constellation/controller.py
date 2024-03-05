@@ -101,6 +101,29 @@ class TrivialController:
                     )
                 )
 
+    def _process_message(self, msg, host_name):
+        cmd = msg[0]
+
+        if cmd == "initialize":
+            config_path = msg[1]
+            payload = self.get_config(host=host_name, config_path=config_path)
+            meta = None
+        elif cmd == "reconfigure":
+            config_path = msg[1]
+            meta = None
+            if msg[2]:
+                for trait in msg[2:]:
+                    payload.append(
+                        self.get_config(
+                            host_name=host_name, config_path=config_path, trait=trait
+                        )
+                    )
+            else:
+                payload.append(
+                    self.get_config(host_name=host_name, config_path=config_path)
+                )
+        return msg, payload, meta
+
     def process_command(self, user_input):
         if user_input.startswith("target"):
             target = user_input.split(" ")[1]
