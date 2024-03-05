@@ -10,8 +10,11 @@ Constellation Satellites.
 import threading
 import time
 import zmq
+from statemachine.exceptions import TransitionNotAllowed
+
 from .cscp import CommandTransmitter, CSCPMessageVerb
 from .base import BaseSatelliteFrame
+
 
 COMMANDS = dict()
 
@@ -42,9 +45,9 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name, cmd_port, **kwds):
+    def __init__(self, name: str, cmd_port: int, **kwds):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
-        super().__init__(name)
+        super().__init__(name, **kwds)
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)
@@ -54,6 +57,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
     def _add_com_thread(self):
         """Add the command receiver thread to the communication thread pool."""
+        super()._add_com_thread()
         self._com_thread_pool["cmd_receiver"] = threading.Thread(
             target=self._recv_cmds, daemon=True
         )
@@ -64,7 +68,7 @@ class CommandReceiver(BaseSatelliteFrame):
         while not self._com_thread_evt.is_set():
             req = self._cmd_tm.get_message()
             if not req:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:
@@ -93,11 +97,18 @@ class CommandReceiver(BaseSatelliteFrame):
                 pass
             # perform the actual callback
             try:
+                self.log.debug("Calling command %s with argument %s", callback, req)
                 res, payload, meta = callback(self, req)
-            except (AttributeError, ValueError, TypeError) as e:
+            except (AttributeError, ValueError, TypeError, NotImplementedError) as e:
                 self.log.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
                     "WrongImplementation", CSCPMessageVerb.NOTIMPLEMENTED, repr(e)
+                )
+                continue
+            except TransitionNotAllowed:
+                self.log.error("Transition %s not allowed", req.msg)
+                self._cmd_tm.send_reply(
+                    "Transition not allowed", CSCPMessageVerb.INVALID, None
                 )
                 continue
             except Exception as e:

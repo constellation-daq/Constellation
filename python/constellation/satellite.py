@@ -6,30 +6,30 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 
-import traceback
 import time
-import threading
-from queue import Queue, Empty
+from queue import Empty
 import logging
+import threading
+import traceback
 
-from .fsm import SatelliteFSM
+from .fsm import SatelliteStateHandler
+from . import __version__
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
 
 from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
-from .broadcastmanager import CHIRPBroadcastManager
+from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
 from .log_and_stats import getLoggerAndStats
 from .error import debug_log, handle_error
-from ._version import version
 
 
 class IncompleteCommand(Exception):
     pass
 
 
-class Satellite(CommandReceiver):
+class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     """Base class for a Constellation Satellite."""
 
     def __init__(
@@ -47,19 +47,6 @@ class Satellite(CommandReceiver):
         # set up python logging
         self.log, self.stats = getLoggerAndStats(self.name, self.context, log_port)
 
-        # state machine
-        self.fsm = SatelliteFSM()
-        # Adding this class as observer to the FSM allows class-internal methods such as
-        # on_start to be Actions to be performed on a Transition of the state
-        # machine. This will ensure that the state does not change before we
-        # have performed all necessary steps.
-        self.fsm.add_observer(self)
-
-        # Set up a queue for handling tasks related to incoming requests via
-        # CSCP or offers via CHIRP. This makes sure that these can be performed
-        # thread-safe.
-        self.task_queue = Queue()
-
         # set up background communication threads
         # NOTE should be a late part of the initialization, as it starts communication
         super()._add_com_thread()
@@ -75,22 +62,13 @@ class Satellite(CommandReceiver):
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.broadcast_manager = CHIRPBroadcastManager(name, group, self.task_queue)
-        self.broadcast_manager.start()
-        self.broadcast_manager.register_offer(cmd_port, CHIRPServiceIdentifier.CONTROL)
-        self.log.info("Satellite broadcasting CONTROL service")
-        self.broadcast_manager.register_offer(hb_port, CHIRPServiceIdentifier.HEARTBEAT)
-        self.log.info("Satellite broadcasting HEARTBEAT service")
-        self.broadcast_manager.register_offer(
-            log_port, CHIRPServiceIdentifier.MONITORING
-        )
-        self.log.info("Satellite broadcasting MONITORING service")
-        # acquisition thread
-        self._stop_running = None
-        self._running_thread = None
+        self.register_offer(CHIRPServiceIdentifier.CONTROL, cmd_port)
+        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, hb_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, log_port)
+        self.broadcast_offers()
 
         # Add exception handling via threading.excepthook to allow the state
-        # machine to reflect exceptions in the receiver thread.
+        # machine to reflect exceptions in the communication services threads.
         #
         # NOTE: This approach using a global state hook does not play well e.g.
         # with the default pytest configuration, however (see
@@ -99,33 +77,9 @@ class Satellite(CommandReceiver):
         # will fail with pytest.
         threading.excepthook = self._thread_exception
         # greet
-        self.log.info(f"Satellite {self.name}, version {self.version} ready to launch!")
+        self.log.info(f"Satellite {self.name}, version {__version__} ready to launch!")
 
-    def _transition_is_allowed(self, request: CSCPMessage):
-        """Determine whether a requested transition is allowed.
-
-        This method will be called by the CommandReceiver to determine whether
-        to complete a request by a call to transition() or to deny the request.
-
-        """
-        args = request.payload.split()
-        transition_target = args[0].lower()
-        # is transition allowed?
-        if not getattr(self.fsm, transition_target) in self.fsm.allowed_events:
-            return False
-        # TODO check that we are not transitioning away from a transitional state (not allowed)
-        return True
-
-    @cscp_requestable
-    def transition(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request."""
-        args = request.payload.split()
-        transition_target = args[0].capitalize()
-        callback = getattr(self, transition_target)
-        # add to the task queue
-        self.task_queue.put((callback, args[1:]))
-        return "transitioning", transition_target, None
-
+    @debug_log
     @cscp_requestable
     def configure(self, request: CSCPMessage):
         """Update configuration via CSCP request."""
@@ -170,8 +124,10 @@ class Satellite(CommandReceiver):
                 # nothing to process
                 pass
 
-            time.sleep(1)
-        # TODO add a 'finally:' which closes zmq context via .term() and cleans up other things
+            time.sleep(0.05)
+        # TODO add a 'finally:' which closes zmq context via .term() and cleans
+        # up other things OR setup an atexit hook
+        #
         # on exit: stop heartbeater
         self.heartbeater.stop()
         # TODO : shutdown broadcast manager and depart
@@ -182,108 +138,102 @@ class Satellite(CommandReceiver):
 
     @handle_error
     @debug_log
-    def Initialize(self):
-        """Initialize.
+    def _wrap_initialize(self, payload: any) -> str:
+        """Wrapper for the 'initializing' transitional state of the FSM.
 
-        Actual actions will be performed by the callback method 'on_load'
-        as long as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
         """
-        self.fsm.initialize("Satellite initialized.")
-        self.log.info("Satellite Initialized.")
-
-    @handle_error
-    def on_initialize(self):
-        """Callback method for the 'initialize' transition of the FSM.
-
-        Set and check config, maybe initialize device.
-        """
-        # TODO on_initialize should (re-)load config values
-        #
         # Verify that there are no running threads left. If there are and the
-        # timeout is exceeded joining them, the raised exception will take us
-        # into ERROR state.
-        self._stop_daq_thread(10.0)
+        # timeout is exceeded joining them, the raised TimeoutError exception
+        # will take us into ERROR state.
+        try:
+            self._state_thread_evt.set()
+            self._state_thread_fut.result(2)
+        except AttributeError:
+            # no threads left
+            pass
+        self._state_thread_evt = None
+        self._state_thread_fut = None
+        return self.do_initializing(payload)
+
+    @debug_log
+    def do_initializing(self, payload: any) -> str:
+        """Method for the device-specific code of 'initializing' transition.
+
+        This should set configuration variables.
+
+        """
+        return "Initialized."
 
     @handle_error
     @debug_log
-    def Launch(self):
-        """Prepare Satellite for data acquistions.
+    def _wrap_launch(self, payload: any) -> str:
+        """Wrapper for the 'launching' transitional state of the FSM.
 
-        Actual actions will be performed by the callback method 'on_launch'
-        aslong as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
         """
-        self.fsm.launch("Satellite launched.")
         self.hb_checker.start()
+        return self.do_launching(payload)
 
-        self.log.info("Satellite Prepared. Acquistion ready.")
-
-    @handle_error
-    def on_launch(self):
-        """Callback method for the 'launch' transition of the FSM."""
-        pass
+    @debug_log
+    def do_launching(self, payload: any) -> str:
+        """Prepare Satellite for data acquistions."""
+        return "Launched."
 
     @handle_error
     @debug_log
-    def Land(self):
-        """Return Satellite to Initialized state.
+    def _wrap_land(self, payload: any) -> str:
+        """Wrapper for the 'landing' transitional state of the FSM.
 
-        Actual actions will be performed by the callback method 'on_land'
-        aslong as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
         """
-        self.fsm.land("Satellite landed.")
         self.hb_checker.stop()
-        self.log.info("Satellite landed.")
+        return self.do_landing(payload)
 
-    @handle_error
-    def on_land(self):
-        """Callback method for the 'unprepare' transition of the FSM."""
-        pass
+    @debug_log
+    def do_landing(self, payload: any) -> str:
+        """Return Satellite to Initialized state."""
+        return "Landed."
 
     @handle_error
     @debug_log
-    def Start(self):
-        """Start command to begin data acquisition.
+    def _wrap_stop(self, payload: any):
+        """Wrapper for the 'stopping' transitional state of the FSM.
 
-        Actual Satellite-specific actions will be performed by the callback
-        method 'on_start' as long as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
 
         """
-        self.fsm.start("Acquisition started.")
-        # start thread running during acquistion
-        self._stop_running = threading.Event()
-        self._running_thread = threading.Thread(target=self.do_run, daemon=True)
-        self._running_thread.start()
-        self.log.info("Satellite Running. Acquistion taking place.")
+        # indicate to the current acquisition thread to stop
+        if self._state_thread_evt:
+            self._state_thread_evt.set()
+        # wait for result, will raise TimeoutError if not successful
+        self._state_thread_fut.result(timeout=10)
 
-    @handle_error
-    def on_start(self):
-        """Callback method for the 'start_run' transition of the FSM.
-
-        Is called *before* the 'do_run' thread is started.
-        """
-        pass
+    @debug_log
+    def do_stopping(self, payload: any):
+        """Stop the data acquisition."""
+        return "Acquisition stopped."
 
     @handle_error
     @debug_log
-    def Stop(self):
-        """Stop command stopping data acquisition.
+    def _wrap_start(self, payload: any) -> str:
+        """Wrapper for the 'run' state of the FSM.
 
-        Actual actions will be performed by the callback method 'on_stop_run'
-        aslong as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
         """
-        self.fsm.stop("Acquisition stopped.")
-        self._stop_daq_thread()
-        self.log.info("Satellite stopped Acquistion.")
+        return self.do_run(payload)
 
-    @handle_error
-    def on_stop(self):
-        """Callback method for the 'stop_run' transition of the FSM.
-
-        This method is called *before* the 'do_run' is stopped.
-        """
-        pass
-
-    def do_run(self):
+    @debug_log
+    def do_run(self, payload: any) -> str:
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
@@ -303,91 +253,73 @@ class Satellite(CommandReceiver):
         """
         # the stop_running Event will be set from outside the thread when it is
         # time to close down.
-        while not self._stop_running.is_set():
+        while not self._state_thread_evt.is_set():
             time.sleep(0.2)
+        return "Finished acquisition."
 
-    @handle_error
     @debug_log
-    def Failure(self, message: str = None):
-        """Trigger a failure on Satellite.
+    def _wrap_failure(self):
+        """Wrapper for the 'ERROR' state of the FSM.
 
-        This is a "command" and will only be called by user action.
-
-        Actual actions will be performed by the callback method 'on_failure'
-        which is called automatically whenever a failure occurs.
-
-        """
-        self.log.error(f"Failure action was triggered with reason given: {message}.")
-        self.fsm.failure(message)
-
-    def on_failure(self):
-        """Callback method for the 'on_failure' transition of the FSM
-
-        This method should implement Satellite-specific actions in case of
-        failure.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
 
         """
         try:
-            self._stop_daq_thread(10.0)
             # Stop heartbeat checking
             self.hb_checker.stop()
+            # stop state thread
+            if self._state_thread_evt:
+                self._state_thread_evt.set()
+            return self.fail_gracefully()
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
         except Exception as e:
             self.log.exception(e)
+            return "Exception caught during failure handling, see logs for details."
+
+    @debug_log
+    def fail_gracefully():
+        """Method called when reaching 'ERROR' state."""
+        return "Failed gracefully."
 
     @handle_error
     @debug_log
-    def Interrupt(self, message: str = None):
+    def _wrap_interrupt(self, payload):
+        """Wrapper for the 'interrupting' transitional state of the FSM.
+
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
+        """
+        return self.do_interrupting()
+
+    @debug_log
+    def do_interrupting(self):
         """Interrupt data acquisition and move to Safe state.
 
-        Actual actions will be performed by the callback method 'on_interrupt'
-        aslong as the transition is allowed.
+        Defaults to calling fail_gracefully, the ERROR-state handler.
         """
-        self.fsm.interrupt(message)
-        self.log.warning("Transitioned to Safe state.")
-
-    @handle_error
-    def on_interrupt(self):
-        """Callback method for the 'on_interrupt' transition of the FSM.
-
-        Defaults to calling on_failure().
-        """
-        self.on_failure()
+        return self.fail_gracefully()
 
     @handle_error
     @debug_log
-    def Recover(self):
-        """Transition to Initialized state.
+    def _wrap_recover(self):
+        """Wrapper for the 'recovering' transitional state of the FSM.
 
-        Actual actions will be performed by the callback method 'on_recover'
-        aslong as the transition is allowed.
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
         """
-        self.fsm.recover("Recovered from Safe state.")
-        self.log.info("Recovered from Safe state.")
+        return self.do_recover()
 
-    @handle_error
-    def on_recover(self):
-        """Callback method for the 'on_recover' transition of the FSM.
+    @debug_log
+    def do_recovering(self):
+        """Transition to Initialized state.
 
         Defaults to on_initialize().
         """
-        self.on_initialize()
-
-    def _stop_daq_thread(self, timeout: float = 30.0):
-        """Stop the acquisition thread.
-
-        Raises RuntimeError if thread is not stopped within timeout."""
-        if self._running_thread and self._running_thread.is_alive():
-            self._stop_running.set()
-            self._running_thread.join(timeout)
-        # check if thread is still alive
-        if self._running_thread and self._running_thread.is_alive():
-            raise RuntimeError(
-                f"Could not join running thread within timeout of {timeout}s!"
-            )
-        self._running_thread = None
-        self._stop_running = None
+        return self.on_initialize()
 
     def _thread_exception(self, args):
         """Handle exceptions in threads.
@@ -402,9 +334,7 @@ class Satellite(CommandReceiver):
             f"caught {args.exc_type} with value \
             {args.exc_value} in thread {args.thread} and traceback {tb}."
         )
-        # indicate to remaining thread to stop
-        if self._stop_running:
-            self._stop_running.set()
+        self._wrap_failure()
         # change internal state
         self.fsm.failure(
             f"Thread {args.thread} failed. Caught exception {args.exc_type} \
@@ -430,7 +360,7 @@ class Satellite(CommandReceiver):
     @cscp_requestable
     def version(self, _request: CSCPMessage = None):
         """Get Constellation version."""
-        return version, None, None
+        return __version__, None, None
 
 
 # -------------------------------------------------------------------------

@@ -41,7 +41,7 @@ enum class Command {
 };
 using enum Command;
 
-template <typename T> std::string pad_str_right(T&& string, std::size_t width) {
+template <typename T> std::string pad_str_right(const T& string, std::size_t width) {
     std::string out {string.data(), string.size()};
     while(out.size() < width) {
         out += ' ';

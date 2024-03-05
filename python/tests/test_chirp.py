@@ -5,54 +5,17 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import pytest
-
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from constellation.chirp import (
     CHIRPBeaconTransmitter,
     CHIRPServiceIdentifier,
     CHIRPMessageType,
-    CHIRP_PORT,
 )
 
-mock_packet_queue = []
 
-
-# SIDE EFFECTS
-def mock_sock_sendto(buf, addr):
-    """Append buf to queue."""
-    mock_packet_queue.append(buf)
-
-
-def mock_sock_recvfrom(bufsize):
-    """Pop entry from queue."""
-    try:
-        return mock_packet_queue.pop(0), ["somehost", CHIRP_PORT]
-    except IndexError:
-        raise BlockingIOError("no mock data")
-
-
-# FIXTURES
-@pytest.fixture
-def mock_socket():
-    with patch("constellation.chirp.socket.socket") as mock:
-        mock = mock.return_value
-        mock.connected = MagicMock(return_value=True)
-        mock.sendto = MagicMock(side_effect=mock_sock_sendto)
-        mock.recvfrom = MagicMock(side_effect=mock_sock_recvfrom)
-        yield mock
-
-
-@pytest.fixture
-def mock_transmitter(mock_socket):
-    t = CHIRPBeaconTransmitter(
-        "mock_sender",
-        "mockstellation",
-    )
-    yield t
-
-
-def test_chirp_beacon_send_recv(mock_socket):
+@pytest.mark.forked
+def test_chirp_beacon_send_recv(mock_chirp_socket):
     """Test interplay between two transmitters (sender/receiver)."""
     sender = CHIRPBeaconTransmitter(
         "mock_sender",
@@ -96,9 +59,10 @@ def test_chirp_beacon_send_recv(mock_socket):
         ), "Wrong chirp header did not trigger expected exception message."
 
 
-def test_filter_same_host(mock_transmitter):
+@pytest.mark.forked
+def test_filter_same_host(mock_chirp_transmitter):
     """Check that same-host packets are dropped."""
-    t = mock_transmitter
+    t = mock_chirp_transmitter
     t.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = t.listen()
     assert not res, "Received packet despite same-host filter."

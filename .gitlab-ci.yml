@@ -9,6 +9,15 @@ stages:
   - docs
   - deploy
 
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - when: always
+
+variables:
+  CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+
 # templates
 
 .debian-clang:
@@ -36,38 +45,38 @@ stages:
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
   variables:
-    CXX: clang++
+    CXX: ccache clang++
     CXX_LD: lld
 
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
-  variables:
-    SPHINX_IMMATERIAL_EXTERNAL_RESOURCE_CACHE_DIR: $CI_PROJECT_DIR/.sphinx_immaterial_cache
-  cache:
-    key: sphinx-immaterial-cache
-    paths:
-      - $CI_PROJECT_DIR/.sphinx_immaterial_cache
   before_script:
     - source /venv/bin/activate
 
-.meson-wrap-cache:
-  cache:
-    key: meson-wrap-cache
-    paths:
-      - subprojects/packagecache/
-      - subprojects/asio-*/
-      - subprojects/Catch2-*/
-      - subprojects/cppzmq-*/
-      - subprojects/libzmq-*/
-      - subprojects/magic_enum-*/
-      - subprojects/msgpack-cxx-*/
-      - subprojects/spdlog-*/
+.meson-wrap-cache: &meson-wrap-cache
+  key: meson-wrap-cache
+  paths:
+    - subprojects/packagecache/
+    - subprojects/asio-*/
+    - subprojects/Catch2-*/
+    - subprojects/cppzmq-*/
+    - subprojects/libzmq-*/
+    - subprojects/magic_enum-*/
+    - subprojects/msgpack-cxx-*/
+    - subprojects/spdlog-*/
+  policy: pull
+
+.ccache: &ccache
+  key: ccache-$CI_JOB_IMAGE
+  paths:
+    - $CCACHE_DIR/
 
 # build stage
 
 .build:
   stage: build
-  extends: .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
     - meson compile -C build
@@ -108,6 +117,10 @@ build:alma9-cern:
   extends:
     - .build
     - .alma9-cern
+  cache:
+    - <<: *meson-wrap-cache
+      policy: pull-push
+    - *ccache
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release -Db_lto=true -Db_lto_mode=thin"
 
@@ -169,7 +182,8 @@ test:alma9-cern:
 
 .lint:
   stage: lint
-  extends: .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
 
 lint:clang-tidy:
   extends:
@@ -180,6 +194,21 @@ lint:clang-tidy:
       artifacts: true
   script:
     - ninja -C build clang-tidy
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
+lint:clang-tidy-diff:
+  extends:
+    - .lint
+    - .debian-clang
+  needs:
+    - job: build:debian-clang
+      artifacts: true
+  script:
+    - git fetch origin
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 lint:coverage:
   extends:
@@ -250,7 +279,8 @@ format:clang-format:
   extends:
     - .format
     - .debian-clang
-    - .meson-wrap-cache
+  cache:
+    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check

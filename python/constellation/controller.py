@@ -12,11 +12,11 @@ import time
 import msgpack
 import zmq
 
-from .broadcastmanager import CHIRPBroadcastManager
 from .chirp import CHIRPServiceIdentifier
 from .confighandler import pack_config, read_config, filter_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
+from .broadcastmanager import CHIRPBroadcaster
 
 
 class TrivialController:
@@ -35,8 +35,8 @@ class TrivialController:
         for host in hosts:
             self.add_sat(host)
 
-        self.broadcast_manager = CHIRPBroadcastManager(name, group, None)
-        self.broadcast_manager.register_request(
+        self.broadcast_manager = CHIRPBroadcaster()
+        self.broadcast_manager.register_callback(
             CHIRPServiceIdentifier.CONTROL, self.add_sat
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)

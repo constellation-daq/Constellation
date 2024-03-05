@@ -106,6 +106,7 @@ def mock_cmdreceiver(mock_socket_recv):
         yield cr
 
 
+@pytest.mark.forked
 def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
     """Test self-concistency between two transmitters (sender/receiver)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -121,6 +122,7 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
     assert "make your" in req.payload
 
 
+@pytest.mark.forked
 def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_recv):
     """Test that commands are received case insensitive (i.e. lower)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
