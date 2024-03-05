@@ -178,7 +178,7 @@ class TrivialController:
             if user_input == "exit":
                 break
             else:
-                response, header, payload = self.process_command(user_input)
+                self.process_command(user_input)
 
 
 class SatelliteManager(TrivialController):
