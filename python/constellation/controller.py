@@ -70,7 +70,6 @@ class TrivialController:
                 self._logger.info("    header: %s", msg.header)
             if payload:
                 self._logger.info("    payload: %s", msg.payload)
-            return msg
 
         except TimeoutError:
             self._logger.error(
@@ -90,7 +89,6 @@ class TrivialController:
                 meta=meta,
                 host_name=host_name,
             )
-            return msg
         else:
             msg = []
             for host in enumerate(self.transmitters.keys()):
@@ -102,7 +100,6 @@ class TrivialController:
                         host_name=host,
                     )
                 )
-            return msg
 
     def process_command(self, user_input):
         if user_input.startswith("target"):
@@ -133,7 +130,6 @@ class TrivialController:
             response, header, payload = self.command(
                 user_input, host_name=self.target_host
             )
-            self.process_response(response, header, payload)
 
     def get_config(
         self,
