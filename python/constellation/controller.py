@@ -84,12 +84,25 @@ class TrivialController:
         """Send cmd and await response."""
 
         if host_name:
-            self._command_satellite(
-                cmd=cmd, payload=payload, meta=meta, host_name=host_name
+            msg = self._command_satellite(
+                cmd=cmd,
+                payload=payload,
+                meta=meta,
+                host_name=host_name,
             )
+            return msg
         else:
-            for sat in enumerate(self.transmitters):
-                sat.send_request(cmd)
+            msg = []
+            for host in enumerate(self.transmitters.keys()):
+                msg.append(
+                    self._command_satellite(
+                        cmd=cmd,
+                        payload=payload,
+                        meta=meta,
+                        host_name=host,
+                    )
+                )
+            return msg
 
     def process_command(self, user_input):
         if user_input.startswith("target"):
