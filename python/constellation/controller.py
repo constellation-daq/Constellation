@@ -112,10 +112,8 @@ class TrivialController:
         if cmd == "initialize":
             config_path = msg[1]
             payload = self.get_config(host=host_name, config_path=config_path)
-            meta = None
         elif cmd == "reconfigure":
             config_path = msg[1]
-            meta = None
             if msg[2]:
                 for trait in msg[2:]:
                     payload.append(
