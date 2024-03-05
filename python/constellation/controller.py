@@ -109,6 +109,8 @@ class TrivialController:
     def _convert_to_cscp(self, msg, host_name):
         """Convert command string into CSCP message, payload and meta."""
         cmd = msg[0]
+        payload = msg[:-1]
+        meta = None
 
         if cmd == "initialize":
             config_path = msg[1]
