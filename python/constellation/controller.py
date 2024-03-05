@@ -156,7 +156,7 @@ class TrivialController:
 
     def get_config(
         self,
-        host: str,
+        host_name: str,
         config_path: str,
         trait: str | None = None,
     ):
@@ -165,7 +165,7 @@ class TrivialController:
 
         try:
             general_config = pack_config(config["GENERAL"])
-            host_config = pack_config(config[host])
+            host_config = pack_config(config[host_name])
 
             if trait:
                 trait_config = filter_config(trait, host_config)
