@@ -7,9 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import logging
 import readline
-import time
 
-import msgpack
 import zmq
 
 from .chirp import CHIRPServiceIdentifier
@@ -57,64 +55,71 @@ class TrivialController:
             len(self.transmitters) - 1,
         )
 
-    def receive(self, socket):
-        """Receive and parse data."""
-        if socket.poll(
-            1000, zmq.POLLIN
-        ):  # NOTE: The choice of 1000 in poll is completely arbitrary
-            response = socket.recv_multipart()
-            d = msgpack.unpackb(response[1]) if len(response) > 1 else {}
-            p = msgpack.unpackb(response[2]) if len(response) > 2 else {}
-            return response[0].decode("utf-8"), d, p
+    def _command_satellite(self, cmd, idx=0, host=None):
+        self.transmitters[host].send_request(cmd)
+        self._logger.info("ID%s send command %s...", idx, cmd)
 
-        else:
-            raise TimeoutError
+        try:
+            response, header, payload = self.transmitters[host].get_message()
+            self._logger.info("ID %sreceived response: %s", idx, response)
+            if header:
+                self._logger.info("    header: %s", header)
+            if payload:
+                self._logger.info("    payload: %s", payload)
 
-    def command(self, cmd, idx=0, socket=None):
+        except TimeoutError:
+            self._logger.error(
+                "ID %s did not receive response. Command timed out.",
+                idx,
+            )
+        except KeyError:
+            self._logger.error("Invalid satellite name.")
+
+    def command(self, cmd, idx=0, host=None):
         """Send cmd and await response."""
 
-        # prepare request header:
-        rhead = {"time": time.time(), "sender": "FIXME"}
-        rd = msgpack.packb(rhead)
-
-        if socket:
-            print("Sending command")
-            socket.send_string(cmd, flags=zmq.SNDMORE)
-            socket.send(rd)
-            self._logger.info(f"ID{idx} send command {cmd}...")
-
-            try:
-                response, header, payload = self.receive(socket)
-                self._logger.info(f"ID{idx} received response: {response}")
-                if header:
-                    self._logger.info(f"    header: {header}")
-                if payload:
-                    self._logger.info(f"    payload: {payload}")
-
-            except TimeoutError:
-                self._logger.error(
-                    f"ID{idx} did not receive response. Command timed out. Disconnecting socket..."
-                )
-                self.remove_sat(socket)
-
+        if host:
+            self._command_satellite(cmd, idx, host)
         else:
-            for i, sock in enumerate(self.sockets):
-                sock.send_string(cmd, flags=zmq.SNDMORE)
-                sock.send(rd)
-                self._logger.info(f"ID{i} send command {cmd}...")
+            for sat in enumerate(self.transmitters):
+                sat.send_request(cmd)
 
-                try:
-                    response, header, payload = self.receive(sock)
-                    self._logger.info(f"ID{i} received response: {response}")
-                    if header:
-                        self._logger.info(f"    header: {header}")
-                    if payload:
-                        self._logger.info(f"    payload: {payload}")
-                except TimeoutError:
-                    self._logger.error(
-                        f"ID{i} did not receive response. Command timed out. Disconnecting socket..."
-                    )
-                    self.remove_sat(sock)
+    def process_command(self, user_input):
+
+        if user_input.startswith("target"):
+            target = user_input.split(" ")[1]
+            if target in self.transmitters.keys():
+                self.target_host = target
+                self._logger.info(f"target for next command: host {self.target_host}")
+            else:
+                self._logger.error("No host...")
+
+        elif user_input.startswith("add"):
+            socket_addr = str(user_input[1])
+            port = str(user_input[2])
+            host = socket_addr + ":" + port
+            self.control_reg(host)
+        elif user_input.startswith("remove"):
+            idx = int(user_input[1])
+            if idx >= len(self.sockets):
+                self._logger.error(f"No host with ID {idx}")
+            self.remove_sat(self.sockets[idx])
+        elif user_input.startswith("configure"):
+            # TODO: make split insensitive to " " in path/to/file
+            config_path = str(user_input[1])
+            try:
+                config = read_config(config_path)
+            except FileNotFoundError:
+                self._logger.warning("Configuration file not found")
+            if host:
+                self.command(pack_config(config), idx, host)
+            else:
+                self._logger.warning("No satellite set for configuration")
+        else:
+            if host:
+                self.command(user_input, idx, host)
+            else:
+                self.command(user_input)
 
     def get_config(
         self,
@@ -154,34 +159,12 @@ class TrivialController:
         print(
             'Possible transitions: "initialize", "load", "unload", "launch", "land", "start", "stop", "recover", "reset"'
         )
-        socket = None
         while True:
             user_input = input("Send command: ")
             if user_input == "exit":
                 break
-            elif user_input.startswith("target"):
-                idx = int(user_input.split(" ")[1])
-                if idx >= len(self.sockets):
-                    self._logger.error(f"No host with ID {idx}")
-                socket = self.sockets[idx]
-                self._logger.info(f"target for next command: host ID {idx}")
-            elif user_input.startswith("add"):
-                socket_addr = str(user_input.split(" ")[1])
-                port = str(user_input.split(" ")[2])
-                host = socket_addr + ":" + port
-                self.control_reg(host)
-            elif user_input.startswith("remove"):
-                idx = int(user_input.split(" ")[1])
-                if idx >= len(self.sockets):
-                    self._logger.error(f"No host with ID {idx}")
-                self.remove_sat(self.sockets[idx])
             else:
-                (
-                    self.command(user_input, idx, socket)
-                    if socket
-                    else self.command(user_input)
-                )
-                socket = None
+                self.process_command(user_input)
 
 
 class SatelliteManager(TrivialController):
