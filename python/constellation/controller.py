@@ -64,13 +64,13 @@ class TrivialController:
         self._logger.info("Host %s send command %s...", host_name, cmd)
 
         try:
-            response, header, payload = self.transmitters[host_name].get_message()
-            self._logger.info("Host %s received response: %s", host_name, response)
-            if header:
-                self._logger.info("    header: %s", header)
+            msg = self.transmitters[host_name].get_message()
+            self._logger.info("Host %s received response: %s", host_name, msg.msg_verb)
+            if msg.header:
+                self._logger.info("    header: %s", msg.header)
             if payload:
-                self._logger.info("    payload: %s", payload)
-            return response, header, payload
+                self._logger.info("    payload: %s", msg.payload)
+            return msg
 
         except TimeoutError:
             self._logger.error(
