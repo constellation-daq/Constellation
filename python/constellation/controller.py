@@ -86,24 +86,21 @@ class TrivialController:
     def command(self, msg, host_name=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         if host_name:
-            cmd, payload, meta = self._process_message(msg, host_name)
-            msg = self._command_satellite(
+            cmd, payload, meta = self._convert_to_cscp(msg, host_name)
+            self._command_satellite(
                 cmd=cmd,
                 payload=payload,
                 meta=meta,
                 host_name=host_name,
             )
         else:
-            msg = []
             for host in enumerate(self.transmitters.keys()):
-                cmd.payload, meta = self._process_message(msg, host)
-                msg.append(
-                    self._command_satellite(
-                        cmd=cmd,
-                        payload=payload,
-                        meta=meta,
-                        host_name=host,
-                    )
+                cmd, payload, meta = self._convert_to_cscp(msg, host)
+                self._command_satellite(
+                    cmd=cmd,
+                    payload=payload,
+                    meta=meta,
+                    host_name=host,
                 )
 
     def _convert_to_cscp(self, msg, host_name):
