@@ -14,6 +14,7 @@ import zmq
 
 from .broadcastmanager import CHIRPBroadcastManager
 from .chirp import CHIRPServiceIdentifier
+from .confighandler import pack_config, read_config, filter_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
 
@@ -113,6 +114,28 @@ class TrivialController:
                         f"ID{i} did not receive response. Command timed out. Disconnecting socket..."
                     )
                     self.remove_sat(sock)
+
+    def get_config(
+        self,
+        host: str,
+        config_path: str,
+        trait: str | None = None,
+    ):
+        """Get configuration to satellite. Specify trait to only send part of config."""
+        config = read_config(config_path)
+
+        try:
+            general_config = pack_config(config["GENERAL"])
+            host_config = pack_config(config[host])
+
+            if trait:
+                trait_config = filter_config(trait, host_config)
+                return trait_config, general_config
+
+            return host_config, general_config
+
+        except KeyError:
+            self._logger.warning("Config doesn't contain specified arguments")
 
     def run(self):
         """Run controller."""
