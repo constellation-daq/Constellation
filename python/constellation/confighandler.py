@@ -66,7 +66,7 @@ def read_config(config_path: str):
         raise
 
 
-def filter_config(self, trait: str, config: dict):
+def filter_config(trait: str, config: dict):
     """Filter through a flat config after specific trait"""
     res = {}
     for key, value in config.items():
