@@ -128,7 +128,8 @@ class TrivialController:
                 payload.append(
                     self.get_config(host_name=host_name, config_path=config_path)
                 )
-        return msg, payload, meta
+        # TODO: add more commands?
+        return cmd, payload, meta
 
     def process_cli_command(self, user_input):
         """Process CLI input commands. If not part of CLI keywords, assume it is a command for satellite."""
