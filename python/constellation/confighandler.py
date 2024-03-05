@@ -64,3 +64,13 @@ def read_config(config_path: str):
     # TODO: Handle errors FileNotFoundError, TypeError, tomllibDecodeError
     except tomllib.TOMLDecodeError:
         raise
+
+
+def filter_config(self, trait: str, config: dict):
+    """Filter through a flat config after specific trait"""
+    res = {}
+    for key, value in config.items():
+        if trait in key:
+            res[key] = value
+
+    return res
