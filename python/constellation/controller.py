@@ -24,7 +24,9 @@ class TrivialController:
         """Initialize values.
 
         Arguments:
-        - hosts :: list of ip addr and ports for satellites to control
+        - name ::  name of controller
+        - group ::  group of controller
+        - hosts ::  name, address and port of satellites to control
         """
         self._logger = logging.getLogger(__name__)
 
@@ -82,7 +84,7 @@ class TrivialController:
             self._logger.error("Invalid satellite name.")
 
     def command(self, msg, host_name=None):
-        """Wrapper for _command_satellite function. Handle sending to all hosts"""
+        """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         if host_name:
             cmd, payload, meta = self._process_message(msg, host_name)
             msg = self._command_satellite(
@@ -104,8 +106,8 @@ class TrivialController:
                     )
                 )
 
-    def _process_message(self, msg, host_name):
-        """Handle input commands and format into command message, payload and meta."""
+    def _convert_to_cscp(self, msg, host_name):
+        """Convert command string into CSCP message, payload and meta."""
         cmd = msg[0]
 
         if cmd == "initialize":
@@ -128,8 +130,8 @@ class TrivialController:
                 )
         return msg, payload, meta
 
-    def process_command(self, user_input):
-        """Process input commands"""
+    def process_cli_command(self, user_input):
+        """Process CLI input commands. If not part of CLI keywords, assume it is a command for satellite."""
         if user_input.startswith("target"):
             target = user_input.split(" ")[1]
             if target in self.transmitters.keys():
@@ -167,7 +169,7 @@ class TrivialController:
         config_path: str,
         trait: str | None = None,
     ):
-        """Get configuration to satellite. Specify trait to only get part of config."""
+        """Get configuration of satellite. Specify trait to only get part of config."""
         config = read_config(config_path)
 
         try:
@@ -204,7 +206,7 @@ class TrivialController:
             if user_input == "exit":
                 break
             else:
-                self.process_command(user_input)
+                self.process_cli_command(user_input)
 
 
 class SatelliteManager(TrivialController):
