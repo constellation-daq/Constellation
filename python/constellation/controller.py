@@ -70,6 +70,7 @@ class TrivialController:
                 self._logger.info("    header: %s", header)
             if payload:
                 self._logger.info("    payload: %s", payload)
+            return response, header, payload
 
         except TimeoutError:
             self._logger.error(
@@ -91,7 +92,6 @@ class TrivialController:
                 sat.send_request(cmd)
 
     def process_command(self, user_input):
-
         if user_input.startswith("target"):
             target = user_input.split(" ")[1]
             if target in self.transmitters.keys():
@@ -115,9 +115,9 @@ class TrivialController:
                 self._logger.error(f"No host {target}")
         else:
             if self.target_host:
-                self.command(user_input)
+                return self.command(user_input)
             else:
-                self.command(user_input)
+                return self.command(user_input)
 
     def get_config(
         self,
