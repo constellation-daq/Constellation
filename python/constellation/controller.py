@@ -117,10 +117,10 @@ class TrivialController:
             else:
                 self._logger.error(f"No host {target}")
         else:
-            if self.target_host:
-                return self.command(user_input)
-            else:
-                return self.command(user_input)
+            response, header, payload = self.command(
+                user_input, host_name=self.target_host
+            )
+            self.process_response(response, header, payload)
 
     def get_config(
         self,
@@ -165,7 +165,7 @@ class TrivialController:
             if user_input == "exit":
                 break
             else:
-                self.process_command(user_input)
+                response, header, payload = self.process_command(user_input)
 
 
 class SatelliteManager(TrivialController):
