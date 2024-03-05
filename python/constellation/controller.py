@@ -16,7 +16,7 @@ from .chirp import CHIRPServiceIdentifier
 from .confighandler import pack_config, read_config, filter_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
-from .broadcastmanager import CHIRPBroadcaster
+from .broadcastmanager import CHIRPBroadcastManager
 
 
 class TrivialController:
@@ -35,9 +35,9 @@ class TrivialController:
         for host in hosts:
             self.add_satellite(host)
 
-        self.broadcast_manager = CHIRPBroadcaster()
-        self.broadcast_manager.register_callback(
-            CHIRPServiceIdentifier.CONTROL, self.add_sat
+        self.broadcast_manager = CHIRPBroadcastManager(name, group, None)
+        self.broadcast_manager.register_request(
+            CHIRPServiceIdentifier.CONTROL, self.add_satellite
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
 
