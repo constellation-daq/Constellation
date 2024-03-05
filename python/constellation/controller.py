@@ -79,10 +79,11 @@ class TrivialController:
         except KeyError:
             self._logger.error("Invalid satellite name.")
 
-    def command(self, cmd, payload, meta=None, host_name=None):
+    def command(self, msg, host_name=None):
         """Send cmd and await response."""
 
         if host_name:
+            cmd, payload, meta = self._process_message(msg, host_name)
             msg = self._command_satellite(
                 cmd=cmd,
                 payload=payload,
@@ -92,6 +93,7 @@ class TrivialController:
         else:
             msg = []
             for host in enumerate(self.transmitters.keys()):
+                cmd.payload, meta = self._process_message(msg, host)
                 msg.append(
                     self._command_satellite(
                         cmd=cmd,
@@ -150,8 +152,10 @@ class TrivialController:
             else:
                 self._logger.error(f"No host {target}")
         else:
-            response, header, payload = self.command(
-                user_input, host_name=self.target_host
+            msg = user_input.split(" ")
+            self.command(
+                msg=msg,
+                host_name=self.target_host,
             )
 
     def get_config(
