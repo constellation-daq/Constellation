@@ -20,6 +20,12 @@ variables:
 
 # templates
 
+.alma9-cern:
+  image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
+  variables:
+    CXX: ccache clang++
+    CXX_LD: lld
+
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
   variables:
@@ -35,23 +41,21 @@ variables:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-latest:latest
   variables:
     CXX: clang++
-    CXX_LD: mold
-
-.ubuntu-22.04:
-  image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
-  variables:
-    CXX: g++
-
-.alma9-cern:
-  image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: lld
 
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
   before_script:
     - source /venv/bin/activate
+
+.ubuntu-22.04:
+  image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
+  variables:
+    CXX: ccache g++
+
+.ubuntu-24.04:
+  image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
+  variables:
+    CXX: g++
 
 .meson-wrap-cache: &meson-wrap-cache
   key: meson-wrap-cache
@@ -85,34 +89,6 @@ variables:
       - build
     expire_in: 24 hour
 
-build:debian-clang:
-  extends:
-    - .build
-    - .debian-clang
-  variables:
-    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
-
-build:fedora-latest:
-  extends:
-    - .build
-    - .fedora-latest
-  variables:
-    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
-
-build:debian-gcc:
-  extends:
-    - .build
-    - .debian-gcc
-  variables:
-    BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
-
-build:ubuntu-22.04:
-  extends:
-    - .build
-    - .ubuntu-22.04
-  variables:
-    BUILD_OPTIONS: "-Dbuildtype=release"
-
 build:alma9-cern:
   extends:
     - .build
@@ -124,6 +100,44 @@ build:alma9-cern:
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release -Db_lto=true -Db_lto_mode=thin"
 
+build:debian-clang:
+  extends:
+    - .build
+    - .debian-clang
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+
+build:debian-gcc:
+  extends:
+    - .build
+    - .debian-gcc
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
+
+build:fedora-latest:
+  extends:
+    - .build
+    - .fedora-latest
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+
+build:ubuntu-22.04:
+  extends:
+    - .build
+    - .ubuntu-22.04
+  cache:
+    - *meson-wrap-cache
+    - *ccache
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=release"
+
+build:ubuntu-24.04:
+  extends:
+    - .build
+    - .ubuntu-24.04
+  variables:
+    BUILD_OPTIONS: "-Dbuildtype=release"
+
 # test stage
 
 .test:
@@ -133,6 +147,14 @@ build:alma9-cern:
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
+
+test:alma9-cern:
+  extends:
+    - .test
+    - .alma9-cern
+  needs:
+    - job: build:alma9-cern
+      artifacts: true
 
 test:debian-clang:
   extends:
@@ -170,12 +192,12 @@ test:ubuntu-22.04:
     - job: build:ubuntu-22.04
       artifacts: true
 
-test:alma9-cern:
+test:ubuntu-24.04:
   extends:
     - .test
-    - .alma9-cern
+    - .ubuntu-24.04
   needs:
-    - job: build:alma9-cern
+    - job: build:ubuntu-24.04
       artifacts: true
 
 # lint stage
@@ -252,9 +274,9 @@ lint:clang-scan-build:
 lint:coverity-scan:
   extends:
     - .lint
-    - .ubuntu-22.04
+    - .ubuntu-24.04
   needs:
-    - job: build:ubuntu-22.04
+    - job: build:ubuntu-24.04
       artifacts: false
   script:
     - curl -s https://scan.coverity.com/download/linux64 -o /tmp/cov-analysis-linux64.tgz
