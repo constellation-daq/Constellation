@@ -163,7 +163,7 @@ TEST_CASE("Message Payload (CSCP1)", "[core][core::message]") {
     msgpack::sbuffer sbuf_header {};
     msgpack::pack(sbuf_header, "this is fine");
     auto payload = std::make_shared<zmq::message_t>(sbuf_header.data(), sbuf_header.size());
-    cscp1_msg.addPayload(payload);
+    cscp1_msg.addPayload(std::move(payload));
 
     // Assemble and disassemble message
     auto frames = cscp1_msg.assemble();
@@ -201,7 +201,7 @@ TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {
         msgpack::sbuffer sbuf_header {};
         msgpack::pack(sbuf_header, "this is fine");
         auto payload = std::make_shared<zmq::message_t>(sbuf_header.data(), sbuf_header.size());
-        cdtp1_msg.addPayload(payload);
+        cdtp1_msg.addPayload(std::move(payload));
     }
 
     // Assemble and disassemble message
