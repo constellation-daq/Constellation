@@ -20,11 +20,13 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
-#include "constellation/chirp/Manager.hpp"
-#include "constellation/chirp/Message.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/utils/ports.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::message;
+using namespace constellation::utils;
 using namespace std::literals::string_literals;
 using namespace std::literals::string_view_literals;
 
@@ -102,7 +104,7 @@ int main(int argc, char* argv[]) {
               << "\n reset" << std::endl;
 
     try {
-        manager.Start();
+        manager.start();
 
         while(true) {
             std::string cmd_input {};
@@ -127,7 +129,7 @@ int main(int argc, char* argv[]) {
 
             // List registered services
             if(cmd == list_registered_services) {
-                auto registered_services = manager.GetRegisteredServices();
+                auto registered_services = manager.getRegisteredServices();
                 std::cout << " Registered Services:\n";
                 for(const auto& service : registered_services) {
                     std::cout << " Service " << pad_str_right(magic_enum::enum_name(service.identifier), 10) //
@@ -143,8 +145,8 @@ int main(int argc, char* argv[]) {
                 if(cmd_split.size() >= 2) {
                     service_opt = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]);
                 }
-                auto discovered_services = service_opt.has_value() ? manager.GetDiscoveredServices(service_opt.value())
-                                                                   : manager.GetDiscoveredServices();
+                auto discovered_services = service_opt.has_value() ? manager.getDiscoveredServices(service_opt.value())
+                                                                   : manager.getDiscoveredServices();
                 std::cout << " Discovered Services:\n";
                 for(const auto& service : discovered_services) {
                     std::cout << " Service " << pad_str_right(magic_enum::enum_name(service.identifier), 15) //
@@ -167,13 +169,13 @@ int main(int argc, char* argv[]) {
                     std::from_chars(cmd_split[2].data(), cmd_split[2].data() + cmd_split[2].size(), port);
                 }
                 if(cmd == register_service) {
-                    auto ret = manager.RegisterService(service, port);
+                    auto ret = manager.registerService(service, port);
                     if(ret) {
                         std::cout << " Registered Service " << pad_str_right(magic_enum::enum_name(service), 10) //
                                   << " Port " << std::setw(5) << port << std::endl;
                     }
                 } else {
-                    auto ret = manager.UnregisterService(service, port);
+                    auto ret = manager.unregisterService(service, port);
                     if(ret) {
                         std::cout << " Unregistered Service " << pad_str_right(magic_enum::enum_name(service), 10) //
                                   << " Port " << std::setw(5) << port << std::endl;
@@ -188,12 +190,12 @@ int main(int argc, char* argv[]) {
                     service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
                 }
                 if(cmd == register_callback) {
-                    auto ret = manager.RegisterDiscoverCallback(&discover_callback, service, nullptr);
+                    auto ret = manager.registerDiscoverCallback(&discover_callback, service, nullptr);
                     if(ret) {
                         std::cout << " Registered Callback for " << magic_enum::enum_name(service) << std::endl;
                     }
                 } else {
-                    auto ret = manager.UnregisterDiscoverCallback(&discover_callback, service);
+                    auto ret = manager.unregisterDiscoverCallback(&discover_callback, service);
                     if(ret) {
                         std::cout << " Unregistered Callback for " << magic_enum::enum_name(service) << std::endl;
                     }
@@ -206,15 +208,15 @@ int main(int argc, char* argv[]) {
                 if(cmd_split.size() >= 2) {
                     service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
                 }
-                manager.SendRequest(service);
+                manager.sendRequest(service);
                 std::cout << " Sent Request for " << magic_enum::enum_name(service) << std::endl;
                 continue;
             }
             // Reset
             if(cmd == reset) {
-                manager.UnregisterDiscoverCallbacks();
-                manager.UnregisterServices();
-                manager.ForgetDiscoveredServices();
+                manager.unregisterDiscoverCallbacks();
+                manager.unregisterServices();
+                manager.forgetDiscoveredServices();
                 continue;
             }
             // Quit

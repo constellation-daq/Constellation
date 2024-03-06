@@ -14,10 +14,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "constellation/chirp/Message.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::chirp;
+using namespace constellation::message;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -39,53 +41,54 @@ TEST_CASE("Sorting of MD5 hashes", "[chirp][md5]") {
 }
 
 TEST_CASE("Reconstruct CHIRP message from assembled blob", "[chirp][chirp::message]") {
-    auto msg = Message(OFFER, "group", "host", CONTROL, 47890);
-    auto asm_msg = msg.Assemble();
-    auto msg_reconstructed = Message(asm_msg);
+    auto msg = CHIRPMessage(OFFER, "group", "host", CONTROL, 47890);
+    auto asm_msg = msg.assemble();
+    auto msg_reconstructed = CHIRPMessage::disassemble(asm_msg);
 
-    REQUIRE(msg.GetType() == msg_reconstructed.GetType());
-    REQUIRE(msg.GetGroupID() == msg_reconstructed.GetGroupID());
-    REQUIRE(msg.GetHostID() == msg_reconstructed.GetHostID());
-    REQUIRE(msg.GetServiceIdentifier() == msg_reconstructed.GetServiceIdentifier());
-    REQUIRE(msg.GetPort() == msg_reconstructed.GetPort());
+    REQUIRE(msg.getType() == msg_reconstructed.getType());
+    REQUIRE(msg.getGroupID() == msg_reconstructed.getGroupID());
+    REQUIRE(msg.getHostID() == msg_reconstructed.getHostID());
+    REQUIRE(msg.getServiceIdentifier() == msg_reconstructed.getServiceIdentifier());
+    REQUIRE(msg.getPort() == msg_reconstructed.getPort());
 }
 
 TEST_CASE("Detect invalid length in CHIRP message", "[chirp][chirp::message]") {
     std::vector<std::uint8_t> msg_data {};
     msg_data.resize(CHIRP_MESSAGE_LENGTH + 1);
 
-    REQUIRE_THROWS_WITH(Message {msg_data},
-                        Equals("Message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes"));
+    REQUIRE_THROWS_WITH(
+        CHIRPMessage::disassemble(msg_data),
+        Equals("Error decoding message: message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes"));
 }
 
 TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = Message(REQUEST, "group", "host", HEARTBEAT, 0);
-    auto asm_msg = msg.Assemble();
+    auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
+    auto asm_msg = msg.assemble();
     asm_msg[0] = 'X';
 
-    REQUIRE_THROWS_WITH(Message {asm_msg}, Equals("Not a CHIRP broadcast"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP broadcast"));
 }
 
 TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = Message(REQUEST, "group", "host", HEARTBEAT, 0);
-    auto asm_msg = msg.Assemble();
+    auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
+    auto asm_msg = msg.assemble();
     asm_msg[5] = '2';
 
-    REQUIRE_THROWS_WITH(Message {asm_msg}, Equals("Not a CHIRP v1 broadcast"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP v1 broadcast"));
 }
 
 TEST_CASE("Detect invalid message type in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = Message(static_cast<MessageType>(255), "group", "host", DATA, 0);
-    auto asm_msg = msg.Assemble();
+    auto msg = CHIRPMessage(static_cast<MessageType>(255), "group", "host", DATA, 0);
+    auto asm_msg = msg.assemble();
 
-    REQUIRE_THROWS_WITH(Message {asm_msg}, Equals("Message Type invalid"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: message type invalid"));
 }
 
 TEST_CASE("Detect invalid service identifier in CHIRP message", "[chirp][chirp::message]") {
-    auto msg = Message(OFFER, "group", "host", static_cast<ServiceIdentifier>(255), 12345);
-    auto asm_msg = msg.Assemble();
+    auto msg = CHIRPMessage(OFFER, "group", "host", static_cast<ServiceIdentifier>(255), 12345);
+    auto asm_msg = msg.assemble();
 
-    REQUIRE_THROWS_WITH(Message {asm_msg}, Equals("Service Identifier invalid"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: service identifier invalid"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

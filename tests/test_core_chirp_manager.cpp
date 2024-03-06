@@ -17,13 +17,13 @@
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/chirp/BroadcastRecv.hpp"
-#include "constellation/chirp/BroadcastSend.hpp"
-#include "constellation/chirp/Manager.hpp"
-#include "constellation/chirp/Message.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastRecv.hpp"
+#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::message;
 using namespace std::literals::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
@@ -81,19 +81,19 @@ TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
 
     // test that first register works
-    REQUIRE(manager.RegisterService(CONTROL, 23999));
+    REQUIRE(manager.registerService(CONTROL, 23999));
     // test that second register does not work
-    REQUIRE_FALSE(manager.RegisterService(CONTROL, 23999));
+    REQUIRE_FALSE(manager.registerService(CONTROL, 23999));
     // test that unregistering works
-    REQUIRE(manager.UnregisterService(CONTROL, 23999));
+    REQUIRE(manager.unregisterService(CONTROL, 23999));
     // test that unregistering for not registered service does not work
-    REQUIRE_FALSE(manager.UnregisterService(CONTROL, 23999));
+    REQUIRE_FALSE(manager.unregisterService(CONTROL, 23999));
     // test unregister all services
-    manager.RegisterService(CONTROL, 23999);
-    manager.RegisterService(CONTROL, 24000);
-    REQUIRE(manager.GetRegisteredServices().size() == 2);
-    manager.UnregisterServices();
-    REQUIRE(manager.GetRegisteredServices().empty());
+    manager.registerService(CONTROL, 23999);
+    manager.registerService(CONTROL, 24000);
+    REQUIRE(manager.getRegisteredServices().size() == 2);
+    manager.unregisterServices();
+    REQUIRE(manager.getRegisteredServices().empty());
 }
 
 TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
@@ -103,23 +103,23 @@ TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     auto callback = [](DiscoveredService, bool, std::any) {};
 
     // test that first register works
-    REQUIRE(manager.RegisterDiscoverCallback(callback, CONTROL, nullptr));
+    REQUIRE(manager.registerDiscoverCallback(callback, CONTROL, nullptr));
     // test that second register does not work
-    REQUIRE_FALSE(manager.RegisterDiscoverCallback(callback, CONTROL, nullptr));
+    REQUIRE_FALSE(manager.registerDiscoverCallback(callback, CONTROL, nullptr));
     // test that unregistering works
-    REQUIRE(manager.UnregisterDiscoverCallback(callback, CONTROL));
+    REQUIRE(manager.unregisterDiscoverCallback(callback, CONTROL));
     // test that unregistering for not registered service does not work
-    REQUIRE_FALSE(manager.UnregisterDiscoverCallback(callback, CONTROL));
+    REQUIRE_FALSE(manager.unregisterDiscoverCallback(callback, CONTROL));
 
     // coverage test for unregister all services
-    manager.RegisterDiscoverCallback(callback, CONTROL, nullptr);
-    manager.RegisterDiscoverCallback(callback, HEARTBEAT, nullptr);
-    manager.UnregisterDiscoverCallbacks();
+    manager.registerDiscoverCallback(callback, CONTROL, nullptr);
+    manager.registerDiscoverCallback(callback, HEARTBEAT, nullptr);
+    manager.unregisterDiscoverCallbacks();
 }
 
 TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    manager.Start();
+    manager.start();
     // This is purely a coverage test to ensure that the async receive works
     std::this_thread::sleep_for(10ms);
 }
@@ -127,80 +127,80 @@ TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    manager.Start();
+    manager.start();
 
-    const auto asm_msg = Message(OFFER, "group2", "sat2", CONTROL, 23999).Assemble();
-    sender.SendBroadcast(asm_msg.data(), asm_msg.size());
+    const auto asm_msg = CHIRPMessage(OFFER, "group2", "sat2", CONTROL, 23999).assemble();
+    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
 
-    REQUIRE(manager.GetDiscoveredServices().empty());
+    REQUIRE(manager.getDiscoveredServices().empty());
 }
 
 TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    manager.Start();
+    manager.start();
 
-    const auto asm_msg = Message(OFFER, "group1", "sat1", CONTROL, 23999).Assemble();
-    sender.SendBroadcast(asm_msg.data(), asm_msg.size());
+    const auto asm_msg = CHIRPMessage(OFFER, "group1", "sat1", CONTROL, 23999).assemble();
+    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
 
-    REQUIRE(manager.GetDiscoveredServices().empty());
+    REQUIRE(manager.getDiscoveredServices().empty());
 }
 
 TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
-    manager2.Start();
+    manager2.start();
 
     // Register service, should send OFFER
-    manager1.RegisterService(DATA, 24000);
+    manager1.registerService(DATA, 24000);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(10ms);
     // Test that we discovered the service
-    const auto services_1 = manager2.GetDiscoveredServices();
+    const auto services_1 = manager2.getDiscoveredServices();
     REQUIRE(services_1.size() == 1);
 
     // Test that message is correct
-    REQUIRE(services_1[0].host_id == manager1.GetHostID());
+    REQUIRE(services_1[0].host_id == manager1.getHostID());
     REQUIRE(services_1[0].address == asio::ip::make_address("127.0.0.1"));
     REQUIRE(services_1[0].identifier == DATA);
     REQUIRE(services_1[0].port == 24000);
 
     // Register other services
-    manager1.RegisterService(MONITORING, 65000);
-    manager1.RegisterService(HEARTBEAT, 65001);
+    manager1.registerService(MONITORING, 65000);
+    manager1.registerService(HEARTBEAT, 65001);
     std::this_thread::sleep_for(10ms);
 
     // Test that we discovered the services
-    REQUIRE(manager2.GetDiscoveredServices().size() == 3);
+    REQUIRE(manager2.getDiscoveredServices().size() == 3);
     // Unregister a service
-    manager1.UnregisterService(MONITORING, 65000);
+    manager1.unregisterService(MONITORING, 65000);
     std::this_thread::sleep_for(10ms);
     // Test that we discovered DEPART message
-    REQUIRE(manager2.GetDiscoveredServices().size() == 2);
+    REQUIRE(manager2.getDiscoveredServices().size() == 2);
     // Now test that we can filter a service category
-    REQUIRE(manager2.GetDiscoveredServices(HEARTBEAT).size() == 1);
+    REQUIRE(manager2.getDiscoveredServices(HEARTBEAT).size() == 1);
     // Test that we can forget services
-    manager2.ForgetDiscoveredServices();
-    REQUIRE(manager2.GetDiscoveredServices().empty());
+    manager2.forgetDiscoveredServices();
+    REQUIRE(manager2.getDiscoveredServices().empty());
 
     // Register new services
-    manager1.UnregisterServices();
-    manager1.RegisterService(CONTROL, 40001);
-    manager1.RegisterService(DATA, 40002);
+    manager1.unregisterServices();
+    manager1.registerService(CONTROL, 40001);
+    manager1.registerService(DATA, 40002);
     std::this_thread::sleep_for(10ms);
     // Test that we discovered services
-    REQUIRE(manager2.GetDiscoveredServices().size() == 2);
+    REQUIRE(manager2.getDiscoveredServices().size() == 2);
     // Unregister all services
-    manager1.UnregisterServices();
+    manager1.unregisterServices();
     std::this_thread::sleep_for(10ms);
     // Test that we discovered DEPART messages
-    REQUIRE(manager2.GetDiscoveredServices().empty());
+    REQUIRE(manager2.getDiscoveredServices().empty());
 }
 
 TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
-    manager2.Start();
+    manager2.start();
 
     // Callback test struct to test if callback was properly executed
     struct CBTest {
@@ -220,9 +220,9 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     };
 
     // Register callback for CONTROL
-    manager2.RegisterDiscoverCallback(callback, CONTROL, &cb_test_data);
+    manager2.registerDiscoverCallback(callback, CONTROL, &cb_test_data);
     // Register CONTROL service
-    manager1.RegisterService(CONTROL, 50100);
+    manager1.registerService(CONTROL, 50100);
     // Wait for execution of callback
     while(!cb_test_data.executed) {
         std::this_thread::sleep_for(1ms);
@@ -234,7 +234,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     REQUIRE(cb_test_data.service.port == 50100);
 
     // Unregister service
-    manager1.UnregisterService(CONTROL, 50100);
+    manager1.unregisterService(CONTROL, 50100);
     // Wait for execution of callback
     while(!cb_test_data.executed) {
         std::this_thread::sleep_for(1ms);
@@ -244,19 +244,19 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     REQUIRE(cb_test_data.depart);
 
     // Unregister callback
-    manager2.UnregisterDiscoverCallback(callback, CONTROL);
+    manager2.unregisterDiscoverCallback(callback, CONTROL);
     // Register CONTROL service
-    manager1.RegisterService(CONTROL, 50100);
+    manager1.registerService(CONTROL, 50100);
     // Wait a bit to check for execution of callback
     std::this_thread::sleep_for(10ms);
     // Test that callback was not executed
     REQUIRE_FALSE(cb_test_data.executed);
 
     // Register callback for HEARTBEAT and MONITORING
-    manager2.RegisterDiscoverCallback(callback, HEARTBEAT, &cb_test_data);
-    manager2.RegisterDiscoverCallback(callback, MONITORING, &cb_test_data);
+    manager2.registerDiscoverCallback(callback, HEARTBEAT, &cb_test_data);
+    manager2.registerDiscoverCallback(callback, MONITORING, &cb_test_data);
     // Register HEARTBEAT service
-    manager1.RegisterService(HEARTBEAT, 50200);
+    manager1.registerService(HEARTBEAT, 50200);
     // Wait for execution of callback
     while(!cb_test_data.executed) {
         std::this_thread::sleep_for(1ms);
@@ -265,7 +265,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     // Test that we got HEARTBEAT callback
     REQUIRE(cb_test_data.service.identifier == HEARTBEAT);
     // Register MONITORING service
-    manager1.RegisterService(MONITORING, 50300);
+    manager1.registerService(MONITORING, 50300);
     // Wait for execution of callback
     while(!cb_test_data.executed) {
         std::this_thread::sleep_for(1ms);
@@ -275,9 +275,9 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     REQUIRE(cb_test_data.service.identifier == MONITORING);
 
     // Unregister all callbacks
-    manager2.UnregisterDiscoverCallbacks();
+    manager2.unregisterDiscoverCallbacks();
     // Unregister all services
-    manager1.UnregisterServices();
+    manager1.unregisterServices();
     // Wait a bit to check for execution of callback
     std::this_thread::sleep_for(10ms);
     // Test that callback was not executed
@@ -291,16 +291,16 @@ TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     // Why? we can only have one working recv binding to the same socket per process unfortunately :/
 
     // Start listening for request message
-    auto raw_msg_fut = std::async(&BroadcastRecv::RecvBroadcast, &receiver);
+    auto raw_msg_fut = std::async(&BroadcastRecv::recvBroadcast, &receiver);
     // Send request
-    manager.SendRequest(CONTROL);
+    manager.sendRequest(CONTROL);
     // Receive message
     const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = Message(raw_msg.content);
+    auto msg_from_manager = CHIRPMessage::disassemble(raw_msg.content);
     // Check message
-    REQUIRE(msg_from_manager.GetType() == REQUEST);
-    REQUIRE(msg_from_manager.GetServiceIdentifier() == CONTROL);
-    REQUIRE(msg_from_manager.GetPort() == 0);
+    REQUIRE(msg_from_manager.getType() == REQUEST);
+    REQUIRE(msg_from_manager.getServiceIdentifier() == CONTROL);
+    REQUIRE(msg_from_manager.getPort() == 0);
 }
 
 TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
@@ -309,13 +309,13 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
 
     // Register service
-    manager.Start();
-    manager.RegisterService(CONTROL, 45454);
+    manager.start();
+    manager.registerService(CONTROL, 45454);
     // Send requests
-    const auto asm_msg_a = Message(REQUEST, "group1", "sat2", CONTROL, 0).Assemble();
-    const auto asm_msg_b = Message(REQUEST, "group1", "sat2", DATA, 0).Assemble();
-    sender.SendBroadcast(asm_msg_a.data(), asm_msg_a.size());
-    sender.SendBroadcast(asm_msg_b.data(), asm_msg_b.size());
+    const auto asm_msg_a = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
+    const auto asm_msg_b = CHIRPMessage(REQUEST, "group1", "sat2", DATA, 0).assemble();
+    sender.sendBroadcast(asm_msg_a.data(), asm_msg_a.size());
+    sender.sendBroadcast(asm_msg_b.data(), asm_msg_b.size());
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(10ms);
 
@@ -325,13 +325,13 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
 TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    manager.Start();
+    manager.start();
 
     // Create invalid message
-    auto asm_msg = Message(REQUEST, "group1", "sat2", CONTROL, 0).Assemble();
+    auto asm_msg = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
     asm_msg[0] = 'X';
     // Send message
-    sender.SendBroadcast(asm_msg.data(), asm_msg.size());
+    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(10ms);
 

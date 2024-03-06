@@ -6,31 +6,31 @@ if not impl_cpp
     subdir_done()
 endif
 
-# CHIRP
+# Core / CHIRP
 
-test_chirp_broadcast = executable('test_chirp_broadcast',
-  sources: 'test_chirp_broadcast.cpp',
-  dependencies: [chirp_dep, catch2_dep],
+test_core_chirp_broadcast = executable('test_core_chirp_broadcast',
+  sources: 'test_core_chirp_broadcast.cpp',
+  dependencies: [core_dep, catch2_dep],
 )
-test('CHIRP broadcast test', test_chirp_broadcast,
+test('Core CHIRP broadcast test', test_core_chirp_broadcast,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   is_parallel: false,
 )
 
-test_chirp_manager = executable('test_chirp_manager',
-  sources: 'test_chirp_manager.cpp',
-  dependencies: [chirp_dep, catch2_dep],
+test_core_chirp_manager = executable('test_core_chirp_manager',
+  sources: 'test_core_chirp_manager.cpp',
+  dependencies: [core_dep, catch2_dep],
 )
-test('CHIRP manager test', test_chirp_manager,
+test('Core CHIRP manager test', test_core_chirp_manager,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   is_parallel: false,
 )
 
-test_chirp_message = executable('test_chirp_message',
-  sources: 'test_chirp_message.cpp',
-  dependencies: [chirp_dep, catch2_dep],
+test_core_chirp_message = executable('test_core_chirp_message',
+  sources: 'test_core_chirp_message.cpp',
+  dependencies: [core_dep, catch2_dep],
 )
-test('CHIRP message test', test_chirp_message,
+test('Core CHIRP message test', test_core_chirp_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 

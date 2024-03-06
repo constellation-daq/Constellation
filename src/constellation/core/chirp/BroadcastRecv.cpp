@@ -33,7 +33,7 @@ BroadcastRecv::BroadcastRecv(const asio::ip::address& any_address, asio::ip::por
 BroadcastRecv::BroadcastRecv(std::string_view any_ip, asio::ip::port_type port)
     : BroadcastRecv(asio::ip::make_address(any_ip), port) {}
 
-BroadcastMessage BroadcastRecv::RecvBroadcast() {
+BroadcastMessage BroadcastRecv::recvBroadcast() {
     BroadcastMessage message {};
 
     // Reserve some space for message
@@ -52,7 +52,7 @@ BroadcastMessage BroadcastRecv::RecvBroadcast() {
     return message;
 }
 
-std::optional<BroadcastMessage> BroadcastRecv::AsyncRecvBroadcast(std::chrono::steady_clock::duration timeout) {
+std::optional<BroadcastMessage> BroadcastRecv::asyncRecvBroadcast(std::chrono::steady_clock::duration timeout) {
     BroadcastMessage message {};
     message.content.resize(MESSAGE_BUFFER);
     asio::ip::udp::endpoint sender_endpoint {};

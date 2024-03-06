@@ -58,7 +58,7 @@ namespace constellation::chirp {
          *
          * @return Received broadcast message
          */
-        CNSTLN_API BroadcastMessage RecvBroadcast();
+        CNSTLN_API BroadcastMessage recvBroadcast();
 
         /**
          * Receive broadcast message (asynchronously)
@@ -66,7 +66,7 @@ namespace constellation::chirp {
          * @param timeout Duration for which to block function call
          * @return Broadcast message if received
          */
-        CNSTLN_API std::optional<BroadcastMessage> AsyncRecvBroadcast(std::chrono::steady_clock::duration timeout);
+        CNSTLN_API std::optional<BroadcastMessage> asyncRecvBroadcast(std::chrono::steady_clock::duration timeout);
 
     private:
         asio::io_context io_context_;

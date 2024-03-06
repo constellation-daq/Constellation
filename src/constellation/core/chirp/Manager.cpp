@@ -16,11 +16,12 @@
 #include <iterator>
 #include <utility>
 
-#include "constellation/chirp/exceptions.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::message;
 using namespace std::literals::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {
@@ -81,20 +82,20 @@ Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_v
 
 Manager::~Manager() {
     // First stop Run function
-    run_thread_.request_stop();
-    if(run_thread_.joinable()) {
-        run_thread_.join();
+    main_loop_thread_.request_stop();
+    if(main_loop_thread_.joinable()) {
+        main_loop_thread_.join();
     }
     // Now unregister all services
-    UnregisterServices();
+    unregisterServices();
 }
 
-void Manager::Start() {
+void Manager::start() {
     // jthread immediately starts on construction
-    run_thread_ = std::jthread(std::bind_front(&Manager::Run, this));
+    main_loop_thread_ = std::jthread(std::bind_front(&Manager::main_loop, this));
 }
 
-bool Manager::RegisterService(ServiceIdentifier service_id, Port port) {
+bool Manager::registerService(ServiceIdentifier service_id, utils::Port port) {
     const RegisteredService service {service_id, port};
 
     std::unique_lock registered_services_lock {registered_services_mutex_};
@@ -104,12 +105,12 @@ bool Manager::RegisterService(ServiceIdentifier service_id, Port port) {
     // Lock not needed anymore
     registered_services_lock.unlock();
     if(actually_inserted) {
-        SendMessage(OFFER, service);
+        sendMessage(OFFER, service);
     }
     return actually_inserted;
 }
 
-bool Manager::UnregisterService(ServiceIdentifier service_id, Port port) {
+bool Manager::unregisterService(ServiceIdentifier service_id, utils::Port port) {
     const RegisteredService service {service_id, port};
 
     std::unique_lock registered_services_lock {registered_services_mutex_};
@@ -119,25 +120,25 @@ bool Manager::UnregisterService(ServiceIdentifier service_id, Port port) {
     // Lock not needed anymore
     registered_services_lock.unlock();
     if(actually_erased) {
-        SendMessage(DEPART, service);
+        sendMessage(DEPART, service);
     }
     return actually_erased;
 }
 
-void Manager::UnregisterServices() {
+void Manager::unregisterServices() {
     const std::lock_guard registered_services_lock {registered_services_mutex_};
     for(auto service : registered_services_) {
-        SendMessage(DEPART, service);
+        sendMessage(DEPART, service);
     }
     registered_services_.clear();
 }
 
-std::set<RegisteredService> Manager::GetRegisteredServices() {
+std::set<RegisteredService> Manager::getRegisteredServices() {
     const std::lock_guard registered_services_lock {registered_services_mutex_};
     return registered_services_;
 }
 
-bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data) {
+bool Manager::registerDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
     const auto insert_ret = discover_callbacks_.emplace(callback, service_id, std::move(user_data));
 
@@ -145,7 +146,7 @@ bool Manager::RegisterDiscoverCallback(DiscoverCallback* callback, ServiceIdenti
     return insert_ret.second;
 }
 
-bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id) {
+bool Manager::unregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
     const auto erase_ret = discover_callbacks_.erase({callback, service_id, {}});
 
@@ -153,24 +154,24 @@ bool Manager::UnregisterDiscoverCallback(DiscoverCallback* callback, ServiceIden
     return erase_ret > 0;
 }
 
-void Manager::UnregisterDiscoverCallbacks() {
+void Manager::unregisterDiscoverCallbacks() {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
     discover_callbacks_.clear();
 }
 
-void Manager::ForgetDiscoveredServices() {
+void Manager::forgetDiscoveredServices() {
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     discovered_services_.clear();
 }
 
-std::vector<DiscoveredService> Manager::GetDiscoveredServices() {
+std::vector<DiscoveredService> Manager::getDiscoveredServices() {
     std::vector<DiscoveredService> ret {};
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     std::copy(discovered_services_.begin(), discovered_services_.end(), std::back_inserter(ret));
     return ret;
 }
 
-std::vector<DiscoveredService> Manager::GetDiscoveredServices(ServiceIdentifier service_id) {
+std::vector<DiscoveredService> Manager::getDiscoveredServices(ServiceIdentifier service_id) {
     std::vector<DiscoveredService> ret {};
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     for(const auto& discovered_service : discovered_services_) {
@@ -181,19 +182,19 @@ std::vector<DiscoveredService> Manager::GetDiscoveredServices(ServiceIdentifier 
     return ret;
 }
 
-void Manager::SendRequest(ServiceIdentifier service) {
-    SendMessage(REQUEST, {service, 0});
+void Manager::sendRequest(ServiceIdentifier service) {
+    sendMessage(REQUEST, {service, 0});
 }
 
-void Manager::SendMessage(MessageType type, RegisteredService service) {
-    const auto asm_msg = Message(type, group_id_, host_id_, service.identifier, service.port).Assemble();
-    sender_.SendBroadcast(asm_msg.data(), asm_msg.size());
+void Manager::sendMessage(MessageType type, RegisteredService service) {
+    const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
+    sender_.sendBroadcast(asm_msg.data(), asm_msg.size());
 }
 
-void Manager::Run(const std::stop_token& stop_token) {
+void Manager::main_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         try {
-            const auto raw_msg_opt = receiver_.AsyncRecvBroadcast(50ms);
+            const auto raw_msg_opt = receiver_.asyncRecvBroadcast(50ms);
 
             // Check for timeout
             if(!raw_msg_opt.has_value()) {
@@ -201,28 +202,28 @@ void Manager::Run(const std::stop_token& stop_token) {
             }
 
             const auto& raw_msg = raw_msg_opt.value();
-            auto chirp_msg = Message(raw_msg.content);
+            auto chirp_msg = CHIRPMessage::disassemble(raw_msg.content);
 
-            if(chirp_msg.GetGroupID() != group_id_) {
+            if(chirp_msg.getGroupID() != group_id_) {
                 // Broadcast from different group, ignore
                 continue;
             }
-            if(chirp_msg.GetHostID() == host_id_) {
+            if(chirp_msg.getHostID() == host_id_) {
                 // Broadcast from self, ignore
                 continue;
             }
 
             const DiscoveredService discovered_service {
-                raw_msg.address, chirp_msg.GetHostID(), chirp_msg.GetServiceIdentifier(), chirp_msg.GetPort()};
+                raw_msg.address, chirp_msg.getHostID(), chirp_msg.getServiceIdentifier(), chirp_msg.getPort()};
 
-            switch(chirp_msg.GetType()) {
+            switch(chirp_msg.getType()) {
             case REQUEST: {
                 auto service_id = discovered_service.identifier;
                 const std::lock_guard registered_services_lock {registered_services_mutex_};
                 // Replay OFFERs for registered services with same service identifier
                 for(const auto& service : registered_services_) {
                     if(service.identifier == service_id) {
-                        SendMessage(OFFER, service);
+                        sendMessage(OFFER, service);
                     }
                 }
                 break;
@@ -265,7 +266,7 @@ void Manager::Run(const std::stop_token& stop_token) {
             }
             default: std::unreachable();
             }
-        } catch(const DecodeError& error) {
+        } catch(const MessageDecodingError& error) {
             continue;
         }
     }

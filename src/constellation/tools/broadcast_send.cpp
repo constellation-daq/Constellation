@@ -15,8 +15,8 @@
 
 #include <asio.hpp>
 
-#include "constellation/chirp/BroadcastSend.hpp"
-#include "constellation/chirp/protocol_info.hpp"
+#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 
 using namespace constellation::chirp;
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Send message: ";
         std::getline(std::cin, message);
 
-        sender.SendBroadcast(message);
+        sender.sendBroadcast(message);
     }
 
     return 0;

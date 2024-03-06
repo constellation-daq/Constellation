@@ -23,10 +23,10 @@ BroadcastSend::BroadcastSend(const asio::ip::address& brd_address, asio::ip::por
 BroadcastSend::BroadcastSend(std::string_view brd_ip, asio::ip::port_type port)
     : BroadcastSend(asio::ip::make_address(brd_ip), port) {}
 
-void BroadcastSend::SendBroadcast(std::string_view message) {
+void BroadcastSend::sendBroadcast(std::string_view message) {
     socket_.send(asio::buffer(message));
 }
 
-void BroadcastSend::SendBroadcast(const void* data, std::size_t size) {
+void BroadcastSend::sendBroadcast(const void* data, std::size_t size) {
     socket_.send(asio::const_buffer(data, size));
 }
