@@ -338,4 +338,16 @@ TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::man
     // If everything worked, the corresponding lines should be marked as executed in coverage
 }
 
+TEST_CASE("Default CHIRP manager instance", "[chirp][chirp::manager]") {
+    // No default manager if not set
+    REQUIRE(Manager::getDefaultInstance() == nullptr);
+
+    // Set manager as default instance
+    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    manager.setAsDefaultInstance();
+
+    // Ensure static variable is set correctly
+    REQUIRE(Manager::getDefaultInstance() == &manager);
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

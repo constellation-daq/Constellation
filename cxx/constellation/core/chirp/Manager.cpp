@@ -70,6 +70,14 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return std::to_underlying(service_id) < std::to_underlying(other.service_id);
 }
 
+Manager* Manager::getDefaultInstance() {
+    return Manager::default_manager_instance_;
+}
+
+void Manager::setAsDefaultInstance() {
+    Manager::default_manager_instance_ = this;
+}
+
 Manager::Manager(const asio::ip::address& brd_address,
                  const asio::ip::address& any_address,
                  std::string_view group_name,
