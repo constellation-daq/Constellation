@@ -44,7 +44,7 @@ namespace constellation::message {
     };
 
     /** CHIRP message assembled to array of bytes */
-    using AssembledMessage = std::array<std::uint8_t, chirp::CHIRP_MESSAGE_LENGTH>;
+    using AssembledMessage = std::array<std::byte, chirp::CHIRP_MESSAGE_LENGTH>;
 
     /** CHIRP message */
     class CHIRPMessage {
@@ -102,7 +102,7 @@ namespace constellation::message {
          * @throw DecodeError If the message header does not match the CHIRP specification, or if the message
          * has an unknown `ServiceIdentifier`
          */
-        CNSTLN_API static CHIRPMessage disassemble(std::span<const std::uint8_t> assembled_message);
+        CNSTLN_API static CHIRPMessage disassemble(std::span<const std::byte> assembled_message);
 
     private:
         CHIRPMessage() = default;

@@ -130,7 +130,7 @@ TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chi
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group2", "sat2", CONTROL, 23999).assemble();
-    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
+    sender.sendBroadcast(asm_msg);
 
     REQUIRE(manager.getDiscoveredServices().empty());
 }
@@ -141,7 +141,7 @@ TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::man
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group1", "sat1", CONTROL, 23999).assemble();
-    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
+    sender.sendBroadcast(asm_msg);
 
     REQUIRE(manager.getDiscoveredServices().empty());
 }
@@ -314,8 +314,8 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
     // Send requests
     const auto asm_msg_a = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
     const auto asm_msg_b = CHIRPMessage(REQUEST, "group1", "sat2", DATA, 0).assemble();
-    sender.sendBroadcast(asm_msg_a.data(), asm_msg_a.size());
-    sender.sendBroadcast(asm_msg_b.data(), asm_msg_b.size());
+    sender.sendBroadcast(asm_msg_a);
+    sender.sendBroadcast(asm_msg_b);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(10ms);
 
@@ -329,9 +329,9 @@ TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::man
 
     // Create invalid message
     auto asm_msg = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
-    asm_msg[0] = 'X';
+    asm_msg[0] = std::byte('X');
     // Send message
-    sender.sendBroadcast(asm_msg.data(), asm_msg.size());
+    sender.sendBroadcast(asm_msg);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(10ms);
 

@@ -10,7 +10,7 @@
 #pragma once
 
 #include <chrono>
-#include <cstdint>
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -25,7 +25,7 @@ namespace constellation::chirp {
     /** Incoming broadcast message */
     struct BroadcastMessage {
         /** Content of the broadcast message in bytes */
-        std::vector<std::uint8_t> content;
+        std::vector<std::byte> content;
 
         /** Address from which the broadcast message was received */
         asio::ip::address address;

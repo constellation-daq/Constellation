@@ -188,7 +188,7 @@ void Manager::sendRequest(ServiceIdentifier service) {
 
 void Manager::sendMessage(MessageType type, RegisteredService service) {
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    sender_.sendBroadcast(asm_msg.data(), asm_msg.size());
+    sender_.sendBroadcast(asm_msg);
 }
 
 void Manager::main_loop(const std::stop_token& stop_token) {
