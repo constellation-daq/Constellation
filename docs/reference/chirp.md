@@ -22,13 +22,13 @@ If no network (with DHCP) is available, the default broadcast address (255.255.2
 To receive broadcasts:
 
 ```sh
-./build/src/constellation/tools/broadcast_recv [ANY_IP] [ANY_PORT]
+./build/cxx/constellation/tools/broadcast_recv [ANY_IP] [ANY_PORT]
 ```
 
 To send broadcasts:
 
 ```sh
-./build/src/constellation/tools/broadcast_send [BRD_IP] [BRD_PORT]
+./build/cxx/constellation/tools/broadcast_send [BRD_IP] [BRD_PORT]
 ```
 
 See [above](#notes-broadcast) for details on the broadcast address.
@@ -38,13 +38,13 @@ See [above](#notes-broadcast) for details on the broadcast address.
 To receive CHIRP messages:
 
 ```sh
-./build/src/constellation/tools/chirp_recv [ANY_IP]
+./build/cxx/constellation/tools/chirp_recv [ANY_IP]
 ```
 
 To send CHIRP messages:
 
 ```sh
-./build/src/constellation/tools/chirp_send [BRD_IP]
+./build/cxx/constellation/tools/chirp_send [BRD_IP]
 ```
 
 See [above](#notes-broadcast) for details on the broadcast address.
@@ -58,7 +58,7 @@ TODO:
 To run the CHIRP manager, run:
 
 ```sh
-./build/src/constellation/tools/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
+./build/cxx/constellation/tools/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
 ```
 
 The following commands are available:
