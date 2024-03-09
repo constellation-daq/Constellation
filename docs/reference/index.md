@@ -23,3 +23,10 @@ cxx/chirp
 ```{toctree}
 :caption: Python Developer API
 ```
+
+```{toctree}
+:caption: Appendix
+:maxdepth: 2
+
+../protocols/index
+```
