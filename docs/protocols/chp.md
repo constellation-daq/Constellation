@@ -3,7 +3,7 @@
 * Status: draft
 * Editor: The Constellation authors
 
-The Constellation Heartbeat Protocol (CHP) defines how hosts distribute and receive auxiliary information such as log messages and statistics data for monitoring purposes.
+The Constellation Heartbeat Protocol (CHP) defines how hosts distribute and receive status information and liveliness indications for the purpose of tracking availability and uptime.
 
 ## Preamble
 
@@ -25,6 +25,7 @@ This specification is not transport specific, but not all behaviour will be repr
 * [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) defines the network discovery protocol and procedure.
 
 ## Implementation
+
 A CHP message MUST consist of a single frames. The definition of ‘frame’ follows that defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
 
 ### Overall Behavior
@@ -35,7 +36,7 @@ Upon service discovery through CHIRP, a CHP receiving host MAY subscribe to the 
 
 A CHP sending host MUST publish messages to all subscribed CHP receiving hosts in regular time intervals. These messages are called "heartbeats".
 
-A CHP sending host SHOULD publish additional messages whenever its internal state changes. These messages are called "eytrasystoles".
+A CHP sending host SHOULD publish additional messages whenever its internal state changes. These messages are called "extrasystoles".
 
 A receiving CHP host SHALL discard messages that it receives with an invalid formatting or content.
 
@@ -47,22 +48,25 @@ Whenever no heartbeat or extrasystole message is received within the defined tim
 
 Whenever a heartbeat or extrasystole message is received within the defined time interval, the lives counter SHALL be reset to its initial value and the current state SHALL be updated with the state information of the CHP sending host from the message.
 
-The regular time intervals for publishing heartbeat messages by CHP sending hosts  SHALL be 1 second.
+The time intervals for publishing heartbeat messages by CHP sending hosts, called "heart rate",  SHALL be variable and adjustable over time by the CHP sending host. Heartbeat messages MAY be sent earlier than the indicated time interval and additional extrasystole messages MAY be published anytime.
 
-The time interval for receiving heartbeat messages from a CHP sending host SHALL be 1.5 seconds.
+The maximum time interval expected for receiving the next heartbeat messages from a given CHP sending host SHALL be inferred from the heart rate value of the last received heartbeat or extrasystole message. The time interval SHALL be 150% of the heart rate time interval and SHALL be adjusted with every received message.
 
 The initial value of the lives counter SHOULD be 3.
 
 ### Message Content
 
 The heartbeat and extrasystole message frame MUST be encoded according to the MessagePack specification.
-It SHALL contain two strings, followed by a 64-bit timestamp and a 1-OCTET integer value.
+It SHALL contain two strings, followed by a 64-bit timestamp, a 1-OCTET integer value and a 2-OCTET integer value.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘H’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
 
 The second string SHOULD contain the name of the sending CHP host.
 
 The timestamp SHALL follow the MessagePack specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
+
 The values SHOULD be the time of sending the heartbeat or extrasystole message at the sending CHP host.
 
 The 1-OCTET integer variable SHALL contain the current state of the CHP sending host.
+
+The 2-OCTET integer variable SHALL indicate the expected time interval in milliseconds until the next heartbeat message is emitted by the sending CHP host.
