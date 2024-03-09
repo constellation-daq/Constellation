@@ -34,7 +34,7 @@ A CHP sending host SHALL advertise its CHP service through CHIRP.
 
 Upon service discovery through CHIRP, a CHP receiving host MAY subscribe to the CHP sending hosts as defined by 29/PUBSUB.
 
-A CHP sending host MUST publish messages to all subscribed CHP receiving hosts in regular time intervals. These messages are called "heartbeats".
+A CHP sending host MUST publish messages to all subscribed CHP receiving hosts in regular time intervals. These messages are called "heartbeats". The CHP sending host SHALL publish messages over the entirety of its existence.
 
 A CHP sending host SHOULD publish additional messages whenever its internal state changes. These messages are called "extrasystoles".
 
