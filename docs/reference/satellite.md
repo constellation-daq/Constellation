@@ -8,6 +8,26 @@ These pages contain detailed technical information concerning the communication 
 minimal set of functionality for them to interoperate with each other.
 ```
 
+## Satellite Commands
+
+Each satellite **must** be able to understand and answer tot he following commands, and it **must** accept or provide the
+corresponding payloads:
+
+| Command | payload | verb reply | payload reply
+| ------- | ------- | ---------- | -------------
+| `get_name` | - | Name of the Satellite | -
+| `get_version` | - | Constellation version identifier string | -
+| `get_commands` | - | See payload | List of commands (+ description+payload?)
+| `get_state` | - | Current state (as string) | -
+| `get_status` | - | Current status | -
+| `get_config` | - | Current config | -
+| `initialize` | Config | Acknowledgement | -
+| `launch` | - | Acknowledgement | -
+| `land` | - | Acknowledgement | -
+| `reconfigure` | Partial config | Acknowledgement | -
+| `start` | Run number | Acknowledgement | -
+| `stop` | - | Acknowledgement | -
+
 ## FSM States
 
 The state can be encoded in a single-byte value.
