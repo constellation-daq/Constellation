@@ -12,8 +12,8 @@
 #include <string>
 #include <string_view>
 
+#include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/exceptions.hpp"
-#include "Protocol.hpp"
 
 namespace constellation::message {
     /**

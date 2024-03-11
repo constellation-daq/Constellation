@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -52,13 +53,15 @@ namespace constellation::message {
     constexpr Protocol get_protocol(const std::string& protocol_identifier) {
         if(protocol_identifier == "CSCP\x01") {
             return CSCP1;
-        } else if(protocol_identifier == "CMDP\x01") {
-            return CMDP1;
-        } else if(protocol_identifier == "CDTP\x01") {
-            return CDTP1;
-        } else {
-            throw std::invalid_argument(protocol_identifier);
         }
+        if(protocol_identifier == "CMDP\x01") {
+            return CMDP1;
+        }
+        if(protocol_identifier == "CDTP\x01") {
+            return CDTP1;
+        }
+        // Unknown protocol:
+        throw std::invalid_argument(protocol_identifier);
     }
 
     /**
@@ -69,6 +72,7 @@ namespace constellation::message {
      */
     inline std::string get_readable_protocol(std::string_view protocol_identifier) {
         std::string out {protocol_identifier.data(), protocol_identifier.size() - 1};
+        // TODO(stephan.lachnit): make this general by finding all non-ASCII symbols and convert them to numbers
         out += std::to_string(protocol_identifier.back());
         return out;
     }
