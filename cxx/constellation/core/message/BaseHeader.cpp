@@ -34,8 +34,17 @@ BaseHeader BaseHeader::disassemble(Protocol protocol, std::span<const std::byte>
     // Unpack protocol
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-    if(protocol_identifier != get_protocol_identifier(protocol)) {
-        throw UnexpectedProtocolError(protocol_identifier, protocol);
+
+    // Try to decode protocol identifier into protocol
+    Protocol protocol_recv;
+    try {
+        protocol_recv = get_protocol(protocol_identifier);
+    } catch(std::invalid_argument& e) {
+        throw InvalidProtocolError(e.what());
+    }
+
+    if(protocol_recv != protocol) {
+        throw UnexpectedProtocolError(protocol_recv, protocol);
     }
 
     // Unpack sender

@@ -44,9 +44,27 @@ namespace constellation::message {
     }
 
     /**
+     * Get protocol from a protocol identifier string
+     *
+     * @param protocol_identifier Protocol identifier string
+     * @return Protocol
+     */
+    constexpr Protocol get_protocol(const std::string& protocol_identifier) {
+        if(protocol_identifier == "CSCP\x01") {
+            return CSCP1;
+        } else if(protocol_identifier == "CMDP\x01") {
+            return CMDP1;
+        } else if(protocol_identifier == "CDTP\x01") {
+            return CDTP1;
+        } else {
+            throw std::invalid_argument(protocol_identifier);
+        }
+    }
+
+    /**
      * Get human-readable protocol identifier string for CSCP, CMDP and CDTP protocols
      *
-     * @param protocol Protocol
+     * @param protocol_identifier Protocol identifier string
      * @return Protocol identifier string with byte version replaced to human-readable version
      */
     inline std::string get_readable_protocol(std::string_view protocol_identifier) {
@@ -55,6 +73,12 @@ namespace constellation::message {
         return out;
     }
 
+    /**
+     * Get human-readable protocol identifier string for CSCP, CMDP and CDTP protocols
+     *
+     * @param protocol Protocol
+     * @return Protocol identifier string with byte version replaced to human-readable version
+     */
     inline std::string get_readable_protocol(Protocol protocol) {
         auto protocol_identifier = get_protocol_identifier(protocol);
         return get_readable_protocol(protocol_identifier);
