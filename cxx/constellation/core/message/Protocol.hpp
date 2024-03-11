@@ -50,7 +50,7 @@ namespace constellation::message {
      * @param protocol_identifier Protocol identifier string
      * @return Protocol
      */
-    constexpr Protocol get_protocol(const std::string& protocol_identifier) {
+    constexpr Protocol get_protocol(std::string_view protocol_identifier) {
         if(protocol_identifier == "CSCP\x01") {
             return CSCP1;
         }
@@ -61,7 +61,7 @@ namespace constellation::message {
             return CDTP1;
         }
         // Unknown protocol:
-        throw std::invalid_argument(protocol_identifier);
+        throw std::invalid_argument(std::string(protocol_identifier).c_str());
     }
 
     /**

@@ -33,7 +33,7 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
 
     // Try to decode protocol identifier into protocol
-    Protocol protocol_recv;
+    Protocol protocol_recv {};
     try {
         protocol_recv = get_protocol(protocol_identifier);
     } catch(std::invalid_argument& e) {
