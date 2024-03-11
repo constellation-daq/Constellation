@@ -27,12 +27,12 @@ using namespace constellation::utils;
 using namespace std::literals::string_literals;
 using namespace std::literals::chrono_literals;
 
-// Find path relative to src/, otherwise path without any parent
+// Find path relative to cxx/, otherwise path without any parent
 std::string get_rel_file_path(std::string file_path) {
-    const auto src_dir = std::filesystem::path::preferred_separator + "src"s + std::filesystem::path::preferred_separator;
+    const auto src_dir = std::filesystem::path::preferred_separator + "cxx"s + std::filesystem::path::preferred_separator;
     const auto src_dir_pos = file_path.find(src_dir);
     if(src_dir_pos != std::string::npos) {
-        // found /src/, start path after pattern
+        // found /cxx/, start path after pattern
         file_path = file_path.substr(src_dir_pos + src_dir.length());
     } else {
         // try to find last / for filename
