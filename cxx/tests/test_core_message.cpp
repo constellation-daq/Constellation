@@ -9,6 +9,7 @@
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
@@ -117,6 +118,9 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+    REQUIRE_THROWS_MATCHES(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CMDP1\""));
 }
 
 TEST_CASE("Header Packing / Unpacking (CDTP, unexpected protocol)", "[core][core::message]") {
@@ -128,6 +132,9 @@ TEST_CASE("Header Packing / Unpacking (CDTP, unexpected protocol)", "[core][core
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+    REQUIRE_THROWS_MATCHES(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CDTP1\""));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -189,6 +196,9 @@ TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
 
     // Check for excess frame detection
     REQUIRE_THROWS_AS(CSCP1Message::disassemble(frames), MessageDecodingError);
+    REQUIRE_THROWS_MATCHES(CSCP1Message::disassemble(frames),
+                           MessageDecodingError,
+                           Message("Error decoding message: Incorrect number of message frames"));
 }
 
 TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {

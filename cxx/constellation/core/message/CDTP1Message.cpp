@@ -32,7 +32,7 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
     if(protocol_identifier != get_protocol_identifier(CDTP1)) {
-        throw UnexpectedProtocolError(protocol_identifier, get_protocol_identifier(CDTP1));
+        throw UnexpectedProtocolError(protocol_identifier, CDTP1);
     }
 
     // Unpack sender
