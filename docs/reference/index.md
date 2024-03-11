@@ -2,7 +2,7 @@
 
 ```{note}
 This section of the manual contains technical details not required for understanding and operating Constellations, but
-only for implementing COnstellation libraries in different languages, or for consulting the available APIs
+only for implementing Constellation libraries in different languages, or for consulting the available APIs
 ```
 
 ```{toctree}
