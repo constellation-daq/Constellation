@@ -49,11 +49,15 @@ namespace constellation::message {
      * @param protocol Protocol
      * @return Protocol identifier string with byte version replaced to human-readable version
      */
-    inline std::string get_hr_protocol_identifier(Protocol protocol) {
-        auto protocol_identifier = get_protocol_identifier(protocol);
+    inline std::string get_readable_protocol(std::string_view protocol_identifier) {
         std::string out {protocol_identifier.data(), protocol_identifier.size() - 1};
         out += std::to_string(protocol_identifier.back());
         return out;
+    }
+
+    inline std::string get_readable_protocol(Protocol protocol) {
+        auto protocol_identifier = get_protocol_identifier(protocol);
+        return get_readable_protocol(protocol_identifier);
     }
 
 } // namespace constellation::message
