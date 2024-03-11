@@ -111,7 +111,7 @@ class DataSender(Satellite):
         )
         self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
-        self.logger.info(f"Satellite {self.name} publishing data on port {data_port}")
+        self.log.info(f"Satellite {self.name} publishing data on port {data_port}")
 
     def do_run(self):
         """Perform the data acquisition and enqueue the results.
@@ -140,7 +140,7 @@ class RandomDataSender(DataSender):
             meta = {"eventid": num, "time": datetime.datetime.now().isoformat()}
             data = DataBlock(payload, meta)
             self.data_queue.put(data)
-            self.logger.debug(f"Queueing data packet {num}")
+            self.log.debug(f"Queueing data packet {num}")
             num += 1
             time.sleep(0.5)
 
@@ -154,7 +154,7 @@ class RandomDataSender(DataSender):
         time.sleep(0.5) """
 
         t1 = time.time()
-        self.logger.info(
+        self.log.info(
             f"total time for {num} evt / {num * len(payload) / 1024 / 1024}MB: {t1 - t0}s"
         )
 

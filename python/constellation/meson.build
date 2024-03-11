@@ -3,11 +3,15 @@
 
 constellation_files = files(
   '__init__.py',
+  'base.py',
   'broadcastmanager.py',
   'chirp.py',
+  'commandmanager.py',
+  'cscp.py',
   'controller.py',
   'datareceiver.py',
   'datasender.py',
+  'error.py',
   'fsm.py',
   'heartbeatchecker.py',
   'heartbeater.py',

@@ -25,7 +25,7 @@ classifiers = [
     "License :: OSI Approved :: European Union Public Licence 1.2 (EUPL 1.2)",
 ]
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "zmq",
     "msgpack",
@@ -34,13 +34,16 @@ dependencies = [
     "numpy",
 ]
 
+[project.scripts]
+Satellite = "constellation.satellite:main"
+
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
 Repository = "https://gitlab.desy.de/constellation/constellation"
 
 [project.optional-dependencies]
 docs = ["sphinx", "myst-parser", "pydata_sphinx_theme", "ablog", "sphinxcontrib.plantuml"]
-test = ["pytest"]
+test = ["pytest", "pytest-forked"]
 
 [tool.meson-python.args]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cpp=disabled"]  # disable C++ for now
