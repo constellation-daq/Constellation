@@ -4,66 +4,42 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import time
-from enum import Enum
 import logging
-
 import zmq
-import msgpack
-
 from logging.handlers import QueueHandler, QueueListener
-from .protocol import LogTransmitter, MetricsTransmitter
+from .cmtp import CMDPTransmitter, Metric
 
 
-class MsgHeader:
-    def __init__(self, sender, timestamp: msgpack.Timestamp, tags: dict):
-        self.sender = sender
-        self.time = timestamp
-        self.tags = tags
+class MonitoringManager:
+    """Class managing the Constellation Monitoring Distribution Protocol."""
 
-    def time_ns(self):
-        return self.time.to_unix_nano()
+    def __init__(self, name: str, context: zmq.Context, port: int):
+        """Set up logging and metrics transmitters."""
+        # Create socket and bind wildcard
+        self._socket = context.socket(zmq.PUB)
+        self._socket.bind(f"tcp://*:{port}")
+        # NOTE: Logger object is a singleton and setup is only necessary once
+        # for the given name.
+        self._logger = logging.getLogger(name)
+        self._zmqhandler = ZeroMQSocketHandler(self._socket)
+        self._logger.addHandler(self._zmqhandler)
+        self._transmitter = CMDPTransmitter(self._socket)
 
-    def time_s(self):
-        return self.time.to_unix()
+    def send_stat(self, metric: Metric):
+        """Send a metric via ZMQ."""
+        return self._transmitter.send_metric(metric)
 
-    def encode(_obj):
-        return [_obj.sender, _obj.time, _obj.tags]
-
-    def decode(_data):
-        return MsgHeader(_data[0], _data[1], _data[2])
-
-
-class LogLevels(Enum):
-    DEBUG = logging.DEBUG
-    INFO = logging.INFO
-    WARNING = logging.WARNING
-    ERROR = logging.ERROR
-
-
-def getLoggerAndStats(name: str, context: zmq.Context, port: int):
-    """Set up and return a logger and statistics object.
-
-    Note that the returned Logger object is a singleton and that the setup is
-    only necessary once.
-
-    """
-    # Create socket and bind wildcard
-    socket = context.socket(zmq.PUB)
-    socket.bind(f"tcp://*:{port}")
-    logger = logging.getLogger(name)
-    zmqhandler = ZeroMQSocketHandler(socket)
-    # set lowest level to ensure that all messages are published
-    zmqhandler.setLevel(0)
-    logger.addHandler(zmqhandler)
-    stats = MetricsTransmitter(socket, name)
-    return logger, stats
+    def close(self):
+        """Close the ZMQ socket."""
+        self._logger.removeHandler(self._zmqhandler)
+        self._socket.close()
 
 
 class ZeroMQSocketHandler(QueueHandler):
     """This handler sends records to a ZMQ socket."""
 
-    def __init__(self, socket: zmq.Socket):
-        super().__init__(LogTransmitter(socket))
+    def __init__(self, transmitter: CMDPTransmitter):
+        super().__init__(transmitter)
 
     def enqueue(self, record):
         self.queue.send(record)
@@ -81,7 +57,7 @@ class ZeroMQSocketListener(QueueListener):
         socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")  # subscribe to LOGs
         socket.connect(uri)
         kwargs.pop("ctx", None)
-        super().__init__(LogTransmitter(socket), *handlers, **kwargs)
+        super().__init__(CMDPTransmitter(socket), *handlers, **kwargs)
 
     def dequeue(self, block):
         return self.queue.recv()
