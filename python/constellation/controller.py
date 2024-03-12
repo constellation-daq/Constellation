@@ -32,8 +32,9 @@ class BaseCLIController:
 
         self.transmitters = {}
         self.context = zmq.Context()
-        for host in hosts:
-            self.add_satellite(host)
+        if hosts:
+            for host in hosts:
+                self.add_satellite(host_name="Example", host_addr=host)
 
         self.broadcast_manager = CHIRPBroadcaster(name, group, None)
         self.broadcast_manager.register_request(
