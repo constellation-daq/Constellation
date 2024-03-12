@@ -84,9 +84,9 @@ variables:
       paths:
         - $PIP_CACHE_DIR/
   before_script:
-    - apt update && apt install ninja-build # see https://github.com/mesonbuild/meson-python/issues/600
     - python3 -m venv venv
     - source venv/bin/activate
+    - pip install meson-python meson ninja
 
 .python-3.11:
   image: python:3.11
@@ -111,7 +111,7 @@ variables:
 .build-py:
   stage: build
   script:
-    - pip install -e .
+    - pip install --no-build-isolation -e .
     - pip install build
     - python3 -m build
 
@@ -189,7 +189,7 @@ build:python-3.12:
 .test-py:
   stage: test
   script:
-    - pip install -e .[test]
+    - pip install --no-build-isolation -e .[test]
     - pytest --force-sugar --junitxml=junit.xml
   artifacts:
     reports:
@@ -279,7 +279,7 @@ lint:coverage-py:
     - job: test:python-3.11
       artifacts: false
   script:
-    - pip install -e .[test]
+    - pip install --no-build-isolation -e .[test]
     - pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
