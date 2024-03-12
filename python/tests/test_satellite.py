@@ -143,6 +143,7 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
     assert req.msg_verb == CSCPMessageVerb.SUCCESS
     KEEP_WAITING = False
     # check state again
+    time.sleep(0.1)
     sender.send_request("get_state")
     time.sleep(0.1)
     req = sender.get_message()
