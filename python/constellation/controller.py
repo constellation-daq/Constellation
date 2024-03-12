@@ -131,7 +131,7 @@ class BaseCLIController:
 
         if cmd == "initialize":
             config_path = msg[1]
-            payload = self.get_config(host=host_name, config_path=config_path)
+            payload = self.get_config(host_name=host_name, config_path=config_path)
         elif cmd == "reconfigure":
             config_path = msg[1]
             if msg[2]:
