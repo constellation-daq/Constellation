@@ -17,7 +17,7 @@ from .fsm import SatelliteFSM
 from .broadcastmanager import CHIRPBroadcaster
 
 
-class TrivialController:
+class BaseCLIController:
     """Simple controller class to send commands to a list of satellites."""
 
     def __init__(self, name, group, hosts):
@@ -207,7 +207,7 @@ class TrivialController:
                 self.process_cli_command(user_input)
 
 
-class SatelliteManager(TrivialController):
+class SatelliteManager(BaseCLIController):
     """Satellite Manager class implementing CHIRP protocol"""
 
     def __init__(self, *args, **kwargs):
@@ -288,7 +288,7 @@ def main():
     readline.parse_and_bind("tab: complete")
 
     # start server with args
-    ctrl = TrivialController(hosts=args.satellite)
+    ctrl = BaseCLIController(hosts=args.satellite)
     ctrl.run_from_cli()
     # ctrl.run()
 
