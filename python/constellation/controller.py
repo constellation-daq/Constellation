@@ -7,6 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import logging
 import readline
+from queue import Empty
 
 import zmq
 
@@ -182,6 +183,25 @@ class BaseCLIController:
                 msg=msg,
                 host_name=self.target_host,
             )
+
+    def _run_task_handler(self):
+        """Main event loop with task handler-routine"""
+        while not self._task_handler_event.is_set():
+            # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
+
+            try:
+                # blocking call but with timeout to prevent deadlocks
+                task = self.task_queue.get(block=True, timeout=0.5)
+                callback = task[0]
+                args = task[1]
+                try:
+                    callback(*args)
+                except Exception as e:
+                    # TODO consider whether to go into error state if anything goes wrong here
+                    self.log.error("Caught exception handling task: %s", repr(e))
+            except Empty:
+                # nothing to process
+                pass
 
     def get_config(
         self,
