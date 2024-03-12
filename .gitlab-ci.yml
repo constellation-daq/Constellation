@@ -181,7 +181,10 @@ build:python-3.11:
   stage: test
   script:
     - pip install -e .[test]
-    - pytest
+    - pytest --junitxml=junit.xml
+  artifacts:
+    reports:
+      junit: junit.xml
 
 test:alma9-cern:
   extends:
