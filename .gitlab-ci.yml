@@ -380,6 +380,24 @@ lint:coverity-scan:
   stage: format
   needs: []
 
+format:black:
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - black python/
+
+format:flake8:
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - flake8 python/
+
 format:clang-format:
   extends:
     - .format
