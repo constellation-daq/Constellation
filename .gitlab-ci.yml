@@ -91,6 +91,9 @@ variables:
 .python-3.11:
   image: python:3.11
 
+.python-3.12:
+  image: python:3.12
+
 # build stage
 
 .build-cpp:
@@ -166,6 +169,12 @@ build:python-3.11:
     - .build-py
     - .python-venv
     - .python-3.11
+
+build:python-3.12:
+  extends:
+    - .build-py
+    - .python-venv
+    - .python-3.12
 
 # test stage
 
@@ -245,6 +254,15 @@ test:python-3.11:
     - .python-3.11
   needs:
     - job: build:python-3.11
+      artifacts: false
+
+test:python-3.12:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.12
+  needs:
+    - job: build:python-3.12
       artifacts: false
 
 # lint stage
