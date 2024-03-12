@@ -111,8 +111,7 @@ variables:
 .build-py:
   stage: build
   script:
-    - pip install --no-build-isolation -e .
-    - pip install build
+    - pip install --no-build-isolation -e .[dev]
     - python3 -m build
 
 build:alma9-cern:
