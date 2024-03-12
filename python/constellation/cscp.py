@@ -103,7 +103,9 @@ class CommandTransmitter:
 
         """
         try:
-            cmdmsg = self.socket.recv_multipart(flags=zmq.NOBLOCK)
+            cmdmsg = (
+                self.socket.recv_multipart()
+            )  # NOTE: seems to not work with flags=zmq.NOBLOCK
         except zmq.ZMQError:
             return None
         msg = CSCPMessage()
