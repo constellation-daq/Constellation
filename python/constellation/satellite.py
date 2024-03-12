@@ -21,7 +21,7 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
-from .log_and_stats import getLoggerAndStats
+from .monitoring import MonitoringManager
 from .error import debug_log, handle_error
 
 
@@ -44,8 +44,8 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             log_port=log_port,
         )
 
-        # set up python logging
-        self.log, self.stats = getLoggerAndStats(self.name, self.context, log_port)
+        # set up python logging and CMDP
+        self.monitoring = MonitoringManager(self.name, self.context, log_port)
 
         # set up background communication threads
         # NOTE should be a late part of the initialization, as it starts communication
