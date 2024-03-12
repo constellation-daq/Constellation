@@ -54,6 +54,7 @@ class BaseCLIController(CHIRPBroadcaster):
     def add_satellite_callback(
         self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
     ):
+        """Callback method of add_satellite. Add satellite to command on service socket and address."""
         socket = self.context.socket(zmq.REQ)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
         self.transmitters[str(service.host_uuid)] = CommandTransmitter(
@@ -190,7 +191,7 @@ class BaseCLIController(CHIRPBroadcaster):
             )
 
     def _run_task_handler(self):
-        """Main event loop with task handler-routine"""
+        """Event loop for task handler-routine"""
         while not self._task_handler_event.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
 
@@ -240,7 +241,7 @@ class BaseCLIController(CHIRPBroadcaster):
         self.command("get_state")
 
     def run_from_cli(self):
-        """Run commands from CLI."""
+        """Run commands from CLI and pass them to task handler-routine."""
         print(
             'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
         )
