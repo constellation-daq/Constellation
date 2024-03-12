@@ -9,6 +9,7 @@
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
@@ -108,6 +109,32 @@ TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
     REQUIRE(std::get<std::chrono::system_clock::time_point>(cscp1_header_unpacked.getTag("test_t")) == tp);
 }
 
+TEST_CASE("Header Packing / Unpacking (invalid protocol)", "[core][core::message]") {
+    const CSCP1Message::Header cscp1_header {"senderCSCP"};
+
+    // Pack header
+    msgpack::sbuffer sbuf {};
+    // first pack version
+    msgpack::pack(sbuf, "INVALID");
+    // then sender
+    msgpack::pack(sbuf, "SenderCSCP");
+    // then time
+    msgpack::pack(sbuf, std::chrono::system_clock::now());
+    // then tags
+    msgpack::pack(sbuf, Dictionary {});
+
+    // Check for wrong protocol to be picked up
+    REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), InvalidProtocolError);
+    REQUIRE_THROWS_MATCHES(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           InvalidProtocolError,
+                           Message("Invalid protocol identifier \"INVALID\""));
+    // CDTP1 has separate header implementation, also test this:
+    REQUIRE_THROWS_AS(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), InvalidProtocolError);
+    REQUIRE_THROWS_MATCHES(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           InvalidProtocolError,
+                           Message("Invalid protocol identifier \"INVALID\""));
+}
+
 TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
     const CSCP1Message::Header cscp1_header {"senderCSCP"};
 
@@ -117,17 +144,14 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
 
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_AS(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
-}
-
-TEST_CASE("Header Packing / Unpacking (CDTP, unexpected protocol)", "[core][core::message]") {
-    const CSCP1Message::Header cscp1_header {"senderCSCP"};
-
-    // Pack header
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, cscp1_header);
-
-    // Check for wrong protocol to be picked up
+    REQUIRE_THROWS_MATCHES(CMDP1Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CMDP1\""));
+    // CDTP1 has separate header implementation, also test this:
     REQUIRE_THROWS_AS(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}), UnexpectedProtocolError);
+    REQUIRE_THROWS_MATCHES(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CDTP1\""));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -189,6 +213,9 @@ TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
 
     // Check for excess frame detection
     REQUIRE_THROWS_AS(CSCP1Message::disassemble(frames), MessageDecodingError);
+    REQUIRE_THROWS_MATCHES(CSCP1Message::disassemble(frames),
+                           MessageDecodingError,
+                           Message("Error decoding message: Incorrect number of message frames"));
 }
 
 TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {

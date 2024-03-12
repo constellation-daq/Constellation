@@ -12,6 +12,7 @@
 #include <string>
 #include <string_view>
 
+#include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::message {
@@ -52,11 +53,11 @@ namespace constellation::message {
      */
     class UnexpectedProtocolError : public utils::RuntimeError {
     public:
-        explicit UnexpectedProtocolError(const std::string& prot_recv, const std::string_view prot_exp) {
+        explicit UnexpectedProtocolError(const Protocol& prot_recv, const Protocol& prot_exp) {
             error_message_ = "Received protocol \"";
-            error_message_ += prot_recv;
+            error_message_ += get_readable_protocol(prot_recv);
             error_message_ += "\" does not match expected identifier \"";
-            error_message_ += prot_exp;
+            error_message_ += get_readable_protocol(prot_exp);
             error_message_ += "\"";
         }
     };

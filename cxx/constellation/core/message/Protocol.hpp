@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -44,16 +45,47 @@ namespace constellation::message {
     }
 
     /**
+     * Get protocol from a protocol identifier string
+     *
+     * @param protocol_identifier Protocol identifier string
+     * @return Protocol
+     */
+    constexpr Protocol get_protocol(std::string_view protocol_identifier) {
+        if(protocol_identifier == "CSCP\x01") {
+            return CSCP1;
+        }
+        if(protocol_identifier == "CMDP\x01") {
+            return CMDP1;
+        }
+        if(protocol_identifier == "CDTP\x01") {
+            return CDTP1;
+        }
+        // Unknown protocol:
+        throw std::invalid_argument(std::string(protocol_identifier).c_str());
+    }
+
+    /**
+     * Get human-readable protocol identifier string for CSCP, CMDP and CDTP protocols
+     *
+     * @param protocol_identifier Protocol identifier string
+     * @return Protocol identifier string with byte version replaced to human-readable version
+     */
+    inline std::string get_readable_protocol(std::string_view protocol_identifier) {
+        std::string out {protocol_identifier.data(), protocol_identifier.size() - 1};
+        // TODO(stephan.lachnit): make this general by finding all non-ASCII symbols and convert them to numbers
+        out += std::to_string(protocol_identifier.back());
+        return out;
+    }
+
+    /**
      * Get human-readable protocol identifier string for CSCP, CMDP and CDTP protocols
      *
      * @param protocol Protocol
      * @return Protocol identifier string with byte version replaced to human-readable version
      */
-    inline std::string get_hr_protocol_identifier(Protocol protocol) {
+    inline std::string get_readable_protocol(Protocol protocol) {
         auto protocol_identifier = get_protocol_identifier(protocol);
-        std::string out {protocol_identifier.data(), protocol_identifier.size() - 1};
-        out += std::to_string(protocol_identifier.back());
-        return out;
+        return get_readable_protocol(protocol_identifier);
     }
 
 } // namespace constellation::message

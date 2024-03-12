@@ -34,8 +34,17 @@ BaseHeader BaseHeader::disassemble(Protocol protocol, std::span<const std::byte>
     // Unpack protocol
     const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
     const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-    if(protocol_identifier != get_protocol_identifier(protocol)) {
-        throw UnexpectedProtocolError(protocol_identifier, get_protocol_identifier(protocol));
+
+    // Try to decode protocol identifier into protocol
+    Protocol protocol_recv {};
+    try {
+        protocol_recv = get_protocol(protocol_identifier);
+    } catch(std::invalid_argument& e) {
+        throw InvalidProtocolError(e.what());
+    }
+
+    if(protocol_recv != protocol) {
+        throw UnexpectedProtocolError(protocol_recv, protocol);
     }
 
     // Unpack sender
@@ -68,9 +77,9 @@ void BaseHeader::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer)
 std::string BaseHeader::to_string() const {
     std::ostringstream out {};
     std::boolalpha(out);
-    out << "Header: "sv << get_hr_protocol_identifier(protocol_) << '\n' //
-        << "Sender: "sv << sender_ << '\n'                               //
-        << "Time:   "sv << time_ << '\n'                                 //
+    out << "Header: "sv << get_readable_protocol(protocol_) << '\n' //
+        << "Sender: "sv << sender_ << '\n'                          //
+        << "Time:   "sv << time_ << '\n'                            //
         << "Tags:"sv;
     for(const auto& entry : tags_) {
         out << "\n "sv << entry.first << ": "sv;
