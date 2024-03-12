@@ -114,7 +114,7 @@ class BaseCLIController:
                 host_name=host_name,
             )
         else:
-            for host in enumerate(self.transmitters.keys()):
+            for host in self.transmitters.keys():
                 cmd, payload, meta = self._convert_to_cscp(msg, host)
                 self._command_satellite(
                     cmd=cmd,
