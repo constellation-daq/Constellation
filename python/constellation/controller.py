@@ -67,9 +67,9 @@ class BaseCLIController:
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
         self._logger.info(
-            "connecting to %s, ID %s...",
+            "connecting to %s, address %s...",
             host_name,
-            len(self.transmitters) - 1,
+            host_addr,
         )
 
     def _command_satellite(self, cmd, payload, meta, host_name=None):
