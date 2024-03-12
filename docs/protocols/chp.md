@@ -55,7 +55,7 @@ The values SHOULD be the time of sending the heartbeat or extrasystole message a
 
 The 1-OCTET integer variable SHALL contain the current state of the CHP sending host.
 
-The 2-OCTET integer variable SHALL indicate the expected time interval in milliseconds until the next heartbeat message is emitted by the sending CHP host.
+The 2-OCTET integer variable SHALL indicate the maximum time interval in units of milliseconds until the next heartbeat message is emitted by the sending CHP host.
 
 ### Lives Counter & Heartbeat Timeouts
 
@@ -65,8 +65,8 @@ Whenever no heartbeat or extrasystole message is received within the defined tim
 
 Whenever a heartbeat or extrasystole message is received within the defined time interval, the lives counter SHALL be reset to its initial value and the current state SHALL be updated with the state information of the CHP sending host from the message.
 
-The time intervals for publishing heartbeat messages by CHP sending hosts, called "heart rate",  SHALL be variable and adjustable over time by the CHP sending host. Heartbeat messages MAY be sent earlier than the indicated time interval and additional extrasystole messages MAY be published anytime.
+The time intervals for publishing heartbeat messages by CHP sending hosts, called "heart rate", SHALL be variable and adjustable over time by the CHP sending host. Heartbeat messages MAY be sent earlier than the indicated time interval and additional extrasystole messages MAY be published anytime.
 
-The maximum time interval expected for receiving the next heartbeat messages from a given CHP sending host SHALL be inferred from the heart rate value of the last received heartbeat or extrasystole message. The time interval SHALL be 150% of the heart rate time interval and SHALL be adjusted with every received message.
+The maximum time interval expected for receiving the next heartbeat messages from a given CHP sending host SHALL be taken from the heart rate value of the last received heartbeat or extrasystole message and SHALL be adjusted with every received message.
 
 The initial value of the lives counter SHOULD be 3.
