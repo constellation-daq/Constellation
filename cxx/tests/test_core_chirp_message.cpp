@@ -53,7 +53,7 @@ TEST_CASE("Reconstruct CHIRP message from assembled blob", "[chirp][chirp::messa
 }
 
 TEST_CASE("Detect invalid length in CHIRP message", "[chirp][chirp::message]") {
-    std::vector<std::uint8_t> msg_data {};
+    std::vector<std::byte> msg_data {};
     msg_data.resize(CHIRP_MESSAGE_LENGTH + 1);
 
     REQUIRE_THROWS_WITH(
@@ -64,7 +64,7 @@ TEST_CASE("Detect invalid length in CHIRP message", "[chirp][chirp::message]") {
 TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]") {
     auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
     auto asm_msg = msg.assemble();
-    asm_msg[0] = 'X';
+    asm_msg[0] = std::byte('X');
 
     REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP broadcast"));
 }
@@ -72,7 +72,7 @@ TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]
 TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") {
     auto msg = CHIRPMessage(REQUEST, "group", "host", HEARTBEAT, 0);
     auto asm_msg = msg.assemble();
-    asm_msg[5] = '2';
+    asm_msg[5] = std::byte('2');
 
     REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP v1 broadcast"));
 }

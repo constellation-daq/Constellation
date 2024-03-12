@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <span>
 #include <string_view>
 
 #include <asio.hpp>
@@ -46,10 +48,9 @@ namespace constellation::chirp {
         /**
          * Send broadcast message
          *
-         * @param data Pointer to message data
-         * @param size Message length in bytes
+         * @param message View of message in bytes
          */
-        CNSTLN_API void sendBroadcast(const void* data, std::size_t size);
+        CNSTLN_API void sendBroadcast(std::span<const std::byte> message);
 
     private:
         asio::io_context io_context_;

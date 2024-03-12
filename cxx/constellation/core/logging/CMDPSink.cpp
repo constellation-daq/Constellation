@@ -14,7 +14,6 @@
 #include <string>
 
 #include <asio.hpp>
-#include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 

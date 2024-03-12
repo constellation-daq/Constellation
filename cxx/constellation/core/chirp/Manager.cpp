@@ -70,6 +70,14 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return std::to_underlying(service_id) < std::to_underlying(other.service_id);
 }
 
+Manager* Manager::getDefaultInstance() {
+    return Manager::default_manager_instance_;
+}
+
+void Manager::setAsDefaultInstance() {
+    Manager::default_manager_instance_ = this;
+}
+
 Manager::Manager(const asio::ip::address& brd_address,
                  const asio::ip::address& any_address,
                  std::string_view group_name,
@@ -188,7 +196,7 @@ void Manager::sendRequest(ServiceIdentifier service) {
 
 void Manager::sendMessage(MessageType type, RegisteredService service) {
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    sender_.sendBroadcast(asm_msg.data(), asm_msg.size());
+    sender_.sendBroadcast(asm_msg);
 }
 
 void Manager::main_loop(const std::stop_token& stop_token) {

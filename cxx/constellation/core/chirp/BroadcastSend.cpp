@@ -27,6 +27,6 @@ void BroadcastSend::sendBroadcast(std::string_view message) {
     socket_.send(asio::buffer(message));
 }
 
-void BroadcastSend::sendBroadcast(const void* data, std::size_t size) {
-    socket_.send(asio::const_buffer(data, size));
+void BroadcastSend::sendBroadcast(std::span<const std::byte> message) {
+    socket_.send(asio::const_buffer(message.data(), message.size_bytes()));
 }
