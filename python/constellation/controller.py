@@ -84,9 +84,14 @@ class BaseCLIController:
 
         try:
             msg = self.transmitters[host_name].get_message()
-            self._logger.info("Host %s received response: %s", host_name, msg.msg_verb)
-            if msg.header:
-                self._logger.info("    header: %s", msg.header)
+            self._logger.info(
+                "Host %s received response: %s, %s",
+                host_name,
+                msg.msg_verb,
+                msg.msg,
+            )
+            if msg.header_meta:
+                self._logger.info("    header: %s", msg.header_meta)
             if payload:
                 self._logger.info("    payload: %s", msg.payload)
 
