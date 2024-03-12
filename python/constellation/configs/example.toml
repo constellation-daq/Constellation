@@ -1,0 +1,47 @@
+
+title = "Example Config"
+
+[CONTROLLER]
+
+keyleith_satellite.powersupply1 = "path/to/file" # send the whole file?
+
+[GENERAL]
+
+mykey = "some value"
+logfile = "path/to/file"
+verbosity = "DEBUG"
+
+[Example]
+
+somekey = "some value"
+
+[Example.Device]
+
+Voltage = 5
+Ampere = 3
+
+[Example.Times]
+
+Sample_Period = 4
+
+
+[keithley_satellite]
+
+mykey = "actually another value"
+
+[keithley_satellite.powersupply1]
+
+hv = 5000
+
+kanal = {"hv" = 5100 } # alternativt
+
+#kanal1.hv = 51000  # is this possible?
+
+[keithley_satellite.powersupply1.kanal1]
+
+hv = 5100
+
+# kanal1 could be a dict that has key value pairs (but would not overwrite the
+# hv key/value of the parent)
+
+# maybe prohit this case (too complicated?)
