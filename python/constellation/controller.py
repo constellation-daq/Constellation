@@ -7,6 +7,8 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import logging
 import readline
+import threading
+import time
 from queue import Empty
 
 import zmq
@@ -237,17 +239,27 @@ class BaseCLIController:
     def run_from_cli(self):
         """Run commands from CLI."""
         print(
-            'Possible commands: "exit", "get_state", "transition <transition>", "target <id no.>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <id no.>"'
+            'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
         )
         print(
             'Possible transitions: "initialize", "load", "unload", "launch", "land", "start", "stop", "recover", "reset"'
         )
+        self._task_handler_event = threading.Event()
+        task_handler_thread = threading.Thread(
+            target=self._run_task_handler, daemon=True
+        )
+        task_handler_thread.start()
+        time.sleep(0.5)
         while True:
             user_input = input("Send command: ")
             if user_input == "exit":
+                self._stop_com_threads()
+                self._task_handler_event.set()
+                task_handler_thread.join()
                 break
             else:
-                self.process_cli_command(user_input)
+                self.task_queue.put([self.process_cli_command, [user_input]])
+            time.sleep(0.5)
 
 
 class SatelliteManager(BaseCLIController):
