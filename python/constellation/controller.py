@@ -51,7 +51,9 @@ class BaseCLIController(CHIRPBroadcaster):
         self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
 
-    def add_satellite_callback(self, service: DiscoveredService):
+    def add_satellite_callback(
+        self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
+    ):
         socket = self.context.socket(zmq.REQ)
         socket.connect(service.address + ":" + service.port)
         self.transmitters[service.host_uuid] = CommandTransmitter(
