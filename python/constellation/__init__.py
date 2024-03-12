@@ -8,5 +8,5 @@ try:
     import importlib.metadata
 
     __version__ = importlib.metadata.version("constellation")  # module name
-except:
+except:  # noqa: E722
     __version__ = "0+unknown"

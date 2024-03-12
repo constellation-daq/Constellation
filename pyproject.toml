@@ -49,5 +49,9 @@ test = ["pytest", "pytest-forked", "pytest-cov", "pytest-sugar"]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cpp=disabled"]  # disable C++ for now
 dist = ["--include-subprojects"]
 
+[tool.flake8]
+max-line-length = 125
+ignore = ["E203", "W503"]
+
 #[project.scripts]
 #my-script = "my_package.module:function"
