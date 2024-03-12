@@ -10,19 +10,18 @@ import readline
 import threading
 import time
 from queue import Empty
+from typing import Dict
 
 import zmq
 
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
 from .chirp import CHIRPServiceIdentifier
-from .confighandler import pack_config, read_config, filter_config
+from .confighandler import filter_config, pack_config, read_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
-from typing import Dict
-from uuid import UUID
 
 
-class BaseCLIController:
+class BaseCLIController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
     def __init__(self, name: str, group: str, hosts=None):
@@ -33,21 +32,23 @@ class BaseCLIController:
         - group ::  group of controller
         - hosts ::  name, address and port of satellites to control
         """
+        super().__init__(name=name, group=group)
+
+        self.transmitters: Dict[str, CommandTransmitter] = {}
+        self.context = zmq.Context()
+
+        super()._add_com_thread()
+        super()._start_com_threads()
         self._logger = logging.getLogger(__name__)
 
-        self.transmitters: Dict[UUID, CommandTransmitter] = {}
-        self.context = zmq.Context()
         if hosts:
             for host in hosts:
-                self.add_satellite(host_name="Example", host_addr=host)
+                self.add_satellite(host_name=host, host_addr=host)
 
-        # NOTE: THIS DOES NOT START AND IS THUS UNUSED
-        self.broadcast_manager = CHIRPBroadcaster(name, group)
-        self.broadcast_manager._add_com_thread()
-        self.broadcast_manager.register_request(
+        self.register_request(
             CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
         )
-        self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
+        self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
 
     def add_satellite_callback(self, service: DiscoveredService):
