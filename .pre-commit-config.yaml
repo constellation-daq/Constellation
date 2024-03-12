@@ -34,6 +34,7 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
+        additional_dependencies: [Flake8-pyproject]
 
   - repo: https://github.com/psf/black
     rev: 24.2.0
