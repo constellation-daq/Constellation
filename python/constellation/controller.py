@@ -17,7 +17,7 @@ from .fsm import SatelliteFSM
 from .broadcastmanager import CHIRPBroadcaster
 
 
-class TrivialController:
+class BaseCLIController:
     """Simple controller class to send commands to a list of satellites."""
 
     def __init__(self, name, group, hosts):
