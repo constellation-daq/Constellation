@@ -282,15 +282,18 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--satellite", "--sat", action="append")
+    parser.add_argument("--name", type=str, default="controller_demo")
+    parser.add_argument("--group", type=str, default="constellation")
+
     args = parser.parse_args()
 
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         level=args.log_level.upper(),
     )
-    if not args.satellite:
-        print("No satellites specified! Use '--satellite' to add one.")
-        return
+    # if not args.satellite:
+    #    print("No satellites specified! Use '--satellite' to add one.")
+    #    return
     # Set up simple tab completion
     commands = [
         "exit",
@@ -309,7 +312,7 @@ def main():
     readline.parse_and_bind("tab: complete")
 
     # start server with args
-    ctrl = BaseCLIController(hosts=args.satellite)
+    ctrl = BaseCLIController(name=args.name, group=args.group, hosts=args.satellite)
     ctrl.run_from_cli()
     # ctrl.run()
 
