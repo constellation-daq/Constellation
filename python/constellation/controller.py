@@ -20,7 +20,7 @@ from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
 class BaseCLIController:
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name, group, hosts):
+    def __init__(self, name: str, group: str, hosts=None):
         """Initialize values.
 
         Arguments:
