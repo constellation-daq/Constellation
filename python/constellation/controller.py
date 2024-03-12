@@ -38,9 +38,11 @@ class BaseCLIController:
             for host in hosts:
                 self.add_satellite(host_name="Example", host_addr=host)
 
-        self.broadcast_manager = CHIRPBroadcaster(name, group, None)
+        # NOTE: THIS DOES NOT START AND IS THUS UNUSED
+        self.broadcast_manager = CHIRPBroadcaster(name, group)
+        self.broadcast_manager._add_com_thread()
         self.broadcast_manager.register_request(
-            CHIRPServiceIdentifier.CONTROL, self.add_satellite
+            CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
