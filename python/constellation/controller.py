@@ -15,6 +15,8 @@ from .confighandler import pack_config, read_config, filter_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
+from typing import Dict
+from uuid import UUID
 
 
 class BaseCLIController:
@@ -30,7 +32,7 @@ class BaseCLIController:
         """
         self._logger = logging.getLogger(__name__)
 
-        self.transmitters = {}
+        self.transmitters: Dict[UUID, CommandTransmitter] = {}
         self.context = zmq.Context()
         if hosts:
             for host in hosts:
