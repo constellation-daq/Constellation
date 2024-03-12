@@ -96,19 +96,16 @@ landing -[dotted]u-> INIT
 
 ORBIT -[#blue,bold]d-> starting : start
 starting -[dotted]d-> RUN
-starting -[dashed]r--> interrupting
 
 ORBIT -[#blue,bold]u-> reconfiguring : reconfigure
 reconfiguring -[dotted]d-> ORBIT
-reconfiguring -[dashed]r--> interrupting
 ORBIT -[dashed]r--> interrupting
 
 RUN -[#blue,bold]u-> stopping : stop
 RUN -[dashed]u--> interrupting
 stopping -[dotted]u-> ORBIT
-stopping -[dashed]r--> interrupting
 
-SAFE -[#blue,bold]u-> INIT : recover
+SAFE -[#blue,bold]l-> INIT : recover
 SAFE -u-> [*]
 interrupting -[dotted]u-> SAFE
 ERROR -[#blue,bold]--> initializing : reset
