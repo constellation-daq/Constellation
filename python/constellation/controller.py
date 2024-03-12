@@ -55,8 +55,8 @@ class BaseCLIController(CHIRPBroadcaster):
         self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
     ):
         socket = self.context.socket(zmq.REQ)
-        socket.connect(service.address + ":" + service.port)
-        self.transmitters[service.host_uuid] = CommandTransmitter(
+        socket.connect("tcp://" + service.address + ":" + str(service.port))
+        self.transmitters[str(service.host_uuid)] = CommandTransmitter(
             str(service.host_uuid), socket
         )
         self._logger.info(
