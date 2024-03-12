@@ -181,7 +181,7 @@ build:python-3.11:
   stage: test
   script:
     - pip install -e .[test]
-    - pytest --junitxml=junit.xml
+    - pytest --force-sugar --junitxml=junit.xml
   artifacts:
     reports:
       junit: junit.xml
@@ -262,7 +262,7 @@ lint:coverage-py:
       artifacts: false
   script:
     - pip install -e .[test]
-    - pytest --cov --cov-report term --cov-report xml:coverage.xml
+    - pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     reports:
