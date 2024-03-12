@@ -17,6 +17,7 @@ workflow:
 
 variables:
   CCACHE_DIR: $CI_PROJECT_DIR/.cache/ccache
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
 
 # C++ templates
 
@@ -75,6 +76,21 @@ variables:
   variables:
     CXX: g++
 
+# Python templates
+
+.python-venv:
+  cache:
+    - key: pip-cache
+      paths:
+        - $PIP_CACHE_DIR/
+  before_script:
+    - apt update && apt install ninja-build # see https://github.com/mesonbuild/meson-python/issues/600
+    - python3 -m venv venv
+    - source venv/bin/activate
+
+.python-3.11:
+  image: python:3.11
+
 # build stage
 
 .build-cpp:
@@ -88,6 +104,13 @@ variables:
     paths:
       - build
     expire_in: 24 hour
+
+.build-py:
+  stage: build
+  script:
+    - pip install -e .
+    - pip install build
+    - python3 -m build
 
 build:alma9-cern:
   extends:
@@ -138,6 +161,12 @@ build:ubuntu-24.04:
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
 
+build:python-3.11:
+  extends:
+    - .build-py
+    - .python-venv
+    - .python-3.11
+
 # test stage
 
 .test-cpp:
@@ -147,6 +176,12 @@ build:ubuntu-24.04:
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
+
+.test-py:
+  stage: test
+  script:
+    - pip install -e .[test]
+    - pytest
 
 test:alma9-cern:
   extends:
@@ -199,6 +234,15 @@ test:ubuntu-24.04:
   needs:
     - job: build:ubuntu-24.04
       artifacts: true
+
+test:python-3.11:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.11
+  needs:
+    - job: build:python-3.11
+      artifacts: false
 
 # lint stage
 

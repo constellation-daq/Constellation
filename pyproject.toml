@@ -3,7 +3,7 @@
 
 [build-system]
 build-backend = "mesonpy"
-requires = ["meson-python", "meson"]
+requires = ["meson-python"]
 
 [project]
 name = "constellation"
