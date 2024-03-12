@@ -191,14 +191,15 @@ class BaseCLIController:
         config = read_config(config_path)
 
         try:
-            general_config = pack_config(config["GENERAL"])
+            ret_config = pack_config(config["GENERAL"])
             host_config = pack_config(config[host_name])
+            ret_config.update(host_config)
 
             if trait:
                 trait_config = filter_config(trait, host_config)
-                return trait_config, general_config
+                ret_config.update(trait_config)
 
-            return host_config, general_config
+            return ret_config
 
         except KeyError:
             self._logger.warning("Config doesn't contain specified arguments")
