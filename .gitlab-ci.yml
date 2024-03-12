@@ -16,9 +16,27 @@ workflow:
     - when: always
 
 variables:
-  CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+  CCACHE_DIR: $CI_PROJECT_DIR/.cache/ccache
 
-# templates
+# C++ templates
+
+.meson-wrap-cache: &meson-wrap-cache
+  key: meson-wrap-cache
+  paths:
+    - subprojects/packagecache/
+    - subprojects/asio-*/
+    - subprojects/Catch2-*/
+    - subprojects/cppzmq-*/
+    - subprojects/libzmq-*/
+    - subprojects/magic_enum-*/
+    - subprojects/msgpack-cxx-*/
+    - subprojects/spdlog-*/
+  policy: pull
+
+.ccache: &ccache
+  key: ccache-$CI_JOB_IMAGE
+  paths:
+    - $CCACHE_DIR/
 
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
@@ -57,27 +75,9 @@ variables:
   variables:
     CXX: g++
 
-.meson-wrap-cache: &meson-wrap-cache
-  key: meson-wrap-cache
-  paths:
-    - subprojects/packagecache/
-    - subprojects/asio-*/
-    - subprojects/Catch2-*/
-    - subprojects/cppzmq-*/
-    - subprojects/libzmq-*/
-    - subprojects/magic_enum-*/
-    - subprojects/msgpack-cxx-*/
-    - subprojects/spdlog-*/
-  policy: pull
-
-.ccache: &ccache
-  key: ccache-$CI_JOB_IMAGE
-  paths:
-    - $CCACHE_DIR/
-
 # build stage
 
-.build:
+.build-cpp:
   stage: build
   cache:
     - *meson-wrap-cache
@@ -91,7 +91,7 @@ variables:
 
 build:alma9-cern:
   extends:
-    - .build
+    - .build-cpp
     - .alma9-cern
   cache:
     - <<: *meson-wrap-cache
@@ -102,28 +102,28 @@ build:alma9-cern:
 
 build:debian-clang:
   extends:
-    - .build
+    - .build-cpp
     - .debian-clang
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
 build:debian-gcc:
   extends:
-    - .build
+    - .build-cpp
     - .debian-gcc
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
 
 build:fedora-latest:
   extends:
-    - .build
+    - .build-cpp
     - .fedora-latest
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
 build:ubuntu-22.04:
   extends:
-    - .build
+    - .build-cpp
     - .ubuntu-22.04
   cache:
     - *meson-wrap-cache
@@ -133,14 +133,14 @@ build:ubuntu-22.04:
 
 build:ubuntu-24.04:
   extends:
-    - .build
+    - .build-cpp
     - .ubuntu-24.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
 
 # test stage
 
-.test:
+.test-cpp:
   stage: test
   script:
     - meson test -C build --suite Constellation --no-rebuild --print-errorlogs
@@ -150,7 +150,7 @@ build:ubuntu-24.04:
 
 test:alma9-cern:
   extends:
-    - .test
+    - .test-cpp
     - .alma9-cern
   needs:
     - job: build:alma9-cern
@@ -158,7 +158,7 @@ test:alma9-cern:
 
 test:debian-clang:
   extends:
-    - .test
+    - .test-cpp
     - .debian-clang
   needs:
     - job: build:debian-clang
@@ -166,7 +166,7 @@ test:debian-clang:
 
 test:debian-gcc:
   extends:
-    - .test
+    - .test-cpp
     - .debian-gcc
   needs:
     - job: build:debian-gcc
@@ -178,7 +178,7 @@ test:debian-gcc:
 
 test:fedora-latest:
   extends:
-    - .test
+    - .test-cpp
     - .fedora-latest
   needs:
     - job: build:fedora-latest
@@ -186,7 +186,7 @@ test:fedora-latest:
 
 test:ubuntu-22.04:
   extends:
-    - .test
+    - .test-cpp
     - .ubuntu-22.04
   needs:
     - job: build:ubuntu-22.04
@@ -194,7 +194,7 @@ test:ubuntu-22.04:
 
 test:ubuntu-24.04:
   extends:
-    - .test
+    - .test-cpp
     - .ubuntu-24.04
   needs:
     - job: build:ubuntu-24.04
@@ -204,8 +204,22 @@ test:ubuntu-24.04:
 
 .lint:
   stage: lint
-  cache:
-    - *meson-wrap-cache
+
+lint:coverage-cpp:
+  extends:
+    - .lint
+    - .debian-gcc
+  needs:
+    - job: test:debian-gcc
+      artifacts: true
+  script:
+    - ninja -C build coverage-xml
+  coverage: '/^\s*lines:\s*\d+.\d+\%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: build/meson-logs/coverage.xml
 
 lint:clang-tidy:
   extends:
@@ -233,22 +247,6 @@ lint:clang-tidy-diff:
       grep -qzv ": error: " clang-tidy-diff.log
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-lint:coverage:
-  extends:
-    - .lint
-    - .debian-gcc
-  needs:
-    - job: test:debian-gcc
-      artifacts: true
-  script:
-    - ninja -C build coverage-xml
-  coverage: '/^\s*lines:\s*\d+.\d+\%/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: build/meson-logs/coverage.xml
 
 lint:clang-scan-build:
   extends:
@@ -303,8 +301,6 @@ format:clang-format:
   extends:
     - .format
     - .debian-clang
-  cache:
-    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check
