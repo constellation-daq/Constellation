@@ -14,7 +14,7 @@ from .chirp import CHIRPServiceIdentifier
 from .confighandler import pack_config, read_config, filter_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
-from .broadcastmanager import CHIRPBroadcaster
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
 
 
 class BaseCLIController:
@@ -41,6 +41,18 @@ class BaseCLIController:
         )
         self.broadcast_manager.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
+
+    def add_satellite_callback(self, service: DiscoveredService):
+        socket = self.context.socket(zmq.REQ)
+        socket.connect(service.address + ":" + service.port)
+        self.transmitters[service.host_uuid] = CommandTransmitter(
+            str(service.host_uuid), socket
+        )
+        self._logger.info(
+            "connecting to %s, address %s...",
+            service.host_uuid,
+            service.address,
+        )
 
     def add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
