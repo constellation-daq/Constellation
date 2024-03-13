@@ -101,25 +101,33 @@ class BaseCLIController(CHIRPBroadcaster):
         except KeyError:
             self._logger.error("Invalid satellite name.")
 
-    def command(self, msg, host_name=None):
+    def command(self, msg):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
-        if host_name:
-            cmd, payload, meta = self._convert_to_cscp(msg)
-            self._command_satellite(
+        if self.target_host:
+            host_names = [self.target_host]
+        else:
+            host_names = self.transmitters.keys()
+
+        for host_name in host_names:
+            cmd, payload, meta = self._convert_to_cscp(msg=msg, host_name=host_name)
+            self._logger.info("Host %s send command %s...", host_name, cmd)
+
+            ret_msg = self._command_satellite(
                 cmd=cmd,
                 payload=payload,
                 meta=meta,
                 host_name=host_name,
             )
-        else:
-            for host in self.transmitters.keys():
-                cmd, payload, meta = self._convert_to_cscp(msg)
-                self._command_satellite(
-                    cmd=cmd,
-                    payload=payload,
-                    meta=meta,
-                    host_name=host,
-                )
+            self._logger.info(
+                "Host %s received response: %s, %s",
+                host_name,
+                ret_msg.msg_verb,
+                ret_msg.msg,
+            )
+            if ret_msg.header_meta:
+                self._logger.info("    header: %s", ret_msg.header_meta)
+            if ret_msg.payload:
+                self._logger.info("    payload: %s", ret_msg.payload)
 
     def _convert_to_cscp(self, msg):
         """Convert command string into CSCP message, payload and meta."""
