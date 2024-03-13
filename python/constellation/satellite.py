@@ -25,10 +25,6 @@ from .monitoring import MonitoringManager
 from .error import debug_log, handle_error
 
 
-class IncompleteCommand(Exception):
-    pass
-
-
 class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     """Base class for a Constellation Satellite."""
 

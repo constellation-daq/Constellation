@@ -13,9 +13,6 @@ import msgpack
 from .protocol import MessageHeader, Protocol
 
 
-PROTOCOL_IDENTIFIER = "CSCP%x01"
-
-
 class CSCPMessageVerb(Enum):
     """Defines the message types of the CSCP.
 
