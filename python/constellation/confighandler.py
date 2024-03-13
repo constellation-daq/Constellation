@@ -58,11 +58,7 @@ class ConfigReceiver:
         raise NotImplementedError
 
 
-class IncompleteConfigError(Exception):
-    pass
-
-
-def unpack_config(dictionary, base, separator="."):
+def unpack_config(dictionary, separator="."):
     """Unpack config dict from flat dict"""
     result = dict()
     for key, value in dictionary.items():
