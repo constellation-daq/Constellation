@@ -71,7 +71,7 @@ class mocket:
             mock_packet_queue_sender[self.port] = [payload]
 
     def send_string(self, payload, flags=None):
-        self.send(payload)
+        self.send(payload.encode())
 
     def recv_multipart(self, flags=None):
         """Pop entry from queue."""
@@ -116,12 +116,23 @@ def mock_sock_recv_multipart_sender(flags=None):
     return r
 
 
+def mock_sock_recv_sender(flags=None):
+    """Pop single entry from queue."""
+    if (
+        send_port not in mock_packet_queue_sender
+        or not mock_packet_queue_sender[send_port]
+    ):
+        raise zmq.ZMQError("no mock data")
+    return mock_packet_queue_sender[send_port].pop(0)
+
+
 @pytest.fixture
 def mock_socket_sender():
     mock = MagicMock()
     mock = mock.return_value
     mock.send = MagicMock(side_effect=mock_sock_send_sender)
     mock.recv_multipart = MagicMock(side_effect=mock_sock_recv_multipart_sender)
+    mock.recv = MagicMock(side_effect=mock_sock_recv_sender)
     yield mock
 
 
