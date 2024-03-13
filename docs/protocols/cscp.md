@@ -109,6 +109,7 @@ The octet MUST contain the message type, which SHALL be `%x00` for requests and 
 * `%x03` for acknowledgement verb `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
 * `%x04` for acknowledgement verb `INVALID`: The command is invalid for the current state of the replying satellite host, e.g. it does not represent a valid transition out of its current state
 * `%x05` for acknowledgement verb `UNKNOWN`: The command is entirely unknown.
+* `%x06` for acknowledgement verb `ERROR`: The received message is not valid.
 
 For request messages, the string SHALL contain the command.
 Commands SHALL be parsed and interpreted case-insensitive.
