@@ -23,7 +23,7 @@ class Configuration:
         return not self._requested_keys == set(self.config.keys())
 
     def get_unused_values(self):
-        return self._requested_keys.difference(self.config.keys())
+        return set(self.config.keys()).difference(self._requested_keys)
 
     def get(self, key: str, default: any = None):
         if key in self.config.keys():
