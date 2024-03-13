@@ -9,21 +9,31 @@ This module provides the class for a Constellation Satellite.
 from .satellite import Satellite
 import time
 import logging
-from .confighandler import unpack_config, ConfigError
+from .confighandler import ConfigError
 
 
 class ExampleDevice:
-    def __init__(self, config):
-        self.config = config
-        self.set_device_configuration()
+    def __init__(self):
+        self.config = {"Voltage": None, "Ampere": None, "Sample_Period": None}
+        self.config_set = {x: False for x in self.config}
 
-    def set_device_configuration(self):
-        try:
-            self.voltage = self.config["Device"]["Voltage"]
-            self.ampere = self.config["Device"]["Ampere"]
-            self.sample_period = self.config["Times"]["Sample_Period"]
-        except KeyError:
-            raise ConfigError("Config key missing!")
+    def update_configuration_value(self, key, value):
+        if key in self.config:
+            self.config[key] = value
+            self.config_set[key] = True
+        else:
+            raise KeyError
+
+    def _is_set(self):
+        return False not in self.config.values()
+
+    def set_config(self):
+        if self._is_set():
+            self.voltage = self.config["Voltage"]
+            self.ampere = self.config["Ampere"]
+            self.sample_period = self.config["Sample_Period"]
+        else:
+            raise ConfigError
 
 
 class ExampleSatellite(Satellite):
@@ -31,13 +41,20 @@ class ExampleSatellite(Satellite):
         super().__init__(*args, **kwargs)
         self.device = None
 
-    def do_initializing(self, payload: any) -> str:
-        self.config = payload
+    def do_initializing(self, payload: dict) -> str:
+        self.device = ExampleDevice()
+        for key, value in payload.items():
+            try:
+                self.device.update_configuration_value(key, value)
+            except KeyError:
+                self.log.error("Configuration has no attribute %s", key)
+
         try:
-            self.device = ExampleDevice(config=unpack_config(self.config))
+            self.device.set_config()
         except ConfigError:
-            self.log.error("Configuration file incomplete!")
+            self.log.error("Configuration not complete. All attributes not set!")
             raise ConfigError
+
         return "Initialized"
 
     def do_run(self, payload: any) -> str:
