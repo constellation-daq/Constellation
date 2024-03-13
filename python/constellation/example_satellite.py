@@ -14,7 +14,7 @@ from .confighandler import ConfigError
 
 class ExampleDevice:
     def __init__(self):
-        self.config = {"Voltage": None, "Ampere": None, "Sample_Period": None}
+        self.config = {"voltage": None, "ampere": None, "sample_period": None}
         self.config_set = {x: False for x in self.config}
 
     def update_configuration_value(self, key, value):
@@ -29,9 +29,9 @@ class ExampleDevice:
 
     def set_config(self):
         if self._is_set():
-            self.voltage = self.config["Voltage"]
-            self.ampere = self.config["Ampere"]
-            self.sample_period = self.config["Sample_Period"]
+            self.voltage = self.config["voltage"]
+            self.ampere = self.config["ampere"]
+            self.sample_period = self.config["sample_period"]
         else:
             raise ConfigError
 
