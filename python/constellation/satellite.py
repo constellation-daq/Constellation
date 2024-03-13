@@ -354,7 +354,14 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
     @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
-        return str(type(self).__name__), None, None
+        return self.name, None, None
+
+    @cscp_requestable
+    def get_device(self, request: CSCPMessage = None) -> str:
+        try:
+            return type(self.device).__name__, None, None
+        except NameError:
+            return None, None, None
 
     @cscp_requestable
     def version(self, _request: CSCPMessage = None):
