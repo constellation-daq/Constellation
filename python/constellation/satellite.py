@@ -350,7 +350,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
     @cscp_requestable
     def get_config(self, _request: CSCPMessage = None) -> str:
-        return str(self.config), None, None
+        return str(self.config.get_values()), None, None
 
     @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
