@@ -144,14 +144,14 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
         try:
             self.config = Configuration(payload)
-            init = self.do_initializing(payload)
+            init_msg = self.do_initializing(payload)
         except ConfigError:
             self.log.error("Failed to configure satellite")
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_values():
                 self.log.warning("Device has unused configuration values %s", key)
-        return init
+        return init_msg
 
     @debug_log
     def do_initializing(self, payload: any) -> str:
