@@ -43,6 +43,9 @@ class Configuration:
         else:
             raise KeyError
 
+    def get_values(self):
+        return self.config
+
 
 class ConfigReceiver:
     def __init__(self):
