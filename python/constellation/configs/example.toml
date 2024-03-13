@@ -1,47 +1,29 @@
+[constellation]
+name = "myconstellation"
 
-title = "Example Config"
+[constellation.keithley]
+importance = "low"
 
-[CONTROLLER]
+[constellation.keithley.powersupply2]
+importance = "essential"
+start_after = "powersupply1"
 
-keyleith_satellite.powersupply1 = "path/to/file" # send the whole file?
 
-[GENERAL]
+[controller]
+constellation_name = "myconstellation"
+show_extra_stuff = true
+scan = "something"
 
-mykey = "some value"
-logfile = "path/to/file"
+
+[satellites]
+
 verbosity = "DEBUG"
 
-[Example]
+[satellites.keithley]
+current_limit = 5
 
-somekey = "some value"
+[satellites.keithley.powersupply1]
+voltage = 5000
 
-[Example.Device]
-
-Voltage = 5
-Ampere = 3
-
-[Example.Times]
-
-Sample_Period = 4
-
-
-[keithley_satellite]
-
-mykey = "actually another value"
-
-[keithley_satellite.powersupply1]
-
-hv = 5000
-
-kanal = {"hv" = 5100 } # alternativt
-
-#kanal1.hv = 51000  # is this possible?
-
-[keithley_satellite.powersupply1.kanal1]
-
-hv = 5100
-
-# kanal1 could be a dict that has key value pairs (but would not overwrite the
-# hv key/value of the parent)
-
-# maybe prohit this case (too complicated?)
+[satellites.keithley.powersupply2]
+voltage = 3000
