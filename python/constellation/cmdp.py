@@ -48,9 +48,9 @@ class CMDPTransmitter:
         self._socket = socket
 
     def send(self, data: logging.LogRecord | Metric):
-        if isinstance(logging.LogRecord, data):
+        if isinstance(data, logging.LogRecord):
             return self.send_log(data)
-        elif isinstance(Metric, data):
+        elif isinstance(data, Metric):
             return self.send_metric(data)
         else:
             raise RuntimeError(
