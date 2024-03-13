@@ -37,6 +37,7 @@ int main(int argc, char* argv[]) {
     // Create CHIRP manager and set as default
     auto chirp_manager = chirp::Manager(address_v4::broadcast(), address_v4::any(), "cnstln1", satellite_name);
     chirp_manager.setAsDefaultInstance();
+    chirp_manager.start();
 
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
