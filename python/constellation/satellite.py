@@ -12,7 +12,7 @@ import logging
 import threading
 import traceback
 
-from .fsm import SatelliteStateHandler
+from .fsm import SatelliteStateHandler, SatelliteState
 from . import __version__
 from .heartbeater import Heartbeater
 from .heartbeatchecker import HeartbeatChecker
@@ -90,8 +90,14 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         return "registering", name, None
 
     def run_satellite(self):
-        """Main event loop with task handler-routine"""
-        while True:
+        """Main Satellite event loop with task handler-routine.
+
+        This routine sequenctially executes tasks queued by the CommandReceiver
+        or the CHIRPBroadcaster. These tasks come in the form of callbacks to
+        e.g. state transitions.
+
+        """
+        while not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
 
             try:
@@ -108,13 +114,26 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
                 # nothing to process
                 pass
 
-            time.sleep(0.05)
-        # TODO add a 'finally:' which closes zmq context via .term() and cleans
-        # up other things OR setup an atexit hook
-        #
+            time.sleep(0.01)
+
+    def reentry(self):
+        """Orderly shutdown and destroy the Satellelite."""
+        # can only exit from certain state, go into ERROR if not the case
+        self.log.info("Satellite on reentry course for self-destruction.")
+        if self.fsm.current_state.id not in [
+            SatelliteState.NEW,
+            SatelliteState.INIT,
+            SatelliteState.SAFE,
+            SatelliteState.ERROR,
+        ]:
+            self.fsm.failure("Performing controlled re-entry and self-destruction.")
+            self._wrap_failure()
         # on exit: stop heartbeater
         self.heartbeater.stop()
-        # TODO : shutdown broadcast manager and depart
+        # close the monitoring (log and stats) socket
+        self.monitoring.close()
+        print("Shutdown of Satellite")
+        super().reentry()
 
     # --------------------------- #
     # ----- satellite commands ----- #
@@ -199,6 +218,8 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             self._state_thread_evt.set()
         # wait for result, will raise TimeoutError if not successful
         self._state_thread_fut.result(timeout=10)
+        self._state_thread_evt = None
+        return self.do_stopping(payload)
 
     @debug_log
     def do_stopping(self, payload: any):
@@ -263,7 +284,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             return "Exception caught during failure handling, see logs for details."
 
     @debug_log
-    def fail_gracefully():
+    def fail_gracefully(self):
         """Method called when reaching 'ERROR' state."""
         return "Failed gracefully."
 
@@ -276,34 +297,35 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         control to the device-specific public method.
 
         """
+        # indicate to the current acquisition thread to stop
+        if self._state_thread_evt:
+            self._state_thread_evt.set()
+            # wait for result, will raise TimeoutError if not successful
+            self._state_thread_fut.result(timeout=10)
+            self._state_thread_evt = None
+        self.hb_checker.stop()
         return self.do_interrupting()
 
     @debug_log
     def do_interrupting(self):
         """Interrupt data acquisition and move to Safe state.
 
-        Defaults to calling fail_gracefully, the ERROR-state handler.
+        Defaults to calling the stop and land handlers.
         """
-        return self.fail_gracefully()
+        self.do_stopping()
+        self.do_landing()
+        return "Interrupted."
 
     @handle_error
     @debug_log
     def _wrap_recover(self):
         """Wrapper for the 'recovering' transitional state of the FSM.
 
-        This method performs the basic Satellite transition before passing
-        control to the device-specific public method.
+        This method does not perform any action as the SAFE->INIT transition has
+        no side-effects.
 
         """
-        return self.do_recover()
-
-    @debug_log
-    def do_recovering(self):
-        """Transition to Initialized state.
-
-        Defaults to on_initialize().
-        """
-        return self.on_initialize()
+        return "Recovered."
 
     def _thread_exception(self, args):
         """Handle exceptions in threads.

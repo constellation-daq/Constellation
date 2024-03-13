@@ -259,6 +259,9 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             if msg.msgtype == CHIRPMessageType.DEPART and msg.port != 0:
                 self._depart_service(msg)
                 continue
+        # shutdown
+        self.broadcast_depart()
+        self._beacon.close()
 
 
 def main(args=None):

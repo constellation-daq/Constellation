@@ -9,6 +9,17 @@ import zmq
 import threading
 import logging
 from queue import Queue
+import atexit
+
+
+SATELLITE_LIST = []
+
+
+@atexit.register
+def destroy_satellites():
+    """Close down connections and perform orderly re-entry."""
+    for sat in SATELLITE_LIST:
+        sat.reentry()
 
 
 class BaseSatelliteFrame:
@@ -38,6 +49,10 @@ class BaseSatelliteFrame:
         self._com_thread_pool: dict(str, threading.Thread) = {}
         # Event to indicate to communication service threads to stop
         self._com_thread_evt: threading.Event = None
+
+        # add self to list of satellites to destroy on shutdown
+        global SATELLITE_LIST
+        SATELLITE_LIST.append(self)
 
     def _add_com_thread(self):
         """Method to add a background communication service thread to the pool.
@@ -73,3 +88,9 @@ class BaseSatelliteFrame:
                         )
         self._com_thread_evt = None
         self._com_thread_pool = {}
+
+    def reentry(self):
+        """Orderly destroy the satellite."""
+        print("Shutdown of Base Satellite")
+        self._stop_com_threads()
+        self.context.term()
