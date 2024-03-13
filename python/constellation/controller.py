@@ -115,7 +115,7 @@ class BaseCLIController(CHIRPBroadcaster):
     def command(self, msg, host_name=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         if host_name:
-            cmd, payload, meta = self._convert_to_cscp(msg, host_name)
+            cmd, payload, meta = self._convert_to_cscp(msg)
             self._command_satellite(
                 cmd=cmd,
                 payload=payload,
@@ -124,7 +124,7 @@ class BaseCLIController(CHIRPBroadcaster):
             )
         else:
             for host in self.transmitters.keys():
-                cmd, payload, meta = self._convert_to_cscp(msg, host)
+                cmd, payload, meta = self._convert_to_cscp(msg)
                 self._command_satellite(
                     cmd=cmd,
                     payload=payload,
@@ -132,27 +132,23 @@ class BaseCLIController(CHIRPBroadcaster):
                     host_name=host,
                 )
 
-    def _convert_to_cscp(self, msg, host_name):
+    def _convert_to_cscp(self, msg):
         """Convert command string into CSCP message, payload and meta."""
         cmd = msg[0]
         payload = msg[:-1]
         meta = None
 
-        if cmd == "initialize":
+        if cmd == "initialize" or cmd == "reconfigure":
             config_path = msg[1]
-            payload = self.get_config(host_name=host_name, config_path=config_path)
-        elif cmd == "reconfigure":
-            config_path = msg[1]
-            if msg[2]:
-                for trait in msg[2:]:
-                    payload.append(
-                        self.get_config(
-                            host_name=host_name, config_path=config_path, trait=trait
-                        )
+            payload = {}
+            for trait in ["constellation", "satellites"]:
+                payload.update(
+                    self.get_config(
+                        config_path=config_path,
+                        trait=trait,
+                        host_class=msg[2],
+                        host_device=msg[3],
                     )
-            else:
-                payload.append(
-                    self.get_config(host_name=host_name, config_path=config_path)
                 )
         # TODO: add more commands?
         return cmd, payload, meta
