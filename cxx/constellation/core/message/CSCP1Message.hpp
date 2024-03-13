@@ -46,6 +46,9 @@ namespace constellation::message {
 
             /** Command is entirely unknown */
             UNKNOWN = '\x05',
+
+            /** Previously received message is invalid */
+            ERROR = '\x06',
         };
 
         /** CSCP1 Header */
