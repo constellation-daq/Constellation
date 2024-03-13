@@ -28,6 +28,9 @@ namespace constellation::message {
             error_message_ = "Error decoding message: ";
             error_message_ += reason;
         }
+
+    protected:
+        MessageDecodingError() = default;
     };
 
     /**
@@ -36,7 +39,7 @@ namespace constellation::message {
      *
      * The message identifier does not represent a valid or known protocol identifier
      */
-    class InvalidProtocolError : public utils::RuntimeError {
+    class InvalidProtocolError : public MessageDecodingError {
     public:
         explicit InvalidProtocolError(const std::string& protocol) {
             error_message_ = "Invalid protocol identifier \"";
@@ -51,7 +54,7 @@ namespace constellation::message {
      *
      * The protocol identifier of the message does not match the expected protocol
      */
-    class UnexpectedProtocolError : public utils::RuntimeError {
+    class UnexpectedProtocolError : public MessageDecodingError {
     public:
         explicit UnexpectedProtocolError(const Protocol& prot_recv, const Protocol& prot_exp) {
             error_message_ = "Received protocol \"";
