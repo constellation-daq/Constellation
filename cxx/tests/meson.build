@@ -3,7 +3,7 @@
 
 # Meson only used to run C++ tests
 if not impl_cpp
-    subdir_done()
+  subdir_done()
 endif
 
 # Core / CHIRP
@@ -62,5 +62,13 @@ test_satellite_fsm = executable('test_satellite_fsm',
   dependencies: [satellite_dep, catch2_dep],
 )
 test('Satellite FSM test', test_satellite_fsm,
-     args: ['--durations', 'yes', '--verbosity', 'high'],
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
+test_satellite_implementation = executable('test_satellite_implementation',
+  sources: 'test_satellite_implementation.cpp',
+  dependencies: [satellite_dep, catch2_dep],
+)
+test('Satellite implementation test', test_satellite_implementation,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
 )
