@@ -89,20 +89,9 @@ class BaseCLIController(CHIRPBroadcaster):
             payload,
             meta,
         )
-        self._logger.info("Host %s send command %s...", host_name, cmd)
-
         try:
-            msg = self.transmitters[host_name].get_message()
-            self._logger.info(
-                "Host %s received response: %s, %s",
-                host_name,
-                msg.msg_verb,
-                msg.msg,
-            )
-            if msg.header_meta:
-                self._logger.info("    header: %s", msg.header_meta)
-            if payload:
-                self._logger.info("    payload: %s", msg.payload)
+            ret_msg = self.transmitters[host_name].get_message()
+            return ret_msg
 
         except TimeoutError:
             self._logger.error(
