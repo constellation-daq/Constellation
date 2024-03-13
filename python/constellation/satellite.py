@@ -349,19 +349,8 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         return self.fsm.status, None, None
 
     @cscp_requestable
-    def get_config(self, _request: CSCPMessage = None) -> str:
-        return str(self.config.get_values()), None, None
-
-    @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
-        return self.name, None, None
-
-    @cscp_requestable
-    def get_device(self, request: CSCPMessage = None) -> str:
-        try:
-            return type(self.device).__name__, None, None
-        except NameError:
-            return None, None, None
+        return "Keithley", None, None  # TODO: Generalize, NotImplemented
 
     @cscp_requestable
     def version(self, _request: CSCPMessage = None):
