@@ -181,10 +181,7 @@ class BaseCLIController(CHIRPBroadcaster):
                 self._logger.error(f"No host {target}")
         else:
             msg = user_input.split(" ")
-            self.command(
-                msg=msg,
-                host_name=self.target_host,
-            )
+            self.command(msg=msg)
 
     def _run_task_handler(self):
         """Event loop for task handler-routine"""
