@@ -66,6 +66,8 @@ install_headers(
 
 install_headers(
   'utils/casts.hpp',
+  'utils/exceptions.hpp',
+  'utils/ports.hpp',
   'utils/std23.hpp',
   'utils/string.hpp',
   subdir: 'constellation/core/utils',
