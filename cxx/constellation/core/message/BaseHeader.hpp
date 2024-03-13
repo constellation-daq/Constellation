@@ -1,0 +1,86 @@
+/**
+ * @file
+ * @brief Base class for message headers in CMDP, CDTP and CSCP
+ *
+ * @copyright Copyright (c) 2023 DESY and the Constellation authors.
+ * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
+ * SPDX-License-Identifier: EUPL-1.2
+ */
+
+#pragma once
+
+#include <chrono>
+#include <cstddef>
+#include <span>
+#include <string_view>
+
+#include <msgpack/pack_decl.hpp>
+#include <msgpack/sbuffer_decl.hpp>
+
+#include "constellation/core/config.hpp"
+#include "constellation/core/message/Dictionary.hpp"
+#include "constellation/core/message/Protocol.hpp"
+
+namespace constellation::message {
+
+    /** Message Header Base Class */
+    class CNSTLN_API BaseHeader {
+    public:
+        virtual ~BaseHeader() = default;
+        BaseHeader(const BaseHeader&) = default;
+        BaseHeader(BaseHeader&&) = default;
+        BaseHeader& operator=(const BaseHeader&) = delete;
+        BaseHeader& operator=(BaseHeader&&) = delete;
+
+        /** Return message protocol */
+        constexpr Protocol getProtocol() const { return protocol_; }
+
+        /** Return message sender */
+        std::string_view getSender() const { return sender_; }
+
+        /** Return message time */
+        constexpr std::chrono::system_clock::time_point getTime() const { return time_; }
+
+        /** Return message tags */
+        const Dictionary& getTags() const { return tags_; }
+
+        /** Return message tag */
+        DictionaryValue getTag(const std::string& key) const { return tags_.at(key); }
+
+        /** Set message tag */
+        void setTag(const std::string& key, DictionaryValue value) { tags_[key] = std::move(value); }
+
+        /** Convert message header to human readable string */
+        CNSTLN_API virtual std::string to_string() const;
+
+        /** Pack message header with msgpack */
+        CNSTLN_API virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+
+    protected:
+        /**
+         * Construct new message header
+         *
+         * @param protocol Message protocol
+         * @param sender Sender name
+         * @param time Message time
+         * @param tags Message tags (defaults to empty dictionary)
+         */
+        BaseHeader(Protocol protocol, std::string sender, std::chrono::system_clock::time_point time, Dictionary tags = {})
+            : protocol_(protocol), sender_(std::move(sender)), time_(time), tags_(std::move(tags)) {}
+
+        /**
+         * Disassemble message from from bytes
+         *
+         * @param protocol Protocol
+         * @param data View to byte data
+         */
+        CNSTLN_API static BaseHeader disassemble(Protocol protocol, std::span<const std::byte> data);
+
+    private:
+        const Protocol protocol_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        std::string sender_;
+        std::chrono::system_clock::time_point time_;
+        Dictionary tags_;
+    };
+
+} // namespace constellation::message

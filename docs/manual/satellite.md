@@ -1,9 +1,63 @@
-# The Constellation Satellite
+# The Satellite
 
 The central components of a Constellation network are satellites. A satellite is a program for controlling an instrument and
 is built around a finite state machine. It is the only component in a Constellation which partakes in all Constellation
 protocols. In the following, the main features of the Constellation Satellite are described.
 
+(satellite-status)=
+## State and Status
+
+The **state** of a Constellation satellite is governed by its [finite state machine](#satellite-fsm). By referring to the
+current state of the satellite, it can be unequivocally deduced what actions the satellite is currently performing.
+
+Sometimes, however, additional information is helpful in interpreting this machine-readable state information. This
+information is supplied by the satellite **status**, a human-readable string describing e.g. the last performed action during
+a [transitional state](#transitions). The status may change while remaining in the same state. In case of a failure, the
+status string provides information on the cause of the failure, if known or available. A typical example for a regular status
+information would be:
+
+* `STATE`: `ORBIT`
+* `STATUS`: "All outputs ramped to 100V"
+
+or for a failure mode situation:
+
+* `STATE`: `ERROR`
+* `STATUS`: "Failed to communicate with FPGA, links not locked"
+
+Unlike the state, which is for example distributed automatically through the [heartbeat protocol](/protocols/chbp), the
+status message has to be explicitly queried via a [command](#satellite-commands).
+
+(satellite-commands)=
+## Controlling the Satellite
+
+The Constellation satellite class exposes a set of remote procedure calls, called "commands" in the following, through the
+CSCP protocol. This comprises commands to initiate state transitions of the [finite state machine](#satellite-fsm) as well as
+methods to query additional information from the satellite. A brief description of the CSCP protocol is provided
+[in the protocol section](/manual/protocols) of the user guide and the full protocol definition and grammar can be found in
+the [appendix](/protocols/cscp).
+
+Commands consist of a command name and an optional payload. The command name shall only contain alphanumeric characters or
+underscores and cannot start with a digit. The following commands represent the minimal set of procedures a satellite needs
+to implement:
+
+| Command        | Description
+| -------------- | -----------
+| `get_name`     | Returns the name of the queried satellite
+| `get_version`  | Returns the Constellation version identifier string the queried satellite has been built with
+| `get_commands` | Provides a full list of the available commands for the queried satellite
+| `get_state`    | Returns the [current state](#satellite-fsm) of the satellite
+| `get_status`   | Returns the current [status message](#satellite-status) of the satellite
+| `get_config`   | Returns the applied configuration
+| `initialize`   | Requests FSM transition "initialize"
+| `launch`       | Requests FSM transition "launch"
+| `land`         | Requests FSM transition "land"
+| `reconfigure`  | Requests FSM transition "reconfigure"
+| `start`        | Requests FSM transition "start"
+| `stop`         | Requests FSM transition "stop"
+
+Satellite implementations are allowed to amend this list with custom commands.
+
+(satellite-fsm)=
 ## The Finite State Machine
 
 The finite state machine (FSM) controls the behavior of the satellite and guarantees that the system is always in a defined state.
@@ -106,6 +160,7 @@ Constellation provides two different ways for satellite implementations to inter
   @enduml
   ```
 
+(transitions)=
 ### Changing States - Transitions
 
 Instrument code of the individual satellites is executed in so-called transitional states. They differ from steady states in
@@ -135,7 +190,7 @@ following transitional states are defined in the Constellation FSM:
 * The `initializing` state
 * The `launching` state
 * The `landing` state
-* The `staring` state
+* The `starting` state
 * The `stopping` state
 
 In addition, the optional `reconfiguring` transitional state enables quick configuration updates of satellites in `ORBIT` state

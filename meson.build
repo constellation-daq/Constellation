@@ -10,7 +10,8 @@ project('Constellation',
 # C++ implementation
 impl_cpp = add_languages('cpp', required: get_option('impl_cpp'))
 if impl_cpp
-  subdir('src/constellation')
+  subdir('cxx/constellation')
+  subdir('cxx/tests')
 endif
 
 # Python implementation
@@ -19,6 +20,3 @@ impl_py = py.found()
 if impl_py
   subdir('python/constellation')
 endif
-
-# Tests
-subdir('tests')

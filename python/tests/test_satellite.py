@@ -43,10 +43,7 @@ def mock_satellite():
         t.start()
         # give the threads a chance to start
         time.sleep(0.1)
-        yield s
-
-
-KEEP_WAITING = True
+        yield s, t
 
 
 @pytest.fixture
@@ -59,16 +56,20 @@ def mock_device_satellite(mock_chirp_socket):
 
     class MockDeviceSatellite(Satellite):
         callback_triggered = False
+        KEEP_WAITING = True
 
         @chirp_callback(CHIRPServiceIdentifier.DATA)
         def callback_function(self, service):
             self.callback_triggered = service
 
         def do_initializing(self, payload):
-            global KEEP_WAITING
-            while KEEP_WAITING:
+            self.KEEP_WAITING = True
+            while self.KEEP_WAITING:
                 time.sleep(0.01)
             return "finished with mock initialization"
+
+        def ready(self):
+            self.KEEP_WAITING = False
 
     with patch("constellation.base.zmq.Context") as mock:
         mock_context = MagicMock()
@@ -126,8 +127,7 @@ def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
 @pytest.mark.forked
 def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_satellite):
     """Test slow transitional states."""
-    global KEEP_WAITING
-    KEEP_WAITING = True
+    satellite = mock_device_satellite
     sender = mock_cmd_transmitter
     # send a request to init
     sender.send_request("initialize", "mock argument string")
@@ -141,8 +141,9 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
     req = sender.get_message()
     assert "initializing" in req.msg.lower()
     assert req.msg_verb == CSCPMessageVerb.SUCCESS
-    KEEP_WAITING = False
+    satellite.ready()
     # check state again
+    time.sleep(0.1)
     sender.send_request("get_state")
     time.sleep(0.1)
     req = sender.get_message()
@@ -154,9 +155,7 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
 def test_satellite_fsm_cannot_change_transitional(
     mock_cmd_transmitter, mock_device_satellite
 ):
-    """Test slow transitional states."""
-    global KEEP_WAITING
-    KEEP_WAITING = True
+    """Test transitions from slow transitional states."""
     sender = mock_cmd_transmitter
     # send a request to init
     sender.send_request("initialize", "mock argument string")
@@ -190,15 +189,16 @@ def test_satellite_fsm_cannot_change_transitional(
 @pytest.mark.forked
 def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     """Test cmd reception."""
-    assert not mock_device_satellite.callback_triggered
+    satellite = mock_device_satellite
+    assert not satellite.callback_triggered
     mock_chirp_transmitter.broadcast(
         CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666
     )
     time.sleep(0.5)
     # chirp message has been processed
     assert len(mock_chirp_packet_queue) == 0
-    assert mock_device_satellite.callback_triggered
-    assert isinstance(mock_device_satellite.callback_triggered, DiscoveredService)
+    assert satellite.callback_triggered
+    assert isinstance(satellite.callback_triggered, DiscoveredService)
 
 
 # TODO test shutdown

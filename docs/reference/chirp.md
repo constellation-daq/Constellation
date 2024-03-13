@@ -4,6 +4,7 @@
 
 Since CHIRP requires a fixed port and we might have multiple programs running CHIRP on one machine, it is important to ensure that the port is not blocked by one program. Networking libraries like ZeroMQ and NNG do this by default when binding to a wildcard address. To ensure that a socket can be used by more than one program, the `SO_REUSEADDR` socket option has to be enabled. Further, to send broadcasts the `SO_BROADCAST` socket option has to be enabled.
 
+(notes-broadcast)=
 ## Notes on broadcast addresses
 
 CHIRP uses an UDP broadcast over port 7123, which means that it send a message to all participants in a network. However, "all" in this context depends the broadcast address.
@@ -21,32 +22,32 @@ If no network (with DHCP) is available, the default broadcast address (255.255.2
 To receive broadcasts:
 
 ```sh
-./build/src/constellation/tools/broadcast_recv [ANY_IP] [ANY_PORT]
+./build/cxx/constellation/tools/broadcast_recv [ANY_IP] [ANY_PORT]
 ```
 
 To send broadcasts:
 
 ```sh
-./build/src/constellation/tools/broadcast_send [BRD_IP] [BRD_PORT]
+./build/cxx/constellation/tools/broadcast_send [BRD_IP] [BRD_PORT]
 ```
 
-See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
+See [above](#notes-broadcast) for details on the broadcast address.
 
 ### CHIRP Messages
 
 To receive CHIRP messages:
 
 ```sh
-./build/src/constellation/tools/chirp_recv [ANY_IP]
+./build/cxx/constellation/tools/chirp_recv [ANY_IP]
 ```
 
 To send CHIRP messages:
 
 ```sh
-./build/src/constellation/tools/chirp_send [BRD_IP]
+./build/cxx/constellation/tools/chirp_send [BRD_IP]
 ```
 
-See [above](#notes-on-broadcast-addresses) for details on the broadcast address.
+See [above](#notes-broadcast) for details on the broadcast address.
 
 TODO:
 
@@ -57,7 +58,7 @@ TODO:
 To run the CHIRP manager, run:
 
 ```sh
-./build/src/constellation/tools/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
+./build/cxx/constellation/tools/chirp_manager [NAME] [BRD_IP] [GROUP] [ANY_IP]
 ```
 
 The following commands are available:

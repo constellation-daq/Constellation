@@ -15,8 +15,10 @@ building
 :caption: Concepts
 
 constellation
-protocols
 satellite
+controller
+listener
+protocols
 ```
 
 ```{toctree}

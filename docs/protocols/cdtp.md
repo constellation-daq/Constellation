@@ -32,15 +32,11 @@ This specification is not transport specific, but not all behaviour will be repr
 
 ## Implementation
 
-A CDTP message SHALL be sent as multipart message and MUST consist of at least two frames and MAY consist of any larger number of frames.
+A CDTP message SHALL be sent as multipart message and MUST consist of at least one frame and MAY consist of any larger number of frames.
 The definitions of ‘frame’ and ‘multipart message’ follow those defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
 
-The message SHALL consist at least of the following frames, in this order:
-
-* The message header
-* The message cargo payload
-
-OPTIONAL frames with additional cargo payload MAY be sent afterwards.
+The first frame of the message frame MUST contain the message header.
+OPTIONAL frames with message payload MAY be sent afterwards.
 
 ### Overall Behavior
 
