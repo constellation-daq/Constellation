@@ -25,17 +25,32 @@ class Metric:
     """Class to hold information for a Constellation metric."""
 
     def __init__(
-        self, name: str, description: str, unit: str, handling: MetricsType, value=None
+        self,
+        name: str,
+        description: str,
+        unit: str,
+        handling: MetricsType,
+        value: any = None,
     ):
         self.name = name
         self.description = description
         self.unit = unit
         self.handling = handling
         self.value = value
+        self.sender = None
+        self.time = None
+        self.meta = None
 
     def as_list(self):
         """Convert metric to list."""
         return [self.description, self.unit, self.handling.value, self.value]
+
+    def __str__(self):
+        """Convert to string."""
+        t = ""
+        if self.time:
+            t = f" at {self.time}"
+        return f"{self.name}: {self.value} [{self.unit}]{t}"
 
 
 class CMDPTransmitter:
@@ -93,8 +108,7 @@ class CMDPTransmitter:
             "processName": record.processName,
             "process": record.process,
         }
-        # the formatted message:
-        payload = record.message
+        payload = record.getMessage()
         return self._dispatch(topic, payload, meta)
 
     def send_metric(self, metric: Metric):
@@ -104,9 +118,12 @@ class CMDPTransmitter:
         meta = None
         return self._dispatch(topic, payload, meta)
 
-    def recv(self) -> logging.LogRecord | Metric:
+    def recv(self, flags=0) -> logging.LogRecord | Metric | None:
         """Receive a Constellation monitoring message and return log or metric."""
-        topic = self.socket.recv().decode("utf-8")
+        try:
+            topic = self._socket.recv(flags).decode("utf-8")
+        except zmq.ZMQError:
+            return None
         if topic.startswith("STATS/"):
             return self._recv_metric(topic)
         elif topic.startswith("LOG/"):
@@ -128,20 +145,13 @@ class CMDPTransmitter:
 
     def _recv_log(self, topic: str) -> logging.LogRecord:
         """Receive a Constellation log message."""
-
         # Read header
-        unpacker_header = msgpack.Unpacker()
-        unpacker_header.feed(self.socket.recv())
-        protocol = unpacker_header.unpack()
-        if not protocol == Protocol.CMDP:
-            raise RuntimeError(
-                f"Received message with malformed CMDP header: {protocol}!"
-            )
-        sender = unpacker_header.unpack()
-        time = unpacker_header.unpack()
-        record = unpacker_header.unpack()
+        sender, time, record = self.msgheader.recv(self._socket)
+        # receive payload
+        message = msgpack.unpackb(self._socket.recv())
+        # message == msg % args
         if "msg" not in record and "args" not in record:
-            record["msg"] = self.socket.recv().decode("utf-8")
+            record["msg"] = message
         record["created"] = time.to_datetime().timestamp()
         record["name"] = sender
         record["levelname"] = topic.split("/")[1]
@@ -150,13 +160,14 @@ class CMDPTransmitter:
     def _recv_metric(self, topic) -> Metric:
         """Receive a Constellation STATS message and return a Metric."""
         name = topic.split("/")[1]
-        header = msgpack.unpackb(self.queue.recv())
-        if not header[0] == Protocol.CMDP:
-            raise RuntimeError(
-                f"Received message with malformed CDTP header: '{header}'!"
-            )
-        description, unit, handling, value = msgpack.unpackb(self.queue.recv())
-        return Metric(name, description, unit, MetricsType(handling), value)
+        # Read header
+        sender, time, record = self.msgheader.recv(self._socket)
+        description, unit, handling, value = msgpack.unpackb(self._socket.recv())
+        m = Metric(name, description, unit, MetricsType(handling), value)
+        m.sender = sender
+        m.time = time
+        m.meta = record
+        return m
 
     def _dispatch(
         self,
@@ -167,6 +178,7 @@ class CMDPTransmitter:
     ):
         """Dispatch a message via ZMQ socket."""
         flags = zmq.SNDMORE | flags
-        self.socket.send_string(topic, flags)
-        self.msgheader.send(self.socket, meta=meta, flags=flags)
-        self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
+        self._socket.send_string(topic, flags)
+        self.msgheader.send(self._socket, meta=meta, flags=flags)
+        flags = flags & ~zmq.SNDMORE
+        self._socket.send(msgpack.packb(payload), flags=flags)
