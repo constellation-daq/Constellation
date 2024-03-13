@@ -185,8 +185,6 @@ class BaseCLIController(CHIRPBroadcaster):
     def _run_task_handler(self):
         """Event loop for task handler-routine"""
         while not self._task_handler_event.is_set():
-            # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
-
             try:
                 # blocking call but with timeout to prevent deadlocks
                 task = self.task_queue.get(block=True, timeout=0.5)
@@ -195,7 +193,6 @@ class BaseCLIController(CHIRPBroadcaster):
                 try:
                     callback(*args)
                 except Exception as e:
-                    # TODO consider whether to go into error state if anything goes wrong here
                     self.log.error("Caught exception handling task: %s", repr(e))
             except Empty:
                 # nothing to process
