@@ -21,6 +21,7 @@
 using namespace constellation::message;
 using namespace constellation::utils;
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, char* argv[]) {
     // Get address via cmdline
     if(argc != 2) {

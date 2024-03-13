@@ -26,6 +26,7 @@ public:
     DummySatellite() = default;
 };
 
+// NOLINTNEXTLINE(bugprone-exception-escape)
 int main(int argc, char* argv[]) {
     // Get satellite name via cmdline
     std::string satellite_name = host_name();
