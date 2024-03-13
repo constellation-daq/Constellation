@@ -25,7 +25,7 @@ class ExampleDevice:
             raise KeyError
 
     def _is_set(self):
-        return False not in self.config.values()
+        return False not in self.config_set.values()
 
     def set_config(self):
         if self._is_set():
