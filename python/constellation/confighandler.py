@@ -26,21 +26,21 @@ class Configuration:
         return set(self.config.keys()).difference(self._requested_keys)
 
     def get(self, key: str, default: any = None):
+        self._requested_keys.add(key)
+
         if key in self.config.keys():
             return self.config[key]
         elif default:
-            self._requested_keys.add(key)
             self.config[key] = default
             return self.config[key]
         else:
-            self._requested_keys.add(key)
             raise KeyError
 
     def __getitem__(self, key: str):
+        self._requested_keys.add(key)
         if key in self.config.keys():
             return self.config[key]
         else:
-            self._requested_keys.add(key)
             raise KeyError
 
 
