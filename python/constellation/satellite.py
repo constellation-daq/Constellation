@@ -21,6 +21,7 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
+from .confighandler import Configuration, ConfigError
 from .log_and_stats import getLoggerAndStats
 from .error import debug_log, handle_error
 
@@ -156,7 +157,17 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             pass
         self._state_thread_evt = None
         self._state_thread_fut = None
-        return self.do_initializing(payload)
+
+        try:
+            self.config = Configuration(payload)
+            init = self.do_initializing(payload)
+        except ConfigError:
+            self.log.error("Failed to configure satellite")
+
+        if self.config.has_unused_values():
+            for key in self.config.get_unused_values():
+                self.log.warning("Device has unused configuration values %s", key)
+        return init
 
     @debug_log
     def do_initializing(self, payload: any) -> str:
