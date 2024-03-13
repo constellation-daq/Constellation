@@ -163,7 +163,7 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             // Try to decode as transition
             auto transition_command = magic_enum::enum_cast<TransitionCommand>(command_string);
             if(transition_command.has_value()) {
-                sendReply(fsm_.reactCSCP(transition_command.value(), message.getPayload()));
+                sendReply(fsm_.reactCommand(transition_command.value(), message.getPayload()));
                 continue;
             }
 

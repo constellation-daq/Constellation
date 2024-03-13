@@ -95,8 +95,8 @@ namespace constellation::satellite {
          * @param payload Payload frame from CSCP
          * @return Tuple containing the CSCP message type and a description
          */
-        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCSCP(TransitionCommand transition_command,
-                                                                                 std::shared_ptr<zmq::message_t> payload);
+        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCommand(TransitionCommand transition_command,
+                                                                                    std::shared_ptr<zmq::message_t> payload);
 
     private:
         /**

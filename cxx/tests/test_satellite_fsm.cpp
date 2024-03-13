@@ -176,28 +176,28 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame
-    ret = fsm.reactCSCP(TransitionCommand::initialize, {});
+    ret = fsm.reactCommand(TransitionCommand::initialize, {});
     REQUIRE(ret.first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(ret.second, Equals("Transition initialize requires a payload frame"));
-    ret = fsm.reactCSCP(TransitionCommand::initialize, payload_frame);
+    ret = fsm.reactCommand(TransitionCommand::initialize, payload_frame);
     REQUIRE(ret.first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(ret.second, Equals("Transition initialize is being initiated"));
 
     // INVALID when not allowed
     satellite->progress_fsm(fsm);
-    ret = fsm.reactCSCP(TransitionCommand::start, {});
+    ret = fsm.reactCommand(TransitionCommand::start, {});
     REQUIRE(ret.first == CSCP1Message::Type::INVALID);
     REQUIRE_THAT(ret.second, Equals("Transition start not allowed from INIT state"));
 
     // payload is ignored when not used
-    ret = fsm.reactCSCP(TransitionCommand::launch, payload_frame);
+    ret = fsm.reactCommand(TransitionCommand::launch, payload_frame);
     REQUIRE(ret.first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(ret.second, Equals("Transition launch is being initiated (payload frame is ignored)"));
     satellite->progress_fsm(fsm);
 
     // NOTIMPLEMENTED if reconfigure not supported
     satellite->dummy_support_reconfigure(false);
-    ret = fsm.reactCSCP(TransitionCommand::reconfigure, std::move(payload_frame));
+    ret = fsm.reactCommand(TransitionCommand::reconfigure, std::move(payload_frame));
     REQUIRE(ret.first == CSCP1Message::Type::NOTIMPLEMENTED);
     REQUIRE_THAT(ret.second, Equals("Transition reconfigure is not implemented by this satellite"));
 }
