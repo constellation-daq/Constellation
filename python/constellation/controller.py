@@ -138,7 +138,6 @@ class BaseCLIController(CHIRPBroadcaster):
         if cmd == "initialize" or cmd == "reconfigure":
             config_path = msg[1]
             class_msg = self._command_satellite("get_class", None, None, host_name)
-            device_msg = self._command_satellite("get_device", None, None, host_name)
 
             payload = {}
             for category in ["constellation", "satellites"]:
@@ -147,7 +146,7 @@ class BaseCLIController(CHIRPBroadcaster):
                         config_path=config_path,
                         category=category,
                         host_class=class_msg.msg,
-                        host_device=device_msg.msg,
+                        host_device="powersupply1",  # TODO: generalize
                     )
                 )
         # TODO: add more commands?
