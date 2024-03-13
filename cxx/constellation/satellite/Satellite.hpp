@@ -11,6 +11,8 @@
 
 #include <any>
 #include <cstdint>
+#include <string>
+#include <string_view>
 #include <thread>
 
 #include "constellation/core/config.hpp"
@@ -104,17 +106,24 @@ namespace constellation::satellite {
         /** Whether or not the reconfigure function is implemented */
         constexpr bool supportsReconfigure() const { return support_reconfigure_; }
 
+        /** Return status of the satellite */
+        std::string_view getStatus() const { return status_; }
+
     protected:
         Satellite();
 
         /** Enable or disable support for reconfigure transition (disabled by default) */
         constexpr void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
 
+        /** Set status of the satellite */
+        void set_status(std::string status) { status_ = std::move(status); }
+
         /** Logger to use */
         log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
 
     private:
         bool support_reconfigure_ {false};
+        std::string status_;
     };
 
 } // namespace constellation::satellite

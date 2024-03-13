@@ -46,6 +46,9 @@ namespace constellation::message {
 
             /** Command is entirely unknown */
             UNKNOWN = '\x05',
+
+            /** Previously received message is invalid */
+            ERROR = '\x06',
         };
 
         /** CSCP1 Header */
@@ -81,6 +84,11 @@ namespace constellation::message {
          * @return Message payload
          */
         std::shared_ptr<zmq::message_t> getPayload() const { return payload_; }
+
+        /**
+         * @return True if message has payload
+         */
+        bool hasPayload() const { return payload_ && !payload_->empty(); }
 
         /**
          * @param payload Shared pointer to the ZeroMQ message to be used as payload
