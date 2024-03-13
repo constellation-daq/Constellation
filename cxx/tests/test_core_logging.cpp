@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <chrono>
-#include <thread>
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "constellation/core/logging/log.hpp"
@@ -14,7 +11,6 @@
 #include "constellation/core/logging/SinkManager.hpp"
 
 using namespace constellation::log;
-using namespace std::literals::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -35,10 +31,6 @@ TEST_CASE("Basic logging", "[logging]") {
     LOG(logger, STATUS) << "status"sv;
     LOG(logger, WARNING) << "warning"sv;
     LOG(logger, CRITICAL) << "critical"sv;
-
-    // Wait for logging to be flushed for proper output with Catch2
-    logger.flush();
-    std::this_thread::sleep_for(1ms);
 }
 
 TEST_CASE("Logging macros", "[logging]") {
@@ -59,10 +51,6 @@ TEST_CASE("Logging macros", "[logging]") {
     REQUIRE(count_once == 1);
     REQUIRE(count_n == 3);
     REQUIRE(count_if == 2);
-
-    // Wait for logging to be flushed for proper output with Catch2
-    logger.flush();
-    std::this_thread::sleep_for(1ms);
 }
 
 TEST_CASE("Log levels", "[logging]") {

@@ -31,16 +31,11 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-// NOLINTNEXTLINE(*-special-member-functions)
 class DummySatellite : public Satellite {
 public:
     DummySatellite() {
         support_reconfigure();
         set_status("just started!");
-    }
-    ~DummySatellite() override {
-        logger_.flush();
-        std::this_thread::sleep_for(1ms);
     }
 };
 
