@@ -12,6 +12,38 @@ class ConfigError(Exception):
     pass
 
 
+class Configuration:
+    def __init__(self, config: dict = {}):
+        if not isinstance(config, dict):
+            raise ConfigError
+        self.config = config
+        self._requested_keys = set(config.keys())
+
+    def has_unused_values(self):
+        return not self._requested_keys == set(self.config.keys())
+
+    def get_unused_values(self):
+        return self._requested_keys.difference(self.config.keys())
+
+    def get(self, key: str, default: any = None):
+        if key in self.config.keys():
+            return self.config[key]
+        elif default:
+            self._requested_keys.add(key)
+            self.config[key] = default
+            return self.config[key]
+        else:
+            self._requested_keys.add(key)
+            raise KeyError
+
+    def __getitem__(self, key: str):
+        if key in self.config.keys():
+            return self.config[key]
+        else:
+            self._requested_keys.add(key)
+            raise KeyError
+
+
 class ConfigReceiver:
     def __init__(self):
         self.config = {}
