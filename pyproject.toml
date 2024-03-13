@@ -54,5 +54,8 @@ dist = ["--include-subprojects"]
 max-line-length = 125
 ignore = ["E203", "W503"]
 
+[tool.coverage.run]
+source = ["constellation"]
+
 #[project.scripts]
 #my-script = "my_package.module:function"
