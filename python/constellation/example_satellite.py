@@ -9,50 +9,30 @@ This module provides the class for a Constellation Satellite.
 from .satellite import Satellite
 import time
 import logging
-from .confighandler import ConfigError
+from .confighandler import ConfigError, Configuration
 
 
-class ExampleDevice:
+class PowerSupply1:
     def __init__(self):
-        self.config = {"voltage": None, "ampere": None, "sample_period": None}
-        self.config_set = {x: False for x in self.config}
+        pass
 
-    def update_configuration_value(self, key, value):
-        if key in self.config:
-            self.config[key] = value
-            self.config_set[key] = True
-        else:
-            raise KeyError
-
-    def _is_set(self):
-        return False not in self.config_set.values()
-
-    def set_config(self):
-        if self._is_set():
-            self.voltage = self.config["voltage"]
-            self.ampere = self.config["ampere"]
-            self.sample_period = self.config["sample_period"]
-        else:
-            raise ConfigError
+    def set_config(self, config: Configuration):
+        self.voltage = config["voltage"]
+        self.ampere = config["ampere"]
+        self.sample_period = config.get("sample_period", default=0.1)
 
 
 class ExampleSatellite(Satellite):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.device = None
+        self.device = PowerSupply1()
 
     def do_initializing(self, payload: dict) -> str:
-        self.device = ExampleDevice()
-        for key, value in payload.items():
-            try:
-                self.device.update_configuration_value(key, value)
-            except KeyError:
-                self.log.error("Configuration has no attribute %s", key)
-
+        super().do_initializing(payload=payload)
         try:
-            self.device.set_config()
-        except ConfigError:
-            self.log.error("Configuration not complete. All attributes not set!")
+            self.device.set_config(self.config)
+        except KeyError as e:
+            self.log.error("Configuration has no attribute %s", e)
             raise ConfigError
 
         return "Initialized"
@@ -73,7 +53,7 @@ def main(args=None):
     parser.add_argument("--cmd-port", type=int, default=23999)
     parser.add_argument("--log-port", type=int, default=5556)
     parser.add_argument("--hb-port", type=int, default=61234)
-    parser.add_argument("--name", type=str, default="satellite_demo")
+    parser.add_argument("--name", type=str, default="keithley")
     parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
 
