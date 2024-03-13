@@ -17,7 +17,7 @@ class Configuration:
         if not isinstance(config, dict):
             raise ConfigError
         self.config = config
-        self._requested_keys = set(config.keys())
+        self._requested_keys: set[str] = set()
 
     def has_unused_values(self):
         return not self._requested_keys == set(self.config.keys())
