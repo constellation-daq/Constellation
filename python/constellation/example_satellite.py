@@ -22,7 +22,7 @@ class PowerSupply1:
         self.sample_period = config.get("sample_period", default=0.1)
 
 
-class ExampleSatellite(Satellite):
+class Keithley(Satellite):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.device = PowerSupply1()
@@ -73,7 +73,7 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = ExampleSatellite(
+    s = Keithley(
         args.name,
         args.group,
         args.cmd_port,

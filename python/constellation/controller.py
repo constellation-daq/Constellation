@@ -129,7 +129,7 @@ class BaseCLIController(CHIRPBroadcaster):
             if ret_msg.payload:
                 self._logger.info("    payload: %s", ret_msg.payload)
 
-    def _convert_to_cscp(self, msg):
+    def _convert_to_cscp(self, msg, host_name):
         """Convert command string into CSCP message, payload and meta."""
         cmd = msg[0]
         payload = msg[:-1]
@@ -137,14 +137,17 @@ class BaseCLIController(CHIRPBroadcaster):
 
         if cmd == "initialize" or cmd == "reconfigure":
             config_path = msg[1]
+            class_msg = self._command_satellite("get_class", None, None, host_name)
+            device_msg = self._command_satellite("get_device", None, None, host_name)
+
             payload = {}
-            for trait in ["constellation", "satellites"]:
+            for category in ["constellation", "satellites"]:
                 payload.update(
                     self.get_config(
                         config_path=config_path,
-                        trait=trait,
-                        host_class=msg[2],
-                        host_device=msg[3],
+                        category=category,
+                        host_class=class_msg.msg,
+                        host_device=device_msg.msg,
                     )
                 )
         # TODO: add more commands?
