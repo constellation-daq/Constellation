@@ -5,10 +5,12 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import pytest
 import logging
+import time
+from unittest.mock import MagicMock
 
 from constellation.cmdp import CMDPTransmitter, Metric, MetricsType
 
-# from constellation.monitoring import ZeroMQSocketListener, MonitoringManager
+from constellation.monitoring import ZeroMQSocketLogListener, MonitoringManager
 
 from conftest import mock_packet_queue_sender, mocket, send_port
 
@@ -27,6 +29,42 @@ def mock_transmitter_b(mock_socket_sender):
     """Mock Transmitter endpoint B."""
     cmdp = CMDPTransmitter("mock_cmdp", mock_socket_sender)
     yield cmdp
+
+
+@pytest.fixture
+def mock_monitoringmanager():
+    """Create a mock MonitoringManager instance."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        return m
+
+    mock_context = MagicMock()
+    mock_context.socket = mocket_factory
+    mm = MonitoringManager("mock_monitor", mock_context, send_port)
+    yield mm
+
+
+@pytest.fixture
+def mock_listener():
+    """Create a mock log listener instance."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        m.endpoint = 1
+        return m
+
+    mock_context = MagicMock()
+    mock_context.socket = mocket_factory
+    mock_handler = MagicMock()
+    mock_handler.handle.return_value = None
+    mock_handler.emit.return_value = None
+    mock_handler.create_lock.return_value = None
+    mock_handler.lock = None
+    listener = ZeroMQSocketLogListener(
+        f"tcp://localhost:{send_port}", mock_handler, ctx=mock_context
+    )
+    yield listener, mock_handler
 
 
 def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
@@ -56,3 +94,27 @@ def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
     assert m2.value == 42
     assert m2.sender == "mock_cmdp"
     assert m2.time
+
+
+@pytest.mark.forked
+def test_monitoring(mock_listener, mock_monitoringmanager):
+    mm = mock_monitoringmanager  # noqa
+    listener, stream = mock_listener
+    # ROOT logger needs to have a level set
+    logger = logging.getLogger()
+    logger.setLevel("DEBUG")
+    # get a "remote" logger
+    lr = logging.getLogger("mock_monitor")
+    lr.warning("mock warning before start")
+    assert len(mock_packet_queue_sender[send_port]) == 3
+    listener.start()
+    time.sleep(0.1)
+    # processed?
+    assert len(mock_packet_queue_sender[send_port]) == 0
+    assert stream.handle.called
+    # check arg to mock call
+    assert isinstance(stream.mock_calls[0][1][0], logging.LogRecord)
+    lr.info("mock info")
+    time.sleep(0.1)
+    assert len(mock_packet_queue_sender[send_port]) == 0
+    assert len(stream.mock_calls) == 2

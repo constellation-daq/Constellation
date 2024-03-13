@@ -19,10 +19,13 @@ class MonitoringManager:
         self._socket = context.socket(zmq.PUB)
         self._socket.bind(f"tcp://*:{port}")
         self._transmitter = CMDPTransmitter(name, self._socket)
+        # ROOT logger needs to have a level set (initializes with level=NOSET)
+        logger = logging.getLogger()
+        logger.setLevel("DEBUG")
         # NOTE: Logger object is a singleton and setup is only necessary once
         # for the given name.
         self._logger = logging.getLogger(name)
-        self._zmqhandler = ZeroMQSocketHandler(self._transmitter)
+        self._zmqhandler = ZeroMQSocketLogHandler(self._transmitter)
         self._logger.addHandler(self._zmqhandler)
 
     def send_stat(self, metric: Metric):
@@ -35,7 +38,7 @@ class MonitoringManager:
         self._socket.close()
 
 
-class ZeroMQSocketHandler(QueueHandler):
+class ZeroMQSocketLogHandler(QueueHandler):
     """This handler sends records to a ZMQ socket."""
 
     def __init__(self, transmitter: CMDPTransmitter):
@@ -49,15 +52,15 @@ class ZeroMQSocketHandler(QueueHandler):
             self.queue.close()
 
 
-class ZeroMQSocketListener(QueueListener):
+class ZeroMQSocketLogListener(QueueListener):
     def __init__(self, uri, /, *handlers, **kwargs):
-        self.ctx = kwargs.get("ctx") or zmq.Context()
-        socket = zmq.Socket(self.ctx, zmq.SUB)
+        context = kwargs.get("ctx") or zmq.Context()
+        self.socket = context.socket(zmq.SUB)
         # TODO implement a filter parameter to customize what to subscribe to
-        socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")  # subscribe to LOGs
-        socket.connect(uri)
+        self.socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")  # subscribe to LOGs
+        self.socket.connect(uri)
         kwargs.pop("ctx", None)
-        super().__init__(CMDPTransmitter(__name__, socket), *handlers, **kwargs)
+        super().__init__(CMDPTransmitter(__name__, self.socket), *handlers, **kwargs)
 
     def dequeue(self, block):
         return self.queue.recv()
@@ -82,7 +85,7 @@ def main(args=None):
     logger.addHandler(stream_handler)
 
     ctx = zmq.Context()
-    zmqlistener = ZeroMQSocketListener(
+    zmqlistener = ZeroMQSocketLogListener(
         f"tcp://{args.host}:{args.port}", stream_handler, ctx=ctx
     )
     zmqlistener.start()
