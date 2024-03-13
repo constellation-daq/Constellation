@@ -7,7 +7,7 @@ import time
 import logging
 import zmq
 from logging.handlers import QueueHandler, QueueListener
-from .cmtp import CMDPTransmitter, Metric
+from .cmdp import CMDPTransmitter, Metric
 
 
 class MonitoringManager:
@@ -18,12 +18,12 @@ class MonitoringManager:
         # Create socket and bind wildcard
         self._socket = context.socket(zmq.PUB)
         self._socket.bind(f"tcp://*:{port}")
+        self._transmitter = CMDPTransmitter(name, self._socket)
         # NOTE: Logger object is a singleton and setup is only necessary once
         # for the given name.
         self._logger = logging.getLogger(name)
-        self._zmqhandler = ZeroMQSocketHandler(self._socket)
+        self._zmqhandler = ZeroMQSocketHandler(self._transmitter)
         self._logger.addHandler(self._zmqhandler)
-        self._transmitter = CMDPTransmitter(self._socket)
 
     def send_stat(self, metric: Metric):
         """Send a metric via ZMQ."""
@@ -57,7 +57,7 @@ class ZeroMQSocketListener(QueueListener):
         socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")  # subscribe to LOGs
         socket.connect(uri)
         kwargs.pop("ctx", None)
-        super().__init__(CMDPTransmitter(socket), *handlers, **kwargs)
+        super().__init__(CMDPTransmitter(__name__, socket), *handlers, **kwargs)
 
     def dequeue(self, block):
         return self.queue.recv()
