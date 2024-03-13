@@ -7,6 +7,7 @@ constellation_files = files(
   'broadcastmanager.py',
   'chirp.py',
   'commandmanager.py',
+  'cmdp.py',
   'cscp.py',
   'controller.py',
   'datareceiver.py',
@@ -15,7 +16,7 @@ constellation_files = files(
   'fsm.py',
   'heartbeatchecker.py',
   'heartbeater.py',
-  'log_and_stats.py',
+  'monitoring.py',
   'protocol.py',
   'satellite.py',
 )
