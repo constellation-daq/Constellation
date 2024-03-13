@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Definitions for the Constellation Satellite Implementation Guidelines (CSIG)
+ * @brief Protocol definitions for the satellite
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".

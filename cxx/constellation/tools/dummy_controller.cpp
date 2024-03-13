@@ -15,7 +15,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/message/CSIG_definitions.hpp"
+#include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::message;

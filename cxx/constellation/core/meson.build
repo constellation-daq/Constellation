@@ -57,10 +57,10 @@ install_headers(
   'message/CHIRPMessage.hpp',
   'message/CMDP1Header.hpp',
   'message/CSCP1Message.hpp',
-  'message/CSIG_definitions.hpp',
   'message/Dictionary.hpp',
   'message/BaseHeader.hpp',
   'message/Protocol.hpp',
+  'message/satellite_definitions.hpp',
   subdir: 'constellation/core/message',
 )
 

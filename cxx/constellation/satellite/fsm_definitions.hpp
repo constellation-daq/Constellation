@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "constellation/core/message/CSIG_definitions.hpp"
+#include "constellation/core/message/satellite_definitions.hpp"
 
 namespace constellation::satellite {
 
