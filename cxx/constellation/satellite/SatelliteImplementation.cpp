@@ -33,6 +33,7 @@
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/ports.hpp"
 #include "constellation/core/utils/std23.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation;
@@ -155,10 +156,7 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             }
 
             // Transform command to lower-case
-            std::string command_string {};
-            for(auto character : message.getVerb().second) {
-                command_string += static_cast<char>(std::tolower(static_cast<unsigned char>(character)));
-            }
+            const std::string command_string = transform(message.getVerb().second, ::tolower);
 
             // Try to decode as transition
             auto transition_command = magic_enum::enum_cast<TransitionCommand>(command_string);
