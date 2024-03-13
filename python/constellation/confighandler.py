@@ -8,6 +8,10 @@ from collections.abc import MutableMapping
 import tomllib
 
 
+class ConfigError(Exception):
+    pass
+
+
 class ConfigReceiver:
     def __init__(self):
         self.config = {}
