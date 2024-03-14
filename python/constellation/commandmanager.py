@@ -125,3 +125,6 @@ class CommandReceiver(BaseSatelliteFrame):
             # finally, assemble a proper response!
             self.log.debug("Command succeeded with '%s': %s", res, req)
             self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
+        self.log.info("CommandReceiver thread shutting down.")
+        # shutdown
+        self._cmd_tm.socket.close()

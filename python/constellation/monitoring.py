@@ -65,6 +65,12 @@ class ZeroMQSocketLogListener(QueueListener):
     def dequeue(self, block):
         return self.queue.recv()
 
+    def stop(self):
+        """Close socket and stop thread."""
+        # stop thread
+        super().stop()
+        self.socket.close()
+
 
 def main(args=None):
     """Start a simple log listener service."""
