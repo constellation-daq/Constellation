@@ -33,7 +33,7 @@ using namespace std::literals::chrono_literals;
 
 class DummySatellite : public Satellite {
 public:
-    DummySatellite() {
+    DummySatellite() : Satellite("Dummy", "sat1") {
         support_reconfigure();
         set_status("just started!");
     }
@@ -69,7 +69,7 @@ private:
 TEST_CASE("Get commands", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -79,7 +79,7 @@ TEST_CASE("Get commands", "[satellite]") {
     sender.send_command("get_name");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals("sat1"));
+    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 
     // get_commands
@@ -114,7 +114,7 @@ TEST_CASE("Get commands", "[satellite]") {
 TEST_CASE("Case insensitive", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -124,14 +124,14 @@ TEST_CASE("Case insensitive", "[satellite]") {
     sender.send_command("GeT_nAmE");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals("sat1"));
+    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 }
 
 TEST_CASE("Transitions", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -159,7 +159,7 @@ TEST_CASE("Transitions", "[satellite]") {
 TEST_CASE("Catch unknown command", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -176,7 +176,7 @@ TEST_CASE("Catch unknown command", "[satellite]") {
 TEST_CASE("Catch unexpected message type", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -193,7 +193,7 @@ TEST_CASE("Catch unexpected message type", "[satellite]") {
 TEST_CASE("Catch invalid protocol", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -219,7 +219,7 @@ TEST_CASE("Catch invalid protocol", "[satellite]") {
 TEST_CASE("Catch unexpected protocol", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
@@ -246,7 +246,7 @@ TEST_CASE("Catch unexpected protocol", "[satellite]") {
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation("sat1", satellite);
+    auto satellite_implementation = SatelliteImplementation(satellite);
     satellite_implementation.start();
 
     // Create sender
