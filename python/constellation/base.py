@@ -91,6 +91,7 @@ class BaseSatelliteFrame:
 
     def reentry(self):
         """Orderly destroy the satellite."""
-        print("Shutdown of Base Satellite")
+        self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
+        self.log.debug("Terminating ZMQ context.")
         self.context.term()

@@ -109,7 +109,10 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             except Empty:
                 # nothing to process
                 pass
-
+            except KeyboardInterrupt:
+                self.log.warning("Satellite caught KeyboardInterrupt, shutting down.")
+                # time to shut down
+                break
             time.sleep(0.01)
 
     def reentry(self):
@@ -128,7 +131,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         self.heartbeater.stop()
         # close the monitoring (log and stats) socket
         self.monitoring.close()
-        print("Shutdown of Satellite")
         super().reentry()
 
     # --------------------------- #
