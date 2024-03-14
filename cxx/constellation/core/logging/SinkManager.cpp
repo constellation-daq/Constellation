@@ -63,7 +63,13 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
         "CMDP", console_sink_, spdlog::thread_pool(), spdlog::async_overflow_policy::overrun_oldest);
     cmdp_console_logger_->set_level(to_spdlog_level(TRACE)); // TODO(stephan.lachnit): log level value?
 
-    // Register CMDP in CHIRP
+    // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
+    cmdp_global_level_ = TRACE; // NOLINT(cppcoreguidelines-prefer-member-initializer)
+}
+
+void SinkManager::registerService() const {
+    // Register service in CHIRP
+    // Note: cannot be done in constructor since CHIRP also does logging
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(chirp::MONITORING, cmdp_sink_->getPort());
@@ -73,9 +79,6 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     }
     cmdp_console_logger_->log(to_spdlog_level(INFO),
                               "Starting to log to CMDP on port " + std::to_string(cmdp_sink_->getPort()));
-
-    // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
-    cmdp_global_level_ = TRACE; // NOLINT(cppcoreguidelines-prefer-member-initializer)
 }
 
 std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topic, std::optional<Level> console_level) {

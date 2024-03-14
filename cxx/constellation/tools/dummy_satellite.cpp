@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
     chirp_manager.setAsDefaultInstance();
     chirp_manager.start();
 
+    // Register CMDP in CHIRP
+    log::SinkManager::getInstance().registerService();
+
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
     auto satellite_implementation = SatelliteImplementation(satellite_name, satellite);
