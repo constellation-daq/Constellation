@@ -125,7 +125,7 @@ class TrivialController:
     def run_from_cli(self):
         """Run commands from CLI."""
         print(
-            'Possible commands: "exit", "get_state", "transition <transition>", "target <id no.>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <id no.>"'
+            'Possible commands: "exit", "get_state", "transition <transition>", "target <id no.>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <id no.>"'  # noqa: E501
         )
         print(
             'Possible transitions: "initialize", "load", "unload", "launch", "land", "start", "stop", "recover", "reset"'

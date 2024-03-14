@@ -201,7 +201,8 @@ class H5DataReceiverWriter(DataReceiver):
         super().__init__(*args, **kwargs)
 
         self.filename = filename
-        self.nameformat = filename  # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
+        # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
+        self.nameformat = filename
 
     def _open_file(self):
         """Open the hdf5 file and return the file object."""
@@ -328,7 +329,8 @@ class H5DataReceiverWriter(DataReceiver):
         self.logger.debug(f"Processing data packet {item.meta['packet_num']}")
 
         # Create a virtual layout with the datasets in group
-        # TODO: this method will result in index-variable overflow, make it so only the latest X datasets are shown or split into multiple virtual datasets at a certain point
+        # TODO: this method will result in index-variable overflow, make it so only the latest X datasets are shown
+        #       or split into multiple virtual datasets at a certain point
         layout = h5py.VirtualLayout(
             shape=(50000,), dtype="i4"  # TODO: Replace 50000 w/ something appropriate
         )

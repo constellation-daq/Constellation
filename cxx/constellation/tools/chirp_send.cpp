@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Name:    " << chirp_msg.getHostID().to_string() << std::endl;
 
         auto asm_msg = chirp_msg.assemble();
-        sender.sendBroadcast(asm_msg.data(), asm_msg.size());
+        sender.sendBroadcast(asm_msg);
     }
 
     return 0;

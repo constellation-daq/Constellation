@@ -49,8 +49,8 @@ TEST_CASE("Send and receive broadcast containing binary content", "[chirp][broad
     // Start receiving new message
     auto msg_future = std::async(&BroadcastRecv::recvBroadcast, &receiver);
     // Send message (bytes)
-    auto msg_content = std::vector<std::uint8_t>({'T', 'E', 'S', 'T'});
-    sender.sendBroadcast(msg_content.data(), msg_content.size());
+    auto msg_content = std::vector<std::byte>({std::byte('T'), std::byte('E'), std::byte('S'), std::byte('T')});
+    sender.sendBroadcast(msg_content);
     // Receive message
     auto msg = msg_future.get();
 

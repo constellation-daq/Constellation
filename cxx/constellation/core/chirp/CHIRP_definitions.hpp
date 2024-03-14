@@ -52,7 +52,7 @@ namespace constellation::chirp {
         /** The CONTROL service identifier indicates a CSCP (Constellation Satellite Control Protocol) service */
         CONTROL = '\x01',
 
-        /** The HEARTBEAT service identifier indicates a CHBP (Constellation Heartbeat Broadcasting Protocol) service */
+        /** The HEARTBEAT service identifier indicates a CHP (Constellation Heartbeat Protocol) service */
         HEARTBEAT = '\x02',
 
         /** The MONITORING service identifier indicates a CMDP (Constellation Monitoring Distribution Protocol) service */

@@ -90,6 +90,19 @@ namespace constellation::chirp {
     class Manager {
     public:
         /**
+         * Return the default CHIRP Manager (requires to be set via `setAsDefaultInstance`)
+         *
+         * @return Pointer to default CHIRP Manager (might be a nullptr)
+         */
+        CNSTLN_API static Manager* getDefaultInstance();
+
+        /**
+         * Set this CHIRP manager as the default instance
+         */
+        CNSTLN_API void setAsDefaultInstance();
+
+    public:
+        /**
          * @param brd_address Broadcast address for outgoing broadcast messages
          * @param any_address Any address for incoming broadcast messages
          * @param group_name Group name of the group to join
@@ -278,6 +291,9 @@ namespace constellation::chirp {
         std::mutex discover_callbacks_mutex_;
 
         std::jthread main_loop_thread_;
+
+        // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+        inline static Manager* default_manager_instance_;
     };
 
 } // namespace constellation::chirp

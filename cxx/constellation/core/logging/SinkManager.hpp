@@ -82,6 +82,8 @@ namespace constellation::log {
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 
+        std::shared_ptr<spdlog::async_logger> cmdp_console_logger_;
+
         std::vector<std::shared_ptr<spdlog::async_logger>> loggers_;
 
         Level cmdp_global_level_;

@@ -9,6 +9,7 @@ repos:
       - id: check-merge-conflict
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
+      - id: check-toml
       - id: check-yaml
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
@@ -33,9 +34,10 @@ repos:
     rev: 7.0.0
     hooks:
       - id: flake8
+        additional_dependencies: [Flake8-pyproject]
 
   - repo: https://github.com/psf/black
-    rev: 24.1.1
+    rev: 24.2.0
     hooks:
       - id: black
         language_version: python3

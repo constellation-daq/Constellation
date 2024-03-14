@@ -15,8 +15,10 @@
 #include <spdlog/async.h>
 #include <spdlog/spdlog.h>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/ProxySink.hpp"
 
+using namespace constellation;
 using namespace constellation::log;
 using namespace std::literals::string_view_literals;
 
@@ -55,6 +57,22 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     // CMDP sink, log level always TRACE since only accessed via ProxySink
     cmdp_sink_ = std::make_shared<CMDPSink>();
     cmdp_sink_->set_level(to_spdlog_level(TRACE));
+
+    // Create console logger for CMDP
+    cmdp_console_logger_ = std::make_shared<spdlog::async_logger>(
+        "CMDP", console_sink_, spdlog::thread_pool(), spdlog::async_overflow_policy::overrun_oldest);
+    cmdp_console_logger_->set_level(to_spdlog_level(TRACE)); // TODO(stephan.lachnit): log level value?
+
+    // Register CMDP in CHIRP
+    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    if(chirp_manager != nullptr) {
+        chirp_manager->registerService(chirp::MONITORING, cmdp_sink_->getPort());
+    } else {
+        cmdp_console_logger_->log(to_spdlog_level(WARNING),
+                                  "Failed to register CMDP with CHIRP, satellite might not be discovered");
+    }
+    cmdp_console_logger_->log(to_spdlog_level(INFO),
+                              "Starting to log to CMDP on port " + std::to_string(cmdp_sink_->getPort()));
 
     // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
     cmdp_global_level_ = TRACE; // NOLINT(cppcoreguidelines-prefer-member-initializer)

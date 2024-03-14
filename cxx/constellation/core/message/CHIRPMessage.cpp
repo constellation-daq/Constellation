@@ -9,7 +9,6 @@
 
 #include "CHIRPMessage.hpp"
 
-#include <algorithm>
 #include <utility>
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
@@ -65,29 +64,31 @@ AssembledMessage CHIRPMessage::assemble() const {
     AssembledMessage ret {};
 
     // Protocol identifier
-    std::copy(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), ret.begin());
+    for(std::size_t n = 0; n < CHIRP_IDENTIFIER.length(); ++n) {
+        ret.at(n) = std::byte(CHIRP_IDENTIFIER.at(n));
+    }
     // Protocol version
-    ret[5] = CHIRP_VERSION;
+    ret.at(5) = std::byte(CHIRP_VERSION);
     // Message Type
-    ret[6] = std::to_underlying(type_);
+    ret.at(6) = std::byte(std::to_underlying(type_));
     // Group Hash
     for(std::uint8_t n = 0; n < 16; ++n) {
-        ret.at(7 + n) = group_id_.at(n);
+        ret.at(7 + n) = std::byte(group_id_.at(n));
     }
     // Host Hash
     for(std::uint8_t n = 0; n < 16; ++n) {
-        ret.at(23 + n) = host_id_.at(n);
+        ret.at(23 + n) = std::byte(host_id_.at(n));
     }
     // Service Identifier
-    ret[39] = std::to_underlying(service_id_);
+    ret.at(39) = std::byte(std::to_underlying(service_id_));
     // Port
-    ret[40] = static_cast<std::uint8_t>(port_ & 0x00FFU);
-    ret[41] = static_cast<std::uint8_t>(static_cast<unsigned int>(port_ >> 8U) & 0x00FFU);
+    ret.at(40) = std::byte(static_cast<std::uint8_t>(port_ & 0x00FFU));
+    ret.at(41) = std::byte(static_cast<std::uint8_t>(static_cast<unsigned int>(port_ >> 8U) & 0x00FFU));
 
     return ret;
 }
 
-CHIRPMessage CHIRPMessage::disassemble(std::span<const std::uint8_t> assembled_message) {
+CHIRPMessage CHIRPMessage::disassemble(std::span<const std::byte> assembled_message) {
     // Create new message
     auto chirp_message = CHIRPMessage();
 
@@ -96,33 +97,38 @@ CHIRPMessage CHIRPMessage::disassemble(std::span<const std::uint8_t> assembled_m
         throw MessageDecodingError("message length is not " + std::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
     }
     // Check protocol identifier
-    if(!std::equal(CHIRP_IDENTIFIER.cbegin(), CHIRP_IDENTIFIER.cend(), assembled_message.begin())) {
-        throw MessageDecodingError("not a CHIRP broadcast");
+    for(std::size_t n = 0; n < CHIRP_IDENTIFIER.length(); ++n) {
+        if(std::to_integer<char>(assembled_message[n]) != CHIRP_IDENTIFIER.at(n)) {
+            throw MessageDecodingError("not a CHIRP broadcast");
+        }
     }
     // Check the protocol version
-    if(assembled_message[5] != CHIRP_VERSION) {
+    if(std::to_integer<std::uint8_t>(assembled_message[5]) != CHIRP_VERSION) {
         throw MessageDecodingError("not a CHIRP v1 broadcast");
     }
     // Message Type
-    if(assembled_message[6] < std::to_underlying(REQUEST) || assembled_message[6] > std::to_underlying(DEPART)) {
+    if(std::to_integer<std::uint8_t>(assembled_message[6]) < std::to_underlying(REQUEST) ||
+       std::to_integer<std::uint8_t>(assembled_message[6]) > std::to_underlying(DEPART)) {
         throw MessageDecodingError("message type invalid");
     }
     chirp_message.type_ = static_cast<MessageType>(assembled_message[6]);
     // Group ID
     for(std::uint8_t n = 0; n < 16; ++n) {
-        chirp_message.group_id_.at(n) = assembled_message[7 + n];
+        chirp_message.group_id_.at(n) = std::to_integer<std::uint8_t>(assembled_message[7 + n]);
     }
     // Host ID
     for(std::uint8_t n = 0; n < 16; ++n) {
-        chirp_message.host_id_.at(n) = assembled_message[23 + n];
+        chirp_message.host_id_.at(n) = std::to_integer<std::uint8_t>(assembled_message[23 + n]);
     }
     // Service Identifier
-    if(assembled_message[39] < std::to_underlying(CONTROL) || assembled_message[39] > std::to_underlying(DATA)) {
+    if(std::to_integer<std::uint8_t>(assembled_message[39]) < std::to_underlying(CONTROL) ||
+       std::to_integer<std::uint8_t>(assembled_message[39]) > std::to_underlying(DATA)) {
         throw MessageDecodingError("service identifier invalid");
     }
     chirp_message.service_id_ = static_cast<ServiceIdentifier>(assembled_message[39]);
     // Port
-    chirp_message.port_ = assembled_message[40] + static_cast<std::uint16_t>(assembled_message[41] << 8U);
+    chirp_message.port_ = std::to_integer<std::uint8_t>(assembled_message[40]) +
+                          static_cast<std::uint16_t>(std::to_integer<unsigned int>(assembled_message[41]) << 8U);
 
     return chirp_message;
 }
