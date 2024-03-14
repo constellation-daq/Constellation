@@ -3,4 +3,5 @@
 
 satellite_libdir = get_option('libdir') / 'ConstellationSatellites'
 
+subdir('Caribou')
 subdir('Sputnik')
