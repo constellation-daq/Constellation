@@ -42,6 +42,8 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
         # set up python logging and CMDP
         self.monitoring = MonitoringManager(self.name, self.context, log_port)
+        # give monitoring a chance to start up and catch early messages
+        time.sleep(0.2)
 
         # set up background communication threads
         # NOTE should be a late part of the initialization, as it starts communication

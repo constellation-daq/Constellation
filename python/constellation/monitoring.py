@@ -20,6 +20,8 @@ class MonitoringManager:
         self._socket.bind(f"tcp://*:{port}")
         self._transmitter = CMDPTransmitter(name, self._socket)
         # ROOT logger needs to have a level set (initializes with level=NOSET)
+        # The root level should be the lowest level that we want to see on any
+        # handler, even streamed via ZMQ.
         logger = logging.getLogger()
         logger.setLevel("DEBUG")
         # NOTE: Logger object is a singleton and setup is only necessary once
