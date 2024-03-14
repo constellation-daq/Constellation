@@ -36,18 +36,18 @@ State values with the lower four bits set to zero indicate steady states. For st
 
 The following states are defined:
 
-* `0x00` - NEW
-* `0x10` - INIT
-* `0x11` - initializing
-* `0x12` - landing
-* `0x20` - ORBIT
-* `0x21` - launching
-* `0x22` - reconfiguring
-* `0x23` - stopping
-* `0x30` - RUN
-* `0x31` - starting
+* `0x10` - NEW
+* `0x12` - initializing
+* `0x20` - INIT
+* `0x23` - launching
+* `0x30` - ORBIT
+* `0x32` - landing
+* `0x33` - reconfiguring
+* `0x34` - starting
+* `0x40` - RUN
+* `0x43` - stopping
+* `0x0E` - interrupting
 * `0xE0` - SAFE
-* `0xE1` - interrupting
 * `0xF0` - ERROR
 
 ## FSM State & Transition Diagram
