@@ -6,6 +6,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
@@ -87,6 +88,15 @@ TEST_CASE("Ephemeral CMDP port", "[logging]") {
     // Port number of ephemeral port should always be >=1024 on all OSes
     auto port_number = SinkManager::getInstance().getCMDPPort();
     REQUIRE(port_number >= 1024);
+}
+
+TEST_CASE("Register Service via CHIRP", "[logging]") {
+    using namespace constellation::chirp;
+    auto manager = Manager("255.255.255.255", "0.0.0.0", "cnstln1", "sat1");
+    manager.setAsDefaultInstance();
+    SinkManager::getInstance().registerService();
+    REQUIRE(manager.getRegisteredServices().size() == 1);
+    REQUIRE(manager.getRegisteredServices().contains({MONITORING, SinkManager::getInstance().getCMDPPort()}));
 }
 
 // TODO(stephan.lachnit): test log message decoding
