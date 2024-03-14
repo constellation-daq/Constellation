@@ -97,7 +97,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         """
         while not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
-
             try:
                 # blocking call but with timeout to prevent deadlocks
                 task = self.task_queue.get(block=True, timeout=0.5)
@@ -371,6 +370,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 def main(args=None):
     """Start the base Satellite server."""
     import argparse
+    import coloredlogs
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
@@ -382,18 +382,8 @@ def main(args=None):
     args = parser.parse_args(args)
 
     # set up logging
-    logger = logging.getLogger()  # get root logger
-    formatter = logging.Formatter(
-        "%(asctime)s | %(name)s |  %(levelname)s: %(message)s"
-    )
-    # global level should be the lowest level that we want to see on any
-    # handler, even streamed via ZMQ
-    logger.setLevel(0)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(args.log_level.upper())
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
     logger.info("Starting up satellite!")
     # start server with remaining args
