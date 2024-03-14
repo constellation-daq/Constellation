@@ -17,9 +17,11 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/ProxySink.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::log;
+using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
 
 SinkManager& SinkManager::getInstance() {
@@ -116,13 +118,11 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
     Level min_cmdp_proxy_level = cmdp_global_level_;
 
     // Get logger topic in upper-case
-    std::string logger_topic {};
-    std::transform(logger->name().cbegin(), logger->name().cend(), logger_topic.begin(), ::toupper);
+    auto logger_topic = transform(logger->name(), ::toupper);
 
     // Then iteratore over topic subscriptions to find minimum level for this logger
     for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
-        std::string sub_topic_uc {}; // TODO(stephan.lachnit): upper-casing should be enforced in the map
-        std::transform(sub_topic.cbegin(), sub_topic.cend(), sub_topic_uc.begin(), ::toupper);
+        auto sub_topic_uc = transform(sub_topic, ::toupper); // TODO(stephan.lachnit): enforce upper-casing in the map
         if(logger_topic.starts_with(sub_topic_uc)) {
             // Logger is subscribed => set new minimum level
             min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
