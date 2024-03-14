@@ -14,9 +14,13 @@ using namespace constellation::log;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-TEST_CASE("Create sink manager", "[logging]") {
-    // Used to create sink manager in separate test for better timing analysis
-    SinkManager::getInstance();
+TEST_CASE("Delayed first message", "[logging]") {
+    // First message is delayed by 500ms, so call this here for better timing analysis
+    SinkManager::getInstance().setCMDPLevelsCustom(TRACE);
+    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
+    auto logger = constellation::log::Logger("DelayedFirstMessage");
+    LOG(logger, TRACE) << "";
+    SinkManager::getInstance().setCMDPLevelsCustom(OFF);
 }
 
 TEST_CASE("Basic logging", "[logging]") {
