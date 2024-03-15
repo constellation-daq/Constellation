@@ -20,6 +20,8 @@ class MonitoringManager:
         self._socket.bind(f"tcp://*:{port}")
         self._transmitter = CMDPTransmitter(name, self._socket)
         # ROOT logger needs to have a level set (initializes with level=NOSET)
+        # The root level should be the lowest level that we want to see on any
+        # handler, even streamed via ZMQ.
         logger = logging.getLogger()
         logger.setLevel("DEBUG")
         # NOTE: Logger object is a singleton and setup is only necessary once
@@ -65,10 +67,17 @@ class ZeroMQSocketLogListener(QueueListener):
     def dequeue(self, block):
         return self.queue.recv()
 
+    def stop(self):
+        """Close socket and stop thread."""
+        # stop thread
+        super().stop()
+        self.socket.close()
+
 
 def main(args=None):
     """Start a simple log listener service."""
     import argparse
+    import coloredlogs
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
@@ -76,17 +85,12 @@ def main(args=None):
     parser.add_argument("port", type=int)
     args = parser.parse_args(args)
     logger = logging.getLogger(__name__)
-    formatter = logging.Formatter(
-        "%(asctime)s | %(name)s |  %(levelname)s: %(message)s"
-    )
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(args.log_level.upper())
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
+    # set up logging
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
     ctx = zmq.Context()
     zmqlistener = ZeroMQSocketLogListener(
-        f"tcp://{args.host}:{args.port}", stream_handler, ctx=ctx
+        f"tcp://{args.host}:{args.port}", logger.handlers[0], ctx=ctx
     )
     zmqlistener.start()
     while True:

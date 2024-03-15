@@ -40,7 +40,7 @@ class MessageHeader:
 
     def recv(self, socket: zmq.Socket, flags: int = 0):
         """Receive header from socket and return all decoded fields."""
-        return self.decode(self.queue.recv())
+        return self.decode(socket.recv())
 
     def decode(self, header):
         """Decode header string and return host, timestamp and meta map."""

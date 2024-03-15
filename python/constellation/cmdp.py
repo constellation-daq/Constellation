@@ -139,7 +139,7 @@ class CMDPTransmitter:
             return self._socket.closed
         return True
 
-    def close(self):
+    def close(self) -> None:
         """Close the socket."""
         self._socket.close()
 

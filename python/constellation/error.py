@@ -18,15 +18,18 @@ def handle_error(func):
         try:
             return func(self, *args, **kwargs)
         except TransitionNotAllowed as exc:
-            err_msg = f"Unable to execute {func.__name__} to {exc.event}: "
+            err_msg = (
+                f"Unable to execute {func.__name__} to transition to {exc.event}: "
+            )
             err_msg += f"Not possible in {exc.state.name} state."
             raise RuntimeError(err_msg) from exc
         except Exception as exc:
             err_msg = f"Unable to execute {func.__name__}: {exc}"
             # set the FSM into failure
             self.fsm.failure(err_msg)
+            self._wrap_failure()
             self.log.error(err_msg + traceback.format_exc())
-            raise RuntimeError(err_msg) from exc
+            return None
 
     return wrapper
 

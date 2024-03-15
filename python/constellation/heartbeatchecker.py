@@ -118,6 +118,8 @@ class HeartbeatChecker:
         self._stop_threads.set()
         for thread in self._threads:
             thread.join()
+        for s in self._sockets:
+            s.close()
         self._reset()
 
 
