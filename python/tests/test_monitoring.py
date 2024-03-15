@@ -67,6 +67,7 @@ def mock_listener():
     yield listener, mock_handler
 
 
+@pytest.mark.forked
 def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
     cmdp, m = mock_transmitter_a
     log = logging.getLogger()
@@ -80,6 +81,7 @@ def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
     assert rec2.getMessage() == "mock log message"
 
 
+@pytest.mark.forked
 def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
     cmdp, m = mock_transmitter_a
     m1 = Metric("mock_val", "a mocked value", "Mmocs", MetricsType.LAST_VALUE, 42)
