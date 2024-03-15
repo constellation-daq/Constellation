@@ -27,7 +27,7 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.11"
 dependencies = [
-    "zmq",
+    "pyzmq",
     "msgpack",
     "python-statemachine",
     "h5py",
