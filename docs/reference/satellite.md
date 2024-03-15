@@ -4,7 +4,7 @@ The following guidelines should be followed when implementing a satellite base c
 
 ```{note}
 These guidelines are only relevant for developing the Constellation framework itself, **not for the implementation of user satellites**.
-These pages contain detailed technical information concerning the communication between COnstellation components and the required
+These pages contain detailed technical information concerning the communication between Constellation components and the required
 minimal set of functionality for them to interoperate with each other.
 ```
 
