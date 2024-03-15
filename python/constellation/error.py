@@ -18,7 +18,9 @@ def handle_error(func):
         try:
             return func(self, *args, **kwargs)
         except TransitionNotAllowed as exc:
-            err_msg = f"Unable to execute {func.__name__} to {exc.event}: "
+            err_msg = (
+                f"Unable to execute {func.__name__} to transition to {exc.event}: "
+            )
             err_msg += f"Not possible in {exc.state.name} state."
             raise RuntimeError(err_msg) from exc
         except Exception as exc:
