@@ -27,6 +27,7 @@ class CSCPMessageVerb(Enum):
     INCOMPLETE = 0x3
     INVALID = 0x4
     UNKNOWN = 0x5
+    ERROR = 0x6
 
 
 class CSCPMessage:
@@ -129,14 +130,16 @@ class CommandTransmitter:
         flags: int = 0,
     ):
         """Dispatch a message via ZMQ socket."""
+        payload = msgpack.packb(payload)
+        msg = msgpack.packb([msgtype.value.to_bytes(1), msg])
         flags = zmq.SNDMORE | flags
         self.msgheader.send(self.socket, meta=meta, flags=flags)
         if not payload:
             # invert+and: disable SNDMORE bit
             flags = flags & ~zmq.SNDMORE
         self.socket.send(
-            msgpack.packb([msgtype.value.to_bytes(1), msg]),
+            msg,
             flags=flags,
         )
         if payload:
-            self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
+            self.socket.send(payload, flags)
