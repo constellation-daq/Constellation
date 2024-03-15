@@ -75,7 +75,7 @@ class CommandReceiver(BaseSatelliteFrame):
     def _recv_cmds(self):
         """Request receive loop."""
         while not self._com_thread_evt.is_set():
-            req = self._cmd_tm.get_message()
+            req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
             if not req:
                 time.sleep(0.01)
                 continue
