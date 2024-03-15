@@ -21,10 +21,13 @@
 #include <magic_enum.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/logging/Level.hpp"
+#include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/utils/ports.hpp"
 
 using namespace constellation::chirp;
+using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::string_literals;
@@ -90,6 +93,9 @@ int main(int argc, char* argv[]) {
                       << std::endl;
         }
     }
+
+    // Turn off console logging
+    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
 
     Manager manager {brd_address, any_address, group, name};
 

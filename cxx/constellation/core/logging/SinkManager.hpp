@@ -55,6 +55,11 @@ namespace constellation::log {
         utils::Port getCMDPPort() const { return cmdp_sink_->getPort(); }
 
         /**
+         * Register monitoring service in CHIRP
+         */
+        CNSTLN_API void registerService() const;
+
+        /**
          * Create a new asynchronous spglog logger
          *
          * @param topic Topic of the new logger

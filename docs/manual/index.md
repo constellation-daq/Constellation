@@ -28,10 +28,3 @@ protocols
 ```{toctree}
 :caption: How-To Guides
 ```
-
-```{toctree}
-:caption: Appendix
-:maxdepth: 2
-
-../protocols/index
-```

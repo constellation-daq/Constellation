@@ -22,6 +22,7 @@
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config.hpp"
+#include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/utils/ports.hpp"
 
@@ -271,6 +272,8 @@ namespace constellation::chirp {
 
         message::MD5Hash group_id_;
         message::MD5Hash host_id_;
+
+        log::Logger logger_;
 
         /** Set of registered services */
         std::set<RegisteredService> registered_services_;
