@@ -132,7 +132,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def initialize(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate initialize state transition via a CSCP request.
+
+        Takes dictionary with configuration values as argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -143,7 +145,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def launch(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate launch state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -154,7 +158,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def land(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate landing state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -165,7 +171,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def start(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate start state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -176,7 +184,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def stop(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate stop state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -191,7 +201,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def reconfigure(self, request: CSCPMessage):
-        """Queue a reconfigure state transition via a CSCP request.
+        """Initiate reconfigure state transition via a CSCP request.
+
+        Takes dictionary with configuration values as argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -206,7 +218,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def interrupt(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate interrupt state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -217,7 +231,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def recover(self, request: CSCPMessage):
-        """Queue a state transition via a CSCP request.
+        """Initiate recover state transition via a CSCP request.
+
+        No payload argument.
 
         If the transition is not allowed, TransitionNotAllowed will be thrown by
         the FSM.
@@ -228,7 +244,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def failure(self, request: CSCPMessage):
-        """Queue an error state transition via a CSCP request.
+        """Enter error state transition via a CSCP request.
+
+        No payload argument.
 
         This is intended for debugging purposes only and should not be called in
         normal operation.
@@ -253,8 +271,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         has finished.
 
         """
-        # call FSM transition, will throw if not allowed
+        # call FSM transition, will throw exception if not allowed
+        self.log.debug("State transition %s requested", target)
         getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
+        self.log.info("State transition %s initiated.", target)
         transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
         if thread:
@@ -278,6 +298,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # try to advance the FSM for finishing transitional states
         try:
             self.fsm.complete(res)
+            self.log.info("State transition to steady state completed.")
         except TransitionNotAllowed:
             # no need to do more than set the status, we are in a steady
             # operational state
@@ -312,9 +333,27 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # close things down; take this case into account as well
         try:
             self.fsm.complete(res)
+            self.log.info("State transition to steady state completed.")
         except TransitionNotAllowed:
             # no need to do more than set the status, we are in a steady
             # operational state
             self.fsm.status = res
         # cleanup
         self._state_thread_evt = None
+
+    @cscp_requestable
+    def get_state(self, _request: CSCPMessage = None) -> (str, None, None):
+        """Return the current state of the Satellite.
+
+        No payload argument.
+        """
+        return self.fsm.current_state.id, None, None
+
+    @cscp_requestable
+    def get_status(self, _request: CSCPMessage = None) -> (str, None, None):
+        """Get a string describing the current status of the Satellite.
+
+        No payload argument.
+
+        """
+        return self.fsm.status, None, None
