@@ -27,6 +27,7 @@ class CSCPMessageVerb(Enum):
     INCOMPLETE = 0x3
     INVALID = 0x4
     UNKNOWN = 0x5
+    ERROR = 0x6
 
 
 class CSCPMessage:
@@ -47,7 +48,7 @@ class CSCPMessage:
 
     def __str__(self):
         """Pretty-print request."""
-        s = "Command '{}' from {} received {} at {} {} payload and meta {}."
+        s = "Message '{}' from {} received {} at {} {} payload and meta {}."
         return s.format(
             self.msg,
             self.from_host,
@@ -80,6 +81,21 @@ class CommandTransmitter:
             flags=zmq.NOBLOCK,
         )
 
+    def request_get_response(self, command, payload: any = None, meta: dict = None):
+        """Send a command request to a Satellite and return response.
+
+        meta is an optional dictionary that is sent as a map of string/value
+        pairs with the header.
+
+        """
+        self._dispatch(
+            command,
+            CSCPMessageVerb.REQUEST,
+            payload=payload,
+            meta=meta,
+        )
+        return self.get_message()
+
     def send_reply(
         self, response, msgtype: CSCPMessageVerb, payload: any = None, meta: dict = None
     ):
@@ -91,16 +107,16 @@ class CommandTransmitter:
         """
         self._dispatch(response, msgtype, payload, meta=meta, flags=zmq.NOBLOCK)
 
-    def get_message(self) -> CSCPMessage:
+    def get_message(self, flags: int = 0) -> CSCPMessage:
         """Retrieve and return a CSCPMessage.
 
-        Returns None if no request is waiting.
+        Returns None if no request is waiting and flags==zmq.NOBLOCK.
 
         Raises RuntimeError if message verb is malformed.
 
         """
         try:
-            cmdmsg = self.socket.recv_multipart(flags=zmq.NOBLOCK)
+            cmdmsg = self.socket.recv_multipart(flags)
         except zmq.ZMQError:
             return None
         msg = CSCPMessage()
@@ -129,14 +145,16 @@ class CommandTransmitter:
         flags: int = 0,
     ):
         """Dispatch a message via ZMQ socket."""
+        payload = msgpack.packb(payload)
+        msg = msgpack.packb([msgtype.value.to_bytes(1), msg])
         flags = zmq.SNDMORE | flags
         self.msgheader.send(self.socket, meta=meta, flags=flags)
         if not payload:
             # invert+and: disable SNDMORE bit
             flags = flags & ~zmq.SNDMORE
         self.socket.send(
-            msgpack.packb([msgtype.value.to_bytes(1), msg]),
+            msg,
             flags=flags,
         )
         if payload:
-            self.socket.send(msgpack.packb(payload), flags=zmq.NOBLOCK)
+            self.socket.send(payload, flags)

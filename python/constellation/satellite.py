@@ -351,16 +351,15 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     # -------------------------- #
 
     @cscp_requestable
-    def get_state(self, _request: CSCPMessage = None) -> str:
-        return self.fsm.current_state.id, None, None
+    def get_version(self, _request: CSCPMessage = None) -> (str, None, None):
+        """Get Constellation version.
 
-    @cscp_requestable
-    def get_status(self, _request: CSCPMessage = None) -> str:
-        return self.fsm.status, None, None
+        No payload argument.
 
-    @cscp_requestable
-    def version(self, _request: CSCPMessage = None):
-        """Get Constellation version."""
+        Additional version information may be included in the meta map (final
+        return value).
+
+        """
         return __version__, None, None
 
 

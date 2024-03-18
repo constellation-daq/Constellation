@@ -12,7 +12,7 @@ import time
 import zmq
 from statemachine.exceptions import TransitionNotAllowed
 
-from .cscp import CommandTransmitter, CSCPMessageVerb
+from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
 
 
@@ -20,7 +20,11 @@ COMMANDS = dict()
 
 
 def cscp_requestable(func):
-    """Register a function as a supported command for CSCP."""
+    """Register a function as a supported command for CSCP.
+
+    See CommandReceiver for a description of the expected signature.
+
+    """
     COMMANDS[func.__name__] = func
     return func
 
@@ -32,6 +36,11 @@ class CommandReceiver(BaseSatelliteFrame):
     have the following signature:
 
     def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
+
+    The expected return values are:
+    - reply message (string)
+    - payload (any)
+    - map (dictionary) (e.g. for meta information)
 
     Inheriting classes need to decorate such command methods with
     '@cscp_requestable' to make them callable through CSCP requests.
@@ -66,7 +75,7 @@ class CommandReceiver(BaseSatelliteFrame):
     def _recv_cmds(self):
         """Request receive loop."""
         while not self._com_thread_evt.is_set():
-            req = self._cmd_tm.get_message()
+            req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
             if not req:
                 time.sleep(0.01)
                 continue
@@ -124,7 +133,45 @@ class CommandReceiver(BaseSatelliteFrame):
                 continue
             # finally, assemble a proper response!
             self.log.debug("Command succeeded with '%s': %s", res, req)
-            self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
+            try:
+                self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
+            except TypeError as e:
+                self.log.exception("Sending response '%s' failed: %s", res, e)
+                self._cmd_tm.send_reply(str(e), CSCPMessageVerb.ERROR, None, None)
         self.log.info("CommandReceiver thread shutting down.")
         # shutdown
         self._cmd_tm.socket.close()
+
+    @cscp_requestable
+    def get_commands(self, _request: CSCPMessage = None):
+        """Return all commands supported by the Satellite.
+
+        No payload argument.
+
+        This will include all methods with the @cscp_requestable decorator. The
+        doc string of the function will be used to derive the summary and
+        payload argument description for each command by using the first and the
+        second line of the doc string, respectively (not counting empty lines).
+
+        """
+        res = []
+        for cmd, fcn in COMMANDS.items():
+            summary = "missing docstring"
+            payload_desc = "no payload/missing docstring"
+            try:
+                doc = [line for line in fcn.__doc__.splitlines() if line]
+                summary = doc[0].strip()
+                payload_desc = doc[1].strip()
+            except (IndexError, AttributeError):
+                pass
+            res.append([cmd, summary, payload_desc])
+        return f"{len(res)} commands known", res, None
+
+    @cscp_requestable
+    def get_class(self, _request: CSCPMessage = None):
+        """Return the class of the Satellite.
+
+        No payload argument.
+
+        """
+        return type(self).__name__, None, None
