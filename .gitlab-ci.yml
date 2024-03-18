@@ -77,12 +77,16 @@ variables:
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
+  before_script:
+    - apt update && apt install -y libi2c-dev
   variables:
     CXX: ccache clang++
     CXX_LD: lld
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
+  before_script:
+    - apt update && apt install -y libi2c-dev
   variables:
     CXX: ccache g++
 
@@ -97,11 +101,15 @@ variables:
 
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
+  before_script:
+    - apt update && apt install -y libi2c-dev
   variables:
     CXX: ccache g++-12
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
+  before_script:
+    - apt update && apt install -y libi2c-dev
   variables:
     CXX: ccache g++
 
