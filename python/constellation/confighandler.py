@@ -51,20 +51,6 @@ class Configuration:
         return list(self._config.keys())
 
 
-class ConfigReceiver:
-    def __init__(self):
-        self.config = {}
-
-    def update_config(self, new_config: dict):
-        """Set corresponding key/value pairs of new_config in config"""
-        for key, value in new_config.items():
-            self.config[key] = value
-
-    def set_config(self):
-        """Set parameter values based on self.config"""
-        raise NotImplementedError
-
-
 def pack_config(dictionary, parent_key="", separator="."):
     """Pack config dict into a flat dict"""
     items = []
