@@ -38,6 +38,7 @@ class Heartbeater:
     def stop(self):
         self._stop_heartbeating.set()
         self._run_thread.join()
+        self.socket.close()
 
     def run(self) -> None:
         while not self._stop_heartbeating.is_set():

@@ -66,9 +66,8 @@ any other component that should follow the Constellation operation synchronously
 
 Satellites are stateful and are implemented around a well-defined finite state machine which governs their behavior and
 possible actions. Satellites are partaking in all Constellation communication protocols: They react to commands from
-controllers over [CSCP](/manual/protocols.md#cscp), listen to other satellite's heartbeat messages via
-[CHBP](/manual/protocols.md#chbp), distribute log messages with [CMDP](/manual/protocols.md#cmdp) and transmit their recorded
-instrument data over [CDTP](/manual/protocols.md#cdtp).
+controllers, listen to other satellites' heartbeat messages, distribute log messages and statistics and transmit their
+recorded instrument data.
 
 A detailed description of the satellite structure, its features and possibilities to interact with are provided in
 [a dedicated chapter](/manual/satellite) in this user guide.
@@ -76,7 +75,7 @@ A detailed description of the satellite structure, its features and possibilitie
 ### The Controller
 
 Controllers are the main user interface to a Constellation. They represent the nodes which are capable of sending commands
-to satellites via the [CSCP protocol](/manual/protocols.md#cscp). The main code for parsing and interpreting configuration
+to satellites via the control protocol. The main code for parsing and interpreting configuration
 files resides in the controller, and graphical or command-line user interfaces typically are implemented as controllers.
 
 Controllers do not possess a state, i.e. they are not a satellite of the Constellation. The main advantage of this approach
@@ -87,7 +86,7 @@ The functionality of the controller in Constellation is described in detail in [
 ### The Listener
 
 The listener is the least powerful type of component. As the name suggests, this program only listens to protocol
-communications of other components, typically via the [CMDP](/manual/protocols.md#cmdp), and is entirely passive otherwise.
+communications of other components, typically via the monitoring protocol, and is entirely passive otherwise.
 Consequently, listeners are stateless  and the Constellation is not affected by them appearing or disappearing during
 operations.
 

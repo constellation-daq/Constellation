@@ -83,10 +83,10 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
     return true;
 }
 
-std::pair<CSCP1Message::Type, std::string> FSM::reactCSCP(CSCPTransition cscp_transition,
-                                                          std::shared_ptr<zmq::message_t> payload) {
+std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand transition_command,
+                                                             std::shared_ptr<zmq::message_t> payload) {
     // Cast to normal transition, underlying values are identical
-    auto transition = static_cast<Transition>(cscp_transition);
+    auto transition = static_cast<Transition>(transition_command);
     // Check if command is a valid transition for the current state
     TransitionFunction transition_function {};
     try {

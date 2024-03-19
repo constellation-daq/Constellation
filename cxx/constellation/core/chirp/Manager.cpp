@@ -16,12 +16,15 @@
 #include <iterator>
 #include <utility>
 
+#include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::message;
+using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {
@@ -83,7 +86,7 @@ Manager::Manager(const asio::ip::address& brd_address,
                  std::string_view group_name,
                  std::string_view host_name)
     : receiver_(any_address, CHIRP_PORT), sender_(brd_address, CHIRP_PORT), group_id_(MD5Hash(group_name)),
-      host_id_(MD5Hash(host_name)) {}
+      host_id_(MD5Hash(host_name)), logger_("CHIRP") {}
 
 Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
     : Manager(asio::ip::make_address(brd_ip), asio::ip::make_address(any_ip), group_name, host_name) {}
@@ -195,6 +198,8 @@ void Manager::sendRequest(ServiceIdentifier service) {
 }
 
 void Manager::sendMessage(MessageType type, RegisteredService service) {
+    LOG(logger_, DEBUG) << "Sending " << to_string(type) << " for " << to_string(service.identifier) << " service on port "
+                        << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
     sender_.sendBroadcast(asm_msg);
 }
@@ -212,6 +217,13 @@ void Manager::main_loop(const std::stop_token& stop_token) {
             const auto& raw_msg = raw_msg_opt.value();
             auto chirp_msg = CHIRPMessage::disassemble(raw_msg.content);
 
+            LOG(logger_, TRACE) << "Received message from " << raw_msg.address.to_string()
+                                << ": group = " << chirp_msg.getGroupID().to_string()
+                                << ", host = " << chirp_msg.getHostID().to_string()
+                                << ", type = " << to_string(chirp_msg.getType())
+                                << ", service = " << to_string(chirp_msg.getServiceIdentifier())
+                                << ", port = " << chirp_msg.getPort();
+
             if(chirp_msg.getGroupID() != group_id_) {
                 // Broadcast from different group, ignore
                 continue;
@@ -227,6 +239,7 @@ void Manager::main_loop(const std::stop_token& stop_token) {
             switch(chirp_msg.getType()) {
             case REQUEST: {
                 auto service_id = discovered_service.identifier;
+                LOG(logger_, DEBUG) << "Received REQUEST for " << to_string(service_id) << " services";
                 const std::lock_guard registered_services_lock {registered_services_mutex_};
                 // Replay OFFERs for registered services with same service identifier
                 for(const auto& service : registered_services_) {
@@ -243,6 +256,10 @@ void Manager::main_loop(const std::stop_token& stop_token) {
 
                     // Unlock discovered_services_lock for user callback
                     discovered_services_lock.unlock();
+
+                    LOG(logger_, DEBUG) << to_string(chirp_msg.getServiceIdentifier()) << " service at "
+                                        << raw_msg.address.to_string() << ":" << chirp_msg.getPort() << " discovered";
+
                     // Acquire lock for discover_callbacks_
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
@@ -261,6 +278,10 @@ void Manager::main_loop(const std::stop_token& stop_token) {
 
                     // Unlock discovered_services_lock for user callback
                     discovered_services_lock.unlock();
+
+                    LOG(logger_, DEBUG) << to_string(chirp_msg.getServiceIdentifier()) << " service at "
+                                        << raw_msg.address.to_string() << ":" << chirp_msg.getPort() << " departed";
+
                     // Acquire lock for discover_callbacks_
                     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
                     // Loop over callback and run as detached threads
@@ -275,6 +296,7 @@ void Manager::main_loop(const std::stop_token& stop_token) {
             default: std::unreachable();
             }
         } catch(const MessageDecodingError& error) {
+            LOG(logger_, WARNING) << error.what();
             continue;
         }
     }

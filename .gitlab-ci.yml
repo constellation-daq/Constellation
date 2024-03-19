@@ -16,9 +16,28 @@ workflow:
     - when: always
 
 variables:
-  CCACHE_DIR: $CI_PROJECT_DIR/.ccache
+  CCACHE_DIR: $CI_PROJECT_DIR/.cache/ccache
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
 
-# templates
+# C++ templates
+
+.meson-wrap-cache: &meson-wrap-cache
+  key: meson-wrap-cache
+  paths:
+    - subprojects/packagecache/
+    - subprojects/asio-*/
+    - subprojects/Catch2-*/
+    - subprojects/cppzmq-*/
+    - subprojects/libzmq-*/
+    - subprojects/magic_enum-*/
+    - subprojects/msgpack-cxx-*/
+    - subprojects/spdlog-*/
+  policy: pull
+
+.ccache: &ccache
+  key: ccache-$CI_JOB_IMAGE
+  paths:
+    - $CCACHE_DIR/
 
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
@@ -57,27 +76,27 @@ variables:
   variables:
     CXX: g++
 
-.meson-wrap-cache: &meson-wrap-cache
-  key: meson-wrap-cache
-  paths:
-    - subprojects/packagecache/
-    - subprojects/asio-*/
-    - subprojects/Catch2-*/
-    - subprojects/cppzmq-*/
-    - subprojects/libzmq-*/
-    - subprojects/magic_enum-*/
-    - subprojects/msgpack-cxx-*/
-    - subprojects/spdlog-*/
-  policy: pull
+# Python templates
 
-.ccache: &ccache
-  key: ccache-$CI_JOB_IMAGE
-  paths:
-    - $CCACHE_DIR/
+.python-venv:
+  cache:
+    - key: pip-cache
+      paths:
+        - $PIP_CACHE_DIR/
+  before_script:
+    - python3 -m venv venv
+    - source venv/bin/activate
+    - pip install meson-python meson ninja
+
+.python-3.11:
+  image: python:3.11
+
+.python-3.12:
+  image: python:3.12
 
 # build stage
 
-.build:
+.build-cpp:
   stage: build
   cache:
     - *meson-wrap-cache
@@ -89,9 +108,15 @@ variables:
       - build
     expire_in: 24 hour
 
+.build-py:
+  stage: build
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - python3 -m build
+
 build:alma9-cern:
   extends:
-    - .build
+    - .build-cpp
     - .alma9-cern
   cache:
     - <<: *meson-wrap-cache
@@ -102,28 +127,28 @@ build:alma9-cern:
 
 build:debian-clang:
   extends:
-    - .build
+    - .build-cpp
     - .debian-clang
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
 build:debian-gcc:
   extends:
-    - .build
+    - .build-cpp
     - .debian-gcc
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
 
 build:fedora-latest:
   extends:
-    - .build
+    - .build-cpp
     - .fedora-latest
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
 build:ubuntu-22.04:
   extends:
-    - .build
+    - .build-cpp
     - .ubuntu-22.04
   cache:
     - *meson-wrap-cache
@@ -133,14 +158,26 @@ build:ubuntu-22.04:
 
 build:ubuntu-24.04:
   extends:
-    - .build
+    - .build-cpp
     - .ubuntu-24.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
 
+build:python-3.11:
+  extends:
+    - .build-py
+    - .python-venv
+    - .python-3.11
+
+build:python-3.12:
+  extends:
+    - .build-py
+    - .python-venv
+    - .python-3.12
+
 # test stage
 
-.test:
+.test-cpp:
   stage: test
   script:
     - meson test -C build --suite Constellation --no-rebuild --print-errorlogs
@@ -148,9 +185,18 @@ build:ubuntu-24.04:
     reports:
       junit: build/meson-logs/testlog.junit.xml
 
+.test-py:
+  stage: test
+  script:
+    - pip install --no-build-isolation -e .[test]
+    - pytest --force-sugar --junitxml=junit.xml
+  artifacts:
+    reports:
+      junit: junit.xml
+
 test:alma9-cern:
   extends:
-    - .test
+    - .test-cpp
     - .alma9-cern
   needs:
     - job: build:alma9-cern
@@ -158,7 +204,7 @@ test:alma9-cern:
 
 test:debian-clang:
   extends:
-    - .test
+    - .test-cpp
     - .debian-clang
   needs:
     - job: build:debian-clang
@@ -166,7 +212,7 @@ test:debian-clang:
 
 test:debian-gcc:
   extends:
-    - .test
+    - .test-cpp
     - .debian-gcc
   needs:
     - job: build:debian-gcc
@@ -178,7 +224,7 @@ test:debian-gcc:
 
 test:fedora-latest:
   extends:
-    - .test
+    - .test-cpp
     - .fedora-latest
   needs:
     - job: build:fedora-latest
@@ -186,7 +232,7 @@ test:fedora-latest:
 
 test:ubuntu-22.04:
   extends:
-    - .test
+    - .test-cpp
     - .ubuntu-22.04
   needs:
     - job: build:ubuntu-22.04
@@ -194,18 +240,68 @@ test:ubuntu-22.04:
 
 test:ubuntu-24.04:
   extends:
-    - .test
+    - .test-cpp
     - .ubuntu-24.04
   needs:
     - job: build:ubuntu-24.04
       artifacts: true
 
+test:python-3.11:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.11
+  needs:
+    - job: build:python-3.11
+      artifacts: false
+
+test:python-3.12:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.12
+  needs:
+    - job: build:python-3.12
+      artifacts: false
+
 # lint stage
 
 .lint:
   stage: lint
-  cache:
-    - *meson-wrap-cache
+
+lint:coverage-py:
+  extends:
+    - .lint
+    - .python-venv
+    - .python-3.11
+  needs:
+    - job: test:python-3.11
+      artifacts: false
+  script:
+    - pip install --no-build-isolation -e .[test]
+    - pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+lint:coverage-cpp:
+  extends:
+    - .lint
+    - .debian-gcc
+  needs:
+    - job: test:debian-gcc
+      artifacts: true
+  script:
+    - ninja -C build coverage-xml
+  coverage: '/^\s*lines:\s*\d+.\d+\%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: build/meson-logs/coverage.xml
 
 lint:clang-tidy:
   extends:
@@ -233,22 +329,6 @@ lint:clang-tidy-diff:
       grep -qzv ": error: " clang-tidy-diff.log
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-lint:coverage:
-  extends:
-    - .lint
-    - .debian-gcc
-  needs:
-    - job: test:debian-gcc
-      artifacts: true
-  script:
-    - ninja -C build coverage-xml
-  coverage: '/^\s*lines:\s*\d+.\d+\%/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: build/meson-logs/coverage.xml
 
 lint:clang-scan-build:
   extends:
@@ -299,12 +379,28 @@ lint:coverity-scan:
   stage: format
   needs: []
 
+format:black:
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - black python/
+
+format:flake8:
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - flake8 python/
+
 format:clang-format:
   extends:
     - .format
     - .debian-clang
-  cache:
-    - *meson-wrap-cache
   script:
     - meson setup build -Dimpl_cpp=enabled
     - ninja -C build clang-format-check

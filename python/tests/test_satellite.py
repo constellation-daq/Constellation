@@ -43,7 +43,7 @@ def mock_satellite():
         t.start()
         # give the threads a chance to start
         time.sleep(0.1)
-        yield s, t
+        yield s
 
 
 @pytest.fixture

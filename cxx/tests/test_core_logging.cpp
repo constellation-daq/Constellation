@@ -4,23 +4,24 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <chrono>
-#include <thread>
-
 #include <catch2/catch_test_macros.hpp>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
 
 using namespace constellation::log;
-using namespace std::literals::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-TEST_CASE("Create sink manager", "[logging]") {
-    // Used to create sink manager in separate test for better timing analysis
-    SinkManager::getInstance();
+TEST_CASE("Delayed first message", "[logging]") {
+    // First message is delayed by 500ms, so call this here for better timing analysis
+    SinkManager::getInstance().setCMDPLevelsCustom(TRACE);
+    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
+    auto logger = constellation::log::Logger("DelayedFirstMessage");
+    LOG(logger, TRACE) << "";
+    SinkManager::getInstance().setCMDPLevelsCustom(OFF);
 }
 
 TEST_CASE("Basic logging", "[logging]") {
@@ -35,10 +36,6 @@ TEST_CASE("Basic logging", "[logging]") {
     LOG(logger, STATUS) << "status"sv;
     LOG(logger, WARNING) << "warning"sv;
     LOG(logger, CRITICAL) << "critical"sv;
-
-    // Wait for logging to be flushed for proper output with Catch2
-    logger.flush();
-    std::this_thread::sleep_for(1ms);
 }
 
 TEST_CASE("Logging macros", "[logging]") {
@@ -59,10 +56,6 @@ TEST_CASE("Logging macros", "[logging]") {
     REQUIRE(count_once == 1);
     REQUIRE(count_n == 3);
     REQUIRE(count_if == 2);
-
-    // Wait for logging to be flushed for proper output with Catch2
-    logger.flush();
-    std::this_thread::sleep_for(1ms);
 }
 
 TEST_CASE("Log levels", "[logging]") {
@@ -95,6 +88,15 @@ TEST_CASE("Ephemeral CMDP port", "[logging]") {
     // Port number of ephemeral port should always be >=1024 on all OSes
     auto port_number = SinkManager::getInstance().getCMDPPort();
     REQUIRE(port_number >= 1024);
+}
+
+TEST_CASE("Register Service via CHIRP", "[logging]") {
+    using namespace constellation::chirp;
+    auto manager = Manager("255.255.255.255", "0.0.0.0", "cnstln1", "sat1");
+    manager.setAsDefaultInstance();
+    SinkManager::getInstance().registerService();
+    REQUIRE(manager.getRegisteredServices().size() == 1);
+    REQUIRE(manager.getRegisteredServices().contains({MONITORING, SinkManager::getInstance().getCMDPPort()}));
 }
 
 // TODO(stephan.lachnit): test log message decoding

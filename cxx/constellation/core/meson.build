@@ -60,12 +60,16 @@ install_headers(
   'message/Dictionary.hpp',
   'message/BaseHeader.hpp',
   'message/Protocol.hpp',
+  'message/satellite_definitions.hpp',
   subdir: 'constellation/core/message',
 )
 
 install_headers(
   'utils/casts.hpp',
+  'utils/exceptions.hpp',
+  'utils/ports.hpp',
   'utils/std23.hpp',
+  'utils/string.hpp',
   subdir: 'constellation/core/utils',
 )
 

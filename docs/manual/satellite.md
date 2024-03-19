@@ -24,7 +24,7 @@ or for a failure mode situation:
 * `STATE`: `ERROR`
 * `STATUS`: "Failed to communicate with FPGA, links not locked"
 
-Unlike the state, which is for example distributed automatically through the [heartbeat protocol](/protocols/chbp), the
+Unlike the state, which is for example distributed automatically through the heartbeat protocol, the
 status message has to be explicitly queried via a [command](#satellite-commands).
 
 (satellite-commands)=

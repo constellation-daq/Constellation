@@ -57,6 +57,14 @@ namespace constellation::log {
          */
         CNSTLN_API Logger(std::string topic, std::optional<Level> console_level = std::nullopt);
 
+        CNSTLN_API virtual ~Logger();
+
+        // No copy/move constructor/assignment
+        Logger(Logger& other) = delete;
+        Logger& operator=(Logger other) = delete;
+        Logger(Logger&& other) = delete;
+        Logger& operator=(Logger&& other) = delete;
+
         /**
          * Check if a message should be logged given the currently configured log level
          *

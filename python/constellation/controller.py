@@ -240,10 +240,12 @@ class BaseCLIController(CHIRPBroadcaster):
     def run_from_cli(self):
         """Run commands from CLI and pass them to task handler-routine."""
         print(
-            'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
+            'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", \
+            "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
         )
         print(
-            'Possible transitions: "initialize", "load", "unload", "launch", "land", "start", "stop", "recover", "reset"'
+            'Possible transitions: "initialize", "load", "unload", "launch", "land", \
+            "start", "stop", "recover", "reset"'
         )
         self._task_handler_event = threading.Event()
         task_handler_thread = threading.Thread(
