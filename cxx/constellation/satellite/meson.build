@@ -14,6 +14,7 @@ satellite_lib = library('ConstellationSatellite',
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
+  install_rpath: constellation_rpath,
 )
 
 # We do not provide a C ABI, so we are fine with exporting C++ symbols via extern C

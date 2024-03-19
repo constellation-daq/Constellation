@@ -36,6 +36,9 @@ spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
 constellation_inc = include_directories('..')
 
+# RPATH for non-default install locations
+constellation_rpath = get_option('prefix') / get_option('libdir')
+
 subdir('core')
 subdir('satellite')
 subdir('exec')

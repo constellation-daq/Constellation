@@ -13,6 +13,7 @@ exec_lib = library('ConstellationExec',
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
+  install_rpath: constellation_rpath,
 )
 
 exec_dep = declare_dependency(
@@ -32,4 +33,5 @@ executable('satellite',
   sources: 'main.cpp',
   dependencies: [exec_dep],
   install: true,
+  install_rpath: constellation_rpath,
 )
