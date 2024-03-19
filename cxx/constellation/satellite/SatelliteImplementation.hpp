@@ -50,6 +50,9 @@ namespace constellation::satellite {
         // join main_loop
         CNSTLN_API void join();
 
+        // shut down satellite
+        CNSTLN_API void shutDown();
+
     private:
         // get next command
         std::optional<message::CSCP1Message> getNextCommand();

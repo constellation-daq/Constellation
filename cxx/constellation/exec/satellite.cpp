@@ -10,8 +10,11 @@
 #include "satellite.hpp"
 
 #include <cctype>
+#include <csignal>
 #include <exception>
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -39,6 +42,13 @@ using namespace constellation::exec;
 using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+
+// Use global std::function to work around C linkage
+std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+extern "C" void signal_hander(int signal) {
+    signal_handler_f(signal);
+}
 
 void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser, bool needs_type) {
     // If not a predefined type, requires that the satellite type is specified
@@ -180,7 +190,18 @@ int constellation::exec::satellite_main(int argc,
     SatelliteImplementation satellite_implementation {satellite};
     satellite_implementation.start();
 
-    // TODO(stephan.lachnit): implement catching CTRL+C and handling shutdown gracefully
+    // Register signal handlers
+    std::once_flag shut_down_flag {};
+    signal_handler_f = [&](int /*signal*/) -> void {
+        std::call_once(shut_down_flag, [&]() {
+            LOG(logger, STATUS) << "Shutting down satellite";
+            satellite_implementation.shutDown();
+        });
+    };
+    std::signal(SIGTERM, &signal_hander);
+    std::signal(SIGINT, &signal_hander);
+
+    // Wait for signal to join
     satellite_implementation.join();
 
     return 0;

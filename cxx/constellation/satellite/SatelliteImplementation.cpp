@@ -40,6 +40,7 @@ using namespace constellation;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::literals::chrono_literals;
 
 SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> satellite)
     : rep_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_)), satellite_(std::move(satellite)),
@@ -72,6 +73,15 @@ void SatelliteImplementation::join() {
     if(main_thread_.joinable()) {
         main_thread_.join();
     }
+}
+
+void SatelliteImplementation::shutDown() {
+    // Request stop on main thread
+    main_thread_.request_stop();
+    // TODO(stephan.lachnit): we should join the thread, but this blocks join in satellite_main...?
+    // TODO(stephan.lachnit): stop heartbeat thread
+    // Interrupt satellite -> either in SAFE or in steady state that is not ORBIT or RUN
+    fsm_.interrupt();
 }
 
 std::optional<CSCP1Message> SatelliteImplementation::getNextCommand() {

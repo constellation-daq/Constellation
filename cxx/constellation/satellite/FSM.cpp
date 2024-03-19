@@ -53,10 +53,7 @@ FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
     if(transition_function_it != transition_map.end()) [[likely]] {
         return transition_function_it->second;
     } else {
-        std::string error_message =
-            "Transition " + to_string(transition) + " not allowed from " + to_string(state_) + " state";
-        LOG(logger_, WARNING) << error_message;
-        throw FSMError(std::move(error_message));
+        throw FSMError("Transition " + to_string(transition) + " not allowed from " + to_string(state_) + " state");
     }
 }
 
@@ -82,6 +79,7 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
     try {
         react(transition, std::move(payload));
     } catch(const FSMError&) {
+        LOG(logger_, INFO) << "Skipping transition " << to_string(transition);
         return false;
     }
     return true;
@@ -97,6 +95,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     try {
         transition_function = findTransitionFunction(transition);
     } catch(const FSMError& error) {
+        LOG(logger_, WARNING) << error.what();
         return {CSCP1Message::Type::INVALID, error.what()};
     }
     // Check if reconfigure command is implemented in case it is requested
@@ -121,6 +120,20 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     LOG(logger_, STATUS) << "New state: " << to_string(state_);
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
+}
+
+void FSM::interrupt() {
+    LOG(logger_, STATUS) << "Interrupting...";
+    //  Wait until we are in a steady state
+    while(!is_steady(state_)) {
+        LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+    }
+    // In a steady state, try to react to interrupt
+    reactIfAllowed(Transition::interrupt);
+    // We could be in interrupting, so wait for steady state
+    while(!is_steady(state_)) {
+        LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+    }
 }
 
 template <typename Func, typename... Args>

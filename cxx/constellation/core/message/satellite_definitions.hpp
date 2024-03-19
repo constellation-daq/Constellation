@@ -19,19 +19,19 @@ namespace constellation::message {
 
     /** Possible Satellite FSM states */
     enum class State : std::uint8_t {
-        NEW,
-        initializing,
-        INIT,
-        launching,
-        landing,
-        ORBIT,
-        reconfiguring,
-        starting,
-        stopping,
-        RUN,
-        interrupting,
-        SAFE,
-        ERROR,
+        NEW = 0x10,
+        initializing = 0x12,
+        INIT = 0x20,
+        launching = 0x23,
+        ORBIT = 0x30,
+        landing = 0x32,
+        reconfiguring = 0x33,
+        starting = 0x34,
+        RUN = 0x40,
+        stopping = 0x43,
+        interrupting = 0x0E,
+        SAFE = 0xE0,
+        ERROR = 0xF0,
     };
 
     /** Possible FSM transitions */

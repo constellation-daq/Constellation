@@ -42,4 +42,7 @@ namespace constellation::exec {
                                   std::string_view program,
                                   std::optional<SatelliteType> satellite_type = std::nullopt) noexcept;
 
+    // Handler for signal like SIGINT etc
+    extern "C" CNSTLN_API void signal_hander(int signal);
+
 } // namespace constellation::exec
