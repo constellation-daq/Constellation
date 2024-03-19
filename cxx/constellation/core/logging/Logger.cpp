@@ -20,6 +20,11 @@ using namespace std::literals::chrono_literals;
 Logger::Logger(std::string topic, std::optional<Level> console_level)
     : spdlog_logger_(SinkManager::getInstance().createLogger(std::move(topic), console_level)) {}
 
+Logger& Logger::getDefault() {
+    static Logger instance {SinkManager::getInstance().getDefaultLogger()};
+    return instance;
+}
+
 Logger::~Logger() {
     flush();
 }
