@@ -371,6 +371,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         return value).
 
         """
+        return __version__, None, None
 
     def get_state(self, _request: CSCPMessage = None) -> str:
         return self.fsm.current_state.id, None, None
@@ -382,11 +383,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
         return "Keithley", None, None  # TODO: Generalize, NotImplemented
-
-    @cscp_requestable
-    def version(self, _request: CSCPMessage = None):
-        """Get Constellation version."""
-        return __version__, None, None
 
 
 # -------------------------------------------------------------------------
