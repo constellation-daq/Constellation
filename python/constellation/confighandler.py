@@ -27,21 +27,11 @@ class Configuration:
 
     def get(self, key: str, default: any = None):
         self._requested_keys.add(key)
-
-        if key in self.config.keys():
-            return self.config[key]
-        elif default:
-            self.config[key] = default
-            return self.config[key]
-        else:
-            raise KeyError
+        return self.config.get(key, default)
 
     def __getitem__(self, key: str):
         self._requested_keys.add(key)
-        if key in self.config.keys():
-            return self.config[key]
-        else:
-            raise KeyError
+        return self.config[key]
 
     def get_values(self):
         return self.config
