@@ -101,7 +101,7 @@ variables:
   cache:
     - *meson-wrap-cache
   script:
-    - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
+    - meson setup build -Dimpl_cpp=enabled -Dcxx_tests=enabled ${BUILD_OPTIONS}
     - meson compile -C build
   artifacts:
     paths:
