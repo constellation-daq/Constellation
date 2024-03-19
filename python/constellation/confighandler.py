@@ -16,25 +16,25 @@ class Configuration:
     def __init__(self, config: dict = {}):
         if not isinstance(config, dict):
             raise ConfigError
-        self.config = config
+        self._config = config
         self._requested_keys: set[str] = set()
 
     def has_unused_values(self):
-        return not self._requested_keys == set(self.config.keys())
+        return not self._requested_keys == set(self._config.keys())
 
     def get_unused_values(self):
-        return set(self.config.keys()).difference(self._requested_keys)
+        return set(self._config.keys()).difference(self._requested_keys)
 
     def get(self, key: str, default: any = None):
         self._requested_keys.add(key)
-        return self.config.get(key, default)
+        return self._config.get(key, default)
 
     def __getitem__(self, key: str):
         self._requested_keys.add(key)
-        return self.config[key]
+        return self._config[key]
 
     def get_values(self):
-        return self.config
+        return self._config
 
 
 class ConfigReceiver:
