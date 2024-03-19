@@ -33,6 +33,9 @@ class Configuration:
         self._requested_keys.add(key)
         return self._config[key]
 
+    def get_keys(self):
+        return list(self._config.keys())
+
 
 class ConfigReceiver:
     def __init__(self):
