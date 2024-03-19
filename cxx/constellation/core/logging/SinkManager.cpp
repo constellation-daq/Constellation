@@ -10,19 +10,65 @@
 #include "SinkManager.hpp"
 
 #include <algorithm>
+#include <ctime>
+#include <map>
+#include <memory>
+#include <string>
 #include <string_view>
+#include <utility>
 
 #include <spdlog/async.h>
+#include <spdlog/async_logger.h>
+#include <spdlog/common.h>
+#include <spdlog/details/log_msg.h>
+#include <spdlog/pattern_formatter.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/logging/CMDPSink.hpp"
+#include "constellation/core/logging/Level.hpp"
 #include "constellation/core/logging/ProxySink.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::log;
 using namespace constellation::utils;
-using namespace std::literals::string_view_literals;
+
+SinkManager::constellation_level_formatter::constellation_level_formatter(bool format_short) : format_short_(format_short) {}
+
+void SinkManager::constellation_level_formatter::format(const spdlog::details::log_msg& msg,
+                                                        const std::tm& /*tm*/,
+                                                        spdlog::memory_buf_t& dest) {
+    auto level_name = to_string(from_spdlog_level(msg.level));
+    if(format_short_) {
+        // Short format: only first letter
+        level_name = level_name.substr(0, 1);
+    } else {
+        // Long format: pad to 8 characters
+        level_name.insert(0, 8 - level_name.size(), ' ');
+    }
+    dest.append(level_name.data(), level_name.data() + level_name.size());
+}
+
+std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::constellation_level_formatter::clone() const {
+    return std::make_unique<constellation_level_formatter>(format_short_);
+}
+
+void SinkManager::constellation_topic_formatter::format(const spdlog::details::log_msg& msg,
+                                                        const std::tm& /*tm*/,
+                                                        spdlog::memory_buf_t& dest) {
+    if(msg.logger_name.size() > 0) {
+        auto topic = "[" + to_string(msg.logger_name) + "]";
+        dest.append(topic.data(), topic.data() + topic.size());
+    }
+}
+
+std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::constellation_topic_formatter::clone() const {
+    return std::make_unique<constellation_topic_formatter>();
+}
 
 SinkManager& SinkManager::getInstance() {
     static SinkManager instance {};
@@ -46,15 +92,20 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     console_sink_->set_level(to_spdlog_level(TRACE));
 
     // Set console format, e.g. |2024-01-10 00:16:40.922| CRITICAL [topic] message
-    console_sink_->set_pattern("|%Y-%m-%d %H:%M:%S.%e| %^%8l%$ [%n] %v");
+    auto formatter = std::make_unique<spdlog::pattern_formatter>();
+    formatter->add_flag<constellation_level_formatter>('l', false);
+    formatter->add_flag<constellation_level_formatter>('L', true);
+    formatter->add_flag<constellation_topic_formatter>('n');
+    formatter->set_pattern("|%Y-%m-%d %H:%M:%S.%e| %^%l%$ %n %v");
+    console_sink_->set_formatter(std::move(formatter));
 
     // Set colors of console sink
-    console_sink_->set_color(to_spdlog_level(CRITICAL), "\x1B[31;1m"sv); // Bold red
-    console_sink_->set_color(to_spdlog_level(STATUS), "\x1B[32;1m"sv);   // Bold green
-    console_sink_->set_color(to_spdlog_level(WARNING), "\x1B[33;1m"sv);  // Bold yellow
-    console_sink_->set_color(to_spdlog_level(INFO), "\x1B[36;1m"sv);     // Bold cyan
-    console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m"sv);      // Cyan
-    console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m"sv);      // Grey
+    console_sink_->set_color(to_spdlog_level(CRITICAL), "\x1B[31;1m"); // Bold red
+    console_sink_->set_color(to_spdlog_level(STATUS), "\x1B[32;1m");   // Bold green
+    console_sink_->set_color(to_spdlog_level(WARNING), "\x1B[33;1m");  // Bold yellow
+    console_sink_->set_color(to_spdlog_level(INFO), "\x1B[36;1m");     // Bold cyan
+    console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m");      // Cyan
+    console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m");      // Grey
 
     // CMDP sink, log level always TRACE since only accessed via ProxySink
     cmdp_sink_ = std::make_shared<CMDPSink>();
@@ -65,8 +116,11 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
         "CMDP", console_sink_, spdlog::thread_pool(), spdlog::async_overflow_policy::overrun_oldest);
     cmdp_console_logger_->set_level(to_spdlog_level(TRACE)); // TODO(stephan.lachnit): log level value?
 
+    // Create default logger without topic
+    default_logger_ = createLogger("");
+
     // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
-    cmdp_global_level_ = TRACE; // NOLINT(cppcoreguidelines-prefer-member-initializer)
+    setCMDPLevelsCustom(TRACE, {});
 }
 
 void SinkManager::registerService() const {
@@ -114,18 +168,21 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
     auto& console_proxy_sink = logger->sinks().at(0);
     auto& cmdp_proxy_sink = logger->sinks().at(1);
 
-    // First set CMDP proxy level to global CMDP minimum
-    Level min_cmdp_proxy_level = cmdp_global_level_;
-
     // Get logger topic in upper-case
     auto logger_topic = transform(logger->name(), ::toupper);
 
-    // Then iteratore over topic subscriptions to find minimum level for this logger
-    for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
-        auto sub_topic_uc = transform(sub_topic, ::toupper); // TODO(stephan.lachnit): enforce upper-casing in the map
-        if(logger_topic.starts_with(sub_topic_uc)) {
-            // Logger is subscribed => set new minimum level
-            min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
+    // First set CMDP proxy level to global CMDP minimum
+    Level min_cmdp_proxy_level = cmdp_global_level_;
+
+    // If not default logger
+    if(!logger_topic.empty()) {
+        // Iteratore over topic subscriptions to find minimum level for this logger
+        for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
+            auto sub_topic_uc = transform(sub_topic, ::toupper); // TODO(stephan.lachnit): enforce upper-casing in the map
+            if(logger_topic.starts_with(sub_topic_uc)) {
+                // Logger is subscribed => set new minimum level
+                min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
+            }
         }
     }
 

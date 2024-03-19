@@ -6,6 +6,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
@@ -19,13 +20,20 @@ TEST_CASE("Delayed first message", "[logging]") {
     // First message is delayed by 500ms, so call this here for better timing analysis
     SinkManager::getInstance().setCMDPLevelsCustom(TRACE);
     SinkManager::getInstance().setGlobalConsoleLevel(OFF);
-    auto logger = constellation::log::Logger("DelayedFirstMessage");
+    auto logger = Logger("DelayedFirstMessage");
     LOG(logger, TRACE) << "";
     SinkManager::getInstance().setCMDPLevelsCustom(OFF);
 }
 
+TEST_CASE("Default logger", "[logging]") {
+    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    LOG(Logger::getDefault(), STATUS) << "Message from default logger";
+    // Default logger is not destructed and thus requires manual flushing
+    Logger::getDefault().flush();
+}
+
 TEST_CASE("Basic logging", "[logging]") {
-    auto logger = constellation::log::Logger("BasicLogging");
+    auto logger = Logger("BasicLogging");
 
     SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
     REQUIRE(logger.shouldLog(TRACE));
@@ -39,7 +47,7 @@ TEST_CASE("Basic logging", "[logging]") {
 }
 
 TEST_CASE("Logging macros", "[logging]") {
-    auto logger = constellation::log::Logger("LoggingMacros");
+    auto logger = Logger("LoggingMacros");
 
     SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
 
@@ -59,7 +67,7 @@ TEST_CASE("Logging macros", "[logging]") {
 }
 
 TEST_CASE("Log levels", "[logging]") {
-    auto logger = constellation::log::Logger("LogLevels", INFO);
+    auto logger = Logger("LogLevels", INFO);
 
     SinkManager::getInstance().setGlobalConsoleLevel(STATUS);
     SinkManager::getInstance().setCMDPLevelsCustom(STATUS);

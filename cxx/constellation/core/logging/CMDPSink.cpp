@@ -53,7 +53,10 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
     std::call_once(setup_flag_, []() { std::this_thread::sleep_for(500ms); });
 
     // Send topic
-    auto topic = "LOG/" + to_string(from_spdlog_level(msg.level)) + "/" + to_string(msg.logger_name);
+    auto topic = "LOG/" + to_string(from_spdlog_level(msg.level));
+    if(msg.logger_name.size() > 0) {
+        topic += "/" + to_string(msg.logger_name);
+    }
     std::transform(topic.begin(), topic.end(), topic.begin(), ::toupper);
     publisher_.send(zmq::buffer(topic), zmq::send_flags::sndmore);
 
