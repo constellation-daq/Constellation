@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-option('impl_cpp', type: 'feature', value: 'auto', description: 'Build C++ implementation')
+option('impl_cxx', type: 'feature', value: 'auto', description: 'Build C++ implementation')
 option('impl_py', type: 'feature', value: 'auto', description: 'Build Python implementation')
 
 option('cxx_tools', type: 'boolean', value: 'true', description: 'Build C++ tools')
