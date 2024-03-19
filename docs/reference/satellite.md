@@ -8,6 +8,17 @@ These pages contain detailed technical information concerning the communication 
 minimal set of functionality for them to interoperate with each other.
 ```
 
+## Names
+
+The full canonical name of a satellite consists of its type and its name:
+
+* The name of the satellite is a user-chosen name.
+* The type the satellite corresponds to the class name of the satellite implementation
+* The canonical name of the satellite consists of the above information in the form "type.name"
+
+The canonical name of a satellite must be unique and is used throughout the framework for identification. This name should
+appear in configuration files and will be sent as the "sending host" information in message header frames.
+
 ## Satellite Commands
 
 Each satellite **must** be able to understand and answer tot he following commands, and it **must** accept or provide the
