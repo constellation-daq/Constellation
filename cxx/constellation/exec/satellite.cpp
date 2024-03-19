@@ -109,8 +109,8 @@ int constellation::exec::satellite_main(int argc,
     const auto default_level_str = transform(parser.get("level"), ::toupper);
     const auto default_level = magic_enum::enum_cast<Level>(default_level_str);
     if(!default_level.has_value()) {
-        LOG(logger, CRITICAL) << "Log level \"" << default_level_str << "\" is not valid, "
-                              << "please choose from TRACE, DEBUG, INFO, STATUS, WARNING, CRITICAL, OFF";
+        LOG(logger, CRITICAL) << "Log level \"" << parser.get("level") << "\" is not valid"
+                              << ", possible values are: " << utils::list_enum_names<Level>();
         return 1;
     }
     SinkManager::getInstance().setGlobalConsoleLevel(default_level.value());
