@@ -101,7 +101,7 @@ variables:
   cache:
     - *meson-wrap-cache
   script:
-    - meson setup build -Dimpl_cpp=enabled ${BUILD_OPTIONS}
+    - meson setup build -Dimpl_cxx=enabled -Dcxx_tests=enabled ${BUILD_OPTIONS}
     - meson compile -C build
   artifacts:
     paths:
@@ -341,7 +341,7 @@ lint:clang-scan-build:
     CCC_CC: clang
     CCC_CXX: clang++
   script:
-    - meson setup build -Dimpl_cpp=enabled -Dbuildtype=debug
+    - meson setup build -Dimpl_cxx=enabled -Dbuildtype=debug
     - ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:
@@ -363,7 +363,7 @@ lint:coverity-scan:
         --form project=$COVERITY_SCAN_PROJECT_NAME --form token=$COVERITY_SCAN_TOKEN
     - tar -xzf /tmp/cov-analysis-linux64.tgz
     - rm -r /tmp/cov-analysis-linux64.tgz
-    - meson setup build -Dimpl_cpp=enabled -Dbuildtype=debug
+    - meson setup build -Dimpl_cxx=enabled -Dbuildtype=debug
     - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja -C build
     - tar -czf cov-int.tgz cov-int
     - curl -s https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
@@ -402,7 +402,7 @@ format:clang-format:
     - .format
     - .debian-clang
   script:
-    - meson setup build -Dimpl_cpp=enabled
+    - meson setup build -Dimpl_cxx=enabled
     - ninja -C build clang-format-check
 
 format:reuse:

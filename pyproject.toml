@@ -49,7 +49,7 @@ docs = ["sphinx", "myst-parser", "pydata_sphinx_theme", "ablog", "sphinxcontrib.
 test = ["pytest", "pytest-forked", "pytest-cov", "pytest-sugar"]
 
 [tool.meson-python.args]
-setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cpp=disabled"]  # disable C++ for now
+setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ for now
 dist = ["--include-subprojects"]
 
 [tool.flake8]
