@@ -22,7 +22,7 @@ class Configuration:
     def has_unused_values(self):
         return not self._requested_keys == set(self._config.keys())
 
-    def get_unused_values(self):
+    def get_unused_keys(self):
         return set(self._config.keys()).difference(self._requested_keys)
 
     def get(self, key: str, default: any = None):
