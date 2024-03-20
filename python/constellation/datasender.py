@@ -16,34 +16,12 @@ from queue import Queue, Empty
 
 import zmq
 
-from .protocol import DataTransmitter
+from .cdtp import DataTransmitter, CDTPMessage
 from .satellite import Satellite
 
 
-class DataBlock:
-    """Class to hold data payload and meta information (map) of an event."""
-
-    def __init__(
-        self,
-        payload=None,
-        meta: dict = None,
-        recv_host: str = None,
-        recv_ts: datetime.datetime = None,
-    ):
-        """Initialize variables."""
-        self.payload = payload
-        self.meta = meta
-        self.recv_host = recv_host
-        self.recv_ts = recv_ts
-
-    def __str__(self):
-        return f"DataBlock (payload: {len(self.payload)}, \
-        meta: {len(self.meta)}, recv from host {self.recv_host} \
-        at {self.recv_ts})"
-
-
 class PushThread(threading.Thread):
-    """Thread that pushes DataBlocks from a Queue to a ZMQ socket."""
+    """Thread that pushes CDTPMessages from a Queue to a ZMQ socket."""
 
     def __init__(
         self,
@@ -59,7 +37,7 @@ class PushThread(threading.Thread):
         Arguments:
         - stopevt    :: Event that if set lets the thread shut down.
         - port       :: The port to bind to.
-        - queue      :: The Queue to process DataBlocks from.
+        - queue      :: The Queue to process CDTPMessages from.
         - context    :: ZMQ context to use (optional).
         """
         super().__init__(*args, **kwargs)
@@ -79,7 +57,7 @@ class PushThread(threading.Thread):
                 # blocking call but with timeout to prevent deadlocks
                 item = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
-                if isinstance(item, DataBlock):
+                if isinstance(item, CDTPMessage):
                     item.meta["packet_num"] = self.packet_num
                     transmitter.send(item.payload, item.meta, self._socket)
                     self._logger.debug(f"Sending packet number {self.packet_num}")
@@ -138,7 +116,7 @@ class RandomDataSender(DataSender):
         num = 0
         while not self._stop_running.is_set():
             meta = {"eventid": num, "time": datetime.datetime.now().isoformat()}
-            data = DataBlock(payload, meta)
+            data = CDTPMessage(payload, meta)
             self.data_queue.put(data)
             self.log.debug(f"Queueing data packet {num}")
             num += 1
@@ -147,7 +125,7 @@ class RandomDataSender(DataSender):
         """
         # Testing shut down process
         meta = {"eventid": num, "time": datetime.datetime.now().isoformat(), "islast": True}
-        data = DataBlock(payload, meta)
+        data = CDTPMessage(payload, meta)
         self.data_queue.put(data)
         self.logger.debug(f"Queueing data packet {num}")
         num += 1
