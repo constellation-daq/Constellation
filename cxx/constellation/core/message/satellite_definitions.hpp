@@ -13,6 +13,8 @@
 #include <type_traits>
 #include <utility>
 
+#include <magic_enum.hpp>
+
 #include "constellation/core/utils/std23.hpp"
 
 namespace constellation::message {
@@ -73,3 +75,11 @@ namespace constellation::message {
     };
 
 } // namespace constellation::message
+
+// State enum exceeds default enum value limits of magic_enum (-128, 127)
+namespace magic_enum::customize {
+    template <> struct enum_range<constellation::message::State> {
+        static constexpr int min = 0;
+        static constexpr int max = 255;
+    };
+} // namespace magic_enum::customize
