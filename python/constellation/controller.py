@@ -175,7 +175,7 @@ class BaseCLIController(CHIRPBroadcaster):
             host_name = str(satellite_info[1])
             host_addr = str(satellite_info[2])
             port = str(satellite_info[3])
-            self.add_satellite(host_name=host_name, host_addr=host_addr, port=port)
+            self._add_satellite(host_name=host_name, host_addr=host_addr, port=port)
 
         elif user_input.startswith("remove"):
             target = user_input.split(" ")[1]
