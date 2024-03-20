@@ -157,4 +157,5 @@ class CommandTransmitter:
             flags=flags,
         )
         if payload:
+            flags = flags & ~zmq.SNDMORE
             self.socket.send(payload, flags)
