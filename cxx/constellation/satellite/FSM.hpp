@@ -99,6 +99,16 @@ namespace constellation::satellite {
         CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCommand(TransitionCommand transition_command,
                                                                                     std::shared_ptr<zmq::message_t> payload);
 
+        /**
+         * @brief Try to perform an interrupt as soon as possible
+         *
+         * This function waits for the next steady state and performs an interrupt if in ORBIT or RUN state, otherwise
+         * nothing is done. It guarantees that the FSM is in a state where the satellite can be safely shut down.
+         *
+         * @warning This function is not thread safe, meaning that no other react command should be called during execution.
+         */
+        CNSTLN_API void interrupt();
+
     private:
         /**
          * Find the transition function for a given transition in the current state

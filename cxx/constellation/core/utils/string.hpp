@@ -7,8 +7,12 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <cctype>
 #include <string>
 #include <string_view>
+#include <type_traits>
+
+#include <magic_enum.hpp>
 
 namespace constellation::utils {
 
@@ -18,6 +22,19 @@ namespace constellation::utils {
         for(auto character : string) {
             out += static_cast<char>(operation(static_cast<unsigned char>(character)));
         }
+        return out;
+    }
+
+    template <typename E>
+        requires std::is_enum_v<E>
+    inline std::string list_enum_names() {
+        std::string out {};
+        constexpr auto enum_names = magic_enum::enum_names<E>();
+        for(const auto enum_name : enum_names) {
+            out += transform(enum_name, ::tolower) + ", ";
+        }
+        // Remove last ", "
+        out.erase(out.size() - 2);
         return out;
     }
 
