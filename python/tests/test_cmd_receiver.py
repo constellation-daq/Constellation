@@ -27,7 +27,7 @@ def mock_sock_send_recv(payload, flags):
 def mock_sock_recv_multipart_recv(flags):
     """Pop entry from queue."""
     if not mock_packet_queue_recv:
-        raise zmq.ZMQError("no mock data")
+        raise zmq.ZMQError("Resource temporarily unavailable")
     # "pop all"
     r, mock_packet_queue_recv[:] = mock_packet_queue_recv[:], []
     return r
@@ -42,7 +42,7 @@ def mock_sock_send_sender(payload, flags):
 def mock_sock_recv_multipart_sender(flags):
     """Pop entry from queue."""
     if not mock_packet_queue_sender:
-        raise zmq.ZMQError("no mock data")
+        raise zmq.ZMQError("Resource temporarily unavailable")
     # "pop all"
     r, mock_packet_queue_sender[:] = mock_packet_queue_sender[:], []
     return r
