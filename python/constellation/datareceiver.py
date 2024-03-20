@@ -219,10 +219,10 @@ class H5DataReceiverWriter(DataReceiver):
         )
         print(self.filename)  # TODO: remove after debugging
         if os.path.isfile(self.filename):
-            self.logger.error(f"file already exists: {self.filename}")
+            self.log.error(f"file already exists: {self.filename}")
             raise RuntimeError(f"file already exists: {self.filename}")
 
-        self.logger.debug("Creating file %s", self.filename)
+        self.log.debug("Creating file %s", self.filename)
         # Create directory path.
         directory = os.path.dirname(self.filename)
         try:
@@ -237,7 +237,7 @@ class H5DataReceiverWriter(DataReceiver):
         try:
             h5file = h5py.File(self.filename, "w")
         except Exception as exception:
-            self.logger.error("Unable to open %s: %s", self.filename, str(exception))
+            self.log.error("Unable to open %s: %s", self.filename, str(exception))
             raise RuntimeError(
                 f"Unable to open {self.filename}: {str(exception)}",
             ) from exception
@@ -254,10 +254,10 @@ class H5DataReceiverWriter(DataReceiver):
         # overloaded by inheriting classes
         """
         # Check if group already exists
-        if item.recv_host not in h5file.keys():
-            grp = h5file.create_group(item.recv_host)
+        if item.name not in h5file.keys():
+            grp = h5file.create_group(item.name)
         else:
-            grp = h5file[item.recv_host]
+            grp = h5file[item.name]
 
         # Create dataset and write data (item) to it
         print(f"event_{item.meta['eventid']}")  # TODO: remove this
@@ -270,21 +270,21 @@ class H5DataReceiverWriter(DataReceiver):
         dset.attrs["CLASS"] = "DETECTOR_DATA"
         for key, val in item.meta.items():
             dset.attrs[key] = val
-        self.logger.debug(f"Processing data packet {item.meta['packet_num']}")
+        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
 
-    def write_data_concat(self, h5file, item):
+    def write_data_concat(self, h5file: h5py.File, item: CDTPMessage):
         """Write data into HDF5 format
 
-        Format: h5file -> Group (recv_host) -> Single Concatenated Dataset (item)
+        Format: h5file -> Group (name) -> Single Concatenated Dataset (item)
 
-        Writes data to file by concatenating item.payload to dataset inside group recv_host.
+        Writes data to file by concatenating item.payload to dataset inside group name.
 
         # TODO add a call to a "write_data" method that can be
         # overloaded by inheriting classes
         """
         # Check if group already exists
-        if item.recv_host not in h5file.keys():
-            grp = h5file.create_group(item.recv_host)
+        if item.name not in h5file.keys():
+            grp = h5file.create_group(item.name)
 
             dset = grp.create_dataset(
                 "data",
@@ -300,29 +300,29 @@ class H5DataReceiverWriter(DataReceiver):
 
         else:
             # Extend current dataset with data obtained from item
-            grp = h5file[item.recv_host]
+            grp = h5file[item.name]
             new_data = np.frombuffer(item.payload, dtype=item.meta["dtype"])
             grp["data"].resize((grp["data"].shape[0] + new_data.shape[0]), axis=0)
             grp["data"][-new_data.shape[0] :] = new_data
 
-        self.logger.debug(f"Processing data packet {item.meta['packet_num']}")
+        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
 
-    def write_data_virtual(self, h5file, item):
+    def write_data_virtual(self, h5file: h5py.File, item: CDTPMessage):
         """Write data to HDF5 format
 
-        Format: h5file -> Group (recv_host) -> Multiple Datasets (item) + Virtual Dataset
+        Format: h5file -> Group (name) -> Multiple Datasets (item) + Virtual Dataset
 
-        Writes data by adding a dataset containing item.payload to group recv_host. Also builds
+        Writes data by adding a dataset containing item.payload to group name. Also builds
         a virtual dataset from the group.
 
         # TODO add a call to a "write_data" method that can be
         # overloaded by inheriting classes
         """
         # Check if group already exists
-        if item.recv_host not in h5file.keys():
-            grp = h5file.create_group(item.recv_host)
+        if item.name not in h5file.keys():
+            grp = h5file.create_group(item.name)
         else:
-            grp = h5file[item.recv_host]
+            grp = h5file[item.name]
 
         dset = grp.create_dataset(
             f"event_{item.meta['eventid']}",
@@ -333,7 +333,7 @@ class H5DataReceiverWriter(DataReceiver):
         dset.attrs["CLASS"] = "DETECTOR_DATA"
         for key, val in item.meta.items():
             dset.attrs[key] = val
-        self.logger.debug(f"Processing data packet {item.meta['packet_num']}")
+        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
 
         # Create a virtual layout with the datasets in group
         # TODO: this method will result in index-variable overflow, make it so only the latest X datasets are shown
@@ -345,12 +345,12 @@ class H5DataReceiverWriter(DataReceiver):
         p = re.compile(r"(\d+)")
         for data_name in sorted(list(grp.keys()), key=lambda s: extract_num(s, p)):
             if data_name != "vdata":
-                data_file = h5file[item.recv_host][data_name]
+                data_file = h5file[item.name][data_name]
                 vsource = h5py.VirtualSource(data_file)
                 layout[last_index : last_index + len(data_file)] = vsource
                 last_index += len(data_file) + 1
         if "vdata" in grp.keys():
-            del h5file[item.recv_host]["vdata"]
+            del h5file[item.name]["vdata"]
         grp.create_virtual_dataset("vdata", layout, fillvalue=-1)
 
     def do_run(self):
