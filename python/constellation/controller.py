@@ -61,9 +61,10 @@ class BaseCLIController(CHIRPBroadcaster):
             str(service.host_uuid), socket
         )
         self._logger.info(
-            "connecting to %s, address %s...",
+            "connecting to %s, address %s on port %s...",
             service.host_uuid,
             service.address,
+            service.port,
         )
 
     def _add_satellite(self, host_name, host_addr, port: int | None = None):
