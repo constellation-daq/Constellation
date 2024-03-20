@@ -90,7 +90,7 @@ class BaseCLIController(CHIRPBroadcaster):
             meta,
         )
         try:
-            ret_msg = self.transmitters[host_name].get_message()
+            ret_msg = self.transmitters[host_name].get_message(flags=0)
             return ret_msg
 
         except TimeoutError:
