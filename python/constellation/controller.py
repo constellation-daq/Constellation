@@ -82,7 +82,9 @@ class BaseCLIController(CHIRPBroadcaster):
             host_addr,
         )
 
-    def _command_satellite(self, cmd, payload, meta, host_name=None):
+    def _command_satellite(
+        self, cmd: str, payload: any, meta: dict, host_name: str = None
+    ):
         """Send cmd and await response."""
 
         self.transmitters[host_name].send_request(
