@@ -75,9 +75,16 @@ class CommandReceiver(BaseSatelliteFrame):
     def _recv_cmds(self):
         """Request receive loop."""
         while not self._com_thread_evt.is_set():
-            req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
+            try:
+                req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
+            except zmq.ZMQError as e:
+                # something wrong with the ZMQ socket, wait a while for recovery
+                self.log.exception(e)
+                time.sleep(0.5)
+                continue
             if not req:
-                time.sleep(0.01)
+                # no message waiting for us, rest until next attempt
+                time.sleep(0.025)
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:

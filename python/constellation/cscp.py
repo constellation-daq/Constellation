@@ -117,7 +117,11 @@ class CommandTransmitter:
         """
         try:
             cmdmsg = self.socket.recv_multipart(flags)
-        except zmq.ZMQError:
+        except zmq.ZMQError as e:
+            if "Resource temporarily unavailable" not in e.strerror:
+                raise RuntimeError(
+                    "CommandTransmitter encountered zmq exception"
+                ) from e
             return None
         msg = CSCPMessage()
         msg.set_header(*self.msgheader.decode(cmdmsg[0]))
