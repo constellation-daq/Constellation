@@ -93,7 +93,7 @@ class mocket(MagicMock):
             self.port not in self._get_queue(False)
             or not self._get_queue(False)[self.port]
         ):
-            raise zmq.ZMQError("no mock data")
+            raise zmq.ZMQError("Resource temporarily unavailable")
         # "pop all"
         r, self._get_queue(False)[self.port][:] = (
             self._get_queue(False)[self.port][:],
@@ -108,7 +108,7 @@ class mocket(MagicMock):
                 send_port not in self._get_queue(False)
                 or not self._get_queue(False)[send_port]
             ):
-                raise zmq.ZMQError("no mock data")
+                raise zmq.ZMQError("Resource temporarily unavailable")
             return self._get_queue(False)[send_port].pop(0)
         else:
             # block
