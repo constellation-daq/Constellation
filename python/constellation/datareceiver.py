@@ -6,24 +6,24 @@ SPDX-License-Identifier: CC-BY-4.0
 Base module for Constellation Satellites that receive data.
 """
 
-import threading
-import os
 import datetime
-import time
 import logging
+import os
+import re
+import threading
+import time
+from queue import Empty, Queue
 from typing import Optional
-from queue import Queue, Empty
 
 import h5py
 import numpy as np
-import re
 import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
-from .satellite import Satellite
-from .protocol import DataTransmitter, CHIRPServiceIdentifier
-from .datasender import DataBlock
+from .cdtp import CDTPMessage, DataTransmitter
+from .chirp import CHIRPServiceIdentifier
 from .fsm import SatelliteState
+from .satellite import Satellite
 
 
 class PullThread(threading.Thread):
@@ -61,7 +61,7 @@ class PullThread(threading.Thread):
         while not self.stopevt.is_set():
             try:
                 # non-blocking call to prevent deadlocks
-                item = DataBlock(*transmitter.recv(self._socket, flags=zmq.NOBLOCK))
+                item = CDTPMessage(*transmitter.recv(self._socket, flags=zmq.NOBLOCK))
 
                 self.queue.put(item)
                 self._logger.debug(
@@ -79,7 +79,7 @@ class PullThread(threading.Thread):
             #       rather than checking
             except Queue.full:
                 self._logger.error(
-                    f"Queue is full. Data {self.packet_num} from {self.item.recv_host} was lost."
+                    f"Queue is full. Data {self.packet_num} from {self.item.name} was lost."
                 )
                 continue
 
@@ -152,15 +152,16 @@ class DataReceiver(Satellite):
         # data placed into the queue via ZMQ socket.
         self._stop_pulling = threading.Event()
         # TODO self._pull_interfaces should be filled via configuration options
-        for host, port in self._pull_interfaces.items():
+        for _uuid, host in self._pull_interfaces.items():
+            address, port = host
             thread = PullThread(
                 stopevt=self._stop_pulling,
-                interface=f"tcp://{host}:{port}",
+                interface=f"tcp://{address}:{port}",
                 queue=self.data_queue,
                 context=self.context,
                 daemon=True,  # terminate with the main thread
             )
-            thread.name = f"{self.name}_{host}_{port}_pull-thread"
+            thread.name = f"{self.name}_{address}_{port}_pull-thread"
             thread.start()
             self._puller_threads.append(thread)
             self.logger.info(f"Satellite {self.name} pulling data from {host}:{port}")
@@ -360,54 +361,31 @@ class H5DataReceiverWriter(DataReceiver):
         Event and close itself down if the Event is set.
 
         """
-        shutdown_started = False
-        shutdown_timer = 0
-        timeout = 5
 
-        active_senders = len(self._pull_interfaces)
         h5file = self._open_file()
+        try:
+            # processing loop
+            while not self._stop_running.is_set() or not self.data_queue.empty():
+                try:
+                    # blocking call but with timeout to prevent deadlocks
+                    item = self.data_queue.get(block=True, timeout=0.5)
 
-        # processing loop
-        while (
-            not self._stop_running.is_set()
-            or not self.data_queue.empty()
-            or active_senders > 0
-        ):
-            try:
-                # blocking call but with timeout to prevent deadlocks
-                item = self.data_queue.get(block=True, timeout=0.5)
-                self.logger.debug(f"Received: {item}")
+                    self.log.debug(f"Received: {item}")
 
-                # Ensures we receive all packages from all senders before shutting down
-                if item.meta["islast"]:
-                    active_senders -= 1
-                    self.logger.debug(f"Last item from: {item.recv_host}")
-                    continue
+                    # if we have data, send it
+                    if isinstance(item, CDTPMessage):
+                        self.write_data_concat(
+                            h5file, item
+                        )  # Could be replaced w/ write_data_concat or write_data_virtual
+                    else:
+                        raise RuntimeError(f"Unable to handle queue item: {type(item)}")
+                    self.data_queue.task_done()
 
-                # if we have data, send it
-                if isinstance(item, DataBlock):
-                    self.write_data_concat(
-                        h5file, item
-                    )  # Could be replaced w/ write_data_concat or write_data_virtual
-                else:
-                    raise RuntimeError(f"Unable to handle queue item: {type(item)}")
-                self.data_queue.task_done()
-
-                # Ensure receiver is running for a period timeout
-                # NOTE: This is messy and takes time. I would like to make it better somehow...
-                if shutdown_started and time.time() - shutdown_timer > timeout:
-                    break
-
-                if self._stop_running.is_set() and not shutdown_started:
-                    shutdown_started = True
-                    shutdown_timer = time.time()
-
-            except Empty:
-                # nothing to process
-                pass
-
-        # TODO the file should be closed in case of an exception
-        h5file.close()
+                except Empty:
+                    # nothing to process
+                    pass
+        finally:
+            h5file.close()
 
 
 # -------------------------------------------------------------------------
