@@ -43,7 +43,7 @@ class BaseCLIController(CHIRPBroadcaster):
 
         if hosts:
             for host in hosts:
-                self.add_satellite(host_name=host, host_addr=host)
+                self._add_satellite(host_name=host, host_addr=host)
 
         self.register_request(
             CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
@@ -66,7 +66,7 @@ class BaseCLIController(CHIRPBroadcaster):
             service.address,
         )
 
-    def add_satellite(self, host_name, host_addr, port: int | None = None):
+    def _add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
