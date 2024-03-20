@@ -16,7 +16,7 @@ import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
 from .chirp import CHIRPServiceIdentifier
-from .confighandler import pack_config, read_config
+from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
 
@@ -140,15 +140,19 @@ class BaseCLIController(CHIRPBroadcaster):
             class_msg = self._command_satellite("get_class", None, None, host_name)
 
             payload = {}
+
             for category in ["constellation", "satellites"]:
-                payload.update(
-                    self.get_config(
-                        config_path=config_path,
-                        category=category,
-                        host_class=class_msg.msg,
-                        host_device="powersupply1",  # TODO: generalize
+                try:
+                    payload.update(
+                        get_config(
+                            config_path=config_path,
+                            category=category,
+                            host_class=class_msg.msg,
+                            host_device="powersupply1",  # TODO: generalize
+                        )
                     )
-                )
+                except KeyError as e:
+                    self.log.warning("Configuration file does not contain key %s", e)
         # TODO: add more commands?
         return cmd, payload, meta
 
@@ -197,37 +201,6 @@ class BaseCLIController(CHIRPBroadcaster):
             except Empty:
                 # nothing to process
                 pass
-
-    def get_config(
-        self,
-        config_path: str,
-        trait: str,
-        host_class: str,
-        host_device: str | None = None,
-    ):
-        """Get configuration of satellite. Specify trait to only get part of config."""
-        config = read_config(config_path)
-        ret_config = {}
-        try:
-            # Set system configurations
-            for key, value in config[trait].items():
-                if not isinstance(value, dict):
-                    ret_config[key] = value
-
-            for key, value in config[trait][host_class].items():
-                if not isinstance(value, dict):
-                    ret_config[key] = value
-
-            if host_device:
-                for key, value in config[trait][host_class][host_device].items():
-                    ret_config[key] = value
-
-        except KeyError as e:
-            self._logger.warning(
-                "Config for %s doesn't contain specified argument %s", trait, e
-            )
-
-        return pack_config(ret_config)
 
     def run(self):
         """Run controller."""
