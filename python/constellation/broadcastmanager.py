@@ -216,7 +216,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """Depart with a service."""
         try:
             service = DiscoveredService(
-                msg.host_uuid, msg.serviceid, msg.from_addr, msg.port
+                msg.host_uuid, msg.serviceid, msg.from_address, msg.port
             )
             self.discovered_services.remove(service)
             self._logger.debug(
