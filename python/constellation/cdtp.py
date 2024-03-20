@@ -33,17 +33,17 @@ class CDTPMessage:
     name: str = None
     timestamp: msgpack.Timestamp = None
     msgtype: CDTPMessageIdentifier = None
-    sequence_number: int = None
+    _sequence_number: int = None
     meta: dict[str, any]
     payload: any = None
 
-    def set_header(self, name, timestamp, msgtype, sequence_number, time_sequence):
+    def set_header(self, name, timestamp, msgtype, _sequence_number, meta):
         """Sets information retrieved from a message header."""
         self.name = name
         self.timestamp = timestamp
         self.msgtype = msgtype
-        self.sequence_number = sequence_number
-        self.time_sequence = time_sequence
+        self._sequence_number = _sequence_number
+        self.meta = meta
 
 
 class DataTransmitter:
