@@ -6,7 +6,6 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Data Transmission Protocol.
 """
 
-import time
 from enum import Enum
 
 import msgpack
@@ -79,7 +78,6 @@ class DataTransmitter:
         payload,
         run_identifier: CDTPMessageIdentifier,
         meta: dict = None,
-        socket: zmq.Socket = None,
         flags: int = 0,
     ):
         """Send a payload over a ZMQ socket.
@@ -100,22 +98,20 @@ class DataTransmitter:
         """
         if not meta:
             meta = {}
-        # use default socket if none was specified
-        if not socket:
-            socket = self._socket
+
+        # Set option to send more based on flag input
         flags = zmq.SNDMORE | flags
         # message header
-        self.msgheader.send(socket, flags=flags)
-        socket.send(msgpack.packb(Protocol.CDTP), flags=flags)
-        socket.send(msgpack.packb(self.name), flags=flags)
-        socket.send(msgpack.packb(time.time_ns()), flags=flags)
-        socket.send(msgpack.packb(run_identifier))
-        socket.send(msgpack.packb(self.sequence_number))
-        self.sequence_number += 1
-        socket.send(msgpack.packb(meta), flags=flags)
+        header_remainder = [
+            run_identifier,
+            self._sequence_number,
+            meta,
+        ]
+        self.msgheader.send(self._socket, meta=header_remainder, flags=flags)
+
         # payload
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
-        return socket.send(msgpack.packb(payload), flags=flags)
+        return self._socket.send(msgpack.packb(payload), flags=flags)
 
     def recv(self, socket: zmq.Socket = None, flags: int = 0):
         """Receive a multi-part data transmission.
