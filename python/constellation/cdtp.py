@@ -113,7 +113,7 @@ class DataTransmitter:
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
         return self._socket.send(msgpack.packb(payload), flags=flags)
 
-    def recv(self, socket: zmq.Socket = None, flags: int = 0):
+    def recv(self, flags: int = 0):
         """Receive a multi-part data transmission.
 
         Follows the Constellation Data Transmission Protocol.
@@ -126,21 +126,15 @@ class DataTransmitter:
         Returns: payload, map (meta data), timestamp and sending host.
 
         """
-        # use default socket if none was specified
-        if not socket:
-            socket = self._socket
-        msg = socket.recv_multipart(flags=flags)
-        if not len(msg) == 6:
+        try:
+            datamsg = self._socket.recv_multipart(flags=flags)
+        except zmq.ZMQError:
+            return None
+        msg = CDTPMessage()
+        msg.set_header(*self.msgheader.decode(datamsg[0]))
+        if not len(datamsg) == 6:
             raise RuntimeError(
-                f"Received message with wrong length of {len(msg)} parts!"
+                f"Received message with wrong length of {len(datamsg)} parts!"
             )
-        if not msgpack.unpackb(msg[0]) == Protocol.CDTP:
-            raise RuntimeError(
-                f"Received message with malformed CDTP header: {msgpack.unpackb(msg[0])}!"
-            )
-        payload = msgpack.unpackb(msg[5])
-        run_seq = msgpack.unpackb(msg[4])
-        run_id = msgpack.unpackb(msg[3])
-        ts = msgpack.unpackb(msg[2])
-        host = msgpack.unpackb(msg[1])
-        return payload, run_seq, run_id, host, ts
+        msg.payload = msgpack.unpackb(datamsg[1])
+        return msg
