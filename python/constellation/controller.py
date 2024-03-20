@@ -86,14 +86,12 @@ class BaseCLIController(CHIRPBroadcaster):
         self, cmd: str, payload: any, meta: dict, host_name: str = None
     ):
         """Send cmd and await response."""
-
-        self.transmitters[host_name].send_request(
-            cmd,
-            payload,
-            meta,
-        )
         try:
-            ret_msg = self.transmitters[host_name].get_message(flags=0)
+            ret_msg = self.transmitters[host_name].request_get_response(
+                cmd,
+                payload,
+                meta,
+            )
             return ret_msg
 
         except TimeoutError:
