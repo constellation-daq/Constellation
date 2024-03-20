@@ -62,9 +62,19 @@ class DataTransmitter:
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CDTP)
         self._socket = socket
-        self.sequence_number = 0
 
-    def send_data(
+    def send_start(self, payload, meta, flags: int = 0):
+        self._sequence_number = 0
+        return self._dispatch(payload, CDTPMessageIdentifier.BOR, meta, flags)
+
+    def send_data(self, payload, meta, flags: int = 0):
+        self._sequence_number += 1
+        return self._dispatch(payload, CDTPMessageIdentifier.DAT, meta, flags)
+
+    def send_end(self, payload, meta, flags: int = 0):
+        return self._dispatch(payload, CDTPMessageIdentifier.EOR, meta, flags)
+
+    def _dispatch(
         self,
         payload,
         run_identifier: CDTPMessageIdentifier,
