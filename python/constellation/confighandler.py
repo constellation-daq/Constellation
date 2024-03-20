@@ -30,13 +30,13 @@ class Configuration:
         """Return all unused configuration keys"""
         return set(self._config.keys()).difference(self._requested_keys)
 
-    def get(self, key: str, default: any = None):
+    def setdefault(self, key: str, default: any = None):
         """
         Return value from requested key in config with default value if specified.
         Mark key as requested in configuration.
         """
         self._requested_keys.add(key)
-        return self._config.get(key, default)
+        return self._config.setdefault(key, default)
 
     def __getitem__(self, key: str):
         """
