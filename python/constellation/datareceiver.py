@@ -211,6 +211,13 @@ class H5DataReceiverWriter(DataReceiver):
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
         self.nameformat = filename
 
+    def do_initializing(self, payload: any) -> str:
+        super().do_initializing(payload)
+        self.nameformat = self.config.setdefault(
+            "name_format", "default_name_{date}.h5"
+        )
+        return "Initializing"
+
     def _open_file(self):
         """Open the hdf5 file and return the file object."""
         h5file = None
