@@ -168,7 +168,7 @@ class BaseCLIController(CHIRPBroadcaster):
                 self._logger.error(f"No host {target}")
 
         elif user_input.startswith("untarget"):
-            self.target_host = target
+            self.target_host = None
 
         elif user_input.startswith("add"):
             satellite_info = user_input.split(" ")
