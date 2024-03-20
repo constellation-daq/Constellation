@@ -19,6 +19,7 @@ import numpy as np
 import re
 import zmq
 
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
 from .satellite import Satellite
 from .protocol import DataTransmitter, CHIRPServiceIdentifier
 from .datasender import DataBlock
@@ -102,20 +103,23 @@ class DataReceiver(Satellite):
         self._stop_pulling = None
         self._pull_interfaces = {}
         self._puller_threads = list[PullThread]()
-        self.broadcast_manager.register_callback(
-            CHIRPServiceIdentifier.DATA, self.data_callback
-        )
-        self.broadcast_manager.request_service(CHIRPServiceIdentifier.DATA)
+        self._stop_pulling = threading.Event()
 
-    def recv_from(self, host: str, port: int) -> None:
-        """Adds an interface (host, port) to receive data from."""
-        self._pull_interfaces[host] = port
-        self.logger.info(f"Adding interface tcp://{host}:{port} to listen to.")
+        self.register_request(CHIRPServiceIdentifier.DATA, self.recv_from_callback)
 
     # NOTE: This callback method is not correct. Both BroadcastManager and Satellite needs to be able to handle PullThreads
-    def data_callback(self, host: str, port: int):
-        """Callback method for data service."""
-        self.recv_from(host, port)
+    def recv_from_callback(
+        self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
+    ):
+        """
+        Callback method for data service.
+        Adds an interface (host, port) to receive data from.
+        """
+        # TODO: Name satellites instead of using host_uuid
+        self._pull_interfaces[service.host_uuid] = (service.address, service.port)
+        self.log.info(
+            f"Adding interface tcp://{service.address}:{service.port} to listen to."
+        )
 
         # NOTE: Not sure this is the right way to handle late-coming satellite offers
         if self.get_state() in [
@@ -125,15 +129,17 @@ class DataReceiver(Satellite):
         ]:
             thread = PullThread(
                 stopevt=self._stop_pulling,
-                interface=f"tcp://{host}:{port}",
+                interface=f"tcp://{service.address}:{service.port}",
                 queue=self.data_queue,
                 context=self.context,
                 daemon=True,  # terminate with the main thread
             )
-            thread.name = f"{self.name}_{host}_{port}_pull-thread"
+            thread.name = f"{self.name}_{service.address}_{service.port}_pull-thread"
             self._puller_threads.append(thread)
             thread.start()
-            self.logger.info(f"Satellite {self.name} pulling data from {host}:{port}")
+            self.log.info(
+                f"Satellite {self.name} pulling data from {service.address}:{service.port}"
+            )
 
     def on_initialize(self):
         """Set up threads to listen to interfaces.
