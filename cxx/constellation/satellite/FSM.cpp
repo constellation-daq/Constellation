@@ -18,6 +18,7 @@
 
 #include <zmq.hpp>
 
+#include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/satellite/exceptions.hpp"
@@ -44,7 +45,7 @@ FSM::~FSM() {
     }
 }
 
-FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) const {
+FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
     // Get transition map for current state (never throws due to FSM design)
     const auto& transition_map = state_transition_map_.at(state_);
     // Find transition
@@ -54,6 +55,7 @@ FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) const
     } else {
         std::string error_message =
             "Transition " + to_string(transition) + " not allowed from " + to_string(state_) + " state";
+        LOG(logger_, WARNING) << error_message;
         throw FSMError(std::move(error_message));
     }
 }
@@ -69,9 +71,11 @@ bool FSM::isAllowed(Transition transition) {
 
 void FSM::react(Transition transition, TransitionPayload payload) {
     // Find transition
+    LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     auto transition_function = findTransitionFunction(transition);
     // Execute transition function
     state_ = (this->*transition_function)(std::move(payload));
+    LOG(logger_, STATUS) << "New state: " << to_string(state_);
 }
 
 bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
@@ -87,6 +91,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
                                                              std::shared_ptr<zmq::message_t> payload) {
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(transition_command);
+    LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     // Check if command is a valid transition for the current state
     TransitionFunction transition_function {};
     try {
@@ -96,19 +101,24 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     }
     // Check if reconfigure command is implemented in case it is requested
     if(transition == Transition::reconfigure && !satellite_->supportsReconfigure()) {
-        return {CSCP1Message::Type::NOTIMPLEMENTED, "Transition reconfigure is not implemented by this satellite"};
+        std::string reconfigure_info {"Transition reconfigure is not implemented by this satellite"};
+        LOG(logger_, WARNING) << reconfigure_info;
+        return {CSCP1Message::Type::NOTIMPLEMENTED, std::move(reconfigure_info)};
     }
     // Check if payload only in initialize, reconfigure, and start
     auto should_have_payload =
         (transition == Transition::initialize || transition == Transition::reconfigure || transition == Transition::start);
     if(should_have_payload && !payload) {
-        return {CSCP1Message::Type::INCOMPLETE, "Transition " + to_string(transition) + " requires a payload frame"};
+        std::string payload_info {"Transition " + to_string(transition) + " requires a payload frame"};
+        LOG(logger_, WARNING) << payload_info;
+        return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
     }
     // If there is a payload, but it is not used add a note in the reply
     const std::string payload_note = (!should_have_payload && payload) ? " (payload frame is ignored)"s : ""s;
     // TODO(stephan.lachnit): check if payload properly formatted, cast to std::variant
     // Execute transition function
     state_ = (this->*transition_function)(std::move(payload));
+    LOG(logger_, STATUS) << "New state: " << to_string(state_);
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
@@ -138,6 +148,7 @@ State FSM::initialize(TransitionPayload payload) {
         }
         // Note: we should quit this externally after some time if a stop was requested, see also `call_satellite_function`
 
+        LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto transition = call_satellite_function(
             this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, std::move(config));
         this->reactIfAllowed(transition);
@@ -148,6 +159,7 @@ State FSM::initialize(TransitionPayload payload) {
 
 State FSM::launch(TransitionPayload /* payload */) {
     auto call_wrapper = [this](const std::stop_token& stop_token) {
+        LOG(logger_, INFO) << "Calling launching function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::launching, Transition::launched, stop_token);
         this->reactIfAllowed(transition);
@@ -158,6 +170,7 @@ State FSM::launch(TransitionPayload /* payload */) {
 
 State FSM::land(TransitionPayload /* payload */) {
     auto call_wrapper = [this](const std::stop_token& stop_token) {
+        LOG(logger_, INFO) << "Calling landing function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::landing, Transition::landed, stop_token);
         this->reactIfAllowed(transition);
@@ -169,6 +182,7 @@ State FSM::land(TransitionPayload /* payload */) {
 State FSM::reconfigure(TransitionPayload payload) {
     using PartialConfig = TransitionPayload; // TODO(stephan.lachnit): get proper partial config object from payload variant
     auto call_wrapper = [this](const std::stop_token& stop_token, PartialConfig partial_config) {
+        LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
         const auto transition = call_satellite_function(this->satellite_.get(),
                                                         &Satellite::reconfiguring,
                                                         Transition::reconfigured,
@@ -182,6 +196,7 @@ State FSM::reconfigure(TransitionPayload payload) {
 
 State FSM::start(TransitionPayload /* payload */) {
     auto call_wrapper = [this](const std::stop_token& stop_token, std::uint32_t run_nr) {
+        LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, stop_token, run_nr);
         this->reactIfAllowed(transition);
@@ -206,6 +221,7 @@ State FSM::stop(TransitionPayload /* payload */) {
         }
         // Note: we should quit this externally after some time if a stop was requested, see also `call_satellite_function`
 
+        LOG(logger_, INFO) << "Calling stopping function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::stopping, Transition::stopped, stop_token);
         this->reactIfAllowed(transition);
@@ -216,6 +232,7 @@ State FSM::stop(TransitionPayload /* payload */) {
 
 State FSM::interrupt(TransitionPayload /* payload */) {
     auto call_wrapper = [this](const std::stop_token& stop_token) {
+        LOG(logger_, INFO) << "Calling interrupting function of satellite...";
         const auto transition = call_satellite_function(
             this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, stop_token, this->state_);
         this->reactIfAllowed(transition);
@@ -226,6 +243,7 @@ State FSM::interrupt(TransitionPayload /* payload */) {
 
 State FSM::failure(TransitionPayload /* payload */) {
     auto call_wrapper = [this](const std::stop_token& stop_token) {
+        LOG(logger_, INFO) << "Calling on_failure function of satellite...";
         call_satellite_function(
             this->satellite_.get(), &Satellite::on_failure, Transition::failure, stop_token, this->state_);
         // Note: we do not trigger a success transition as we always go to ERROR state

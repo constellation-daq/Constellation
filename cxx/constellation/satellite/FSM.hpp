@@ -17,6 +17,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/config.hpp"
+#include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
@@ -43,7 +44,7 @@ namespace constellation::satellite {
          *
          * @param satellite Satellite class with functions of transitional states
          */
-        FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)) {}
+        FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)), logger_("FSM") {}
 
         CNSTLN_API ~FSM();
 
@@ -106,7 +107,7 @@ namespace constellation::satellite {
          * @return Transition function corresponding to the transition
          * @throw FSMError if the transition is not a valid transition in the current state
          */
-        TransitionFunction findTransitionFunction(Transition transition) const;
+        TransitionFunction findTransitionFunction(Transition transition);
 
         // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
         CNSTLN_API auto initialize(TransitionPayload /* payload */) -> State;
@@ -194,6 +195,7 @@ namespace constellation::satellite {
     private:
         State state_ {State::NEW};
         std::shared_ptr<Satellite> satellite_;
+        log::Logger logger_;
         std::jthread transitional_thread_;
         std::jthread run_thread_;
         std::jthread failure_thread_;
