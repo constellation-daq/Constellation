@@ -28,4 +28,7 @@ concepts/protocols
 
 ```{toctree}
 :caption: How-To Guides
+
+howtos/satellite_cxx
+howtos/port_eudaq
 ```
