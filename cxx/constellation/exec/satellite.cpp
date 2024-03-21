@@ -143,7 +143,7 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Check satellite name
-    const auto type_name = needs_type ? parser.get("type") : satellite_type.value().type_name;
+    const auto type_name = needs_type ? parser.get("type") : std::move(satellite_type.value().type_name);
     const auto satellite_name = parser.get("name");
     const auto canonical_name = type_name + "." + satellite_name;
     // TODO(stephan.lachnit): check if names are valid
@@ -188,7 +188,7 @@ int constellation::exec::satellite_main(int argc,
     SinkManager::getInstance().registerService();
 
     // Start satellite
-    SatelliteImplementation satellite_implementation {satellite};
+    SatelliteImplementation satellite_implementation {std::move(satellite)};
     satellite_implementation.start();
 
     // Register signal handlers
