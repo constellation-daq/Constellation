@@ -110,11 +110,11 @@ void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::strin
 
 std::optional<std::pair<CSCP1Message::Type, std::string>>
 SatelliteImplementation::handleGetCommand(std::string_view command) {
-    auto return_verb = std::optional<std::pair<CSCP1Message::Type, std::string>>(std::nullopt);
+    std::optional<std::pair<CSCP1Message::Type, std::string>> return_verb {};
 
     auto command_enum = magic_enum::enum_cast<GetCommand>(command);
     if(!command_enum.has_value()) {
-        return return_verb;
+        return std::nullopt;
     }
 
     using enum GetCommand;
