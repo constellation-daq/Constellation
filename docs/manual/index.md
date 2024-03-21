@@ -14,11 +14,11 @@ building
 ```{toctree}
 :caption: Concepts
 
-constellation
-satellite
-controller
-listener
-protocols
+concepts/constellation
+concepts/satellite
+concepts/controller
+concepts/listener
+concepts/protocols
 ```
 
 ```{toctree}
