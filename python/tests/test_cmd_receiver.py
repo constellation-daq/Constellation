@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import pytest
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 import zmq
 
 from constellation.cscp import CSCPMessageVerb, CommandTransmitter
@@ -174,3 +174,19 @@ def test_thread_shutdown(mock_cmdreceiver, mock_transmitter):
     # reply should be missing
     assert not rep
     assert not mock_cmdreceiver._com_thread_evt
+
+
+@pytest.mark.forked
+def test_cmd_unique_commands(mock_cmdreceiver):
+    """Test that commands from different classes do not mix."""
+
+    class MockOtherCommandReceiver(CommandReceiver):
+        @cscp_requestable
+        def get_unique_value(self, msg):
+            return 42, None, None
+
+    with patch("constellation.commandmanager.zmq.Context"):
+        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222)
+        msg, cmds, _meta = cr.get_commands()
+        # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
+        assert ["get_state", ANY, ANY] not in cmds
