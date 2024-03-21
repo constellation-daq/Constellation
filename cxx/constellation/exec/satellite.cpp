@@ -50,6 +50,7 @@ extern "C" void signal_hander(int signal) {
     signal_handler_f(signal);
 }
 
+// NOLINTNEXTLINE(*-avoid-c-arrays)
 void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser, bool needs_type) {
     // If not a predefined type, requires that the satellite type is specified
     if(needs_type) {
@@ -96,7 +97,7 @@ void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser, bool n
 }
 
 int constellation::exec::satellite_main(int argc,
-                                        char* argv[],
+                                        char* argv[], // NOLINT(*-avoid-c-arrays)
                                         std::string_view program,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     // Get the default logger
@@ -198,8 +199,10 @@ int constellation::exec::satellite_main(int argc,
             satellite_implementation.shutDown();
         });
     };
+    // NOLINTBEGIN(cert-err33-c)
     std::signal(SIGTERM, &signal_hander);
     std::signal(SIGINT, &signal_hander);
+    // NOLINTEND(cert-err33-c)
 
     // Wait for signal to join
     satellite_implementation.join();
