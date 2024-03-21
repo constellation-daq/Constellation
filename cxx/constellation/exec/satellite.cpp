@@ -11,6 +11,7 @@
 
 #include <cctype>
 #include <csignal>
+#include <cstdlib>
 #include <exception>
 #include <functional>
 #include <iostream>
@@ -32,6 +33,7 @@
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/std23.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
 #include "constellation/exec/exceptions.hpp"
@@ -97,6 +99,15 @@ void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser, bool n
     parser.parse_args(argc, argv);
 }
 
+// parser.get() might throw a logic error, but this never happens in practice
+std::string get_arg(argparse::ArgumentParser& parser, std::string_view arg) noexcept {
+    try {
+        return parser.get(arg);
+    } catch(const std::exception&) {
+        std::unreachable();
+    }
+}
+
 int constellation::exec::satellite_main(int argc,
                                         char* argv[], // NOLINT(*-avoid-c-arrays)
                                         std::string_view program,
@@ -126,10 +137,10 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Set log level
-    const auto default_level_str = transform(parser.get("level"), ::toupper);
+    const auto default_level_str = transform(get_arg(parser, "level"), ::toupper);
     const auto default_level = magic_enum::enum_cast<Level>(default_level_str);
     if(!default_level.has_value()) {
-        LOG(logger, CRITICAL) << "Log level \"" << parser.get("level") << "\" is not valid"
+        LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
                               << ", possible values are: " << utils::list_enum_names<Level>();
         return 1;
     }
@@ -138,22 +149,22 @@ int constellation::exec::satellite_main(int argc,
     // Check broadcast and any address
     asio::ip::address brd_addr {};
     try {
-        brd_addr = asio::ip::address::from_string(parser.get("brd"));
+        brd_addr = asio::ip::address::from_string(get_arg(parser, "brd"));
     } catch(const asio::system_error& error) {
-        LOG(logger, CRITICAL) << "Invalid broadcast address \"" << parser.get("brd") << "\"";
+        LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
         return 1;
     }
     asio::ip::address any_addr {};
     try {
-        any_addr = asio::ip::address::from_string(parser.get("any"));
+        any_addr = asio::ip::address::from_string(get_arg(parser, "any"));
     } catch(const asio::system_error& error) {
-        LOG(logger, CRITICAL) << "Invalid any address \"" << parser.get("any") << "\"";
+        LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
         return 1;
     }
 
     // Check satellite name
-    const auto type_name = needs_type ? parser.get("type") : std::move(satellite_type.value().type_name);
-    const auto satellite_name = parser.get("name");
+    const auto type_name = needs_type ? get_arg(parser, "type") : std::move(satellite_type.value().type_name);
+    const auto satellite_name = get_arg(parser, "name");
     const auto canonical_name = type_name + "." + satellite_name;
     // TODO(stephan.lachnit): check if names are valid
 
@@ -185,7 +196,7 @@ int constellation::exec::satellite_main(int argc,
     // Create CHIRP manager and set as default
     std::unique_ptr<chirp::Manager> chirp_manager {};
     try {
-        chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, parser.get("group"), canonical_name);
+        chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, get_arg(parser, "group"), canonical_name);
         chirp_manager->setAsDefaultInstance();
         chirp_manager->start();
     } catch(const std::exception& error) {
