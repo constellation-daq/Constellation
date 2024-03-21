@@ -31,6 +31,7 @@
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/logging/ProxySink.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
@@ -107,14 +108,18 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m");      // Cyan
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m");      // Grey
 
-    // CMDP sink, log level always TRACE since only accessed via ProxySink
-    cmdp_sink_ = std::make_shared<CMDPSink>();
-    cmdp_sink_->set_level(to_spdlog_level(TRACE));
-
     // Create console logger for CMDP
     cmdp_console_logger_ = std::make_shared<spdlog::async_logger>(
         "CMDP", console_sink_, spdlog::thread_pool(), spdlog::async_overflow_policy::overrun_oldest);
-    cmdp_console_logger_->set_level(to_spdlog_level(TRACE)); // TODO(stephan.lachnit): log level value?
+    cmdp_console_logger_->set_level(to_spdlog_level(TRACE));
+
+    // CMDP sink, log level always TRACE since only accessed via ProxySink
+    try {
+        cmdp_sink_ = std::make_shared<CMDPSink>();
+        cmdp_sink_->set_level(to_spdlog_level(TRACE));
+    } catch(const zmq::error_t& error) {
+        throw ZMQInitError(error.what());
+    }
 
     // Create default logger without topic
     default_logger_ = createLogger("");

@@ -13,6 +13,7 @@
 #include <csignal>
 #include <exception>
 #include <functional>
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -100,6 +101,14 @@ int constellation::exec::satellite_main(int argc,
                                         char* argv[], // NOLINT(*-avoid-c-arrays)
                                         std::string_view program,
                                         std::optional<SatelliteType> satellite_type) noexcept {
+    // Ensure that ZeroMQ doesn't fail creating the CMDP sink
+    try {
+        SinkManager::getInstance();
+    } catch(const ZMQInitError& error) {
+        std::cerr << "Failed to initialize logging: " << error.what() << std::endl;
+        return 1;
+    }
+
     // Get the default logger
     auto& logger = Logger::getDefault();
 
