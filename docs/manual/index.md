@@ -15,6 +15,7 @@ building
 :caption: Concepts
 
 concepts/constellation
+concepts/logging
 concepts/satellite
 concepts/controller
 concepts/listener
