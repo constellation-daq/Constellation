@@ -14,14 +14,15 @@ from typing import Dict
 
 import zmq
 
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
+from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier
 from .confighandler import pack_config, read_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
+from .error import debug_log
 
 
-class BaseCLIController(CHIRPBroadcaster):
+class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
     def __init__(self, name: str, group: str, hosts=None):
@@ -35,37 +36,38 @@ class BaseCLIController(CHIRPBroadcaster):
         super().__init__(name=name, group=group)
 
         self.transmitters: Dict[str, CommandTransmitter] = {}
-        self.context = zmq.Context()
 
         super()._add_com_thread()
         super()._start_com_threads()
-        self._logger = logging.getLogger(__name__)
 
         if hosts:
             for host in hosts:
                 self.add_satellite(host_name=host, host_addr=host)
 
-        self.register_request(
-            CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
-        )
         self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
+        self._task_handler_event = threading.Event()
+        self.task_handler_thread = threading.Thread(
+            target=self._run_task_handler, daemon=True
+        )
+        self.task_handler_thread.start()
 
-    def add_satellite_callback(
-        self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
-    ):
+    @debug_log
+    @chirp_callback(CHIRPServiceIdentifier.CONTROL)
+    def _add_satellite_callback(self, service: DiscoveredService):
         """Callback method of add_satellite. Add satellite to command on service socket and address."""
         socket = self.context.socket(zmq.REQ)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
         self.transmitters[str(service.host_uuid)] = CommandTransmitter(
             str(service.host_uuid), socket
         )
-        self._logger.info(
+        self.log.info(
             "connecting to %s, address %s...",
             service.host_uuid,
             service.address,
         )
 
+    @debug_log
     def add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
@@ -75,7 +77,7 @@ class BaseCLIController(CHIRPBroadcaster):
         socket = self.context.socket(zmq.REQ)
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
-        self._logger.info(
+        self.log.info(
             "connecting to %s, address %s...",
             host_name,
             host_addr,
@@ -94,12 +96,12 @@ class BaseCLIController(CHIRPBroadcaster):
             return ret_msg
 
         except TimeoutError:
-            self._logger.error(
+            self.log.error(
                 "Host %s did not receive response. Command timed out.",
                 host_name,
             )
         except KeyError:
-            self._logger.error("Invalid satellite name.")
+            self.log.error("Invalid satellite name.")
 
     def command(self, msg):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
@@ -110,7 +112,7 @@ class BaseCLIController(CHIRPBroadcaster):
 
         for host_name in host_names:
             cmd, payload, meta = self._convert_to_cscp(msg=msg, host_name=host_name)
-            self._logger.info("Host %s send command %s...", host_name, cmd)
+            self.log.info("Host %s send command %s...", host_name, cmd)
 
             ret_msg = self._command_satellite(
                 cmd=cmd,
@@ -118,16 +120,16 @@ class BaseCLIController(CHIRPBroadcaster):
                 meta=meta,
                 host_name=host_name,
             )
-            self._logger.info(
+            self.log.info(
                 "Host %s received response: %s, %s",
                 host_name,
                 ret_msg.msg_verb,
                 ret_msg.msg,
             )
             if ret_msg.header_meta:
-                self._logger.info("    header: %s", ret_msg.header_meta)
+                self.log.info("    header: %s", ret_msg.header_meta)
             if ret_msg.payload:
-                self._logger.info("    payload: %s", ret_msg.payload)
+                self.log.info("    payload: %s", ret_msg.payload)
 
     def _convert_to_cscp(self, msg, host_name):
         """Convert command string into CSCP message, payload and meta."""
@@ -158,9 +160,9 @@ class BaseCLIController(CHIRPBroadcaster):
             target = user_input.split(" ")[1]
             if target in self.transmitters.keys():
                 self.target_host = target
-                self._logger.info(f"target for next command: host {self.target_host}")
+                self.log.info(f"target for next command: host {self.target_host}")
             else:
-                self._logger.error(f"No host {target}")
+                self.log.error(f"No host {target}")
 
         elif user_input.startswith("untarget"):
             self.target_host = target
@@ -177,7 +179,7 @@ class BaseCLIController(CHIRPBroadcaster):
             if target in self.transmitters.keys():
                 self.transmitters.pop(target)
             else:
-                self._logger.error(f"No host {target}")
+                self.log.error(f"No host {target}")
         else:
             msg = user_input.split(" ")
             self.command(msg=msg)
@@ -193,7 +195,7 @@ class BaseCLIController(CHIRPBroadcaster):
                 try:
                     callback(*args)
                 except Exception as e:
-                    self.log.error("Caught exception handling task: %s", repr(e))
+                    self.log.exception(e)
             except Empty:
                 # nothing to process
                 pass
@@ -223,7 +225,7 @@ class BaseCLIController(CHIRPBroadcaster):
                     ret_config[key] = value
 
         except KeyError as e:
-            self._logger.warning(
+            self.log.warning(
                 "Config for %s doesn't contain specified argument %s", trait, e
             )
 
@@ -237,6 +239,7 @@ class BaseCLIController(CHIRPBroadcaster):
         self.command("transition start_run")
         self.command("get_state")
 
+    @debug_log
     def run_from_cli(self):
         """Run commands from CLI and pass them to task handler-routine."""
         print(
@@ -247,25 +250,26 @@ class BaseCLIController(CHIRPBroadcaster):
             'Possible transitions: "initialize", "load", "unload", "launch", "land", \
             "start", "stop", "recover", "reset"'
         )
-        self._task_handler_event = threading.Event()
-        task_handler_thread = threading.Thread(
-            target=self._run_task_handler, daemon=True
-        )
-        task_handler_thread.start()
         time.sleep(0.5)
         while True:
             user_input = input("Send command: ")
             if user_input == "exit":
-                self._stop_com_threads()
-                self._task_handler_event.set()
-                task_handler_thread.join()
+                self.stop()
                 break
             else:
                 self.task_queue.put([self.process_cli_command, [user_input]])
             time.sleep(0.5)
 
+    def reentry(self):
+        """Stop the controller."""
+        self.log.info("Stopping controller.")
+        self._task_handler_event.set()
+        for _name, cmd_tm in self.transmitters.items():
+            cmd_tm.socket.close()
+        self.task_handler_thread.join()
 
-class SatelliteManager(BaseCLIController):
+
+class SatelliteManager(BaseController):
     """Satellite Manager class implementing CHIRP protocol"""
 
     def __init__(self, *args, **kwargs):
@@ -315,6 +319,7 @@ class CliCompleter(object):  # Custom completer
 def main():
     """Start a controller."""
     import argparse
+    import coloredlogs
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
@@ -324,10 +329,12 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        level=args.log_level.upper(),
-    )
+    # set up logging
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+
+    logger.info("Starting up CLI Controller!")
+
     # if not args.satellite:
     #    print("No satellites specified! Use '--satellite' to add one.")
     #    return
@@ -349,7 +356,7 @@ def main():
     readline.parse_and_bind("tab: complete")
 
     # start server with args
-    ctrl = BaseCLIController(name=args.name, group=args.group, hosts=args.satellite)
+    ctrl = BaseController(name=args.name, group=args.group, hosts=args.satellite)
     ctrl.run_from_cli()
     # ctrl.run()
 
