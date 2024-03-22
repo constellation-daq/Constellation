@@ -75,7 +75,7 @@ def mock_device_satellite(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockDeviceSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
+        s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333)
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -86,6 +86,12 @@ def mock_device_satellite(mock_chirp_socket):
 # %%%%%%%%%%%%%%%
 # TESTS
 # %%%%%%%%%%%%%%%
+
+
+@pytest.mark.forked
+def test_device_satellite_instantiation(mock_device_satellite):
+    """Test that we can create the satellite."""
+    assert mock_device_satellite.name == "MockDeviceSatellite.mydevice1"
 
 
 @pytest.mark.forked
