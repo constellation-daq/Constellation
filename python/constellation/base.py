@@ -32,7 +32,7 @@ class BaseSatelliteFrame:
     """
 
     def __init__(self, name, **_kwds):
-        # add class name to create a fully-qualified constellation name
+        # add class name to create the canonical name
         self.name = f"{type(self).__name__}.{name}"
         self.log = logging.getLogger(name)
         self.context = zmq.Context()
