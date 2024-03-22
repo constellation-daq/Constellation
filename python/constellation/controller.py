@@ -16,7 +16,7 @@ import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier
-from .confighandler import pack_config, read_config
+from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
 from .error import debug_log
@@ -42,7 +42,7 @@ class BaseController(CHIRPBroadcaster):
 
         if hosts:
             for host in hosts:
-                self.add_satellite(host_name=host, host_addr=host)
+                self._add_satellite(host_name=host, host_addr=host)
 
         self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
@@ -62,13 +62,14 @@ class BaseController(CHIRPBroadcaster):
             str(service.host_uuid), socket
         )
         self.log.info(
-            "connecting to %s, address %s...",
+            "connecting to %s, address %s on port %s...",
             service.host_uuid,
             service.address,
+            service.port,
         )
 
     @debug_log
-    def add_satellite(self, host_name, host_addr, port: int | None = None):
+    def _add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
@@ -83,16 +84,16 @@ class BaseController(CHIRPBroadcaster):
             host_addr,
         )
 
-    def _command_satellite(self, cmd, payload, meta, host_name=None):
+    def _command_satellite(
+        self, cmd: str, payload: any, meta: dict, host_name: str = None
+    ):
         """Send cmd and await response."""
-
-        self.transmitters[host_name].send_request(
-            cmd,
-            payload,
-            meta,
-        )
         try:
-            ret_msg = self.transmitters[host_name].get_message(flags=0)
+            ret_msg = self.transmitters[host_name].request_get_response(
+                cmd,
+                payload,
+                meta,
+            )
             return ret_msg
 
         except TimeoutError:
@@ -142,15 +143,19 @@ class BaseController(CHIRPBroadcaster):
             class_msg = self._command_satellite("get_class", None, None, host_name)
 
             payload = {}
+
             for category in ["constellation", "satellites"]:
-                payload.update(
-                    self.get_config(
-                        config_path=config_path,
-                        category=category,
-                        host_class=class_msg.msg,
-                        host_device="powersupply1",  # TODO: generalize
+                try:
+                    payload.update(
+                        get_config(
+                            config_path=config_path,
+                            category=category,
+                            host_class=class_msg.msg,
+                            host_device="powersupply1",  # TODO: generalize
+                        )
                     )
-                )
+                except KeyError as e:
+                    self.log.warning("Configuration file does not contain key %s", e)
         # TODO: add more commands?
         return cmd, payload, meta
 
@@ -165,14 +170,14 @@ class BaseController(CHIRPBroadcaster):
                 self.log.error(f"No host {target}")
 
         elif user_input.startswith("untarget"):
-            self.target_host = target
+            self.target_host = None
 
         elif user_input.startswith("add"):
             satellite_info = user_input.split(" ")
             host_name = str(satellite_info[1])
             host_addr = str(satellite_info[2])
             port = str(satellite_info[3])
-            self.add_satellite(host_name=host_name, host_addr=host_addr, port=port)
+            self._add_satellite(host_name=host_name, host_addr=host_addr, port=port)
 
         elif user_input.startswith("remove"):
             target = user_input.split(" ")[1]
@@ -199,37 +204,6 @@ class BaseController(CHIRPBroadcaster):
             except Empty:
                 # nothing to process
                 pass
-
-    def get_config(
-        self,
-        config_path: str,
-        trait: str,
-        host_class: str,
-        host_device: str | None = None,
-    ):
-        """Get configuration of satellite. Specify trait to only get part of config."""
-        config = read_config(config_path)
-        ret_config = {}
-        try:
-            # Set system configurations
-            for key, value in config[trait].items():
-                if not isinstance(value, dict):
-                    ret_config[key] = value
-
-            for key, value in config[trait][host_class].items():
-                if not isinstance(value, dict):
-                    ret_config[key] = value
-
-            if host_device:
-                for key, value in config[trait][host_class][host_device].items():
-                    ret_config[key] = value
-
-        except KeyError as e:
-            self.log.warning(
-                "Config for %s doesn't contain specified argument %s", trait, e
-            )
-
-        return pack_config(ret_config)
 
     def run(self):
         """Run controller."""

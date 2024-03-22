@@ -30,13 +30,13 @@ class Configuration:
         """Return all unused configuration keys"""
         return set(self._config.keys()).difference(self._requested_keys)
 
-    def get(self, key: str, default: any = None):
+    def setdefault(self, key: str, default: any = None):
         """
         Return value from requested key in config with default value if specified.
         Mark key as requested in configuration.
         """
         self._requested_keys.add(key)
-        return self._config.get(key, default)
+        return self._config.setdefault(key, default)
 
     def __getitem__(self, key: str):
         """
@@ -63,21 +63,33 @@ def pack_config(dictionary, parent_key="", separator="."):
     return dict(items)
 
 
-def read_config(config_path: str):
-    """Get config contents as a flat dict"""
+def get_config(
+    config_path: str,
+    category: str,
+    host_class: str,
+    host_device: str | None = None,
+):
+    """Get configuration of satellite. Specify category to only get part of config."""
     try:
         with open(config_path, "rb") as f:
-            return tomllib.load(f)
+            config = tomllib.load(f)
     # TODO: Handle errors FileNotFoundError, TypeError, tomllibDecodeError
     except tomllib.TOMLDecodeError:
         raise
+        # TODO: Handle TOMLDecodeError
 
+    ret_config = {}
+    # Set system configurations
+    for key, value in config[category].items():
+        if not isinstance(value, dict):
+            ret_config[key] = value
 
-def filter_config(trait: str, config: dict):
-    """Filter through a flat config after specific trait"""
-    res = {}
-    for key, value in config.items():
-        if trait in key:
-            res[key] = value
+    for key, value in config[category][host_class].items():
+        if not isinstance(value, dict):
+            ret_config[key] = value
 
-    return res
+    if host_device:
+        for key, value in config[category][host_class][host_device].items():
+            ret_config[key] = value
+
+    return pack_config(ret_config)
