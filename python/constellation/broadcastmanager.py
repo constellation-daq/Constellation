@@ -134,7 +134,14 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
     def register_request(
         self, serviceid: CHIRPServiceIdentifier, callback: callable
     ) -> None:
-        """Register new callback for ServiceIdentifier."""
+        """Register new callback for ServiceIdentifier.
+
+        Note that this expects a function as callable and not a method of a
+        class. For the latter, consider using the chirp_callback decorator or
+        use a lambda expression:
+
+        self.register_request(CHIRPServiceIdentifier.DATA, (lambda _self, service: self._callback(service)))
+        """
         if serviceid in CALLBACKS:
             self._logger.info("Overwriting callback")
         CALLBACKS[serviceid] = callback

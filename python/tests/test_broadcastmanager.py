@@ -76,6 +76,29 @@ def mock_bm_parent(mock_socket):
     yield bm
 
 
+@pytest.fixture
+def mock_bm_alt_parent(mock_socket):
+    """Create alternative mock class inheriting from BroadcastManager.
+
+    Does not use callback decorator.
+
+    """
+
+    class MockAltBroadcaster(CHIRPBroadcaster):
+        alt_callback_triggered = False
+
+        def alt_service_callback(self, service):
+            self.alt_callback_triggered = True
+
+    bm = MockAltBroadcaster(
+        name="mock-satellite",
+        group="mockstellation",
+    )
+    bm._add_com_thread()
+    bm._start_com_threads()
+    yield bm
+
+
 @pytest.mark.forked
 def test_manager_register(mock_bm):
     """Test registering services."""
@@ -108,9 +131,9 @@ def test_manager_discover(mock_bm):
 
 
 @pytest.mark.forked
-def test_manager_callback_runtime(mock_bm):
+def test_manager_ext_callback_runtime(mock_bm):
     """Test callback when discovering services registered during rumtime."""
-    # create callback
+    # create external callback
     mock = MagicMock()
     assert mock_bm.task_queue.empty()
     mock_bm.register_request(CHIRPServiceIdentifier.DATA, mock.callback)
@@ -123,8 +146,29 @@ def test_manager_callback_runtime(mock_bm):
     assert not mock_bm.task_queue.empty()
     assert mock.callback.call_count == 0
     fcn, arg = mock_bm.task_queue.get()
-    fcn(mock_bm, arg)
+    fcn(*arg)
     assert mock.callback.call_count == 1
+
+
+@pytest.mark.forked
+def test_manager_method_callback_runtime(mock_bm_alt_parent):
+    """Test callback when discovering services registered during rumtime."""
+    assert mock_bm_alt_parent.task_queue.empty()
+    mock_bm_alt_parent.register_request(
+        CHIRPServiceIdentifier.DATA,
+        (lambda _self, service: mock_bm_alt_parent.alt_service_callback(service)),
+    )
+    mock_packet_queue.append(offer_data_666)
+    # thread running in background listening to "socket"
+    time.sleep(0.5)
+    assert len(mock_packet_queue) == 0
+    assert len(mock_bm_alt_parent.discovered_services) == 1
+    # callback queued but not performed (no worker thread)
+    assert not mock_bm_alt_parent.alt_callback_triggered
+    assert not mock_bm_alt_parent.task_queue.empty()
+    fcn, arg = mock_bm_alt_parent.task_queue.get()
+    fcn(*arg)
+    assert mock_bm_alt_parent.alt_callback_triggered
 
 
 @pytest.mark.forked
@@ -142,5 +186,5 @@ def test_manager_callback_decorator(mock_bm_parent):
     assert not mock_bm_parent.task_queue.empty()
     assert not mock_bm_parent.callback_triggered
     fcn, arg = mock_bm_parent.task_queue.get()
-    fcn(mock_bm_parent, arg)
+    fcn(*arg)
     assert mock_bm_parent.callback_triggered
