@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <memory>
 #include <optional>
@@ -17,6 +18,9 @@
 #include <vector>
 
 #include <spdlog/async_logger.h>
+#include <spdlog/common.h>
+#include <spdlog/details/log_msg.h>
+#include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "constellation/core/config.hpp"
@@ -31,6 +35,25 @@ namespace constellation::log {
      * This class manager the console and CMDP sinks and can creates new spdlog loggers.
      */
     class SinkManager {
+    private:
+        // Formatter for the log level (overwrites spdlog defaults)
+        class CNSTLN_API constellation_level_formatter final : public spdlog::custom_flag_formatter {
+        public:
+            constellation_level_formatter(bool format_short);
+            void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
+            std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
+
+        private:
+            bool format_short_;
+        };
+
+        // Formatter for the topic (adds brackets except for the default logger)
+        class CNSTLN_API constellation_topic_formatter final : public spdlog::custom_flag_formatter {
+        public:
+            void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
+            std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
+        };
+
     public:
         CNSTLN_API static SinkManager& getInstance();
 
@@ -60,7 +83,7 @@ namespace constellation::log {
         CNSTLN_API void registerService() const;
 
         /**
-         * Create a new asynchronous spglog logger
+         * Create a new asynchronous spdlog logger
          *
          * @param topic Topic of the new logger
          * @param console_level Optional log level for console output to overwrite global level
@@ -68,6 +91,11 @@ namespace constellation::log {
          */
         CNSTLN_API std::shared_ptr<spdlog::async_logger> createLogger(std::string topic,
                                                                       std::optional<Level> console_level = std::nullopt);
+
+        /**
+         * Return the default logger (no topic)
+         */
+        std::shared_ptr<spdlog::async_logger> getDefaultLogger() const { return default_logger_; }
 
         // TODO(stephan.lachnit): remove, this debug until fetching subscriptions from ZeroMQ is implemented
         CNSTLN_API void setCMDPLevelsCustom(Level cmdp_global_level,
@@ -87,6 +115,7 @@ namespace constellation::log {
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 
+        std::shared_ptr<spdlog::async_logger> default_logger_;
         std::shared_ptr<spdlog::async_logger> cmdp_console_logger_;
 
         std::vector<std::shared_ptr<spdlog::async_logger>> loggers_;

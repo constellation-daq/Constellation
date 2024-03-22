@@ -57,6 +57,11 @@ namespace constellation::log {
          */
         CNSTLN_API Logger(std::string topic, std::optional<Level> console_level = std::nullopt);
 
+        /**
+         * Return the default logger
+         */
+        CNSTLN_API static Logger& getDefault();
+
         CNSTLN_API virtual ~Logger();
 
         // No copy/move constructor/assignment
@@ -103,6 +108,9 @@ namespace constellation::log {
          * Flush each spdlog sink (synchronously)
          */
         CNSTLN_API void flush();
+
+    protected:
+        Logger(std::shared_ptr<spdlog::async_logger> spdlog_logger) : spdlog_logger_(std::move(spdlog_logger)) {}
 
     private:
         std::shared_ptr<spdlog::async_logger> spdlog_logger_;

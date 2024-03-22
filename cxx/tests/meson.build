@@ -1,8 +1,13 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-# Meson only used to run C++ tests
-if not impl_cpp
+catch2_dep = dependency('catch2-with-main',
+  version: '>=3.0.0',
+  default_options: ['tests=false'],
+  required: get_option('cxx_tests'),
+)
+
+if not catch2_dep.found()
   subdir_done()
 endif
 

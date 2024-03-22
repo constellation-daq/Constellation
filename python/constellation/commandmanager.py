@@ -16,7 +16,8 @@ from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
 
 
-COMMANDS = dict()
+# store command names of decorated methods
+COMMANDS = []
 
 
 def cscp_requestable(func):
@@ -25,7 +26,7 @@ def cscp_requestable(func):
     See CommandReceiver for a description of the expected signature.
 
     """
-    COMMANDS[func.__name__] = func
+    COMMANDS.append(func.__name__)
     return func
 
 
@@ -63,6 +64,8 @@ class CommandReceiver(BaseSatelliteFrame):
         sock.bind(f"tcp://*:{cmd_port}")
         self.log.info(f"Satellite listening on command port {cmd_port}")
         self._cmd_tm = CommandTransmitter(name, sock)
+        # cached list of supported commands
+        self._cmds = []
 
     def _add_com_thread(self):
         """Add the command receiver thread to the communication thread pool."""
@@ -74,10 +77,23 @@ class CommandReceiver(BaseSatelliteFrame):
 
     def _recv_cmds(self):
         """Request receive loop."""
+        # first, determine the supported commands
+        #
+        # NOTE the global list COMMANDS might include methods unavailble in this
+        # class if e.g. different classes inheriting from Satellite were imported.
+        # This step reduces the list to what is actually available.
+        self._cmds = [cmd for cmd in COMMANDS if hasattr(self, cmd)]
         while not self._com_thread_evt.is_set():
-            req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
+            try:
+                req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
+            except zmq.ZMQError as e:
+                # something wrong with the ZMQ socket, wait a while for recovery
+                self.log.exception(e)
+                time.sleep(0.5)
+                continue
             if not req:
-                time.sleep(0.01)
+                # no message waiting for us, rest until next attempt
+                time.sleep(0.025)
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:
@@ -88,9 +104,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 continue
 
             # find a matching callback
-            try:
-                callback = COMMANDS[req.msg]
-            except KeyError:
+            if req.msg not in self._cmds:
                 self.log.error("Unknown command: %s", req)
                 self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.UNKNOWN)
                 continue
@@ -106,8 +120,8 @@ class CommandReceiver(BaseSatelliteFrame):
                 pass
             # perform the actual callback
             try:
-                self.log.debug("Calling command %s with argument %s", callback, req)
-                res, payload, meta = callback(self, req)
+                self.log.debug("Calling command %s with argument %s", req.msg, req)
+                res, payload, meta = getattr(self, req.msg)(req)
             except (AttributeError, ValueError, TypeError, NotImplementedError) as e:
                 self.log.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
@@ -155,10 +169,11 @@ class CommandReceiver(BaseSatelliteFrame):
 
         """
         res = []
-        for cmd, fcn in COMMANDS.items():
+        for cmd in self._cmds:
             summary = "missing docstring"
             payload_desc = "no payload/missing docstring"
             try:
+                fcn = getattr(self, cmd)
                 doc = [line for line in fcn.__doc__.splitlines() if line]
                 summary = doc[0].strip()
                 payload_desc = doc[1].strip()
