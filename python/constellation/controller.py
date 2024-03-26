@@ -46,12 +46,12 @@ class BaseCLIController(CHIRPBroadcaster):
                 self._add_satellite(host_name=host, host_addr=host)
 
         self.register_request(
-            CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
+            CHIRPServiceIdentifier.CONTROL, self._add_satellite_callback
         )
         self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
 
-    def add_satellite_callback(
+    def _add_satellite_callback(
         self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
     ):
         """Callback method of add_satellite. Add satellite to command on service socket and address."""
