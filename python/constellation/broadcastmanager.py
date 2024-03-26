@@ -99,7 +99,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         super().__init__(name, **kwds)
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(name, group)
+        self._beacon = CHIRPBeaconTransmitter(self.name, group)
 
         # Offered and discovered services
         self._registered_services = {}

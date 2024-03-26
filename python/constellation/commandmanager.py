@@ -63,7 +63,7 @@ class CommandReceiver(BaseSatelliteFrame):
         sock = self.context.socket(zmq.REP)
         sock.bind(f"tcp://*:{cmd_port}")
         self.log.info(f"Satellite listening on command port {cmd_port}")
-        self._cmd_tm = CommandTransmitter(name, sock)
+        self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
         self._cmds = []
 
