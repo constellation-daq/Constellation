@@ -96,7 +96,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         e.g. state transitions.
 
         """
-        while not self._com_thread_evt.is_set():
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
             try:
                 # blocking call but with timeout to prevent deadlocks
@@ -377,14 +377,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     @cscp_requestable
     def get_status(self, _request: CSCPMessage = None) -> str:
         return self.fsm.status, None, None
-
-    @cscp_requestable
-    def get_class(self, request: CSCPMessage = None) -> str:
-        return (
-            str(self.__class__.__name__),
-            None,
-            None,
-        )  # TODO: Generalize, NotImplemented
 
 
 # -------------------------------------------------------------------------

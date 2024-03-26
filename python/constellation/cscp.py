@@ -94,7 +94,10 @@ class CommandTransmitter:
             payload=payload,
             meta=meta,
         )
-        return self.get_message()
+        msg = self.get_message()
+        if not msg.msg_verb == CSCPMessageVerb.SUCCESS:
+            raise RuntimeError(msg.msg)
+        return msg
 
     def send_reply(
         self, response, msgtype: CSCPMessageVerb, payload: any = None, meta: dict = None

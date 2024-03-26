@@ -8,7 +8,6 @@ Constellation Satellites.
 
 import logging
 import threading
-from functools import wraps
 
 import time
 from uuid import UUID
@@ -27,18 +26,15 @@ from .chirp import (
 CALLBACKS = dict()
 
 
-def chirp_callback(request_service: CHIRPServiceIdentifier):
+class chirp_callback:
     """Register a function as a callback for CHIRP service requests."""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+    def __init__(self, request_service: CHIRPServiceIdentifier):
+        self.request_service = request_service
 
-        CALLBACKS[request_service] = func
-        return wrapper
-
-    return decorator
+    def __call__(self, func):
+        CALLBACKS[self.request_service] = func
+        return func
 
 
 class DiscoveredService:
@@ -103,7 +99,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         super().__init__(name, **kwds)
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(name, group)
+        self._beacon = CHIRPBeaconTransmitter(self.name, group)
 
         # Offered and discovered services
         self._registered_services = {}
@@ -136,18 +132,19 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
     ) -> None:
         """Register new callback for ServiceIdentifier.
 
-        Note that this expects a function as callable and not a method of a
-        class. For the latter, consider using the chirp_callback decorator or
-        use a lambda expression:
+        Note that this expects a function as callable and not a method. For the
+        latter, consider using the chirp_callback decorator or use a lambda
+        expression:
 
-        self.register_request(CHIRPServiceIdentifier.DATA, (lambda _self, service: self._callback(service)))
+        self.register_request(CHIRPServiceIdentifier.DATA, (lambda _bm, service: self._callback(service)))
+
         """
         if serviceid in CALLBACKS:
             self._logger.info("Overwriting callback")
         CALLBACKS[serviceid] = callback
         # make a callback if a service has already been discovered
         for known in self.get_discovered(serviceid):
-            self.task_queue.put((callback, known))
+            self.task_queue.put((callback, [self, known]))
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
@@ -235,7 +232,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             service.alive = False
             try:
                 callback = CALLBACKS[msg.serviceid]
-                self.task_queue.put((callback, service))
+                self.task_queue.put((callback, [self, service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
         except ValueError:

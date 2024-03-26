@@ -63,7 +63,7 @@ class CommandReceiver(BaseSatelliteFrame):
         sock = self.context.socket(zmq.REP)
         sock.bind(f"tcp://*:{cmd_port}")
         self.log.info(f"Satellite listening on command port {cmd_port}")
-        self._cmd_tm = CommandTransmitter(name, sock)
+        self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
         self._cmds = []
 
@@ -100,13 +100,17 @@ class CommandReceiver(BaseSatelliteFrame):
                 self.log.error(
                     f"Received malformed request with msg verb: {req.msg_verb}"
                 )
-                self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.INVALID)
+                self._cmd_tm.send_reply(
+                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.INVALID
+                )
                 continue
 
             # find a matching callback
             if req.msg not in self._cmds:
                 self.log.error("Unknown command: %s", req)
-                self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.UNKNOWN)
+                self._cmd_tm.send_reply(
+                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.UNKNOWN
+                )
                 continue
             # test whether callback is allowed by calling the
             # method "_COMMAND_is_allowed" (if exists).
@@ -114,7 +118,9 @@ class CommandReceiver(BaseSatelliteFrame):
                 is_allowed = getattr(self, f"_{req.msg}_is_allowed")(req)
                 if not is_allowed:
                     self.log.error("Command not allowed: %s", req)
-                    self._cmd_tm.send_reply("Not allowed", CSCPMessageVerb.INVALID)
+                    self._cmd_tm.send_reply(
+                        f"Not allowed: {req.msg_verb}", CSCPMessageVerb.INVALID
+                    )
                     continue
             except AttributeError:
                 pass

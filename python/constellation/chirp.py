@@ -15,6 +15,11 @@ CHIRP_PORT = 7123
 CHIRP_HEADER = "CHIRP%x01"
 
 
+def get_uuid(name: str) -> UUID:
+    """Return the UUID for a string."""
+    return uuid5(NAMESPACE_DNS, name)
+
+
 class CHIRPServiceIdentifier(Enum):
     """Identifies the type of service.
 
@@ -112,8 +117,8 @@ class CHIRPBeaconTransmitter:
         group: str,
     ) -> None:
         """Initialize attributes and open broadcast socket."""
-        self._host_uuid = uuid5(NAMESPACE_DNS, name)
-        self._group_uuid = uuid5(NAMESPACE_DNS, group)
+        self._host_uuid = get_uuid(name)
+        self._group_uuid = get_uuid(group)
 
         # whether or not to filter broadcasts on group
         self._filter_group = True
