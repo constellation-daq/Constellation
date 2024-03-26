@@ -164,7 +164,7 @@ class DataReceiver(Satellite):
             thread.name = f"{self.name}_{address}_{port}_pull-thread"
             thread.start()
             self._puller_threads.append(thread)
-            self.logger.info(f"Satellite {self.name} pulling data from {host}:{port}")
+            self.log.info(f"Satellite {self.name} pulling data from {address}:{port}")
 
     def on_failure(self):
         """Stop all threads."""
