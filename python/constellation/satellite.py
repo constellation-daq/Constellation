@@ -373,6 +373,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         """
         return __version__, None, None
 
+    @cscp_requestable
     def get_state(self, _request: CSCPMessage = None) -> str:
         return self.fsm.current_state.id, None, None
 
