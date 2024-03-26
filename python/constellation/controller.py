@@ -24,7 +24,7 @@ from .fsm import SatelliteFSM
 class BaseCLIController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name: str, group: str, hosts=None):
+    def __init__(self, *args, hosts=None, **kwargs):
         """Initialize values.
 
         Arguments:
@@ -32,7 +32,7 @@ class BaseCLIController(CHIRPBroadcaster):
         - group ::  group of controller
         - hosts ::  name, address and port of satellites to control
         """
-        super().__init__(name=name, group=group)
+        super().__init__(*args, **kwargs)
 
         self.transmitters: Dict[str, CommandTransmitter] = {}
         self.context = zmq.Context()
