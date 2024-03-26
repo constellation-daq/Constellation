@@ -37,7 +37,7 @@ class SatelliteArray:
     def satellites(self):
         return self._satellites
 
-    def _add_class(self, name, commands):
+    def _add_class(self, name: str, commands: list[str]):
         try:
             cl = getattr(self, name)
             return cl
@@ -49,7 +49,7 @@ class SatelliteArray:
         setattr(self, name, cl)
         return cl
 
-    def _add_satellite(self, name, cls, commands):
+    def _add_satellite(self, name: str, cls: str, commands: list[str]):
         try:
             cl = getattr(self, cls)
         except AttributeError:
@@ -60,15 +60,22 @@ class SatelliteArray:
         self._satellites.append(sat)
         return sat
 
-    def _remove_satellite(self, name, cls):
+    def _remove_satellite(self, uuid: str):
+        name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
-        delattr(self, f"{cls}.{name}")
+        delattr(getattr(self, cls), name)
         # clear from list
-        self._satellites = [
-            sat for sat in self._satellites if sat.name != name or sat.class_name != cls
-        ]
+        self._satellites = [sat for sat in self._satellites if sat.uuid != uuid]
 
-    def _add_cmds(self, obj, handler, cmds):
+    def _get_name_from_uuid(self, uuid: str):
+        s = [sat for sat in self._satellites if sat.uuid == uuid]
+        if not s:
+            raise KeyError("No Satellite with that UUID known.")
+        name = s[0].name
+        cls = s[0].class_name
+        return name, cls
+
+    def _add_cmds(self, obj: any, handler: callable, cmds: list[str]):
         try:
             sat = obj.name
         except AttributeError:
@@ -128,7 +135,12 @@ class BaseController(CHIRPBroadcaster):
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
     def _add_satellite_callback(self, service: DiscoveredService):
         """Callback method connecting to satellite."""
-        # TODO handle departures
+        if not service.alive:
+            self._remove_satellite(service)
+        else:
+            self._add_satellite(service)
+
+    def _add_satellite(self, service: DiscoveredService):
         # create socket
         socket = self.context.socket(zmq.REQ)
         # configure send/recv timeouts to avoid hangs if Satellite fails
@@ -159,6 +171,28 @@ class BaseController(CHIRPBroadcaster):
             self.transmitters[str(service.host_uuid)] = ct
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
+
+    def _remove_satellite(self, service: DiscoveredService):
+        name, cls = None, None
+        # departure
+        uuid = str(service.host_uuid)
+        try:
+            name, cls = self.constellation._get_name_from_uuid(uuid)
+            self.constellation._remove_satellite(uuid)
+        except KeyError:
+            pass
+        self.log.debug(
+            "Departure of %s, known as %s.%s",
+            service.host_uuid,
+            name,
+            cls,
+        )
+        try:
+            ct = self.transmitters[uuid]
+            ct.socket.close()
+            self.transmitters.pop(uuid)
+        except KeyError:
+            pass
 
     def command(self, payload=None, sat=None, satcls=None, cmd=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
