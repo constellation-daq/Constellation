@@ -377,10 +377,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
     def get_status(self, _request: CSCPMessage = None) -> str:
         return self.fsm.status, None, None
 
-    @cscp_requestable
-    def get_class(self, request: CSCPMessage = None) -> str:
-        return "Keithley", None, None  # TODO: Generalize, NotImplemented
-
 
 # -------------------------------------------------------------------------
 
