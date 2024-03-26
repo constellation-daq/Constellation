@@ -8,7 +8,6 @@ Constellation Satellites.
 
 import logging
 import threading
-from functools import wraps
 
 import time
 from uuid import UUID
@@ -27,18 +26,15 @@ from .chirp import (
 CALLBACKS = dict()
 
 
-def chirp_callback(request_service: CHIRPServiceIdentifier):
+class chirp_callback:
     """Register a function as a callback for CHIRP service requests."""
 
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
+    def __init__(self, request_service: CHIRPServiceIdentifier):
+        self.request_service = request_service
 
-        CALLBACKS[request_service] = func
-        return wrapper
-
-    return decorator
+    def __call__(self, func):
+        CALLBACKS[self.request_service] = func
+        return func
 
 
 class DiscoveredService:
