@@ -89,7 +89,7 @@ class SatelliteClassCommLink:
 class SatelliteCommLink(SatelliteClassCommLink):
     def __init__(self, name, cls):
         self.name = name
-        self.uuid = get_uuid(f"{cls}.{name}")
+        self.uuid = str(get_uuid(f"{cls}.{name}"))
         super().__init__(cls)
 
 
@@ -129,27 +129,33 @@ class BaseController(CHIRPBroadcaster):
     def _add_satellite_callback(self, service: DiscoveredService):
         """Callback method connecting to satellite."""
         # TODO handle departures
-        # configure send/recv timeouts to avoid hangs if Satellite fails
-        self.context.setOption(zmq.ZMQ_RCVTIMEO, 1000)
-        self.context.setOption(zmq.ZMQ_SNDTIMEO, 1000)
         # create socket
         socket = self.context.socket(zmq.REQ)
+        # configure send/recv timeouts to avoid hangs if Satellite fails
+        socket.setsockopt(zmq.SNDTIMEO, 1000)
+        socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
-        ct = CommandTransmitter(service.host_uuid, socket)
-        self.log.info(
-            "connecting to %s, address %s on port %s...",
+        ct = CommandTransmitter(self.name, socket)
+        self.log.debug(
+            "Connecting to %s, address %s on port %s...",
             service.host_uuid,
             service.address,
             service.port,
         )
         try:
-            # get canonical name
-            msg = ct.request_get_response("get_name")
-            cls, name = msg.msg.split(".", maxsplit=1)
             # get list of commands
             msg = ct.request_get_response("get_commands")
-            cmds = msg.payload
-            self.constellation._add_satellite(name, cls, cmds)
+            # get only the actual command name
+            cmds = [cmd[0] for cmd in msg.payload]
+            # get canonical name
+            cls, name = msg.from_host.split(".", maxsplit=1)
+            sat = self.constellation._add_satellite(name, cls, cmds)
+            if sat.uuid != str(service.host_uuid):
+                self.log.warning(
+                    "UUIDs do not match: expected %s but received %s",
+                    sat.uuid,
+                    str(service.host_uuid),
+                )
             self.transmitters[str(service.host_uuid)] = ct
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
@@ -160,16 +166,28 @@ class BaseController(CHIRPBroadcaster):
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat.uuid for sat in self.constellation]
+            targets = [sat.uuid for sat in self.constellation.satellites]
+            self.log.info(
+                "Sending %s to all %s connected Satellites.", cmd, len(targets)
+            )
         elif not sat:
             targets = [
-                sat.uuid for sat in self.constellation if sat.class_name == satcls
+                sat.uuid
+                for sat in self.constellation.satellites
+                if sat.class_name == satcls
             ]
+            self.log.info(
+                "Sending %s to all %s connected Satellites of class %s.",
+                cmd,
+                len(targets),
+                satcls,
+            )
         else:
             targets = [getattr(getattr(self.constellation, satcls), sat).uuid]
+            self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         for target in targets:
-            self.log.info("Host %s send command %s...", target, cmd)
+            self.log.debug("Host %s send command %s...", target, cmd)
 
             try:
                 ret_msg = self.transmitters[target].request_get_response(
@@ -179,16 +197,26 @@ class BaseController(CHIRPBroadcaster):
                 )
             except KeyError:
                 self.log.error(
-                    "Command %s failed for %s.%s: No transmitter available",
+                    "Command %s failed for %s (%s.%s): No transmitter available",
                     cmd,
+                    target,
                     satcls,
                     sat,
                 )
                 continue
+            except RuntimeError as e:
+                self.log.error(
+                    "Command %s failed for %s (%s.%s): %s",
+                    cmd,
+                    target,
+                    satcls,
+                    sat,
+                    repr(e),
+                )
+                continue
             self.log.info(
-                "Host %s sent response: %s, %s",
-                target,
-                ret_msg.msg_verb,
+                "%s responded: %s",
+                ret_msg.from_host,
                 ret_msg.msg,
             )
             if ret_msg.header_meta:
