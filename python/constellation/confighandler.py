@@ -92,4 +92,4 @@ def get_config(
         for key, value in config[category][host_class][host_device].items():
             ret_config[key] = value
 
-    return pack_config(ret_config)
+    return ret_config
