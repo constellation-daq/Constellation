@@ -22,7 +22,7 @@ corresponding Constellation satellite skeleton. The following table helps in fin
 | `DoStopRun`    | `stopping`              | Direct equivalent. Stops the run currently in progress.
 | `RunLoop`      | `running`               | Equivalent with the difference that instead of keeping track of the running via a custom variable (like `m_running`) often found in EUDAQ Producers, Constellation provides a stop token. More information is available [here](/manual/howtos/satellite_cxx).
 | `DoReset`      | -                       | In EUDAQ, this command puts the producer back into the initial state. In contrast, resetting a satellite in Constellation means calling its `initializing` method again.
-| `DoTerminate`  | -                       | -
+| `DoTerminate`  | Destructor              | The EUDAQ equivalent of the `terminate` action in Constellation is the `shutdown` command which can only be triggered when not running or in orbit. The corresponding code should be placed in the destructor of the satellite.
 | `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because statistical metrics are transmitted differently, more similar to log messages. More information can be found [here](/manual/concepts/statistics).
 
 ## Transmitting Data
