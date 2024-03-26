@@ -44,3 +44,6 @@ voltage = 5000
 [satellites.example_satellite.example_device2]
 # Device-specific system settings for satelli
 voltage = 3000
+
+[satellites.H5DataReceiverWriter]
+name_format = "test_data_{date}.h5"
