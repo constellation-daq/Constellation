@@ -100,12 +100,8 @@ class DataTransmitter:
         # Set option to send more based on flag input
         flags = zmq.SNDMORE | flags
         # message header
-        header_remainder = [
-            run_identifier,
-            self._sequence_number,
-            meta,
-        ]
-        self.msgheader.send(self._socket, meta=header_remainder, flags=flags)
+        self.msgheader.send(self._socket, meta=meta, flags=flags)
+        self._socket.send([run_identifier, self._sequence_number], flags=flags)
 
         # payload
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
