@@ -420,7 +420,6 @@ def main(args=None):
         cmd_port=args.cmd_port,
         hb_port=args.hb_port,
         log_port=args.log_port,
-        filename="test_data_{date}.h5",
     )
 
     s.run_satellite()
