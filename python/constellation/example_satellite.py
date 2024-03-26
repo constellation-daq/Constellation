@@ -12,7 +12,7 @@ import logging
 from .confighandler import ConfigError, Configuration
 
 
-class PowerSupply1:
+class Example_Device1:
 
     def set_config(self, config: Configuration):
         self.voltage = config["voltage"]
@@ -20,10 +20,10 @@ class PowerSupply1:
         self.sample_period = config.setdefault("sample_period", default=0.1)
 
 
-class Keithley(Satellite):
+class Example_Satellite(Satellite):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.device = PowerSupply1()
+        self.device = Example_Device1()
 
     def do_initializing(self, payload: dict) -> str:
         super().do_initializing(payload=payload)
@@ -71,7 +71,7 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Keithley(
+    s = Example_Satellite(
         args.name,
         args.group,
         args.cmd_port,

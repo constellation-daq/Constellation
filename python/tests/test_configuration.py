@@ -24,8 +24,8 @@ def config():
             get_config(
                 "python/constellation/configs/example.toml",
                 category,
-                "keithley",
-                "powersupply2",
+                "example_satellite",
+                "example_device2",
             )
         )
     yield Configuration(config)
