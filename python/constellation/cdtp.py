@@ -33,7 +33,7 @@ class CDTPMessage:
     name: str = None
     timestamp: msgpack.Timestamp = None
     msgtype: CDTPMessageIdentifier = None
-    _sequence_number: int = None
+    sequence_number: int = None
     meta: dict[str, any]
     payload: any = None
 
@@ -59,17 +59,26 @@ class DataTransmitter:
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CDTP)
         self._socket = socket
+        self.running = False
 
     def send_start(self, payload, meta, flags: int = 0):
-        self._sequence_number = 0
+        self.sequence_number = 0
+        self.running = True
         return self._dispatch(payload, CDTPMessageIdentifier.BOR, meta, flags)
 
     def send_data(self, payload, meta, flags: int = 0):
-        self._sequence_number += 1
-        return self._dispatch(payload, CDTPMessageIdentifier.DAT, meta, flags)
+        if self.running:
+            self.sequence_number += 1
+            return self._dispatch(payload, CDTPMessageIdentifier.DAT, meta, flags)
+        msg = "Data transfer sequence not started"
+        raise RuntimeError(msg)
 
     def send_end(self, payload, meta, flags: int = 0):
-        return self._dispatch(payload, CDTPMessageIdentifier.EOR, meta, flags)
+        if self.running:
+            self.running = False
+            return self._dispatch(payload, CDTPMessageIdentifier.EOR, meta, flags)
+        msg = "Data transfer sequence not started"
+        raise RuntimeError(msg)
 
     def _dispatch(
         self,
@@ -101,7 +110,7 @@ class DataTransmitter:
         flags = zmq.SNDMORE | flags
         # message header
         self.msgheader.send(self._socket, meta=meta, flags=flags)
-        self._socket.send([run_identifier, self._sequence_number], flags=flags)
+        self._socket.send([run_identifier, self.sequence_number], flags=flags)
 
         # payload
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
@@ -126,6 +135,6 @@ class DataTransmitter:
             return None
         msg = CDTPMessage()
         msg.set_header(*self.msgheader.decode(datamsg[0]))
-        msg.msgtype, msg._sequence_number = msgpack.unpackb(datamsg[1])
+        msg.msgtype, msg.sequence_number = msgpack.unpackb(datamsg[1])
         msg.payload = msgpack.unpackb(datamsg[2])
         return msg
