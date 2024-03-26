@@ -250,7 +250,7 @@ class H5DataReceiverWriter(DataReceiver):
             ) from exception
         return h5file
 
-    def write_data(self, h5file, item):
+    def write_data(self, h5file: h5py.File, item: CDTPMessage):
         """Write data to HDF5 format
 
         Current format: File -> Grp (recv_host) -> Dataset (event_{eventid)
