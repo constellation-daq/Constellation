@@ -15,6 +15,7 @@ from constellation.chirp import (
 )
 
 from constellation.cscp import CommandTransmitter
+from constellation.cdtp import DataTransmitter
 
 # chirp
 mock_chirp_packet_queue = []
@@ -23,6 +24,7 @@ mock_chirp_packet_queue = []
 mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
+recv_port = 22222
 
 
 # SIDE EFFECTS
@@ -138,6 +140,26 @@ def mock_socket_sender():
 
 
 @pytest.fixture
+def mock_socket_receiver():
+    mock = mocket()
+    mock.return_value = mock
+    mock.endpoint = 1
+    mock.port = recv_port
+
+
+@pytest.fixture
 def mock_cmd_transmitter(mock_socket_sender):
     t = CommandTransmitter("mock_sender", mock_socket_sender)
     yield t
+
+
+@pytest.fixture
+def mock_data_transmitter(mock_socket_sender):
+    t = DataTransmitter("mock_sender", mock_socket_sender)
+    yield t
+
+
+@pytest.fixture
+def mock_data_receiver(mock_socket_receiver):
+    r = DataTransmitter("mock_receiver", mock_socket_receiver)
+    yield r
