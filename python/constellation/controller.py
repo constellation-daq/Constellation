@@ -68,22 +68,6 @@ class BaseController(CHIRPBroadcaster):
             service.port,
         )
 
-    @debug_log
-    def _add_satellite(self, host_name, host_addr, port: int | None = None):
-        """Add satellite socket to controller on port."""
-        if "tcp://" not in host_addr[:6]:
-            host_addr = "tcp://" + host_addr
-        if port:
-            host_addr = host_addr + ":" + port
-        socket = self.context.socket(zmq.REQ)
-        socket.connect(host_addr)
-        self.transmitters[host_name] = CommandTransmitter(host_name, socket)
-        self.log.info(
-            "connecting to %s, address %s...",
-            host_name,
-            host_addr,
-        )
-
     def _command_satellite(
         self, cmd: str, payload: any, meta: dict, host_name: str = None
     ):
@@ -172,13 +156,6 @@ class BaseController(CHIRPBroadcaster):
         elif user_input.startswith("untarget"):
             self.target_host = None
 
-        elif user_input.startswith("add"):
-            satellite_info = user_input.split(" ")
-            host_name = str(satellite_info[1])
-            host_addr = str(satellite_info[2])
-            port = str(satellite_info[3])
-            self._add_satellite(host_name=host_name, host_addr=host_addr, port=port)
-
         elif user_input.startswith("remove"):
             target = user_input.split(" ")[1]
             if target in self.transmitters.keys():
@@ -218,7 +195,7 @@ class BaseController(CHIRPBroadcaster):
         """Run commands from CLI and pass them to task handler-routine."""
         print(
             'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", \
-            "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
+            "failure", "register <ip> <port>", "remove <uuid>"'
         )
         print(
             'Possible transitions: "initialize", "load", "unload", "launch", "land", \
@@ -319,7 +296,6 @@ def main():
         "transition ",
         "failure",
         "register ",
-        "add ",
         "remove ",
     ]
     transitions = [t.name for t in SatelliteFSM.events]
