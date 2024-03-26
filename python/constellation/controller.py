@@ -57,12 +57,12 @@ class BaseCLIController(CHIRPBroadcaster):
         """Callback method of add_satellite. Add satellite to command on service socket and address."""
         self._add_satellite(str(service.host_uuid), str(service.address), service.port)
 
-    def _add_satellite(self, host_name, host_addr, port: int | None = None):
+    def _add_satellite(self, host_name: str, host_addr: str, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
         if port:
-            host_addr = host_addr + ":" + port
+            host_addr = host_addr + ":" + str(port)
         socket = self.context.socket(zmq.REQ)
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
