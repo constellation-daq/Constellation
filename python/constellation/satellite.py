@@ -167,7 +167,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             self.log.error("Failed to configure satellite")
 
         if self.config.has_unused_values():
-            for key in self.config.get_unused_values():
+            for key in self.config.get_unused_keys():
                 self.log.warning("Device has unused configuration values %s", key)
         return init_msg
 
