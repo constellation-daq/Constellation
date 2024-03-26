@@ -255,9 +255,9 @@ class BaseController(CHIRPBroadcaster):
                 ret_msg.msg,
             )
             if ret_msg.header_meta:
-                self.debug.info("    header: %s", ret_msg.header_meta)
+                self.log.debug.info("    header: %s", ret_msg.header_meta)
             if ret_msg.payload:
-                self.debug.info("    payload: %s", ret_msg.payload)
+                self.log.debug.info("    payload: %s", ret_msg.payload)
             res[ret_msg.from_host] = {"msg": ret_msg.msg, "payload": ret_msg.payload}
         return res
 
