@@ -76,6 +76,7 @@ def get_config(
 
     if host_device:
         for key, value in config[category][host_class][host_device].items():
-            ret_config[key] = value
+            if not isinstance(value, dict):
+                ret_config[key] = value
 
     return ret_config
