@@ -96,7 +96,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         e.g. state transitions.
 
         """
-        while not self._com_thread_evt.is_set():
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
             try:
                 # blocking call but with timeout to prevent deadlocks
