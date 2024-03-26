@@ -18,7 +18,7 @@ importance = "low"
 [constellation.example_satellite.example_device2]
 # Device-specific system settings for network
 importance = "essential"
-start_after = "example_device1"
+start_after = "example_satellite.example_device1"
 
 
 [controller]
