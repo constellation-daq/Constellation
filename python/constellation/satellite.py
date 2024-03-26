@@ -387,7 +387,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             str(self.__class__.__name__),
             None,
             None,
-        )  # TODO: Generalize, NotImplemented
+        )
 
 
 # -------------------------------------------------------------------------
