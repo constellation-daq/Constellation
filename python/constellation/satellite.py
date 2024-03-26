@@ -164,7 +164,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         init_msg = self.do_initializing(payload)
 
         if self.config.has_unused_values():
-            for key in self.config.get_unused_values():
+            for key in self.config.get_unused_keys():
                 self.log.warning("Device has unused configuration values %s", key)
         return init_msg
 
@@ -370,6 +370,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         """
         return __version__, None, None
 
+    @cscp_requestable
     def get_state(self, _request: CSCPMessage = None) -> str:
         return self.fsm.current_state.id, None, None
 
@@ -379,7 +380,11 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
     @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
-        return "Keithley", None, None  # TODO: Generalize, NotImplemented
+        return (
+            str(self.__class__.__name__),
+            None,
+            None,
+        )  # TODO: Generalize, NotImplemented
 
 
 # -------------------------------------------------------------------------

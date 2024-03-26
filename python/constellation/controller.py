@@ -25,7 +25,7 @@ from .error import debug_log
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name: str, group: str, hosts=None):
+    def __init__(self, *args, hosts=None, **kwargs):
         """Initialize values.
 
         Arguments:
@@ -33,7 +33,7 @@ class BaseController(CHIRPBroadcaster):
         - group ::  group of controller
         - hosts ::  name, address and port of satellites to control
         """
-        super().__init__(name=name, group=group)
+        super().__init__(*args, **kwargs)
 
         self.transmitters: Dict[str, CommandTransmitter] = {}
 
@@ -74,7 +74,7 @@ class BaseController(CHIRPBroadcaster):
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
         if port:
-            host_addr = host_addr + ":" + port
+            host_addr = host_addr + ":" + str(port)
         socket = self.context.socket(zmq.REQ)
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
@@ -82,6 +82,7 @@ class BaseController(CHIRPBroadcaster):
             "connecting to %s, address %s...",
             host_name,
             host_addr,
+            port,
         )
 
     def _command_satellite(
@@ -151,7 +152,7 @@ class BaseController(CHIRPBroadcaster):
                             config_path=config_path,
                             category=category,
                             host_class=class_msg.msg,
-                            host_device="powersupply1",  # TODO: generalize
+                            host_device="example_device1",  # TODO: generalize
                         )
                     )
                 except KeyError as e:

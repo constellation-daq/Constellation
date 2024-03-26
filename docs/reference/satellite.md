@@ -8,9 +8,29 @@ These pages contain detailed technical information concerning the communication 
 minimal set of functionality for them to interoperate with each other.
 ```
 
+## Names
+
+The full canonical name of a satellite consists of its type and its name:
+
+* The name of the satellite is a user-chosen name.
+* The type the satellite corresponds to the class name of the satellite implementation
+* The canonical name of the satellite consists of the above information in the form "type.name"
+
+The canonical name of a satellite must be unique and is used throughout the framework for identification. This name should
+appear in configuration files and will be sent as the "sending host" information in message header frames.
+
+## Satellite Startup & Shutdown
+
+When a new satellite is launched, the state of its FSM **shall always** be its `NEW` state.
+
+When a satellite process is supposed to be shut down, the satellite **should**
+
+* go through the `interrupting` transitional state if necessary and exit either from `INIT` or `SAFE` state if the shutdown was requested through `SIGINT` or `SIGTERM` signals (graceful shutdown).
+* exit the process immediately if the shutdown was requested through `SIGQUIT` or `SIGABRT` signals (forceful shutdown).
+
 ## Satellite Commands
 
-Each satellite **must** be able to understand and answer tot he following commands, and it **must** accept or provide the
+Each satellite **must** be able to understand and answer to the following commands, and it **must** accept or provide the
 corresponding payloads:
 
 | Command | payload | verb reply | payload reply
@@ -112,3 +132,11 @@ ERROR -[#blue,bold]--> initializing : reset
 ERROR -u-> [*]
 @enduml
 ```
+
+## Autonomous Transitions
+
+The satellite **should** automatically and autonomously initiate the `interrupting` transition to the `SAFE` steady state
+under the following conditions:
+
+* The CHP instance reports that a previously tracked remote satellite became unavailable
+* The CHP instance reports that the state of a tracked remote satellite changed to `ERROR`
