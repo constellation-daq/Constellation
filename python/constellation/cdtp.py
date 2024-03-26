@@ -37,12 +37,10 @@ class CDTPMessage:
     meta: dict[str, any]
     payload: any = None
 
-    def set_header(self, name, timestamp, msgtype, _sequence_number, meta):
+    def set_header(self, name, timestamp, meta):
         """Sets information retrieved from a message header."""
         self.name = name
         self.timestamp = timestamp
-        self.msgtype = msgtype
-        self._sequence_number = _sequence_number
         self.meta = meta
 
 
