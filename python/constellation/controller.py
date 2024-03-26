@@ -140,7 +140,7 @@ class BaseCLIController(CHIRPBroadcaster):
                             config_path=config_path,
                             category=category,
                             host_class=class_msg.msg,
-                            host_device="powersupply1",  # TODO: generalize
+                            host_device="example_device1",  # TODO: generalize
                         )
                     )
                 except KeyError as e:
