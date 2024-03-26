@@ -17,7 +17,7 @@ class PowerSupply1:
     def set_config(self, config: Configuration):
         self.voltage = config["voltage"]
         self.ampere = config["ampere"]
-        self.sample_period = config.get("sample_period", default=0.1)
+        self.sample_period = config.setdefault("sample_period", default=0.1)
 
 
 class Keithley(Satellite):
