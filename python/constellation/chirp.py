@@ -15,6 +15,11 @@ CHIRP_PORT = 7123
 CHIRP_HEADER = "CHIRP%x01"
 
 
+def get_uuid(name: str) -> UUID:
+    """Return the UUID for a string."""
+    return uuid5(NAMESPACE_DNS, name)
+
+
 class CHIRPServiceIdentifier(Enum):
     """Identifies the type of service.
 
