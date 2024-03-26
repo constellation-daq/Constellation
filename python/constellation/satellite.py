@@ -167,7 +167,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             self.log.error("Failed to configure satellite")
 
         if self.config.has_unused_values():
-            for key in self.config.get_unused_values():
+            for key in self.config.get_unused_keys():
                 self.log.warning("Device has unused configuration values %s", key)
         return init_msg
 
@@ -383,7 +383,11 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
     @cscp_requestable
     def get_class(self, request: CSCPMessage = None) -> str:
-        return "Keithley", None, None  # TODO: Generalize, NotImplemented
+        return (
+            str(self.__class__.__name__),
+            None,
+            None,
+        )  # TODO: Generalize, NotImplemented
 
 
 # -------------------------------------------------------------------------

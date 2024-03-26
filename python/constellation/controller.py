@@ -24,7 +24,7 @@ from .fsm import SatelliteFSM
 class BaseCLIController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name: str, group: str, hosts=None):
+    def __init__(self, *args, hosts=None, **kwargs):
         """Initialize values.
 
         Arguments:
@@ -32,7 +32,7 @@ class BaseCLIController(CHIRPBroadcaster):
         - group ::  group of controller
         - hosts ::  name, address and port of satellites to control
         """
-        super().__init__(name=name, group=group)
+        super().__init__(*args, **kwargs)
 
         self.transmitters: Dict[str, CommandTransmitter] = {}
         self.context = zmq.Context()
@@ -46,40 +46,31 @@ class BaseCLIController(CHIRPBroadcaster):
                 self._add_satellite(host_name=host, host_addr=host)
 
         self.register_request(
-            CHIRPServiceIdentifier.CONTROL, self.add_satellite_callback
+            CHIRPServiceIdentifier.CONTROL, self._add_satellite_callback
         )
         self.request(CHIRPServiceIdentifier.CONTROL)
         self.target_host = None
 
-    def add_satellite_callback(
+    def _add_satellite_callback(
         self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
     ):
         """Callback method of add_satellite. Add satellite to command on service socket and address."""
-        socket = self.context.socket(zmq.REQ)
-        socket.connect("tcp://" + service.address + ":" + str(service.port))
-        self.transmitters[str(service.host_uuid)] = CommandTransmitter(
-            str(service.host_uuid), socket
-        )
-        self._logger.info(
-            "connecting to %s, address %s on port %s...",
-            service.host_uuid,
-            service.address,
-            service.port,
-        )
+        self._add_satellite(str(service.host_uuid), str(service.address), service.port)
 
-    def _add_satellite(self, host_name, host_addr, port: int | None = None):
+    def _add_satellite(self, host_name: str, host_addr: str, port: int | None = None):
         """Add satellite socket to controller on port."""
         if "tcp://" not in host_addr[:6]:
             host_addr = "tcp://" + host_addr
         if port:
-            host_addr = host_addr + ":" + port
+            host_addr = host_addr + ":" + str(port)
         socket = self.context.socket(zmq.REQ)
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
         self._logger.info(
-            "connecting to %s, address %s...",
+            "connecting to %s, address %s on port %s...",
             host_name,
             host_addr,
+            port,
         )
 
     def _command_satellite(
@@ -149,7 +140,7 @@ class BaseCLIController(CHIRPBroadcaster):
                             config_path=config_path,
                             category=category,
                             host_class=class_msg.msg,
-                            host_device="powersupply1",  # TODO: generalize
+                            host_device="example_device1",  # TODO: generalize
                         )
                     )
                 except KeyError as e:

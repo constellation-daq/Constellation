@@ -3,8 +3,6 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-from collections.abc import MutableMapping
-
 import tomllib
 
 
@@ -51,18 +49,6 @@ class Configuration:
         return list(self._config.keys())
 
 
-def pack_config(dictionary, parent_key="", separator="."):
-    """Pack config dict into a flat dict"""
-    items = []
-    for key, value in dictionary.items():
-        new_key = parent_key + separator + key if parent_key else key
-        if isinstance(value, MutableMapping):
-            items.extend(pack_config(value, new_key, separator=separator).items())
-        else:
-            items.append((new_key, value))
-    return dict(items)
-
-
 def get_config(
     config_path: str,
     category: str,
@@ -90,6 +76,7 @@ def get_config(
 
     if host_device:
         for key, value in config[category][host_class][host_device].items():
-            ret_config[key] = value
+            if not isinstance(value, dict):
+                ret_config[key] = value
 
-    return pack_config(ret_config)
+    return ret_config
