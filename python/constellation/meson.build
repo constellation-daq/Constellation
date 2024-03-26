@@ -19,6 +19,7 @@ constellation_files = files(
   'monitoring.py',
   'protocol.py',
   'satellite.py',
+  'confighandler.py',
 )
 
 py.install_sources(constellation_files,
