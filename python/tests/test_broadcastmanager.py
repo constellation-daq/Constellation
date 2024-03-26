@@ -134,9 +134,15 @@ def test_manager_discover(mock_bm):
 def test_manager_ext_callback_runtime(mock_bm):
     """Test callback when discovering services registered during rumtime."""
     # create external callback
-    mock = MagicMock()
+    global callback_seen
+    callback_seen = False
+
+    def mycallback(bm, service):
+        global callback_seen
+        callback_seen = True
+
     assert mock_bm.task_queue.empty()
-    mock_bm.register_request(CHIRPServiceIdentifier.DATA, mock.callback)
+    mock_bm.register_request(CHIRPServiceIdentifier.DATA, mycallback)
     mock_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
@@ -144,10 +150,10 @@ def test_manager_ext_callback_runtime(mock_bm):
     assert len(mock_bm.discovered_services) == 1
     # callback queued but not performed (no worker thread)
     assert not mock_bm.task_queue.empty()
-    assert mock.callback.call_count == 0
+    assert not callback_seen
     fcn, arg = mock_bm.task_queue.get()
     fcn(*arg)
-    assert mock.callback.call_count == 1
+    assert callback_seen
 
 
 @pytest.mark.forked
@@ -156,7 +162,7 @@ def test_manager_method_callback_runtime(mock_bm_alt_parent):
     assert mock_bm_alt_parent.task_queue.empty()
     mock_bm_alt_parent.register_request(
         CHIRPServiceIdentifier.DATA,
-        (lambda _self, service: mock_bm_alt_parent.alt_service_callback(service)),
+        (lambda bm, service: mock_bm_alt_parent.alt_service_callback(service)),
     )
     mock_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
