@@ -13,8 +13,6 @@ from .confighandler import ConfigError, Configuration
 
 
 class PowerSupply1:
-    def __init__(self):
-        pass
 
     def set_config(self, config: Configuration):
         self.voltage = config["voltage"]
