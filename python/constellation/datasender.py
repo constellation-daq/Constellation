@@ -7,7 +7,6 @@ A base module for a Constellation Satellite that sends data.
 """
 
 import time
-import datetime
 import threading
 import os
 import logging
@@ -16,7 +15,7 @@ from queue import Queue, Empty
 
 import zmq
 
-from .cdtp import DataTransmitter, CDTPMessage
+from .cdtp import DataTransmitter
 from .satellite import Satellite
 
 
@@ -117,28 +116,18 @@ class RandomDataSender(DataSender):
         """Example implementation that generates random values."""
         payload = os.urandom(1024)
 
-        t0 = time.time()
+        t0 = time.time_ns()
+
         num = 0
         while not self._stop_running.is_set():
-            meta = {"eventid": num, "time": datetime.datetime.now().isoformat()}
-            data = CDTPMessage(payload, meta)
-            self.data_queue.put(data)
+            self.data_queue.put(payload)
             self.log.debug(f"Queueing data packet {num}")
             num += 1
             time.sleep(0.5)
 
-        """
-        # Testing shut down process
-        meta = {"eventid": num, "time": datetime.datetime.now().isoformat(), "islast": True}
-        data = CDTPMessage(payload, meta)
-        self.data_queue.put(data)
-        self.logger.debug(f"Queueing data packet {num}")
-        num += 1
-        time.sleep(0.5) """
-
-        t1 = time.time()
+        t1 = time.time_ns()
         self.log.info(
-            f"total time for {num} evt / {num * len(payload) / 1024 / 1024}MB: {t1 - t0}s"
+            f"total time for {num} evt / {num * len(payload) / 1024 / 1024}MB: {(t1 - t0)/1000000000}s"
         )
 
 
