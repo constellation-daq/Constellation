@@ -13,13 +13,85 @@ from queue import Empty
 from typing import Dict
 
 import zmq
+from functools import partial
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
-from .chirp import CHIRPServiceIdentifier
+from .chirp import CHIRPServiceIdentifier, get_uuid
 from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .fsm import SatelliteFSM
 from .error import debug_log
+
+from .commandmanager import COMMANDS
+from .satellite import Satellite  # noqa
+
+
+class SatelliteArray:
+    def __init__(self, group: str, handler: callable):
+        self.constellation = group
+        self._handler = handler
+        # initialize with the commands known to any CSCP Satellite
+        self._add_cmds(self, self._handler, COMMANDS)
+        self._satellites: list(SatelliteCommLink) = []
+
+    @property
+    def satellites(self):
+        return self._satellites
+
+    def _add_class(self, name, commands):
+        try:
+            cl = getattr(self, name)
+            return cl
+        except AttributeError:
+            pass
+        # add attributes now
+        cl = SatelliteClassCommLink(name)
+        self._add_cmds(cl, self._handler, commands)
+        setattr(self, name, cl)
+        return cl
+
+    def _add_satellite(self, name, cls, commands):
+        try:
+            cl = getattr(self, cls)
+        except AttributeError:
+            cl = self._add_class(cls, commands)
+        sat = SatelliteCommLink(name, cls)
+        self._add_cmds(sat, self._handler, commands)
+        setattr(cl, name, sat)
+        self._satellites.add(sat)
+        return sat
+
+    def _remove_satellite(self, name, cls):
+        # remove attribute
+        delattr(self, f"{cls}.{name}")
+        # clear from list
+        self._satellites = [
+            sat for sat in self._satellites if sat.name != name or sat.class_name != cls
+        ]
+
+    def _add_cmds(self, obj, handler, cmds):
+        try:
+            sat = obj.name
+        except AttributeError:
+            sat = None
+        try:
+            satcls = obj.class_name
+        except AttributeError:
+            satcls = None
+        for cmd in cmds:
+            setattr(obj, cmd, partial(handler, sat=sat, satcls=satcls, cmd=cmd))
+
+
+class SatelliteClassCommLink:
+    def __init__(self, name):
+        self.class_name = name
+
+
+class SatelliteCommLink(SatelliteClassCommLink):
+    def __init__(self, name, cls):
+        self.name = name
+        self.uuid = get_uuid(f"{cls}.{name}")
+        super().__init__(cls)
 
 
 class BaseController(CHIRPBroadcaster):
