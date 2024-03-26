@@ -29,5 +29,6 @@ concepts/listener
 :caption: How-To Guides
 
 howtos/satellite_cxx
+howtos/satellite_py
 howtos/port_eudaq
 ```

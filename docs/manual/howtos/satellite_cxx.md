@@ -6,8 +6,8 @@ It is recommended to have a peek into the overall [concept of satellites](/manua
 order to get an impression of which functionality of the application could fit into which state of the finite state machine.
 
 ```{note}
-This how-to describes the procedure of implementing a new satellite for Constellation in C++. For Python look [here]() and
-for the microcontroller implementation, please refer to [MicroSat]().
+This how-to describes the procedure of implementing a new satellite for Constellation in C++. For Python look [here](/manual/howtos/satellite_py) and
+for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
 
 ## Sending or Receiving Data
