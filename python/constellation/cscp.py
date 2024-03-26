@@ -6,6 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Satellite Control Protocol.
 """
 
+import io
 from enum import Enum
 import zmq
 import msgpack
@@ -125,9 +126,13 @@ class CommandTransmitter:
             return None
         msg = CSCPMessage()
         msg.set_header(*self.msgheader.decode(cmdmsg[0]))
-        msg.msg_verb, msg.msg = msgpack.unpackb(cmdmsg[1])
+        # Decode message verb
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(cmdmsg[1])
+        msg.msg_verb = unpacker.unpack()
+        msg.msg = unpacker.unpack()
         try:
-            msg.msg_verb = CSCPMessageVerb(int.from_bytes(msg.msg_verb))
+            msg.msg_verb = CSCPMessageVerb(msg.msg_verb)
         except ValueError:
             raise RuntimeError(
                 f"Received invalid request with msg verb: {msg.msg_verb}"
@@ -135,7 +140,9 @@ class CommandTransmitter:
         # convert to lower case:
         msg.msg = msg.msg.lower()
         try:
-            msg.payload = msgpack.unpackb(cmdmsg[2])
+            unpacker = msgpack.Unpacker()
+            unpacker.feed(cmdmsg[2])
+            msg.payload = unpacker.unpack()
         except IndexError:
             pass
         return msg
@@ -149,17 +156,19 @@ class CommandTransmitter:
         flags: int = 0,
     ):
         """Dispatch a message via ZMQ socket."""
-        payload = msgpack.packb(payload)
-        msg = msgpack.packb([msgtype.value.to_bytes(1), msg])
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(msgtype.value))
+        stream.write(packer.pack(msg))
         flags = zmq.SNDMORE | flags
         self.msgheader.send(self.socket, meta=meta, flags=flags)
         if not payload:
             # invert+and: disable SNDMORE bit
             flags = flags & ~zmq.SNDMORE
         self.socket.send(
-            msg,
+            stream.getbuffer(),
             flags=flags,
         )
         if payload:
             flags = flags & ~zmq.SNDMORE
-            self.socket.send(payload, flags)
+            self.socket.send(packer.pack(payload), flags)
