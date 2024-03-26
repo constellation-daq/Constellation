@@ -17,28 +17,48 @@ process data from other satellites.
 
 ## Implementing the FSM Transitions
 
-*
-*
-*
-*
-*
+In Constellation, actions such as device configuration and initialization are realized through so-called transitional states
+which are entered by a command and exited as soon as their action is complete. A more detailed description on this can be found
+in the [satellite section](/manual/concepts/satellite) of the framework concepts overview. The actions attached to these
+transitional states are implemented by overriding the virtual methods provided by the `Satellite` base class.
+
+For a new satellite, the following transitional state actions **have to be implemented**:
+
+* `void NewSatellite::initializing()`
+* `void NewSatellite::launching()`
+* `void NewSatellite::landing()`
+* `void NewSatellite::starting()`
+* `void NewSatellite::stopping()`
+
+The following transitional state actions are optional:
+
+* `void NewSatellite::reconfiguring()`: implements a fast partial reconfiguration of the satellite, see below for a detailed description.
+* `void NewSatellite::interrupting()`: this is the transition to the `SAFE` state and defaults to `stopping` (if necessary because current state is `RUN`), followed by `landing`. If desired, this can be overwritten with a custom action.
+
+For the steady state action for the `RUN` state, see below.
 
 ## Running and the Stop Token
+
+The satellite's `RUN` state is governed by the `running` action, which - just as the transitional state actions above - is overridden from the `Satellite` base class.
+The function will be called upon entering the `RUN` state (and after the `starting` action has completed) and is expected to finish as quickly as possible when the
+`stop` command is received. The function comes with the `stop_token` parameter which should be used to check for a pending stop request, e.g. like:
 
 ```cpp
 void NewSatellite::running(const std::stop_token& stop_token) {
 
     while(!stop_token.stop_requested()) {
-      // Do work
+        // Do work
     }
 }
 ```
 
+Any finalization of the measurement run should be performed in the `stopping` action rather than at the end of the `running` function, if possible.
+
 ## To Reconfigure or Not To Reconfigure
 
-Reconfiguration (partial, fast update of individual parameters) is an optional transition from ORBIT to ORBIT state. It can
-be useful to implement this to allow e.g. fast parameter scans which directly cycle from RUN to ORBIT, through reconfigure
-and back to RUN:
+Reconfiguration (partial, fast update of individual parameters) is an optional transition from `ORBIT` to `ORBIT` state. It can
+be useful to implement this to allow e.g. fast parameter scans which directly cycle from `RUN` to `ORBIT`, through reconfigure
+and back to `RUN`:
 
 ```plantuml
 @startuml
@@ -53,7 +73,7 @@ RUN -[#blue,bold]r-> ORBIT : stop
 @enduml
 ```
 
-without the necessity to land and complete reinitializing the satellite.
+without the necessity to land and complete re-initializing the satellite.
 
 However, not all parameters or all hardware is suitable for this, so this transition is optional and needs to be explicitly
 enabled in the constructor of the satellite:
@@ -67,7 +87,7 @@ MySatellite(std::string_view name) : Satellite(name) {
 and the corresponding transition function `reconfiguring()` needs to be implemented.
 
 The payload of this method is a partial configuration which contains only the keys to be changed. The satellite
-implementation should check for the validity of all keys and (...except?) in case invalid keys are found.
+implementation should check for the validity of all keys and report in case invalid keys are found.
 
 ## Error Handling
 
