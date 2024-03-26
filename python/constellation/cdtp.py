@@ -107,7 +107,7 @@ class DataTransmitter:
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
         return self._socket.send(msgpack.packb(payload), flags=flags)
 
-    def recv(self, flags: int = 0):
+    def recv(self, flags: int = 0) -> CDTPMessage:
         """Receive a multi-part data transmission.
 
         Follows the Constellation Data Transmission Protocol.
@@ -126,9 +126,6 @@ class DataTransmitter:
             return None
         msg = CDTPMessage()
         msg.set_header(*self.msgheader.decode(datamsg[0]))
-        if not len(datamsg) == 6:
-            raise RuntimeError(
-                f"Received message with wrong length of {len(datamsg)} parts!"
-            )
-        msg.payload = msgpack.unpackb(datamsg[1])
+        msg.msgtype, msg._sequence_number = msgpack.unpackb(datamsg[1])
+        msg.payload = msgpack.unpackb(datamsg[2])
         return msg
