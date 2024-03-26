@@ -55,17 +55,7 @@ class BaseCLIController(CHIRPBroadcaster):
         self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
     ):
         """Callback method of add_satellite. Add satellite to command on service socket and address."""
-        socket = self.context.socket(zmq.REQ)
-        socket.connect("tcp://" + service.address + ":" + str(service.port))
-        self.transmitters[str(service.host_uuid)] = CommandTransmitter(
-            str(service.host_uuid), socket
-        )
-        self._logger.info(
-            "connecting to %s, address %s on port %s...",
-            service.host_uuid,
-            service.address,
-            service.port,
-        )
+        self._add_satellite(str(service.host_uuid), str(service.address), service.port)
 
     def _add_satellite(self, host_name, host_addr, port: int | None = None):
         """Add satellite socket to controller on port."""
@@ -77,9 +67,10 @@ class BaseCLIController(CHIRPBroadcaster):
         socket.connect(host_addr)
         self.transmitters[host_name] = CommandTransmitter(host_name, socket)
         self._logger.info(
-            "connecting to %s, address %s...",
+            "connecting to %s, address %s on port %s...",
             host_name,
             host_addr,
+            port,
         )
 
     def _command_satellite(
