@@ -46,7 +46,6 @@ class PushThread(threading.Thread):
         self._logger = logging.getLogger(__name__)
         self.stopevt = stopevt
         self.queue = queue
-        self.packet_num = 0
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PUSH)
         self._socket.bind(f"tcp://*:{port}")
@@ -54,22 +53,25 @@ class PushThread(threading.Thread):
     def run(self):
         """Start sending data."""
         transmitter = DataTransmitter(self.name, self._socket)
+        BOR = True
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
-                item = self.queue.get(block=True, timeout=0.5)
+                payload = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
-                if isinstance(item, CDTPMessage):
-                    item.meta["packet_num"] = self.packet_num
-                    transmitter.send(item.payload, item.meta, self._socket)
-                    self._logger.debug(f"Sending packet number {self.packet_num}")
-                    self.packet_num += 1
+                if BOR:
+                    transmitter.send_start(payload)
+                    BOR = False
                 else:
-                    raise RuntimeError(f"Unable to handle queue item: {type(item)}")
+                    transmitter.send_data(payload)
+                self._logger.debug(
+                    f"Sending packet number {transmitter.sequence_number}"
+                )
                 self.queue.task_done()
             except Empty:
                 # nothing to process
                 pass
+        transmitter.send_end(payload)
 
 
 class DataSender(Satellite):
