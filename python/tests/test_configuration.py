@@ -32,14 +32,14 @@ def config():
 
 
 @pytest.fixture
-def mock_device_satellite(mock_chirp_socket):
+def mock_example_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
     def mocket_factory(*args, **kwargs):
         m = mocket()
         return m
 
-    class MockDeviceSatellite(Satellite):
+    class MockExampleSatellite(Satellite):
         def do_initializing(self, payload):
             self.voltage = self.config.setdefault("voltage", 10)
             return "finished with mock initialization"
@@ -48,7 +48,9 @@ def mock_device_satellite(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockDeviceSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
+        s = MockExampleSatellite(
+            "mock_satellite", "mockstellation", 11111, 22222, 33333
+        )
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -68,8 +70,8 @@ def test_unused_values(config):
     assert not config.has_unused_values()
 
 
-def test_sending_config(config, mock_device_satellite, mock_cmd_transmitter):
-    satellite = mock_device_satellite
+def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
+    satellite = mock_example_satellite
     sender = mock_cmd_transmitter
 
     sender.send_request("initialize", config._config)
