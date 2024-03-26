@@ -25,7 +25,8 @@ class PushThread(threading.Thread):
 
     def __init__(
         self,
-        stopevt,
+        name: str,
+        stopevt: threading.Event,
         port: int,
         queue: Queue,
         *args,
@@ -41,6 +42,7 @@ class PushThread(threading.Thread):
         - context    :: ZMQ context to use (optional).
         """
         super().__init__(*args, **kwargs)
+        self.name = name
         self._logger = logging.getLogger(__name__)
         self.stopevt = stopevt
         self.queue = queue
@@ -51,7 +53,7 @@ class PushThread(threading.Thread):
 
     def run(self):
         """Start sending data."""
-        transmitter = DataTransmitter()
+        transmitter = DataTransmitter(self.name, self._socket)
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
@@ -81,13 +83,14 @@ class DataSender(Satellite):
         self._stop_pusher = threading.Event()
         self.data_queue = Queue()
         self._push_thread = PushThread(
+            name=self.name,
             stopevt=self._stop_pusher,
             port=data_port,
             queue=self.data_queue,
             context=self.context,
             daemon=True,  # terminate with the main thread
         )
-        self._push_thread.name = f"{self.name}_Pusher-thread"
+        # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
         self.log.info(f"Satellite {self.name} publishing data on port {data_port}")
 
