@@ -9,9 +9,9 @@ import logging
 import threading
 from queue import Empty
 from typing import Dict
+from functools import partial
 
 import zmq
-from functools import partial
 from IPython import embed
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
@@ -26,6 +26,8 @@ from .satellite import Satellite  # noqa
 
 
 class SatelliteArray:
+    """Provide object-oriented control of connected Satellites."""
+
     def __init__(self, group: str, handler: callable):
         self.constellation = group
         self._handler = handler
@@ -35,9 +37,11 @@ class SatelliteArray:
 
     @property
     def satellites(self):
+        """Return the list of known Satellite."""
         return self._satellites
 
     def _add_class(self, name: str, commands: list[str]):
+        """Add a new class to the array."""
         try:
             cl = getattr(self, name)
             return cl
@@ -50,6 +54,7 @@ class SatelliteArray:
         return cl
 
     def _add_satellite(self, name: str, cls: str, commands: list[str]):
+        """Add a new Satellite."""
         try:
             cl = getattr(self, cls)
         except AttributeError:
@@ -61,6 +66,7 @@ class SatelliteArray:
         return sat
 
     def _remove_satellite(self, uuid: str):
+        """Remove a Satellite."""
         name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
         delattr(getattr(self, cls), name)
@@ -89,11 +95,15 @@ class SatelliteArray:
 
 
 class SatelliteClassCommLink:
+    """A link to a Satellite Class."""
+
     def __init__(self, name):
         self.class_name = name
 
 
 class SatelliteCommLink(SatelliteClassCommLink):
+    """A link to a Satellite."""
+
     def __init__(self, name, cls):
         self.name = name
         self.uuid = str(get_uuid(f"{cls}.{name}"))
@@ -103,7 +113,7 @@ class SatelliteCommLink(SatelliteClassCommLink):
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name: str, group: str, hosts=None):
+    def __init__(self, name: str, group: str):
         """Initialize values.
 
         Arguments:
@@ -113,23 +123,19 @@ class BaseController(CHIRPBroadcaster):
         """
         super().__init__(name=name, group=group)
 
-        self.transmitters: Dict[str, CommandTransmitter] = {}
+        self._transmitters: Dict[str, CommandTransmitter] = {}
 
         self.constellation = SatelliteArray(group, self.command)
 
         super()._add_com_thread()
         super()._start_com_threads()
 
-        if hosts:
-            for host in hosts:
-                self._add_satellite(host_name=host, host_addr=host)
-
         self.request(CHIRPServiceIdentifier.CONTROL)
         self._task_handler_event = threading.Event()
-        self.task_handler_thread = threading.Thread(
+        self._task_handler_thread = threading.Thread(
             target=self._run_task_handler, daemon=True
         )
-        self.task_handler_thread.start()
+        self._task_handler_thread.start()
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
@@ -168,7 +174,7 @@ class BaseController(CHIRPBroadcaster):
                     sat.uuid,
                     str(service.host_uuid),
                 )
-            self.transmitters[str(service.host_uuid)] = ct
+            self._transmitters[str(service.host_uuid)] = ct
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -188,9 +194,9 @@ class BaseController(CHIRPBroadcaster):
             cls,
         )
         try:
-            ct = self.transmitters[uuid]
+            ct = self._transmitters[uuid]
             ct.socket.close()
-            self.transmitters.pop(uuid)
+            self._transmitters.pop(uuid)
         except KeyError:
             pass
 
@@ -225,7 +231,7 @@ class BaseController(CHIRPBroadcaster):
             self.log.debug("Host %s send command %s...", target, cmd)
 
             try:
-                ret_msg = self.transmitters[target].request_get_response(
+                ret_msg = self._transmitters[target].request_get_response(
                     command=cmd,
                     payload=payload,
                     meta=None,
@@ -281,16 +287,9 @@ class BaseController(CHIRPBroadcaster):
         """Stop the controller."""
         self.log.info("Stopping controller.")
         self._task_handler_event.set()
-        for _name, cmd_tm in self.transmitters.items():
+        for _name, cmd_tm in self._transmitters.items():
             cmd_tm.socket.close()
-        self.task_handler_thread.join()
-
-
-class SatelliteManager(BaseController):
-    """Satellite Manager class implementing CHIRP protocol"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        self._task_handler_thread.join()
 
 
 def main():
