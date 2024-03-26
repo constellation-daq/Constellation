@@ -15,9 +15,9 @@ from enum import StrEnum
 
 
 class Protocol(StrEnum):
-    CDTP = "CDTP%x01"
-    CSCP = "CDTP%x01"
-    CMDP = "CMDP\01"
+    CDTP = "CDTP\x01"
+    CSCP = "CSCP\x01"
+    CMDP = "CMDP\x01"
 
 
 class MessageHeader:
