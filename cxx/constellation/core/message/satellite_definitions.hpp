@@ -13,25 +13,27 @@
 #include <type_traits>
 #include <utility>
 
+#include <magic_enum.hpp>
+
 #include "constellation/core/utils/std23.hpp"
 
 namespace constellation::message {
 
     /** Possible Satellite FSM states */
     enum class State : std::uint8_t {
-        NEW,
-        initializing,
-        INIT,
-        launching,
-        landing,
-        ORBIT,
-        reconfiguring,
-        starting,
-        stopping,
-        RUN,
-        interrupting,
-        SAFE,
-        ERROR,
+        NEW = 0x10,
+        initializing = 0x12,
+        INIT = 0x20,
+        launching = 0x23,
+        ORBIT = 0x30,
+        landing = 0x32,
+        reconfiguring = 0x33,
+        starting = 0x34,
+        RUN = 0x40,
+        stopping = 0x43,
+        interrupting = 0x0E,
+        SAFE = 0xE0,
+        ERROR = 0xF0,
     };
 
     /** Possible FSM transitions */
@@ -73,3 +75,11 @@ namespace constellation::message {
     };
 
 } // namespace constellation::message
+
+// State enum exceeds default enum value limits of magic_enum (-128, 127)
+namespace magic_enum::customize {
+    template <> struct enum_range<constellation::message::State> {
+        static constexpr int min = 0;
+        static constexpr int max = 255;
+    };
+} // namespace magic_enum::customize

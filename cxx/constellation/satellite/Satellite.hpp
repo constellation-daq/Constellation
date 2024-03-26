@@ -109,8 +109,17 @@ namespace constellation::satellite {
         /** Return status of the satellite */
         std::string_view getStatus() const { return status_; }
 
+        /** Return the name of the satellite type */
+        constexpr std::string_view getTypeName() const { return type_name_; }
+
+        /** Return the name of the satellite */
+        constexpr std::string_view getSatelliteName() const { return satellite_name_; }
+
+        /** Return the canonical satellite name (type_name.satellite_name) */
+        std::string getCanonicalName() const;
+
     protected:
-        Satellite();
+        Satellite(std::string_view type_name, std::string_view satellite_name);
 
         /** Enable or disable support for reconfigure transition (disabled by default) */
         constexpr void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
@@ -124,6 +133,11 @@ namespace constellation::satellite {
     private:
         bool support_reconfigure_ {false};
         std::string status_;
+        std::string_view type_name_;
+        std::string_view satellite_name_;
     };
+
+    // Generator function that needs to be exported in a satellite library
+    using Generator = std::shared_ptr<Satellite>(std::string_view, std::string_view);
 
 } // namespace constellation::satellite

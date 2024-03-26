@@ -9,7 +9,10 @@
 
 #pragma once
 
+#include <utility>
+
 #include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/utils/std23.hpp"
 
 namespace constellation::satellite {
 
@@ -21,5 +24,10 @@ namespace constellation::satellite {
 
     // Forward possible FSM transition commands
     using message::TransitionCommand;
+
+    inline constexpr bool is_steady(State state) {
+        // Lower four bytes are 0
+        return (static_cast<unsigned int>(std::to_underlying(state)) & 0x0FU) == 0x00U;
+    }
 
 } // namespace constellation::satellite

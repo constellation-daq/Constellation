@@ -1,6 +1,10 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('cxx_tools')
+  subdir_done()
+endif
+
 # Core / CHIRP
 
 executable('broadcast_recv',
@@ -33,11 +37,7 @@ executable('cmdp_log_send',
 
 # Satellite
 
-executable('dummy_satellite',
-           sources: 'dummy_satellite.cpp',
-           dependencies: [core_dep, satellite_dep],
-)
 executable('dummy_controller',
-           sources: 'dummy_controller.cpp',
-           dependencies: [core_dep, cppzmq_dep],
+  sources: 'dummy_controller.cpp',
+  dependencies: [core_dep, cppzmq_dep],
 )

@@ -10,13 +10,23 @@
 #include "Satellite.hpp"
 
 #include <any>
+#include <cstdint>
 #include <stop_token>
+#include <string_view>
 
 #include "constellation/core/logging/log.hpp"
+#include "constellation/core/utils/casts.hpp"
+#include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation::satellite;
+using namespace constellation::utils;
 
-Satellite::Satellite() : logger_("SATELLITE") {}
+Satellite::Satellite(std::string_view type_name, std::string_view satellite_name)
+    : logger_("SATELLITE"), type_name_(type_name), satellite_name_(satellite_name) {}
+
+std::string Satellite::getCanonicalName() const {
+    return utils::to_string(type_name_) + "." + utils::to_string(satellite_name_);
+}
 
 void Satellite::initializing(const std::stop_token& /* stop_token */, const std::any& /* config */) {
     LOG(logger_, INFO) << "Initializing - empty";

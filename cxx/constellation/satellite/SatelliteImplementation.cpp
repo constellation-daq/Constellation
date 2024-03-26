@@ -40,9 +40,10 @@ using namespace constellation;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::literals::chrono_literals;
 
-SatelliteImplementation::SatelliteImplementation(std::string_view name, std::shared_ptr<Satellite> satellite)
-    : name_(name), rep_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_)), satellite_(std::move(satellite)),
+SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> satellite)
+    : rep_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_)), satellite_(std::move(satellite)),
       fsm_(satellite_), logger_("CSCP") {
     // Set receive timeout for socket
     rep_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
@@ -74,6 +75,15 @@ void SatelliteImplementation::join() {
     }
 }
 
+void SatelliteImplementation::shutDown() {
+    // Request stop on main thread
+    main_thread_.request_stop();
+    // TODO(stephan.lachnit): we should join the thread, but this blocks join in satellite_main...?
+    // TODO(stephan.lachnit): stop heartbeat thread
+    // Interrupt satellite -> either in SAFE or in steady state that is not ORBIT or RUN
+    fsm_.interrupt();
+}
+
 std::optional<CSCP1Message> SatelliteImplementation::getNextCommand() {
     // Receive next message
     zmq::multipart_t recv_msg {};
@@ -95,22 +105,22 @@ std::optional<CSCP1Message> SatelliteImplementation::getNextCommand() {
 }
 
 void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::string> reply_verb) {
-    CSCP1Message({to_string(name_)}, std::move(reply_verb)).assemble().send(rep_);
+    CSCP1Message({satellite_->getCanonicalName()}, std::move(reply_verb)).assemble().send(rep_);
 }
 
 std::optional<std::pair<CSCP1Message::Type, std::string>>
 SatelliteImplementation::handleGetCommand(std::string_view command) {
-    auto return_verb = std::optional<std::pair<CSCP1Message::Type, std::string>>(std::nullopt);
+    std::optional<std::pair<CSCP1Message::Type, std::string>> return_verb {};
 
     auto command_enum = magic_enum::enum_cast<GetCommand>(command);
     if(!command_enum.has_value()) {
-        return return_verb;
+        return std::nullopt;
     }
 
     using enum GetCommand;
     switch(command_enum.value()) {
     case get_name: {
-        return_verb = {CSCP1Message::Type::SUCCESS, to_string(name_)};
+        return_verb = {CSCP1Message::Type::SUCCESS, satellite_->getCanonicalName()};
         break;
     }
     case get_commands: {

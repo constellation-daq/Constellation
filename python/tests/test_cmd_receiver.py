@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import pytest
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 import zmq
 
 from constellation.cscp import CSCPMessageVerb, CommandTransmitter
@@ -27,7 +27,7 @@ def mock_sock_send_recv(payload, flags):
 def mock_sock_recv_multipart_recv(flags):
     """Pop entry from queue."""
     if not mock_packet_queue_recv:
-        raise zmq.ZMQError("no mock data")
+        raise zmq.ZMQError("Resource temporarily unavailable")
     # "pop all"
     r, mock_packet_queue_recv[:] = mock_packet_queue_recv[:], []
     return r
@@ -42,7 +42,7 @@ def mock_sock_send_sender(payload, flags):
 def mock_sock_recv_multipart_sender(flags):
     """Pop entry from queue."""
     if not mock_packet_queue_sender:
-        raise zmq.ZMQError("no mock data")
+        raise zmq.ZMQError("Resource temporarily unavailable")
     # "pop all"
     r, mock_packet_queue_sender[:] = mock_packet_queue_sender[:], []
     return r
@@ -174,3 +174,19 @@ def test_thread_shutdown(mock_cmdreceiver, mock_transmitter):
     # reply should be missing
     assert not rep
     assert not mock_cmdreceiver._com_thread_evt
+
+
+@pytest.mark.forked
+def test_cmd_unique_commands(mock_cmdreceiver):
+    """Test that commands from different classes do not mix."""
+
+    class MockOtherCommandReceiver(CommandReceiver):
+        @cscp_requestable
+        def get_unique_value(self, msg):
+            return 42, None, None
+
+    with patch("constellation.commandmanager.zmq.Context"):
+        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222)
+        msg, cmds, _meta = cr.get_commands()
+        # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
+        assert ["get_state", ANY, ANY] not in cmds

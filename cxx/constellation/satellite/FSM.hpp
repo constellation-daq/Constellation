@@ -17,6 +17,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/config.hpp"
+#include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
@@ -43,7 +44,7 @@ namespace constellation::satellite {
          *
          * @param satellite Satellite class with functions of transitional states
          */
-        FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)) {}
+        FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)), logger_("FSM") {}
 
         CNSTLN_API ~FSM();
 
@@ -98,6 +99,16 @@ namespace constellation::satellite {
         CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCommand(TransitionCommand transition_command,
                                                                                     std::shared_ptr<zmq::message_t> payload);
 
+        /**
+         * @brief Try to perform an interrupt as soon as possible
+         *
+         * This function waits for the next steady state and performs an interrupt if in ORBIT or RUN state, otherwise
+         * nothing is done. It guarantees that the FSM is in a state where the satellite can be safely shut down.
+         *
+         * @warning This function is not thread safe, meaning that no other react command should be called during execution.
+         */
+        CNSTLN_API void interrupt();
+
     private:
         /**
          * Find the transition function for a given transition in the current state
@@ -106,7 +117,7 @@ namespace constellation::satellite {
          * @return Transition function corresponding to the transition
          * @throw FSMError if the transition is not a valid transition in the current state
          */
-        TransitionFunction findTransitionFunction(Transition transition) const;
+        TransitionFunction findTransitionFunction(Transition transition);
 
         // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
         CNSTLN_API auto initialize(TransitionPayload /* payload */) -> State;
@@ -194,6 +205,7 @@ namespace constellation::satellite {
     private:
         State state_ {State::NEW};
         std::shared_ptr<Satellite> satellite_;
+        log::Logger logger_;
         std::jthread transitional_thread_;
         std::jthread run_thread_;
         std::jthread failure_thread_;

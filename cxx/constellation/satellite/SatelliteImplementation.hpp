@@ -27,7 +27,7 @@ namespace constellation::satellite {
 
     class SatelliteImplementation final {
     public:
-        CNSTLN_API SatelliteImplementation(std::string_view name, std::shared_ptr<Satellite> satellite);
+        CNSTLN_API SatelliteImplementation(std::shared_ptr<Satellite> satellite);
 
         CNSTLN_API ~SatelliteImplementation();
 
@@ -50,6 +50,9 @@ namespace constellation::satellite {
         // join main_loop
         CNSTLN_API void join();
 
+        // shut down satellite
+        CNSTLN_API void shutDown();
+
     private:
         // get next command
         std::optional<message::CSCP1Message> getNextCommand();
@@ -64,7 +67,6 @@ namespace constellation::satellite {
         void main_loop(const std::stop_token& stop_token);
 
     private:
-        std::string_view name_;
         zmq::context_t context_;
         zmq::socket_t rep_;
         utils::Port port_;
