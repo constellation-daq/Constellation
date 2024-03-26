@@ -35,6 +35,7 @@ verbosity = "DEBUG"
 [satellites.example_satellite]
 # Class-specific system settings for satellites
 current_limit = 5
+ampere = 2
 
 [satellites.example_satellite.example_device1]
 # Device-specific system settings for satellites
