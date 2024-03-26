@@ -57,7 +57,7 @@ class SatelliteArray:
         sat = SatelliteCommLink(name, cls)
         self._add_cmds(sat, self._handler, commands)
         setattr(cl, name, sat)
-        self._satellites.add(sat)
+        self._satellites.append(sat)
         return sat
 
     def _remove_satellite(self, name, cls):
