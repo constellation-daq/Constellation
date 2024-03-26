@@ -253,9 +253,9 @@ class H5DataReceiverWriter(DataReceiver):
     def write_data(self, h5file: h5py.File, item: CDTPMessage):
         """Write data to HDF5 format
 
-        Current format: File -> Grp (recv_host) -> Dataset (event_{eventid)
+        Current format: File -> Grp (name) -> Dataset (event_{eventid)
 
-        Writes data to file by adding new dataset to group recv_host.
+        Writes data to file by adding new dataset to group name.
 
         # TODO add a call to a "write_data" method that can be
         # overloaded by inheriting classes
