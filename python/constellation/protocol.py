@@ -9,15 +9,16 @@ Module implementing the Constellation communication protocols.
 import msgpack
 import zmq
 
+import io
 import time
 import platform
 from enum import StrEnum
 
 
 class Protocol(StrEnum):
-    CDTP = "CDTP%x01"
-    CSCP = "CDTP%x01"
-    CMDP = "CMDP\01"
+    CDTP = "CDTP\x01"
+    CSCP = "CSCP\x01"
+    CMDP = "CMDP\x01"
 
 
 class MessageHeader:
@@ -44,27 +45,29 @@ class MessageHeader:
 
     def decode(self, header):
         """Decode header string and return host, timestamp and meta map."""
-        header = msgpack.unpackb(header)
-        if not header[0] == self.protocol.value:
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(header)
+        protocol = unpacker.unpack()
+        host = unpacker.unpack()
+        timestamp = unpacker.unpack()
+        meta = unpacker.unpack()
+        if not protocol == self.protocol.value:
             raise RuntimeError(
                 f"Received message with malformed {self.protocol.name} header: {header}!"
             )
-        host = header[1]
-        timestamp = header[2]
-        meta = header[3]
         return host, timestamp, meta
 
     def encode(self, meta: dict = None):
         """Generate and return a header as list."""
         if not meta:
             meta = {}
-        header = [
-            self.protocol.value,
-            self.name,
-            msgpack.Timestamp.from_unix_nano(time.time_ns()),
-            meta,
-        ]
-        return msgpack.packb(header)
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(self.protocol.value))
+        stream.write(packer.pack(self.name))
+        stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
+        stream.write(packer.pack(meta))
+        return stream.getbuffer()
 
 
 class DataTransmitter:
