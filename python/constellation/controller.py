@@ -12,7 +12,6 @@ from typing import Dict
 from functools import partial
 
 import zmq
-from IPython import embed
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
@@ -304,6 +303,7 @@ def main():
     """Start a controller."""
     import argparse
     import coloredlogs
+    from IPython import embed
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
