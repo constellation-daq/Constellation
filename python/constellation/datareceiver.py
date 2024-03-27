@@ -20,7 +20,7 @@ import numpy as np
 import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
-from .cdtp import CDTPMessage, DataTransmitter
+from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
 from .fsm import SatelliteState
 from .satellite import Satellite
@@ -292,9 +292,13 @@ class H5DataReceiverWriter(DataReceiver):
         # Check if group already exists
         if item.name not in h5file.keys():
             grp = h5file.create_group(item.name)
+            self.run_number[item.name] = 0
 
+        if item.msgtype == CDTPMessageIdentifier.BOR:
+            self.run_number[item.name] += 1
+            title = "data_run_" + str(self.run_number[item.name])
             dset = grp.create_dataset(
-                "data",
+                title,
                 data=np.frombuffer(item.payload, dtype=item.meta["dtype"]),
                 chunks=True,
                 dtype=item.meta["dtype"],
