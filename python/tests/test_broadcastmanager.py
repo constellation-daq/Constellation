@@ -8,7 +8,7 @@ import pytest
 import time
 from unittest.mock import patch, MagicMock
 
-from constellation.broadcastmanager import CHIRPBroadcaster, chirp_callback, CALLBACKS
+from constellation.broadcastmanager import CHIRPBroadcaster, chirp_callback
 
 from constellation.chirp import CHIRPServiceIdentifier, CHIRP_PORT
 
@@ -132,7 +132,7 @@ def test_manager_callback_decorator(mock_bm_parent):
     """Test callback when discovering services registered via decorator."""
     # create callback
     assert mock_bm_parent.task_queue.empty()
-    assert len(CALLBACKS) == 1
+    assert len(mock_bm_parent._chirp_callbacks) == 1
     mock_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
