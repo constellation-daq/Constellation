@@ -51,7 +51,6 @@ class PullThread(threading.Thread):
         self.name = name
         self.stopevt = stopevt
         self.queue = queue
-        self.packet_num = 0
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PULL)
         self._socket.connect(interface)
@@ -63,13 +62,12 @@ class PullThread(threading.Thread):
         while not self.stopevt.is_set():
             try:
                 # non-blocking call to prevent deadlocks
-                item = CDTPMessage(*transmitter.recv(self._socket, flags=zmq.NOBLOCK))
+                item = CDTPMessage(*transmitter.recv(flags=zmq.NOBLOCK))
 
                 self.queue.put(item)
                 self._logger.debug(
-                    f"Received packet as packet number {self.packet_num}"
+                    f"Received packet as packet number {item.sequence_number}"
                 )
-                self.packet_num += 1
             except zmq.ZMQError:
                 # no thing to process, sleep instead
                 # TODO consider adjust sleep value
@@ -81,7 +79,7 @@ class PullThread(threading.Thread):
             #       rather than checking
             except Queue.full:
                 self._logger.error(
-                    f"Queue is full. Data {self.packet_num} from {self.item.name} was lost."
+                    f"Queue is full. Data {item.sequence_number} from {item.name} was lost."
                 )
                 continue
 
