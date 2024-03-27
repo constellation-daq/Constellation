@@ -133,6 +133,7 @@ class CHIRPBeaconTransmitter:
         )
         # on socket layer (SOL_SOCKET), enable re-using address in case
         # already bound (REUSEPORT)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         # enable broadcasting
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -185,14 +186,15 @@ class CHIRPBeaconTransmitter:
             # no data waiting for us
             return None
 
-        if from_address[1] != CHIRP_PORT:
-            # NOTE: not sure this can happen with the way the socket is set up
-            return None
-
-        header = msgpack.unpackb(buf)[0]
-        if not header == CHIRP_HEADER:
+        try:
+            header = msgpack.unpackb(buf)[0]
+            if not header == CHIRP_HEADER:
+                raise RuntimeError(
+                    f"Received malformed CHIRP header by host {from_address}: {header}!"
+                )
+        except Exception as e:
             raise RuntimeError(
-                f"Received malformed CHIRP header by host {from_address}: {header}!"
+                f"Received malformed CHIRP header by host {from_address}: {e}"
             )
 
         # Unpack msg
