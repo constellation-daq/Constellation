@@ -54,6 +54,7 @@ to implement:
 | `reconfigure`  | Requests FSM transition "reconfigure"
 | `start`        | Requests FSM transition "start"
 | `stop`         | Requests FSM transition "stop"
+| `shutdown`     | Terminates the satellite application. This command can only be called from the `NEW`, `INIT`, `SAFE` and `ERROR` states.
 
 Satellite implementations are allowed to amend this list with custom commands.
 
