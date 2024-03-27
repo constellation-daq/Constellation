@@ -27,26 +27,6 @@ from conftest import mock_chirp_packet_queue, mocket
 
 
 @pytest.fixture
-def mock_satellite():
-    """Create a mock Satellite base instance."""
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        return m
-
-    with patch("constellation.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
-
-
-@pytest.fixture
 def mock_device_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 

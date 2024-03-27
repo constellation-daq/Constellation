@@ -95,6 +95,8 @@ class CommandTransmitter:
             meta=meta,
         )
         msg = self.get_message()
+        if not msg:
+            raise RuntimeError("Failed to get response")
         if not msg.msg_verb == CSCPMessageVerb.SUCCESS:
             raise RuntimeError(msg.msg)
         return msg

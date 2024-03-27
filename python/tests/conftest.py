@@ -6,8 +6,11 @@ SPDX-License-Identifier: CC-BY-4.0
 import pytest
 from unittest.mock import patch, MagicMock
 import operator
+import threading
 import time
 import zmq
+
+from constellation.satellite import Satellite
 
 from constellation.chirp import (
     CHIRP_PORT,
@@ -15,6 +18,7 @@ from constellation.chirp import (
 )
 
 from constellation.cscp import CommandTransmitter
+from constellation.controller import BaseController
 
 # chirp
 mock_chirp_packet_queue = []
@@ -23,6 +27,8 @@ mock_chirp_packet_queue = []
 mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
+
+CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
 
 
 # SIDE EFFECTS
@@ -41,6 +47,7 @@ def mock_chirp_sock_recvfrom(bufsize):
 
 @pytest.fixture
 def mock_chirp_socket():
+    """Mock CHIRP socket calls."""
     with patch("constellation.chirp.socket.socket") as mock:
         mock = mock.return_value
         mock.connected = MagicMock(return_value=True)
@@ -64,6 +71,7 @@ class mocket(MagicMock):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.port = 0
+        # sender/receiver?
         self.endpoint = 0  # 0 or 1
 
     def _get_queue(self, out: bool):
@@ -89,11 +97,18 @@ class mocket(MagicMock):
 
     def recv_multipart(self, flags=None):
         """Pop entry from queue."""
-        if (
-            self.port not in self._get_queue(False)
-            or not self._get_queue(False)[self.port]
-        ):
-            raise zmq.ZMQError("Resource temporarily unavailable")
+        if flags == zmq.NOBLOCK:
+            if (
+                self.port not in self._get_queue(False)
+                or not self._get_queue(False)[self.port]
+            ):
+                raise zmq.ZMQError("Resource temporarily unavailable")
+        else:
+            while (
+                self.port not in self._get_queue(False)
+                or not self._get_queue(False)[self.port]
+            ):
+                time.sleep(0.01)
         # "pop all"
         r, self._get_queue(False)[self.port][:] = (
             self._get_queue(False)[self.port][:],
@@ -105,19 +120,19 @@ class mocket(MagicMock):
         """Pop single entry from queue."""
         if flags == zmq.NOBLOCK:
             if (
-                send_port not in self._get_queue(False)
-                or not self._get_queue(False)[send_port]
+                self.port not in self._get_queue(False)
+                or not self._get_queue(False)[self.port]
             ):
                 raise zmq.ZMQError("Resource temporarily unavailable")
-            return self._get_queue(False)[send_port].pop(0)
+            return self._get_queue(False)[self.port].pop(0)
         else:
             # block
             while (
-                send_port not in self._get_queue(False)
-                or not self._get_queue(False)[send_port]
+                self.port not in self._get_queue(False)
+                or not self._get_queue(False)[self.port]
             ):
                 time.sleep(0.01)
-            return self._get_queue(False)[send_port].pop(0)
+            return self._get_queue(False)[self.port].pop(0)
 
     def bind(self, host):
         self.port = int(host.split(":")[2])
@@ -141,3 +156,42 @@ def mock_socket_sender():
 def mock_cmd_transmitter(mock_socket_sender):
     t = CommandTransmitter("mock_sender", mock_socket_sender)
     yield t
+
+
+@pytest.fixture
+def mock_satellite(mock_chirp_socket):
+    """Create a mock Satellite base instance."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        return m
+
+    with patch("constellation.base.zmq.Context") as mock:
+        mock_context = MagicMock()
+        mock_context.socket = mocket_factory
+        mock.return_value = mock_context
+        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
+        t = threading.Thread(target=s.run_satellite)
+        t.start()
+        # give the threads a chance to start
+        time.sleep(0.1)
+        yield s
+
+
+@pytest.fixture
+def mock_controller(mock_chirp_socket):
+    """Create a mock Controller base instance."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        m.endpoint = 1
+        return m
+
+    with patch("constellation.base.zmq.Context") as mock:
+        mock_context = MagicMock()
+        mock_context.socket = mocket_factory
+        mock.return_value = mock_context
+        c = BaseController("mock_controller", "mockstellation")
+        # give the threads a chance to start
+        time.sleep(0.1)
+        yield c
