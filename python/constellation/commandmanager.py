@@ -10,6 +10,7 @@ Constellation Satellites.
 import threading
 import time
 import zmq
+from functools import wraps
 from statemachine.exceptions import TransitionNotAllowed
 
 from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
@@ -26,8 +27,26 @@ def cscp_requestable(func):
     See CommandReceiver for a description of the expected signature.
 
     """
-    COMMANDS.append(func.__name__)
-    return func
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    # mark function as chirp callback
+    wrapper.cscp_command = True
+    return wrapper
+
+
+def get_cscp_commands(cls):
+    """Loop over all class methods and return those marked as CHIRP callback."""
+    res = []
+    for func in dir(cls):
+        call = getattr(cls, func)
+        if callable(call) and not func.startswith("__"):
+            # regular method
+            if hasattr(call, "cscp_command"):
+                res.append(func)
+    return res
 
 
 class CommandReceiver(BaseSatelliteFrame):
@@ -65,7 +84,7 @@ class CommandReceiver(BaseSatelliteFrame):
         self.log.info(f"Satellite listening on command port {cmd_port}")
         self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
-        self._cmds = []
+        self._cmds = get_cscp_commands(self)
 
     def _add_com_thread(self):
         """Add the command receiver thread to the communication thread pool."""
@@ -77,12 +96,6 @@ class CommandReceiver(BaseSatelliteFrame):
 
     def _recv_cmds(self):
         """Request receive loop."""
-        # first, determine the supported commands
-        #
-        # NOTE the global list COMMANDS might include methods unavailble in this
-        # class if e.g. different classes inheriting from Satellite were imported.
-        # This step reduces the list to what is actually available.
-        self._cmds = [cmd for cmd in COMMANDS if hasattr(self, cmd)]
         while not self._com_thread_evt.is_set():
             try:
                 req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
