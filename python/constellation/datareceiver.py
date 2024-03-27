@@ -313,10 +313,20 @@ class H5DataReceiverWriter(DataReceiver):
             # Extend current dataset with data obtained from item
             grp = h5file[item.name]
             new_data = np.frombuffer(item.payload, dtype=item.meta["dtype"])
-            grp["data"].resize((grp["data"].shape[0] + new_data.shape[0]), axis=0)
-            grp["data"][-new_data.shape[0] :] = new_data
+            title = "data_run_" + str(self.run_number[item.name])
+            grp[title].resize((grp["data"].shape[0] + new_data.shape[0]), axis=0)
+            grp[title][-new_data.shape[0] :] = new_data
 
-        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
+            if item.msgtype == CDTPMessageIdentifier.EOR:
+                self.log.info(
+                    "Received last packet from %s on run %s",
+                    item.name,
+                    self.run_number[item.name],
+                )
+
+        self.log.debug(
+            f"Processing data packet {item.sequence_number} from {item.name}"
+        )
 
     def write_data_virtual(self, h5file: h5py.File, item: CDTPMessage):
         """Write data to HDF5 format
