@@ -165,7 +165,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
-                self.log.warning("Device has unused configuration values %s", key)
+                self.log.warning("Satellite ignored configuration value: '%s'", key)
         return init_msg
 
     @debug_log
