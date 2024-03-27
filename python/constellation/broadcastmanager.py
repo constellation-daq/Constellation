@@ -151,7 +151,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._chirp_callbacks[serviceid] = callback
         # make a callback if a service has already been discovered
         for known in self.get_discovered(serviceid):
-            self.task_queue.put((callback, [self, known]))
+            self.task_queue.put((callback, [known]))
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
@@ -218,7 +218,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             )
             try:
                 callback = self._chirp_callbacks[msg.serviceid]
-                self.task_queue.put((callback, service))
+                self.task_queue.put((callback, [service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
             self.discovered_services.append(service)
@@ -239,7 +239,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             service.alive = False
             try:
                 callback = self._chirp_callbacks[msg.serviceid]
-                self.task_queue.put((callback, service))
+                self.task_queue.put((callback, [service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
         except ValueError:

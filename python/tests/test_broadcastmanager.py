@@ -113,7 +113,7 @@ def test_manager_ext_callback_runtime(mock_bm):
     global callback_seen
     callback_seen = False
 
-    def mycallback(bm, service):
+    def mycallback(service):
         global callback_seen
         callback_seen = True
 
@@ -138,7 +138,7 @@ def test_manager_method_callback_runtime(mock_bm_alt_parent):
     assert mock_bm_alt_parent.task_queue.empty()
     mock_bm_alt_parent.register_request(
         CHIRPServiceIdentifier.DATA,
-        (lambda bm, service: mock_bm_alt_parent.alt_service_callback(service)),
+        mock_bm_alt_parent.alt_service_callback,
     )
     mock_chirp_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
