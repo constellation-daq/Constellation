@@ -208,6 +208,7 @@ class H5DataReceiverWriter(DataReceiver):
         super().__init__(*args, **kwargs)
 
         self.filename = filename
+        self.run_number: dict[str, int] = {}
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
         self.nameformat = filename
 
