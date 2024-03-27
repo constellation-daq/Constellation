@@ -28,45 +28,45 @@ std::string Satellite::getCanonicalName() const {
     return to_string(type_name_) + "." + to_string(satellite_name_);
 }
 
-void Satellite::initializing(const std::stop_token& /* stop_token */, const config::Configuration& /* config */) {
-    LOG(logger_, INFO) << "Initializing - empty";
+void Satellite::initializing(const config::Configuration& /* config */) {
+    LOG(logger_, INFO) << "Initializing - default";
 }
 
-void Satellite::launching(const std::stop_token& /* stop_token */) {
-    LOG(logger_, INFO) << "Launching - empty";
+void Satellite::launching() {
+    LOG(logger_, INFO) << "Launching - default";
 }
 
-void Satellite::landing(const std::stop_token& /* stop_token */) {
-    LOG(logger_, INFO) << "Landing - empty";
+void Satellite::landing() {
+    LOG(logger_, INFO) << "Landing - default";
 }
 
-void Satellite::reconfiguring(const std::stop_token& /* stop_token */, const config::Configuration& /* partial_config */) {
+void Satellite::reconfiguring(const config::Configuration& /* partial_config */) {
     // TODO(stephan.lachnit): throw if not supported
-    LOG(logger_, INFO) << "Reconfiguring - empty";
+    LOG(logger_, INFO) << "Reconfiguring - default";
 }
 
-void Satellite::starting(const std::stop_token& /* stop_token */, std::uint32_t run_number) {
-    LOG(logger_, INFO) << "Starting run " << run_number << " - empty";
+void Satellite::starting(std::uint32_t run_number) {
+    LOG(logger_, INFO) << "Starting run " << run_number << " - default";
 }
 
-void Satellite::stopping(const std::stop_token& /* stop_token */) {
-    LOG(logger_, INFO) << "Stopping - empty";
+void Satellite::stopping() {
+    LOG(logger_, INFO) << "Stopping - default";
 }
 
 void Satellite::running(const std::stop_token& /* stop_token */) {
-    LOG(logger_, INFO) << "Running - empty";
+    LOG(logger_, INFO) << "Running - default";
 }
 
-void Satellite::interrupting(const std::stop_token& stop_token, State previous_state) {
+void Satellite::interrupting(State previous_state) {
     LOG(logger_, INFO) << "Interrupting from " << to_string(previous_state) << " - default";
     if(previous_state == State::RUN) {
         LOG(logger_, DEBUG) << "Interrupting: execute stopping";
-        stopping(stop_token);
+        stopping();
     }
     LOG(logger_, DEBUG) << "Interrupting: execute landing";
-    landing(stop_token);
+    landing();
 }
 
-void Satellite::on_failure(const std::stop_token& /* stop_token */, State /* previous_state */) {
-    LOG(logger_, INFO) << "Failure - empty";
+void Satellite::on_failure(State previous_state) {
+    LOG(logger_, INFO) << "Failure from " << to_string(previous_state) << " - default";
 }

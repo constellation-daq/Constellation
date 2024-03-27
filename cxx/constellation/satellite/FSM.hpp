@@ -155,7 +155,6 @@ namespace constellation::satellite {
             }},
             {State::launching, {
                 {Transition::launched, &FSM::launched},
-                {Transition::interrupt, &FSM::interrupt},
                 {Transition::failure, &FSM::failure},
             }},
             {State::landing, {
@@ -171,17 +170,14 @@ namespace constellation::satellite {
             }},
             {State::reconfiguring, {
                 {Transition::reconfigured, &FSM::reconfigured},
-                {Transition::interrupt, &FSM::interrupt},
                 {Transition::failure, &FSM::failure},
             }},
             {State::starting, {
                 {Transition::started, &FSM::started},
-                {Transition::interrupt, &FSM::interrupt},
                 {Transition::failure, &FSM::failure},
             }},
             {State::stopping, {
                 {Transition::stopped, &FSM::stopped},
-                {Transition::interrupt, &FSM::interrupt},
                 {Transition::failure, &FSM::failure},
             }},
             {State::RUN, {
@@ -207,9 +203,9 @@ namespace constellation::satellite {
         State state_ {State::NEW};
         std::shared_ptr<Satellite> satellite_;
         log::Logger logger_;
-        std::jthread transitional_thread_;
+        std::thread transitional_thread_;
         std::jthread run_thread_;
-        std::jthread failure_thread_;
+        std::thread failure_thread_;
     };
 
 } // namespace constellation::satellite
