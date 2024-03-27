@@ -88,7 +88,9 @@ namespace constellation::satellite {
         virtual void running(const std::stop_token& stop_token);
 
         /**
-         * Interrupt function, i.e. go immediately to safe state
+         * Interrupt function, i.e. go immediately to SAFE state
+         *
+         * By default, this function calls `stopping` (if in RUN state) and then `landing`.
          *
          * @param stop_token Token which tracks if interrupting should be aborted (i.e. an incoming shutdown)
          * @param previous_state State in which the Satellite was being interrupted
@@ -96,7 +98,7 @@ namespace constellation::satellite {
         virtual void interrupting(const std::stop_token& stop_token, State previous_state);
 
         /**
-         * On-Failure function, i.e. executed when entering the failure state
+         * On-Failure function, i.e. executed when entering the ERROR state
          *
          * @param stop_token Token which tracks if on_failure should be aborted (e.g. an incoming shutdown or restart)
          * @param previous_state State in which the Satellite was before experiencing a failure

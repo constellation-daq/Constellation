@@ -25,7 +25,7 @@ Satellite::Satellite(std::string_view type_name, std::string_view satellite_name
     : logger_("SATELLITE"), type_name_(type_name), satellite_name_(satellite_name) {}
 
 std::string Satellite::getCanonicalName() const {
-    return utils::to_string(type_name_) + "." + utils::to_string(satellite_name_);
+    return to_string(type_name_) + "." + to_string(satellite_name_);
 }
 
 void Satellite::initializing(const std::stop_token& /* stop_token */, const config::Configuration& /* config */) {
@@ -57,8 +57,14 @@ void Satellite::running(const std::stop_token& /* stop_token */) {
     LOG(logger_, INFO) << "Running - empty";
 }
 
-void Satellite::interrupting(const std::stop_token& /* stop_token */, State /* previous_state */) {
-    LOG(logger_, INFO) << "Interrupting - empty";
+void Satellite::interrupting(const std::stop_token& stop_token, State previous_state) {
+    LOG(logger_, INFO) << "Interrupting from " << to_string(previous_state) << " - default";
+    if(previous_state == State::RUN) {
+        LOG(logger_, DEBUG) << "Interrupting: execute stopping";
+        stopping(stop_token);
+    }
+    LOG(logger_, DEBUG) << "Interrupting: execute landing";
+    landing(stop_token);
 }
 
 void Satellite::on_failure(const std::stop_token& /* stop_token */, State /* previous_state */) {

@@ -267,24 +267,24 @@ State FSM::stop(TransitionPayload /* payload */) {
 }
 
 State FSM::interrupt(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this](const std::stop_token& stop_token, State previous_state) {
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
         const auto transition = call_satellite_function(
-            this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, stop_token, this->state_);
+            this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, stop_token, previous_state);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper);
+    transitional_thread_ = std::jthread(call_wrapper, this->state_);
     return State::interrupting;
 }
 
 State FSM::failure(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this](const std::stop_token& stop_token, State previous_state) {
         LOG(logger_, INFO) << "Calling on_failure function of satellite...";
         call_satellite_function(
-            this->satellite_.get(), &Satellite::on_failure, Transition::failure, stop_token, this->state_);
+            this->satellite_.get(), &Satellite::on_failure, Transition::failure, stop_token, previous_state);
         // Note: we do not trigger a success transition as we always go to ERROR state
     };
-    failure_thread_ = std::jthread(call_wrapper);
+    failure_thread_ = std::jthread(call_wrapper, this->state_);
     return State::ERROR;
 }
 
