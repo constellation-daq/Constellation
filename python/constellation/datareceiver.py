@@ -31,6 +31,7 @@ class PullThread(threading.Thread):
 
     def __init__(
         self,
+        name: str,
         stopevt: threading.Event,
         interface: str,
         queue: Queue,
@@ -47,6 +48,7 @@ class PullThread(threading.Thread):
         - context    :: ZMQ context to use (optional).
         """
         super().__init__(*args, **kwargs)
+        self.name = name
         self.stopevt = stopevt
         self.queue = queue
         self.packet_num = 0
@@ -57,7 +59,7 @@ class PullThread(threading.Thread):
 
     def run(self):
         """Start receiving data."""
-        transmitter = DataTransmitter()
+        transmitter = DataTransmitter(self.name, self._socket)
         while not self.stopevt.is_set():
             try:
                 # non-blocking call to prevent deadlocks
@@ -128,13 +130,13 @@ class DataReceiver(Satellite):
             SatelliteState.RUN,
         ]:
             thread = PullThread(
+                name=self.name,
                 stopevt=self._stop_pulling,
                 interface=f"tcp://{service.address}:{service.port}",
                 queue=self.data_queue,
                 context=self.context,
                 daemon=True,  # terminate with the main thread
             )
-            thread.name = f"{self.name}_{service.address}_{service.port}_pull-thread"
             self._puller_threads.append(thread)
             thread.start()
             self.log.info(
