@@ -264,7 +264,15 @@ class BaseController(CHIRPBroadcaster):
                 self.log.debug("    header: %s", ret_msg.header_meta)
             if ret_msg.payload:
                 self.log.debug("    payload: %s", ret_msg.payload)
-            res[ret_msg.from_host] = {"msg": ret_msg.msg, "payload": ret_msg.payload}
+            if sat:
+                # simplify return value for single satellite
+                res = {"msg": ret_msg.msg, "payload": ret_msg.payload}
+            else:
+                # append
+                res[ret_msg.from_host] = {
+                    "msg": ret_msg.msg,
+                    "payload": ret_msg.payload,
+                }
         return res
 
     def _run_task_handler(self):
