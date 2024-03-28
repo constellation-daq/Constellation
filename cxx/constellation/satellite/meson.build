@@ -10,7 +10,7 @@ satellite_src = files(
 satellite_lib = library('ConstellationSatellite',
   sources: satellite_src,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep, magic_enum_dep],
+  dependencies: [core_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,

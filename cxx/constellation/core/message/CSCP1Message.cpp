@@ -39,7 +39,7 @@ zmq::multipart_t CSCP1Message::assemble() {
     frames.addmem(sbuf_body.data(), sbuf_body.size());
 
     // Third frame: swap payload if available
-    if(payload_ && !payload_->empty()) {
+    if(hasPayload()) {
         zmq::message_t payload_frame {};
         payload_frame.swap(*payload_);
         frames.add(std::move(payload_frame));
