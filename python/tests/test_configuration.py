@@ -58,6 +58,7 @@ def mock_example_satellite(mock_chirp_socket):
         yield s
 
 
+@pytest.mark.forked
 def test_unused_values(config):
     assert config.has_unused_values()
     config.setdefault("voltage")
@@ -70,6 +71,7 @@ def test_unused_values(config):
     assert not config.has_unused_values()
 
 
+@pytest.mark.forked
 def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
     satellite = mock_example_satellite
     sender = mock_cmd_transmitter
