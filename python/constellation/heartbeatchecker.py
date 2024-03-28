@@ -117,7 +117,7 @@ class HeartbeatChecker:
         """Stop heartbeat checking."""
         self._stop_threads.set()
         for thread in self._threads:
-            thread.join()
+            thread.join(1)
         for s in self._sockets:
             s.close()
         self._reset()

@@ -21,6 +21,7 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
+from .confighandler import Configuration
 from .monitoring import MonitoringManager
 from .error import debug_log, handle_error
 
@@ -95,7 +96,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         e.g. state transitions.
 
         """
-        while not self._com_thread_evt.is_set():
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
             try:
                 # blocking call but with timeout to prevent deadlocks
@@ -158,7 +159,14 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             pass
         self._state_thread_evt = None
         self._state_thread_fut = None
-        return self.do_initializing(payload)
+
+        self.config = Configuration(payload)
+        init_msg = self.do_initializing(payload)
+
+        if self.config.has_unused_values():
+            for key in self.config.get_unused_keys():
+                self.log.warning("Satellite ignored configuration value: '%s'", key)
+        return init_msg
 
     @debug_log
     def do_initializing(self, payload: any) -> str:
@@ -275,6 +283,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             # stop state thread
             if self._state_thread_evt:
                 self._state_thread_evt.set()
+                self._state_thread.join(1)
             return self.fail_gracefully()
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!

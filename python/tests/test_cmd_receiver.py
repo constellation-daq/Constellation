@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import pytest
 import time
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 import zmq
 
 from constellation.cscp import CSCPMessageVerb, CommandTransmitter
@@ -189,4 +189,4 @@ def test_cmd_unique_commands(mock_cmdreceiver):
         cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222)
         msg, cmds, _meta = cr.get_commands()
         # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
-        assert ["get_state", ANY, ANY] not in cmds
+        assert "get_state" not in cmds

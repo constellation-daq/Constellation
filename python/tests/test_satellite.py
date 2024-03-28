@@ -27,26 +27,6 @@ from conftest import mock_chirp_packet_queue, mocket
 
 
 @pytest.fixture
-def mock_satellite():
-    """Create a mock Satellite base instance."""
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        return m
-
-    with patch("constellation.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
-
-
-@pytest.fixture
 def mock_device_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
@@ -117,7 +97,7 @@ def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     assert "new" in req.msg.lower()
     assert req.msg_verb == CSCPMessageVerb.SUCCESS
     # transition
-    sender.send_request("initialize", "mock argument string")
+    sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.2)
     req = sender.get_message()
     assert "transitioning" in req.msg.lower()
@@ -136,7 +116,7 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
     satellite = mock_device_satellite
     sender = mock_cmd_transmitter
     # send a request to init
-    sender.send_request("initialize", "mock argument string")
+    sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
     assert "transitioning" in req.msg.lower()
@@ -164,7 +144,7 @@ def test_satellite_fsm_cannot_change_transitional(
     """Test transitions from slow transitional states."""
     sender = mock_cmd_transmitter
     # send a request to init
-    sender.send_request("initialize", "mock argument string")
+    sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
     assert "transitioning" in req.msg.lower()
@@ -176,7 +156,7 @@ def test_satellite_fsm_cannot_change_transitional(
     assert "initializing" in req.msg.lower()
     assert req.msg_verb == CSCPMessageVerb.SUCCESS
     # send a request to init again
-    sender.send_request("initialize", "mock argument string")
+    sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
     assert req.msg_verb == CSCPMessageVerb.INVALID
