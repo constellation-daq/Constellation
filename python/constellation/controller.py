@@ -111,16 +111,24 @@ class SatelliteClassCommLink:
     """A link to a Satellite Class."""
 
     def __init__(self, name):
-        self.class_name = name
+        self._class_name = name
+
+    def __str__(self):
+        """Convert to class name."""
+        return self._class_name
 
 
 class SatelliteCommLink(SatelliteClassCommLink):
     """A link to a Satellite."""
 
     def __init__(self, name, cls):
-        self.name = name
-        self.uuid = str(get_uuid(f"{cls}.{name}"))
+        self._name = name
+        self._uuid = str(get_uuid(f"{cls}.{name}"))
         super().__init__(cls)
+
+    def __str__(self):
+        """Convert to canonical name."""
+        return f"{self._class_name}.{self._name}"
 
 
 class BaseController(CHIRPBroadcaster):
@@ -178,10 +186,10 @@ class BaseController(CHIRPBroadcaster):
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
             sat = self.constellation._add_satellite(name, cls, msg.payload)
-            if sat.uuid != str(service.host_uuid):
+            if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
-                    sat.uuid,
+                    sat._uuid,
                     str(service.host_uuid),
                 )
             self._transmitters[str(service.host_uuid)] = ct
