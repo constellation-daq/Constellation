@@ -16,7 +16,6 @@ import zmq
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
 
-# from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .satellite import Satellite
@@ -132,7 +131,7 @@ class SatelliteCommLink(SatelliteClassCommLink):
 
 
 class BaseController(CHIRPBroadcaster):
-    """Simple controller class to send commands to a list of satellites."""
+    """Simple controller class to send commands to a Constellation."""
 
     def __init__(self, name: str, group: str, interface: str):
         """Initialize values.
@@ -140,6 +139,7 @@ class BaseController(CHIRPBroadcaster):
         Arguments:
         - name ::  name of controller
         - group ::  group of controller
+        - interface :: the interface to connect to
         """
         super().__init__(name=name, group=group, interface=interface)
 
@@ -151,6 +151,7 @@ class BaseController(CHIRPBroadcaster):
         super()._start_com_threads()
 
         self.request(CHIRPServiceIdentifier.CONTROL)
+        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(
             target=self._run_task_handler, daemon=True
@@ -316,6 +317,7 @@ class BaseController(CHIRPBroadcaster):
         for _name, cmd_tm in self._transmitters.items():
             cmd_tm.socket.close()
         self._task_handler_thread.join()
+        super().reentry()
 
 
 def main():
@@ -326,7 +328,7 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
-    parser.add_argument("--name", type=str, default="controller_demo")
+    parser.add_argument("--name", type=str, default="cli_controller")
     parser.add_argument("--group", type=str, default="constellation")
     parser.add_argument("--interface", type=str, default="*")
 

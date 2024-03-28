@@ -7,11 +7,15 @@ import time
 import logging
 import zmq
 import threading
+from queue import Empty
 from functools import wraps
 from datetime import datetime
 from logging.handlers import QueueHandler, QueueListener
-from .cmdp import CMDPTransmitter, Metric, MetricsType
+
 from .base import BaseSatelliteFrame
+from .cmdp import CMDPTransmitter, Metric, MetricsType
+from .chirp import CHIRPServiceIdentifier
+from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 
 
 def schedule_metric(handling: MetricsType, interval: float):
@@ -58,13 +62,19 @@ def get_scheduled_metrics(cls):
 
 
 class MonitoringSender(BaseSatelliteFrame):
-    """Class managing the Constellation Monitoring Distribution Protocol."""
+    """Sender class for Constellation Monitoring Distribution Protocol.
+
+    Any method of inheriting classes that has the @schedule_metric decorator,
+    will be regularly polled for new values and a corresponding Metric be sent
+    on the monitoring port.
+
+    """
 
     def __init__(self, name: str, mon_port: int, interface: str, **kwds):
         """Set up logging and metrics transmitters."""
         super().__init__(name=name, interface=interface, **kwds)
 
-        # Create monitoring socket and bind wildcard
+        # Create monitoring socket and bind interface
         socket = self.context.socket(zmq.PUB)
         socket.bind(f"tcp://{interface}:{mon_port}")
         self._mon_tm = CMDPTransmitter(name, socket)
@@ -84,7 +94,7 @@ class MonitoringSender(BaseSatelliteFrame):
         self._metrics_callbacks = get_scheduled_metrics(self)
 
     def send_metric(self, metric: Metric):
-        """Send a metric via ZMQ."""
+        """Send a single metric via ZMQ."""
         return self._mon_tm.send_metric(metric)
 
     def _add_com_thread(self):
@@ -141,23 +151,137 @@ class ZeroMQSocketLogHandler(QueueHandler):
 
 
 class ZeroMQSocketLogListener(QueueListener):
-    def __init__(self, uri, /, *handlers, **kwargs):
-        context = kwargs.get("ctx") or zmq.Context()
-        self.socket = context.socket(zmq.SUB)
-        # TODO implement a filter parameter to customize what to subscribe to
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")  # subscribe to LOGs
-        self.socket.connect(uri)
-        kwargs.pop("ctx", None)
-        super().__init__(CMDPTransmitter(__name__, self.socket), *handlers, **kwargs)
+    """This listener receives messages from a CMDPTransmitter.
+
+    NOTE that the corresponding socket should only subscribe to LOG messages!
+
+    """
+
+    def __init__(self, transmitter, /, *handlers, **kwargs):
+        super().__init__(transmitter, *handlers, **kwargs)
 
     def dequeue(self, block):
         return self.queue.recv()
 
     def stop(self):
         """Close socket and stop thread."""
-        # stop thread
-        super().stop()
-        self.socket.close()
+        self.queue.close()
+
+
+class MonitoringListener(CHIRPBroadcaster):
+    """Simple monitor class to receive logs and metrics from a Constellation."""
+
+    def __init__(self, name: str, group: str, interface: str):
+        """Initialize values.
+
+        Arguments:
+        - name ::  name of this Monitor
+        - group ::  group of controller
+        - interface :: the interface to connect to
+        """
+        super().__init__(name=name, group=group, interface=interface)
+
+        self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
+        self._metric_transmitters: dict[str, CMDPTransmitter] = {}
+
+        super()._add_com_thread()
+        super()._start_com_threads()
+
+        self.request(CHIRPServiceIdentifier.MONITORING)
+
+        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
+        self._task_handler_event = threading.Event()
+        self._task_handler_thread = threading.Thread(
+            target=self._run_task_handler, daemon=True
+        )
+        self._task_handler_thread.start()
+
+    @chirp_callback(CHIRPServiceIdentifier.MONITORING)
+    def _add_satellite_callback(self, service: DiscoveredService):
+        """Callback method connecting to satellite."""
+        if not service.alive:
+            self._remove_satellite(service)
+        else:
+            self._add_satellite(service)
+
+    def _add_satellite(self, service: DiscoveredService):
+        address = "tcp://" + service.address + ":" + str(service.port)
+        uuid = str(service.host_uuid)
+        self.log.debug(
+            "Connecting to %s, address %s...",
+            uuid,
+            address,
+        )
+        # create socket for logs
+        socket = self.context.socket(zmq.SUB)
+        socket.connect(address)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
+        listener = ZeroMQSocketLogListener(
+            CMDPTransmitter(self.name, socket), self.log.handlers[0]
+        )
+        self._log_listeners[uuid] = listener
+        listener.start()
+
+        # create socket for metrics
+        socket = self.context.socket(zmq.SUB)
+        socket.connect(address)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "STATS/")
+        self._metric_transmitters[uuid] = CMDPTransmitter(self.name, socket)
+
+    def _remove_satellite(self, service: DiscoveredService):
+        # departure
+        uuid = str(service.host_uuid)
+        self.log.debug(
+            "Departure of %s.",
+            service.host_uuid,
+        )
+        try:
+            self._log_listeners[uuid].stop()
+            self._log_listeners.pop(uuid)
+        except KeyError:
+            pass
+        try:
+            self._metric_transmitters[uuid].close()
+            self._metric_transmitters.pop(uuid)
+        except KeyError:
+            pass
+
+    def receive_metrics(self):
+        """Main loop to receive metrics."""
+        while True:
+            time.sleep(0.1)
+            for uuid, tm in self._metric_transmitters.items():
+                try:
+                    metric = tm.recv(flags=zmq.NOBLOCK)
+                except Exception as e:
+                    self.log.error("Error receiving metric: %s", repr(e))
+                if not metric:
+                    continue
+                print(metric)
+
+    def _run_task_handler(self):
+        """Event loop for task handler-routine"""
+        while not self._task_handler_event.is_set():
+            try:
+                # blocking call but with timeout to prevent deadlocks
+                task = self.task_queue.get(block=True, timeout=0.5)
+                callback = task[0]
+                args = task[1]
+                try:
+                    callback(*args)
+                except Exception as e:
+                    self.log.exception(e)
+            except Empty:
+                # nothing to process
+                pass
+
+    def reentry(self):
+        """Shutdown Monitor."""
+        for _uuid, listener in self._log_listeners.items():
+            listener.stop()
+        for _uuid, tm in self._metric_transmitters.items():
+            tm.close()
+        super().reentry()
 
 
 def main(args=None):
@@ -165,22 +289,20 @@ def main(args=None):
     import argparse
     import coloredlogs
 
-    parser = argparse.ArgumentParser(description=main.__doc__)
+    parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
-    parser.add_argument("host", type=str)
-    parser.add_argument("port", type=int)
+    parser.add_argument("--name", type=str, default="simple_monitor")
+    parser.add_argument("--group", type=str, default="constellation")
+    parser.add_argument("--interface", type=str, default="*")
+
     args = parser.parse_args(args)
-    logger = logging.getLogger(__name__)
+
     # set up logging
+    logger = logging.getLogger(args.name)
     coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
-    ctx = zmq.Context()
-    zmqlistener = ZeroMQSocketLogListener(
-        f"tcp://{args.host}:{args.port}", logger.handlers[0], ctx=ctx
-    )
-    zmqlistener.start()
-    while True:
-        time.sleep(0.01)
+    mon = MonitoringListener(name=args.name, group=args.group, interface=args.interface)
+    mon.receive_metrics()
 
 
 if __name__ == "__main__":
