@@ -22,11 +22,13 @@ from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
 from .confighandler import Configuration
-from .monitoring import MonitoringManager
+from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
 
 
-class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
+class Satellite(
+    CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler, MonitoringSender
+):
     """Base class for a Constellation Satellite."""
 
     def __init__(
@@ -49,10 +51,9 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         )
 
         # give monitoring a chance to start up and catch early messages
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         # set up background communication threads
-        # NOTE should be a late part of the initialization, as it starts communication
         super()._add_com_thread()
         super()._start_com_threads()
 

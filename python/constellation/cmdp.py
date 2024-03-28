@@ -50,7 +50,7 @@ class Metric:
         t = ""
         if self.time:
             t = f" at {self.time}"
-        return f"{self.name}: {self.value} [{self.unit}]{t}"
+        return f"{self.name} ({self.description}): {self.value} [{self.unit}]{t}"
 
 
 class CMDPTransmitter:
