@@ -39,13 +39,14 @@ def cscp_requestable(func):
 
 def get_cscp_commands(cls):
     """Loop over all class methods and return those marked as CHIRP callback."""
-    res = []
+    res = {}
     for func in dir(cls):
         call = getattr(cls, func)
         if callable(call) and not func.startswith("__"):
             # regular method
             if hasattr(call, "cscp_command"):
-                res.append(func)
+                doc = call.__doc__
+                res[func] = doc
     return res
 
 
@@ -187,19 +188,7 @@ class CommandReceiver(BaseSatelliteFrame):
         second line of the doc string, respectively (not counting empty lines).
 
         """
-        res = []
-        for cmd in self._cmds:
-            summary = "missing docstring"
-            payload_desc = "no payload/missing docstring"
-            try:
-                fcn = getattr(self, cmd)
-                doc = [line for line in fcn.__doc__.splitlines() if line]
-                summary = doc[0].strip()
-                payload_desc = doc[1].strip()
-            except (IndexError, AttributeError):
-                pass
-            res.append([cmd, summary, payload_desc])
-        return f"{len(res)} commands known", res, None
+        return f"{len(self._cmds)} commands known", self._cmds, None
 
     @cscp_requestable
     def get_class(self, _request: CSCPMessage = None):
