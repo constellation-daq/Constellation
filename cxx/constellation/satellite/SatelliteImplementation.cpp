@@ -27,6 +27,7 @@
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/Dictionary.hpp"
@@ -129,6 +130,10 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         return_verb = {CSCP1Message::Type::SUCCESS, satellite_->getCanonicalName()};
         break;
     }
+    case get_version: {
+        return_verb = {CSCP1Message::Type::SUCCESS, CNSTLN_VERSION};
+        break;
+    }
     case get_commands: {
         // TODO(stephan.lachnit): return list of commands
         return_verb = {CSCP1Message::Type::SUCCESS, "Commands attached in payload"};
@@ -145,6 +150,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         command_dict["stop"] = "Stop satellite";
         // Get commands
         command_dict["get_name"] = "Get canonical name of satellite";
+        command_dict["get_version"] = "Get Constellation version of satellite";
         command_dict["get_commands"] =
             "Get commands supported by satellite (returned in payload as flat MessagePack dict with strings as keys)";
         command_dict["get_state"] = "Get state of satellite";
