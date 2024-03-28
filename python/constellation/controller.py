@@ -321,10 +321,13 @@ def main():
     # start server with args
     ctrl = BaseController(name=args.name, group=args.group)  # noqa
 
-    print("\nWelcome to the Constellation CLI Controller!\n")
+    print("\nWelcome to the Constellation CLI IPython Controller!\n")
     print(
-        "You can interact with the discovered Satellites via the `ctrl.constellation` array.\n"
+        "You can interact with the discovered Satellites via the `ctrl.constellation` array:"
     )
+    print("          ctrl.constellation.get_state()\n")
+    print("To get help for any of its methods, call it with a question mark:")
+    print("          ctrl.constellation.get_state?\n")
     print("Happy hacking! :)\n")
 
     # start IPython console
