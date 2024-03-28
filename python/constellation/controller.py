@@ -90,11 +90,21 @@ class SatelliteArray:
             satcls = None
         for cmd, doc in cmds.items():
 
-            def wrapper(payload):
-                return partial(handler, sat=sat, satcls=satcls, cmd=cmd)(payload)
+            class wrapper:
+                """Class to wrap partial calls w/ signature of orig. fcn."""
 
-            wrapper.__doc__ = doc
-            setattr(obj, cmd, wrapper)
+                def __init__(self, fcn):
+                    """Initialize with fcn as a partial() call."""
+                    self.fcn = fcn
+
+                def call(self, payload=None):
+                    """Perform call. This doc string will be overwritten."""
+                    return self.fcn(payload)
+
+            w = wrapper(partial(handler, sat=sat, satcls=satcls, cmd=cmd))
+            # add docstring
+            w.call.__func__.__doc__ = doc
+            setattr(obj, cmd, w.call)
 
 
 class SatelliteClassCommLink:
