@@ -37,8 +37,8 @@ dependencies = [
 
 [project.scripts]
 Satellite = "constellation.satellite:main"
-LogListener = "constellation.monitoring:main"
 Controller = "constellation.controller:main"
+Monitor = "constellation.monitoring:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"

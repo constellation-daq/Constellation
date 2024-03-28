@@ -58,10 +58,7 @@ def mock_chirp_socket():
 
 @pytest.fixture
 def mock_chirp_transmitter(mock_chirp_socket):
-    t = CHIRPBeaconTransmitter(
-        "mock_sender",
-        "mockstellation",
-    )
+    t = CHIRPBeaconTransmitter("mock_sender", "mockstellation", "127.0.0.1")
     yield t
 
 
@@ -170,7 +167,9 @@ def mock_satellite(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333)
+        s = Satellite(
+            "mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
+        )
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -191,7 +190,7 @@ def mock_controller(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        c = BaseController("mock_controller", "mockstellation")
+        c = BaseController("mock_controller", "mockstellation", "127.0.0.1")
         # give the threads a chance to start
         time.sleep(0.1)
         yield c

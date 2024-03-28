@@ -16,7 +16,6 @@ import zmq
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
 
-# from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .satellite import Satellite
@@ -69,10 +68,10 @@ class SatelliteArray:
         # remove attribute
         delattr(getattr(self, cls), name)
         # clear from list
-        self._satellites = [sat for sat in self._satellites if sat.uuid != uuid]
+        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
 
     def _get_name_from_uuid(self, uuid: str):
-        s = [sat for sat in self._satellites if sat.uuid == uuid]
+        s = [sat for sat in self._satellites if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
         name = s[0].name
@@ -81,11 +80,11 @@ class SatelliteArray:
 
     def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
         try:
-            sat = obj.name
+            sat = obj._name
         except AttributeError:
             sat = None
         try:
-            satcls = obj.class_name
+            satcls = obj._class_name
         except AttributeError:
             satcls = None
         for cmd, doc in cmds.items():
@@ -111,30 +110,38 @@ class SatelliteClassCommLink:
     """A link to a Satellite Class."""
 
     def __init__(self, name):
-        self.class_name = name
+        self._class_name = name
+
+    def __str__(self):
+        """Convert to class name."""
+        return self._class_name
 
 
 class SatelliteCommLink(SatelliteClassCommLink):
     """A link to a Satellite."""
 
     def __init__(self, name, cls):
-        self.name = name
-        self.uuid = str(get_uuid(f"{cls}.{name}"))
+        self._name = name
+        self._uuid = str(get_uuid(f"{cls}.{name}"))
         super().__init__(cls)
+
+    def __str__(self):
+        """Convert to canonical name."""
+        return f"{self._class_name}.{self._name}"
 
 
 class BaseController(CHIRPBroadcaster):
-    """Simple controller class to send commands to a list of satellites."""
+    """Simple controller class to send commands to a Constellation."""
 
-    def __init__(self, name: str, group: str):
+    def __init__(self, name: str, group: str, interface: str):
         """Initialize values.
 
         Arguments:
         - name ::  name of controller
         - group ::  group of controller
-        - hosts ::  name, address and port of satellites to control
+        - interface :: the interface to connect to
         """
-        super().__init__(name=name, group=group)
+        super().__init__(name=name, group=group, interface=interface)
 
         self._transmitters: Dict[str, CommandTransmitter] = {}
 
@@ -144,6 +151,7 @@ class BaseController(CHIRPBroadcaster):
         super()._start_com_threads()
 
         self.request(CHIRPServiceIdentifier.CONTROL)
+        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(
             target=self._run_task_handler, daemon=True
@@ -179,10 +187,10 @@ class BaseController(CHIRPBroadcaster):
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
             sat = self.constellation._add_satellite(name, cls, msg.payload)
-            if sat.uuid != str(service.host_uuid):
+            if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
-                    sat.uuid,
+                    sat._uuid,
                     str(service.host_uuid),
                 )
             self._transmitters[str(service.host_uuid)] = ct
@@ -213,11 +221,10 @@ class BaseController(CHIRPBroadcaster):
 
     def command(self, payload=None, sat=None, satcls=None, cmd=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
-
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat.uuid for sat in self.constellation.satellites]
+            targets = [sat._uuid for sat in self.constellation.satellites]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
@@ -234,7 +241,7 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
-            targets = [getattr(getattr(self.constellation, satcls), sat).uuid]
+            targets = [getattr(getattr(self.constellation, satcls), sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         res = {}
@@ -309,6 +316,7 @@ class BaseController(CHIRPBroadcaster):
         for _name, cmd_tm in self._transmitters.items():
             cmd_tm.socket.close()
         self._task_handler_thread.join()
+        super().reentry()
 
 
 def main():
@@ -319,8 +327,9 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
-    parser.add_argument("--name", type=str, default="controller_demo")
+    parser.add_argument("--name", type=str, default="cli_controller")
     parser.add_argument("--group", type=str, default="constellation")
+    parser.add_argument("--interface", type=str, default="*")
 
     args = parser.parse_args()
 
@@ -331,7 +340,9 @@ def main():
     logger.debug("Starting up CLI Controller!")
 
     # start server with args
-    ctrl = BaseController(name=args.name, group=args.group)  # noqa
+    ctrl = BaseController(  # noqa
+        name=args.name, group=args.group, interface=args.interface
+    )
 
     print("\nWelcome to the Constellation CLI IPython Controller!\n")
     print(
