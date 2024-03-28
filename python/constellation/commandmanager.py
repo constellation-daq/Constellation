@@ -75,13 +75,13 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, cmd_port: int, **kwds):
+    def __init__(self, name: str, cmd_port: int, interface: str, **kwds):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
-        super().__init__(name, **kwds)
+        super().__init__(name=name, interface=interface, **kwds)
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)
-        sock.bind(f"tcp://*:{cmd_port}")
+        sock.bind(f"tcp://{interface}:{cmd_port}")
         self.log.info(f"Satellite listening on command port {cmd_port}")
         self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands

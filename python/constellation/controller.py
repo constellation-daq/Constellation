@@ -126,15 +126,14 @@ class SatelliteCommLink(SatelliteClassCommLink):
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a list of satellites."""
 
-    def __init__(self, name: str, group: str):
+    def __init__(self, name: str, group: str, interface: str):
         """Initialize values.
 
         Arguments:
         - name ::  name of controller
         - group ::  group of controller
-        - hosts ::  name, address and port of satellites to control
         """
-        super().__init__(name=name, group=group)
+        super().__init__(name=name, group=group, interface=interface)
 
         self._transmitters: Dict[str, CommandTransmitter] = {}
 
@@ -321,6 +320,7 @@ def main():
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--name", type=str, default="controller_demo")
     parser.add_argument("--group", type=str, default="constellation")
+    parser.add_argument("--interface", type=str, default="*")
 
     args = parser.parse_args()
 
@@ -331,7 +331,9 @@ def main():
     logger.debug("Starting up CLI Controller!")
 
     # start server with args
-    ctrl = BaseController(name=args.name, group=args.group)  # noqa
+    ctrl = BaseController(  # noqa
+        name=args.name, group=args.group, interface=args.interface
+    )
 
     print("\nWelcome to the Constellation CLI IPython Controller!\n")
     print(

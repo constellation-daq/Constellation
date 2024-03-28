@@ -102,6 +102,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self,
         name: str,
         group: str,
+        interface: str,
         **kwds,
     ):
         """Initialize parameters.
@@ -111,9 +112,9 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         :param group: group the Satellite belongs to
         :type group: str
         """
-        super().__init__(name, **kwds)
+        super().__init__(name=name, interface=interface, **kwds)
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(self.name, group)
+        self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
         # Offered and discovered services
         self._registered_services = {}

@@ -115,6 +115,7 @@ class CHIRPBeaconTransmitter:
         self,
         name: str,
         group: str,
+        interface: str,
     ) -> None:
         """Initialize attributes and open broadcast socket."""
         self._host_uuid = get_uuid(name)
@@ -142,10 +143,13 @@ class CHIRPBeaconTransmitter:
         #
         # NOTE: this only works for IPv4
         #
-        # TODO: consider to only bind the interface matching a given IP!
+        # Only bind the interface matching a given IP.
         # Otherwise, we risk announcing services that do not bind to the
         # interface they are announced on.
-        self._sock.bind(("", CHIRP_PORT))
+        if interface == "*":
+            # ZMQ's "*" -> socket's '' (i.e. INADDR_ANY for IPv4)
+            interface = ""
+        self._sock.bind((interface, CHIRP_PORT))
 
     @property
     def host(self) -> UUID:

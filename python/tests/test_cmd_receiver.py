@@ -98,7 +98,7 @@ def mock_cmdreceiver(mock_socket_recv):
         mock_context = MagicMock()
         mock_context.socket.return_value = mock_socket_recv
         mock.return_value = mock_context
-        cr = MockCommandReceiver("mock_satellite", cmd_port=1111)
+        cr = MockCommandReceiver("mock_satellite", cmd_port=1111, interface="127.0.0.1")
         cr._add_com_thread()
         cr._start_com_threads()
         # give the thread a chance to start
@@ -186,7 +186,9 @@ def test_cmd_unique_commands(mock_cmdreceiver):
             return 42, None, None
 
     with patch("constellation.commandmanager.zmq.Context"):
-        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222)
+        cr = MockOtherCommandReceiver(
+            "mock_other_satellite", cmd_port=22222, interface="127.0.0.1"
+        )
         msg, cmds, _meta = cr.get_commands()
         # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
         assert "get_state" not in cmds

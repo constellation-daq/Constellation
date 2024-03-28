@@ -49,7 +49,7 @@ def mock_example_satellite(mock_chirp_socket):
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
         s = MockExampleSatellite(
-            "mock_satellite", "mockstellation", 11111, 22222, 33333
+            "mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
         )
         t = threading.Thread(target=s.run_satellite)
         t.start()

@@ -55,7 +55,9 @@ def mock_device_satellite(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333)
+        s = MockDeviceSatellite(
+            "mydevice1", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
+        )
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
