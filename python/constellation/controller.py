@@ -19,9 +19,8 @@ from .chirp import CHIRPServiceIdentifier, get_uuid
 # from .confighandler import get_config
 from .cscp import CommandTransmitter
 from .error import debug_log
-
-from .commandmanager import COMMANDS
-from .satellite import Satellite  # noqa
+from .satellite import Satellite
+from .commandmanager import get_cscp_commands
 
 
 class SatelliteArray:
@@ -31,7 +30,7 @@ class SatelliteArray:
         self.constellation = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
-        self._add_cmds(self, self._handler, COMMANDS)
+        self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
         self._satellites: list(SatelliteCommLink) = []
 
     @property
@@ -39,7 +38,7 @@ class SatelliteArray:
         """Return the list of known Satellite."""
         return self._satellites
 
-    def _add_class(self, name: str, commands: list[str]):
+    def _add_class(self, name: str, commands: dict[str]):
         """Add a new class to the array."""
         try:
             cl = getattr(self, name)
@@ -52,7 +51,7 @@ class SatelliteArray:
         setattr(self, name, cl)
         return cl
 
-    def _add_satellite(self, name: str, cls: str, commands: list[str]):
+    def _add_satellite(self, name: str, cls: str, commands: dict[str]):
         """Add a new Satellite."""
         try:
             cl = getattr(self, cls)
@@ -80,7 +79,7 @@ class SatelliteArray:
         cls = s[0].class_name
         return name, cls
 
-    def _add_cmds(self, obj: any, handler: callable, cmds: list[str]):
+    def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
         try:
             sat = obj.name
         except AttributeError:
@@ -89,8 +88,13 @@ class SatelliteArray:
             satcls = obj.class_name
         except AttributeError:
             satcls = None
-        for cmd in cmds:
-            setattr(obj, cmd, partial(handler, sat=sat, satcls=satcls, cmd=cmd))
+        for cmd, doc in cmds.items():
+
+            def wrapper(payload):
+                return partial(handler, sat=sat, satcls=satcls, cmd=cmd)(payload)
+
+            wrapper.__doc__ = doc
+            setattr(obj, cmd, wrapper)
 
 
 class SatelliteClassCommLink:
@@ -162,11 +166,10 @@ class BaseController(CHIRPBroadcaster):
         try:
             # get list of commands
             msg = ct.request_get_response("get_commands")
-            # get only the actual command name
-            cmds = [cmd[0] for cmd in msg.payload]
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
-            sat = self.constellation._add_satellite(name, cls, cmds)
+            print(msg.payload.values)
+            sat = self.constellation._add_satellite(name, cls, msg.payload)
             if sat.uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
