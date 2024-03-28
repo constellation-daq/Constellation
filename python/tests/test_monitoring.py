@@ -58,24 +58,15 @@ def mock_monitoringsender():
 
 
 @pytest.fixture
-def mock_listener():
+def mock_listener(mock_transmitter_b):
     """Create a mock log listener instance."""
 
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        m.endpoint = 1
-        return m
-
-    mock_context = MagicMock()
-    mock_context.socket = mocket_factory
     mock_handler = MagicMock()
     mock_handler.handle.return_value = None
     mock_handler.emit.return_value = None
     mock_handler.create_lock.return_value = None
     mock_handler.lock = None
-    listener = ZeroMQSocketLogListener(
-        f"tcp://127.0.0.1:{send_port}", mock_handler, ctx=mock_context
-    )
+    listener = ZeroMQSocketLogListener(mock_transmitter_b, mock_handler)
     yield listener, mock_handler
 
 
@@ -104,7 +95,7 @@ def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
     m2 = mock_transmitter_b.recv()
     # check that the packet is processed
     assert len(mock_packet_queue_sender[send_port]) == 0
-    assert m2.name == "mock_val"
+    assert m2.name == "MOCK_VAL"
     assert m2.value == 42
     assert m2.sender == "mock_cmdp"
     assert m2.time
@@ -149,4 +140,4 @@ def test_monitoring_sender_loop(mock_listener, mock_monitoringsender):
     m._add_com_thread()
     m._start_com_threads()
     time.sleep(0.3)
-    assert b"STATS/get_answer" in mock_packet_queue_sender[send_port]
+    assert b"STATS/GET_ANSWER" in mock_packet_queue_sender[send_port]
