@@ -68,10 +68,10 @@ class SatelliteArray:
         # remove attribute
         delattr(getattr(self, cls), name)
         # clear from list
-        self._satellites = [sat for sat in self._satellites if sat.uuid != uuid]
+        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
 
     def _get_name_from_uuid(self, uuid: str):
-        s = [sat for sat in self._satellites if sat.uuid == uuid]
+        s = [sat for sat in self._satellites if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
         name = s[0].name
@@ -80,11 +80,11 @@ class SatelliteArray:
 
     def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
         try:
-            sat = obj.name
+            sat = obj._name
         except AttributeError:
             sat = None
         try:
-            satcls = obj.class_name
+            satcls = obj._class_name
         except AttributeError:
             satcls = None
         for cmd, doc in cmds.items():
@@ -221,11 +221,10 @@ class BaseController(CHIRPBroadcaster):
 
     def command(self, payload=None, sat=None, satcls=None, cmd=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
-
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat.uuid for sat in self.constellation.satellites]
+            targets = [sat._uuid for sat in self.constellation.satellites]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
@@ -242,7 +241,7 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
-            targets = [getattr(getattr(self.constellation, satcls), sat).uuid]
+            targets = [getattr(getattr(self.constellation, satcls), sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         res = {}
