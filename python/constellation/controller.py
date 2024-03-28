@@ -178,7 +178,6 @@ class BaseController(CHIRPBroadcaster):
             msg = ct.request_get_response("get_commands")
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
-            print(msg.payload.values)
             sat = self.constellation._add_satellite(name, cls, msg.payload)
             if sat.uuid != str(service.host_uuid):
                 self.log.warning(

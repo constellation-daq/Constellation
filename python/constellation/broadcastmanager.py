@@ -201,7 +201,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             msg.host_uuid, msg.serviceid, msg.from_address, msg.port
         )
         if service in self.discovered_services:
-            self._logger.info(
+            self._logger.debug(
                 "Service already discovered: %s on host %s",
                 msg.serviceid,
                 msg.from_address,
