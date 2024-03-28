@@ -17,10 +17,6 @@ from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
 
 
-# store command names of decorated methods
-COMMANDS = []
-
-
 def cscp_requestable(func):
     """Register a function as a supported command for CSCP.
 
