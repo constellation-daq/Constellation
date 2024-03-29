@@ -49,7 +49,7 @@ namespace constellation::satellite {
          * @tparam Args Argument types
          */
         template <typename R, typename... Args>
-        void add(std::string name,
+        void add(const std::string& name,
                  std::string description,
                  std::initializer_list<constellation::message::State> states,
                  std::function<R(Args...)> func);
@@ -161,7 +161,7 @@ namespace constellation::satellite {
     };
 
     template <typename R, typename... Args>
-    inline void CommandRegistry::add(std::string name,
+    inline void CommandRegistry::add(const std::string& name,
                                      std::string description,
                                      std::initializer_list<constellation::message::State> states,
                                      std::function<R(Args...)> func) {
