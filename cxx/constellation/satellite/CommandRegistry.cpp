@@ -18,9 +18,7 @@ using namespace constellation;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-std::string CommandRegistry::call(const message::State state,
-                                  const std::string& name,
-                                  const std::vector<std::string>& args) {
+std::string CommandRegistry::call(message::State state, const std::string& name, const std::vector<std::string>& args) {
     auto cmd = commands_.find(name);
 
     // Check if this is a known command at all
@@ -29,7 +27,7 @@ std::string CommandRegistry::call(const message::State state,
     }
 
     // Check if we are allowed to call this command from the current state:
-    if(!cmd->second.valid_states.empty() && !cmd->second.valid_states.count(state)) {
+    if(!cmd->second.valid_states.empty() && !cmd->second.valid_states.contains(state)) {
         throw InvalidUserCommand(name, state);
     }
 

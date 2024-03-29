@@ -87,7 +87,7 @@ namespace constellation::satellite {
          * @throws MissingUserCommandArguments if the number of arguments does not match
          * @throws std::invalid_argument if an argument or the return value could not be decoded or encoded to std::string
          */
-        std::string call(const message::State state, const std::string& name, const std::vector<std::string>& args);
+        std::string call(message::State state, const std::string& name, const std::vector<std::string>& args);
 
         /**
          * @brief Generate map of commands with comprehensive description
@@ -127,8 +127,8 @@ namespace constellation::satellite {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            std::string call_command(const std::vector<std::string>& args, std::index_sequence<I...>) {
-                return utils::to_string(func(utils::from_string<typename std::decay<Args>::type>(args.at(I))...));
+            std::string call_command(const std::vector<std::string>& args, std::index_sequence<I...> /*unused*/) {
+                return utils::to_string(func(utils::from_string<typename std::decay_t<Args>>(args.at(I))...));
             }
         };
 
@@ -140,9 +140,9 @@ namespace constellation::satellite {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            std::string call_command(const std::vector<std::string>& args, std::index_sequence<I...>) {
-                func(utils::from_string<typename std::decay<Args>::type>(args.at(I))...);
-                return std::string();
+            std::string call_command(const std::vector<std::string>& args, std::index_sequence<I...> /*unused*/) {
+                func(utils::from_string<typename std::decay_t<Args>>(args.at(I))...);
+                return {};
             }
         };
 
@@ -169,8 +169,8 @@ namespace constellation::satellite {
             throw utils::LogicError("Can not register command with empty name");
         }
 
-        const auto [it, success] = commands_.insert(
-            {std::move(name), Command {generate_call(std::move(func)), sizeof...(Args), description, states}});
+        const auto [it, success] =
+            commands_.insert({name, Command {generate_call(std::move(func)), sizeof...(Args), description, states}});
 
         if(!success) {
             throw utils::LogicError("Command \"" + name + "\" is already registered");
@@ -186,7 +186,7 @@ namespace constellation::satellite {
         if(!func || !t) {
             throw utils::LogicError("Object and member function pointers must not be nullptr");
         }
-        add(std::move(name), std::move(description), std::move(states), std::function<R(Args...)>([=](Args... args) {
+        add(std::move(name), std::move(description), states, std::function<R(Args...)>([=](Args... args) {
                 return (t->*func)(args...);
             }));
     }

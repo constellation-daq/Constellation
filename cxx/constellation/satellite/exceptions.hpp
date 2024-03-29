@@ -22,7 +22,7 @@ namespace constellation::satellite {
      * An error occurred in a request to the finite state machine
      */
     class FSMError : public utils::RuntimeError {
-        explicit FSMError(const std::string& reason) { error_message_ = std::move(reason); }
+        explicit FSMError(const std::string& reason) { error_message_ = reason; }
 
     protected:
         FSMError() = default;
@@ -46,7 +46,7 @@ namespace constellation::satellite {
 
     /** Error thrown for all user command errors */
     class UserCommandError : public utils::RuntimeError {
-        explicit UserCommandError(const std::string& reason) { error_message_ = std::move(reason); }
+        explicit UserCommandError(const std::string& reason) { error_message_ = reason; }
 
     protected:
         UserCommandError() = default;

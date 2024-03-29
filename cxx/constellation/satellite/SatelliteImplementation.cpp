@@ -189,13 +189,13 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
-SatelliteImplementation::handleUserCommand(std::string_view command, std::shared_ptr<zmq::message_t> arguments) {
+SatelliteImplementation::handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& arguments) {
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
-    std::shared_ptr<zmq::message_t> payload {};
-
+    const std::shared_ptr<zmq::message_t> payload {};
+    // FIXME use payload to return output?
     std::vector<std::string> args {};
     try {
-        if(arguments && arguments->size() > 0) {
+        if(arguments && !arguments->empty()) {
             const auto msgpack_args = msgpack::unpack(to_char_ptr(arguments->data()), arguments->size());
             args = msgpack_args->as<std::vector<std::string>>();
         }
