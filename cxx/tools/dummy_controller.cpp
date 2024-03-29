@@ -18,6 +18,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -59,22 +60,49 @@ int main(int argc, char* argv[]) {
     req.connect(uri);
 
     while(true) {
-        std::string command;
+        std::string commandline;
         std::cout << "Send command: ";
-        std::getline(std::cin, command);
+        std::getline(std::cin, commandline);
+
+        // Split into command and args
+        std::istringstream iss(commandline);
+        // Obtain command:
+        std::string command;
+        std::getline(iss, command, ' ');
 
         // Send command
         auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
         if(command == "initialize" || command == "reconfigure") {
-            send_msg.addPayload(Dictionary().assemble());
-            std::cout << "Added empty configuration to message" << std::endl;
-        } else if(command == "start") {
-            const std::uint32_t run_nr = 1234U;
+            std::cout << "attaching dumy configuration dictionary as payload" << std::endl;
+            Dictionary dict;
+            dict["key"] = "value";
             msgpack::sbuffer sbuf {};
-            msgpack::pack(sbuf, run_nr);
+            msgpack::pack(sbuf, dict);
+            auto frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+            send_msg.addPayload(frame);
+        } else if(command == "start") {
+            std::string runnr;
+            std::getline(iss, runnr, ' ');
+            size_t run = stoi(runnr);
+            msgpack::sbuffer sbuf {};
+            msgpack::pack(sbuf, run);
             send_msg.addPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
-            std::cout << "Added run number " << run_nr << " to message" << std::endl;
+            std::cout << "added run number " << run << " as payload" << std::endl;
+        } else {
+            std::vector<std::string> args;
+            std::string arg;
+            while(std::getline(iss, arg, ' ')) {
+                args.emplace_back(arg);
+            }
+            if(!args.empty()) {
+                std::cout << "attaching " << args.size() << " command arguments as payload array" << std::endl;
+                msgpack::sbuffer sbuf {};
+                msgpack::pack(sbuf, args);
+                auto frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+                send_msg.addPayload(frame);
+            }
         }
+
         send_msg.assemble().send(req);
 
         // Receive reply
