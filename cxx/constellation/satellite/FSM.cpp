@@ -58,7 +58,7 @@ FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
     if(transition_function_it != transition_map.end()) [[likely]] {
         return transition_function_it->second;
     } else {
-        throw FSMError("Transition " + to_string(transition) + " not allowed from " + to_string(state_) + " state");
+        throw InvalidFSMTransition(transition, state_);
     }
 }
 

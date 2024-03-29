@@ -9,26 +9,38 @@
 
 #pragma once
 
-#include <exception>
-#include <string>
+#include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::satellite {
 
-    /** Error thrown when a FSM transition is not allowed */
-    class FSMError : public std::exception {
-    public:
-        /**
-         * @param error_message Error message
-         */
-        FSMError(std::string error_message) : error_message_(std::move(error_message)) {}
+    /**
+     * @ingroup Exceptions
+     * @brief Finite State Machine Error
+     *
+     * An error occurred in a request to the finite state machine
+     */
+    class FSMError : public utils::RuntimeError {
+        explicit FSMError(const std::string& reason) { error_message_ = std::move(reason); }
 
-        /**
-         * @return Error message
-         */
-        const char* what() const noexcept final { return error_message_.c_str(); }
-
-    private:
-        std::string error_message_;
+    protected:
+        FSMError() = default;
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid transition requested
+     *
+     * A transition of the finite state machine was requested which is not allowed from the current state
+     */
+    class InvalidFSMTransition : public FSMError {
+    public:
+        explicit InvalidFSMTransition(const message::Transition transition, const message::State state) {
+            error_message_ = "Transition ";
+            error_message_ += utils::to_string(transition);
+            error_message_ += " not allowed from state ";
+            error_message_ += utils::to_string(state);
+        }
+    };
 } // namespace constellation::satellite
