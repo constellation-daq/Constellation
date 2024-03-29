@@ -18,6 +18,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
+#include "constellation/satellite/CommandRegistry.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
@@ -112,6 +113,23 @@ namespace constellation::satellite {
         /** Return the canonical satellite name (type_name.satellite_name) */
         std::string getCanonicalName() const;
 
+        /**
+         * @brief Call a user-registered command
+         *
+         * @param state Current state of the satellite finite state machine
+         * @param name Name of the command to be called
+         * @param args Vector of arguments for the command, encoded as std::string
+         * @return Return value of the command encoded as std::string
+         */
+        std::string callUserCommand(const message::State state,
+                                    const std::string& name,
+                                    const std::vector<std::string>& args) {
+            return user_commands_.call(state, name, args);
+        }
+
+        /** Return map of user-registered commands with their description */
+        std::map<std::string, std::string> getUserCommands() const { return user_commands_.describeCommands(); }
+
         /** Return a const reference to the satellite configuration */
         const config::Configuration& getConfig() const { return config_; }
 
@@ -130,6 +148,21 @@ namespace constellation::satellite {
         /** Logger to use */
         log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
 
+        /**
+         * @brief Register a new user command
+         *
+         * @param name Name of the command
+         * @param description Comprehensive description of the command
+         * @param states States of the finite state machine in which this command can be called
+         * @param func Pointer to the member function to be called
+         * @param t Pointer to the satellite object
+         */
+        template <typename T, typename R, typename... Args>
+        void register_command(
+            std::string name, std::string description, std::initializer_list<State> states, R (T::*func)(Args...), T* t) {
+            user_commands_.add(std::move(name), std::move(description), states, func, t);
+        }
+
     private:
         // FSM needs access to configuration
         friend FSM;
@@ -146,6 +179,7 @@ namespace constellation::satellite {
         std::string_view type_name_;
         std::string_view satellite_name_;
         config::Configuration config_;
+        CommandRegistry user_commands_;
     };
 
     // Generator function that needs to be exported in a satellite library
