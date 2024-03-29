@@ -43,4 +43,62 @@ namespace constellation::satellite {
             error_message_ += utils::to_string(state);
         }
     };
+
+    /** Error thrown for all user command errors */
+    class UserCommandError : public utils::RuntimeError {
+        explicit UserCommandError(const std::string& reason) { error_message_ = std::move(reason); }
+
+    protected:
+        UserCommandError() = default;
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid user command
+     *
+     * The user command is not registered
+     */
+    class UnknownUserCommand : public UserCommandError {
+    public:
+        explicit UnknownUserCommand(const std::string& command) {
+            error_message_ = "Unknown command \"";
+            error_message_ += command;
+            error_message_ += "\"";
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid user command
+     *
+     * The user command is not valid in the current state of the finite state machine
+     */
+    class InvalidUserCommand : public UserCommandError {
+    public:
+        explicit InvalidUserCommand(const std::string& command, const message::State state) {
+            error_message_ = "Command ";
+            error_message_ += command;
+            error_message_ += " cannot be called in state ";
+            error_message_ += utils::to_string(state);
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid user command
+     *
+     * The user command is not registered
+     */
+    class MissingUserCommandArguments : public UserCommandError {
+    public:
+        explicit MissingUserCommandArguments(const std::string& command, size_t args_expected, size_t args_given) {
+            error_message_ = "Command \"";
+            error_message_ += command;
+            error_message_ += "\" expects ";
+            error_message_ += std::to_string(args_expected);
+            error_message_ += " arguments but ";
+            error_message_ += std::to_string(args_given);
+            error_message_ += " given";
+        }
+    };
 } // namespace constellation::satellite
