@@ -39,8 +39,9 @@ namespace constellation::satellite {
         explicit InvalidFSMTransition(const message::Transition transition, const message::State state) {
             error_message_ = "Transition ";
             error_message_ += utils::to_string(transition);
-            error_message_ += " not allowed from state ";
+            error_message_ += " not allowed from ";
             error_message_ += utils::to_string(state);
+            error_message_ += " state";
         }
     };
 
