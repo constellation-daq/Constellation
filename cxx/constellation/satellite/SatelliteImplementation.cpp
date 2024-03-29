@@ -158,7 +158,13 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         command_dict["get_status"] = "Get status of satellite";
         command_dict["get_config"] =
             "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
-        // TODO(stephan.lachnit): append user commands
+
+        // Append user commands
+        auto user_commands = satellite_->getUserCommands();
+        for(auto& cmd : user_commands) {
+            command_dict.insert({cmd.first, cmd.second});
+        }
+
         // Pack dict
         payload = command_dict.assemble();
         break;
@@ -183,8 +189,36 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
-SatelliteImplementation::handleUserCommand(std::string_view, std::shared_ptr<zmq::message_t>) {
-    return std::nullopt;
+SatelliteImplementation::handleUserCommand(std::string_view command, std::shared_ptr<zmq::message_t> arguments) {
+    std::pair<message::CSCP1Message::Type, std::string> return_verb {};
+    std::shared_ptr<zmq::message_t> payload {};
+
+    std::vector<std::string> args {};
+    try {
+        if(arguments && arguments->size() > 0) {
+            const auto msgpack_args = msgpack::unpack(to_char_ptr(arguments->data()), arguments->size());
+            args = msgpack_args->as<std::vector<std::string>>();
+        }
+
+        auto retval = satellite_->callUserCommand(fsm_.getState(), std::string(command), args);
+        return_verb = {CSCP1Message::Type::SUCCESS, retval};
+    } catch(std::bad_cast& e) {
+        // Issue with obtaining parameters from payload
+        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+    } catch(std::invalid_argument& e) {
+        // Issue with decoding of the arguments
+        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+    } catch(MissingUserCommandArguments& e) {
+        // Issue with number of arguments
+        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+    } catch(InvalidUserCommand& e) {
+        // Command cannot be called
+        return_verb = {CSCP1Message::Type::INVALID, e.what()};
+    } catch(...) {
+        return std::nullopt;
+    }
+
+    return std::make_pair(return_verb, payload);
 }
 
 void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
