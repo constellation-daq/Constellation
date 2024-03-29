@@ -37,6 +37,7 @@
 #include "constellation/core/utils/ports.hpp"
 #include "constellation/core/utils/std23.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation;
@@ -181,6 +182,11 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
     return std::make_pair(return_verb, payload);
 }
 
+std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
+SatelliteImplementation::handleUserCommand(std::string_view, std::shared_ptr<zmq::message_t>) {
+    return std::nullopt;
+}
+
 void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         try {
@@ -217,7 +223,12 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
                 continue;
             }
 
-            // TODO(stephan.lachnit): Try to decode as user commands
+            // Handle user-registered commands:
+            auto user_command_reply = handleUserCommand(command_string, message.getPayload());
+            if(user_command_reply.has_value()) {
+                sendReply(user_command_reply.value().first, user_command_reply.value().second);
+                continue;
+            }
 
             // Command is not known
             std::string unknown_command_reply = "Command \"";
