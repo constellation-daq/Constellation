@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
         } else if(command == "start") {
             std::string runnr;
             std::getline(iss, runnr, ' ');
-            size_t run = stoi(runnr);
+            const size_t run = stoi(runnr);
             msgpack::sbuffer sbuf {};
             msgpack::pack(sbuf, run);
             send_msg.addPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
