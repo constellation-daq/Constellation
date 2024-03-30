@@ -21,13 +21,16 @@
 #include <utility>
 
 #include <magic_enum.hpp>
+#include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/message/Dictionary.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
@@ -104,13 +107,17 @@ std::optional<CSCP1Message> SatelliteImplementation::getNextCommand() {
     return message;
 }
 
-void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::string> reply_verb) {
-    CSCP1Message({satellite_->getCanonicalName()}, std::move(reply_verb)).assemble().send(rep_);
+void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::string> reply_verb,
+                                        std::shared_ptr<zmq::message_t> payload) {
+    auto msg = CSCP1Message({satellite_->getCanonicalName()}, std::move(reply_verb));
+    msg.addPayload(std::move(payload)); // CSCP1Message handle handle nullptr and empty messages
+    msg.assemble().send(rep_);
 }
 
-std::optional<std::pair<CSCP1Message::Type, std::string>>
+std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
 SatelliteImplementation::handleGetCommand(std::string_view command) {
-    std::optional<std::pair<CSCP1Message::Type, std::string>> return_verb {};
+    std::pair<message::CSCP1Message::Type, std::string> return_verb {};
+    std::shared_ptr<zmq::message_t> payload {};
 
     auto command_enum = magic_enum::enum_cast<GetCommand>(command);
     if(!command_enum.has_value()) {
@@ -123,9 +130,38 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         return_verb = {CSCP1Message::Type::SUCCESS, satellite_->getCanonicalName()};
         break;
     }
+    case get_version: {
+        return_verb = {CSCP1Message::Type::SUCCESS, CNSTLN_VERSION};
+        break;
+    }
     case get_commands: {
         // TODO(stephan.lachnit): return list of commands
-        return_verb = {CSCP1Message::Type::NOTIMPLEMENTED, "Command get_commands is not implemented"};
+        return_verb = {CSCP1Message::Type::SUCCESS, "Commands attached in payload"};
+        auto command_dict = Dictionary();
+        // FSM commands
+        command_dict["initialize"] = "Initialize satellite (payload: config as flat MessagePack dict with strings as keys)";
+        command_dict["launch"] = "Launch satellite";
+        command_dict["land"] = "Land satellite";
+        if(satellite_->supportsReconfigure()) {
+            command_dict["reconfigure"] =
+                "Reconfigure satellite (payload: partial config as flat MessagePack dict with strings as keys)";
+        }
+        command_dict["start"] = "Start satellite (payload: run number as MessagePack integer)";
+        command_dict["stop"] = "Stop satellite";
+        // Get commands
+        command_dict["get_name"] = "Get canonical name of satellite";
+        command_dict["get_version"] = "Get Constellation version of satellite";
+        command_dict["get_commands"] =
+            "Get commands supported by satellite (returned in payload as flat MessagePack dict with strings as keys)";
+        command_dict["get_state"] = "Get state of satellite";
+        command_dict["get_status"] = "Get status of satellite";
+        command_dict["get_config"] =
+            "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
+        // TODO(stephan.lachnit): append user commands
+        // Pack dict
+        msgpack::sbuffer sbuf {};
+        msgpack::pack(sbuf, command_dict);
+        payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
         break;
     }
     case get_state: {
@@ -143,7 +179,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
     default: std::unreachable();
     }
 
-    return return_verb;
+    return std::make_pair(return_verb, payload);
 }
 
 void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
@@ -178,7 +214,7 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             // Try to decode as other builtin (non-transition) commands
             auto get_command_reply = handleGetCommand(command_string);
             if(get_command_reply.has_value()) {
-                sendReply(get_command_reply.value());
+                sendReply(get_command_reply.value().first, get_command_reply.value().second);
                 continue;
             }
 

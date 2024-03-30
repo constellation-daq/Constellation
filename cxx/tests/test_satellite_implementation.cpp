@@ -85,9 +85,9 @@ TEST_CASE("Get commands", "[satellite]") {
     // get_commands
     sender.send_command("get_commands");
     auto recv_msg_get_commands = sender.recv();
-    REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::NOTIMPLEMENTED);
-    REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Command get_commands is not implemented"));
-    REQUIRE(!recv_msg_get_commands.hasPayload());
+    REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
+    REQUIRE(recv_msg_get_commands.hasPayload());
 
     // get_state
     sender.send_command("get_state");
