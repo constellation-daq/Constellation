@@ -8,6 +8,7 @@
  */
 
 #include "Dictionary.hpp"
+#include "constellation/core/utils/std23.hpp"
 
 #include <msgpack.hpp>
 
