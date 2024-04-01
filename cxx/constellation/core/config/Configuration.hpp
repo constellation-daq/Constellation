@@ -40,6 +40,7 @@ namespace constellation::config {
              * Default constructor
              */
             AccessMarker() = default;
+            ~AccessMarker() = default;
 
             /**
              * @brief Explicit copy constructor to allow copying of the map keys
@@ -50,6 +51,14 @@ namespace constellation::config {
              * @brief Explicit copy assignment operator to allow copying of the map keys
              */
             AccessMarker& operator=(const AccessMarker& rhs);
+
+            /// @{
+            /**
+             * @brief Allow moving the access marker
+             */
+            AccessMarker(AccessMarker&&) noexcept = default; // NOLINT
+            AccessMarker& operator=(AccessMarker&&) = default;
+            /// @}
 
             /**
              * @brief Method to register a key for a new access marker
@@ -83,6 +92,7 @@ namespace constellation::config {
          * @brief Construct a configuration object
          */
         Configuration() = default;
+        ~Configuration() = default;
 
         /// @{
         /**
@@ -144,7 +154,7 @@ namespace constellation::config {
          * @return List of values in the array in the requested template parameter
          *         or the default array if the key does not exist
          */
-        template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T> def) const;
+        template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def) const;
 
         /**
          * @brief Get literal value of a key as string
@@ -204,7 +214,6 @@ namespace constellation::config {
          * @param val List of values to assign to the key
          * @param mark_used Flag whether key should be marked as "used" directly
          */
-        // TODO [doc] Provide second template parameter to specify the vector type to return it in
         template <typename T> void setArray(const std::string& key, const std::vector<T>& val, bool mark_used = false);
 
         /**
@@ -265,7 +274,7 @@ namespace constellation::config {
          * @param path Path to make absolute (if it is not already absolute)
          * @param canonicalize_path If the path should be canonicalized (throws an error if the path does not exist)
          */
-        std::filesystem::path path_to_absolute(std::filesystem::path path, bool canonicalize_path) const;
+        static std::filesystem::path path_to_absolute(std::filesystem::path path, bool canonicalize_path);
 
         Dictionary config_;
         mutable AccessMarker used_keys_;

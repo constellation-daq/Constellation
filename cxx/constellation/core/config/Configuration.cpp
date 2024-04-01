@@ -27,6 +27,10 @@ Configuration::AccessMarker::AccessMarker(const Configuration::AccessMarker& rhs
 }
 
 Configuration::AccessMarker& Configuration::AccessMarker::operator=(const Configuration::AccessMarker& rhs) {
+    if(this == &rhs) {
+        return *this;
+    }
+
     for(const auto& [key, value] : rhs.markers_) {
         registerMarker(key);
         markers_.at(key).store(value.load());
@@ -103,7 +107,7 @@ std::filesystem::path Configuration::getPathWithExtension(const std::string& key
 /**
  * @throws std::invalid_argument If the path does not exists
  */
-std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) const {
+std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {
     // If not a absolute path, make it an absolute path
     if(!path.is_absolute()) {
         // Get current directory and append the relative path
