@@ -57,7 +57,7 @@ namespace constellation::config {
          * @brief Convert value to string representation
          * @return String representation of the value
          */
-        std::string str() const;
+        CNSTLN_API std::string str() const;
 
         /**
          * @brief Get type info of the value currently stored in the variant
@@ -65,23 +65,11 @@ namespace constellation::config {
          */
         std::type_info const& type() const;
 
-        /**
-         * @brief MsgPack Unpacker method
-         * Method to unpack a DictionaRyValue from a MsgPack object
-         *
-         * @param msgpack_object MsgPack object to unpack
-         * @return DictionaryValue object
-         * @throws msgpack::type_error if it cannot be unpacked into a DictionaryValue
-         */
-        static DictionaryValue msgpack_unpack(const msgpack::object& msgpack_object);
+        /** Unpack value with msgpack */
+        CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
 
-        /**
-         * \brief MsgPack Packer method
-         * Method to pack this DictionaryValue into a MsgPack object
-         *
-         * \param msgpack_packer Packer to add the object to
-         */
-        void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+        /** Pack value with msgpack */
+        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
     };
 
     /**

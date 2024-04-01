@@ -63,30 +63,29 @@ void DictionaryValue::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_pa
     std::visit(visitor, *this);
 }
 
-DictionaryValue DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
-    DictionaryValue value {};
+void DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
     switch(msgpack_object.type) {
     case msgpack::type::BOOLEAN: {
-        value = msgpack_object.as<bool>();
+        *this = msgpack_object.as<bool>();
         break;
     }
     case msgpack::type::POSITIVE_INTEGER:
     case msgpack::type::NEGATIVE_INTEGER: {
-        value = msgpack_object.as<std::int64_t>();
+        *this = msgpack_object.as<std::int64_t>();
         break;
     }
     case msgpack::type::FLOAT32:
     case msgpack::type::FLOAT64: {
-        value = msgpack_object.as<double>();
+        *this = msgpack_object.as<double>();
         break;
     }
     case msgpack::type::STR: {
-        value = msgpack_object.as<std::string>();
+        *this = msgpack_object.as<std::string>();
         break;
     }
     case msgpack::type::EXT: {
         // Try to convert to time_point, throws if wrong EXT type
-        value = msgpack_object.as<std::chrono::system_clock::time_point>();
+        *this = msgpack_object.as<std::chrono::system_clock::time_point>();
         break;
     }
     case msgpack::type::NIL: {
@@ -97,7 +96,6 @@ DictionaryValue DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_o
         throw msgpack::type_error();
     }
     }
-    return value;
 }
 
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
@@ -105,7 +103,7 @@ void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer)
 
     for(auto const& [key, val] : *this) {
         msgpack_packer.pack(key);
-        val.msgpack_pack(msgpack_packer);
+        msgpack_packer.pack(val);
     }
 }
 
@@ -125,7 +123,8 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
         const auto key = msgpack_kv.key.as<std::string>();
 
         // Unpack value
-        const auto value = DictionaryValue::msgpack_unpack(msgpack_kv.val);
+        auto value = DictionaryValue();
+        value.msgpack_unpack(msgpack_kv.val);
 
         // Insert / overwrite in the map
         this->insert_or_assign(key, std::move(value));
