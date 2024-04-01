@@ -15,9 +15,24 @@
 #include <stdexcept>
 #include <string>
 
+#include <msgpack.hpp>
+#include <zmq.hpp>
+
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::config;
+
+Configuration::Configuration(std::shared_ptr<zmq::message_t> payload) {
+    const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
+    const auto dict = msgpack_payload->as<Dictionary>();
+    // Register all markers:
+    for(const auto& [key, val] : dict) {
+        used_keys_.registerMarker(key);
+    }
+    // Store the dictionary
+    config_ = std::move(dict);
+};
 
 Configuration::AccessMarker::AccessMarker(const Configuration::AccessMarker& rhs) {
     for(const auto& [key, value] : rhs.markers_) {

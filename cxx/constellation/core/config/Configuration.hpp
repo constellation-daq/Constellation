@@ -16,6 +16,10 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
 
+namespace zmq {
+    class message_t;
+}
+
 namespace constellation::config {
 
     template <typename T> using Matrix = std::vector<std::vector<T>>;
@@ -25,7 +29,7 @@ namespace constellation::config {
      *
      * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
      */
-    class Configuration {
+    class CNSTLN_API Configuration {
 
         /**
          * @brief Helper class to keep track of key access
@@ -93,6 +97,8 @@ namespace constellation::config {
          */
         Configuration() = default;
         ~Configuration() = default;
+
+        explicit Configuration(std::shared_ptr<zmq::message_t> payload);
 
         /// @{
         /**
