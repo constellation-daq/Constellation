@@ -22,6 +22,7 @@ std::string DictionaryValue::str() const {
 
     std::visit(overload {
                    [&](const std::monostate&) { out << "NULL"; },
+                   [&](const bool& arg) { out << std::boolalpha << arg; },
                    [&](const std::vector<double>& arg) {
                        out << "[";
                        for(const auto& val : arg) {

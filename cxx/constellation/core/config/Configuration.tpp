@@ -71,7 +71,7 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::setArray(const std::string& key, const std::vector<T>& val, bool mark_used) {
-        set<std::vector<T>>(val);
+        set<std::vector<T>>(key, val, mark_used);
     }
 
     template <typename T> void Configuration::setDefault(const std::string& key, const T& val) {

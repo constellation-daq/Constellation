@@ -23,9 +23,7 @@ namespace constellation::config {
     /**
      * @brief Generic configuration object storing keys
      *
-     * The configuration holds a set of keys with arbitrary values that are internally stored as strings. It has special
-     * logic for reading paths (relative to the configuration file). All types are converted to their appropriate type using
-     * the library of \ref StringConversions.
+     * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
      */
     class Configuration {
 
