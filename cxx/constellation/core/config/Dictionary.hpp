@@ -36,6 +36,10 @@ namespace constellation::config {
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
     };
 
+    template <class V> std::type_info const& get_type(V const& v) {
+        return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, v);
+    }
+
     /**
      * Dictionary type with serialization functions for MessagePack and ZeroMQ
      */
