@@ -18,7 +18,9 @@ using namespace constellation;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-std::string CommandRegistry::call(message::State state, const std::string& name, const std::vector<std::string>& args) {
+message::DictionaryValue CommandRegistry::call(message::State state,
+                                               const std::string& name,
+                                               const std::vector<message::DictionaryValue>& args) {
     auto cmd = commands_.find(name);
 
     // Check if this is a known command at all
