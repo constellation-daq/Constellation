@@ -195,11 +195,11 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
     std::shared_ptr<zmq::message_t> payload {};
 
-    std::vector<message::DictionaryValue> args {};
+    config::List args {};
     try {
         if(arguments && !arguments->empty()) {
             const auto msgpack_args = msgpack::unpack(to_char_ptr(arguments->data()), arguments->size());
-            args = msgpack_args->as<std::vector<message::DictionaryValue>>();
+            args = msgpack_args->as<config::List>();
         }
 
         auto retval = satellite_->callUserCommand(fsm_.getState(), std::string(command), args);
@@ -207,7 +207,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
 
         // Return the call value as payload
         msgpack::sbuffer sbuf {};
-        std::visit([&](auto&& arg) { msgpack::pack(sbuf, arg); }, retval);
+        msgpack::pack(sbuf, retval);
         payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
         return_verb = {CSCP1Message::Type::SUCCESS, {}};
     } catch(std::bad_cast& e) {

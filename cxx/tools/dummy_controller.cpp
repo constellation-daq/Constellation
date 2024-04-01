@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
             send_msg.addPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
             std::cout << "added run number " << run << " as payload" << std::endl;
         } else {
-            std::vector<constellation::message::DictionaryValue> args;
+            List args;
             std::string arg;
             while(std::getline(iss, arg, ' ')) {
                 args.emplace_back(stoi(arg));
@@ -126,9 +126,9 @@ int main(int argc, char* argv[]) {
                     std::cout << std::endl;
                 }
             } catch(std::bad_cast&) {
-                const auto val = unpack_dictval(payload.get());
-                std::cout << "Payload: \t";
-                std::visit([&](auto&& arg) { std::cout << arg; }, val);
+                auto val = Value();
+                val.msgpack_unpack(payload.get());
+                std::cout << "Payload: \t" << val.str();
                 std::cout << std::endl;
             } catch(...) {
                 std::cout << "Payload: <could not unpack payload>" << std::endl;

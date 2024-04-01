@@ -121,9 +121,7 @@ namespace constellation::satellite {
          * @param args Vector of arguments for the command, encoded as std::string
          * @return Return value of the command encoded as std::string
          */
-        message::DictionaryValue callUserCommand(const message::State state,
-                                                 const std::string& name,
-                                                 const std::vector<message::DictionaryValue>& args) {
+        config::Value callUserCommand(const message::State state, const std::string& name, const config::List& args) {
             return user_commands_.call(state, name, args);
         }
 

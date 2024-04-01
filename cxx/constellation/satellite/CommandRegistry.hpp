@@ -22,7 +22,7 @@
 #include "exceptions.hpp"
 
 #include "constellation/core/config.hpp"
-#include "constellation/core/message/Dictionary.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/type.hpp"
@@ -88,9 +88,7 @@ namespace constellation::satellite {
          * @throws MissingUserCommandArguments if the number of arguments does not match
          * @throws std::invalid_argument if an argument or the return value could not be decoded or encoded to std::string
          */
-        message::DictionaryValue call(message::State state,
-                                      const std::string& name,
-                                      const std::vector<message::DictionaryValue>& args);
+        config::Value call(message::State state, const std::string& name, const std::vector<config::Value>& args);
 
         /**
          * @brief Generate map of commands with comprehensive description
@@ -104,7 +102,7 @@ namespace constellation::satellite {
         std::map<std::string, std::string> describeCommands() const;
 
     private:
-        using Call = std::function<message::DictionaryValue(const std::vector<message::DictionaryValue>&)>;
+        using Call = std::function<config::Value(const std::vector<config::Value>&)>;
 
         /**
          * @struct Command
@@ -126,13 +124,12 @@ namespace constellation::satellite {
         template <typename R, typename... Args> struct Wrapper {
             std::function<R(Args...)> func;
 
-            message::DictionaryValue operator()(const std::vector<message::DictionaryValue>& args) {
+            config::Value operator()(const std::vector<config::Value>& args) {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            message::DictionaryValue call_command(const std::vector<message::DictionaryValue>& args,
-                                                  std::index_sequence<I...> /*unused*/) {
-                return message::to_dictval(func(message::from_dictval<typename std::decay_t<Args>>(args.at(I))...));
+            config::Value call_command(const std::vector<config::Value>& args, std::index_sequence<I...> /*unused*/) {
+                return config::Value::convert(func(config::Value::value<typename std::decay_t<Args>>(args.at(I))...));
             }
         };
 
@@ -140,13 +137,12 @@ namespace constellation::satellite {
         template <typename... Args> struct Wrapper<void, Args...> {
             std::function<void(Args...)> func;
 
-            message::DictionaryValue operator()(const std::vector<message::DictionaryValue>& args) {
+            config::Value operator()(const std::vector<config::Value>& args) {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            message::DictionaryValue call_command(const std::vector<message::DictionaryValue>& args,
-                                                  std::index_sequence<I...> /*unused*/) {
-                func(message::from_dictval<typename std::decay_t<Args>>(args.at(I))...);
+            config::Value call_command(const std::vector<config::Value>& args, std::index_sequence<I...> /*unused*/) {
+                func(config::Value::value<typename std::decay_t<Args>>(args.at(I))...);
                 return {};
             }
         };
