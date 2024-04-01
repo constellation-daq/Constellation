@@ -5,7 +5,9 @@ core_src = files(
   'chirp/BroadcastRecv.cpp',
   'chirp/BroadcastSend.cpp',
   'chirp/Manager.cpp',
+  'config/Configuration.cpp',
   'config/Dictionary.cpp',
+  'config/exceptions.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
@@ -48,6 +50,13 @@ install_headers(
 )
 
 install_headers(
+  'config/Configuration.hpp',
+  'config/Dictionary.hpp',
+  'config/exceptions.hpp',
+  subdir: 'constellation/core/config',
+)
+
+install_headers(
   'external/md5.h',
   subdir: 'constellation/core/external',
 )
@@ -63,7 +72,6 @@ install_headers(
 )
 
 install_headers(
-  'config/Dictionary.hpp',
   'message/CDTP1Message.hpp',
   'message/CHIRPMessage.hpp',
   'message/CMDP1Header.hpp',
