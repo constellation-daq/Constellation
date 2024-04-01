@@ -31,6 +31,10 @@ namespace constellation::config {
     using DictionaryValue =
         std::variant<std::monostate, bool, std::int64_t, double, std::string, std::chrono::system_clock::time_point>;
 
+    template <class V> std::type_info const& get_type(V const& v) {
+        return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, v);
+    }
+
     /**
      * Dictionary type with serialization functions for MessagePack
      */
