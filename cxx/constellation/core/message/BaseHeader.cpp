@@ -82,20 +82,22 @@ std::string BaseHeader::to_string() const {
         << "Sender: "sv << sender_ << '\n'                          //
         << "Time:   "sv << time_ << '\n'                            //
         << "Tags:"sv;
+
+    auto visitor = Overload {
+        [&](const std::monostate&) { out << "NULL"; },
+        [&](const std::vector<std::string>& arg) {
+            out << "[";
+            for(const auto& val : arg) {
+                out << val << ", ";
+            }
+            out << "]";
+        },
+        [&](const auto& arg) { out << arg; },
+    };
+
     for(const auto& entry : tags_) {
         out << "\n "sv << entry.first << ": "sv;
-        std::visit(
-            [&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr(std::is_same_v<T, std::monostate>) {
-                    // Monostate => nil
-                    out << "nil";
-                } else {
-                    // Other types have implementation
-                    out << arg;
-                }
-            },
-            entry.second);
+        std::visit(visitor, entry.second);
     }
     return out.str();
 }

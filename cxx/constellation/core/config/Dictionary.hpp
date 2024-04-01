@@ -28,8 +28,18 @@ namespace constellation::config {
      *
      * Allowed types: nil, bool, int, float, string and time point
      */
-    using DictionaryValue =
-        std::variant<std::monostate, bool, std::int64_t, double, std::string, std::chrono::system_clock::time_point>;
+    using DictionaryValue = std::variant<std::monostate,
+                                         bool,
+                                         std::int64_t,
+                                         double,
+                                         std::string,
+                                         std::chrono::system_clock::time_point,
+                                         std::vector<std::string>>;
+
+    template <typename... Ts> struct Overload : Ts... {
+        using Ts::operator()...;
+    };
+    template <class... Ts> Overload(Ts...) -> Overload<Ts...>;
 
     template <class V> std::type_info const& get_type(V const& v) {
         return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, v);

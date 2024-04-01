@@ -19,20 +19,15 @@ using namespace constellation::config;
 
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     msgpack_packer.pack_map(this->size());
+
+    auto visitor = Overload {
+        [&](const std::monostate&) { msgpack_packer.pack(msgpack::type::nil_t()); },
+        [&](const auto& arg) { msgpack_packer.pack(arg); },
+    };
+
     for(auto const& [key, val] : *this) {
         msgpack_packer.pack(key);
-        std::visit(
-            [&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr(std::is_same_v<T, std::monostate>) {
-                    // Monostate => nil
-                    msgpack_packer.pack_nil();
-                } else {
-                    // Other types have implementation
-                    msgpack_packer.pack(arg);
-                }
-            },
-            val);
+        std::visit(visitor, val);
     }
 }
 
