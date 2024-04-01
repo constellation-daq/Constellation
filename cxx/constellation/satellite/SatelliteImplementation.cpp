@@ -190,18 +190,26 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
 SatelliteImplementation::handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& arguments) {
+    LOG(logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
+
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
-    const std::shared_ptr<zmq::message_t> payload {};
-    // FIXME use payload to return output?
-    std::vector<std::string> args {};
+    std::shared_ptr<zmq::message_t> payload {};
+
+    std::vector<message::DictionaryValue> args {};
     try {
         if(arguments && !arguments->empty()) {
             const auto msgpack_args = msgpack::unpack(to_char_ptr(arguments->data()), arguments->size());
-            args = msgpack_args->as<std::vector<std::string>>();
+            args = msgpack_args->as<std::vector<message::DictionaryValue>>();
         }
 
         auto retval = satellite_->callUserCommand(fsm_.getState(), std::string(command), args);
-        return_verb = {CSCP1Message::Type::SUCCESS, retval};
+        LOG(logger_, DEBUG) << "User command \"" << command << "\" succeeded, packing return value.";
+
+        // Return the call value as payload
+        msgpack::sbuffer sbuf {};
+        std::visit([&](auto&& arg) { msgpack::pack(sbuf, arg); }, retval);
+        payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+        return_verb = {CSCP1Message::Type::SUCCESS, {}};
     } catch(std::bad_cast& e) {
         // Issue with obtaining parameters from payload
         return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
@@ -215,6 +223,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
         // Command cannot be called
         return_verb = {CSCP1Message::Type::INVALID, e.what()};
     } catch(...) {
+        LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\"";
         return std::nullopt;
     }
 
