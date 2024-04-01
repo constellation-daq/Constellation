@@ -18,14 +18,15 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/message/Dictionary.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/ports.hpp"
 #include "constellation/satellite/Satellite.hpp"
 #include "constellation/satellite/SatelliteImplementation.hpp"
 
 using namespace Catch::Matchers;
+using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;

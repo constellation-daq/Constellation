@@ -21,7 +21,7 @@
 
 #include "constellation/core/config.hpp"
 
-namespace constellation::message {
+namespace constellation::config {
 
     /**
      * Value type for Dictionary using std::variant
@@ -43,4 +43,4 @@ namespace constellation::message {
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
     };
 
-} // namespace constellation::message
+} // namespace constellation::config

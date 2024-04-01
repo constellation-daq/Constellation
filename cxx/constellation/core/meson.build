@@ -5,13 +5,13 @@ core_src = files(
   'chirp/BroadcastRecv.cpp',
   'chirp/BroadcastSend.cpp',
   'chirp/Manager.cpp',
+  'config/Dictionary.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
   'message/CDTP1Message.cpp',
   'message/CHIRPMessage.cpp',
   'message/CSCP1Message.cpp',
-  'message/Dictionary.cpp',
   'message/BaseHeader.cpp',
 )
 
@@ -63,11 +63,11 @@ install_headers(
 )
 
 install_headers(
+  'config/Dictionary.hpp',
   'message/CDTP1Message.hpp',
   'message/CHIRPMessage.hpp',
   'message/CMDP1Header.hpp',
   'message/CSCP1Message.hpp',
-  'message/Dictionary.hpp',
   'message/BaseHeader.hpp',
   'message/Protocol.hpp',
   'message/satellite_definitions.hpp',

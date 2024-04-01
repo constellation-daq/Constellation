@@ -15,7 +15,7 @@
 #include <type_traits>
 #include <variant>
 
-using namespace constellation::message;
+using namespace constellation::config;
 
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     msgpack_packer.pack_map(this->size());
