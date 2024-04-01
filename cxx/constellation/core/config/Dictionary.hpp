@@ -23,6 +23,7 @@
 
 namespace constellation::config {
 
+    /** Overload pattern for visitors */
     template <typename... Ts> struct overload : Ts... {
         using Ts::operator()...;
     };
@@ -31,7 +32,7 @@ namespace constellation::config {
     /**
      * Value type for Dictionary using std::variant
      *
-     * Allowed types: nil, bool, int, float, string and time point
+     * Allowed types: nil, bool, long int, double, string, time point and vectors thereof
      */
     using Value = std::variant<std::monostate,
                                bool,
@@ -43,14 +44,44 @@ namespace constellation::config {
                                std::vector<double>,
                                std::vector<std::string>>;
 
+    /**
+     * @class DictionaryValue
+     * @brief Augmented std::variant with MsgPack packer and unpacker routines
+     */
     class DictionaryValue : public Value {
     public:
         using Value::Value;
         using Value::operator=;
 
+        /**
+         * @brief Convert value to string representation
+         * @return String representation of the value
+         */
         std::string str() const;
 
+        /**
+         * @brief Get type info of the value currently stored in the variant
+         * @return Type info of the currently held value
+         */
         std::type_info const& type() const;
+
+        /**
+         * @brief MsgPack Unpacker method
+         * Method to unpack a DictionaRyValue from a MsgPack object
+         *
+         * @param msgpack_object MsgPack object to unpack
+         * @return DictionaryValue object
+         * @throws msgpack::type_error if it cannot be unpacked into a DictionaryValue
+         */
+        static DictionaryValue msgpack_unpack(const msgpack::object& msgpack_object);
+
+        /**
+         * \brief MsgPack Packer method
+         * Method to pack this DictionaryValue into a MsgPack object
+         *
+         * \param msgpack_packer Packer to add the object to
+         */
+        void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
     };
 
     /**

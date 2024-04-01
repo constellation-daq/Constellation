@@ -55,17 +55,57 @@ std::type_info const& DictionaryValue::type() const {
     return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, *this);
 }
 
-void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
-    msgpack_packer.pack_map(this->size());
-
+void DictionaryValue::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     auto visitor = overload {
         [&](const std::monostate&) { msgpack_packer.pack(msgpack::type::nil_t()); },
         [&](const auto& arg) { msgpack_packer.pack(arg); },
     };
+    std::visit(visitor, *this);
+}
+
+DictionaryValue DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
+    DictionaryValue value {};
+    switch(msgpack_object.type) {
+    case msgpack::type::BOOLEAN: {
+        value = msgpack_object.as<bool>();
+        break;
+    }
+    case msgpack::type::POSITIVE_INTEGER:
+    case msgpack::type::NEGATIVE_INTEGER: {
+        value = msgpack_object.as<std::int64_t>();
+        break;
+    }
+    case msgpack::type::FLOAT32:
+    case msgpack::type::FLOAT64: {
+        value = msgpack_object.as<double>();
+        break;
+    }
+    case msgpack::type::STR: {
+        value = msgpack_object.as<std::string>();
+        break;
+    }
+    case msgpack::type::EXT: {
+        // Try to convert to time_point, throws if wrong EXT type
+        value = msgpack_object.as<std::chrono::system_clock::time_point>();
+        break;
+    }
+    case msgpack::type::NIL: {
+        value = std::monostate();
+        break;
+    }
+    default: {
+        throw msgpack::type_error();
+    }
+    }
+    return value;
+}
+
+void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+    msgpack_packer.pack_map(this->size());
 
     for(auto const& [key, val] : *this) {
         msgpack_packer.pack(key);
-        std::visit(visitor, val);
+        val.msgpack_pack(msgpack_packer);
     }
 }
 
@@ -85,39 +125,7 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
         const auto key = msgpack_kv.key.as<std::string>();
 
         // Unpack value
-        DictionaryValue value {};
-        switch(msgpack_kv.val.type) {
-        case msgpack::type::BOOLEAN: {
-            value = msgpack_kv.val.as<bool>();
-            break;
-        }
-        case msgpack::type::POSITIVE_INTEGER:
-        case msgpack::type::NEGATIVE_INTEGER: {
-            value = msgpack_kv.val.as<std::int64_t>();
-            break;
-        }
-        case msgpack::type::FLOAT32:
-        case msgpack::type::FLOAT64: {
-            value = msgpack_kv.val.as<double>();
-            break;
-        }
-        case msgpack::type::STR: {
-            value = msgpack_kv.val.as<std::string>();
-            break;
-        }
-        case msgpack::type::EXT: {
-            // Try to convert to time_point, throws if wrong EXT type
-            value = msgpack_kv.val.as<std::chrono::system_clock::time_point>();
-            break;
-        }
-        case msgpack::type::NIL: {
-            value = std::monostate();
-            break;
-        }
-        default: {
-            throw msgpack::type_error();
-        }
-        }
+        const auto value = DictionaryValue::msgpack_unpack(msgpack_kv.val);
 
         // Insert / overwrite in the map
         this->insert_or_assign(key, std::move(value));
