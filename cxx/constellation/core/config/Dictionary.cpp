@@ -17,10 +17,46 @@
 
 using namespace constellation::config;
 
+std::string DictionaryValue::str() const {
+    std::ostringstream out {};
+
+    std::visit(overload {
+                   [&](const std::monostate&) { out << "NULL"; },
+                   [&](const std::vector<double>& arg) {
+                       out << "[";
+                       for(const auto& val : arg) {
+                           out << val << ", ";
+                       }
+                       out << "]";
+                   },
+                   [&](const std::vector<std::int64_t>& arg) {
+                       out << "[";
+                       for(const auto& val : arg) {
+                           out << val << ", ";
+                       }
+                       out << "]";
+                   },
+                   [&](const std::vector<std::string>& arg) {
+                       out << "[";
+                       for(const auto& val : arg) {
+                           out << val << ", ";
+                       }
+                       out << "]";
+                   },
+                   [&](const auto& arg) { out << arg; },
+               },
+               *this);
+    return out.str();
+}
+
+std::type_info const& DictionaryValue::type() const {
+    return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, *this);
+}
+
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     msgpack_packer.pack_map(this->size());
 
-    auto visitor = Overload {
+    auto visitor = overload {
         [&](const std::monostate&) { msgpack_packer.pack(msgpack::type::nil_t()); },
         [&](const auto& arg) { msgpack_packer.pack(arg); },
     };

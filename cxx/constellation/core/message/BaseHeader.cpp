@@ -84,7 +84,7 @@ std::string BaseHeader::to_string() const {
         << "Tags:"sv;
 
     for(const auto& entry : tags_) {
-        out << "\n "sv << entry.first << ": "sv << config::get_string(entry.second);
+        out << "\n "sv << entry.first << ": "sv << entry.second.str();
     }
     return out.str();
 }

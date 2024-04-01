@@ -22,11 +22,11 @@ namespace constellation::config {
         } catch(std::out_of_range& e) {
             throw MissingKeyError(key);
         } catch(std::bad_variant_access& e) {
-            throw InvalidKeyError(key, get_type(config_.at(key)), typeid(T), e.what());
+            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
         } catch(std::invalid_argument& e) {
-            throw InvalidKeyError(key, get_type(config_.at(key)), typeid(T), e.what());
+            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
         } catch(std::overflow_error& e) {
-            throw InvalidKeyError(key, get_type(config_.at(key)), typeid(T), e.what());
+            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
         }
     }
 
