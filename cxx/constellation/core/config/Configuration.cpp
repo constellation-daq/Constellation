@@ -143,6 +143,21 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     }
 }
 
+std::string Configuration::getText(const std::string& key) const {
+    try {
+        used_keys_.markUsed(key);
+        return config_.at(key).str();
+    } catch(std::out_of_range& e) {
+        throw MissingKeyError(key);
+    }
+}
+std::string Configuration::getText(const std::string& key, const std::string& def) const {
+    if(!has(key)) {
+        return def;
+    }
+    return getText(key);
+}
+
 /**
  * All keys that are already defined earlier in this configuration are not changed.
  */
@@ -150,8 +165,7 @@ void Configuration::merge(const Configuration& other) {
     for(const auto& [key, value] : other.config_) {
         // Only merge values that do not yet exist
         if(!has(key)) {
-            // FIXME merge values
-            // setText(key, value);
+            set(key, value);
         }
     }
 }

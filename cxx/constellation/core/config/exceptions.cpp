@@ -12,9 +12,8 @@
 
 using namespace constellation::config;
 
-InvalidValueError::InvalidValueError(const Configuration&, const std::string& key, const std::string& reason) {
-    // FIXME print value: " + config.getText(key) + "
-    error_message_ = "Value  of key '" + key + "' is not valid";
+InvalidValueError::InvalidValueError(const Configuration& config, const std::string& key, const std::string& reason) {
+    error_message_ = "Value " + config.getText(key) + " of key '" + key + "' is not valid";
     if(!reason.empty()) {
         error_message_ += ": " + reason;
     }

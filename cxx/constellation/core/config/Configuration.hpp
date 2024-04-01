@@ -149,6 +149,23 @@ namespace constellation::config {
         template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T> def) const;
 
         /**
+         * @brief Get literal value of a key as string
+         * @param key Key to get values of
+         * @return Literal value of the key
+         * @note This function does also not remove quotation marks in strings
+         */
+        std::string getText(const std::string& key) const;
+
+        /**
+         * @brief Get literal value of a key as string or a default if it does not exists
+         * @param key Key to get values of
+         * @param def Default value to use if key is not defined
+         * @return Literal value of the key or the default value if the key does not exists
+         * @note This function does also not remove quotation marks in strings
+         */
+        std::string getText(const std::string& key, const std::string& def) const;
+
+        /**
          * @brief Get absolute path to file with paths relative to the configuration
          * @param key Key to get path of
          * @param check_exists If the file should be checked for existence (if yes always returns a canonical path)
