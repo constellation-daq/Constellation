@@ -204,13 +204,11 @@ class DataReceiver(Satellite):
 class H5DataReceiverWriter(DataReceiver):
     """Satellite which receives data via ZMQ writing it to HDF5."""
 
-    def __init__(self, *args, filename: str, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.filename = filename
         self.run_number: dict[str, int] = {}
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
-        self.nameformat = filename
 
     def do_initializing(self, payload: any) -> str:
         super().do_initializing(payload)
