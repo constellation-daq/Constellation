@@ -20,6 +20,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .satellite import Satellite
 from .commandmanager import get_cscp_commands
+from .confighandler import get_config
 
 
 class SatelliteArray:
@@ -336,6 +337,18 @@ def main():
     # set up logging
     logger = logging.getLogger(args.name)
     coloredlogs.install(level=args.log_level.upper(), logger=logger)
+
+    # NOTE: Temporary solution for getting config-files
+    write_config = {}
+
+    for category in ["constellation", "satellites"]:
+        write_config.update(
+            get_config(
+                config_path="python/constellation/configs/example.toml",
+                category=category,
+                host_class="H5DataReceiverWriter",
+            )
+        )
 
     logger.debug("Starting up CLI Controller!")
 
