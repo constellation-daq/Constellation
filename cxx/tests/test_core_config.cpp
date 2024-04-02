@@ -63,4 +63,29 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.getUnusedKeys().empty());
 }
 
+TEST_CASE("Invalid Key Access", "[core][core::config]") {
+    Configuration config;
+
+    // Check for invalid key to be detected
+    REQUIRE_THROWS_AS(config.get<bool>("invalidkey"), MissingKeyError);
+    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key 'invalidkey' does not exist"));
+
+    // Check for invalid type conversion
+    config.set("key", true);
+    REQUIRE_THROWS_AS(config.get<double>("key"), InvalidTypeError);
+    REQUIRE_THROWS_MATCHES(config.get<double>("key"),
+                           InvalidTypeError,
+                           Message("Could not convert value of type 'bool' to type 'double' for key 'key'"));
+
+    // Check for invalid enum value conversion:
+    enum MyEnum {
+        ONE,
+        TWO,
+    };
+    config.set("myenum", "THREE");
+    REQUIRE_THROWS_AS(config.get<MyEnum>("myenum"), InvalidValueError);
+    REQUIRE_THROWS_MATCHES(config.get<MyEnum>("myenum"),
+                           InvalidValueError,
+                           Message("Value THREE of key 'myenum' is not valid: possible values are one, two"));
+}
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
