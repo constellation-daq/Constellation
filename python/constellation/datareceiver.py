@@ -418,9 +418,11 @@ def main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--cmd-port", type=int, default=23989)
-    parser.add_argument("--log-port", type=int, default=55566)
+    parser.add_argument("--mon-port", type=int, default=55556)
     parser.add_argument("--hb-port", type=int, default=61244)
-
+    parser.add_argument("--interface", type=str, default="*")
+    parser.add_argument("--name", type=str, default="h5_data_receiver")
+    parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
     logging.basicConfig(
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -429,10 +431,12 @@ def main(args=None):
 
     # start server with remaining args
     s = H5DataReceiverWriter(
-        "h5_data_receiver",
         cmd_port=args.cmd_port,
         hb_port=args.hb_port,
-        log_port=args.log_port,
+        mon_port=args.mon_port,
+        name=args.name,
+        group=args.group,
+        interface=args.interface,
     )
 
     s.run_satellite()
