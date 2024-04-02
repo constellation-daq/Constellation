@@ -20,6 +20,8 @@ importance = "low"
 importance = "essential"
 start_after = "example_satellite.example_device1"
 
+[constellation.H5DataReceiverWriter]
+some_key = "some_value"
 
 [controller]
 # General system settings for controller
