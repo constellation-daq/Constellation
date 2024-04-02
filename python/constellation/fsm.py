@@ -42,13 +42,17 @@ class SatelliteState(Enum):
     starting = auto()
     stopping = auto()
     interrupting = auto()
+    # state if shutdown
+    DEAD = auto()
 
 
 class SatelliteFSM(StateMachine):
     """Manage the satellite's state and its transitions."""
 
     # Convert enum to states
-    states = States.from_enum(SatelliteState, initial=SatelliteState.NEW)
+    states = States.from_enum(
+        SatelliteState, initial=SatelliteState.NEW, final=SatelliteState.DEAD
+    )
 
     # Define transitions
     # - NEW <=> INIT
@@ -99,6 +103,11 @@ class SatelliteFSM(StateMachine):
     # complete a transitional state
     complete = initialized | launched | landed | started
     complete |= stopped | reconfigured | interrupted
+
+    # final state
+    shutdown = states.INIT.to(states.DEAD)
+    shutdown |= states.ERROR.to(states.DEAD)
+    shutdown |= states.SAFE.to(states.DEAD)
 
     def __init__(self):
         self.status = "Satellite not initialized yet."
