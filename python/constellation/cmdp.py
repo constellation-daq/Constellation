@@ -185,9 +185,7 @@ class CMDPTransmitter:
         packer = msgpack.Packer()
         topic = topic.upper()
         flags = zmq.SNDMORE | flags
-        # self._socket.send_string(topic, flags)
         self._socket.send_string(topic, flags)
         self.msgheader.send(self._socket, meta=meta, flags=flags)
         flags = flags & ~zmq.SNDMORE
-        # self._socket.send(msgpack.packb(payload), flags=flags)
         self._socket.send(packer.pack(payload), flags=flags)

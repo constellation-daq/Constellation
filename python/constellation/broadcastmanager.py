@@ -126,7 +126,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._logger = logging.getLogger(name + ".broadcast")
 
     def _add_com_thread(self):
-        """Add the command receiver thread to the communication thread pool."""
+        """Add the CHIRP broadcaster thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["chirp_broadcaster"] = threading.Thread(
             target=self._run, daemon=True
