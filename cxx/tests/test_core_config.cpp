@@ -53,7 +53,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.get<std::uint8_t>("uint8") == 8);
 
     REQUIRE(config.get<double>("double") == 1.3);
-    REQUIRE(config.get<float>("float") == 3.14f);
+    REQUIRE(config.get<float>("float") == 3.14F);
 
     REQUIRE(config.get<std::string>("string") == "a");
 
@@ -61,6 +61,29 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
 
     // Check that all keys have been marked as used
     REQUIRE(config.getUnusedKeys().empty());
+}
+
+TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
+    Configuration config;
+
+    config.set("myval", 3.14, true);
+
+    // Check that the key is marked as used
+    REQUIRE(config.getUnusedKeys().empty());
+    REQUIRE(config.get<double>("myval") == 3.14);
+}
+
+TEST_CASE("Set Default Value", "[core][core::config]") {
+    Configuration config;
+
+    // Check that a default does not overwrite existing values
+    config.set("myval", true);
+    config.setDefault("myval", false);
+    REQUIRE(config.get<bool>("myval") == true);
+
+    // Check that a default is set when the value does not exist
+    config.setDefault("mydefault", false);
+    REQUIRE(config.get<bool>("mydefault") == false);
 }
 
 TEST_CASE("Invalid Key Access", "[core][core::config]") {

@@ -85,7 +85,7 @@ namespace constellation::config {
      * @ingroup Exceptions
      * @brief Indicates an error with the contents of value
      *
-     * Should be raised if the data contains valid data for its type (otherwise an \ref InvalidKeyError should have been
+     * Should be raised if the data contains valid data for its type (otherwise an \ref InvalidTypeError should have been
      * raised earlier), but the value is not in the range of allowed values.
      */
     class InvalidValueError : public ConfigurationError {
