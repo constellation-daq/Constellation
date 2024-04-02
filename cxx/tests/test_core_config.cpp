@@ -41,6 +41,9 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     };
     config.set("myenum", MyEnum::ONE);
 
+    auto tp = std::chrono::system_clock::now();
+    config.set("time", tp);
+
     // Check that keys are unused
     REQUIRE(config.size() == config.getUnusedKeys().size());
 
@@ -59,8 +62,21 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
 
     REQUIRE(config.get<MyEnum>("myenum") == MyEnum::ONE);
 
+    REQUIRE(config.get<std::chrono::system_clock::time_point>("time") == tp);
+
     // Check that all keys have been marked as used
     REQUIRE(config.getUnusedKeys().empty());
+}
+
+TEST_CASE("Set & Get Array Values", "[core][core::config]") {
+    Configuration config;
+
+    config.setArray<double>("myarray", {12., 14., 16.});
+    REQUIRE(config.getArray<double>("myarray") == std::vector<double>({12., 14., 16.}));
+
+    // config.set<std::vector<size_t>>("my_size_t_vector", {1, 2, 3});
+    config.setArray<size_t>("my_size_t_array", {1, 2, 3});
+    REQUIRE(config.getArray<size_t>("my_size_t_array") == std::vector<size_t>({1, 2, 3}));
 }
 
 TEST_CASE("Set Value & Mark Used", "[core][core::config]") {

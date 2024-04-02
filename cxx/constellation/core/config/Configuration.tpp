@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <algorithm>
+
 #include <magic_enum.hpp>
 
 #include "constellation/core/utils/string.hpp"
@@ -69,7 +71,29 @@ namespace constellation::config {
      * @throws InvalidKeyError If an overflow happened while converting the key
      */
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
-        return get<std::vector<T>>(key);
+        if constexpr(std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+            auto vec = get<std::vector<std::int64_t>>(key);
+            return std::vector<T>(vec.begin(), vec.end());
+        } else if constexpr(std::is_floating_point_v<T>) {
+            auto vec = get<std::vector<double>>(key);
+            return std::vector<T>(vec.begin(), vec.end());
+        } else if constexpr(std::is_enum_v<T>) {
+
+            auto vec = get<std::vector<std::string>>(key);
+            std::vector<T> result;
+            result.reserve(vec.size());
+            std::for_each(vec.begin(), vec.end(), [&](auto& str) {
+                std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+                auto enum_val = magic_enum::enum_cast<T>(str);
+                if(!enum_val.has_value()) {
+                    throw std::invalid_argument("possible values are " + utils::list_enum_names<T>());
+                }
+                result.push_back(enum_val.value());
+            });
+            return result;
+        } else {
+            return get<std::vector<T>>(key);
+        }
     }
 
     /**
@@ -99,7 +123,21 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::setArray(const std::string& key, const std::vector<T>& val, bool mark_used) {
-        set<std::vector<T>>(key, val, mark_used);
+        if constexpr(std::is_same_v<T, size_t>) {
+            // FIXME check for overflow
+            std::vector<std::int64_t> nval(val.begin(), val.end());
+            set(key, nval, mark_used);
+        } else if constexpr(std::is_enum_v<T>) {
+            std::vector<std::string> nval;
+            nval.reserve(val.size());
+
+            std::for_each(val.begin(), val.end(), [&](auto& enum_val) {
+                nval.emplace_back(magic_enum::enum_name<T>(val));
+            });
+            set(key, nval, mark_used);
+        } else {
+            set<std::vector<T>>(key, val, mark_used);
+        }
     }
 
     template <typename T> void Configuration::setDefault(const std::string& key, const T& val) {
