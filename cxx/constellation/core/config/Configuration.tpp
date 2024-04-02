@@ -23,7 +23,10 @@ namespace constellation::config {
         try {
             const auto dictval = config_.at(key);
             T val;
-            if constexpr(std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+            // Value is directly held by variant:
+            if constexpr(is_one_of<T, Value>()) {
+                val = std::get<T>(dictval);
+            } else if constexpr(std::is_integral_v<T>) {
                 val = static_cast<T>(std::get<std::int64_t>(dictval));
             } else if constexpr(std::is_floating_point_v<T>) {
                 val = static_cast<T>(std::get<double>(dictval));
@@ -38,7 +41,7 @@ namespace constellation::config {
 
                 val = enum_val.value();
             } else {
-                val = std::get<T>(dictval);
+                throw std::bad_variant_access();
             }
             used_keys_.markUsed(key);
             return val;
@@ -71,7 +74,10 @@ namespace constellation::config {
      * @throws InvalidKeyError If an overflow happened while converting the key
      */
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
-        if constexpr(std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+        // Value is directly held by variant, let's return:
+        if constexpr(is_one_of<std::vector<T>, Value>()) {
+            return get<std::vector<T>>(key);
+        } else if constexpr(std::is_integral_v<T>) {
             auto vec = get<std::vector<std::int64_t>>(key);
             return std::vector<T>(vec.begin(), vec.end());
         } else if constexpr(std::is_floating_point_v<T>) {
@@ -108,12 +114,15 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
-        if constexpr(std::is_same_v<T, size_t>) {
+        if constexpr(is_one_of<T, Value>()) {
+            config_[key] = val;
+        } else if constexpr(std::is_same_v<T, size_t>) {
             // FIXME check for overflow
             config_[key] = static_cast<std::int64_t>(val);
         } else if constexpr(std::is_enum_v<T>) {
             config_[key] = std::string(magic_enum::enum_name<T>(val));
         } else {
+            // FIXME throw something?
             config_[key] = val;
         }
         used_keys_.registerMarker(key);
@@ -123,7 +132,9 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::setArray(const std::string& key, const std::vector<T>& val, bool mark_used) {
-        if constexpr(std::is_same_v<T, size_t>) {
+        if constexpr(is_one_of<std::vector<T>, Value>()) {
+            set<std::vector<T>>(key, val, mark_used);
+        } else if constexpr(std::is_integral_v<T>) {
             // FIXME check for overflow
             std::vector<std::int64_t> nval(val.begin(), val.end());
             set(key, nval, mark_used);
@@ -132,10 +143,11 @@ namespace constellation::config {
             nval.reserve(val.size());
 
             std::for_each(val.begin(), val.end(), [&](auto& enum_val) {
-                nval.emplace_back(magic_enum::enum_name<T>(val));
+                nval.emplace_back(magic_enum::enum_name<T>(enum_val));
             });
             set(key, nval, mark_used);
         } else {
+            // FIXME throw something?
             set<std::vector<T>>(key, val, mark_used);
         }
     }

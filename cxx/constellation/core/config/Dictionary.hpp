@@ -29,6 +29,11 @@ namespace constellation::config {
     };
     template <class... Ts> overload(Ts...) -> overload<Ts...>;
 
+    /** Check if a type can be held by a variant */
+    template <class T, class U> struct is_one_of;
+    template <class T, class... Ts>
+    struct is_one_of<T, std::variant<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
+
     /**
      * Value type for Dictionary using std::variant
      *
