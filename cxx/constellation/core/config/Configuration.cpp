@@ -23,9 +23,9 @@
 
 using namespace constellation::config;
 
-Configuration::Configuration(std::shared_ptr<zmq::message_t> payload) {
+Configuration::Configuration(const std::shared_ptr<zmq::message_t>& payload) {
     const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
-    const auto dict = msgpack_payload->as<Dictionary>();
+    auto dict = msgpack_payload->as<Dictionary>();
     // Register all markers:
     for(const auto& [key, val] : dict) {
         used_keys_.registerMarker(key);

@@ -18,7 +18,7 @@
 
 namespace zmq {
     class message_t;
-}
+} // namespace zmq
 
 namespace constellation::config {
 
@@ -98,7 +98,7 @@ namespace constellation::config {
         Configuration() = default;
         ~Configuration() = default;
 
-        explicit Configuration(std::shared_ptr<zmq::message_t> payload);
+        explicit Configuration(const std::shared_ptr<zmq::message_t>& payload);
 
         /// @{
         /**
