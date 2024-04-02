@@ -19,6 +19,7 @@ class Protocol(StrEnum):
     CDTP = "CDTP\x01"
     CSCP = "CSCP\x01"
     CMDP = "CMDP\x01"
+    CHP = "CHP\x01"
 
 
 class MessageHeader:
