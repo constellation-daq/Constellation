@@ -109,6 +109,8 @@ class SatelliteFSM(StateMachine):
     shutdown |= states.ERROR.to(states.DEAD)
     shutdown |= states.SAFE.to(states.DEAD)
 
+    transitioned = False
+
     def __init__(self):
         self.status = "Satellite not initialized yet."
         super().__init__()
@@ -116,6 +118,10 @@ class SatelliteFSM(StateMachine):
     def before_transition(self, status):
         """Set status before the state change."""
         self.status = status
+
+    def after_transition(self):
+        """Set flag indicating state change."""
+        self.transitioned = True
 
     def write_diagram(self, filename):
         """Create a png with the FSM schematic."""

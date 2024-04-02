@@ -45,11 +45,15 @@ class HeartbeatSender(SatelliteStateHandler):
     def _run(self) -> None:
         last = datetime.now()
         while not self._com_thread_evt.is_set():
-            if (datetime.now() - last).total_seconds() > self.heartbeat_period / 1000:
+            if (
+                (datetime.now() - last).total_seconds() > self.heartbeat_period / 1000
+            ) or self.fsm.transitioned:
                 last = datetime.now()
                 state = self.fsm.current_state.value
                 self._hb_tm.send(state, int(self.heartbeat_period * 1.1))
-            time.sleep(0.1)
+                self.fsm.transitioned = False
+            else:
+                time.sleep(0.1)
         # clean up
         self._hb_tm.close()
 
