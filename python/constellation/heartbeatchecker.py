@@ -69,11 +69,9 @@ class HeartbeatChecker:
         while not self._stop_threads.is_set():
             last_diff = (datetime.now() - last).total_seconds()
             if last_diff < interval / 1000:
-                logger.debug("sleeping")
                 time.sleep(0.1)
             else:
                 host, ts, state, new_interval = transmitter.recv()
-                logger.debug(f"getting {state} and {new_interval}")
                 if not state:
                     if last_diff > (interval / 1000) * 1.5:
                         # no message after 150% of the interval, subtract life

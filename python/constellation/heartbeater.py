@@ -48,7 +48,6 @@ class HeartbeatSender(SatelliteStateHandler):
             if (datetime.now() - last).total_seconds() > self.heartbeat_period / 1000:
                 last = datetime.now()
                 state = self.fsm.current_state.value
-                print(f"sending {state} and {self.heartbeat_period}")
                 self._hb_tm.send(state, int(self.heartbeat_period * 1.1))
             time.sleep(0.1)
         # clean up
