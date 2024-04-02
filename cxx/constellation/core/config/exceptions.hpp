@@ -81,7 +81,6 @@ namespace constellation::config {
         }
     };
 
-    class Configuration;
     /**
      * @ingroup Exceptions
      * @brief Indicates an error with the contents of value
@@ -93,12 +92,19 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid value
-         * @param config Configuration object containing the problematic key
+         * @param value invalid value in string representation
          * @param key Name of the problematic key
          * @param reason Reason why the value is invalid (empty if no explicit reason)
          */
-        InvalidValueError(const Configuration& config, const std::string& key, const std::string& reason = "");
+        InvalidValueError(const std::string& value, const std::string& key, const std::string& reason = "") {
+            error_message_ = "Value " + value + " of key '" + key + "' is not valid";
+            if(!reason.empty()) {
+                error_message_ += ": " + reason;
+            }
+        }
     };
+
+    class Configuration;
     /**
      * @ingroup Exceptions
      * @brief Indicates an error with a combination of configuration keys

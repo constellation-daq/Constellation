@@ -31,7 +31,7 @@ namespace constellation::config {
                 auto enum_val = magic_enum::enum_cast<T>(str);
 
                 if(!enum_val.has_value()) {
-                    throw std::invalid_argument("invalid value " + str + ", possible values are: " + utils::list_enum_names<T>());
+                    throw std::invalid_argument("possible values are " + utils::list_enum_names<T>());
                 }
 
                 val = enum_val.value();
@@ -46,7 +46,7 @@ namespace constellation::config {
             // Do not give an additional reason, the variant access is cryptic:
             throw InvalidTypeError(key, config_.at(key).type(), typeid(T));
         } catch(std::invalid_argument& e) {
-            throw InvalidTypeError(key, config_.at(key).type(), typeid(T), e.what());
+            throw InvalidValueError(config_.at(key).str(), key, e.what());
         } catch(std::overflow_error& e) {
             throw InvalidTypeError(key, config_.at(key).type(), typeid(T), e.what());
         }

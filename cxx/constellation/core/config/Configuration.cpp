@@ -84,7 +84,7 @@ std::filesystem::path Configuration::getPath(const std::string& key, bool check_
     try {
         return path_to_absolute(get<std::string>(key), check_exists);
     } catch(std::invalid_argument& e) {
-        throw InvalidValueError(*this, key, e.what());
+        throw InvalidValueError(config_.at(key).str(), key, e.what());
     }
 }
 /**
@@ -98,7 +98,7 @@ std::filesystem::path Configuration::getPathWithExtension(const std::string& key
     try {
         return path_to_absolute(std::filesystem::path(get<std::string>(key)).replace_extension(extension), check_exists);
     } catch(std::invalid_argument& e) {
-        throw InvalidValueError(*this, key, e.what());
+        throw InvalidValueError(config_.at(key).str(), key, e.what());
     }
 }
 /**
