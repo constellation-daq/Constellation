@@ -14,8 +14,8 @@
 namespace constellation::config {
     /**
      * @throws MissingKeyError If the requested key is not defined
-     * @throws InvalidKeyError If the conversion to the requested type did not succeed
-     * @throws InvalidKeyError If an overflow happened while converting the key
+     * @throws InvalidTypeError If the conversion to the requested type did not succeed
+     * @throws InvalidTypeError If an overflow happened while converting the key
      */
     template <typename T> T Configuration::get(const std::string& key) const {
         try {
@@ -43,11 +43,12 @@ namespace constellation::config {
         } catch(std::out_of_range& e) {
             throw MissingKeyError(key);
         } catch(std::bad_variant_access& e) {
-            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
+            // Do not give an additional reason, the variant access is cryptic:
+            throw InvalidTypeError(key, config_.at(key).type(), typeid(T));
         } catch(std::invalid_argument& e) {
-            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
+            throw InvalidTypeError(key, config_.at(key).type(), typeid(T), e.what());
         } catch(std::overflow_error& e) {
-            throw InvalidKeyError(key, config_.at(key).type(), typeid(T), e.what());
+            throw InvalidTypeError(key, config_.at(key).type(), typeid(T), e.what());
         }
     }
 

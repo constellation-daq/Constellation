@@ -25,24 +25,25 @@ namespace constellation::config {
      * @ingroup Exceptions
      * @brief Indicates a problem converting the value of a configuration key to the value it should represent
      */
-    class InvalidKeyError : public ConfigurationError {
+    class InvalidTypeError : public ConfigurationError {
     public:
         /**
          * @brief Construct an error for a value with an invalid type
          * @param key Name of the corresponding key
-         * @param value Value as a literal string
-         * @param type Type where the value should have been converted to
+         * @param vtype Type of the stored value
+         * @param type Type the value should have been converted to
          * @param reason Reason why the conversion failed
          */
-        InvalidKeyError(const std::string& key,
-                        const std::type_info& value,
-                        const std::type_info& type,
-                        const std::string& reason) {
+        InvalidTypeError(const std::string& key,
+                         const std::type_info& vtype,
+                         const std::type_info& type,
+                         const std::string& reason = "") {
             // FIXME wording
-            error_message_ = "Could not convert value of type ";
-            error_message_ += utils::demangle(value.name());
-            error_message_ += " from key '" + key + "' to type ";
+            error_message_ = "Could not convert value of type '";
+            error_message_ += utils::demangle(vtype.name());
+            error_message_ += "' to type '";
             error_message_ += utils::demangle(type.name());
+            error_message_ += "' for key '" + key + "'";
             if(!reason.empty()) {
                 error_message_ += ": " + reason;
             }
