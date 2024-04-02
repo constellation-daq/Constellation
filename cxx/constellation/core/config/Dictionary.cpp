@@ -98,6 +98,31 @@ void DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
     }
 }
 
+void List::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+    msgpack_packer.pack_array(this->size());
+
+    for(auto const& val : *this) {
+        msgpack_packer.pack(val);
+    }
+}
+
+void List::msgpack_unpack(const msgpack::object& msgpack_object) {
+    // Unpack map
+    if(msgpack_object.type != msgpack::type::ARRAY) {
+        throw msgpack::type_error();
+    }
+    const auto msgpack_array_raw = msgpack_object.via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
+    const auto msgpack_array = std::span(msgpack_array_raw.ptr, msgpack_array_raw.size);
+
+    for(const auto& msgpack_val : msgpack_array) {
+        auto value = DictionaryValue();
+        value.msgpack_unpack(msgpack_val);
+
+        // Insert / overwrite in the map
+        this->emplace_back(std::move(value));
+    }
+}
+
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     msgpack_packer.pack_map(this->size());
 

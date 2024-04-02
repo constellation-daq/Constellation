@@ -78,6 +78,18 @@ namespace constellation::config {
     };
 
     /**
+     * List type with serialization functions for MessagePack
+     */
+    class List final : public std::vector<DictionaryValue> {
+    public:
+        /** Pack dictionary with msgpack */
+        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+
+        /** Unpack dictionary with msgpack */
+        CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
+    };
+
+    /**
      * Dictionary type with serialization functions for MessagePack
      */
     class Dictionary final : public std::map<std::string, DictionaryValue> {
