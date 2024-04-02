@@ -48,7 +48,7 @@ namespace constellation::config {
      * @class DictionaryValue
      * @brief Augmented std::variant with MsgPack packer and unpacker routines
      */
-    class DictionaryValue : public Value {
+    class CNSTLN_API DictionaryValue : public Value {
     public:
         using Value::Value;
         using Value::operator=;
@@ -57,7 +57,7 @@ namespace constellation::config {
          * @brief Convert value to string representation
          * @return String representation of the value
          */
-        CNSTLN_API std::string str() const;
+        std::string str() const;
 
         /**
          * @brief Get type info of the value currently stored in the variant
@@ -66,10 +66,10 @@ namespace constellation::config {
         std::type_info const& type() const;
 
         /** Unpack value with msgpack */
-        CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
+        void msgpack_unpack(const msgpack::object& msgpack_object);
 
         /** Pack value with msgpack */
-        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+        void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
     };
 
     /**

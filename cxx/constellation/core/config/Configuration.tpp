@@ -7,6 +7,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <magic_enum.hpp>
+
+#include "constellation/core/utils/string.hpp"
+
 namespace constellation::config {
     /**
      * @throws MissingKeyError If the requested key is not defined
@@ -16,7 +20,24 @@ namespace constellation::config {
     template <typename T> T Configuration::get(const std::string& key) const {
         try {
             const auto dictval = config_.at(key);
-            const auto val = std::get<T>(dictval);
+            T val;
+            if constexpr(std::is_integral_v<T> && !std::is_same_v<T, bool>) {
+                val = static_cast<T>(std::get<std::int64_t>(dictval));
+            } else if constexpr(std::is_floating_point_v<T>) {
+                val = static_cast<T>(std::get<double>(dictval));
+            } else if constexpr(std::is_enum_v<T>) {
+                auto str = std::get<std::string>(dictval);
+                std::transform(str.begin(), str.end(), str.begin(), ::toupper);
+                auto enum_val = magic_enum::enum_cast<T>(str);
+
+                if(!enum_val.has_value()) {
+                    throw std::invalid_argument("invalid value " + str + ", possible values are: " + utils::list_enum_names<T>());
+                }
+
+                val = enum_val.value();
+            } else {
+                val = std::get<T>(dictval);
+            }
             used_keys_.markUsed(key);
             return val;
         } catch(std::out_of_range& e) {
@@ -62,8 +83,14 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
-        // FIXME need to make sure *can* actually set this and throw error otherwise
-        config_[key] = val;
+        if constexpr(std::is_same_v<T, size_t>) {
+            // FIXME check for overflow
+            config_[key] = static_cast<std::int64_t>(val);
+        } else if constexpr(std::is_enum_v<T>) {
+            config_[key] = std::string(magic_enum::enum_name<T>(val));
+        } else {
+            config_[key] = val;
+        }
         used_keys_.registerMarker(key);
         if(mark_used) {
             used_keys_.markUsed(key);

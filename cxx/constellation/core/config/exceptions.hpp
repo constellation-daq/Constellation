@@ -12,6 +12,7 @@
 #include <string>
 
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::config {
     /**
@@ -37,11 +38,11 @@ namespace constellation::config {
                         const std::type_info& value,
                         const std::type_info& type,
                         const std::string& reason) {
-            // FIXME demangle name
+            // FIXME wording
             error_message_ = "Could not convert value of type ";
-            error_message_ += value.name();
+            error_message_ += utils::demangle(value.name());
             error_message_ += " from key '" + key + "' to type ";
-            error_message_ += type.name();
+            error_message_ += utils::demangle(type.name());
             if(!reason.empty()) {
                 error_message_ += ": " + reason;
             }
