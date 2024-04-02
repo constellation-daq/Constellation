@@ -12,9 +12,9 @@ import logging
 import threading
 import traceback
 
-from .fsm import SatelliteStateHandler, SatelliteState
+from .fsm import SatelliteState
 from . import __version__
-from .heartbeater import Heartbeater
+from .heartbeater import HeartbeatSender
 from .heartbeatchecker import HeartbeatChecker
 
 from .cscp import CSCPMessage
@@ -27,7 +27,10 @@ from .error import debug_log, handle_error
 
 
 class Satellite(
-    CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler, MonitoringSender
+    CommandReceiver,
+    CHIRPBroadcaster,
+    MonitoringSender,
+    HeartbeatSender,
 ):
     """Base class for a Constellation Satellite."""
 
@@ -56,12 +59,6 @@ class Satellite(
         # set up background communication threads
         super()._add_com_thread()
         super()._start_com_threads()
-
-        # register and start heartbeater
-        self.heartbeater = Heartbeater(
-            self.get_state, f"tcp://{interface}:{hb_port}", context=self.context
-        )
-        self.heartbeater.start()
 
         # register heartbeat checker
         self.hb_checker = HeartbeatChecker()
@@ -135,8 +132,6 @@ class Satellite(
         ]:
             self.fsm.failure("Performing controlled re-entry and self-destruction.")
             self._wrap_failure()
-        # on exit: stop heartbeater
-        self.heartbeater.stop()
         super().reentry()
 
     # --------------------------- #
