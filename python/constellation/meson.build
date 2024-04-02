@@ -11,6 +11,7 @@ constellation_files = files(
   'cscp.py',
   'cdtp.py',
   'controller.py',
+  'confighandler.py',
   'datareceiver.py',
   'datasender.py',
   'error.py',

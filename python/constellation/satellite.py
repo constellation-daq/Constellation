@@ -21,16 +21,24 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
-from .confighandler import Configuration, ConfigError
-from .monitoring import MonitoringManager
+from .confighandler import Configuration
+from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
 
 
-class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
+class Satellite(
+    CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler, MonitoringSender
+):
     """Base class for a Constellation Satellite."""
 
     def __init__(
-        self, name: str, group: str, cmd_port: int, hb_port: int, log_port: int
+        self,
+        name: str,
+        group: str,
+        cmd_port: int,
+        hb_port: int,
+        mon_port: int,
+        interface: str,
     ):
         """Set up class attributes."""
         super().__init__(
@@ -38,22 +46,20 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             group=group,
             cmd_port=cmd_port,
             hb_port=hb_port,
-            log_port=log_port,
+            mon_port=mon_port,
+            interface=interface,
         )
 
-        # set up python logging and CMDP
-        self.monitoring = MonitoringManager(self.name, self.context, log_port)
         # give monitoring a chance to start up and catch early messages
-        time.sleep(0.2)
+        time.sleep(0.1)
 
         # set up background communication threads
-        # NOTE should be a late part of the initialization, as it starts communication
         super()._add_com_thread()
         super()._start_com_threads()
 
         # register and start heartbeater
         self.heartbeater = Heartbeater(
-            self.get_state, f"tcp://*:{hb_port}", context=self.context
+            self.get_state, f"tcp://{interface}:{hb_port}", context=self.context
         )
         self.heartbeater.start()
 
@@ -63,7 +69,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         # register broadcast manager
         self.register_offer(CHIRPServiceIdentifier.CONTROL, cmd_port)
         self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, hb_port)
-        self.register_offer(CHIRPServiceIdentifier.MONITORING, log_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, mon_port)
         self.broadcast_offers()
 
         # Add exception handling via threading.excepthook to allow the state
@@ -96,7 +102,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         e.g. state transitions.
 
         """
-        while not self._com_thread_evt.is_set():
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
             # TODO: add check for heartbeatchecker: if any entries in hb.get_failed, trigger action
             try:
                 # blocking call but with timeout to prevent deadlocks
@@ -131,8 +137,6 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             self._wrap_failure()
         # on exit: stop heartbeater
         self.heartbeater.stop()
-        # close the monitoring (log and stats) socket
-        self.monitoring.close()
         super().reentry()
 
     # --------------------------- #
@@ -160,15 +164,12 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
         self._state_thread_evt = None
         self._state_thread_fut = None
 
-        try:
-            self.config = Configuration(payload)
-            init_msg = self.do_initializing(payload)
-        except ConfigError:
-            self.log.error("Failed to configure satellite")
+        self.config = Configuration(payload)
+        init_msg = self.do_initializing(payload)
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
-                self.log.warning("Device has unused configuration values %s", key)
+                self.log.warning("Satellite ignored configuration value: '%s'", key)
         return init_msg
 
     @debug_log
@@ -286,6 +287,7 @@ class Satellite(CommandReceiver, CHIRPBroadcaster, SatelliteStateHandler):
             # stop state thread
             if self._state_thread_evt:
                 self._state_thread_evt.set()
+                self._state_thread.join(1)
             return self.fail_gracefully()
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
@@ -401,8 +403,9 @@ def main(args=None):
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--cmd-port", type=int, default=23999)
-    parser.add_argument("--log-port", type=int, default=5556)  # Should be 55556?
+    parser.add_argument("--mon-port", type=int, default=55556)
     parser.add_argument("--hb-port", type=int, default=61234)
+    parser.add_argument("--interface", type=str, default="*")
     parser.add_argument("--name", type=str, default="satellite_demo")
     parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
@@ -413,7 +416,14 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Satellite(args.name, args.group, args.cmd_port, args.hb_port, args.log_port)
+    s = Satellite(
+        name=args.name,
+        group=args.group,
+        cmd_port=args.cmd_port,
+        hb_port=args.hb_port,
+        mon_port=args.mon_port,
+        interface=args.interface,
+    )
     s.run_satellite()
 
 

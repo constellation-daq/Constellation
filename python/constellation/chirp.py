@@ -15,6 +15,11 @@ CHIRP_PORT = 7123
 CHIRP_HEADER = "CHIRP%x01"
 
 
+def get_uuid(name: str) -> UUID:
+    """Return the UUID for a string."""
+    return uuid5(NAMESPACE_DNS, name)
+
+
 class CHIRPServiceIdentifier(Enum):
     """Identifies the type of service.
 
@@ -110,10 +115,11 @@ class CHIRPBeaconTransmitter:
         self,
         name: str,
         group: str,
+        interface: str,
     ) -> None:
         """Initialize attributes and open broadcast socket."""
-        self._host_uuid = uuid5(NAMESPACE_DNS, name)
-        self._group_uuid = uuid5(NAMESPACE_DNS, group)
+        self._host_uuid = get_uuid(name)
+        self._group_uuid = get_uuid(group)
 
         # whether or not to filter broadcasts on group
         self._filter_group = True
@@ -128,6 +134,7 @@ class CHIRPBeaconTransmitter:
         )
         # on socket layer (SOL_SOCKET), enable re-using address in case
         # already bound (REUSEPORT)
+        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         # enable broadcasting
         self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -137,10 +144,13 @@ class CHIRPBeaconTransmitter:
         #
         # NOTE: this only works for IPv4
         #
-        # TODO: consider to only bind the interface matching a given IP!
+        # Only bind the interface matching a given IP.
         # Otherwise, we risk announcing services that do not bind to the
         # interface they are announced on.
-        self._sock.bind(("", CHIRP_PORT))
+        if interface == "*":
+            # ZMQ's "*" -> socket's '' (i.e. INADDR_ANY for IPv4)
+            interface = ""
+        self._sock.bind((interface, CHIRP_PORT))
 
     @property
     def host(self) -> UUID:
@@ -180,14 +190,15 @@ class CHIRPBeaconTransmitter:
             # no data waiting for us
             return None
 
-        if from_address[1] != CHIRP_PORT:
-            # NOTE: not sure this can happen with the way the socket is set up
-            return None
-
-        header = msgpack.unpackb(buf)[0]
-        if not header == CHIRP_HEADER:
+        try:
+            header = msgpack.unpackb(buf)[0]
+            if not header == CHIRP_HEADER:
+                raise RuntimeError(
+                    f"Received malformed CHIRP header by host {from_address}: {header}!"
+                )
+        except Exception as e:
             raise RuntimeError(
-                f"Received malformed CHIRP header by host {from_address}: {header}!"
+                f"Received malformed CHIRP header by host {from_address}: {e}"
             )
 
         # Unpack msg

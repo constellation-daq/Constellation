@@ -6,177 +6,292 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import logging
-import readline
 import threading
-import time
 from queue import Empty
 from typing import Dict
+from functools import partial
 
 import zmq
 
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
-from .chirp import CHIRPServiceIdentifier
-from .confighandler import get_config
+from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
+from .chirp import CHIRPServiceIdentifier, get_uuid
+
 from .cscp import CommandTransmitter
-from .fsm import SatelliteFSM
+from .error import debug_log
+from .satellite import Satellite
+from .commandmanager import get_cscp_commands
 
 
-class BaseCLIController(CHIRPBroadcaster):
-    """Simple controller class to send commands to a list of satellites."""
+class SatelliteArray:
+    """Provide object-oriented control of connected Satellites."""
 
-    def __init__(self, *args, hosts=None, **kwargs):
+    def __init__(self, group: str, handler: callable):
+        self.constellation = group
+        self._handler = handler
+        # initialize with the commands known to any CSCP Satellite
+        self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
+        self._satellites: list(SatelliteCommLink) = []
+
+    @property
+    def satellites(self):
+        """Return the list of known Satellite."""
+        return self._satellites
+
+    def _add_class(self, name: str, commands: dict[str]):
+        """Add a new class to the array."""
+        try:
+            cl = getattr(self, name)
+            return cl
+        except AttributeError:
+            pass
+        # add attributes now
+        cl = SatelliteClassCommLink(name)
+        self._add_cmds(cl, self._handler, commands)
+        setattr(self, name, cl)
+        return cl
+
+    def _add_satellite(self, name: str, cls: str, commands: dict[str]):
+        """Add a new Satellite."""
+        try:
+            cl = getattr(self, cls)
+        except AttributeError:
+            cl = self._add_class(cls, commands)
+        sat = SatelliteCommLink(name, cls)
+        self._add_cmds(sat, self._handler, commands)
+        setattr(cl, name, sat)
+        self._satellites.append(sat)
+        return sat
+
+    def _remove_satellite(self, uuid: str):
+        """Remove a Satellite."""
+        name, cls = self._get_name_from_uuid(uuid)
+        # remove attribute
+        delattr(getattr(self, cls), name)
+        # clear from list
+        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
+
+    def _get_name_from_uuid(self, uuid: str):
+        s = [sat for sat in self._satellites if sat._uuid == uuid]
+        if not s:
+            raise KeyError("No Satellite with that UUID known.")
+        name = s[0].name
+        cls = s[0].class_name
+        return name, cls
+
+    def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
+        try:
+            sat = obj._name
+        except AttributeError:
+            sat = None
+        try:
+            satcls = obj._class_name
+        except AttributeError:
+            satcls = None
+        for cmd, doc in cmds.items():
+
+            class wrapper:
+                """Class to wrap partial calls w/ signature of orig. fcn."""
+
+                def __init__(self, fcn):
+                    """Initialize with fcn as a partial() call."""
+                    self.fcn = fcn
+
+                def call(self, payload=None):
+                    """Perform call. This doc string will be overwritten."""
+                    return self.fcn(payload)
+
+            w = wrapper(partial(handler, sat=sat, satcls=satcls, cmd=cmd))
+            # add docstring
+            w.call.__func__.__doc__ = doc
+            setattr(obj, cmd, w.call)
+
+
+class SatelliteClassCommLink:
+    """A link to a Satellite Class."""
+
+    def __init__(self, name):
+        self._class_name = name
+
+    def __str__(self):
+        """Convert to class name."""
+        return self._class_name
+
+
+class SatelliteCommLink(SatelliteClassCommLink):
+    """A link to a Satellite."""
+
+    def __init__(self, name, cls):
+        self._name = name
+        self._uuid = str(get_uuid(f"{cls}.{name}"))
+        super().__init__(cls)
+
+    def __str__(self):
+        """Convert to canonical name."""
+        return f"{self._class_name}.{self._name}"
+
+
+class BaseController(CHIRPBroadcaster):
+    """Simple controller class to send commands to a Constellation."""
+
+    def __init__(self, name: str, group: str, interface: str):
         """Initialize values.
 
         Arguments:
         - name ::  name of controller
         - group ::  group of controller
-        - hosts ::  name, address and port of satellites to control
+        - interface :: the interface to connect to
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(name=name, group=group, interface=interface)
 
-        self.transmitters: Dict[str, CommandTransmitter] = {}
-        self.context = zmq.Context()
+        self._transmitters: Dict[str, CommandTransmitter] = {}
+
+        self.constellation = SatelliteArray(group, self.command)
 
         super()._add_com_thread()
         super()._start_com_threads()
-        self._logger = logging.getLogger(__name__)
 
-        if hosts:
-            for host in hosts:
-                self._add_satellite(host_name=host, host_addr=host)
-
-        self.register_request(
-            CHIRPServiceIdentifier.CONTROL, self._add_satellite_callback
-        )
         self.request(CHIRPServiceIdentifier.CONTROL)
-        self.target_host = None
-
-    def _add_satellite_callback(
-        self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
-    ):
-        """Callback method of add_satellite. Add satellite to command on service socket and address."""
-        self._add_satellite(str(service.host_uuid), str(service.address), service.port)
-
-    def _add_satellite(self, host_name: str, host_addr: str, port: int | None = None):
-        """Add satellite socket to controller on port."""
-        if "tcp://" not in host_addr[:6]:
-            host_addr = "tcp://" + host_addr
-        if port:
-            host_addr = host_addr + ":" + str(port)
-        socket = self.context.socket(zmq.REQ)
-        socket.connect(host_addr)
-        self.transmitters[host_name] = CommandTransmitter(host_name, socket)
-        self._logger.info(
-            "connecting to %s, address %s on port %s...",
-            host_name,
-            host_addr,
-            port,
+        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
+        self._task_handler_event = threading.Event()
+        self._task_handler_thread = threading.Thread(
+            target=self._run_task_handler, daemon=True
         )
+        self._task_handler_thread.start()
 
-    def _command_satellite(
-        self, cmd: str, payload: any, meta: dict, host_name: str = None
-    ):
-        """Send cmd and await response."""
-        try:
-            ret_msg = self.transmitters[host_name].request_get_response(
-                cmd,
-                payload,
-                meta,
-            )
-            return ret_msg
-
-        except TimeoutError:
-            self._logger.error(
-                "Host %s did not receive response. Command timed out.",
-                host_name,
-            )
-        except KeyError:
-            self._logger.error("Invalid satellite name.")
-
-    def command(self, msg):
-        """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
-        if self.target_host:
-            host_names = [self.target_host]
+    @debug_log
+    @chirp_callback(CHIRPServiceIdentifier.CONTROL)
+    def _add_satellite_callback(self, service: DiscoveredService):
+        """Callback method connecting to satellite."""
+        if not service.alive:
+            self._remove_satellite(service)
         else:
-            host_names = self.transmitters.keys()
+            self._add_satellite(service)
 
-        for host_name in host_names:
-            cmd, payload, meta = self._convert_to_cscp(msg=msg, host_name=host_name)
-            self._logger.info("Host %s send command %s...", host_name, cmd)
+    def _add_satellite(self, service: DiscoveredService):
+        # create socket
+        socket = self.context.socket(zmq.REQ)
+        # configure send/recv timeouts to avoid hangs if Satellite fails
+        socket.setsockopt(zmq.SNDTIMEO, 1000)
+        socket.setsockopt(zmq.RCVTIMEO, 1000)
+        socket.connect("tcp://" + service.address + ":" + str(service.port))
+        ct = CommandTransmitter(self.name, socket)
+        self.log.debug(
+            "Connecting to %s, address %s on port %s...",
+            service.host_uuid,
+            service.address,
+            service.port,
+        )
+        try:
+            # get list of commands
+            msg = ct.request_get_response("get_commands")
+            # get canonical name
+            cls, name = msg.from_host.split(".", maxsplit=1)
+            sat = self.constellation._add_satellite(name, cls, msg.payload)
+            if sat._uuid != str(service.host_uuid):
+                self.log.warning(
+                    "UUIDs do not match: expected %s but received %s",
+                    sat._uuid,
+                    str(service.host_uuid),
+                )
+            self._transmitters[str(service.host_uuid)] = ct
+        except RuntimeError as e:
+            self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
-            ret_msg = self._command_satellite(
-                cmd=cmd,
-                payload=payload,
-                meta=meta,
-                host_name=host_name,
+    def _remove_satellite(self, service: DiscoveredService):
+        name, cls = None, None
+        # departure
+        uuid = str(service.host_uuid)
+        try:
+            name, cls = self.constellation._get_name_from_uuid(uuid)
+            self.constellation._remove_satellite(uuid)
+        except KeyError:
+            pass
+        self.log.debug(
+            "Departure of %s, known as %s.%s",
+            service.host_uuid,
+            name,
+            cls,
+        )
+        try:
+            ct = self._transmitters[uuid]
+            ct.socket.close()
+            self._transmitters.pop(uuid)
+        except KeyError:
+            pass
+
+    def command(self, payload=None, sat=None, satcls=None, cmd=None):
+        """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
+        targets = []
+        # figure out whether to send command to Satellite, Class or whole Constellation
+        if not sat and not satcls:
+            targets = [sat._uuid for sat in self.constellation.satellites]
+            self.log.info(
+                "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
-            self._logger.info(
-                "Host %s received response: %s, %s",
-                host_name,
-                ret_msg.msg_verb,
+        elif not sat:
+            targets = [
+                sat.uuid
+                for sat in self.constellation.satellites
+                if sat.class_name == satcls
+            ]
+            self.log.info(
+                "Sending %s to all %s connected Satellites of class %s.",
+                cmd,
+                len(targets),
+                satcls,
+            )
+        else:
+            targets = [getattr(getattr(self.constellation, satcls), sat)._uuid]
+            self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
+
+        res = {}
+        for target in targets:
+            self.log.debug("Host %s send command %s...", target, cmd)
+
+            try:
+                ret_msg = self._transmitters[target].request_get_response(
+                    command=cmd,
+                    payload=payload,
+                    meta=None,
+                )
+            except KeyError:
+                self.log.error(
+                    "Command %s failed for %s (%s.%s): No transmitter available",
+                    cmd,
+                    target,
+                    satcls,
+                    sat,
+                )
+                continue
+            except RuntimeError as e:
+                self.log.error(
+                    "Command %s failed for %s (%s.%s): %s",
+                    cmd,
+                    target,
+                    satcls,
+                    sat,
+                    repr(e),
+                )
+                continue
+            self.log.debug(
+                "%s responded: %s",
+                ret_msg.from_host,
                 ret_msg.msg,
             )
             if ret_msg.header_meta:
-                self._logger.info("    header: %s", ret_msg.header_meta)
+                self.log.debug("    header: %s", ret_msg.header_meta)
             if ret_msg.payload:
-                self._logger.info("    payload: %s", ret_msg.payload)
-
-    def _convert_to_cscp(self, msg, host_name):
-        """Convert command string into CSCP message, payload and meta."""
-        cmd = msg[0]
-        payload = msg[:-1]
-        meta = None
-
-        if cmd == "initialize" or cmd == "reconfigure":
-            config_path = msg[1]
-            class_msg = self._command_satellite("get_class", None, None, host_name)
-
-            payload = {}
-
-            for category in ["constellation", "satellites"]:
-                try:
-                    payload.update(
-                        get_config(
-                            config_path=config_path,
-                            category=category,
-                            host_class=class_msg.msg,
-                            host_device="example_device1",  # TODO: generalize
-                        )
-                    )
-                except KeyError as e:
-                    self.log.warning("Configuration file does not contain key %s", e)
-        # TODO: add more commands?
-        return cmd, payload, meta
-
-    def process_cli_command(self, user_input):
-        """Process CLI input commands. If not part of CLI keywords, assume it is a command for satellite."""
-        if user_input.startswith("target"):
-            target = user_input.split(" ")[1]
-            if target in self.transmitters.keys():
-                self.target_host = target
-                self._logger.info(f"target for next command: host {self.target_host}")
+                self.log.debug("    payload: %s", ret_msg.payload)
+            if sat:
+                # simplify return value for single satellite
+                res = {"msg": ret_msg.msg, "payload": ret_msg.payload}
             else:
-                self._logger.error(f"No host {target}")
-
-        elif user_input.startswith("untarget"):
-            self.target_host = None
-
-        elif user_input.startswith("add"):
-            satellite_info = user_input.split(" ")
-            host_name = str(satellite_info[1])
-            host_addr = str(satellite_info[2])
-            port = str(satellite_info[3])
-            self._add_satellite(host_name=host_name, host_addr=host_addr, port=port)
-
-        elif user_input.startswith("remove"):
-            target = user_input.split(" ")[1]
-            if target in self.transmitters.keys():
-                self.transmitters.pop(target)
-            else:
-                self._logger.error(f"No host {target}")
-        else:
-            msg = user_input.split(" ")
-            self.command(msg=msg)
+                # append
+                res[ret_msg.from_host] = {
+                    "msg": ret_msg.msg,
+                    "payload": ret_msg.payload,
+                }
+        return res
 
     def _run_task_handler(self):
         """Event loop for task handler-routine"""
@@ -189,134 +304,57 @@ class BaseCLIController(CHIRPBroadcaster):
                 try:
                     callback(*args)
                 except Exception as e:
-                    self.log.error("Caught exception handling task: %s", repr(e))
+                    self.log.exception(e)
             except Empty:
                 # nothing to process
                 pass
 
-    def run(self):
-        """Run controller."""
-        self.command("get_state")
-        self.command("transition initialize")
-        self.command("transition prepare")
-        self.command("transition start_run")
-        self.command("get_state")
-
-    def run_from_cli(self):
-        """Run commands from CLI and pass them to task handler-routine."""
-        print(
-            'Possible commands: "exit", "get_state", "<transition>", "target <uuid>", \
-            "failure", "register <ip> <port>", "add <ip> <port>", "remove <uuid>"'
-        )
-        print(
-            'Possible transitions: "initialize", "load", "unload", "launch", "land", \
-            "start", "stop", "recover", "reset"'
-        )
-        self._task_handler_event = threading.Event()
-        task_handler_thread = threading.Thread(
-            target=self._run_task_handler, daemon=True
-        )
-        task_handler_thread.start()
-        time.sleep(0.5)
-        while True:
-            user_input = input("Send command: ")
-            if user_input == "exit":
-                self._stop_com_threads()
-                self._task_handler_event.set()
-                task_handler_thread.join()
-                break
-            else:
-                self.task_queue.put([self.process_cli_command, [user_input]])
-            time.sleep(0.5)
-
-
-class SatelliteManager(BaseCLIController):
-    """Satellite Manager class implementing CHIRP protocol"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class CliCompleter(object):  # Custom completer
-    def __init__(self, commands, transitions):
-        self.commands = sorted(commands)
-        self.transitions = sorted(transitions)
-
-    # Returns the first word if there is a space, otherwise nothing
-    def get_cur_before(self):
-        idx = readline.get_begidx()
-        full = readline.get_line_buffer()
-        prefix = full[:idx]
-        n = prefix.split()
-        if len(n) > 0:
-            return n[0]
-        else:
-            return ""
-
-    def complete(self, text, state):
-        cmd = self.get_cur_before()
-        if cmd == "transition":
-            return self.complete_transition(text, state)
-        elif cmd != "":
-            return None
-        if text == "":  # Display all possibilities
-            self.matches = self.commands[:]
-        else:
-            self.matches = [s for s in self.commands if s and s.startswith(text)]
-
-        if state > len(self.matches):
-            return None
-        else:
-            return self.matches[state]
-
-    def complete_transition(self, text, state):
-        matches = [s for s in self.transitions if s and s.startswith(text)]
-        if state > len(matches):
-            return None
-        else:
-            return matches[state]
+    def reentry(self):
+        """Stop the controller."""
+        self.log.info("Stopping controller.")
+        self._task_handler_event.set()
+        for _name, cmd_tm in self._transmitters.items():
+            cmd_tm.socket.close()
+        self._task_handler_thread.join()
+        super().reentry()
 
 
 def main():
     """Start a controller."""
     import argparse
+    import coloredlogs
+    from IPython import embed
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--log-level", default="info")
-    parser.add_argument("--satellite", "--sat", action="append")
-    parser.add_argument("--name", type=str, default="controller_demo")
+    parser.add_argument("--name", type=str, default="cli_controller")
     parser.add_argument("--group", type=str, default="constellation")
+    parser.add_argument("--interface", type=str, default="*")
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        level=args.log_level.upper(),
-    )
-    # if not args.satellite:
-    #    print("No satellites specified! Use '--satellite' to add one.")
-    #    return
-    # Set up simple tab completion
-    commands = [
-        "exit",
-        "get_state",
-        "transition ",
-        "failure",
-        "register ",
-        "add ",
-        "remove ",
-    ]
-    transitions = [t.name for t in SatelliteFSM.events]
+    # set up logging
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
-    cliCompleter = CliCompleter(list(set(commands)), list(set(transitions)))
-    readline.set_completer_delims(" \t\n;")
-    readline.set_completer(cliCompleter.complete)
-    readline.parse_and_bind("tab: complete")
+    logger.debug("Starting up CLI Controller!")
 
     # start server with args
-    ctrl = BaseCLIController(name=args.name, group=args.group, hosts=args.satellite)
-    ctrl.run_from_cli()
-    # ctrl.run()
+    ctrl = BaseController(  # noqa
+        name=args.name, group=args.group, interface=args.interface
+    )
+
+    print("\nWelcome to the Constellation CLI IPython Controller!\n")
+    print(
+        "You can interact with the discovered Satellites via the `ctrl.constellation` array:"
+    )
+    print("          ctrl.constellation.get_state()\n")
+    print("To get help for any of its methods, call it with a question mark:")
+    print("          ctrl.constellation.get_state?\n")
+    print("Happy hacking! :)\n")
+
+    # start IPython console
+    embed()
 
 
 if __name__ == "__main__":

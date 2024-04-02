@@ -49,7 +49,7 @@ def mock_example_satellite(mock_chirp_socket):
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
         s = MockExampleSatellite(
-            "mock_satellite", "mockstellation", 11111, 22222, 33333
+            "mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
         )
         t = threading.Thread(target=s.run_satellite)
         t.start()
@@ -58,6 +58,7 @@ def mock_example_satellite(mock_chirp_socket):
         yield s
 
 
+@pytest.mark.forked
 def test_unused_values(config):
     assert config.has_unused_values()
     config.setdefault("voltage")
@@ -70,6 +71,7 @@ def test_unused_values(config):
     assert not config.has_unused_values()
 
 
+@pytest.mark.forked
 def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
     satellite = mock_example_satellite
     sender = mock_cmd_transmitter

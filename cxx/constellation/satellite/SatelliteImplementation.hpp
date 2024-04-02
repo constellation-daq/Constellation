@@ -9,12 +9,15 @@
 
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
+
+#include <zmq.hpp>
 
 #include "constellation/core/config.hpp"
 #include "constellation/core/logging/Logger.hpp"
@@ -58,10 +61,12 @@ namespace constellation::satellite {
         std::optional<message::CSCP1Message> getNextCommand();
 
         // reply to command
-        void sendReply(std::pair<message::CSCP1Message::Type, std::string> reply_verb);
+        void sendReply(std::pair<message::CSCP1Message::Type, std::string> reply_verb,
+                       std::shared_ptr<zmq::message_t> payload = {});
 
         // handle get commands
-        std::optional<std::pair<message::CSCP1Message::Type, std::string>> handleGetCommand(std::string_view command);
+        std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
+        handleGetCommand(std::string_view command);
 
         // main loop
         void main_loop(const std::stop_token& stop_token);

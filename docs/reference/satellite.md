@@ -21,12 +21,13 @@ appear in configuration files and will be sent as the "sending host" information
 
 ## Satellite Startup & Shutdown
 
-When a new satellite is launched, the state of its FSM **shall always** be its `NEW` state.
+When a new satellite application is started, the state of its FSM **shall always** be `NEW`.
 
-When a satellite process is supposed to be shut down, the satellite **should**
+Shutting down a satellite application is possible in three different ways:
 
-* go through the `interrupting` transitional state if necessary and exit either from `INIT` or `SAFE` state if the shutdown was requested through `SIGINT` or `SIGTERM` signals (graceful shutdown).
-* exit the process immediately if the shutdown was requested through `SIGQUIT` or `SIGABRT` signals (forceful shutdown).
+* sending the command `shutdown` through CSCP: The satellite **shall** only react to this transition when in `NEW`, `INIT`, `SAFE` or `ERROR` state.
+* requesting a graceful shutdown through `SIGINT` or `SIGTERM` signals: The satellite **shall** go through the `interrupting` transitional state if necessary and exit either from `INIT` or `SAFE` state.
+* requesting a forceful shutdown through `SIGQUIT` or `SIGABRT` signals: The satellite application **should** exit the process immediately.
 
 ## Satellite Commands
 
@@ -47,6 +48,7 @@ corresponding payloads:
 | `reconfigure` | Partial config | Acknowledgement | -
 | `start` | Run number | Acknowledgement | -
 | `stop` | - | Acknowledgement | -
+| `shutdown` | - | Acknowledgement | -
 
 ## FSM States
 

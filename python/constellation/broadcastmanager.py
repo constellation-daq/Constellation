@@ -24,21 +24,31 @@ from .chirp import (
 )
 
 
-CALLBACKS = dict()
-
-
 def chirp_callback(request_service: CHIRPServiceIdentifier):
-    """Register a function as a callback for CHIRP service requests."""
+    """Mark a function as a callback for CHIRP service requests."""
 
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             return func(*args, **kwargs)
 
-        CALLBACKS[request_service] = func
+        # mark function as chirp callback
+        wrapper.chirp_callback = request_service
         return wrapper
 
     return decorator
+
+
+def get_chirp_callbacks(cls):
+    """Loop over all class methods and return those marked as CHIRP callback."""
+    res = {}
+    for func in dir(cls):
+        call = getattr(cls, func)
+        if callable(call) and not func.startswith("__"):
+            # regular method
+            if hasattr(call, "chirp_callback"):
+                res[getattr(call, "chirp_callback")] = call
+    return res
 
 
 class DiscoveredService:
@@ -92,6 +102,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self,
         name: str,
         group: str,
+        interface: str,
         **kwds,
     ):
         """Initialize parameters.
@@ -101,14 +112,15 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         :param group: group the Satellite belongs to
         :type group: str
         """
-        super().__init__(name, **kwds)
+        super().__init__(name=name, interface=interface, **kwds)
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(name, group)
+        self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
         # Offered and discovered services
         self._registered_services = {}
         self.discovered_services = []
         self._chirp_thread = None
+        self._chirp_callbacks = get_chirp_callbacks(self)
 
         # set up logging
         self._logger = logging.getLogger(name + ".broadcast")
@@ -135,12 +147,12 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self, serviceid: CHIRPServiceIdentifier, callback: callable
     ) -> None:
         """Register new callback for ServiceIdentifier."""
-        if serviceid in CALLBACKS:
+        if serviceid in self._chirp_callbacks:
             self._logger.info("Overwriting callback")
-        CALLBACKS[serviceid] = callback
+        self._chirp_callbacks[serviceid] = callback
         # make a callback if a service has already been discovered
         for known in self.get_discovered(serviceid):
-            self.task_queue.put((callback, known))
+            self.task_queue.put((callback, [known]))
 
     def register_offer(self, serviceid: CHIRPServiceIdentifier, port: int) -> None:
         """Register new offered service or overwrite existing service."""
@@ -155,7 +167,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         any incoming OFFERS will go unnoticed.
 
         """
-        if serviceid not in CALLBACKS:
+        if serviceid not in self._chirp_callbacks:
             self._logger.warning(
                 "Serviceid %s does not have a registered callback", serviceid
             )
@@ -174,7 +186,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
-        for serviceid in CALLBACKS:
+        for serviceid in self._chirp_callbacks:
             self._logger.debug("Broadcasting service REQUEST for %s", serviceid)
             self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
@@ -190,7 +202,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             msg.host_uuid, msg.serviceid, msg.from_address, msg.port
         )
         if service in self.discovered_services:
-            self._logger.info(
+            self._logger.debug(
                 "Service already discovered: %s on host %s",
                 msg.serviceid,
                 msg.from_address,
@@ -201,13 +213,14 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         else:
             # add service to internal list and queue callback (if registered)
             self._logger.info(
-                "Received new OFFER for service: %s on host %s",
+                "Received new OFFER for service: %s on host %s:%s",
                 msg.serviceid,
                 msg.from_address,
+                msg.port,
             )
             try:
-                callback = CALLBACKS[msg.serviceid]
-                self.task_queue.put((callback, [self, service]))
+                callback = self._chirp_callbacks[msg.serviceid]
+                self.task_queue.put((callback, [service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
             self.discovered_services.append(service)
@@ -227,8 +240,8 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             # indicate that service is no longer with us
             service.alive = False
             try:
-                callback = CALLBACKS[msg.serviceid]
-                self.task_queue.put((callback, service))
+                callback = self._chirp_callbacks[msg.serviceid]
+                self.task_queue.put((callback, [service]))
             except KeyError:
                 self._logger.debug("No callback for service %s set up.", msg.serviceid)
         except ValueError:

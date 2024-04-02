@@ -10,14 +10,11 @@ Constellation Satellites.
 import threading
 import time
 import zmq
+from functools import wraps
 from statemachine.exceptions import TransitionNotAllowed
 
 from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
-
-
-# store command names of decorated methods
-COMMANDS = []
 
 
 def cscp_requestable(func):
@@ -26,8 +23,27 @@ def cscp_requestable(func):
     See CommandReceiver for a description of the expected signature.
 
     """
-    COMMANDS.append(func.__name__)
-    return func
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    # mark function as chirp callback
+    wrapper.cscp_command = True
+    return wrapper
+
+
+def get_cscp_commands(cls):
+    """Loop over all class methods and return those marked as CHIRP callback."""
+    res = {}
+    for func in dir(cls):
+        call = getattr(cls, func)
+        if callable(call) and not func.startswith("__"):
+            # regular method
+            if hasattr(call, "cscp_command"):
+                doc = call.__doc__
+                res[func] = doc
+    return res
 
 
 class CommandReceiver(BaseSatelliteFrame):
@@ -55,17 +71,17 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, cmd_port: int, **kwds):
+    def __init__(self, name: str, cmd_port: int, interface: str, **kwds):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
-        super().__init__(name, **kwds)
+        super().__init__(name=name, interface=interface, **kwds)
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)
-        sock.bind(f"tcp://*:{cmd_port}")
+        sock.bind(f"tcp://{interface}:{cmd_port}")
         self.log.info(f"Satellite listening on command port {cmd_port}")
-        self._cmd_tm = CommandTransmitter(name, sock)
+        self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
-        self._cmds = []
+        self._cmds = get_cscp_commands(self)
 
     def _add_com_thread(self):
         """Add the command receiver thread to the communication thread pool."""
@@ -77,12 +93,6 @@ class CommandReceiver(BaseSatelliteFrame):
 
     def _recv_cmds(self):
         """Request receive loop."""
-        # first, determine the supported commands
-        #
-        # NOTE the global list COMMANDS might include methods unavailble in this
-        # class if e.g. different classes inheriting from Satellite were imported.
-        # This step reduces the list to what is actually available.
-        self._cmds = [cmd for cmd in COMMANDS if hasattr(self, cmd)]
         while not self._com_thread_evt.is_set():
             try:
                 req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
@@ -100,13 +110,17 @@ class CommandReceiver(BaseSatelliteFrame):
                 self.log.error(
                     f"Received malformed request with msg verb: {req.msg_verb}"
                 )
-                self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.INVALID)
+                self._cmd_tm.send_reply(
+                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.INVALID
+                )
                 continue
 
             # find a matching callback
             if req.msg not in self._cmds:
                 self.log.error("Unknown command: %s", req)
-                self._cmd_tm.send_reply("Unknown command", CSCPMessageVerb.UNKNOWN)
+                self._cmd_tm.send_reply(
+                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.UNKNOWN
+                )
                 continue
             # test whether callback is allowed by calling the
             # method "_COMMAND_is_allowed" (if exists).
@@ -114,7 +128,9 @@ class CommandReceiver(BaseSatelliteFrame):
                 is_allowed = getattr(self, f"_{req.msg}_is_allowed")(req)
                 if not is_allowed:
                     self.log.error("Command not allowed: %s", req)
-                    self._cmd_tm.send_reply("Not allowed", CSCPMessageVerb.INVALID)
+                    self._cmd_tm.send_reply(
+                        f"Not allowed: {req.msg_verb}", CSCPMessageVerb.INVALID
+                    )
                     continue
             except AttributeError:
                 pass
@@ -168,19 +184,7 @@ class CommandReceiver(BaseSatelliteFrame):
         second line of the doc string, respectively (not counting empty lines).
 
         """
-        res = []
-        for cmd in self._cmds:
-            summary = "missing docstring"
-            payload_desc = "no payload/missing docstring"
-            try:
-                fcn = getattr(self, cmd)
-                doc = [line for line in fcn.__doc__.splitlines() if line]
-                summary = doc[0].strip()
-                payload_desc = doc[1].strip()
-            except (IndexError, AttributeError):
-                pass
-            res.append([cmd, summary, payload_desc])
-        return f"{len(res)} commands known", res, None
+        return f"{len(self._cmds)} commands known", self._cmds, None
 
     @cscp_requestable
     def get_class(self, _request: CSCPMessage = None):
