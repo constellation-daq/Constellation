@@ -213,7 +213,7 @@ class H5DataReceiverWriter(DataReceiver):
     def do_initializing(self, payload: any) -> str:
         super().do_initializing(payload)
         self.nameformat = self.config.setdefault(
-            "name_format.h5", "default_name_{date}.h5"
+            "name_format", "default_name_{date}.h5"
         )
         return "Initializing"
 
