@@ -56,13 +56,14 @@ class PushThread(threading.Thread):
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
-                payload = self.queue.get(block=True, timeout=0.5)
+                payload, meta = self.queue.get(block=True, timeout=0.5)
+
                 # if we have data, send it
                 if BOR:
-                    transmitter.send_start(payload)
+                    transmitter.send_start(payload, meta)
                     BOR = False
                 else:
-                    transmitter.send_data(payload)
+                    transmitter.send_data(payload, meta)
                 self._logger.debug(
                     f"Sending packet number {transmitter.sequence_number}"
                 )
@@ -120,7 +121,7 @@ class RandomDataSender(DataSender):
 
         num = 0
         while not self._stop_running.is_set():
-            self.data_queue.put(payload)
+            self.data_queue.put((payload, {}))
             self.log.debug(f"Queueing data packet {num}")
             num += 1
             time.sleep(0.5)
