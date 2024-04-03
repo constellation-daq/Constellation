@@ -17,6 +17,7 @@ import zmq
 
 from .cdtp import DataTransmitter
 from .satellite import Satellite
+from .broadcastmanager import CHIRPServiceIdentifier
 
 
 class PushThread(threading.Thread):
@@ -96,7 +97,9 @@ class DataSender(Satellite):
         self._push_thread.start()
         self.log.info(f"Satellite {self.name} publishing data on port {data_port}")
 
-    def do_run(self):
+        self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
+        self.broadcast_offers()
+
         """Perform the data acquisition and enqueue the results.
 
         This method will be executed in a separate thread by the underlying
