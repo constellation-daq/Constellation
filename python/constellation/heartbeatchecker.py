@@ -40,6 +40,7 @@ class HeartbeatChecker:
         self._states_lock = threading.Lock()
         self.states = dict[str, SatelliteState]()
         self.failed = dict[str, threading.Event]()
+        self.auto_recover = False  # clear fail Event if Satellite reappears?
 
     def register(self, name, host: str, context: Optional[zmq.Context] = None) -> None:
         """Register a heartbeat check for a specific Satellite."""
@@ -111,9 +112,13 @@ class HeartbeatChecker:
                         )
                         fail_evt.set()
                         self._interrupt(name)
+                else:
+                    # maybe recover?
+                    if self.auto_recover and fail_evt.is_set():
+                        fail_evt.clear()
                 if ts.to_unix() < last.timestamp():
                     # received hb older than last update; we are lagging behind;
-                    # skip to next without updating 'last'
+                    # skip to next without updating 'last' (or sleeping)
                     logger.debug(
                         f"{name} lagging behind, consuming heartbeats without rest"
                     )
