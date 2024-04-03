@@ -88,6 +88,11 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
     REQUIRE(recv_msg_get_commands.hasPayload());
+    const auto msgpayload = recv_msg_get_commands.getPayload();
+    const auto payload = msgpack::unpack(to_char_ptr(msgpayload->data()), msgpayload->size());
+    const auto dict = payload->as<Dictionary>();
+    REQUIRE(dict.contains("get_commands"));
+    REQUIRE(std::get<std::string>(dict.at("stop")) == "Stop satellite");
 
     // get_state
     sender.send_command("get_state");
