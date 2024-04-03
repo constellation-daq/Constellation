@@ -5,19 +5,21 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Host Identification and Reconnaissance Protocol (CHIRP).
 """
 
+from hashlib import md5
+import io
 import socket
-from uuid import UUID, uuid5, NAMESPACE_DNS
+from uuid import UUID
 from enum import Enum
-import msgpack
 
 
 CHIRP_PORT = 7123
-CHIRP_HEADER = "CHIRP%x01"
+CHIRP_HEADER = "CHIRP\x01"
 
 
 def get_uuid(name: str) -> UUID:
-    """Return the UUID for a string."""
-    return uuid5(NAMESPACE_DNS, name)
+    """Return the UUID for a string using MD5 hashing."""
+    hash = md5(name.encode(), usedforsecurity=False)
+    return UUID(bytes=hash.digest())
 
 
 class CHIRPServiceIdentifier(Enum):
@@ -82,26 +84,33 @@ class CHIRPMessage:
         self.port = port
         self.from_address = None
 
-    def pack(self):
-        """Serialize message using msgpack.packb()."""
-        msg = [
-            CHIRP_HEADER,
-            self.msgtype.value,
-            self.group_uuid.bytes,
-            self.host_uuid.bytes,
-            self.serviceid.value,
-            self.port,
-        ]
-        return msgpack.packb(msg)
+    def pack(self) -> bytes:
+        """Serialize message to raw bytes."""
+        bytes = io.BytesIO()
+        bytes.write(CHIRP_HEADER.encode())
+        bytes.write(self.msgtype.value.to_bytes(length=1))
+        bytes.write(self.group_uuid.bytes)
+        bytes.write(self.host_uuid.bytes)
+        bytes.write(self.serviceid.value.to_bytes(length=1))
+        bytes.write(self.port.to_bytes(length=2, byteorder="big"))
+        return bytes.getvalue()
 
-    def unpack(self, msg):
-        """Unpack and decode binary msg using msgpack.unpackb()."""
-        _header, msgtype, group, host, service, port = msgpack.unpackb(msg)
-        self.msgtype = CHIRPMessageType(msgtype)
-        self.group_uuid = UUID(bytes=group)
-        self.host_uuid = UUID(bytes=host)
-        self.serviceid = CHIRPServiceIdentifier(service)
-        self.port = port
+    def unpack(self, msg: bytes):
+        """Decode from bytes."""
+        # Check message length
+        if len(msg) != 42:
+            raise RuntimeError(
+                f"Invalid CHIRP message: length is {len(msg)} instead of 42 bytes long"
+            )
+        # Check header
+        if msg[0:6] != CHIRP_HEADER.encode():
+            raise RuntimeError(f"Invalid CHIRP message: header {msg[0:6]} is malformed")
+        # Decode message
+        self.msgtype = CHIRPMessageType(int.from_bytes(msg[6:7]))
+        self.group_uuid = UUID(bytes=msg[7:23])
+        self.host_uuid = UUID(bytes=msg[23:39])
+        self.serviceid = CHIRPServiceIdentifier(int.from_bytes(msg[39:40]))
+        self.port = int.from_bytes(msg[40:42], byteorder="big")
 
 
 class CHIRPBeaconTransmitter:
@@ -189,17 +198,6 @@ class CHIRPBeaconTransmitter:
         except BlockingIOError:
             # no data waiting for us
             return None
-
-        try:
-            header = msgpack.unpackb(buf)[0]
-            if not header == CHIRP_HEADER:
-                raise RuntimeError(
-                    f"Received malformed CHIRP header by host {from_address}: {header}!"
-                )
-        except Exception as e:
-            raise RuntimeError(
-                f"Received malformed CHIRP header by host {from_address}: {e}"
-            )
 
         # Unpack msg
         msg = CHIRPMessage()
