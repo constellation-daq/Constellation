@@ -104,6 +104,7 @@ class DataReceiver(Satellite):
         self._pull_interfaces = {}
         self._puller_threads = list[PullThread]()
         self._stop_pulling = threading.Event()
+        self._run_event = threading.Event()
 
         self.request(CHIRPServiceIdentifier.DATA)
 
@@ -213,6 +214,10 @@ class DataReceiver(Satellite):
                         )
             self._stop_pulling = None
             self._puller_threads = list[PullThread]()
+
+    def do_stopping(self, payload: any):
+        self._run_event.set()
+        return "Acquisition stopped"
 
 
 class H5DataReceiverWriter(DataReceiver):
@@ -399,7 +404,7 @@ class H5DataReceiverWriter(DataReceiver):
         h5file = self._open_file()
         try:
             # processing loop
-            while not self._state_thread_evt.is_set():
+            while not self._run_event.is_set():
                 try:
                     # blocking call but with timeout to prevent deadlocks
                     item = self.data_queue.get(block=True, timeout=0.5)
