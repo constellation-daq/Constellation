@@ -62,12 +62,12 @@ class PullThread(threading.Thread):
         while not self.stopevt.is_set():
             try:
                 # non-blocking call to prevent deadlocks
-                item = CDTPMessage(*transmitter.recv(flags=zmq.NOBLOCK))
-
-                self.queue.put(item)
-                self._logger.debug(
-                    f"Received packet as packet number {item.sequence_number}"
-                )
+                item = transmitter.recv(flags=zmq.NOBLOCK)
+                if item:
+                    self.queue.put(item, block=False)
+                    self._logger.debug(
+                        f"Received packet as packet number {item.sequence_number}"
+                    )
             except zmq.ZMQError:
                 # no thing to process, sleep instead
                 # TODO consider adjust sleep value
