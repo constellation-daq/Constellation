@@ -189,6 +189,27 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     assert isinstance(satellite.callback_triggered, DiscoveredService)
 
 
-# TODO test shutdown
-# TODO test wrong packet (header)
-# TODO test state transitions
+@pytest.mark.forked
+def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
+    """Test that Satellite can 'walk' through a series of transitions."""
+    transitions = {
+        "initialize": "INIT",
+        "launch": "ORBIT",
+        "start": "RUN",
+        "stop": "ORBIT",
+        "land": "INIT",
+    }
+    payload = {"mock key": "mock argument string"}
+    sender = mock_cmd_transmitter
+    for cmd, state in transitions.items():
+        sender.send_request(cmd, payload)
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert "transitioning" in req.msg.lower()
+        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        # check state
+        sender.send_request("get_state")
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert state.lower() in req.msg.lower()
+        assert req.msg_verb == CSCPMessageVerb.SUCCESS
