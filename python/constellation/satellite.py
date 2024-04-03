@@ -241,7 +241,16 @@ class Satellite(
         control to the device-specific public method.
 
         """
+        res = self.do_starting(payload)
+        # complete transitional state
+        self.fsm.complete(res)
+        # continue to execute DAQ in this thread
         return self.do_run(payload)
+
+    @debug_log
+    def do_starting(self, payload: any) -> str:
+        """Final preparation for acquisition."""
+        return "Finished preparations, starting."
 
     @debug_log
     def do_run(self, payload: any) -> str:
