@@ -133,7 +133,7 @@ class DataReceiver(Satellite):
             SatelliteState.RUN,
         ]:
             thread = PullThread(
-                name=self.name,
+                name=str(service.host_uuid),
                 stopevt=self._stop_pulling,
                 interface=f"tcp://{service.address}:{service.port}",
                 queue=self.data_queue,
