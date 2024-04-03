@@ -308,39 +308,48 @@ class H5DataReceiverWriter(DataReceiver):
         # overloaded by inheriting classes
         """
         # Check if group already exists
-        if item.name not in h5file.keys():
-            grp = h5file.create_group(item.name)
-            self.run_number[item.name] = 0
+        try:
+            if item.name not in h5file.keys():
+                grp = h5file.create_group(item.name)
+                self.run_number[item.name] = 0
+        except Exception:
+            self.log.error("Failed to create item group")
 
-        if item.msgtype == CDTPMessageIdentifier.BOR:
-            self.run_number[item.name] += 1
-            title = "data_run_" + str(self.run_number[item.name])
-            dset = grp.create_dataset(
-                title,
-                data=np.frombuffer(item.payload, dtype=item.meta["dtype"]),
-                chunks=True,
-                dtype=item.meta["dtype"],
-                maxshape=(None,),
-            )
-
-            dset.attrs["CLASS"] = "DETECTOR_DATA"
-            for key, val in item.meta.items():
-                dset.attrs[key] = val
-
-        else:
-            # Extend current dataset with data obtained from item
-            grp = h5file[item.name]
-            new_data = np.frombuffer(item.payload, dtype=item.meta["dtype"])
-            title = "data_run_" + str(self.run_number[item.name])
-            grp[title].resize((grp["data"].shape[0] + new_data.shape[0]), axis=0)
-            grp[title][-new_data.shape[0] :] = new_data
-
-            if item.msgtype == CDTPMessageIdentifier.EOR:
-                self.log.info(
-                    "Received last packet from %s on run %s",
-                    item.name,
-                    self.run_number[item.name],
+        try:
+            if item.msgtype == CDTPMessageIdentifier.BOR.value:
+                self.run_number[item.name] += 1
+                title = "data_run_" + str(self.run_number[item.name])
+                dset = grp.create_dataset(
+                    title,
+                    data=np.frombuffer(
+                        item.payload, dtype=item.meta.get("dtype", float)
+                    ),
+                    chunks=True,
+                    dtype=item.meta.get("dtype", None),
+                    maxshape=(None,),
                 )
+
+                dset.attrs["CLASS"] = "DETECTOR_DATA"
+                for key, val in item.meta.items():
+                    dset.attrs[key] = val
+            else:
+                # Extend current dataset with data obtained from item
+                grp = h5file[item.name]
+                new_data = np.frombuffer(
+                    item.payload, dtype=item.meta.get("dtype", float)
+                )
+                title = "data_run_" + str(self.run_number[item.name])
+                grp[title].resize((grp[title].shape[0] + new_data.shape[0]), axis=0)
+                grp[title][-new_data.shape[0] :] = new_data
+
+                if item.msgtype == CDTPMessageIdentifier.EOR.value:
+                    self.log.info(
+                        "Received last packet from %s on run %s",
+                        item.name,
+                        self.run_number[item.name],
+                    )
+        except Exception:
+            self.log.error("Failed to write to file")
 
         self.log.debug(
             f"Processing data packet {item.sequence_number} from {item.name}"
