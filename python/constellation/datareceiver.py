@@ -242,7 +242,6 @@ class H5DataReceiverWriter(DataReceiver):
         self.filename = self.nameformat.format(
             date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
         )
-        print(self.filename)  # TODO: remove after debugging
         if os.path.isfile(self.filename):
             self.log.error(f"file already exists: {self.filename}")
             raise RuntimeError(f"file already exists: {self.filename}")
@@ -285,7 +284,6 @@ class H5DataReceiverWriter(DataReceiver):
             grp = h5file[item.name]
 
         # Create dataset and write data (item) to it
-        print(f"event_{item.meta['eventid']}")  # TODO: remove this
         dset = grp.create_dataset(
             f"event_{item.meta['eventid']}",
             data=np.frombuffer(item.payload, dtype=item.meta["dtype"]),
