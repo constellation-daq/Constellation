@@ -19,7 +19,7 @@ import h5py
 import numpy as np
 import zmq
 
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService
+from .broadcastmanager import chirp_callback, DiscoveredService
 from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
 from .fsm import SatelliteState
@@ -105,14 +105,19 @@ class DataReceiver(Satellite):
         self._puller_threads = list[PullThread]()
         self._stop_pulling = threading.Event()
 
-        self.register_request(CHIRPServiceIdentifier.DATA, self.recv_from_callback)
+        self.request(CHIRPServiceIdentifier.DATA)
 
     # NOTE: This callback method is not correct. Both BroadcastManager and Satellite needs to be able to handle PullThreads
-    def recv_from_callback(
-        self, _broadcaster: CHIRPBroadcaster, service: DiscoveredService
-    ):
+    @chirp_callback(CHIRPServiceIdentifier.DATA)
+    def _add_sender_callback(self, service: DiscoveredService):
+        """Callback method for connecting to data service."""
+        if not service.alive:
+            self._remove_sender(service)
+        else:
+            self._add_sender(service)
+
+    def _add_sender(self, service: DiscoveredService):
         """
-        Callback method for data service.
         Adds an interface (host, port) to receive data from.
         """
         # TODO: Name satellites instead of using host_uuid
@@ -141,7 +146,13 @@ class DataReceiver(Satellite):
                 f"Satellite {self.name} pulling data from {service.address}:{service.port}"
             )
 
-    def on_initialize(self):
+    def _remove_sender(self, service: DiscoveredService):
+        """Removes sender from pool"""
+        uuid = str(service.host_uuid)
+        self._puller_threads(uuid).join()
+        self._pull_interfaces.pop(uuid)
+        self._puller_threads.pop(uuid)
+
         """Set up threads to listen to interfaces.
 
         Stops any still-running threads.
