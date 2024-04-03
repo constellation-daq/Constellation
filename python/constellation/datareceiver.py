@@ -185,7 +185,7 @@ class DataReceiver(Satellite):
         """Stop all threads."""
         self._stop_pull_threads(2.0)
 
-    def do_run(self):
+    def do_run(self, payload: any) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -401,7 +401,7 @@ class H5DataReceiverWriter(DataReceiver):
             del h5file[item.name]["vdata"]
         grp.create_virtual_dataset("vdata", layout, fillvalue=-1)
 
-    def do_run(self):
+    def do_run(self, payload: any) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -434,6 +434,7 @@ class H5DataReceiverWriter(DataReceiver):
                     pass
         finally:
             h5file.close()
+            return "Finished Acquisition"
 
 
 # -------------------------------------------------------------------------
