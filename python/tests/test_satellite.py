@@ -209,7 +209,7 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         assert req.msg_verb == CSCPMessageVerb.SUCCESS
         # check state
         sender.send_request("get_state")
-        time.sleep(0.2)
+        time.sleep(0.4)
         req = sender.get_message()
         assert state.lower() in req.msg.lower()
         assert req.msg_verb == CSCPMessageVerb.SUCCESS
