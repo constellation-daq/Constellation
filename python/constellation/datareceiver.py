@@ -12,7 +12,7 @@ import os
 import re
 import threading
 import time
-from queue import Empty, Queue
+from queue import Empty, Queue, Full
 from typing import Optional
 
 import h5py
@@ -77,7 +77,7 @@ class PullThread(threading.Thread):
             # TODO consider case where queue is full
             # NOTE: Due to data_queue being a shared resource it is probably safer to handle the exception
             #       rather than checking
-            except Queue.full:
+            except Full:
                 self._logger.error(
                     f"Queue is full. Data {item.sequence_number} from {item.name} was lost."
                 )
