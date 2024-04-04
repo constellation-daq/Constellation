@@ -416,7 +416,7 @@ class H5DataReceiverWriter(DataReceiver):
         h5file = self._open_file()
         try:
             # processing loop
-            while not self._run_event.is_set():
+            while not self._state_thread_evt.is_set() or not self.data_queue.empty():
                 try:
                     # blocking call but with timeout to prevent deadlocks
                     item = self.data_queue.get(block=True, timeout=0.5)
