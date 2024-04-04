@@ -128,11 +128,7 @@ class DataReceiver(Satellite):
         )
 
         # NOTE: Not sure this is the right way to handle late-coming satellite offers
-        if self.get_state() in [
-            SatelliteState.INIT,
-            SatelliteState.ORBIT,
-            SatelliteState.RUN,
-        ]:
+        if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
             thread = PullThread(
                 name=str(service.host_uuid),
                 stopevt=self._stop_pulling,
