@@ -85,22 +85,34 @@ class DataSender(Satellite):
 
         # set up the data pusher which will transmit
         # data placed into the queue via ZMQ socket
-        self._stop_pusher = threading.Event()
         self.data_queue = Queue()
+        self.data_port = data_port
+        self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
+        self.broadcast_offers()
+
+    def do_launching(self, payload: any) -> str:
+        self._stop_pusher = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
             stopevt=self._stop_pusher,
-            port=data_port,
+            port=self.data_port,
             queue=self.data_queue,
             context=self.context,
             daemon=True,  # terminate with the main thread
         )
         # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
-        self.log.info(f"Satellite {self.name} publishing data on port {data_port}")
+        self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
+        return super().do_launching(payload)
 
-        self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
-        self.broadcast_offers()
+    def do_landing(self, payload: any) -> str:
+        self._stop_pusher.set()
+        try:
+            time.sleep(60)
+            self._push_thread.join(timeout=10)
+        except TimeoutError:
+            self.log.warning("Unable to close push thread. Process timed out.")
+        return super().do_landing(payload)
 
         """Perform the data acquisition and enqueue the results.
 
