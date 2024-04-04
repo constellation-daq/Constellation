@@ -12,6 +12,8 @@
 #include <msgpack.hpp>
 
 #include <span>
+#include <type_traits>
+#include <variant>
 
 using namespace constellation::message;
 
@@ -19,7 +21,18 @@ void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer)
     msgpack_packer.pack_map(this->size());
     for(auto const& [key, val] : *this) {
         msgpack_packer.pack(key);
-        std::visit([&](auto&& arg) { msgpack_packer.pack(arg); }, val);
+        std::visit(
+            [&](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr(std::is_same_v<T, std::monostate>) {
+                    // Monostate => nil
+                    msgpack_packer.pack_nil();
+                } else {
+                    // Other types have implementation
+                    msgpack_packer.pack(arg);
+                }
+            },
+            val);
     }
 }
 
@@ -62,6 +75,10 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
         case msgpack::type::EXT: {
             // Try to convert to time_point, throws if wrong EXT type
             value = msgpack_kv.val.as<std::chrono::system_clock::time_point>();
+            break;
+        }
+        case msgpack::type::NIL: {
+            value = std::monostate();
             break;
         }
         default: {

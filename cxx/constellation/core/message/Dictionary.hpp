@@ -26,9 +26,10 @@ namespace constellation::message {
     /**
      * Value type for Dictionary using std::variant
      *
-     * Allowed types: bool, int, float, string and time point
+     * Allowed types: nil, bool, int, float, string and time point
      */
-    using DictionaryValue = std::variant<bool, std::int64_t, double, std::string, std::chrono::system_clock::time_point>;
+    using DictionaryValue =
+        std::variant<std::monostate, bool, std::int64_t, double, std::string, std::chrono::system_clock::time_point>;
 
     /**
      * Dictionary type with serialization functions for MessagePack
