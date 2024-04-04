@@ -43,6 +43,19 @@ class CDTPMessage:
         self.timestamp = timestamp
         self.meta = meta
 
+    def __str__(self):
+        """Pretty-print request."""
+        s = "Data message from {} received at {} of type {}, "
+        s += "sequence number {} {} payload and meta {}."
+        return s.format(
+            self.name,
+            self.timestamp,
+            self.msgtype,
+            self.sequence_number,
+            "with a" if self.payload else "without a",
+            self.meta,
+        )
+
 
 class DataTransmitter:
     """Base class for sending Constellation data packets via ZMQ."""
