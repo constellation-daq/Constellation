@@ -39,6 +39,8 @@ dependencies = [
 Satellite = "constellation.satellite:main"
 Controller = "constellation.controller:main"
 Monitor = "constellation.monitoring:main"
+DemoHeartbeatChecker = "constellation.heartbeatchecker:main"
+DemoHeartbeatSender = "constellation.heartbeater:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"

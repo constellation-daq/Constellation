@@ -7,6 +7,7 @@ constellation_files = files(
   'broadcastmanager.py',
   'chirp.py',
   'commandmanager.py',
+  'chp.py',
   'cmdp.py',
   'cscp.py',
   'controller.py',

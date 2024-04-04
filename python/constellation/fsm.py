@@ -42,13 +42,17 @@ class SatelliteState(Enum):
     starting = auto()
     stopping = auto()
     interrupting = auto()
+    # state if shutdown
+    DEAD = auto()
 
 
 class SatelliteFSM(StateMachine):
     """Manage the satellite's state and its transitions."""
 
     # Convert enum to states
-    states = States.from_enum(SatelliteState, initial=SatelliteState.NEW)
+    states = States.from_enum(
+        SatelliteState, initial=SatelliteState.NEW, final=SatelliteState.DEAD
+    )
 
     # Define transitions
     # - NEW <=> INIT
@@ -100,6 +104,13 @@ class SatelliteFSM(StateMachine):
     complete = initialized | launched | landed | started
     complete |= stopped | reconfigured | interrupted
 
+    # final state
+    shutdown = states.INIT.to(states.DEAD)
+    shutdown |= states.ERROR.to(states.DEAD)
+    shutdown |= states.SAFE.to(states.DEAD)
+
+    transitioned = False
+
     def __init__(self):
         self.status = "Satellite not initialized yet."
         super().__init__()
@@ -107,6 +118,10 @@ class SatelliteFSM(StateMachine):
     def before_transition(self, status):
         """Set status before the state change."""
         self.status = status
+
+    def after_transition(self):
+        """Set flag indicating state change."""
+        self.transitioned = True
 
     def write_diagram(self, filename):
         """Create a png with the FSM schematic."""
