@@ -111,7 +111,8 @@ class CommandReceiver(BaseSatelliteFrame):
                     f"Received malformed request with msg verb: {req.msg_verb}"
                 )
                 self._cmd_tm.send_reply(
-                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.INVALID
+                    f"Received malformed request with msg verb: {req.msg_verb}",
+                    CSCPMessageVerb.INVALID,
                 )
                 continue
 
@@ -119,7 +120,7 @@ class CommandReceiver(BaseSatelliteFrame):
             if req.msg not in self._cmds:
                 self.log.error("Unknown command: %s", req)
                 self._cmd_tm.send_reply(
-                    f"Unknown command: {req.msg_verb}", CSCPMessageVerb.UNKNOWN
+                    f"Unknown command: {req.msg}", CSCPMessageVerb.UNKNOWN
                 )
                 continue
             # test whether callback is allowed by calling the
