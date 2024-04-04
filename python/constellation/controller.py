@@ -230,7 +230,7 @@ class BaseController(CHIRPBroadcaster):
             )
         elif not sat:
             targets = [
-                sat.uuid
+                sat._uuid
                 for sat in self.constellation.satellites
                 if sat._class_name == satcls
             ]
