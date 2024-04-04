@@ -9,6 +9,7 @@ Module implementing the Constellation Data Transmission Protocol.
 from enum import Enum
 
 import msgpack
+import io
 import zmq
 
 from .protocol import MessageHeader, Protocol
@@ -113,18 +114,23 @@ class DataTransmitter:
         Returns: return of socket.send(payload) call.
 
         """
-        if not meta:
-            meta = {}
 
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(run_identifier.value))
+        stream.write(packer.pack(self.sequence_number))
         # Set option to send more based on flag input
         flags = zmq.SNDMORE | flags
         # message header
         self.msgheader.send(self._socket, meta=meta, flags=flags)
-        self._socket.send([run_identifier, self.sequence_number], flags=flags)
+        self._socket.send(
+            stream.getbuffer(),
+            flags=flags,
+        )
 
         # payload
         flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
-        return self._socket.send(msgpack.packb(payload), flags=flags)
+        return self._socket.send(packer.pack(payload), flags=flags)
 
     def recv(self, flags: int = 0) -> CDTPMessage:
         """Receive a multi-part data transmission.
@@ -145,6 +151,20 @@ class DataTransmitter:
             return None
         msg = CDTPMessage()
         msg.set_header(*self.msgheader.decode(datamsg[0]))
-        msg.msgtype, msg.sequence_number = msgpack.unpackb(datamsg[1])
-        msg.payload = msgpack.unpackb(datamsg[2])
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(datamsg[1])
+
+        # Retrieve sequence identifier and number
+        try:
+            msg.msgtype = CDTPMessageIdentifier(unpacker.unpack())
+        except ValueError:
+            raise RuntimeError(
+                f"Received invalid sequence identifier with msg: {msg.msgtype}"
+            )
+        msg.sequence_number = unpacker.unpack()
+
+        # Retrieve payload
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(datamsg[2])
+        msg.payload = unpacker.unpack()
         return msg
