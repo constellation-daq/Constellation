@@ -152,12 +152,14 @@ class DataReceiver(Satellite):
         self._puller_threads.pop(uuid)
 
     def do_initializing(self, payload: any) -> str:
+        return super().do_initializing(payload)
+
+    def do_launching(self, payload: any) -> str:
         """Set up threads to listen to interfaces.
 
         Stops any still-running threads.
 
         """
-        self._stop_pull_threads(10.0)
         # Set up the data pusher which will transmit
         # data placed into the queue via ZMQ socket.
         self._stop_pulling = threading.Event()
@@ -176,7 +178,11 @@ class DataReceiver(Satellite):
             thread.start()
             self._puller_threads[uuid] = thread
             self.log.info(f"Satellite {self.name} pulling data from {address}:{port}")
-        return "Initialized"
+        return super().do_launching(payload)
+
+    def do_landing(self, payload: any) -> str:
+        self._stop_pull_threads(10.0)
+        return super().do_landing(payload)
 
     def on_failure(self):
         """Stop all threads."""
