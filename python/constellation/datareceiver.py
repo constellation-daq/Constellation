@@ -102,7 +102,7 @@ class DataReceiver(Satellite):
         self.data_queue = Queue()
         self._stop_pulling = None
         self._pull_interfaces = {}
-        self._puller_threads = list[PullThread]()
+        self._puller_threads = dict[str:PullThread]()
         self._stop_pulling = threading.Event()
         self._run_event = threading.Event()
 
@@ -129,15 +129,16 @@ class DataReceiver(Satellite):
 
         # NOTE: Not sure this is the right way to handle late-coming satellite offers
         if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
+            uuid = str(service.host_uuid)
             thread = PullThread(
-                name=str(service.host_uuid),
+                name=uuid,
                 stopevt=self._stop_pulling,
                 interface=f"tcp://{service.address}:{service.port}",
                 queue=self.data_queue,
                 context=self.context,
                 daemon=True,  # terminate with the main thread
             )
-            self._puller_threads.append(thread)
+            self._puller_threads[uuid] = thread
             thread.start()
             self.log.info(
                 f"Satellite {self.name} pulling data from {service.address}:{service.port}"
@@ -146,7 +147,7 @@ class DataReceiver(Satellite):
     def _remove_sender(self, service: DiscoveredService):
         """Removes sender from pool"""
         uuid = str(service.host_uuid)
-        self._puller_threads(uuid).join()
+        self._puller_threads[uuid].join()
         self._pull_interfaces.pop(uuid)
         self._puller_threads.pop(uuid)
 
@@ -173,7 +174,7 @@ class DataReceiver(Satellite):
             )
             thread.name = f"{self.name}_{address}_{port}_pull-thread"
             thread.start()
-            self._puller_threads.append(thread)
+            self._puller_threads[uuid] = thread
             self.log.info(f"Satellite {self.name} pulling data from {address}:{port}")
         return "Initialized"
 
