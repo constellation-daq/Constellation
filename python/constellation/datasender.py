@@ -114,6 +114,7 @@ class DataSender(Satellite):
             self.log.warning("Unable to close push thread. Process timed out.")
         return super().do_landing(payload)
 
+    def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.
 
         This method will be executed in a separate thread by the underlying
@@ -130,7 +131,7 @@ class DataSender(Satellite):
 class RandomDataSender(DataSender):
     """Constellation Satellite which pushes RANDOM data via ZMQ."""
 
-    def do_run(self):
+    def do_run(self, payload: any) -> str:
         """Example implementation that generates random values."""
         payload = os.urandom(1024)
 
@@ -147,6 +148,7 @@ class RandomDataSender(DataSender):
         self.log.info(
             f"total time for {num} evt / {num * len(payload) / 1024 / 1024}MB: {(t1 - t0)/1000000000}s"
         )
+        return "Finished acquisition"
 
 
 # -------------------------------------------------------------------------
