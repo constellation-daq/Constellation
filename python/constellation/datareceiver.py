@@ -229,13 +229,13 @@ class H5DataReceiverWriter(DataReceiver):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.run_number: dict[str, int] = {}
+        self.run_number = 0
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
 
     def do_initializing(self, payload: any) -> str:
         super().do_initializing(payload)
         self.nameformat = self.config.setdefault(
-            "name_format", "default_name_{date}.h5"
+            "name_format", "default_name_{run_number}_{date}.h5"
         )
         return "Initializing"
 
@@ -243,7 +243,8 @@ class H5DataReceiverWriter(DataReceiver):
         """Open the hdf5 file and return the file object."""
         h5file = None
         self.filename = self.nameformat.format(
-            date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
+            run_number=self.run_number,
+            date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
         )
         if os.path.isfile(self.filename):
             self.log.error(f"file already exists: {self.filename}")
@@ -319,7 +320,7 @@ class H5DataReceiverWriter(DataReceiver):
         try:
             if item.msgtype == CDTPMessageIdentifier.BOR.value:
                 self.run_number[item.name] += 1
-                title = "data_run_" + str(self.run_number[item.name])
+                title = "data_run_" + str(self.run_number)
                 dset = grp.create_dataset(
                     title,
                     data=np.frombuffer(
@@ -339,7 +340,7 @@ class H5DataReceiverWriter(DataReceiver):
                 new_data = np.frombuffer(
                     item.payload, dtype=item.meta.get("dtype", float)
                 )
-                title = "data_run_" + str(self.run_number[item.name])
+                title = "data_run_" + str(self.run_number)
                 grp[title].resize((grp[title].shape[0] + new_data.shape[0]), axis=0)
                 grp[title][-new_data.shape[0] :] = new_data
 
@@ -347,7 +348,7 @@ class H5DataReceiverWriter(DataReceiver):
                     self.log.info(
                         "Received last packet from %s on run %s",
                         item.name,
-                        self.run_number[item.name],
+                        self.run_number,
                     )
         except Exception:
             self.log.error("Failed to write to file")
@@ -411,6 +412,7 @@ class H5DataReceiverWriter(DataReceiver):
 
         """
 
+        self.run_number += 1
         h5file = self._open_file()
         try:
             # processing loop
