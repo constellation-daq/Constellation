@@ -48,7 +48,7 @@ def test_chirp_beacon_send_recv(mock_chirp_socket):
     with patch("constellation.chirp.CHIRP_HEADER"):
         with pytest.raises(RuntimeError) as e:
             res = receiver.listen()
-        assert "malformed CHIRP header" in str(
+        assert "malformed message" in str(
             e.value
         ), "Wrong chirp header did not trigger expected exception message."
 
