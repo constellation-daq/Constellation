@@ -54,15 +54,18 @@ class PushThread(threading.Thread):
         """Start sending data."""
         transmitter = DataTransmitter(self.name, self._socket)
         BOR = True
+
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
                 payload, meta = self.queue.get(block=True, timeout=0.5)
-
                 # if we have data, send it
                 if BOR:
                     transmitter.send_start(payload, meta)
                     BOR = False
+                elif self.queue.empty():
+                    transmitter.send_end(payload, meta)
+                    BOR = True
                 else:
                     transmitter.send_data(payload, meta)
                 self._logger.debug(
@@ -72,7 +75,6 @@ class PushThread(threading.Thread):
             except Empty:
                 # nothing to process
                 pass
-        transmitter.send_end(payload)
 
 
 class DataSender(Satellite):
