@@ -74,8 +74,8 @@ class SatelliteArray:
         s = [sat for sat in self._satellites if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
-        name = s[0].name
-        cls = s[0].class_name
+        name = s[0]._name
+        cls = s[0]._class_name
         return name, cls
 
     def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
@@ -232,7 +232,7 @@ class BaseController(CHIRPBroadcaster):
             targets = [
                 sat.uuid
                 for sat in self.constellation.satellites
-                if sat.class_name == satcls
+                if sat._class_name == satcls
             ]
             self.log.info(
                 "Sending %s to all %s connected Satellites of class %s.",
