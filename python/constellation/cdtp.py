@@ -87,8 +87,8 @@ class DataTransmitter:
         raise RuntimeError(msg)
 
     def send_end(self, payload, meta: dict = {}, flags: int = 0):
-        msg = "Data transfer sequence not started"
-        raise RuntimeError(msg)
+        self.running = False
+        return self._dispatch(payload, CDTPMessageIdentifier.EOR, meta, flags)
 
     def _dispatch(
         self,
