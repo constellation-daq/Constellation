@@ -89,7 +89,7 @@ void DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
         break;
     }
     case msgpack::type::NIL: {
-        value = std::monostate();
+        *this = std::monostate();
         break;
     }
     default: {
