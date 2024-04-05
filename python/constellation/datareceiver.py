@@ -210,7 +210,7 @@ class DataReceiver(Satellite):
         if self._stop_pulling:
             # stop any running threads
             self._stop_pulling.set()
-            for t in self._puller_threads:
+            for _, t in self._puller_threads.items():
                 if t.is_alive():
                     t.join(timeout)
                     # check in case we timed out:
