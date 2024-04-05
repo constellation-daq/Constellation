@@ -53,21 +53,17 @@ class PushThread(threading.Thread):
     def run(self):
         """Start sending data."""
         transmitter = DataTransmitter(self.name, self._socket)
-        BOR = True
-
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
                 payload, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
-                if BOR:
-                    transmitter.send_start(payload, meta)
-                    BOR = False
-                elif self.queue.empty():
-                    transmitter.send_end(payload, meta)
-                    BOR = True
+                if "BOR" in meta:
+                    transmitter.send_start(payload=payload, meta=meta)
+                elif "EOR" in meta:
+                    transmitter.send_end(payload=payload, meta=meta)
                 else:
-                    transmitter.send_data(payload, meta)
+                    transmitter.send_data(payload=payload, meta=meta)
                 self._logger.debug(
                     f"Sending packet number {transmitter.sequence_number}"
                 )
@@ -113,6 +109,12 @@ class DataSender(Satellite):
         except TimeoutError:
             self.log.warning("Unable to close push thread. Process timed out.")
         return super().do_landing(payload)
+
+    def _wrap_start(self, payload: any) -> str:
+        self.data_queue.put(("SETUP HERE", {"BOR": True}))
+        ret = super()._wrap_start(payload)
+        self.data_queue.put((0, {"EOR": True}))
+        return ret
 
     def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.
