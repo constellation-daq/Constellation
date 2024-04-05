@@ -163,7 +163,7 @@ class RandomDataSender(DataSender):
 
 
 def main(args=None):
-    """Start the Lecroy oscilloscope device server."""
+    """Start the Constellation data sender satellite."""
     import argparse
 
     parser = argparse.ArgumentParser()
