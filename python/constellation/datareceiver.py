@@ -236,9 +236,8 @@ class H5DataReceiverWriter(DataReceiver):
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
 
     def do_initializing(self, payload: any) -> str:
-        super().do_initializing(payload)
-        self.nameformat = self.config.setdefault(
-            "name_format", "default_name_{run_number}_{date}.h5"
+        self.file_name_pattern = self.config.setdefault(
+            "file_name_pattern", "default_name_{run_number}_{date}.h5"
         )
         return "Initializing"
 
