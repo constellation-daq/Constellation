@@ -45,10 +45,10 @@ namespace constellation::message {
         const config::Dictionary& getTags() const { return tags_; }
 
         /** Return message tag */
-        config::DictionaryValue getTag(const std::string& key) const { return tags_.at(key); }
+        config::Value getTag(const std::string& key) const { return tags_.at(key); }
 
         /** Set message tag */
-        void setTag(const std::string& key, config::DictionaryValue value) { tags_[key] = std::move(value); }
+        void setTag(const std::string& key, config::Value value) { tags_[key] = std::move(value); }
 
         /** Convert message header to human readable string */
         CNSTLN_API virtual std::string to_string() const;

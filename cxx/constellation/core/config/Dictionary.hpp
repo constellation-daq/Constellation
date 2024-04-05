@@ -39,24 +39,24 @@ namespace constellation::config {
      *
      * Allowed types: nil, bool, long int, double, string, time point and vectors thereof
      */
-    using Value = std::variant<std::monostate,
-                               bool,
-                               std::int64_t,
-                               double,
-                               std::string,
-                               std::chrono::system_clock::time_point,
-                               std::vector<std::int64_t>,
-                               std::vector<double>,
-                               std::vector<std::string>>;
+    using value_t = std::variant<std::monostate,
+                                 bool,
+                                 std::int64_t,
+                                 double,
+                                 std::string,
+                                 std::chrono::system_clock::time_point,
+                                 std::vector<std::int64_t>,
+                                 std::vector<double>,
+                                 std::vector<std::string>>;
 
     /**
-     * @class DictionaryValue
+     * @class Value
      * @brief Augmented std::variant with MsgPack packer and unpacker routines
      */
-    class CNSTLN_API DictionaryValue : public Value {
+    class CNSTLN_API Value : public value_t {
     public:
-        using Value::Value;
-        using Value::operator=;
+        using value_t::value_t;
+        using value_t::operator=;
 
         /**
          * @brief Convert value to string representation
@@ -80,7 +80,7 @@ namespace constellation::config {
     /**
      * List type with serialization functions for MessagePack
      */
-    class List final : public std::vector<DictionaryValue> {
+    class List final : public std::vector<Value> {
     public:
         /** Pack dictionary with msgpack */
         CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
@@ -92,7 +92,7 @@ namespace constellation::config {
     /**
      * Dictionary type with serialization functions for MessagePack
      */
-    class Dictionary final : public std::map<std::string, DictionaryValue> {
+    class Dictionary final : public std::map<std::string, Value> {
     public:
         /** Pack dictionary with msgpack */
         CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;

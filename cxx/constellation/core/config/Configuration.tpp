@@ -24,7 +24,7 @@ namespace constellation::config {
             const auto dictval = config_.at(key);
             T val;
             // Value is directly held by variant:
-            if constexpr(is_one_of<T, Value>()) {
+            if constexpr(is_one_of<T, value_t>()) {
                 val = std::get<T>(dictval);
             } else if constexpr(std::is_integral_v<T>) {
                 val = static_cast<T>(std::get<std::int64_t>(dictval));
@@ -75,7 +75,7 @@ namespace constellation::config {
      */
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
         // Value is directly held by variant, let's return:
-        if constexpr(is_one_of<std::vector<T>, Value>()) {
+        if constexpr(is_one_of<std::vector<T>, value_t>()) {
             return get<std::vector<T>>(key);
         } else if constexpr(std::is_integral_v<T>) {
             auto vec = get<std::vector<std::int64_t>>(key);
@@ -114,7 +114,7 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
-        if constexpr(is_one_of<T, Value>()) {
+        if constexpr(is_one_of<T, value_t>()) {
             config_[key] = val;
         } else if constexpr(std::is_same_v<T, size_t>) {
             // FIXME check for overflow
@@ -132,7 +132,7 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::setArray(const std::string& key, const std::vector<T>& val, bool mark_used) {
-        if constexpr(is_one_of<std::vector<T>, Value>()) {
+        if constexpr(is_one_of<std::vector<T>, value_t>()) {
             set<std::vector<T>>(key, val, mark_used);
         } else if constexpr(std::is_integral_v<T>) {
             // FIXME check for overflow

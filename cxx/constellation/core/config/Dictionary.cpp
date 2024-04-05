@@ -18,7 +18,7 @@
 
 using namespace constellation::config;
 
-std::string DictionaryValue::str() const {
+std::string Value::str() const {
     std::ostringstream out {};
 
     std::visit(overload {
@@ -51,11 +51,11 @@ std::string DictionaryValue::str() const {
     return out.str();
 }
 
-std::type_info const& DictionaryValue::type() const {
+std::type_info const& Value::type() const {
     return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, *this);
 }
 
-void DictionaryValue::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+void Value::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     auto visitor = overload {
         [&](const std::monostate&) { msgpack_packer.pack(msgpack::type::nil_t()); },
         [&](const auto& arg) { msgpack_packer.pack(arg); },
@@ -63,7 +63,7 @@ void DictionaryValue::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_pa
     std::visit(visitor, *this);
 }
 
-void DictionaryValue::msgpack_unpack(const msgpack::object& msgpack_object) {
+void Value::msgpack_unpack(const msgpack::object& msgpack_object) {
     switch(msgpack_object.type) {
     case msgpack::type::BOOLEAN: {
         *this = msgpack_object.as<bool>();
@@ -115,7 +115,7 @@ void List::msgpack_unpack(const msgpack::object& msgpack_object) {
     const auto msgpack_array = std::span(msgpack_array_raw.ptr, msgpack_array_raw.size);
 
     for(const auto& msgpack_val : msgpack_array) {
-        auto value = DictionaryValue();
+        auto value = Value();
         value.msgpack_unpack(msgpack_val);
 
         // Insert / overwrite in the map
@@ -148,7 +148,7 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
         const auto key = msgpack_kv.key.as<std::string>();
 
         // Unpack value
-        auto value = DictionaryValue();
+        auto value = Value();
         value.msgpack_unpack(msgpack_kv.val);
 
         // Insert / overwrite in the map
