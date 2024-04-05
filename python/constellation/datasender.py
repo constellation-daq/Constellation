@@ -114,9 +114,9 @@ class DataSender(Satellite):
         return super().do_landing(payload)
 
     def _wrap_start(self, payload: any) -> str:
-        self.data_queue.put(("SETUP HERE", {"BOR": True}))
+        self.data_queue.put(("Run setup Here", {"BOR": True}))
         ret = super()._wrap_start(payload)
-        self.data_queue.put((0, {"EOR": True}))
+        self.data_queue.put(("Run end Here", {"EOR": True}))
         return ret
 
     def do_run(self, payload: any) -> str:
