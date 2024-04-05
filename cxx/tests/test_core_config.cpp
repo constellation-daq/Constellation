@@ -13,6 +13,9 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
+
 #include "constellation/core/config/Configuration.hpp"
 
 using namespace Catch::Matchers;
@@ -74,9 +77,106 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     config.setArray<double>("myarray", {12., 14., 16.});
     REQUIRE(config.getArray<double>("myarray") == std::vector<double>({12., 14., 16.}));
 
-    // config.set<std::vector<size_t>>("my_size_t_vector", {1, 2, 3});
     config.setArray<size_t>("my_size_t_array", {1, 2, 3});
     REQUIRE(config.getArray<size_t>("my_size_t_array") == std::vector<size_t>({1, 2, 3}));
+
+    // FIXME more
+
+    // Non-basic types cannot be set directly but need set/getArray:
+    // config.set<std::vector<size_t>>("my_size_t_vector", {1, 2, 3});
+}
+
+TEST_CASE("Set & Get Path Values", "[core][core::config]") {
+    Configuration config;
+
+    config.set<std::string>("path", "/tmp/somefile.txt");
+    config.set<double>("tisnotapath", 16.5);
+    config.setArray<std::string>("patharray", {"/tmp/somefile.txt", "/tmp/someotherfile.txt"});
+    config.setArray<double>("tisnotapatharray", {16.5, 17.5});
+    config.set<std::string>("relpath", "somefile.txt");
+
+    // Read path without canonicalization
+    REQUIRE(config.getPath("path") == std::filesystem::path("/tmp/somefile.txt"));
+
+    // Attempt to read value that is not a string:
+    REQUIRE_THROWS_AS(config.getPath("tisnotapath"), InvalidTypeError);
+
+    // Read path without canonicalization, setting an extension
+    REQUIRE(config.getPathWithExtension("path", "ini") == std::filesystem::path("/tmp/somefile.ini"));
+    REQUIRE_THROWS_AS(config.getPathWithExtension("path", "ini", true), InvalidValueError);
+
+    // Read path with check for existence
+    REQUIRE_THROWS_AS(config.getPath("path", true), InvalidValueError);
+    REQUIRE_THROWS_MATCHES(config.getPath("path", true),
+                           InvalidValueError,
+                           Message("Value /tmp/somefile.txt of key 'path' is not valid: path /tmp/somefile.txt not found"));
+
+    // Read relative path
+    auto relpath = config.getPath("relpath");
+    REQUIRE(!std::filesystem::relative(relpath, std::filesystem::current_path()).empty());
+
+    // Read path array without canonicalization
+    REQUIRE(config.getPathArray("patharray") ==
+            std::vector<std::filesystem::path>({"/tmp/somefile.txt", "/tmp/someotherfile.txt"}));
+
+    // Attempt to read value that is not a string:
+    REQUIRE_THROWS_AS(config.getPathArray("tisnotapatharray"), InvalidTypeError);
+
+    // config.setArray<size_t>("my_size_t_array", {1, 2, 3});
+    // REQUIRE(config.getArray<size_t>("my_size_t_array") == std::vector<size_t>({1, 2, 3}));
+}
+
+TEST_CASE("Access Values as Text", "[core][core::config]") {
+    Configuration config;
+
+    config.set("bool", true);
+    config.set("int64", std::int64_t(63));
+    config.set("size", size_t(1));
+    config.set("uint64", std::uint64_t(64));
+    config.set("uint8", std::uint8_t(8));
+    config.set("double", double(1.3));
+    config.set("float", float(3.14));
+    config.set("string", std::string("a"));
+
+    enum MyEnum {
+        ONE,
+        TWO,
+    };
+    config.set("myenum", MyEnum::ONE);
+
+    std::chrono::time_point<std::chrono::system_clock> tp {};
+    config.set("time", tp);
+
+    // Compare text representation
+    REQUIRE(config.getText("bool") == "true");
+    REQUIRE(config.getText("int64") == "63");
+    REQUIRE(config.getText("size") == "1");
+    REQUIRE(config.getText("uint64") == "64");
+    REQUIRE(config.getText("uint8") == "8");
+    REQUIRE(config.getText("double") == "1.3");
+    REQUIRE(config.getText("float") == "3.14");
+    REQUIRE(config.getText("string") == "a");
+    REQUIRE(config.getText("myenum") == "ONE");
+    REQUIRE(config.getText("time") == "1970-01-01 00:00:00.000000000");
+
+    // Get text with default for existing key:
+    REQUIRE(config.getText("bool", "false") == "true");
+    // Get text with default for non-existent key:
+    REQUIRE(config.getText("foo", "false") == "false");
+}
+
+TEST_CASE("Count Key Appearances", "[core][core::config]") {
+    Configuration config;
+
+    config.set("bool", true);
+    config.set("int64", std::int64_t(63));
+
+    REQUIRE(config.count({"nokey", "otherkey"}) == 0);
+    REQUIRE(config.count({"bool", "notbool"}) == 1);
+    REQUIRE(config.count({"bool", "int64"}) == 2);
+
+    REQUIRE_THROWS_AS(config.count({}), std::invalid_argument);
+    REQUIRE_THROWS_MATCHES(config.count({}), std::invalid_argument, Message("list of keys cannot be empty"));
 }
 
 TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
@@ -87,6 +187,21 @@ TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
     // Check that the key is marked as used
     REQUIRE(config.getUnusedKeys().empty());
     REQUIRE(config.get<double>("myval") == 3.14);
+}
+
+TEST_CASE("Get all Values", "[core][core::config]") {
+    Configuration config;
+
+    config.set("myval", 3.14);
+    config.set("_internal", 1);
+
+    auto keys = config.getAll();
+
+    // Check that we have "myval"
+    REQUIRE(std::get<double>(keys.at("myval")) == 3.14);
+
+    // Check that only one key was returned and the internal withheld:
+    REQUIRE(keys.size() == 1);
 }
 
 TEST_CASE("Set Default Value", "[core][core::config]") {
