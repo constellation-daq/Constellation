@@ -106,7 +106,7 @@ class DataReceiver(Satellite):
         self.data_queue = Queue()
         self._stop_pulling = None
         self._pull_interfaces = {}
-        self._puller_threads = dict[str:PullThread]()
+        self._puller_threads = dict[str, PullThread]()
         self._stop_pulling = threading.Event()
 
         self.request(CHIRPServiceIdentifier.DATA)
@@ -219,7 +219,7 @@ class DataReceiver(Satellite):
                             "Could not stop data-pulling thread {t.name} in time."
                         )
             self._stop_pulling = None
-            self._puller_threads = list[PullThread]()
+            self._puller_threads = dict[str, PullThread]()
 
     def do_stopping(self, payload: any) -> str:
         return super().do_stopping(payload)
