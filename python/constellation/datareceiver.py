@@ -230,6 +230,7 @@ class H5DataReceiverWriter(DataReceiver):
         super().__init__(*args, **kwargs)
 
         self.run_number = 0
+        self.running_sats = []
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
 
     def do_initializing(self, payload: any) -> str:
@@ -423,11 +424,19 @@ class H5DataReceiverWriter(DataReceiver):
 
                     self.log.debug(f"Received: {item}")
 
-                    # if we have data, send it
+                    # if we have data, write it
                     if isinstance(item, CDTPMessage):
+                        if (
+                            item.msgtype != CDTPMessageIdentifier.BOR
+                            and item.name not in self.running_sats
+                        ):
+                            self.log.warning(
+                                f"Received item from {item.name} that is not part of current run"
+                            )
+                            continue
                         self.write_data_concat(
                             h5file, item
-                        )  # Could be replaced w/ write_data_concat or write_data_virtual
+                        )  # NOTE: Could be replaced w/ write_data_concat or write_data_virtual
                     else:
                         raise RuntimeError(f"Unable to handle queue item: {type(item)}")
                     self.data_queue.task_done()
