@@ -106,19 +106,19 @@ std::filesystem::path Configuration::getPathWithExtension(const std::string& key
  *
  * For all relative paths the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
-// std::vector<std::filesystem::path> Configuration::getPathArray(const std::string& key, bool check_exists) const {
-//     std::vector<std::filesystem::path> path_array;
+std::vector<std::filesystem::path> Configuration::getPathArray(const std::string& key, bool check_exists) const {
+    std::vector<std::filesystem::path> path_array;
 
-//     // Convert all paths to absolute
-//     try {
-//         for(auto& path : getArray<std::string>(key)) {
-//             path_array.emplace_back(path_to_absolute(path, check_exists));
-//         }
-//         return path_array;
-//     } catch(std::invalid_argument& e) {
-//         throw InvalidValueError(*this, key, e.what());
-//     }
-// }
+    // Convert all paths to absolute
+    try {
+        for(auto& path : getArray<std::string>(key)) {
+            path_array.emplace_back(path_to_absolute(path, check_exists));
+        }
+        return path_array;
+    } catch(std::invalid_argument& e) {
+        throw InvalidValueError(config_.at(key).str(), key, e.what());
+    }
+}
 /**
  * @throws std::invalid_argument If the path does not exists
  */

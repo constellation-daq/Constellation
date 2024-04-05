@@ -196,7 +196,7 @@ namespace constellation::config {
          */
         std::filesystem::path getPathWithExtension(const std::string& key,
                                                    const std::string& extension,
-                                                   bool check_exists) const;
+                                                   bool check_exists = false) const;
 
         /**
          * @brief Get array of absolute paths to files with paths relative to the configuration
