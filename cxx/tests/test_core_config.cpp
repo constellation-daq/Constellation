@@ -320,4 +320,22 @@ TEST_CASE("Merge Configurations", "[core][core::config]") {
     REQUIRE(config_a.get<bool>("bool") == true);
 }
 
+TEST_CASE("Generate Configurations from ZMQ Frame", "[core][core::config]") {
+
+    // Create dictionary
+    Dictionary dict;
+    dict["key"] = 3.12;
+    dict["array"] = std::vector<std::string>({"one", "two", "three"});
+
+    // Add payload frame
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, dict);
+    auto payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+
+    Configuration config(payload);
+
+    REQUIRE(config.get<double>("key") == 3.12);
+    REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

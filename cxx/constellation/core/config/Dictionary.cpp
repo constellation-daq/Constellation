@@ -78,37 +78,79 @@ void Value::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) cons
 }
 
 void Value::msgpack_unpack(const msgpack::object& msgpack_object) {
-    switch(msgpack_object.type) {
-    case msgpack::type::BOOLEAN: {
-        *this = msgpack_object.as<bool>();
-        break;
-    }
-    case msgpack::type::POSITIVE_INTEGER:
-    case msgpack::type::NEGATIVE_INTEGER: {
-        *this = msgpack_object.as<std::int64_t>();
-        break;
-    }
-    case msgpack::type::FLOAT32:
-    case msgpack::type::FLOAT64: {
-        *this = msgpack_object.as<double>();
-        break;
-    }
-    case msgpack::type::STR: {
-        *this = msgpack_object.as<std::string>();
-        break;
-    }
-    case msgpack::type::EXT: {
-        // Try to convert to time_point, throws if wrong EXT type
-        *this = msgpack_object.as<std::chrono::system_clock::time_point>();
-        break;
-    }
-    case msgpack::type::NIL: {
-        *this = std::monostate();
-        break;
-    }
-    default: {
-        throw msgpack::type_error();
-    }
+
+    // Check for arrays - we decode them in one go to ensure same-type values
+    if(msgpack_object.type == msgpack::type::ARRAY) {
+        const auto msgpack_array_raw = msgpack_object.via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
+        const auto msgpack_array = std::span(msgpack_array_raw.ptr, msgpack_array_raw.size);
+
+        // If empty we only store nil:
+        if(msgpack_array.empty()) {
+            *this = std::monostate();
+        }
+
+        switch(msgpack_array.front().type) {
+        case msgpack::type::BOOLEAN: {
+            *this = msgpack_object.as<std::vector<bool>>();
+            break;
+        }
+        case msgpack::type::POSITIVE_INTEGER:
+        case msgpack::type::NEGATIVE_INTEGER: {
+            *this = msgpack_object.as<std::vector<std::int64_t>>();
+            break;
+        }
+        case msgpack::type::FLOAT32:
+        case msgpack::type::FLOAT64: {
+            *this = msgpack_object.as<std::vector<double>>();
+            break;
+        }
+        case msgpack::type::STR: {
+            *this = msgpack_object.as<std::vector<std::string>>();
+            break;
+        }
+        case msgpack::type::EXT: {
+            // Try to convert to time_point, throws if wrong EXT type
+            *this = msgpack_object.as<std::vector<std::chrono::system_clock::time_point>>();
+            break;
+        }
+        default: {
+            throw msgpack::type_error();
+        }
+        }
+
+    } else {
+        switch(msgpack_object.type) {
+        case msgpack::type::BOOLEAN: {
+            *this = msgpack_object.as<bool>();
+            break;
+        }
+        case msgpack::type::POSITIVE_INTEGER:
+        case msgpack::type::NEGATIVE_INTEGER: {
+            *this = msgpack_object.as<std::int64_t>();
+            break;
+        }
+        case msgpack::type::FLOAT32:
+        case msgpack::type::FLOAT64: {
+            *this = msgpack_object.as<double>();
+            break;
+        }
+        case msgpack::type::STR: {
+            *this = msgpack_object.as<std::string>();
+            break;
+        }
+        case msgpack::type::EXT: {
+            // Try to convert to time_point, throws if wrong EXT type
+            *this = msgpack_object.as<std::chrono::system_clock::time_point>();
+            break;
+        }
+        case msgpack::type::NIL: {
+            *this = std::monostate();
+            break;
+        }
+        default: {
+            throw msgpack::type_error();
+        }
+        }
     }
 }
 
