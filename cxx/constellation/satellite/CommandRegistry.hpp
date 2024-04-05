@@ -88,7 +88,7 @@ namespace constellation::satellite {
          * @throws MissingUserCommandArguments if the number of arguments does not match
          * @throws std::invalid_argument if an argument or the return value could not be decoded or encoded to std::string
          */
-        config::Value call(message::State state, const std::string& name, const std::vector<config::Value>& args);
+        config::Value call(message::State state, const std::string& name, const config::List& args);
 
         /**
          * @brief Generate map of commands with comprehensive description
@@ -102,7 +102,7 @@ namespace constellation::satellite {
         std::map<std::string, std::string> describeCommands() const;
 
     private:
-        using Call = std::function<config::Value(const std::vector<config::Value>&)>;
+        using Call = std::function<config::Value(const config::List&)>;
 
         /**
          * @struct Command
@@ -120,16 +120,19 @@ namespace constellation::satellite {
         // Map of registered commands
         std::unordered_map<std::string, Command> commands_;
 
+        template <typename T> static inline T value(const config::Value& value);
+        template <typename T> static inline config::Value convert(const T& value);
+
         // Wrapper for command with return value
         template <typename R, typename... Args> struct Wrapper {
             std::function<R(Args...)> func;
 
-            config::Value operator()(const std::vector<config::Value>& args) {
+            config::Value operator()(const config::List& args) {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            config::Value call_command(const std::vector<config::Value>& args, std::index_sequence<I...> /*unused*/) {
-                return config::Value::convert(func(config::Value::value<typename std::decay_t<Args>>(args.at(I))...));
+            config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
+                return convert(func(value<typename std::decay_t<Args>>(args.at(I))...));
             }
         };
 
@@ -137,12 +140,12 @@ namespace constellation::satellite {
         template <typename... Args> struct Wrapper<void, Args...> {
             std::function<void(Args...)> func;
 
-            config::Value operator()(const std::vector<config::Value>& args) {
+            config::Value operator()(const config::List& args) {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
             template <std::size_t... I>
-            config::Value call_command(const std::vector<config::Value>& args, std::index_sequence<I...> /*unused*/) {
-                func(config::Value::value<typename std::decay_t<Args>>(args.at(I))...);
+            config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
+                func(value<typename std::decay_t<Args>>(args.at(I))...);
                 return {};
             }
         };
@@ -160,6 +163,32 @@ namespace constellation::satellite {
             return Wrapper<R, Args...> {std::move(function)};
         }
     };
+
+    template <typename T> inline T CommandRegistry::value(const config::Value& value) {
+        try {
+            return std::get<T>(value);
+        } catch(std::bad_variant_access&) {
+            std::string msg;
+            msg += "Mismatch of argument type \"";
+            msg += utils::demangle(typeid(T).name());
+            msg += "\" to provided type \"";
+            msg += utils::demangle(value.type().name());
+            msg += "\"";
+            throw std::invalid_argument(msg);
+        }
+    }
+
+    template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
+        try {
+            return config::Value(value);
+        } catch(std::bad_variant_access&) {
+            std::string msg;
+            msg += "Error casting provided type \"";
+            msg += utils::demangle(typeid(T).name());
+            msg += "\" to dictionary value";
+            throw std::invalid_argument(msg);
+        }
+    }
 
     template <typename R, typename... Args>
     inline void CommandRegistry::add(const std::string& name,

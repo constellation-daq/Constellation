@@ -60,7 +60,7 @@ namespace constellation::utils {
     template <typename T>
         requires std::is_arithmetic_v<T>
     inline std::string to_string(T value) {
-        std::ostringstream out;
+        const std::ostringstream out;
         out << value;
         if(out.fail()) {
             std::string msg;

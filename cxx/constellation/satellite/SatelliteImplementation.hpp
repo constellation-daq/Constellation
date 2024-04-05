@@ -70,7 +70,7 @@ namespace constellation::satellite {
 
         // handle user commands
         std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
-        handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& arguments);
+        handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& payload);
 
         // main loop
         void main_loop(const std::stop_token& stop_token);

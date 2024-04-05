@@ -18,7 +18,7 @@ using namespace constellation;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-config::Value CommandRegistry::call(message::State state, const std::string& name, const std::vector<config::Value>& args) {
+config::Value CommandRegistry::call(message::State state, const std::string& name, const config::List& args) {
     auto cmd = commands_.find(name);
 
     // Check if this is a known command at all
