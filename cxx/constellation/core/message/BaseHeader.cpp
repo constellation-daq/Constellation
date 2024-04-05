@@ -83,7 +83,18 @@ std::string BaseHeader::to_string() const {
         << "Tags:"sv;
     for(const auto& entry : tags_) {
         out << "\n "sv << entry.first << ": "sv;
-        std::visit([&](auto&& arg) { out << arg; }, entry.second);
+        std::visit(
+            [&](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr(std::is_same_v<T, std::monostate>) {
+                    // Monostate => nil
+                    out << "nil";
+                } else {
+                    // Other types have implementation
+                    out << arg;
+                }
+            },
+            entry.second);
     }
     return out.str();
 }
