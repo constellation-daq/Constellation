@@ -77,7 +77,7 @@ namespace constellation::config {
         KeyValueParseError(const std::string& key_value, const std::string& reason) {
             error_message_ = "Could not parse key / value pair '";
             error_message_ += key_value;
-            error_message_ += ": " + reason;
+            error_message_ += "': " + reason;
         }
     };
 

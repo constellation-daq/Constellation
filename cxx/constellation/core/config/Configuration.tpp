@@ -119,6 +119,10 @@ namespace constellation::config {
         } else if constexpr(std::is_same_v<T, size_t>) {
             // FIXME check for overflow
             config_[key] = static_cast<std::int64_t>(val);
+        } else if constexpr(std::is_integral_v<T>) {
+            config_[key] = static_cast<std::int64_t>(val);
+        } else if constexpr(std::is_floating_point_v<T>) {
+            config_[key] = static_cast<double>(val);
         } else if constexpr(std::is_enum_v<T>) {
             config_[key] = std::string(magic_enum::enum_name<T>(val));
         } else {
@@ -137,6 +141,9 @@ namespace constellation::config {
         } else if constexpr(std::is_integral_v<T>) {
             // FIXME check for overflow
             std::vector<std::int64_t> nval(val.begin(), val.end());
+            set(key, nval, mark_used);
+        } else if constexpr(std::is_floating_point_v<T>) {
+            std::vector<double> nval(val.begin(), val.end());
             set(key, nval, mark_used);
         } else if constexpr(std::is_enum_v<T>) {
             std::vector<std::string> nval;

@@ -74,16 +74,42 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
 TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     Configuration config;
 
-    config.setArray<double>("myarray", {12., 14., 16.});
-    REQUIRE(config.getArray<double>("myarray") == std::vector<double>({12., 14., 16.}));
+    config.setArray<bool>("bool", {true, false, true});
 
-    config.setArray<size_t>("my_size_t_array", {1, 2, 3});
-    REQUIRE(config.getArray<size_t>("my_size_t_array") == std::vector<size_t>({1, 2, 3}));
+    config.setArray<std::int64_t>("int64", {63, 62, 61});
+    config.setArray<size_t>("size", {1, 2, 3});
+    config.setArray<std::uint64_t>("uint64", {64, 65, 66});
+    config.setArray<std::uint8_t>("uint8", {8, 7, 6});
 
-    // FIXME more
+    config.setArray<double>("double", {1.3, 3.1});
+    config.setArray<float>("float", {3.14F, 1.43F});
 
-    // Non-basic types cannot be set directly but need set/getArray:
-    // config.set<std::vector<size_t>>("my_size_t_vector", {1, 2, 3});
+    config.setArray<std::string>("string", {"a", "b", "c"});
+
+    enum MyEnum {
+        ONE,
+        TWO,
+    };
+    config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
+
+    auto tp = std::chrono::system_clock::now();
+    config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
+
+    // Read values back
+    REQUIRE(config.getArray<bool>("bool") == std::vector<bool>({true, false, true}));
+
+    REQUIRE(config.getArray<std::int64_t>("int64") == std::vector<std::int64_t>({63, 62, 61}));
+    REQUIRE(config.getArray<size_t>("size") == std::vector<size_t>({1, 2, 3}));
+    REQUIRE(config.getArray<std::uint64_t>("uint64") == std::vector<std::uint64_t>({64, 65, 66}));
+    REQUIRE(config.getArray<std::uint8_t>("uint8") == std::vector<std::uint8_t>({8, 7, 6}));
+
+    REQUIRE(config.getArray<double>("double") == std::vector<double>({1.3, 3.1}));
+    REQUIRE(config.getArray<float>("float") == std::vector<float>({3.14F, 1.43F}));
+
+    REQUIRE(config.getArray<std::string>("string") == std::vector<std::string>({"a", "b", "c"}));
+
+    REQUIRE(config.getArray<std::chrono::system_clock::time_point>("time") ==
+            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 }
 
 TEST_CASE("Set & Get Path Values", "[core][core::config]") {

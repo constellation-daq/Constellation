@@ -24,6 +24,13 @@ std::string Value::str() const {
     std::visit(overload {
                    [&](const std::monostate&) { out << "NULL"; },
                    [&](const bool& arg) { out << std::boolalpha << arg; },
+                   [&](const std::vector<bool>& arg) {
+                       out << "[" << std::boolalpha;
+                       for(const auto& val : arg) {
+                           out << val << ", ";
+                       }
+                       out << "]";
+                   },
                    [&](const std::vector<double>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
@@ -39,6 +46,13 @@ std::string Value::str() const {
                        out << "]";
                    },
                    [&](const std::vector<std::string>& arg) {
+                       out << "[";
+                       for(const auto& val : arg) {
+                           out << val << ", ";
+                       }
+                       out << "]";
+                   },
+                   [&](const std::vector<std::chrono::system_clock::time_point>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
                            out << val << ", ";

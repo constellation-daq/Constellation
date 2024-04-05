@@ -45,9 +45,11 @@ namespace constellation::config {
                                  double,
                                  std::string,
                                  std::chrono::system_clock::time_point,
+                                 std::vector<bool>,
                                  std::vector<std::int64_t>,
                                  std::vector<double>,
-                                 std::vector<std::string>>;
+                                 std::vector<std::string>,
+                                 std::vector<std::chrono::system_clock::time_point>>;
 
     /**
      * @class Value
