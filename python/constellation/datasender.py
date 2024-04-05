@@ -143,7 +143,7 @@ class RandomDataSender(DataSender):
         t0 = time.time_ns()
 
         num = 0
-        while not self._stop_running.is_set():
+        while not self._state_thread_evt.is_set():
             self.data_queue.put((payload, {}))
             self.log.debug(f"Queueing data packet {num}")
             num += 1
