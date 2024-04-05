@@ -83,6 +83,10 @@ class PullThread(threading.Thread):
                 )
                 continue
 
+    def join(self, *args, **kwargs):
+        self._socket.close()
+        return super().join(*args, **kwargs)
+
 
 def extract_num(s, p, ret=0):
     """Help function used for sorting data keys in write_data_virtual"""

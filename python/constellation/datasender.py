@@ -72,6 +72,10 @@ class PushThread(threading.Thread):
                 # nothing to process
                 pass
 
+    def join(self, *args, **kwargs):
+        self._socket.close()
+        return super().join(*args, **kwargs)
+
 
 class DataSender(Satellite):
     """Constellation Satellite which pushes data via ZMQ."""
