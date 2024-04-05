@@ -303,56 +303,81 @@ class H5DataReceiverWriter(DataReceiver):
     def write_data_concat(self, h5file: h5py.File, item: CDTPMessage):
         """Write data into HDF5 format
 
-        Format: h5file -> Group (name) -> Single Concatenated Dataset (item)
+        Format: h5file -> Group (name) ->   BOR Dataset
+                                            Single Concatenated Dataset
+                                            EOR Dataset
 
         Writes data to file by concatenating item.payload to dataset inside group name.
-
-        # TODO add a call to a "write_data" method that can be
-        # overloaded by inheriting classes
         """
-        # Check if group already exists
-        try:
-            if item.name not in h5file.keys():
+        # Check if group already exists.
+        if item.msgtype == CDTPMessageIdentifier.BOR and item.name not in h5file.keys():
+            self.running_sats.append(item.name)
+            try:
                 grp = h5file.create_group(item.name)
-        except Exception as e:
-            self.log.error(
-                "Failed to create group for dataset. Exception occurred: %s", e
-            )
-
-        try:
-            grp = h5file[item.name]
-            if item.msgtype == CDTPMessageIdentifier.BOR:
-                title = "data_run_" + str(self.run_number)
+                title = "BOR_" + str(self.run_number)
                 dset = grp.create_dataset(
                     title,
-                    data=np.frombuffer(
-                        item.payload, dtype=item.meta.get("dtype", float)
-                    ),
-                    chunks=True,
-                    dtype=item.meta.get("dtype", None),
-                    maxshape=(None,),
+                    data=item.payload,
                 )
 
-                dset.attrs["CLASS"] = "DETECTOR_DATA"
+                dset.attrs["CLASS"] = "DETECTOR_BOR"
                 for key, val in item.meta.items():
                     dset.attrs[key] = val
-            else:
-                # Extend current dataset with data obtained from item
-                new_data = np.frombuffer(
-                    item.payload, dtype=item.meta.get("dtype", float)
-                )
-                title = "data_run_" + str(self.run_number)
-                grp[title].resize((grp[title].shape[0] + new_data.shape[0]), axis=0)
-                grp[title][-new_data.shape[0] :] = new_data
 
-                if item.msgtype == CDTPMessageIdentifier.EOR:
-                    self.log.info(
-                        "Received last packet from %s on run %s",
-                        item.name,
-                        self.run_number,
+            except Exception as e:
+                self.log.error(
+                    "Failed to create group for dataset. Exception occurred: %s", e
+                )
+
+        elif item.msgtype == CDTPMessageIdentifier.DAT:
+            try:
+                grp = h5file[item.name]
+                title = "data_run_" + str(self.run_number)
+
+                # Create dataset if it doesn't already exist
+                if title not in grp:
+                    dset = grp.create_dataset(
+                        title,
+                        data=item.payload,
+                        chunks=True,
+                        dtype=item.meta.get("dtype", None),
+                        maxshape=(None,),
                     )
-        except Exception as e:
-            self.log.error("Failed to write to file. Exception occurred: %s", e)
+
+                    dset.attrs["CLASS"] = "DETECTOR_DATA"
+                    for key, val in item.meta.items():
+                        dset.attrs[key] = val
+
+                else:
+                    # Extend current dataset with data obtained from item
+                    new_data = item.payload
+                    grp[title].resize((grp[title].shape[0] + len(new_data)), axis=0)
+                    grp[title][-len(new_data) :] = new_data
+
+            except Exception as e:
+                self.log.error("Failed to write to file. Exception occurred: %s", e)
+
+        elif item.msgtype == CDTPMessageIdentifier.EOR:
+            try:
+                grp = h5file[item.name]
+                title = "EOR_" + str(self.run_number)
+                dset = grp.create_dataset(
+                    title,
+                    data=item.payload,
+                )
+
+                dset.attrs["CLASS"] = "DETECTOR_EOR"
+                for key, val in item.meta.items():
+                    dset.attrs[key] = val
+                self.log.info(
+                    "Wrote last packet from %s on run %s",
+                    item.name,
+                    self.run_number,
+                )
+            except Exception as e:
+                self.log.error(
+                    "Failed to create group for dataset. Exception occurred: %s", e
+                )
 
         self.log.debug(
             f"Processing data packet {item.sequence_number} from {item.name}"
