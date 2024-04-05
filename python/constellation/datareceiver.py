@@ -471,6 +471,7 @@ class H5DataReceiverWriter(DataReceiver):
                     pass
         finally:
             h5file.close()
+            self.running_sats = []
             return "Finished Acquisition"
 
 
