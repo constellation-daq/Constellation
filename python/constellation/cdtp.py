@@ -78,23 +78,23 @@ class DataTransmitter:
     def send_start(self, payload, meta: dict = {}, flags: int = 0):
         self.sequence_number = 0
         self.running = True
-        return self._dispatch(payload, CDTPMessageIdentifier.BOR, meta, flags)
+        return self._dispatch(CDTPMessageIdentifier.BOR, payload, meta, flags)
 
     def send_data(self, payload, meta: dict = {}, flags: int = 0):
         if self.running:
             self.sequence_number += 1
-            return self._dispatch(payload, CDTPMessageIdentifier.DAT, meta, flags)
+            return self._dispatch(CDTPMessageIdentifier.DAT, payload, meta, flags)
         msg = "Data transfer sequence not started"
         raise RuntimeError(msg)
 
     def send_end(self, payload, meta: dict = {}, flags: int = 0):
         self.running = False
-        return self._dispatch(payload, CDTPMessageIdentifier.EOR, meta, flags)
+        return self._dispatch(CDTPMessageIdentifier.EOR, payload, meta, flags)
 
     def _dispatch(
         self,
-        payload,
         run_identifier: CDTPMessageIdentifier,
+        payload: any = None,
         meta: dict = {},
         flags: int = 0,
     ):
@@ -123,14 +123,17 @@ class DataTransmitter:
         flags = zmq.SNDMORE | flags
         # message header
         self.msgheader.send(self._socket, meta=meta, flags=flags)
+        if payload is None:
+            flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
         self._socket.send(
             stream.getbuffer(),
             flags=flags,
         )
 
         # payload
-        flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
-        return self._socket.send(packer.pack(payload), flags=flags)
+        if payload is not None:
+            flags = flags & (~zmq.SNDMORE)  # flip SNDMORE bit
+            self._socket.send(packer.pack(payload), flags=flags)
 
     def recv(self, flags: int = 0) -> CDTPMessage:
         """Receive a multi-part data transmission.
@@ -163,8 +166,11 @@ class DataTransmitter:
             )
         msg.sequence_number = unpacker.unpack()
 
-        # Retrieve payload
-        unpacker = msgpack.Unpacker()
-        unpacker.feed(datamsg[2])
-        msg.payload = unpacker.unpack()
+        try:
+            # Retrieve payload
+            unpacker = msgpack.Unpacker()
+            unpacker.feed(datamsg[2])
+            msg.payload = unpacker.unpack()
+        except IndexError:
+            pass
         return msg
