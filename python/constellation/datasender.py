@@ -104,7 +104,6 @@ class DataSender(Satellite):
     def do_landing(self, payload: any) -> str:
         self._stop_pusher.set()
         try:
-            time.sleep(60)
             self._push_thread.join(timeout=10)
         except TimeoutError:
             self.log.warning("Unable to close push thread. Process timed out.")
