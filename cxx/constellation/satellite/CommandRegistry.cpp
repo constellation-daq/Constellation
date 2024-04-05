@@ -27,6 +27,7 @@ config::Value CommandRegistry::call(message::State state, const std::string& nam
     }
 
     // Check if we are allowed to call this command from the current state:
+    // Note: empty state list means that everything is allowed.
     if(!cmd->second.valid_states.empty() && !cmd->second.valid_states.contains(state)) {
         throw InvalidUserCommand(name, state);
     }
@@ -52,7 +53,7 @@ std::map<std::string, std::string> CommandRegistry::describeCommands() const {
         description += std::to_string(cmd.second.nargs);
         description += " arguments.";
 
-        // Append allowed states
+        // Append allowed states (empty means allowed from all states)
         if(!cmd.second.valid_states.empty()) {
             description += "\nThis command can only be called in the following states: ";
             description += std::accumulate(cmd.second.valid_states.begin(),

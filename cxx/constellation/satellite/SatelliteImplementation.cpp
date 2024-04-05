@@ -160,9 +160,9 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
             "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
 
         // Append user commands
-        auto user_commands = satellite_->getUserCommands();
-        for(auto& cmd : user_commands) {
-            command_dict.insert({cmd.first, cmd.second});
+        const auto user_commands = satellite_->getUserCommands();
+        for(const auto& cmd : user_commands) {
+            command_dict.emplace(cmd.first, cmd.second);
         }
 
         // Pack dict
@@ -189,16 +189,16 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, std::shared_ptr<zmq::message_t>>>
-SatelliteImplementation::handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& arguments) {
+SatelliteImplementation::handleUserCommand(std::string_view command, const std::shared_ptr<zmq::message_t>& payload) {
     LOG(logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
 
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
-    std::shared_ptr<zmq::message_t> payload {};
+    std::shared_ptr<zmq::message_t> return_payload {};
 
     config::List args {};
     try {
-        if(arguments && !arguments->empty()) {
-            const auto msgpack_args = msgpack::unpack(to_char_ptr(arguments->data()), arguments->size());
+        if(payload && !payload->empty()) {
+            const auto msgpack_args = msgpack::unpack(to_char_ptr(payload->data()), payload->size());
             args = msgpack_args->as<config::List>();
         }
 
@@ -208,7 +208,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
         // Return the call value as payload
         msgpack::sbuffer sbuf {};
         msgpack::pack(sbuf, retval);
-        payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+        return_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
         return_verb = {CSCP1Message::Type::SUCCESS, {}};
     } catch(std::bad_cast& e) {
         // Issue with obtaining parameters from payload
@@ -227,7 +227,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
         return std::nullopt;
     }
 
-    return std::make_pair(return_verb, payload);
+    return std::make_pair(return_verb, return_payload);
 }
 
 void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {

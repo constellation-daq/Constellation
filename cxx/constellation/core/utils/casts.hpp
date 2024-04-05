@@ -11,8 +11,6 @@
 
 #pragma once
 
-#include "type.hpp"
-
 #include <concepts>
 #include <cstddef>
 #include <sstream>
@@ -21,6 +19,8 @@
 #include <type_traits>
 
 #include <magic_enum.hpp>
+
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::utils {
 
