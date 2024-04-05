@@ -102,12 +102,43 @@ TEST_CASE("Set Default Value", "[core][core::config]") {
     REQUIRE(config.get<bool>("mydefault") == false);
 }
 
+TEST_CASE("Set & Use Aliases", "[core][core::config]") {
+    Configuration config;
+
+    // Alias set before key exists
+    config.setAlias("thisisnotset", "mykey");
+
+    // Set key
+    config.set("mykey", 99);
+
+    // Set alias to key
+    config.setAlias("thisisset", "mykey");
+
+    // Check that the alias set before the key existed is not set:
+    REQUIRE(config.has("thisisnotset") == false);
+
+    // Check that the new key is accessible
+    REQUIRE(config.get<size_t>("thisisset") == 99);
+
+    // Set second key
+    config.set("myotherkey", 77);
+    // Attempt to set an alias for second key
+    config.setAlias("mykey", "myotherkey");
+
+    // Check that the alias would not overwrite another existing key:
+    REQUIRE(config.get<size_t>("mykey") == 99);
+}
+
 TEST_CASE("Invalid Key Access", "[core][core::config]") {
     Configuration config;
 
     // Check for invalid key to be detected
     REQUIRE_THROWS_AS(config.get<bool>("invalidkey"), MissingKeyError);
     REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key 'invalidkey' does not exist"));
+
+    // Check for invalid key to be detected when querying text representation
+    REQUIRE_THROWS_AS(config.getText("invalidkey"), MissingKeyError);
+    REQUIRE_THROWS_MATCHES(config.getText("invalidkey"), MissingKeyError, Message("Key 'invalidkey' does not exist"));
 
     // Check for invalid type conversion
     config.set("key", true);
@@ -127,4 +158,25 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
                            InvalidValueError,
                            Message("Value THREE of key 'myenum' is not valid: possible values are one, two"));
 }
+
+TEST_CASE("Merge Configurations", "[core][core::config]") {
+    Configuration config_a;
+    Configuration config_b;
+
+    config_a.set("bool", true);
+    config_a.set("int64", std::int64_t(63));
+
+    config_b.set("bool", false);
+    config_b.set("uint64", std::uint64_t(64));
+
+    // Merge configurations
+    config_a.merge(config_b);
+
+    // Check that keys from config_b have been transferred:
+    REQUIRE(config_a.get<std::uint64_t>("uint64") == 64);
+
+    // Check that existing keys in config_a have not been overwritten
+    REQUIRE(config_a.get<bool>("bool") == true);
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
