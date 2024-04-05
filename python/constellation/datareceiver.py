@@ -108,7 +108,6 @@ class DataReceiver(Satellite):
         self._pull_interfaces = {}
         self._puller_threads = dict[str:PullThread]()
         self._stop_pulling = threading.Event()
-        self._run_event = threading.Event()
 
         self.request(CHIRPServiceIdentifier.DATA)
 
@@ -222,9 +221,8 @@ class DataReceiver(Satellite):
             self._stop_pulling = None
             self._puller_threads = list[PullThread]()
 
-    def do_stopping(self, payload: any):
-        self._run_event.set()
-        return "Acquisition stopped"
+    def do_stopping(self, payload: any) -> str:
+        return super().do_stopping(payload)
 
 
 class H5DataReceiverWriter(DataReceiver):
