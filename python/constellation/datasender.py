@@ -8,11 +8,12 @@ A base module for a Constellation Satellite that sends data.
 
 import time
 import threading
-import os
 import logging
 from typing import Optional
 from queue import Queue, Empty
 
+import random
+import numpy as np
 import zmq
 
 from .cdtp import DataTransmitter
@@ -138,7 +139,9 @@ class RandomDataSender(DataSender):
 
     def do_run(self, payload: any) -> str:
         """Example implementation that generates random values."""
-        payload = os.urandom(1024)
+        samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
+        fs = random.uniform(0, 3)
+        payload = np.sin(2 * np.pi * fs * samples).tolist()
 
         t0 = time.time_ns()
 
