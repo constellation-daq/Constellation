@@ -27,35 +27,35 @@ std::string Value::str() const {
                    [&](const std::vector<bool>& arg) {
                        out << "[" << std::boolalpha;
                        for(const auto& val : arg) {
-                           out << val << ", ";
+                           out << val << ",";
                        }
                        out << "]";
                    },
                    [&](const std::vector<double>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
-                           out << val << ", ";
+                           out << val << ",";
                        }
                        out << "]";
                    },
                    [&](const std::vector<std::int64_t>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
-                           out << val << ", ";
+                           out << val << ",";
                        }
                        out << "]";
                    },
                    [&](const std::vector<std::string>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
-                           out << val << ", ";
+                           out << val << ",";
                        }
                        out << "]";
                    },
                    [&](const std::vector<std::chrono::system_clock::time_point>& arg) {
                        out << "[";
                        for(const auto& val : arg) {
-                           out << val << ", ";
+                           out << val << ",";
                        }
                        out << "]";
                    },

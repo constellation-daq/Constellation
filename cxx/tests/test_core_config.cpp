@@ -170,7 +170,7 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     };
     config.set("myenum", MyEnum::ONE);
 
-    std::chrono::time_point<std::chrono::system_clock> tp {};
+    const std::chrono::time_point<std::chrono::system_clock> tp {};
     config.set("time", tp);
 
     // Compare text representation
@@ -189,6 +189,42 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     REQUIRE(config.getText("bool", "false") == "true");
     // Get text with default for non-existent key:
     REQUIRE(config.getText("foo", "false") == "false");
+}
+
+TEST_CASE("Access Arrays as Text", "[core][core::config]") {
+    Configuration config;
+
+    config.setArray<bool>("bool", {true, false, true});
+
+    config.setArray<std::int64_t>("int64", {63, 62, 61});
+    config.setArray<size_t>("size", {1, 2, 3});
+    config.setArray<std::uint64_t>("uint64", {64, 65, 66});
+    config.setArray<std::uint8_t>("uint8", {8, 7, 6});
+
+    config.setArray<double>("double", {1.3, 3.1});
+    config.setArray<float>("float", {3.14F, 1.43F});
+
+    config.setArray<std::string>("string", {"a", "b", "c"});
+
+    enum MyEnum {
+        ONE,
+        TWO,
+    };
+    config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
+
+    const std::chrono::system_clock::time_point tp {};
+    config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
+
+    REQUIRE(config.getText("bool") == "[true,false,true,]");
+    REQUIRE(config.getText("int64") == "[63,62,61,]");
+    REQUIRE(config.getText("size") == "[1,2,3,]");
+    REQUIRE(config.getText("uint64") == "[64,65,66,]");
+    REQUIRE(config.getText("uint8") == "[8,7,6,]");
+    REQUIRE(config.getText("double") == "[1.3,3.1,]");
+    REQUIRE(config.getText("float") == "[3.14,1.43,]");
+    REQUIRE(config.getText("string") == "[a,b,c,]");
+    REQUIRE(config.getText("time") ==
+            "[1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,]");
 }
 
 TEST_CASE("Count Key Appearances", "[core][core::config]") {
@@ -320,6 +356,93 @@ TEST_CASE("Merge Configurations", "[core][core::config]") {
     REQUIRE(config_a.get<bool>("bool") == true);
 }
 
+TEST_CASE("Copy & Move Configurations", "[core][core::config]") {
+
+    Configuration config;
+    config.set("bool", true);
+
+    const Configuration config_copy = config;
+    REQUIRE(config_copy.get<bool>("bool") == true);
+
+    const Configuration config_move = std::move(config);
+    REQUIRE(config_move.get<bool>("bool") == true);
+}
+
+TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
+
+    // Create dictionary
+    List list;
+    auto tp = std::chrono::system_clock::now();
+    list.push_back(true);
+    list.push_back(std::int64_t(63));
+    list.push_back(double(1.3));
+    list.push_back(std::string("a"));
+    list.push_back(tp);
+    list.push_back(std::vector<bool>({true, false, true}));
+    list.push_back(std::vector<std::int64_t>({63, 62, 61}));
+    list.push_back(std::vector<double>({1.3, 3.1}));
+    list.push_back(std::vector<std::string>({"a", "b", "c"}));
+    list.push_back(std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+
+    // Pack to MsgPack
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, list);
+
+    // Unpack from MsgPack
+    auto unpacked = msgpack::unpack(sbuf.data(), sbuf.size());
+    auto list_unpacked = unpacked->as<List>();
+
+    REQUIRE(std::get<bool>(list_unpacked.at(0)) == true);
+    REQUIRE(std::get<std::int64_t>(list_unpacked.at(1)) == std::int64_t(63));
+    REQUIRE(std::get<double>(list_unpacked.at(2)) == double(1.3));
+    REQUIRE(std::get<std::string>(list_unpacked.at(3)) == std::string("a"));
+    REQUIRE(std::get<std::chrono::system_clock::time_point>(list_unpacked.at(4)) == tp);
+    REQUIRE(std::get<std::vector<bool>>(list_unpacked.at(5)) == std::vector<bool>({true, false, true}));
+    REQUIRE(std::get<std::vector<std::int64_t>>(list_unpacked.at(6)) == std::vector<std::int64_t>({63, 62, 61}));
+    REQUIRE(std::get<std::vector<double>>(list_unpacked.at(7)) == std::vector<double>({1.3, 3.1}));
+    REQUIRE(std::get<std::vector<std::string>>(list_unpacked.at(8)) == std::vector<std::string>({"a", "b", "c"}));
+    REQUIRE(std::get<std::vector<std::chrono::system_clock::time_point>>(list_unpacked.at(9)) ==
+            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+}
+
+TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
+
+    // Create dictionary
+    Dictionary dict;
+    auto tp = std::chrono::system_clock::now();
+    dict["bool"] = true;
+    dict["int64"] = std::int64_t(63);
+    dict["double"] = double(1.3);
+    dict["string"] = std::string("a");
+    dict["time"] = tp;
+
+    dict["array_bool"] = std::vector<bool>({true, false, true});
+    dict["array_int64"] = std::vector<std::int64_t>({63, 62, 61});
+    dict["array_double"] = std::vector<double>({1.3, 3.1});
+    dict["array_string"] = std::vector<std::string>({"a", "b", "c"});
+    dict["array_time"] = std::vector<std::chrono::system_clock::time_point>({tp, tp, tp});
+
+    // Pack to MsgPack
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, dict);
+
+    // Unpack from MsgPack
+    auto unpacked = msgpack::unpack(sbuf.data(), sbuf.size());
+    auto dict_unpacked = unpacked->as<Dictionary>();
+
+    REQUIRE(std::get<bool>(dict_unpacked["bool"]) == true);
+    REQUIRE(std::get<std::int64_t>(dict_unpacked["int64"]) == std::int64_t(63));
+    REQUIRE(std::get<double>(dict_unpacked["double"]) == double(1.3));
+    REQUIRE(std::get<std::string>(dict_unpacked["string"]) == std::string("a"));
+    REQUIRE(std::get<std::chrono::system_clock::time_point>(dict_unpacked["time"]) == tp);
+    REQUIRE(std::get<std::vector<bool>>(dict_unpacked["array_bool"]) == std::vector<bool>({true, false, true}));
+    REQUIRE(std::get<std::vector<std::int64_t>>(dict_unpacked["array_int64"]) == std::vector<std::int64_t>({63, 62, 61}));
+    REQUIRE(std::get<std::vector<double>>(dict_unpacked["array_double"]) == std::vector<double>({1.3, 3.1}));
+    REQUIRE(std::get<std::vector<std::string>>(dict_unpacked["array_string"]) == std::vector<std::string>({"a", "b", "c"}));
+    REQUIRE(std::get<std::vector<std::chrono::system_clock::time_point>>(dict_unpacked["array_time"]) ==
+            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+}
+
 TEST_CASE("Generate Configurations from ZMQ Frame", "[core][core::config]") {
 
     // Create dictionary
@@ -332,7 +455,7 @@ TEST_CASE("Generate Configurations from ZMQ Frame", "[core][core::config]") {
     msgpack::pack(sbuf, dict);
     auto payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 
-    Configuration config(payload);
+    const Configuration config(payload);
 
     REQUIRE(config.get<double>("key") == 3.12);
     REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
