@@ -119,11 +119,19 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
 
     // Try to decode the payload:
     TransitionPayload fsm_payload {};
-    const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
-    if(msgpack_payload->type == msgpack::type::MAP) {
-        fsm_payload = config::Configuration(msgpack_payload->as<Dictionary>());
-    } else if(msgpack_payload->type == msgpack::type::POSITIVE_INTEGER) {
-        fsm_payload = msgpack_payload->as<std::uint32_t>();
+    try {
+        if(payload && !payload->empty()) {
+            const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
+            if(msgpack_payload->type == msgpack::type::MAP) {
+                fsm_payload = config::Configuration(msgpack_payload->as<Dictionary>());
+            } else if(msgpack_payload->type == msgpack::type::POSITIVE_INTEGER) {
+                fsm_payload = msgpack_payload->as<std::uint32_t>();
+            }
+        }
+    } catch(msgpack::unpack_error& e) {
+        std::string payload_info {"Transition " + to_string(transition) + " received invalid payload: " + e.what()};
+        LOG(logger_, WARNING) << payload_info;
+        return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
     }
 
     // Execute transition function
@@ -131,7 +139,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
         state_ = (this->*transition_function)(std::move(fsm_payload));
         LOG(logger_, STATUS) << "New state: " << to_string(state_);
     } catch(std::bad_variant_access&) {
-        std::string payload_info {"Transition " + to_string(transition) + " received in correct payload"};
+        std::string payload_info {"Transition " + to_string(transition) + " received incorrect payload"};
         LOG(logger_, WARNING) << payload_info;
         return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
     }
