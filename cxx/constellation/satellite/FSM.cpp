@@ -123,7 +123,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     if(msgpack_payload->type == msgpack::type::MAP) {
         fsm_payload = config::Configuration(msgpack_payload->as<Dictionary>());
     } else if(msgpack_payload->type == msgpack::type::POSITIVE_INTEGER) {
-        fsm_payload = msgpack_payload->as<size_t>();
+        fsm_payload = msgpack_payload->as<std::uint32_t>();
     }
 
     // Execute transition function
@@ -163,7 +163,7 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
 // NOLINTBEGIN(performance-unnecessary-value-param)
 
 State FSM::initialize(TransitionPayload payload) {
-    auto config = std::get<Configuration>(payload);
+    auto cfg = std::get<Configuration>(payload);
     auto call_wrapper = [this](const std::stop_token& stop_token, const Configuration& config) {
         // We might come from ERROR, so let's stop the failure thread
         this->failure_thread_.request_stop();
@@ -177,7 +177,7 @@ State FSM::initialize(TransitionPayload payload) {
             this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, std::move(config));
+    transitional_thread_ = std::jthread(call_wrapper, std::move(cfg));
     return State::initializing;
 }
 
@@ -204,28 +204,26 @@ State FSM::land(TransitionPayload /* payload */) {
 }
 
 State FSM::reconfigure(TransitionPayload payload) {
-    using PartialConfig = TransitionPayload; // TODO(stephan.lachnit): get proper partial config object from payload variant
-    auto call_wrapper = [this](const std::stop_token& stop_token, PartialConfig partial_config) {
+    auto cfg = std::get<Configuration>(payload);
+    auto call_wrapper = [this](const std::stop_token& stop_token, const Configuration& partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
-        const auto transition = call_satellite_function(this->satellite_.get(),
-                                                        &Satellite::reconfiguring,
-                                                        Transition::reconfigured,
-                                                        stop_token,
-                                                        std::move(partial_config));
+        const auto transition = call_satellite_function(
+            this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, stop_token, partial_config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, std::move(payload));
+    transitional_thread_ = std::jthread(call_wrapper, std::move(cfg));
     return State::reconfiguring;
 }
 
-State FSM::start(TransitionPayload /* payload */) {
+State FSM::start(TransitionPayload payload) {
+    auto run = std::get<std::uint32_t>(payload);
     auto call_wrapper = [this](const std::stop_token& stop_token, std::uint32_t run_nr) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, stop_token, run_nr);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, 0); // TODO(stephan.lachnit): get std::uint32_t from payload variant
+    transitional_thread_ = std::jthread(call_wrapper, run);
     return State::starting;
 }
 

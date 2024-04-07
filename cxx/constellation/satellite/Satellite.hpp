@@ -61,9 +61,9 @@ namespace constellation::satellite {
          * Reconfigure satellite, i.e. apply a partial configuration to the already launched satellite
          *
          * @param stop_token Token which tracks if reconfiguring should be aborted
-         * @param partial_config Changes to the configuration of the Satellite TODO(stephan.lachnit): proper class
+         * @param partial_config Changes to the configuration of the Satellite
          */
-        virtual void reconfiguring(const std::stop_token& stop_token, const std::any& partial_config);
+        virtual void reconfiguring(const std::stop_token& stop_token, const config::Configuration& partial_config);
 
         /**
          * Start satellite, i.e. prepare for immediate data taking, e.g. opening files or creating buffers

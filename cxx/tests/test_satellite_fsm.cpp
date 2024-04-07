@@ -43,7 +43,7 @@ public:
         Satellite::landing(stop_token);
         transitional_state(stop_token);
     }
-    void reconfiguring(const std::stop_token& stop_token, const std::any& partial_config) override {
+    void reconfiguring(const std::stop_token& stop_token, const Configuration& partial_config) override {
         Satellite::reconfiguring(stop_token, partial_config);
         transitional_state(stop_token);
     }

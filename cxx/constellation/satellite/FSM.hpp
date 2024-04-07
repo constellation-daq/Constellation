@@ -28,7 +28,7 @@ namespace constellation::satellite {
     class FSM final {
     public:
         /** Payload of a transition function: variant with config, partial_config or run_nr */
-        using TransitionPayload = std::variant<std::monostate, config::Configuration, size_t>;
+        using TransitionPayload = std::variant<std::monostate, config::Configuration, std::uint32_t>;
 
         /** Function pointer for a transition function: takes the variant mentioned above, returns new State */
         using TransitionFunction = State (FSM::*)(TransitionPayload);
