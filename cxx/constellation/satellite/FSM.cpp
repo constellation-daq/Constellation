@@ -127,8 +127,15 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     }
 
     // Execute transition function
-    state_ = (this->*transition_function)(std::move(fsm_payload));
-    LOG(logger_, STATUS) << "New state: " << to_string(state_);
+    try {
+        state_ = (this->*transition_function)(std::move(fsm_payload));
+        LOG(logger_, STATUS) << "New state: " << to_string(state_);
+    } catch(std::bad_variant_access&) {
+        std::string payload_info {"Transition " + to_string(transition) + " received in correct payload"};
+        LOG(logger_, WARNING) << payload_info;
+        return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
+    }
+
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
