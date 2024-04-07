@@ -22,13 +22,11 @@
 
 using namespace constellation::config;
 
-Configuration::Configuration(const Dictionary& dict) {
+Configuration::Configuration(const Dictionary& dict) : config_(dict) {
     // Register all markers:
     for(const auto& [key, val] : dict) {
         used_keys_.registerMarker(key);
     }
-    // Store the dictionary
-    config_ = dict;
 };
 
 Configuration::AccessMarker::AccessMarker(const Configuration::AccessMarker& rhs) {
