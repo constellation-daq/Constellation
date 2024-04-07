@@ -14,12 +14,14 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <zmq.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace Catch::Matchers;
+using namespace constellation::config;
 using namespace constellation::satellite;
 using namespace std::literals::chrono_literals;
 
@@ -29,7 +31,7 @@ public:
     DummySatellite() : Satellite("Dummy", "sat1") { support_reconfigure(); }
     void dummy_support_reconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
     void dummy_throw_transitional() { throw_transitional_ = true; }
-    void initializing(const std::stop_token& stop_token, const std::any& config) override {
+    void initializing(const std::stop_token& stop_token, const Configuration& config) override {
         Satellite::initializing(stop_token, config);
         transitional_state(stop_token);
     }

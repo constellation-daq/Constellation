@@ -17,6 +17,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/config.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
@@ -26,8 +27,8 @@ namespace constellation::satellite {
 
     class FSM final {
     public:
-        /** Payload of a transition function: TODO(stephan.lachnit) variant with config, partial_config or run_nr */
-        using TransitionPayload = std::any;
+        /** Payload of a transition function: variant with config, partial_config or run_nr */
+        using TransitionPayload = std::variant<std::monostate, config::Configuration, size_t>;
 
         /** Function pointer for a transition function: takes the variant mentioned above, returns new State */
         using TransitionFunction = State (FSM::*)(TransitionPayload);

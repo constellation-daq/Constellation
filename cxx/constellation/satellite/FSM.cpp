@@ -16,6 +16,7 @@
 #include <thread>
 #include <utility>
 
+#include <msgpack.hpp>
 #include <zmq.hpp>
 
 #include "constellation/core/logging/log.hpp"
@@ -25,6 +26,7 @@
 #include "constellation/satellite/fsm_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
+using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
@@ -114,9 +116,18 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     }
     // If there is a payload, but it is not used add a note in the reply
     const std::string payload_note = (!should_have_payload && payload) ? " (payload frame is ignored)"s : ""s;
-    // TODO(stephan.lachnit): check if payload properly formatted, cast to std::variant
+
+    // Try to decode the payload:
+    TransitionPayload fsm_payload {};
+    const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
+    if(msgpack_payload->type == msgpack::type::MAP) {
+        fsm_payload = config::Configuration(msgpack_payload->as<Dictionary>());
+    } else if(msgpack_payload->type == msgpack::type::POSITIVE_INTEGER) {
+        fsm_payload = msgpack_payload->as<size_t>();
+    }
+
     // Execute transition function
-    state_ = (this->*transition_function)(std::move(payload));
+    state_ = (this->*transition_function)(std::move(fsm_payload));
     LOG(logger_, STATUS) << "New state: " << to_string(state_);
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
@@ -152,8 +163,8 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
 // NOLINTBEGIN(performance-unnecessary-value-param)
 
 State FSM::initialize(TransitionPayload payload) {
-    using Config = TransitionPayload; // TODO(stephan.lachnit): get proper config object from payload variant
-    auto call_wrapper = [this](const std::stop_token& stop_token, Config config) {
+    auto config = std::get<Configuration>(payload);
+    auto call_wrapper = [this](const std::stop_token& stop_token, const Configuration& config) {
         // We might come from ERROR, so let's stop the failure thread
         this->failure_thread_.request_stop();
         if(this->failure_thread_.joinable()) {
@@ -163,10 +174,10 @@ State FSM::initialize(TransitionPayload payload) {
 
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto transition = call_satellite_function(
-            this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, std::move(config));
+            this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, std::move(payload));
+    transitional_thread_ = std::jthread(call_wrapper, std::move(config));
     return State::initializing;
 }
 

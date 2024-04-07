@@ -16,6 +16,7 @@
 #include <thread>
 
 #include "constellation/core/config.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
@@ -38,9 +39,9 @@ namespace constellation::satellite {
          * Note: do not perform actions that require actions before shutdown or another initialization
          *
          * @param stop_token Token which tracks if initializing should be aborted
-         * @param config Configuration of the Satellite TODO(stephan.lachnit): proper class
+         * @param config Configuration of the Satellite
          */
-        virtual void initializing(const std::stop_token& stop_token, const std::any& config);
+        virtual void initializing(const std::stop_token& stop_token, const config::Configuration& config);
 
         /**
          * Launch satellite, i.e. apply configuration
