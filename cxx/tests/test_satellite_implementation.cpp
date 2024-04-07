@@ -145,7 +145,7 @@ TEST_CASE("Transitions", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    Dictionary config {};
+    const Dictionary config {};
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, config);
     auto initialize_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
@@ -271,7 +271,7 @@ TEST_CASE("Catch invalid payload", "[satellite]") {
     auto recv_msg_initialize = sender.recv();
     REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_initialize.getVerb().second),
-                 Equals("Transition initialize received in correct payload"));
+                 Equals("Transition initialize received incorrect payload"));
 
     // Check state
     std::this_thread::sleep_for(100ms);
