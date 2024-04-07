@@ -16,10 +16,6 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
 
-namespace zmq {
-    class message_t;
-} // namespace zmq
-
 namespace constellation::config {
 
     template <typename T> using Matrix = std::vector<std::vector<T>>;
@@ -98,7 +94,12 @@ namespace constellation::config {
         Configuration() = default;
         ~Configuration() = default;
 
-        explicit Configuration(const std::shared_ptr<zmq::message_t>& payload);
+        /**
+         * @brief Construct a configuration object from a dictionary
+         *
+         * @param dict Dictionary to construct config object from
+         */
+        explicit Configuration(const Dictionary& dict);
 
         /// @{
         /**

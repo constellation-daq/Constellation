@@ -13,9 +13,6 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
-#include <zmq.hpp>
-#include <zmq_addon.hpp>
-
 #include "constellation/core/config/Configuration.hpp"
 
 using namespace Catch::Matchers;
@@ -443,19 +440,14 @@ TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 }
 
-TEST_CASE("Generate Configurations from ZMQ Frame", "[core][core::config]") {
+TEST_CASE("Generate Configurations from Dictionary", "[core][core::config]") {
 
     // Create dictionary
     Dictionary dict;
     dict["key"] = 3.12;
     dict["array"] = std::vector<std::string>({"one", "two", "three"});
 
-    // Add payload frame
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, dict);
-    auto payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
-
-    const Configuration config(payload);
+    const Configuration config(dict);
 
     REQUIRE(config.get<double>("key") == 3.12);
     REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
