@@ -66,8 +66,6 @@ std::size_t Configuration::count(std::initializer_list<std::string> keys) const 
 }
 
 /**
- * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
- *
  * For a relative path the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
 std::filesystem::path Configuration::getPath(const std::string& key, bool check_exists) const {
@@ -78,8 +76,6 @@ std::filesystem::path Configuration::getPath(const std::string& key, bool check_
     }
 }
 /**
- * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
- *
  * For a relative path the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
 std::filesystem::path Configuration::getPathWithExtension(const std::string& key,
@@ -92,8 +88,6 @@ std::filesystem::path Configuration::getPathWithExtension(const std::string& key
     }
 }
 /**
- * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
- *
  * For all relative paths the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
 std::vector<std::filesystem::path> Configuration::getPathArray(const std::string& key, bool check_exists) const {
@@ -111,9 +105,7 @@ std::vector<std::filesystem::path> Configuration::getPathArray(const std::string
     }
     return path_array;
 }
-/**
- * @throws std::invalid_argument If the path does not exists
- */
+
 std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {
     // If not a absolute path, make it an absolute path
     if(!path.is_absolute()) {

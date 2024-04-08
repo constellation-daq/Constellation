@@ -90,6 +90,7 @@ namespace constellation::config {
 
     // Forward declaration of Configuration class
     class Configuration;
+
     /**
      * @ingroup Exceptions
      * @brief Indicates an error with a combination of configuration keys
@@ -109,4 +110,5 @@ namespace constellation::config {
                                 std::initializer_list<std::string> keys,
                                 const std::string& reason = "");
     };
+
 } // namespace constellation::config

@@ -53,13 +53,9 @@ namespace constellation::config {
              */
             AccessMarker& operator=(const AccessMarker& rhs);
 
-            /// @{
-            /**
-             * @brief Allow moving the access marker
-             */
+            // Default move constructor/assignment
             AccessMarker(AccessMarker&&) noexcept = default;
             AccessMarker& operator=(AccessMarker&&) = default;
-            /// @}
 
             /**
              * @brief Method to register a key for a new access marker
@@ -90,7 +86,7 @@ namespace constellation::config {
 
     public:
         /**
-         * @brief Construct a configuration object
+         * @brief Construct an empty configuration object
          */
         Configuration() = default;
         ~Configuration() = default;
@@ -102,21 +98,11 @@ namespace constellation::config {
          */
         Configuration(const Dictionary& dict);
 
-        /// @{
-        /**
-         * @brief Allow copying the configuration
-         */
+        // Default copy/move constructor/assignment
         Configuration(const Configuration&) = default;
         Configuration& operator=(const Configuration&) = default;
-        /// @}
-
-        /// @{
-        /**
-         * @brief Allow moving the configuration
-         */
         Configuration(Configuration&&) noexcept = default;
         Configuration& operator=(Configuration&&) = default;
-        /// @}
 
         /**
          * @brief Check if key is defined
@@ -203,6 +189,8 @@ namespace constellation::config {
          * @param key Key to get path of
          * @param check_exists If the file should be checked for existence (if yes always returns a canonical path)
          * @return Absolute path to a file
+         *
+         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
         std::filesystem::path getPath(const std::string& key, bool check_exists = false) const;
 
@@ -212,6 +200,8 @@ namespace constellation::config {
          * @param extension File extension to be added to path if not present
          * @param check_exists If the file should be checked for existence (if yes always returns a canonical path)
          * @return Absolute path to a file
+         *
+         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
         std::filesystem::path getPathWithExtension(const std::string& key,
                                                    const std::string& extension,
@@ -222,6 +212,8 @@ namespace constellation::config {
          * @param key Key to get path of
          * @param check_exists If the files should be checked for existence (if yes always returns a canonical path)
          * @return List of absolute path to all the requested files
+         *
+         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
         std::vector<std::filesystem::path> getPathArray(const std::string& key, bool check_exists = false) const;
 
@@ -301,12 +293,14 @@ namespace constellation::config {
          * @brief Make relative paths absolute from this configuration file
          * @param path Path to make absolute (if it is not already absolute)
          * @param canonicalize_path If the path should be canonicalized (throws an error if the path does not exist)
+         * @throws std::invalid_argument If the path does not exists
          */
         static std::filesystem::path path_to_absolute(std::filesystem::path path, bool canonicalize_path);
 
         Dictionary config_;
         mutable AccessMarker used_keys_;
     };
+
 } // namespace constellation::config
 
 // Include template members
