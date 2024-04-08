@@ -35,10 +35,12 @@ namespace constellation::config {
             // Value is directly held by variant:
             if constexpr(is_one_of<T, value_t>()) {
                 val = std::get<T>(dictval);
-            } else if constexpr(std::is_integral_v<T>) {
-                val = static_cast<T>(std::get<std::int64_t>(dictval));
-            } else if constexpr(std::is_floating_point_v<T>) {
-                val = static_cast<T>(std::get<double>(dictval));
+            } else if constexpr(std::is_arithmetic_v<T>) {
+                if(std::holds_alternative<std::int64_t>(dictval)) {
+                    val = static_cast<T>(std::get<std::int64_t>(dictval));
+                } else {
+                    val = static_cast<T>(std::get<double>(dictval));
+                }
             } else if constexpr(std::is_enum_v<T>) {
                 const auto str = std::get<std::string>(dictval);
                 const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
@@ -73,21 +75,24 @@ namespace constellation::config {
     }
 
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
-        // Value is directly held by variant, let's return:
-        if constexpr(is_one_of<std::vector<T>, value_t>()) {
-            return get<std::vector<T>>(key);
-        } else if constexpr(std::is_integral_v<T>) {
-            const auto vec = get<std::vector<std::int64_t>>(key);
-            return std::vector<T>(vec.begin(), vec.end());
-        } else if constexpr(std::is_floating_point_v<T>) {
-            const auto vec = get<std::vector<double>>(key);
-            return std::vector<T>(vec.begin(), vec.end());
-        } else if constexpr(std::is_enum_v<T>) {
-            const auto vec = get<std::vector<std::string>>(key);
-            std::vector<T> result {};
-            result.reserve(vec.size());
+        try {
+            // Value is directly held by variant, let's return:
+            if constexpr(is_one_of<std::vector<T>, value_t>()) {
+                return get<std::vector<T>>(key);
+            } else if constexpr(std::is_arithmetic_v<T>) {
+                const auto dictval = config_.at(key);
+                if(std::holds_alternative<std::vector<std::int64_t>>(dictval)) {
+                    const auto vec = get<std::vector<std::int64_t>>(key);
+                    return std::vector<T>(vec.begin(), vec.end());
+                } else {
+                    const auto vec = get<std::vector<double>>(key);
+                    return std::vector<T>(vec.begin(), vec.end());
+                }
+            } else if constexpr(std::is_enum_v<T>) {
+                const auto vec = get<std::vector<std::string>>(key);
+                std::vector<T> result {};
+                result.reserve(vec.size());
 
-            try {
                 std::for_each(vec.begin(), vec.end(), [&](const auto& str) {
                     const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
                     if(!enum_val.has_value()) {
@@ -95,13 +100,16 @@ namespace constellation::config {
                     }
                     result.emplace_back(enum_val.value());
                 });
-            } catch(std::invalid_argument& e) {
-                /* Value held by the dictionary entry could not be converted to desired type */
-                throw InvalidValueError(config_.at(key).str(), key, e.what());
+                return result;
+            } else {
+                return get<std::vector<T>>(key);
             }
-            return result;
-        } else {
-            return get<std::vector<T>>(key);
+        } catch(std::out_of_range& e) {
+                /* Requested key has not been found in dictionary */
+            throw MissingKeyError(key);
+        } catch(std::invalid_argument& e) {
+                /* Value held by the dictionary entry could not be converted to desired type */
+            throw InvalidValueError(config_.at(key).str(), key, e.what());
         }
     }
 
