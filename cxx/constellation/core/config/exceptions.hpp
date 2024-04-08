@@ -9,7 +9,9 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <string>
+#include <typeinfo>
 
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/type.hpp"
@@ -19,7 +21,20 @@ namespace constellation::config {
      * @ingroup Exceptions
      * @brief Base class for all configurations exceptions in the framework.
      */
-    class ConfigurationError : public utils::Exception {};
+    class ConfigurationError : public utils::RuntimeError {};
+
+    /**
+     * @ingroup Exceptions
+     * @brief Informs of a missing key that should have been defined
+     */
+    class MissingKeyError : public ConfigurationError {
+    public:
+        /**
+         * @brief Construct an error for a missing key
+         * @param key Name of the missing key
+         */
+        MissingKeyError(const std::string& key) { error_message_ = "Key '" + key + "' does not exist"; }
+    };
 
     /**
      * @ingroup Exceptions
@@ -40,44 +55,13 @@ namespace constellation::config {
                          const std::string& reason = "") {
             // FIXME wording
             error_message_ = "Could not convert value of type '";
-            error_message_ += utils::demangle(vtype.name());
+            error_message_ += utils::demangle(vtype);
             error_message_ += "' to type '";
-            error_message_ += utils::demangle(type.name());
+            error_message_ += utils::demangle(type);
             error_message_ += "' for key '" + key + "'";
             if(!reason.empty()) {
                 error_message_ += ": " + reason;
             }
-        }
-    };
-
-    /**
-     * @ingroup Exceptions
-     * @brief Informs of a missing key that should have been defined
-     */
-    class MissingKeyError : public ConfigurationError {
-    public:
-        /**
-         * @brief Construct an error for a missing key
-         * @param key Name of the missing key
-         */
-        MissingKeyError(const std::string& key) { error_message_ = "Key '" + key + "' does not exist"; }
-    };
-
-    /**
-     * @ingroup Exceptions
-     * @brief Indicates an error while parsing a key / value pair
-     */
-    class KeyValueParseError : public ConfigurationError {
-    public:
-        /**
-         * @brief Construct an error for a invalid key value pair
-         * @param key_value Key value pair which the parser tries to interpret
-         * @param reason Reason for the parser to fail
-         */
-        KeyValueParseError(const std::string& key_value, const std::string& reason) {
-            error_message_ = "Could not parse key / value pair '";
-            error_message_ += key_value;
-            error_message_ += "': " + reason;
         }
     };
 
@@ -104,6 +88,7 @@ namespace constellation::config {
         }
     };
 
+    // Forward declaration of Configuration class
     class Configuration;
     /**
      * @ingroup Exceptions

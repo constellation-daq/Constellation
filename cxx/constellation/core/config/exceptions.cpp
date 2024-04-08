@@ -7,7 +7,11 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "constellation/core/config/exceptions.hpp"
+#include "exceptions.hpp"
+
+#include <initializer_list>
+#include <string>
+
 #include "constellation/core/config/Configuration.hpp"
 
 using namespace constellation::config;

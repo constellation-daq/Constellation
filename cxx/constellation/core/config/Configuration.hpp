@@ -268,6 +268,9 @@ namespace constellation::config {
 
         /**
          * @brief Return total number of key / value pairs
+         *
+         * This also counts internal keys.
+         *
          * @return Number of settings
          */
         std::size_t size() const { return config_.size(); }
