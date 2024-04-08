@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "Configuration.hpp"
+
 #include <algorithm>
 #include <cstdint>
 #include <limits>
