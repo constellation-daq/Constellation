@@ -120,7 +120,7 @@ namespace constellation::satellite {
         // Map of registered commands
         std::unordered_map<std::string, Command> commands_;
 
-        template <typename T> static inline T value(const config::Value& value);
+        template <typename T> static inline T to_argument(const config::Value& value);
         template <typename T> static inline config::Value convert(const T& value);
 
         // Wrapper for command with return value
@@ -132,7 +132,7 @@ namespace constellation::satellite {
             }
             template <std::size_t... I>
             config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
-                return convert(func(value<typename std::decay_t<Args>>(args.at(I))...));
+                return convert(func(to_argument<typename std::decay_t<Args>>(args.at(I))...));
             }
         };
 
@@ -145,7 +145,7 @@ namespace constellation::satellite {
             }
             template <std::size_t... I>
             config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
-                func(value<typename std::decay_t<Args>>(args.at(I))...);
+                func(to_argument<typename std::decay_t<Args>>(args.at(I))...);
                 return {};
             }
         };
@@ -164,61 +164,6 @@ namespace constellation::satellite {
         }
     };
 
-    template <typename T> inline T CommandRegistry::value(const config::Value& value) {
-        try {
-            return std::get<T>(value);
-        } catch(std::bad_variant_access&) {
-            std::string msg;
-            msg += "Mismatch of argument type \"";
-            msg += utils::demangle(typeid(T).name());
-            msg += "\" to provided type \"";
-            msg += utils::demangle(value.type().name());
-            msg += "\"";
-            throw std::invalid_argument(msg);
-        }
-    }
-
-    template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
-        try {
-            return config::Value(value);
-        } catch(std::bad_variant_access&) {
-            std::string msg;
-            msg += "Error casting provided type \"";
-            msg += utils::demangle(typeid(T).name());
-            msg += "\" to dictionary value";
-            throw std::invalid_argument(msg);
-        }
-    }
-
-    template <typename R, typename... Args>
-    inline void CommandRegistry::add(const std::string& name,
-                                     std::string description,
-                                     std::initializer_list<constellation::message::State> states,
-                                     std::function<R(Args...)> func) {
-        if(name.empty()) {
-            throw utils::LogicError("Can not register command with empty name");
-        }
-
-        const auto [it, success] = commands_.emplace(
-            name, Command {generate_call(std::move(func)), sizeof...(Args), std::move(description), states});
-
-        if(!success) {
-            throw utils::LogicError("Command \"" + name + "\" is already registered");
-        }
-    }
-
-    template <typename T, typename R, typename... Args>
-    inline void CommandRegistry::add(std::string name,
-                                     std::string description,
-                                     std::initializer_list<constellation::message::State> states,
-                                     R (T::*func)(Args...),
-                                     T* t) {
-        if(!func || !t) {
-            throw utils::LogicError("Object and member function pointers must not be nullptr");
-        }
-        add(std::move(name), std::move(description), states, std::function<R(Args...)>([=](Args... args) {
-                return (t->*func)(args...);
-            }));
-    }
-
 } // namespace constellation::satellite
+
+#include "CommandRegistry.tpp"
