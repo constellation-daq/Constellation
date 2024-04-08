@@ -204,7 +204,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
 
     // NOTIMPLEMENTED if reconfigure not supported
     satellite->dummy_support_reconfigure(false);
-    ret = fsm.reactCommand(TransitionCommand::reconfigure, std::move(payload_frame));
+    ret = fsm.reactCommand(TransitionCommand::reconfigure, payload_frame);
     REQUIRE(ret.first == CSCP1Message::Type::NOTIMPLEMENTED);
     REQUIRE_THAT(ret.second, Equals("Transition reconfigure is not implemented by this satellite"));
 }
