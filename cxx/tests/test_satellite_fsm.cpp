@@ -172,7 +172,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     using constellation::message::CSCP1Message;
 
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, Dictionary {});
+    msgpack::pack(sbuf, Dictionary());
     auto payload_frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 

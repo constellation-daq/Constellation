@@ -252,7 +252,7 @@ TEST_CASE("Catch unexpected protocol", "[satellite]") {
                  Equals("Received protocol \"CMDP1\" does not match expected identifier \"CSCP1\""));
 }
 
-TEST_CASE("Catch invalid payload", "[satellite]") {
+TEST_CASE("Catch incorrect payload", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
     auto satellite_implementation = SatelliteImplementation(satellite);

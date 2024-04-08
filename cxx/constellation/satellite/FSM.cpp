@@ -192,7 +192,7 @@ State FSM::initialize(TransitionPayload payload) {
             this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, std::move(cfg));
+    transitional_thread_ = std::jthread(call_wrapper, cfg);
     return State::initializing;
 }
 
@@ -226,7 +226,7 @@ State FSM::reconfigure(TransitionPayload payload) {
             this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, stop_token, partial_config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, std::move(cfg));
+    transitional_thread_ = std::jthread(call_wrapper, cfg);
     return State::reconfiguring;
 }
 

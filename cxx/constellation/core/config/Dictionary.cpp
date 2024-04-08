@@ -8,7 +8,6 @@
  */
 
 #include "Dictionary.hpp"
-#include "constellation/core/utils/std23.hpp"
 
 #include <msgpack.hpp>
 
@@ -16,13 +15,15 @@
 #include <type_traits>
 #include <variant>
 
+#include "constellation/core/utils/std23.hpp"
+
 using namespace constellation::config;
 
 std::string Value::str() const {
     std::ostringstream out {};
 
     std::visit(overload {
-                   [&](const std::monostate&) { out << "NULL"; },
+                   [&](const std::monostate&) { out << "NIL"; },
                    [&](const bool& arg) { out << std::boolalpha << arg; },
                    [&](const std::vector<bool>& arg) {
                        out << "[" << std::boolalpha;

@@ -70,13 +70,13 @@ namespace constellation::config {
          * @brief Get type info of the value currently stored in the variant
          * @return Type info of the currently held value
          */
-        std::type_info const& type() const;
-
-        /** Unpack value with msgpack */
-        void msgpack_unpack(const msgpack::object& msgpack_object);
+        const std::type_info& type() const;
 
         /** Pack value with msgpack */
-        void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+
+        /** Unpack value with msgpack */
+        CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
     };
 
     /**
@@ -84,10 +84,10 @@ namespace constellation::config {
      */
     class List final : public std::vector<Value> {
     public:
-        /** Pack dictionary with msgpack */
+        /** Pack list with msgpack */
         CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
 
-        /** Unpack dictionary with msgpack */
+        /** Unpack list with msgpack */
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
     };
 

@@ -88,6 +88,7 @@ install_headers(
   'utils/ports.hpp',
   'utils/std23.hpp',
   'utils/string.hpp',
+  'utils/type.hpp',
   subdir: 'constellation/core/utils',
 )
 

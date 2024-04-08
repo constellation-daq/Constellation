@@ -32,10 +32,10 @@ namespace constellation::utils {
         const std::unique_ptr<char, void (*)(void*)> res {abi::__cxa_demangle(name, nullptr, nullptr, &status), std::free};
 
         if(status == 0) {
-            // Remove allpix tag if necessary
+            // Remove constellation prefix if necessary
             std::string str = res.get();
             if(!keep_prefix && str.find("constellation::") == 0) {
-                return str.substr(8);
+                return str.substr(15);
             }
             return str;
         }
@@ -46,7 +46,7 @@ namespace constellation::utils {
     /**
      * @brief Demangle the type to human-readable form if it is mangled
      * @param name The possibly mangled name
-     * @param keep_prefix If true the allpix namespace tag will be kept, otherwise it is removed
+     * @param keep_prefix If true the constellation namespace prefix will be kept, otherwise it is removed
      */
     inline std::string demangle(const char* name, bool keep_prefix = false) {
         return name;
