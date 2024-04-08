@@ -27,11 +27,6 @@
 
 using namespace constellation::config;
 
-// Type trait for std::vector
-template <class T> struct is_vector : std::false_type {};
-template <typename T> struct is_vector<std::vector<T>> : std::true_type {};
-template <class T> inline constexpr bool is_vector_v = is_vector<T>::value;
-
 std::string Value::str() const {
     std::ostringstream out {};
 
