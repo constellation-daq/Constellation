@@ -51,10 +51,6 @@ void Configuration::AccessMarker::registerMarker(const std::string& key) {
     markers_.emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple());
 }
 
-bool Configuration::has(const std::string& key) const {
-    return config_.find(key) != config_.cend();
-}
-
 std::size_t Configuration::count(std::initializer_list<std::string> keys) const {
     if(keys.size() == 0) {
         throw std::invalid_argument("list of keys cannot be empty");

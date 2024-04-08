@@ -21,8 +21,6 @@
 
 namespace constellation::config {
 
-    template <typename T> using Matrix = std::vector<std::vector<T>>;
-
     /**
      * @brief Generic configuration object storing keys
      *
@@ -54,7 +52,6 @@ namespace constellation::config {
              * @brief Explicit copy assignment operator to allow copying of the map keys
              */
             AccessMarker& operator=(const AccessMarker& rhs);
-
 
             /**
              * @brief Method to register a key for a new access marker

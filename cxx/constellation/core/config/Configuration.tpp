@@ -87,13 +87,18 @@ namespace constellation::config {
             std::vector<T> result {};
             result.reserve(vec.size());
 
-            std::for_each(vec.begin(), vec.end(), [&](const auto& str) {
-                const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
-                if(!enum_val.has_value()) {
-                    throw std::invalid_argument("possible values are " + utils::list_enum_names<T>());
-                }
-                result.emplace_back(enum_val.value());
-            });
+            try {
+                std::for_each(vec.begin(), vec.end(), [&](const auto& str) {
+                    const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
+                    if(!enum_val.has_value()) {
+                        throw std::invalid_argument("possible values are " + utils::list_enum_names<T>());
+                    }
+                    result.emplace_back(enum_val.value());
+                });
+            } catch(std::invalid_argument& e) {
+                /* Value held by the dictionary entry could not be converted to desired type */
+                throw InvalidValueError(config_.at(key).str(), key, e.what());
+            }
             return result;
         } else {
             return get<std::vector<T>>(key);
