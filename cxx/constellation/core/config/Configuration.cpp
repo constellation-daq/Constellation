@@ -136,13 +136,10 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     if(!has(old_key) || has(new_key)) {
         return;
     }
-    try {
-        config_[new_key] = config_.at(old_key);
-        used_keys_.registerMarker(new_key);
-        used_keys_.markUsed(old_key);
-    } catch(std::out_of_range& e) {
-        throw MissingKeyError(old_key);
-    }
+
+    config_[new_key] = config_.at(old_key);
+    used_keys_.registerMarker(new_key);
+    used_keys_.markUsed(old_key);
 
     if(warn) {
         // FIXME logging
