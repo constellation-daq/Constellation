@@ -48,7 +48,7 @@ Configuration::AccessMarker& Configuration::AccessMarker::operator=(const Config
 }
 
 void Configuration::AccessMarker::registerMarker(const std::string& key) {
-    markers_.emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple());
+    markers_.emplace(key, false);
 }
 
 std::size_t Configuration::count(std::initializer_list<std::string> keys) const {
