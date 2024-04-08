@@ -5,8 +5,12 @@
  */
 
 #include <chrono>
-#include <ctime>
+#include <cstdint>
+#include <filesystem>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
@@ -14,6 +18,8 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
@@ -26,7 +32,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("bool", true);
 
     config.set("int64", std::int64_t(63));
-    config.set("size", size_t(1));
+    config.set("size", std::size_t(1));
     config.set("uint64", std::uint64_t(64));
     config.set("uint8", std::uint8_t(8));
 
@@ -51,7 +57,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.get<bool>("bool") == true);
 
     REQUIRE(config.get<std::int64_t>("int64") == 63);
-    REQUIRE(config.get<size_t>("size") == 1);
+    REQUIRE(config.get<std::size_t>("size") == 1);
     REQUIRE(config.get<std::uint64_t>("uint64") == 64);
     REQUIRE(config.get<std::uint8_t>("uint8") == 8);
 
@@ -74,7 +80,7 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     config.setArray<bool>("bool", {true, false, true});
 
     config.setArray<std::int64_t>("int64", {63, 62, 61});
-    config.setArray<size_t>("size", {1, 2, 3});
+    config.setArray<std::size_t>("size", {1, 2, 3});
     config.setArray<std::uint64_t>("uint64", {64, 65, 66});
     config.setArray<std::uint8_t>("uint8", {8, 7, 6});
 
@@ -150,11 +156,11 @@ TEST_CASE("Set & Get Path Values", "[core][core::config]") {
 }
 
 TEST_CASE("Access Values as Text", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     config.set("bool", true);
     config.set("int64", std::int64_t(63));
-    config.set("size", size_t(1));
+    config.set("size", std::size_t(1));
     config.set("uint64", std::uint64_t(64));
     config.set("uint8", std::uint8_t(8));
     config.set("double", double(1.3));
@@ -189,12 +195,12 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
 }
 
 TEST_CASE("Access Arrays as Text", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     config.setArray<bool>("bool", {true, false, true});
 
     config.setArray<std::int64_t>("int64", {63, 62, 61});
-    config.setArray<size_t>("size", {1, 2, 3});
+    config.setArray<std::size_t>("size", {1, 2, 3});
     config.setArray<std::uint64_t>("uint64", {64, 65, 66});
     config.setArray<std::uint8_t>("uint8", {8, 7, 6});
 
@@ -225,7 +231,7 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
 }
 
 TEST_CASE("Count Key Appearances", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     config.set("bool", true);
     config.set("int64", std::int64_t(63));
@@ -239,7 +245,7 @@ TEST_CASE("Count Key Appearances", "[core][core::config]") {
 }
 
 TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     config.set("myval", 3.14, true);
 
@@ -249,7 +255,7 @@ TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
 }
 
 TEST_CASE("Get all Values", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     config.set("myval", 3.14);
     config.set("_internal", 1);
@@ -264,7 +270,7 @@ TEST_CASE("Get all Values", "[core][core::config]") {
 }
 
 TEST_CASE("Set Default Value", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     // Check that a default does not overwrite existing values
     config.set("myval", true);
@@ -277,7 +283,7 @@ TEST_CASE("Set Default Value", "[core][core::config]") {
 }
 
 TEST_CASE("Set & Use Aliases", "[core][core::config]") {
-    Configuration config;
+    Configuration config {};
 
     // Alias set before key exists
     config.setAlias("thisisnotset", "mykey");
@@ -292,7 +298,7 @@ TEST_CASE("Set & Use Aliases", "[core][core::config]") {
     REQUIRE(config.has("thisisnotset") == false);
 
     // Check that the new key is accessible
-    REQUIRE(config.get<size_t>("thisisset") == 99);
+    REQUIRE(config.get<std::size_t>("thisisset") == 99);
 
     // Set second key
     config.set("myotherkey", 77);
@@ -300,7 +306,7 @@ TEST_CASE("Set & Use Aliases", "[core][core::config]") {
     config.setAlias("mykey", "myotherkey");
 
     // Check that the alias would not overwrite another existing key:
-    REQUIRE(config.get<size_t>("mykey") == 99);
+    REQUIRE(config.get<std::size_t>("mykey") == 99);
 }
 
 TEST_CASE("Invalid Key Access", "[core][core::config]") {
@@ -334,8 +340,8 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
 }
 
 TEST_CASE("Merge Configurations", "[core][core::config]") {
-    Configuration config_a;
-    Configuration config_b;
+    Configuration config_a {};
+    Configuration config_b {};
 
     config_a.set("bool", true);
     config_a.set("int64", std::int64_t(63));
@@ -354,8 +360,8 @@ TEST_CASE("Merge Configurations", "[core][core::config]") {
 }
 
 TEST_CASE("Copy & Move Configurations", "[core][core::config]") {
+    Configuration config {};
 
-    Configuration config;
     config.set("bool", true);
 
     const Configuration config_copy = config;
@@ -366,9 +372,8 @@ TEST_CASE("Copy & Move Configurations", "[core][core::config]") {
 }
 
 TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
-
     // Create dictionary
-    List list;
+    List list {};
     auto tp = std::chrono::system_clock::now();
     list.push_back(true);
     list.push_back(std::int64_t(63));
@@ -403,9 +408,8 @@ TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
 }
 
 TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
-
     // Create dictionary
-    Dictionary dict;
+    Dictionary dict {};
     auto tp = std::chrono::system_clock::now();
     dict["bool"] = true;
     dict["int64"] = std::int64_t(63);
@@ -441,13 +445,12 @@ TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
 }
 
 TEST_CASE("Generate Configurations from Dictionary", "[core][core::config]") {
-
     // Create dictionary
-    Dictionary dict;
+    Dictionary dict {};
     dict["key"] = 3.12;
     dict["array"] = std::vector<std::string>({"one", "two", "three"});
 
-    const Configuration config(dict);
+    const Configuration config {dict};
 
     REQUIRE(config.get<double>("key") == 3.12);
     REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
