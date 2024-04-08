@@ -276,7 +276,7 @@ namespace constellation::config {
         std::size_t size() const { return config_.size(); }
 
         /**
-         * @brief Merge other configuration, only adding keys that are not yet defined in this configuration
+         * @brief Update with keys from another configuration, potentially overriding keys in this configuration
          * @param other Configuration to merge this one with
          */
         void merge(const Configuration& other);

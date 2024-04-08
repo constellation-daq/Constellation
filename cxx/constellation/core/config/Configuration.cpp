@@ -170,14 +170,11 @@ std::string Configuration::getText(const std::string& key, const std::string& de
 }
 
 /**
- * All keys that are already defined earlier in this configuration are not changed.
+ * All keys that are already defined earlier in this configuration will be overridden.
  */
 void Configuration::merge(const Configuration& other) {
     for(const auto& [key, value] : other.config_) {
-        // Only merge values that do not yet exist
-        if(!has(key)) {
-            set(key, value);
-        }
+        set(key, value);
     }
 }
 

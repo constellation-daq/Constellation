@@ -355,8 +355,8 @@ TEST_CASE("Merge Configurations", "[core][core::config]") {
     // Check that keys from config_b have been transferred:
     REQUIRE(config_a.get<std::uint64_t>("uint64") == 64);
 
-    // Check that existing keys in config_a have not been overwritten
-    REQUIRE(config_a.get<bool>("bool") == true);
+    // Check that existing keys in config_a have been overwritten
+    REQUIRE(config_a.get<bool>("bool") == false);
 }
 
 TEST_CASE("Copy & Move Configurations", "[core][core::config]") {
