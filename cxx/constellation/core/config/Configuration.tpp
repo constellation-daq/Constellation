@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "Configuration.hpp"
-
 #include <algorithm>
 #include <cstdint>
 #include <limits>
@@ -51,18 +49,6 @@ namespace constellation::config {
             return get<T>(key);
         }
         return def;
-    }
-
-    template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
-        try {
-            return get<std::vector<T>>(key);
-        } catch(std::out_of_range& e) {
-            /* Requested key has not been found in dictionary */
-            throw MissingKeyError(key);
-        } catch(std::invalid_argument& e) {
-            /* Value held by the dictionary entry could not be converted to desired type */
-            throw InvalidValueError(config_.at(key).str(), key, e.what());
-        }
     }
 
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) const {

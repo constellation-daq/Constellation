@@ -156,7 +156,7 @@ namespace constellation::config {
          * @throws InvalidKeyError If the conversion to the requested type did not succeed
          * @throws InvalidKeyError If an overflow happened while converting the key
          */
-        template <typename T> std::vector<T> getArray(const std::string& key) const;
+        template <typename T> std::vector<T> getArray(const std::string& key) const { return get<std::vector<T>>(key); }
 
         /**
          * @brief Get values for a key containing an array or default array if it does not exists
