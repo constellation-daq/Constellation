@@ -22,6 +22,7 @@
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
 
+using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::string_view_literals;
@@ -81,20 +82,9 @@ std::string BaseHeader::to_string() const {
         << "Sender: "sv << sender_ << '\n'                          //
         << "Time:   "sv << time_ << '\n'                            //
         << "Tags:"sv;
+
     for(const auto& entry : tags_) {
-        out << "\n "sv << entry.first << ": "sv;
-        std::visit(
-            [&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr(std::is_same_v<T, std::monostate>) {
-                    // Monostate => nil
-                    out << "nil";
-                } else {
-                    // Other types have implementation
-                    out << arg;
-                }
-            },
-            entry.second);
+        out << "\n "sv << entry.first << ": "sv << entry.second.str();
     }
     return out.str();
 }

@@ -28,7 +28,7 @@ std::string Satellite::getCanonicalName() const {
     return utils::to_string(type_name_) + "." + utils::to_string(satellite_name_);
 }
 
-void Satellite::initializing(const std::stop_token& /* stop_token */, const std::any& /* config */) {
+void Satellite::initializing(const std::stop_token& /* stop_token */, const config::Configuration& /* config */) {
     LOG(logger_, INFO) << "Initializing - empty";
 }
 
@@ -40,7 +40,7 @@ void Satellite::landing(const std::stop_token& /* stop_token */) {
     LOG(logger_, INFO) << "Landing - empty";
 }
 
-void Satellite::reconfiguring(const std::stop_token& /* stop_token */, const std::any& /* partial_config */) {
+void Satellite::reconfiguring(const std::stop_token& /* stop_token */, const config::Configuration& /* partial_config */) {
     // TODO(stephan.lachnit): throw if not supported
     LOG(logger_, INFO) << "Reconfiguring - empty";
 }

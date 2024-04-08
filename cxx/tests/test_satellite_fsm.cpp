@@ -12,14 +12,17 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <msgpack.hpp>
 #include <zmq.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace Catch::Matchers;
+using namespace constellation::config;
 using namespace constellation::satellite;
 using namespace std::literals::chrono_literals;
 
@@ -29,7 +32,7 @@ public:
     DummySatellite() : Satellite("Dummy", "sat1") { support_reconfigure(); }
     void dummy_support_reconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
     void dummy_throw_transitional() { throw_transitional_ = true; }
-    void initializing(const std::stop_token& stop_token, const std::any& config) override {
+    void initializing(const std::stop_token& stop_token, const Configuration& config) override {
         Satellite::initializing(stop_token, config);
         transitional_state(stop_token);
     }
@@ -41,7 +44,7 @@ public:
         Satellite::landing(stop_token);
         transitional_state(stop_token);
     }
-    void reconfiguring(const std::stop_token& stop_token, const std::any& partial_config) override {
+    void reconfiguring(const std::stop_token& stop_token, const Configuration& partial_config) override {
         Satellite::reconfiguring(stop_token, partial_config);
         transitional_state(stop_token);
     }
@@ -97,12 +100,12 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     auto fsm = FSM(satellite);
 
     // NEW -> INIT
-    fsm.react(Transition::initialize);
+    fsm.react(Transition::initialize, Configuration());
     REQUIRE(fsm.getState() == State::initializing);
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::INIT);
     // INIT -> INIT
-    fsm.react(Transition::initialize);
+    fsm.react(Transition::initialize, Configuration());
     REQUIRE(fsm.getState() == State::initializing);
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::INIT);
@@ -112,12 +115,12 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::ORBIT);
     // ORBIT -> ORBIT
-    fsm.react(Transition::reconfigure);
+    fsm.react(Transition::reconfigure, Configuration());
     REQUIRE(fsm.getState() == State::reconfiguring);
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::ORBIT);
     // ORBIT -> RUN
-    fsm.react(Transition::start);
+    fsm.react(Transition::start, 0U);
     REQUIRE(fsm.getState() == State::starting);
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::RUN);
@@ -138,7 +141,7 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     auto fsm = FSM(satellite);
 
     // Failure in transitional state
-    fsm.react(Transition::initialize);
+    fsm.react(Transition::initialize, Configuration());
     REQUIRE(fsm.getState() == State::initializing);
     satellite->dummy_throw_transitional();
     while(fsm.getState() == State::initializing) {
@@ -151,7 +154,7 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     REQUIRE_FALSE(fsm.reactIfAllowed(Transition::failure));
 
     // Reset
-    fsm.react(Transition::initialize);
+    fsm.react(Transition::initialize, Configuration());
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::INIT);
 
@@ -168,7 +171,9 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto fsm = FSM(satellite);
     using constellation::message::CSCP1Message;
 
-    auto payload_frame = std::make_shared<zmq::message_t>();
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, Dictionary());
+    auto payload_frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame
@@ -221,7 +226,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from NEW state"));
     INFO("NEW succeeded");
 
-    fsm.react(initialize);
+    fsm.react(initialize, Configuration());
     REQUIRE(fsm.getState() == State::initializing);
     // Allowed in initializing: initialized, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from initializing state"));
@@ -299,7 +304,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE(fsm.isAllowed(failure));
     INFO("ORBIT succeeded");
 
-    fsm.react(reconfigure);
+    fsm.react(reconfigure, Configuration());
     REQUIRE(fsm.getState() == State::reconfiguring);
     // Allowed in reconfiguring: reconfigured, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from reconfiguring state"));
@@ -320,7 +325,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     INFO("reconfiguring succeeded");
 
     satellite->progress_fsm(fsm);
-    fsm.react(start);
+    fsm.react(start, 0U);
     REQUIRE(fsm.getState() == State::starting);
     // Allowed in starting: started, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from starting state"));
