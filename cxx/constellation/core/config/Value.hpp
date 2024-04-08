@@ -63,6 +63,15 @@ namespace constellation::config {
         std::string str() const;
 
         /**
+         * @brief Get value in requested type
+         * @return Value in the type of the requested template parameter
+         *
+         * @throws invalid_argument If the conversion to the requested type did not succeed
+         * @throws bad_variant_access If no suitable conversion was found and direct access did not succeed
+         */
+        template <typename T> T get() const;
+
+        /**
          * @brief Get type info of the value currently stored in the variant
          * @return Type info of the currently held value
          */
@@ -75,3 +84,6 @@ namespace constellation::config {
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
     };
 } // namespace constellation::config
+
+// Include template members
+#include "Value.tpp"

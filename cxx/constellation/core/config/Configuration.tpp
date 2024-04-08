@@ -31,28 +31,7 @@ namespace constellation::config {
     template <typename T> T Configuration::get(const std::string& key) const {
         try {
             const auto dictval = config_.at(key);
-            T val;
-            // Value is directly held by variant:
-            if constexpr(is_one_of<T, value_t>()) {
-                val = std::get<T>(dictval);
-            } else if constexpr(std::is_arithmetic_v<T>) {
-                if(std::holds_alternative<std::int64_t>(dictval)) {
-                    val = static_cast<T>(std::get<std::int64_t>(dictval));
-                } else {
-                    val = static_cast<T>(std::get<double>(dictval));
-                }
-            } else if constexpr(std::is_enum_v<T>) {
-                const auto str = std::get<std::string>(dictval);
-                const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
-
-                if(!enum_val.has_value()) {
-                    throw std::invalid_argument("possible values are " + utils::list_enum_names<T>());
-                }
-
-                val = enum_val.value();
-            } else {
-                throw std::bad_variant_access();
-            }
+            auto val = dictval.get<T>();
             used_keys_.markUsed(key);
             return val;
         } catch(std::out_of_range& e) {
