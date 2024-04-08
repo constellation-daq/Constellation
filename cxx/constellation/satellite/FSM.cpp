@@ -86,7 +86,7 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
 }
 
 std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand transition_command,
-                                                             std::shared_ptr<zmq::message_t> payload) {
+                                                             const std::shared_ptr<zmq::message_t>& payload) {
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
