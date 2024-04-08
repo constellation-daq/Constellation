@@ -14,11 +14,7 @@
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::config {
-    /**
-     * @throws MissingKeyError If the requested key is not defined
-     * @throws InvalidTypeError If the conversion to the requested type did not succeed
-     * @throws InvalidTypeError If an overflow happened while converting the key
-     */
+
     template <typename T> T Configuration::get(const std::string& key) const {
         try {
             const auto dictval = config_.at(key);
@@ -57,10 +53,6 @@ namespace constellation::config {
         }
     }
 
-    /**
-     * @throws InvalidKeyError If the conversion to the requested type did not succeed
-     * @throws InvalidKeyError If an overflow happened while converting the key
-     */
     template <typename T> T Configuration::get(const std::string& key, const T& def) const {
         if(has(key)) {
             return get<T>(key);
@@ -68,11 +60,6 @@ namespace constellation::config {
         return def;
     }
 
-    /**
-     * @throws MissingKeyError If the requested key is not defined
-     * @throws InvalidKeyError If the conversion to the requested type did not succeed
-     * @throws InvalidKeyError If an overflow happened while converting the key
-     */
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
         // Value is directly held by variant, let's return:
         if constexpr(is_one_of<std::vector<T>, value_t>()) {
@@ -102,10 +89,6 @@ namespace constellation::config {
         }
     }
 
-    /**
-     * @throws InvalidKeyError If the conversion to the requested type did not succeed
-     * @throws InvalidKeyError If an overflow happened while converting the key
-     */
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) const {
         if(has(key)) {
             return getArray<T>(key);

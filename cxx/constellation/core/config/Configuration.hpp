@@ -135,6 +135,10 @@ namespace constellation::config {
          * @brief Get value of a key in requested type
          * @param key Key to get value of
          * @return Value of the key in the type of the requested template parameter
+         *
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the conversion to the requested type did not succeed
+         * @throws InvalidTypeError If an overflow happened while converting the key
          */
         template <typename T> T get(const std::string& key) const;
 
@@ -144,6 +148,9 @@ namespace constellation::config {
          * @param def Default value to use if key is not defined
          * @return Value of the key in the type of the requested template parameter
          *         or the default value if the key does not exists
+         *
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
          */
         template <typename T> T get(const std::string& key, const T& def) const;
 
@@ -151,6 +158,10 @@ namespace constellation::config {
          * @brief Get values for a key containing an array
          * @param key Key to get values of
          * @return List of values in the array in the requested template parameter
+         *
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
          */
         template <typename T> std::vector<T> getArray(const std::string& key) const;
 
@@ -160,6 +171,9 @@ namespace constellation::config {
          * @param def Default value array to use if key is not defined
          * @return List of values in the array in the requested template parameter
          *         or the default array if the key does not exist
+         *
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
          */
         template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def) const;
 
