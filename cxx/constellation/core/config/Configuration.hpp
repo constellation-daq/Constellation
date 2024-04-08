@@ -11,7 +11,10 @@
 
 #include <atomic>
 #include <filesystem>
+#include <initializer_list>
 #include <map>
+#include <string>
+#include <vector>
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
@@ -52,13 +55,6 @@ namespace constellation::config {
              */
             AccessMarker& operator=(const AccessMarker& rhs);
 
-            /// @{
-            /**
-             * @brief Allow moving the access marker
-             */
-            AccessMarker(AccessMarker&&) noexcept = default; // NOLINT
-            AccessMarker& operator=(AccessMarker&&) = default;
-            /// @}
 
             /**
              * @brief Method to register a key for a new access marker
@@ -84,7 +80,7 @@ namespace constellation::config {
             bool isUsed(const std::string& key) { return markers_.at(key).load(); }
 
         private:
-            std::map<std::string, std::atomic<bool>> markers_;
+            std::map<std::string, std::atomic_bool> markers_;
         };
 
     public:
@@ -99,37 +95,24 @@ namespace constellation::config {
          *
          * @param dict Dictionary to construct config object from
          */
-        explicit Configuration(const Dictionary& dict);
-
-        /// @{
-        /**
-         * @brief Allow copying the configuration
-         */
-        Configuration(const Configuration&) = default;
-        Configuration& operator=(const Configuration&) = default;
-        /// @}
-
-        /// @{
-        /**
-         * @brief Allow moving the configuration
-         */
-        Configuration(Configuration&&) noexcept = default; // NOLINT
-        Configuration& operator=(Configuration&&) = default;
-        /// @}
+        Configuration(const Dictionary& dict);
 
         /**
          * @brief Check if key is defined
          * @param key Key to check for existence
          * @return True if key exists, false otherwise
          */
-        bool has(const std::string& key) const;
+        bool has(const std::string& key) const { return config_.contains(key); }
 
         /**
          * @brief Check how many of the given keys are defined
+         *
+         * This is useful to check if two or more conflicting config keys that are defined.
+         *
          * @param keys Keys to check for existence
          * @return number of existing keys from the given list
          */
-        unsigned int count(std::initializer_list<std::string> keys) const;
+        std::size_t count(std::initializer_list<std::string> keys) const;
 
         /**
          * @brief Get value of a key in requested type
@@ -266,7 +249,7 @@ namespace constellation::config {
          * @brief Return total number of key / value pairs
          * @return Number of settings
          */
-        size_t size() const { return config_.size(); }
+        std::size_t size() const { return config_.size(); }
 
         /**
          * @brief Merge other configuration, only adding keys that are not yet defined in this configuration

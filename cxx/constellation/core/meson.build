@@ -51,6 +51,7 @@ install_headers(
 
 install_headers(
   'config/Configuration.hpp',
+  'config/Configuration.tpp',
   'config/Dictionary.hpp',
   'config/exceptions.hpp',
   subdir: 'constellation/core/config',
