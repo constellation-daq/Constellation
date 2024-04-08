@@ -53,6 +53,14 @@ namespace constellation::config {
              */
             AccessMarker& operator=(const AccessMarker& rhs);
 
+            /// @{
+            /**
+             * @brief Allow moving the access marker
+             */
+            AccessMarker(AccessMarker&&) noexcept = default; // NOLINT
+            AccessMarker& operator=(AccessMarker&&) = default;
+            /// @}
+
             /**
              * @brief Method to register a key for a new access marker
              * @param key Key of the marker
@@ -93,6 +101,22 @@ namespace constellation::config {
          * @param dict Dictionary to construct config object from
          */
         Configuration(const Dictionary& dict);
+
+        /// @{
+        /**
+         * @brief Allow copying the configuration
+         */
+        Configuration(const Configuration&) = default;
+        Configuration& operator=(const Configuration&) = default;
+        /// @}
+
+        /// @{
+        /**
+         * @brief Allow moving the configuration
+         */
+        Configuration(Configuration&&) noexcept = default; // NOLINT
+        Configuration& operator=(Configuration&&) = default;
+        /// @}
 
         /**
          * @brief Check if key is defined
