@@ -16,17 +16,13 @@
 
 namespace constellation::utils {
     /**
-     * @brief Tag for specific type
+     * @brief Demangle the type to human-readable form if it is mangled
+     * @param name The possibly mangled name
+     * @param keep_prefix If true the constellation namespace prefix will be kept, otherwise it is removed
      */
-    template <typename T> struct type_tag {};
-    /**
-     * @brief Empty tag
-     */
-    struct empty_tag {};
-
-#ifdef __GNUG__
-    // Only demangled for GNU compiler
     inline std::string demangle(const char* name, bool keep_prefix = false) {
+        // Only demangled for GNU compiler
+#ifdef __GNUG__
         // Try to demangle
         int status = -1;
         const std::unique_ptr<char, void (*)(void*)> res {abi::__cxa_demangle(name, nullptr, nullptr, &status), std::free};
@@ -39,17 +35,7 @@ namespace constellation::utils {
             }
             return str;
         }
-        return name;
-    }
-
-#else
-    /**
-     * @brief Demangle the type to human-readable form if it is mangled
-     * @param name The possibly mangled name
-     * @param keep_prefix If true the constellation namespace prefix will be kept, otherwise it is removed
-     */
-    inline std::string demangle(const char* name, bool keep_prefix = false) {
-        return name;
-    }
 #endif
+        return name;
+    }
 } // namespace constellation::utils
