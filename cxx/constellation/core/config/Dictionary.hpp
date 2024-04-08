@@ -13,7 +13,9 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <type_traits>
 #include <variant>
+#include <vector>
 
 #include <msgpack/object_decl.hpp>
 #include <msgpack/pack_decl.hpp>
@@ -22,12 +24,6 @@
 #include "constellation/core/config.hpp"
 
 namespace constellation::config {
-
-    /** Overload pattern for visitors */
-    template <typename... Ts> struct overload : Ts... {
-        using Ts::operator()...;
-    };
-    template <class... Ts> overload(Ts...) -> overload<Ts...>;
 
     /** Check if a type can be held by a variant */
     template <class T, class U> struct is_one_of;

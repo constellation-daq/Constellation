@@ -11,71 +11,74 @@
 
 #include <msgpack.hpp>
 
+#include <chrono>
+#include <cstdint>
+#include <ios>
 #include <span>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <typeinfo>
+#include <utility>
 #include <variant>
+#include <vector>
 
 #include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::config;
 
+// Type trait for std::vector
+template <class T> struct is_vector : std::false_type {};
+template <typename T> struct is_vector<std::vector<T>> : std::true_type {};
+template <class T> inline constexpr bool is_vector_v = is_vector<T>::value;
+
 std::string Value::str() const {
     std::ostringstream out {};
 
-    std::visit(overload {
-                   [&](const std::monostate&) { out << "NIL"; },
-                   [&](const bool& arg) { out << std::boolalpha << arg; },
-                   [&](const std::vector<bool>& arg) {
-                       out << "[" << std::boolalpha;
-                       for(const auto& val : arg) {
-                           out << val << ",";
-                       }
-                       out << "]";
-                   },
-                   [&](const std::vector<double>& arg) {
-                       out << "[";
-                       for(const auto& val : arg) {
-                           out << val << ",";
-                       }
-                       out << "]";
-                   },
-                   [&](const std::vector<std::int64_t>& arg) {
-                       out << "[";
-                       for(const auto& val : arg) {
-                           out << val << ",";
-                       }
-                       out << "]";
-                   },
-                   [&](const std::vector<std::string>& arg) {
-                       out << "[";
-                       for(const auto& val : arg) {
-                           out << val << ",";
-                       }
-                       out << "]";
-                   },
-                   [&](const std::vector<std::chrono::system_clock::time_point>& arg) {
-                       out << "[";
-                       for(const auto& val : arg) {
-                           out << val << ",";
-                       }
-                       out << "]";
-                   },
-                   [&](const auto& arg) { out << arg; },
-               },
-               *this);
+    std::visit(
+        [&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr(std::is_same_v<T, std::monostate>) {
+                out << "NIL";
+            } else if constexpr(std::is_same_v<T, bool>) {
+                out << std::boolalpha << arg;
+            } else if constexpr(std::is_same_v<T, std::vector<bool>>) {
+                out << "[" << std::boolalpha;
+                for(const auto& val : arg) {
+                    out << val << ",";
+                }
+                out << "]";
+            } else if constexpr(is_vector_v<T>) {
+                out << "[";
+                for(const auto& val : arg) {
+                    out << val << ",";
+                }
+                out << "]";
+            } else {
+                out << arg;
+            }
+        },
+        *this);
+
     return out.str();
 }
 
-std::type_info const& Value::type() const {
+const std::type_info& Value::type() const {
     return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, *this);
 }
 
 void Value::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
-    auto visitor = overload {
-        [&](const std::monostate&) { msgpack_packer.pack(msgpack::type::nil_t()); },
-        [&](const auto& arg) { msgpack_packer.pack(arg); },
-    };
-    std::visit(visitor, *this);
+    std::visit(
+        [&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr(std::is_same_v<T, std::monostate>) {
+                // std::monostate => nil
+                msgpack_packer.pack_nil();
+            } else {
+                msgpack_packer.pack(arg);
+            }
+        },
+        *this);
 }
 
 void Value::msgpack_unpack(const msgpack::object& msgpack_object) {
