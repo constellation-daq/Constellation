@@ -12,9 +12,13 @@
 #include <cstddef>
 #include <filesystem>
 #include <initializer_list>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <msgpack.hpp>
+#include <zmq.hpp>
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
@@ -198,4 +202,10 @@ std::vector<std::string> Configuration::getUnusedKeys() const {
     }
 
     return result;
+}
+
+std::shared_ptr<zmq::message_t> Configuration::assemble() const {
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, config_);
+    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 }

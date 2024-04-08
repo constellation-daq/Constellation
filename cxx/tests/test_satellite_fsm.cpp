@@ -16,7 +16,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
-#include <msgpack.hpp>
 #include <zmq.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
@@ -180,9 +179,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto fsm = FSM(satellite);
     using constellation::message::CSCP1Message;
 
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, Dictionary());
-    auto payload_frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+    auto payload_frame = Configuration().assemble();
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame

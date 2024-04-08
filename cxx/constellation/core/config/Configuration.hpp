@@ -13,8 +13,11 @@
 #include <filesystem>
 #include <initializer_list>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
+
+#include <zmq.hpp>
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
@@ -287,6 +290,13 @@ namespace constellation::config {
          * well as aliases are marked as used automatically and are therefore never returned.
          */
         std::vector<std::string> getUnusedKeys() const;
+
+        /**
+         * @brief Assemble configuration via msgpack for ZeroMQ
+         *
+         * @note This does not embedded the used keys, just the tag / value pairs
+         */
+        std::shared_ptr<zmq::message_t> assemble() const;
 
     private:
         /**

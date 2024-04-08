@@ -18,6 +18,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/casts.hpp"
@@ -145,11 +146,7 @@ TEST_CASE("Transitions", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    const Dictionary config {};
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, config);
-    auto initialize_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
-    initialize_msg.addPayload(std::move(initialize_payload));
+    initialize_msg.addPayload(Configuration().assemble());
     sender.send(initialize_msg);
 
     // Check reply
