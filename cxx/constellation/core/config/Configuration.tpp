@@ -42,14 +42,14 @@ namespace constellation::config {
             used_keys_.markUsed(key);
             return val;
         } catch(std::out_of_range& e) {
+            /* Requested key has not been found in dictionary */
             throw MissingKeyError(key);
         } catch(std::bad_variant_access& e) {
-            // Do not give an additional reason, the variant access is cryptic:
+            /* Value held by the dictionary entry could not be cast to desired type */
             throw InvalidTypeError(key, config_.at(key).type(), typeid(T));
         } catch(std::invalid_argument& e) {
+            /* Value held by the dictionary entry could not be converted to desired type */
             throw InvalidValueError(config_.at(key).str(), key, e.what());
-        } catch(std::overflow_error& e) {
-            throw InvalidTypeError(key, config_.at(key).type(), typeid(T), e.what());
         }
     }
 
