@@ -41,7 +41,7 @@ namespace constellation::utils {
 
     /**
      * @brief Demangle the type to human-readable form if it is mangled
-     * @param name Type info of the mangled name
+     * @param type Type info of the mangled name
      * @param keep_prefix If true the constellation namespace prefix will be kept, otherwise it is removed
      */
     inline std::string demangle(const std::type_info& type, bool keep_prefix = false) {

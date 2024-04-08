@@ -57,7 +57,7 @@ namespace constellation::config {
             /**
              * @brief Allow moving the access marker
              */
-            AccessMarker(AccessMarker&&) noexcept = default; // NOLINT
+            AccessMarker(AccessMarker&&) noexcept = default;
             AccessMarker& operator=(AccessMarker&&) = default;
             /// @}
 
@@ -114,7 +114,7 @@ namespace constellation::config {
         /**
          * @brief Allow moving the configuration
          */
-        Configuration(Configuration&&) noexcept = default; // NOLINT
+        Configuration(Configuration&&) noexcept = default;
         Configuration& operator=(Configuration&&) = default;
         /// @}
 
