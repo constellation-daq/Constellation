@@ -6,9 +6,13 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <memory>
+#include <stop_token>
+#include <string>
 #include <thread>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -32,42 +36,42 @@ public:
     DummySatellite() : Satellite("Dummy", "sat1") { support_reconfigure(); }
     void dummy_support_reconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
     void dummy_throw_transitional() { throw_transitional_ = true; }
-    void initializing(const std::stop_token& stop_token, const Configuration& config) override {
-        Satellite::initializing(stop_token, config);
-        transitional_state(stop_token);
+    void initializing(const Configuration& config) override {
+        Satellite::initializing(config);
+        transitional_state();
     }
-    void launching(const std::stop_token& stop_token) override {
-        Satellite::launching(stop_token);
-        transitional_state(stop_token);
+    void launching() override {
+        Satellite::launching();
+        transitional_state();
     }
-    void landing(const std::stop_token& stop_token) override {
-        Satellite::landing(stop_token);
-        transitional_state(stop_token);
+    void landing() override {
+        Satellite::landing();
+        transitional_state();
     }
-    void reconfiguring(const std::stop_token& stop_token, const Configuration& partial_config) override {
-        Satellite::reconfiguring(stop_token, partial_config);
-        transitional_state(stop_token);
+    void reconfiguring(const Configuration& partial_config) override {
+        Satellite::reconfiguring(partial_config);
+        transitional_state();
     }
-    void starting(const std::stop_token& stop_token, std::uint32_t run_number) override {
-        Satellite::starting(stop_token, run_number);
-        transitional_state(stop_token);
+    void starting(std::uint32_t run_number) override {
+        Satellite::starting(run_number);
+        transitional_state();
     }
-    void stopping(const std::stop_token& stop_token) override {
-        Satellite::stopping(stop_token);
-        transitional_state(stop_token);
+    void stopping() override {
+        Satellite::stopping();
+        transitional_state();
     }
     void running(const std::stop_token& stop_token) override {
         Satellite::running(stop_token);
-        transitional_state(stop_token);
+        transitional_state();
     }
-    void interrupting(const std::stop_token& stop_token, State previous_state) override {
-        Satellite::interrupting(stop_token, previous_state);
-        transitional_state(stop_token);
+    void interrupting(State previous_state) override {
+        // Note: the default implementation might call `stopping` and `landing`, both of which call `transitional_state`
+        progress_fsm_ = true;
+        Satellite::interrupting(previous_state);
+        progress_fsm_ = false;
+        transitional_state();
     }
-    void on_failure(const std::stop_token& stop_token, State previous_state) override {
-        Satellite::on_failure(stop_token, previous_state);
-        transitional_state(stop_token);
-    }
+    void on_failure(State previous_state) override { Satellite::on_failure(previous_state); }
     void progress_fsm(FSM& fsm) {
         auto old_state = fsm.getState();
         progress_fsm_ = true;
@@ -79,8 +83,8 @@ public:
     }
 
 private:
-    void transitional_state(const std::stop_token& stop_token) {
-        while(!progress_fsm_ && !stop_token.stop_requested()) {
+    void transitional_state() {
+        while(!progress_fsm_) {
             if(throw_transitional_) {
                 throw_transitional_ = false;
                 throw std::exception();
@@ -158,10 +162,15 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::INIT);
 
-    // Interrupt in transitional state
+    // Interrupt in RUN state
     fsm.react(Transition::launch);
-    REQUIRE(fsm.getState() == State::launching);
+    satellite->progress_fsm(fsm);
+    REQUIRE(fsm.getState() == State::ORBIT);
+    fsm.react(Transition::start, 0U);
+    satellite->progress_fsm(fsm);
+    REQUIRE(fsm.getState() == State::RUN);
     fsm.react(Transition::interrupt);
+    std::this_thread::sleep_for(100ms); // Give some time call stopping and landing
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::SAFE);
 }
@@ -228,6 +237,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     fsm.react(initialize, Configuration());
     REQUIRE(fsm.getState() == State::initializing);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in initializing: initialized, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from initializing state"));
     REQUIRE_THROWS_WITH(fsm.react(launch), Equals("Transition launch not allowed from initializing state"));
@@ -246,6 +256,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::INIT);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in INIT: initialize, launch, failure
     REQUIRE(fsm.isAllowed(initialize));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from INIT state"));
@@ -266,6 +277,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     fsm.react(launch);
     REQUIRE(fsm.getState() == State::launching);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in launching: launched, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from launching state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from launching state"));
@@ -279,13 +291,14 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE_THROWS_WITH(fsm.react(started), Equals("Transition started not allowed from launching state"));
     REQUIRE_THROWS_WITH(fsm.react(stop), Equals("Transition stop not allowed from launching state"));
     REQUIRE_THROWS_WITH(fsm.react(stopped), Equals("Transition stopped not allowed from launching state"));
-    REQUIRE(fsm.isAllowed(interrupt));
+    REQUIRE_THROWS_WITH(fsm.react(interrupt), Equals("Transition interrupt not allowed from launching state"));
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from launching state"));
     REQUIRE(fsm.isAllowed(failure));
     INFO("launching succeeded");
 
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::ORBIT);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in ORBIT: start, land, reconfigure, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from ORBIT state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from ORBIT state"));
@@ -306,6 +319,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     fsm.react(reconfigure, Configuration());
     REQUIRE(fsm.getState() == State::reconfiguring);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in reconfiguring: reconfigured, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from reconfiguring state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from reconfiguring state"));
@@ -319,7 +333,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE_THROWS_WITH(fsm.react(started), Equals("Transition started not allowed from reconfiguring state"));
     REQUIRE_THROWS_WITH(fsm.react(stop), Equals("Transition stop not allowed from reconfiguring state"));
     REQUIRE_THROWS_WITH(fsm.react(stopped), Equals("Transition stopped not allowed from reconfiguring state"));
-    REQUIRE(fsm.isAllowed(interrupt));
+    REQUIRE_THROWS_WITH(fsm.react(interrupt), Equals("Transition interrupt not allowed from reconfiguring state"));
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from reconfiguring state"));
     REQUIRE(fsm.isAllowed(failure));
     INFO("reconfiguring succeeded");
@@ -327,6 +341,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     satellite->progress_fsm(fsm);
     fsm.react(start, 0U);
     REQUIRE(fsm.getState() == State::starting);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in starting: started, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from starting state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from starting state"));
@@ -340,13 +355,14 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE(fsm.isAllowed(started));
     REQUIRE_THROWS_WITH(fsm.react(stop), Equals("Transition stop not allowed from starting state"));
     REQUIRE_THROWS_WITH(fsm.react(stopped), Equals("Transition stopped not allowed from starting state"));
-    REQUIRE(fsm.isAllowed(interrupt));
+    REQUIRE_THROWS_WITH(fsm.react(interrupt), Equals("Transition interrupt not allowed from starting state"));
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from starting state"));
     REQUIRE(fsm.isAllowed(failure));
     INFO("starting succeeded");
 
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::RUN);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in RUN: stop, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from RUN state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from RUN state"));
@@ -367,6 +383,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     fsm.react(stop);
     REQUIRE(fsm.getState() == State::stopping);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in stopping: stopped, interrupt, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from stopping state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from stopping state"));
@@ -380,7 +397,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE_THROWS_WITH(fsm.react(started), Equals("Transition started not allowed from stopping state"));
     REQUIRE_THROWS_WITH(fsm.react(stop), Equals("Transition stop not allowed from stopping state"));
     REQUIRE(fsm.isAllowed(stopped));
-    REQUIRE(fsm.isAllowed(interrupt));
+    REQUIRE_THROWS_WITH(fsm.react(interrupt), Equals("Transition interrupt not allowed from stopping state"));
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from stopping state"));
     REQUIRE(fsm.isAllowed(failure));
     INFO("stopping succeeded");
@@ -388,6 +405,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     satellite->progress_fsm(fsm);
     fsm.react(land);
     REQUIRE(fsm.getState() == State::landing);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in landing: landed, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from landing state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from landing state"));
@@ -408,8 +426,10 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     satellite->progress_fsm(fsm);
     fsm.react(launch);
+    satellite->progress_fsm(fsm);
     fsm.react(interrupt);
     REQUIRE(fsm.getState() == State::interrupting);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in interrupting: interrupted, failure
     REQUIRE_THROWS_WITH(fsm.react(initialize), Equals("Transition initialize not allowed from interrupting state"));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from interrupting state"));
@@ -430,6 +450,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::SAFE);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in SAFE: initialize, failure
     REQUIRE(fsm.isAllowed(initialize));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from SAFE state"));
@@ -450,6 +471,7 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
 
     fsm.react(failure);
     REQUIRE(fsm.getState() == State::ERROR);
+    std::this_thread::sleep_for(5ms); // Give some to log in the correct order
     // Allowed in ERROR: initialize
     REQUIRE(fsm.isAllowed(initialize));
     REQUIRE_THROWS_WITH(fsm.react(initialized), Equals("Transition initialized not allowed from ERROR state"));

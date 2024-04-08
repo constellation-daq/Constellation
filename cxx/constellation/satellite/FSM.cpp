@@ -33,15 +33,13 @@ using namespace constellation::utils;
 using namespace std::literals::string_literals;
 
 FSM::~FSM() {
-    transitional_thread_.request_stop();
-    if(transitional_thread_.joinable()) {
-        transitional_thread_.join();
-    }
     run_thread_.request_stop();
     if(run_thread_.joinable()) {
         run_thread_.join();
     }
-    failure_thread_.request_stop();
+    if(transitional_thread_.joinable()) {
+        transitional_thread_.join();
+    }
     if(failure_thread_.joinable()) {
         failure_thread_.join();
     }
@@ -161,10 +159,11 @@ void FSM::interrupt() {
     }
 }
 
+// Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
 Transition call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
     try {
-        // Note: we should probably use a packaged task to quit this externally like https://stackoverflow.com/a/56268886
+        // Call transition function of satellite
         (satellite->*func)(args...);
         // Finish transition
         return success_transition;
@@ -174,70 +173,71 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
     }
 }
 
+// Joins a thread and assigns it to a new thread with given args
+template <typename... Args> void launch_assign_thread(std::thread& thread, Args... args) {
+    // Join if possible to avoid std::terminate
+    if(thread.joinable()) {
+        thread.join();
+    }
+    // Launch thread
+    thread = std::thread(args...);
+}
+
 // NOLINTBEGIN(performance-unnecessary-value-param)
 
 State FSM::initialize(TransitionPayload payload) {
-    auto cfg = std::get<Configuration>(payload);
-    auto call_wrapper = [this](const std::stop_token& stop_token, const Configuration& config) {
-        // We might come from ERROR, so let's stop the failure thread
-        this->failure_thread_.request_stop();
-        if(this->failure_thread_.joinable()) {
-            this->failure_thread_.join();
-        }
-        // Note: we should quit this externally after some time if a stop was requested, see also `call_satellite_function`
-
+    auto call_wrapper = [this](const Configuration& config) {
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
-        const auto transition = call_satellite_function(
-            this->satellite_.get(), &Satellite::initializing, Transition::initialized, stop_token, config);
+        const auto transition =
+            call_satellite_function(this->satellite_.get(), &Satellite::initializing, Transition::initialized, config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, cfg);
+    const auto config = std::get<Configuration>(payload);
+    launch_assign_thread(transitional_thread_, call_wrapper, config);
     return State::initializing;
 }
 
 State FSM::launch(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling launching function of satellite...";
-        const auto transition =
-            call_satellite_function(this->satellite_.get(), &Satellite::launching, Transition::launched, stop_token);
+        const auto transition = call_satellite_function(this->satellite_.get(), &Satellite::launching, Transition::launched);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(transitional_thread_, call_wrapper);
     return State::launching;
 }
 
 State FSM::land(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling landing function of satellite...";
-        const auto transition =
-            call_satellite_function(this->satellite_.get(), &Satellite::landing, Transition::landed, stop_token);
+        const auto transition = call_satellite_function(this->satellite_.get(), &Satellite::landing, Transition::landed);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(transitional_thread_, call_wrapper);
     return State::landing;
 }
 
 State FSM::reconfigure(TransitionPayload payload) {
-    auto cfg = std::get<Configuration>(payload);
-    auto call_wrapper = [this](const std::stop_token& stop_token, const Configuration& partial_config) {
+    auto call_wrapper = [this](const Configuration& partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
         const auto transition = call_satellite_function(
-            this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, stop_token, partial_config);
+            this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, partial_config);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, cfg);
+    const auto partial_config = std::get<Configuration>(payload);
+    launch_assign_thread(transitional_thread_, call_wrapper, partial_config);
     return State::reconfiguring;
 }
 
 State FSM::start(TransitionPayload payload) {
-    auto run = std::get<std::uint32_t>(payload);
-    auto call_wrapper = [this](const std::stop_token& stop_token, std::uint32_t run_nr) {
+    auto call_wrapper = [this](std::uint32_t run_nr) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
-            call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, stop_token, run_nr);
+            call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, run_nr);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper, run);
+    const auto run_nr = std::get<std::uint32_t>(payload);
+    launch_assign_thread(transitional_thread_, call_wrapper, run_nr);
     return State::starting;
 }
 
@@ -249,42 +249,39 @@ State FSM::started(TransitionPayload /* payload */) {
 }
 
 State FSM::stop(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this]() {
         // First stop of RUN thread
         this->run_thread_.request_stop();
         if(this->run_thread_.joinable()) {
             this->run_thread_.join();
         }
-        // Note: we should quit this externally after some time if a stop was requested, see also `call_satellite_function`
 
         LOG(logger_, INFO) << "Calling stopping function of satellite...";
-        const auto transition =
-            call_satellite_function(this->satellite_.get(), &Satellite::stopping, Transition::stopped, stop_token);
+        const auto transition = call_satellite_function(this->satellite_.get(), &Satellite::stopping, Transition::stopped);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(transitional_thread_, call_wrapper);
     return State::stopping;
 }
 
 State FSM::interrupt(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this](State previous_state) {
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
         const auto transition = call_satellite_function(
-            this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, stop_token, this->state_);
+            this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, previous_state);
         this->reactIfAllowed(transition);
     };
-    transitional_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(transitional_thread_, call_wrapper, this->state_);
     return State::interrupting;
 }
 
 State FSM::failure(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](const std::stop_token& stop_token) {
+    auto call_wrapper = [this](State previous_state) {
         LOG(logger_, INFO) << "Calling on_failure function of satellite...";
-        call_satellite_function(
-            this->satellite_.get(), &Satellite::on_failure, Transition::failure, stop_token, this->state_);
+        call_satellite_function(this->satellite_.get(), &Satellite::on_failure, Transition::failure, previous_state);
         // Note: we do not trigger a success transition as we always go to ERROR state
     };
-    failure_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(failure_thread_, call_wrapper, this->state_);
     return State::ERROR;
 }
 
