@@ -9,16 +9,15 @@
 
 #include "Configuration.hpp"
 
-#include <cassert>
+#include <cstddef>
 #include <filesystem>
-#include <ostream>
+#include <initializer_list>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
-#include <msgpack.hpp>
-
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::config;
 
@@ -56,12 +55,12 @@ bool Configuration::has(const std::string& key) const {
     return config_.find(key) != config_.cend();
 }
 
-unsigned int Configuration::count(std::initializer_list<std::string> keys) const {
+std::size_t Configuration::count(std::initializer_list<std::string> keys) const {
     if(keys.size() == 0) {
         throw std::invalid_argument("list of keys cannot be empty");
     }
 
-    unsigned int found = 0;
+    std::size_t found = 0;
     for(const auto& key : keys) {
         if(has(key)) {
             found++;
@@ -102,17 +101,19 @@ std::filesystem::path Configuration::getPathWithExtension(const std::string& key
  * For all relative paths the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
 std::vector<std::filesystem::path> Configuration::getPathArray(const std::string& key, bool check_exists) const {
-    std::vector<std::filesystem::path> path_array;
+    const auto vals = getArray<std::string>(key);
+    std::vector<std::filesystem::path> path_array {};
+    path_array.reserve(vals.size());
 
     // Convert all paths to absolute
     try {
-        for(auto& path : getArray<std::string>(key)) {
+        for(const auto& path : vals) {
             path_array.emplace_back(path_to_absolute(path, check_exists));
         }
-        return path_array;
     } catch(std::invalid_argument& e) {
         throw InvalidValueError(config_.at(key).str(), key, e.what());
     }
+    return path_array;
 }
 /**
  * @throws std::invalid_argument If the path does not exists
@@ -185,7 +186,7 @@ void Configuration::merge(const Configuration& other) {
 }
 
 Dictionary Configuration::getAll() const {
-    Dictionary result;
+    Dictionary result {};
 
     // Loop over all configuration keys
     for(const auto& key_value : config_) {
@@ -201,7 +202,7 @@ Dictionary Configuration::getAll() const {
 }
 
 std::vector<std::string> Configuration::getUnusedKeys() const {
-    std::vector<std::string> result;
+    std::vector<std::string> result {};
 
     // Loop over all configuration keys, excluding internal ones
     for(const auto& key_value : getAll()) {
