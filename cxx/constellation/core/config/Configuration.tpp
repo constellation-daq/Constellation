@@ -65,7 +65,7 @@ namespace constellation::config {
             config_[key] = val;
         } else if constexpr(std::is_integral_v<T>) {
             if (val > std::numeric_limits<std::int64_t>::max()) {
-                // TODO: throw
+                throw InvalidValueError(std::to_string(val), key, "type overflow");
             }
             config_[key] = static_cast<std::int64_t>(val);
         } else if constexpr(std::is_floating_point_v<T>) {
@@ -90,7 +90,7 @@ namespace constellation::config {
             nval.reserve(val.size());
             for (auto val_elem : val) {
                 if (val_elem > std::numeric_limits<std::int64_t>::max()) {
-                    // TODO: throw
+                    throw InvalidValueError(std::to_string(val_elem), key, "type overflow");
                 }
                 nval.emplace_back(static_cast<std::int64_t>(val_elem));
             }
