@@ -27,8 +27,8 @@ namespace constellation::satellite {
         virtual ~Satellite() = default;
 
         // No copy/move constructor/assignment
-        Satellite(Satellite& other) = delete;
-        Satellite& operator=(Satellite other) = delete;
+        Satellite(const Satellite& other) = delete;
+        Satellite& operator=(const Satellite& other) = delete;
         Satellite(Satellite&& other) = delete;
         Satellite& operator=(Satellite&& other) = delete;
 
