@@ -9,16 +9,19 @@
 
 #include "FSM.hpp"
 
-#include <any>
+#include <cstdint>
 #include <memory>
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <typeinfo>
 #include <utility>
 
 #include <msgpack.hpp>
 #include <zmq.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/casts.hpp"
@@ -121,7 +124,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
         if(payload && !payload->empty()) {
             if(transition == Transition::initialize || transition == Transition::reconfigure) {
                 const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
-                fsm_payload = config::Configuration(msgpack_payload->as<Dictionary>());
+                fsm_payload = Configuration(msgpack_payload->as<Dictionary>());
             } else if(transition == Transition::start) {
                 const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
                 fsm_payload = msgpack_payload->as<std::uint32_t>();
