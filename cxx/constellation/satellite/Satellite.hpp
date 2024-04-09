@@ -110,6 +110,9 @@ namespace constellation::satellite {
         /** Return the canonical satellite name (type_name.satellite_name) */
         std::string getCanonicalName() const;
 
+        /** Return a reference to the satellite logger */
+        log::Logger& getLogger() { return logger_; }
+
     protected:
         Satellite(std::string_view type_name, std::string_view satellite_name);
 

@@ -10,6 +10,7 @@
 #include "FSM.hpp"
 
 #include <cstdint>
+#include <exception>
 #include <memory>
 #include <stop_token>
 #include <string>
@@ -170,8 +171,12 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
         (satellite->*func)(args...);
         // Finish transition
         return success_transition;
+    } catch(const std::exception& error) {
+        // Something went wrong, log and go to error state
+        LOG(satellite->getLogger(), CRITICAL) << "Critical failure during transition: " << error.what();
+        return Transition::failure;
     } catch(...) {
-        // something went wrong, go to error state
+        // Something went wrong but not with a proper exception, go to error state
         return Transition::failure;
     }
 }
