@@ -135,6 +135,8 @@ CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
 CMDP1StatMessage::CMDP1StatMessage(std::string topic, CMDP1Message::Header header, config::Value value, metrics::Type type)
     : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), {}), topic_(std::move(topic)) {
 
+    // FIXME this currently is deliberately not according to CMDP protocol!
+
     // Pack the metrics payload
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, value);
@@ -147,6 +149,8 @@ std::pair<constellation::config::Value, constellation::metrics::Type> CMDP1StatM
     // Offset since we decode two separate msgpack objects
     std::size_t offset = 0;
     const auto payload = getPayload();
+
+    // FIXME this currently is deliberately not according to CMDP protocol!
 
     // Unpack value
     const auto msgpack_value = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
