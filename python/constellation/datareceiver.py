@@ -229,38 +229,6 @@ class H5DataReceiverWriter(DataReceiver):
         )
         return "Initializing"
 
-    def _open_file(self):
-        """Open the hdf5 file and return the file object."""
-        h5file = None
-        filename = self.file_name_pattern.format(
-            run_number=self.run_number,
-            date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-        )
-        if os.path.isfile(filename):
-            self.log.error(f"file already exists: {filename}")
-            raise RuntimeError(f"file already exists: {filename}")
-
-        self.log.debug("Creating file %s", filename)
-        # Create directory path.
-        directory = os.path.dirname(filename)
-        try:
-            os.makedirs(directory)
-        except (FileExistsError, FileNotFoundError):
-            pass
-        except Exception as exception:
-            raise RuntimeError(
-                f"unable to create directory {directory}: \
-                {type(exception)} {str(exception)}"
-            ) from exception
-        try:
-            h5file = h5py.File(filename, "w")
-        except Exception as exception:
-            self.log.error("Unable to open %s: %s", filename, str(exception))
-            raise RuntimeError(
-                f"Unable to open {filename}: {str(exception)}",
-            ) from exception
-        return h5file
-
     def write_data(self, h5file: h5py.File, item: CDTPMessage):
         """Write data to HDF5 format
 
@@ -462,6 +430,38 @@ class H5DataReceiverWriter(DataReceiver):
             h5file.close()
             self.running_sats = []
             return "Finished Acquisition"
+
+    def _open_file(self):
+        """Open the hdf5 file and return the file object."""
+        h5file = None
+        filename = self.file_name_pattern.format(
+            run_number=self.run_number,
+            date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+        )
+        if os.path.isfile(filename):
+            self.log.error(f"file already exists: {filename}")
+            raise RuntimeError(f"file already exists: {filename}")
+
+        self.log.debug("Creating file %s", filename)
+        # Create directory path.
+        directory = os.path.dirname(filename)
+        try:
+            os.makedirs(directory)
+        except (FileExistsError, FileNotFoundError):
+            pass
+        except Exception as exception:
+            raise RuntimeError(
+                f"unable to create directory {directory}: \
+                {type(exception)} {str(exception)}"
+            ) from exception
+        try:
+            h5file = h5py.File(filename, "w")
+        except Exception as exception:
+            self.log.error("Unable to open %s: %s", filename, str(exception))
+            raise RuntimeError(
+                f"Unable to open {filename}: {str(exception)}",
+            ) from exception
+        return h5file
 
 
 # -------------------------------------------------------------------------
