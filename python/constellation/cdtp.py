@@ -76,11 +76,34 @@ class DataTransmitter:
         self.sequence_number = 0
 
     def send_start(self, payload, meta: dict = {}, flags: int = 0):
+        """
+        Send starting message of data run over a ZMQ socket.
+
+        Follows the Constellation Data Transmission Protocol.
+
+        payload: meta information about the beginning of run.
+
+        flags: additional ZMQ socket flags to use during transmission.
+
+        """
         self.sequence_number = 0
         self.running = True
         return self._dispatch(CDTPMessageIdentifier.BOR, payload, meta, flags)
 
     def send_data(self, payload, meta: dict = {}, flags: int = 0):
+        """
+        Send data message of data run over a ZMQ socket.
+
+        Follows the Constellation Data Transmission Protocol.
+
+        payload: meta information about the beginning of run.
+
+        meta: optional dictionary that is sent as a map of string/value
+        pairs with the header.
+
+        flags: additional ZMQ socket flags to use during transmission.
+
+        """
         if self.running:
             self.sequence_number += 1
             return self._dispatch(CDTPMessageIdentifier.DAT, payload, meta, flags)
@@ -88,6 +111,17 @@ class DataTransmitter:
         raise RuntimeError(msg)
 
     def send_end(self, payload, meta: dict = {}, flags: int = 0):
+        """
+        Send ending message of data run over a ZMQ socket.
+
+        Follows the Constellation Data Transmission Protocol.
+
+        payload: meta information about the end of run.
+
+        flags: additional ZMQ socket flags to use during transmission.
+
+        """
+
         self.running = False
         return self._dispatch(CDTPMessageIdentifier.EOR, payload, meta, flags)
 
