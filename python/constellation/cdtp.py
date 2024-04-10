@@ -149,9 +149,6 @@ class DataTransmitter:
 
         meta: dictionary to include in the map of the message header.
 
-        socket: ZMQ socket to use for transmission. If none is specified, use
-        the one the class was initialized with.
-
         flags: additional ZMQ socket flags to use during transmission.
 
         Returns: return of socket.send(payload) call.
@@ -182,9 +179,6 @@ class DataTransmitter:
         """Receive a multi-part data transmission.
 
         Follows the Constellation Data Transmission Protocol.
-
-        socket: ZMQ socket to use for transmission. If none is specified, use
-        the one the class was initialized with.
 
         flags: additional ZMQ socket flags to use during transmission.
 
