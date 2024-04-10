@@ -18,10 +18,12 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
+#include "constellation/core/metrics/Manager.hpp"
 
 namespace constellation::message {
 
@@ -166,6 +168,45 @@ namespace constellation::message {
     private:
         log::Level level_;
         std::string log_topic_;
+    };
+
+    class CMDP1StatMessage : public CMDP1Message {
+    public:
+        /**
+         * Construct a new CMDP1 message for metrics
+         *
+         * @param topic Topic of the statistics metric message
+         * @param header CMDP1 header of the message
+         * @param value Value of the metric
+         * @param type Type of the metric
+         */
+        CNSTLN_API CMDP1StatMessage(std::string topic, Header header, config::Value value, metrics::Type type);
+
+        /**
+         * Construct a CMDP1StatMessage from a decoded CMDP1Message
+         *
+         * @throw IncorrectMessageType If the message is not a (valid) metrics message
+         */
+        CNSTLN_API CMDP1StatMessage(CMDP1Message message);
+
+        /**
+         * @return Metric value and type
+         */
+        CNSTLN_API std::pair<config::Value, metrics::Type> getMetric() const;
+
+        /**
+         * Disassemble stats message from ZeroMQ frames
+         *
+         * This function moves the payload.
+         *
+         * @return New CMDP1StatMessage assembled from ZeroMQ frames
+         * @throw MessageDecodingError If the message is not a valid CMDP1 message
+         * @throw IncorrectMessageType If the message is a valid CMDP1 message but not a (valid) stat message
+         */
+        CNSTLN_API static CMDP1StatMessage disassemble(zmq::multipart_t& frames);
+
+    private:
+        std::string topic_;
     };
 
 } // namespace constellation::message

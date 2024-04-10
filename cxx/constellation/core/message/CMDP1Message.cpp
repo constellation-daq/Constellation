@@ -25,6 +25,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
+using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
@@ -127,6 +128,47 @@ std::string_view CMDP1LogMessage::getLogMessage() const {
 }
 
 CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
+    // Use disassemble from base class and cast via constructor
+    return {CMDP1Message::disassemble(frames)};
+}
+
+CMDP1StatMessage::CMDP1StatMessage(std::string topic, CMDP1Message::Header header, config::Value value, metrics::Type type)
+    : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), {}), topic_(std::move(topic)) {
+
+    // Pack the metrics payload
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, value);
+    msgpack::pack(sbuf, magic_enum::enum_integer(type));
+
+    setPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
+}
+
+std::pair<constellation::config::Value, constellation::metrics::Type> CMDP1StatMessage::getMetric() const {
+    // Offset since we decode two separate msgpack objects
+    std::size_t offset = 0;
+    const auto payload = getPayload();
+
+    // Unpack value
+    const auto msgpack_value = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
+    const auto value = msgpack_value->as<config::Value>();
+
+    // Unpack type
+    const auto msgpack_type = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
+    const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
+
+    if(type.has_value()) {
+        throw MessageDecodingError("Invalid metric type");
+    }
+    return {value, type.value()};
+}
+
+CMDP1StatMessage::CMDP1StatMessage(CMDP1Message message) : CMDP1Message(std::move(message)) {
+    if(isLogMessage()) {
+        throw IncorrectMessageType("Not a metric message");
+    }
+}
+
+CMDP1StatMessage CMDP1StatMessage::disassemble(zmq::multipart_t& frames) {
     // Use disassemble from base class and cast via constructor
     return {CMDP1Message::disassemble(frames)};
 }
