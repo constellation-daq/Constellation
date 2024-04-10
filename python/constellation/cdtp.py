@@ -145,6 +145,8 @@ class DataTransmitter:
 
         Follows the Constellation Data Transmission Protocol.
 
+        run_identifier: flag identifying start, middle and end of run
+
         payload: data to send.
 
         meta: dictionary to include in the map of the message header.
