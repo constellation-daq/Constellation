@@ -222,6 +222,7 @@ class H5DataReceiverWriter(DataReceiver):
         self.run_number = 0
         self.running_sats = []
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
+        self.file_name_pattern = None
 
     def do_initializing(self, payload: any) -> str:
         self.file_name_pattern = self.config.setdefault(
