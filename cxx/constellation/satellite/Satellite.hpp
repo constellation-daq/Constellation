@@ -160,12 +160,11 @@ namespace constellation::satellite {
          * @param interval Minimum interval between consecutive emissions
          * @param value Initial value of the metric
          * @retval true if the metric was registered
-         * @retval false if the metric was already registered
          */
-        bool register_timed_metric(const std::string& topic,
+        void register_timed_metric(const std::string& topic,
                                    metrics::Clock::duration interval,
                                    metrics::Type type,
-                                   config::Value value = {});
+                                   config::Value value = {}) const;
 
         /**
          * Register a metric which will be emitted after having been triggered a given number of times
@@ -174,12 +173,11 @@ namespace constellation::satellite {
          * @param triggers Minimum number of triggers between consecutive emissions
          * @param value Initial value of the metric
          * @retval true if the metric was registered
-         * @retval false if the metric was already registered
          */
-        bool register_triggered_metric(const std::string& topic,
+        void register_triggered_metric(const std::string& topic,
                                        std::size_t triggers,
                                        metrics::Type type,
-                                       config::Value value = {});
+                                       config::Value value = {}) const;
 
         /**
          * Update the value cached for the given metric
@@ -187,7 +185,7 @@ namespace constellation::satellite {
          * \param topic Unique topic of the metric
          * \param value New value of the metric
          */
-        void set_metric(const std::string& topic, config::Value value);
+        void set_metric(const std::string& topic, config::Value value) const;
 
         /**
          * @brief Register a new user command
