@@ -111,36 +111,6 @@ class DataReceiver(Satellite):
 
         self.request(CHIRPServiceIdentifier.DATA)
 
-    @chirp_callback(CHIRPServiceIdentifier.DATA)
-    def _add_sender_callback(self, service: DiscoveredService):
-        """Callback method for connecting to data service."""
-        if not service.alive:
-            self._remove_sender(service)
-        else:
-            self._add_sender(service)
-
-    def _add_sender(self, service: DiscoveredService):
-        """
-        Adds an interface (host, port) to receive data from.
-        """
-        # TODO: Name satellites instead of using host_uuid
-        self._pull_interfaces[service.host_uuid] = (service.address, service.port)
-        self.log.info(
-            f"Adding interface tcp://{service.address}:{service.port} to listen to."
-        )
-
-        # NOTE: Not sure this is the right way to handle late-coming satellite offers
-        if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
-            uuid = str(service.host_uuid)
-            self._start_thread(uuid, service.address, service.port)
-
-    def _remove_sender(self, service: DiscoveredService):
-        """Removes sender from pool"""
-        uuid = str(service.host_uuid)
-        self._puller_threads[uuid].join()
-        self._pull_interfaces.pop(uuid)
-        self._puller_threads.pop(uuid)
-
     def do_initializing(self, payload: any) -> str:
         return super().do_initializing(payload)
 
@@ -180,6 +150,36 @@ class DataReceiver(Satellite):
 
         """
         raise NotImplementedError
+
+    @chirp_callback(CHIRPServiceIdentifier.DATA)
+    def _add_sender_callback(self, service: DiscoveredService):
+        """Callback method for connecting to data service."""
+        if not service.alive:
+            self._remove_sender(service)
+        else:
+            self._add_sender(service)
+
+    def _add_sender(self, service: DiscoveredService):
+        """
+        Adds an interface (host, port) to receive data from.
+        """
+        # TODO: Name satellites instead of using host_uuid
+        self._pull_interfaces[service.host_uuid] = (service.address, service.port)
+        self.log.info(
+            f"Adding interface tcp://{service.address}:{service.port} to listen to."
+        )
+
+        # NOTE: Not sure this is the right way to handle late-coming satellite offers
+        if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
+            uuid = str(service.host_uuid)
+            self._start_thread(uuid, service.address, service.port)
+
+    def _remove_sender(self, service: DiscoveredService):
+        """Removes sender from pool"""
+        uuid = str(service.host_uuid)
+        self._puller_threads[uuid].join()
+        self._pull_interfaces.pop(uuid)
+        self._puller_threads.pop(uuid)
 
     def _start_thread(self, uuid: str, address, port: int):
         thread = PullThread(
