@@ -64,7 +64,7 @@ class PullThread(threading.Thread):
                 # non-blocking call to prevent deadlocks
                 item = transmitter.recv(flags=zmq.NOBLOCK)
                 if item:
-                    self.queue.put(item, block=False)
+                    self.queue.put(item)
                     self._logger.debug(
                         f"Received packet as packet number {item.sequence_number}"
                     )
