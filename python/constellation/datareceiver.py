@@ -88,9 +88,9 @@ class PullThread(threading.Thread):
         return super().join(*args, **kwargs)
 
 
-def extract_num(s, p, ret=0):
+def extract_num(key, pattern: re.Pattern, ret=0):
     """Help function used for sorting data keys in write_data_virtual"""
-    search = p.search(s)
+    search = pattern.search(key)
     if search:
         return int(search.groups()[0])
     else:
