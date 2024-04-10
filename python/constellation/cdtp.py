@@ -207,7 +207,6 @@ class DataTransmitter:
 
         try:
             # Retrieve payload
-            unpacker = msgpack.Unpacker()
             unpacker.feed(datamsg[2])
             msg.payload = unpacker.unpack()
         except IndexError:
