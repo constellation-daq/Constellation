@@ -133,19 +133,7 @@ class DataReceiver(Satellite):
         # NOTE: Not sure this is the right way to handle late-coming satellite offers
         if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
             uuid = str(service.host_uuid)
-            thread = PullThread(
-                name=uuid,
-                stopevt=self._stop_pulling,
-                interface=f"tcp://{service.address}:{service.port}",
-                queue=self.data_queue,
-                context=self.context,
-                daemon=True,  # terminate with the main thread
-            )
-            self._puller_threads[uuid] = thread
-            thread.start()
-            self.log.info(
-                f"Satellite {self.name} pulling data from {service.address}:{service.port}"
-            )
+            self._start_thread(uuid, service.address, service.port)
 
     def _remove_sender(self, service: DiscoveredService):
         """Removes sender from pool"""
@@ -169,18 +157,8 @@ class DataReceiver(Satellite):
         # TODO self._pull_interfaces should be filled via configuration options
         for uuid, host in self._pull_interfaces.items():
             address, port = host
-            thread = PullThread(
-                name=uuid,
-                stopevt=self._stop_pulling,
-                interface=f"tcp://{address}:{port}",
-                queue=self.data_queue,
-                context=self.context,
-                daemon=True,  # terminate with the main thread
-            )
-            thread.name = f"{self.name}_{address}_{port}_pull-thread"
-            thread.start()
-            self._puller_threads[uuid] = thread
-            self.log.info(f"Satellite {self.name} pulling data from {address}:{port}")
+            self._start_thread(uuid, address, port)
+
         return super().do_launching(payload)
 
     def do_landing(self, payload: any) -> str:
@@ -203,6 +181,20 @@ class DataReceiver(Satellite):
 
         """
         raise NotImplementedError
+
+    def _start_thread(self, uuid: str, address, port: int):
+        thread = PullThread(
+            name=uuid,
+            stopevt=self._stop_pulling,
+            interface=f"tcp://{address}:{port}",
+            queue=self.data_queue,
+            context=self.context,
+            daemon=True,  # terminate with the main thread
+        )
+        thread.name = f"{self.name}_{address}_{port}_pull-thread"
+        thread.start()
+        self._puller_threads[uuid] = thread
+        self.log.info(f"Satellite {self.name} pulling data from {address}:{port}")
 
     def _stop_pull_threads(self, timeout=None) -> None:
         """Stop any running threads that pull data."""
