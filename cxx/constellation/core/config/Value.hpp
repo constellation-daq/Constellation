@@ -47,6 +47,7 @@ namespace constellation::config {
                                  std::string,
                                  std::chrono::system_clock::time_point,
                                  std::vector<bool>,
+                                 std::vector<char>,
                                  std::vector<std::int64_t>,
                                  std::vector<double>,
                                  std::vector<std::string>,

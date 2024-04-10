@@ -87,6 +87,8 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     config.setArray<double>("double", {1.3, 3.1});
     config.setArray<float>("float", {3.14F, 1.43F});
 
+    config.setArray<char>("binary", {0x1, 0x2, 0x3});
+
     config.setArray<std::string>("string", {"a", "b", "c"});
 
     enum MyEnum {
@@ -108,6 +110,8 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
 
     REQUIRE(config.getArray<double>("double") == std::vector<double>({1.3, 3.1}));
     REQUIRE(config.getArray<float>("float") == std::vector<float>({3.14F, 1.43F}));
+
+    REQUIRE(config.getArray<char>("binary") == std::vector<char>({0x1, 0x2, 0x3}));
 
     REQUIRE(config.getArray<std::string>("string") == std::vector<std::string>({"a", "b", "c"}));
 
@@ -207,6 +211,8 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     config.setArray<double>("double", {1.3, 3.1});
     config.setArray<float>("float", {3.14F, 1.43F});
 
+    config.setArray<char>("binary", {0x1, 0x2, 0x3});
+
     config.setArray<std::string>("string", {"a", "b", "c"});
 
     enum MyEnum {
@@ -225,6 +231,7 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     REQUIRE(config.getText("uint8") == "[8,7,6,]");
     REQUIRE(config.getText("double") == "[1.3,3.1,]");
     REQUIRE(config.getText("float") == "[3.14,1.43,]");
+    REQUIRE(config.getText("binary") == "[0x1,0x2,0x3,]");
     REQUIRE(config.getText("string") == "[a,b,c,]");
     REQUIRE(config.getText("time") ==
             "[1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,]");
@@ -420,6 +427,7 @@ TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
     dict["array_bool"] = std::vector<bool>({true, false, true});
     dict["array_int64"] = std::vector<std::int64_t>({63, 62, 61});
     dict["array_double"] = std::vector<double>({1.3, 3.1});
+    dict["array_binary"] = std::vector<char>({0x1, 0x2, 0x3});
     dict["array_string"] = std::vector<std::string>({"a", "b", "c"});
     dict["array_time"] = std::vector<std::chrono::system_clock::time_point>({tp, tp, tp});
 
@@ -439,6 +447,7 @@ TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
     REQUIRE(std::get<std::vector<bool>>(dict_unpacked["array_bool"]) == std::vector<bool>({true, false, true}));
     REQUIRE(std::get<std::vector<std::int64_t>>(dict_unpacked["array_int64"]) == std::vector<std::int64_t>({63, 62, 61}));
     REQUIRE(std::get<std::vector<double>>(dict_unpacked["array_double"]) == std::vector<double>({1.3, 3.1}));
+    REQUIRE(std::get<std::vector<char>>(dict_unpacked["array_binary"]) == std::vector<char>({0x1, 0x2, 0x3}));
     REQUIRE(std::get<std::vector<std::string>>(dict_unpacked["array_string"]) == std::vector<std::string>({"a", "b", "c"}));
     REQUIRE(std::get<std::vector<std::chrono::system_clock::time_point>>(dict_unpacked["array_time"]) ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));

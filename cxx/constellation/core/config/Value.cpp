@@ -43,6 +43,12 @@ std::string Value::str() const {
                     out << val << ",";
                 }
                 out << "]";
+            } else if constexpr(std::is_same_v<T, std::vector<char>>) {
+                out << "[" << std::hex;
+                for(const auto& val : arg) {
+                    out << "0x" << static_cast<int>(val) << ",";
+                }
+                out << "]";
             } else if constexpr(is_vector_v<T>) {
                 out << "[";
                 for(const auto& val : arg) {
@@ -131,6 +137,10 @@ void Value::msgpack_unpack(const msgpack::object& msgpack_object) {
         case msgpack::type::FLOAT32:
         case msgpack::type::FLOAT64: {
             *this = msgpack_object.as<double>();
+            break;
+        }
+        case msgpack::type::BIN: {
+            *this = msgpack_object.as<std::vector<char>>();
             break;
         }
         case msgpack::type::STR: {
