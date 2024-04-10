@@ -67,8 +67,7 @@ class DataTransmitter:
         socket: the ZMQ socket to use if no other is specified on send()/recv()
         calls.
 
-        host: the name to use in the message header. Defaults to system host name.
-
+        name: the name to use in the message header.
         """
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CDTP)
