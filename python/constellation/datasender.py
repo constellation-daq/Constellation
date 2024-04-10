@@ -37,9 +37,10 @@ class PushThread(threading.Thread):
         """Initialize values.
 
         Arguments:
+        - name       :: Name of the satellite.
         - stopevt    :: Event that if set lets the thread shut down.
         - port       :: The port to bind to.
-        - queue      :: The Queue to process CDTPMessages from.
+        - queue      :: The Queue to process payload and meta of data runs from.
         - context    :: ZMQ context to use (optional).
         """
         super().__init__(*args, **kwargs)
