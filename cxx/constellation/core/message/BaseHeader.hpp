@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstddef>
 #include <span>
+#include <string>
 #include <string_view>
 
 #include <msgpack/pack_decl.hpp>
@@ -82,7 +83,7 @@ namespace constellation::message {
         CNSTLN_API static BaseHeader disassemble(Protocol protocol, std::span<const std::byte> data);
 
     private:
-        const Protocol protocol_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+        Protocol protocol_;
         std::string sender_;
         std::chrono::system_clock::time_point time_;
         config::Dictionary tags_;
