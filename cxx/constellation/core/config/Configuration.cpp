@@ -187,6 +187,22 @@ Dictionary Configuration::getAll() const {
     return result;
 }
 
+Dictionary Configuration::get_used_entries() const {
+    Dictionary result {};
+
+    // Loop over all configuration keys
+    for(const auto& key_value : config_) {
+        // Skip all unused keys
+        if(!used_keys_.isUsed(key_value.first)) {
+            continue;
+        }
+
+        result.emplace(key_value);
+    }
+
+    return result;
+}
+
 std::vector<std::string> Configuration::getUnusedKeys() const {
     std::vector<std::string> result {};
 
@@ -201,8 +217,9 @@ std::vector<std::string> Configuration::getUnusedKeys() const {
     return result;
 }
 
-std::shared_ptr<zmq::message_t> Configuration::assemble() const {
+std::shared_ptr<zmq::message_t> Configuration::assemble(bool used_only) const {
+    auto dict = (used_only ? get_used_entries() : config_);
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, config_);
+    msgpack::pack(sbuf, dict);
     return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 }
