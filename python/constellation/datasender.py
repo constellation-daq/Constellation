@@ -93,6 +93,7 @@ class DataSender(Satellite):
         self.broadcast_offers()
 
     def do_launching(self, payload: any) -> str:
+        """Launch satellite. Start PushThread."""
         self._stop_pusher = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
@@ -108,6 +109,7 @@ class DataSender(Satellite):
         return super().do_launching(payload)
 
     def do_landing(self, payload: any) -> str:
+        """Land satellite. Stop PushThread."""
         self._stop_pusher.set()
         try:
             self._push_thread.join(timeout=10)
@@ -116,6 +118,12 @@ class DataSender(Satellite):
         return super().do_landing(payload)
 
     def _wrap_start(self, payload: any) -> str:
+        """Wrapper for the 'run' state of the FSM.
+
+        This method notifies the data queue of the beginning and end of the data run,
+        as well as performing basic satellite transitioning.
+
+        """
         self.data_queue.put(("FIXME: Setup of run here?", CDTPMessageIdentifier.BOR))
         ret = super()._wrap_start(payload)
         self.data_queue.put(
