@@ -127,7 +127,8 @@ int main(int argc, char* argv[]) {
                 }
             } catch(std::bad_cast&) {
                 auto val = Value();
-                val.msgpack_unpack(payload.get());
+                val.msgpack_unpack(
+                    msgpack::unpack(to_char_ptr(recv_msg.getPayload()->data()), recv_msg.getPayload()->size()).get());
                 std::cout << "Payload: \t" << val.str();
                 std::cout << std::endl;
             } catch(...) {
