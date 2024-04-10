@@ -111,7 +111,6 @@ class DataReceiver(Satellite):
 
         self.request(CHIRPServiceIdentifier.DATA)
 
-    # NOTE: This callback method is not correct. Both BroadcastManager and Satellite needs to be able to handle PullThreads
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService):
         """Callback method for connecting to data service."""
