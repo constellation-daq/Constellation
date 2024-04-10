@@ -132,7 +132,10 @@ CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
     return {CMDP1Message::disassemble(frames)};
 }
 
-CMDP1StatMessage::CMDP1StatMessage(std::string topic, CMDP1Message::Header header, config::Value value, metrics::Type type)
+CMDP1StatMessage::CMDP1StatMessage(std::string topic,
+                                   CMDP1Message::Header header,
+                                   const config::Value& value,
+                                   metrics::Type type)
     : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), {}), topic_(std::move(topic)) {
 
     // FIXME this currently is deliberately not according to CMDP protocol!
@@ -160,7 +163,7 @@ std::pair<constellation::config::Value, constellation::metrics::Type> CMDP1StatM
     const auto msgpack_type = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
     const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
 
-    if(type.has_value()) {
+    if(!type.has_value()) {
         throw MessageDecodingError("Invalid metric type");
     }
     return {value, type.value()};

@@ -179,7 +179,7 @@ namespace constellation::message {
          * @param value Value of the metric
          * @param type Type of the metric
          */
-        CNSTLN_API CMDP1StatMessage(std::string topic, Header header, config::Value value, metrics::Type type);
+        CNSTLN_API CMDP1StatMessage(std::string topic, Header header, const config::Value& value, metrics::Type type);
 
         /**
          * Construct a CMDP1StatMessage from a decoded CMDP1Message
