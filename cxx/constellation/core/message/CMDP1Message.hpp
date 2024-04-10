@@ -24,6 +24,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/metrics/Manager.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 
 namespace constellation::message {
 
@@ -176,10 +177,9 @@ namespace constellation::message {
          *
          * @param topic Topic of the statistics metric message
          * @param header CMDP1 header of the message
-         * @param value Value of the metric
-         * @param type Type of the metric
+         * @param metric The metric to be sent
          */
-        CNSTLN_API CMDP1StatMessage(std::string topic, Header header, const config::Value& value, metrics::Type type);
+        CNSTLN_API CMDP1StatMessage(std::string topic, Header header, const std::shared_ptr<metrics::Metric>& metric);
 
         /**
          * Construct a CMDP1StatMessage from a decoded CMDP1Message
@@ -191,7 +191,7 @@ namespace constellation::message {
         /**
          * @return Metric value and type
          */
-        CNSTLN_API std::pair<config::Value, metrics::Type> getMetric() const;
+        CNSTLN_API std::tuple<constellation::config::Value, std::string, metrics::Type> getMetric() const;
 
         /**
          * Disassemble stats message from ZeroMQ frames

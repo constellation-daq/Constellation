@@ -29,9 +29,10 @@ namespace constellation::metrics {
 
     class Metric {
     public:
-        Metric(const Type type) : type_(type) {};
+        Metric(std::string_view unit, const Type type) : unit_(unit), type_(type) {};
 
-        Metric(const Type type, config::Value value) : type_(type), value_(std::move(value)), changed_(true) {}
+        Metric(std::string_view unit, const Type type, config::Value value)
+            : unit_(unit), type_(type), value_(std::move(value)), changed_(true) {}
 
         virtual ~Metric() noexcept = default;
 
@@ -44,6 +45,7 @@ namespace constellation::metrics {
         virtual void set(const config::Value& value);
 
         config::Value value() const { return value_; }
+        std::string unit() const { return unit_; }
 
         Type type() const { return type_; }
 
@@ -54,6 +56,7 @@ namespace constellation::metrics {
         virtual bool condition() = 0;
 
     private:
+        std::string unit_ {};
         Type type_;
         config::Value value_ {};
         bool changed_ {false};
@@ -61,8 +64,8 @@ namespace constellation::metrics {
 
     class TimedMetric : public Metric {
     public:
-        TimedMetric(Clock::duration interval, Type type, config::Value value = {})
-            : Metric(type, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
+        TimedMetric(std::string_view unit, Type type, Clock::duration interval, config::Value value = {})
+            : Metric(unit, type, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
 
         bool condition() override;
         Clock::time_point next_trigger() const override;
@@ -74,7 +77,7 @@ namespace constellation::metrics {
 
     class TriggeredMetric : public Metric {
     public:
-        TriggeredMetric(std::size_t triggers, Type type, config::Value value);
+        TriggeredMetric(std::string_view unit, Type type, std::size_t triggers, config::Value value);
 
         void set(const config::Value& value) override;
 

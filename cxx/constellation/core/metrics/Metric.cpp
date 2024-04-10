@@ -47,8 +47,8 @@ Clock::time_point TimedMetric::next_trigger() const {
     return last_trigger_ + interval_;
 }
 
-TriggeredMetric::TriggeredMetric(std::size_t triggers, Type type, config::Value value)
-    : Metric(type, value), triggers_(triggers) {
+TriggeredMetric::TriggeredMetric(std::string_view unit, Type type, std::size_t triggers, config::Value value)
+    : Metric(unit, type, value), triggers_(triggers) {
     // We have an initial value, let's log it directly
     if(!std::holds_alternative<std::monostate>(value)) {
         current_triggers_ = triggers_;

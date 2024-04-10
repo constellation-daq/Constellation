@@ -134,26 +134,22 @@ CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
 
 CMDP1StatMessage::CMDP1StatMessage(std::string topic,
                                    CMDP1Message::Header header,
-                                   const config::Value& value,
-                                   metrics::Type type)
+                                   const std::shared_ptr<metrics::Metric>& metric)
     : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), {}), topic_(std::move(topic)) {
-
-    // FIXME this currently is deliberately not according to CMDP protocol!
 
     // Pack the metrics payload
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, value);
-    msgpack::pack(sbuf, magic_enum::enum_integer(type));
+    msgpack::pack(sbuf, metric->value());
+    msgpack::pack(sbuf, magic_enum::enum_integer(metric->type()));
+    msgpack::pack(sbuf, metric->unit());
 
     setPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
 }
 
-std::pair<constellation::config::Value, constellation::metrics::Type> CMDP1StatMessage::getMetric() const {
+std::tuple<constellation::config::Value, std::string, constellation::metrics::Type> CMDP1StatMessage::getMetric() const {
     // Offset since we decode two separate msgpack objects
     std::size_t offset = 0;
     const auto payload = getPayload();
-
-    // FIXME this currently is deliberately not according to CMDP protocol!
 
     // Unpack value
     const auto msgpack_value = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
@@ -163,10 +159,14 @@ std::pair<constellation::config::Value, constellation::metrics::Type> CMDP1StatM
     const auto msgpack_type = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
     const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
 
+    // Unpack unit
+    const auto msgpack_unit = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
+    const auto unit = msgpack_unit->as<std::string>();
+
     if(!type.has_value()) {
         throw MessageDecodingError("Invalid metric type");
     }
-    return {value, type.value()};
+    return {value, unit, type.value()};
 }
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message message) : CMDP1Message(std::move(message)) {
