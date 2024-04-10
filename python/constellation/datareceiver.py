@@ -350,7 +350,8 @@ class H5DataReceiverWriter(DataReceiver):
         Format: h5file -> Group (name) -> Multiple Datasets (item) + Virtual Dataset
 
         Writes data by adding a dataset containing item.payload to group name. Also builds
-        a virtual dataset from the group.
+        a virtual dataset from the group. This allows each data package to be kept in a separate
+        dataset along with the virtual dataset containing all other datasets concatenated.
 
         # TODO add a call to a "write_data" method that can be
         # overloaded by inheriting classes
