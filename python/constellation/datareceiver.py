@@ -220,11 +220,14 @@ class H5DataReceiverWriter(DataReceiver):
         super().__init__(*args, **kwargs)
 
         self.run_number = 0
+
+        # Tracker for which satellites have joined the current data run.
         self.running_sats = []
         # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
         self.file_name_pattern = None
 
     def do_initializing(self, payload: any) -> str:
+        """Initialize the satellite. Set pattern for file name."""
         self.file_name_pattern = self.config.setdefault(
             "file_name_pattern", "default_name_{run_number}_{date}.h5"
         )
