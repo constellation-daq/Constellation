@@ -131,6 +131,7 @@ class DataReceiver(Satellite):
         return super().do_launching(payload)
 
     def do_landing(self, payload: any) -> str:
+        """Stop pull threads."""
         self._stop_pull_threads(10.0)
         return super().do_landing(payload)
 
