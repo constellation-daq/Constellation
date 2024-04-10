@@ -212,9 +212,6 @@ class DataReceiver(Satellite):
             self._stop_pulling = None
             self._puller_threads = dict[str, PullThread]()
 
-    def do_stopping(self, payload: any) -> str:
-        return super().do_stopping(payload)
-
 
 class H5DataReceiverWriter(DataReceiver):
     """Satellite which receives data via ZMQ writing it to HDF5."""
