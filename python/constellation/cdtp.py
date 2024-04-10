@@ -73,6 +73,7 @@ class DataTransmitter:
         self.msgheader = MessageHeader(name, Protocol.CDTP)
         self._socket = socket
         self.running = False
+        self.sequence_number = 0
 
     def send_start(self, payload, meta: dict = {}, flags: int = 0):
         self.sequence_number = 0
