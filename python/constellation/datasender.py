@@ -60,9 +60,9 @@ class PushThread(threading.Thread):
                 payload, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
                 if meta == CDTPMessageIdentifier.BOR:
-                    transmitter.send_start(payload=payload, meta=meta.value)
+                    transmitter.send_start(payload=payload)
                 elif meta == CDTPMessageIdentifier.EOR:
-                    transmitter.send_end(payload=payload, meta=meta.value)
+                    transmitter.send_end(payload=payload)
                 else:
                     transmitter.send_data(payload=payload, meta=meta)
                 self._logger.debug(
