@@ -34,14 +34,13 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 class DummySatellite : public Satellite {
-    int usr_cmd() const { return value_; }
-    int usr_cmd_arg(int a) const { return value_ * a; }
-
-    std::array<int, 1> usr_cmd_invalid_return() const { return {value_}; }
-
+    // NOLINTBEGIN(readability-convert-member-functions-to-static,readability-make-member-function-const)
+    int usr_cmd() { return 2; }
+    int usr_cmd_arg(int a) { return 2 * a; }
+    std::array<int, 1> usr_cmd_invalid_return() { return {2}; }
     void usr_cmd_void() { value_ = 3; };
-
     int value_ {2};
+    // NOLINTEND(readability-convert-member-functions-to-static,readability-make-member-function-const)
 
 public:
     DummySatellite() : Satellite("Dummy", "sat1") {
@@ -350,8 +349,8 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     class MySatellite : public DummySatellite {
-        int cmd() const { return val_; }
-        int val_ {2};
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
 
     public:
         MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
@@ -360,8 +359,8 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     REQUIRE_THROWS_WITH(std::make_shared<MySatellite>(), Equals("Can not register command with empty name"));
 
     class MySatellite2 : public DummySatellite {
-        int cmd() const { return val_; }
-        int val_ {2};
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
 
     public:
         MySatellite2() {

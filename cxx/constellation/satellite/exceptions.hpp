@@ -86,7 +86,7 @@ namespace constellation::satellite {
 
     /**
      * @ingroup Exceptions
-     * @brief Invalid user command
+     * @brief Missing arguments for user command
      *
      * The user command is not registered
      */
@@ -100,6 +100,38 @@ namespace constellation::satellite {
             error_message_ += " arguments but ";
             error_message_ += std::to_string(args_given);
             error_message_ += " given";
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid arguments for user command
+     *
+     * The user command is not registered
+     */
+    class InvalidUserCommandArguments : public UserCommandError {
+    public:
+        explicit InvalidUserCommandArguments(const std::type_info& argtype, const std::type_info& valuetype) {
+            error_message_ = "Mismatch of argument type \"";
+            error_message_ += utils::demangle(argtype);
+            error_message_ += "\" to provided type \"";
+            error_message_ += utils::demangle(valuetype);
+            error_message_ += "\"";
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid arguments for user command
+     *
+     * The user command is not registered
+     */
+    class InvalidUserCommandResult : public UserCommandError {
+    public:
+        explicit InvalidUserCommandResult(const std::type_info& argtype) {
+            error_message_ = "Error casting function return type \"";
+            error_message_ += utils::demangle(argtype);
+            error_message_ += "\" to dictionary value";
         }
     };
 } // namespace constellation::satellite

@@ -29,13 +29,7 @@ namespace constellation::satellite {
         try {
             return value.get<T>();
         } catch(std::bad_variant_access&) {
-            std::string msg;
-            msg += "Mismatch of argument type \"";
-            msg += utils::demangle(typeid(T));
-            msg += "\" to provided type \"";
-            msg += utils::demangle(value.type());
-            msg += "\"";
-            throw std::invalid_argument(msg);
+            throw InvalidUserCommandArguments(typeid(T), value.type());
         }
     }
 
@@ -43,11 +37,7 @@ namespace constellation::satellite {
         try {
             return config::Value::set(value);
         } catch(std::bad_cast&) {
-            std::string msg;
-            msg += "Error casting function return type \"";
-            msg += utils::demangle(typeid(T));
-            msg += "\" to dictionary value";
-            throw std::invalid_argument(msg);
+            throw InvalidUserCommandResult(typeid(T));
         }
     }
 

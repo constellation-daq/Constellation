@@ -215,15 +215,14 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
     } catch(std::bad_cast&) {
         // Issue with obtaining parameters from payload
         return_verb = {CSCP1Message::Type::INCOMPLETE, "Could not convert command payload to argument list"};
-    } catch(std::invalid_argument& e) {
-        // Issue with decoding of the arguments
-        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
-    } catch(MissingUserCommandArguments& e) {
-        // Issue with number of arguments
-        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+    } catch(UnknownUserCommand&) {
+        return std::nullopt;
     } catch(InvalidUserCommand& e) {
         // Command cannot be called
         return_verb = {CSCP1Message::Type::INVALID, e.what()};
+    } catch(UserCommandError& e) {
+        // Any other issue with executing the user command (missing arguments, wrong arguments, ...)
+        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
     } catch(...) {
         LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\"";
         return std::nullopt;
