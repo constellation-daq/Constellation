@@ -86,6 +86,35 @@ namespace constellation::config {
             return {static_cast<double>(val)};
         } else if constexpr(std::is_enum_v<T>) {
             return {utils::to_string(val)};
+        } else if constexpr(is_vector_v<T>) {
+            using U = typename T::value_type;
+
+            if constexpr(std::is_integral_v<U>) {
+                std::vector<std::int64_t> nval {};
+                nval.reserve(val.size());
+                for (auto val_elem : val) {
+                    if (val_elem > std::numeric_limits<std::int64_t>::max()) {
+                        throw std::overflow_error("type overflow");
+                    }
+                    nval.emplace_back(static_cast<std::int64_t>(val_elem));
+                }
+
+                return {nval};
+            } else if constexpr(std::is_floating_point_v<U>) {
+                const std::vector<double> nval {val.begin(), val.end()};
+                return {nval};
+            } else if constexpr(std::is_enum_v<U>) {
+                std::vector<std::string> nval {};
+                nval.reserve(val.size());
+
+                std::for_each(val.begin(), val.end(), [&](const auto& enum_val) {
+                    nval.emplace_back(utils::to_string(enum_val));
+                });
+
+                return {nval};
+            } else {
+                throw std::bad_cast();
+            }
         } else {
             throw std::bad_cast();
         }
