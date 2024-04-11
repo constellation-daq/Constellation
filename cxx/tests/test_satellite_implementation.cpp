@@ -39,6 +39,8 @@ class DummySatellite : public Satellite {
 
     std::array<int, 1> usr_cmd_invalid_return() { return {value_}; }
 
+    void usr_cmd_void() { value_ = 3; };
+
     int value_ {2};
 
 public:
@@ -48,6 +50,7 @@ public:
         register_command("my_cmd", "A User Command", {}, &DummySatellite::usr_cmd, this);
         register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
         register_command("my_cmd_invalid_return", "Invalid User Command", {}, &DummySatellite::usr_cmd_invalid_return, this);
+        register_command("my_cmd_void", "Command without arguments & return", {}, &DummySatellite::usr_cmd_void, this);
     }
 };
 
@@ -166,6 +169,13 @@ TEST_CASE("User commands", "[satellite]") {
     const auto usrargmsgpayload = recv_msg_usr_cmd_arg.getPayload();
     const auto usrargpayload = msgpack::unpack(to_char_ptr(usrargmsgpayload->data()), usrargmsgpayload->size());
     REQUIRE(usrargpayload->as<int>() == 8);
+
+    // my_cmd_void user command without arguments and return value
+    sender.send_command("my_cmd_void");
+    auto recv_msg_usr_cmd_void = sender.recv();
+    REQUIRE(recv_msg_usr_cmd_void.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_void.getVerb().second), Equals(""));
+    REQUIRE(!recv_msg_usr_cmd_void.hasPayload());
 }
 
 TEST_CASE("Case insensitive", "[satellite]") {

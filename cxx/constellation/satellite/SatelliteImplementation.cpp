@@ -205,10 +205,12 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
         auto retval = satellite_->callUserCommand(fsm_.getState(), std::string(command), args);
         LOG(logger_, DEBUG) << "User command \"" << command << "\" succeeded, packing return value.";
 
-        // Return the call value as payload
-        msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, retval);
-        return_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+        // Return the call value as payload only if it is not std::monostate
+        if(!std::holds_alternative<std::monostate>(retval)) {
+            msgpack::sbuffer sbuf {};
+            msgpack::pack(sbuf, retval);
+            return_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+        }
         return_verb = {CSCP1Message::Type::SUCCESS, {}};
     } catch(std::bad_cast&) {
         // Issue with obtaining parameters from payload
