@@ -20,11 +20,13 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace std::literals::string_view_literals;
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
+using namespace constellation::utils;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -127,7 +129,7 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     REQUIRE(config.getArray<std::chrono::system_clock::time_point>("time") ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 
-    REQUIRE(config.getArray<double>("empty") == std::vector<double>());
+    REQUIRE(config.getArray<double>("empty").empty());
 }
 
 TEST_CASE("Handle monostate", "[core][core::config]") {
@@ -136,12 +138,14 @@ TEST_CASE("Handle monostate", "[core][core::config]") {
     config.set<std::monostate>("monostate", {});
 
     REQUIRE(config.get<std::monostate>("monostate") == std::monostate {});
-    REQUIRE(config.get<std::vector<double>>("monostate") == std::vector<double> {});
+    REQUIRE(config.get<std::vector<double>>("monostate").empty());
 
     REQUIRE_THROWS_AS(config.get<double>("monostate"), InvalidTypeError);
     REQUIRE_THROWS_MATCHES(config.get<double>("monostate"),
                            InvalidTypeError,
                            Message("Could not convert value of type 'std::monostate' to type 'double' for key 'monostate'"));
+
+    REQUIRE(config.getText("monostate") == "NIL");
 }
 
 TEST_CASE("Set & Get Path Values", "[core][core::config]") {
@@ -176,6 +180,12 @@ TEST_CASE("Set & Get Path Values", "[core][core::config]") {
     // Read path array without canonicalization
     REQUIRE(config.getPathArray("patharray") ==
             std::vector<std::filesystem::path>({"/tmp/somefile.txt", "/tmp/someotherfile.txt"}));
+
+    // Read path array with check for existence
+    REQUIRE_THROWS_MATCHES(config.getPathArray("patharray", true),
+                           InvalidValueError,
+                           Message("Value [/tmp/somefile.txt,/tmp/someotherfile.txt,] of key 'patharray' is not valid: path "
+                                   "/tmp/somefile.txt not found"));
 
     // Attempt to read value that is not a string:
     REQUIRE_THROWS_AS(config.getPathArray("tisnotapatharray"), InvalidTypeError);
@@ -369,6 +379,19 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
     REQUIRE_THROWS_MATCHES(config.get<MyEnum>("myenum"),
                            InvalidValueError,
                            Message("Value THREE of key 'myenum' is not valid: possible values are ONE, TWO"));
+
+    // Check for setting of invalid types
+    REQUIRE_THROWS_AS(config.set("key", std::array<int, 5> {1, 2, 3, 4, 5}), InvalidTypeError);
+}
+
+TEST_CASE("Value Overflow", "[core][core::config]") {
+
+    const std::size_t val = std::numeric_limits<std::size_t>::max();
+    REQUIRE_THROWS_AS(Value::set(val), std::overflow_error);
+    REQUIRE_THROWS_AS(Value::set(std::vector<std::size_t>({val})), std::overflow_error);
+
+    Configuration config;
+    REQUIRE_THROWS_AS(config.set("size", val), InvalidValueError);
 }
 
 TEST_CASE("Merge Configurations", "[core][core::config]") {
@@ -419,7 +442,10 @@ TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
     list.push_back(std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 
     // Empty vector
-    list.push_back(std::vector<double>({}));
+    list.push_back(std::vector<double> {});
+
+    // MsgPack NIL
+    list.push_back(std::monostate {});
 
     // Pack to MsgPack
     msgpack::sbuffer sbuf {};
@@ -440,7 +466,8 @@ TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
     REQUIRE(list_unpacked.at(8).get<std::vector<std::string>>() == std::vector<std::string>({"a", "b", "c"}));
     REQUIRE(list_unpacked.at(9).get<std::vector<std::chrono::system_clock::time_point>>() ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
-    REQUIRE(list_unpacked.at(10).get<std::vector<double>>() == std::vector<double>());
+    REQUIRE(list_unpacked.at(10).get<std::vector<double>>().empty());
+    REQUIRE(list_unpacked.at(11).get<std::monostate>() == std::monostate());
 }
 
 TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
@@ -492,6 +519,30 @@ TEST_CASE("Generate Configurations from Dictionary", "[core][core::config]") {
 
     REQUIRE(config.get<double>("key") == 3.12);
     REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
+}
+
+TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
+    Configuration config;
+    config.set("bool", true);
+    config.set("int64", std::int64_t(63));
+    config.set("size", std::size_t(1));
+
+    // Mark one key as used:
+    REQUIRE(config.get<std::int64_t>("int64") == std::int64_t(63));
+
+    // Assemble & disassemble with all keys:
+    auto msg_all = config.assemble();
+    const auto msg_all_payload = msgpack::unpack(to_char_ptr(msg_all->data()), msg_all->size());
+    const auto dict_all = msg_all_payload->as<Dictionary>();
+    REQUIRE(dict_all.size() == 3);
+    REQUIRE(dict_all.at("bool").get<bool>() == true);
+
+    // Assemble & disassemble with used keys only:
+    auto msg_used = config.assemble(true);
+    const auto msg_used_payload = msgpack::unpack(to_char_ptr(msg_used->data()), msg_used->size());
+    const auto dict_used = msg_used_payload->as<Dictionary>();
+    REQUIRE(dict_used.size() == 1);
+    REQUIRE_THROWS_AS(dict_used.at("bool"), std::out_of_range);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

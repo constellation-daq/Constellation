@@ -23,7 +23,7 @@ namespace constellation::config {
         // Value is directly held by variant:
         if constexpr(is_one_of<T, value_t>()) {
             // If it's one of the supported vector types but we have a std::monostate, return an empty vector since this is
-            // what we build from an emopty msgpack array:
+            // what we build from an empty msgpack array:
             if (is_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
                 return {};
             }
