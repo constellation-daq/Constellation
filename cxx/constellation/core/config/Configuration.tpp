@@ -61,54 +61,18 @@ namespace constellation::config {
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
-        if constexpr(is_one_of<T, value_t>()) {
-            config_[key] = val;
-        } else if constexpr(std::is_integral_v<T>) {
-            if (val > std::numeric_limits<std::int64_t>::max()) {
-                throw InvalidValueError(std::to_string(val), key, "type overflow");
+        try {
+            config_[key] = Value::set(val);
+            used_keys_.registerMarker(key);
+            if(mark_used) {
+                used_keys_.markUsed(key);
             }
-            config_[key] = static_cast<std::int64_t>(val);
-        } else if constexpr(std::is_floating_point_v<T>) {
-            config_[key] = static_cast<double>(val);
-        } else if constexpr(std::is_enum_v<T>) {
-            config_[key] = utils::to_string(val);
-        } else {
-            // FIXME throw something?
-            config_[key] = val;
-        }
-        used_keys_.registerMarker(key);
-        if(mark_used) {
-            used_keys_.markUsed(key);
-        }
-    }
-
-    template <typename T> void Configuration::setArray(const std::string& key, const std::vector<T>& val, bool mark_used) {
-        if constexpr(is_one_of<std::vector<T>, value_t>()) {
-            set<std::vector<T>>(key, val, mark_used);
-        } else if constexpr(std::is_integral_v<T>) {
-            std::vector<std::int64_t> nval {};
-            nval.reserve(val.size());
-            for (auto val_elem : val) {
-                if (val_elem > std::numeric_limits<std::int64_t>::max()) {
-                    throw InvalidValueError(std::to_string(val_elem), key, "type overflow");
-                }
-                nval.emplace_back(static_cast<std::int64_t>(val_elem));
-            }
-            set(key, nval, mark_used);
-        } else if constexpr(std::is_floating_point_v<T>) {
-            const std::vector<double> nval {val.begin(), val.end()};
-            set(key, nval, mark_used);
-        } else if constexpr(std::is_enum_v<T>) {
-            std::vector<std::string> nval {};
-            nval.reserve(val.size());
-
-            std::for_each(val.begin(), val.end(), [&](const auto& enum_val) {
-                nval.emplace_back(utils::to_string(enum_val));
-            });
-            set(key, nval, mark_used);
-        } else {
-            // FIXME throw something?
-            set<std::vector<T>>(key, val, mark_used);
+        } catch(std::bad_cast& e) {
+            /* Value held by the dictionary entry could not be cast to desired type */
+            throw InvalidTypeError(key, typeid(T), typeid(value_t));
+        } catch(std::overflow_error& e) {
+            // FIXME to_string utils need to be extended for us!
+            throw InvalidValueError("std::to_string(val)", key, e.what());
         }
     }
 

@@ -234,7 +234,9 @@ namespace constellation::config {
          * @param val List of values to assign to the key
          * @param mark_used Flag whether key should be marked as "used" directly
          */
-        template <typename T> void setArray(const std::string& key, const std::vector<T>& val, bool mark_used = false);
+        template <typename T> void setArray(const std::string& key, const std::vector<T>& val, bool mark_used = false) {
+            set<std::vector<T>>(key, val, mark_used);
+        }
 
         /**
          * @brief Set default value for a key only if it is not defined yet
