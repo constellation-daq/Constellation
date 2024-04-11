@@ -34,10 +34,10 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 class DummySatellite : public Satellite {
-    int usr_cmd() { return value_; }
-    int usr_cmd_arg(int a) { return value_ * a; }
+    int usr_cmd() const { return value_; }
+    int usr_cmd_arg(int a) const { return value_ * a; }
 
-    std::array<int, 1> usr_cmd_invalid_return() { return {value_}; }
+    std::array<int, 1> usr_cmd_invalid_return() const { return {value_}; }
 
     void usr_cmd_void() { value_ = 3; };
 
@@ -51,6 +51,7 @@ public:
         register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
         register_command("my_cmd_invalid_return", "Invalid User Command", {}, &DummySatellite::usr_cmd_invalid_return, this);
         register_command("my_cmd_void", "Command without arguments & return", {}, &DummySatellite::usr_cmd_void, this);
+        register_command("my_cmd_state", "Command for RUN state only", {State::RUN}, &DummySatellite::usr_cmd_void, this);
     }
 };
 
@@ -109,6 +110,10 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(dict.contains("my_cmd"));
     REQUIRE(std::get<std::string>(dict.at("my_cmd")) ==
             "A User Command\nThis command requires 0 arguments.\nThis command can be called in all states.");
+    REQUIRE(dict.contains("my_cmd_state"));
+    REQUIRE(std::get<std::string>(dict.at("my_cmd_state")) ==
+            "Command for RUN state only\nThis command requires 0 arguments.\nThis command can only be called in the "
+            "following states: RUN");
 
     // get_state
     sender.send_command("get_state");
@@ -345,7 +350,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     class MySatellite : public DummySatellite {
-        int cmd() { return val_; }
+        int cmd() const { return val_; }
         int val_ {2};
 
     public:
@@ -355,7 +360,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     REQUIRE_THROWS_WITH(std::make_shared<MySatellite>(), Equals("Can not register command with empty name"));
 
     class MySatellite2 : public DummySatellite {
-        int cmd() { return val_; }
+        int cmd() const { return val_; }
         int val_ {2};
 
     public:
@@ -400,6 +405,29 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     REQUIRE(recv_msg_wrongarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_wrongarg.getVerb().second),
                  StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::time_point"));
+
+    // my_usr_cmd_arg with wrong number of argument
+    auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
+    msgpack::sbuffer manysbuf {};
+    List manyargs;
+    manyargs.push_back(3);
+    manyargs.push_back(4);
+    msgpack::pack(manysbuf, manyargs);
+    manyarg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(manysbuf.data()), manysbuf.size()));
+    sender.send(manyarg_msg);
+
+    auto recv_msg_manyarg = sender.recv();
+    REQUIRE(recv_msg_manyarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
+    REQUIRE_THAT(to_string(recv_msg_manyarg.getVerb().second),
+                 Equals("Command \"my_cmd_arg\" expects 1 arguments but 2 given"));
+
+    // my_usr_state from wrong state
+    sender.send_command("my_cmd_state");
+    auto recv_msg_usr_cmd_state = sender.recv();
+    REQUIRE(recv_msg_usr_cmd_state.getVerb().first == CSCP1Message::Type::INVALID);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_state.getVerb().second),
+                 Equals("Command my_cmd_state cannot be called in state NEW"));
+    REQUIRE(!recv_msg_usr_cmd_state.hasPayload());
 }
 
 TEST_CASE("Catch incorrect user command return value", "[satellite]") {
