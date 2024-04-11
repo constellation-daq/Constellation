@@ -210,9 +210,9 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
         msgpack::pack(sbuf, retval);
         return_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
         return_verb = {CSCP1Message::Type::SUCCESS, {}};
-    } catch(std::bad_cast& e) {
+    } catch(std::bad_cast&) {
         // Issue with obtaining parameters from payload
-        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+        return_verb = {CSCP1Message::Type::INCOMPLETE, "Could not convert command payload to argument list"};
     } catch(std::invalid_argument& e) {
         // Issue with decoding of the arguments
         return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
