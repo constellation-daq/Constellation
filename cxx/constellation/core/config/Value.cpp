@@ -92,6 +92,7 @@ void Value::msgpack_unpack(const msgpack::object& msgpack_object) {
         // If empty we only store nil:
         if(msgpack_array.empty()) {
             *this = std::monostate();
+            return;
         }
 
         switch(msgpack_array.front().type) {

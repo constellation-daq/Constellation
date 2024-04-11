@@ -106,6 +106,9 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     auto tp = std::chrono::system_clock::now();
     config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
 
+    // Empty vector:
+    config.setArray<double>("empty", {});
+
     // Read values back
     REQUIRE(config.getArray<bool>("bool") == std::vector<bool>({true, false, true}));
 
@@ -123,6 +126,8 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
 
     REQUIRE(config.getArray<std::chrono::system_clock::time_point>("time") ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+
+    REQUIRE(config.getArray<double>("empty") == std::vector<double>());
 }
 
 TEST_CASE("Set & Get Path Values", "[core][core::config]") {
@@ -399,6 +404,9 @@ TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
     list.push_back(std::vector<std::string>({"a", "b", "c"}));
     list.push_back(std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 
+    // Empty vector
+    list.push_back(std::vector<double>({}));
+
     // Pack to MsgPack
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, list);
@@ -407,17 +415,18 @@ TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
     auto unpacked = msgpack::unpack(sbuf.data(), sbuf.size());
     auto list_unpacked = unpacked->as<List>();
 
-    REQUIRE(std::get<bool>(list_unpacked.at(0)) == true);
-    REQUIRE(std::get<std::int64_t>(list_unpacked.at(1)) == std::int64_t(63));
-    REQUIRE(std::get<double>(list_unpacked.at(2)) == double(1.3));
-    REQUIRE(std::get<std::string>(list_unpacked.at(3)) == std::string("a"));
-    REQUIRE(std::get<std::chrono::system_clock::time_point>(list_unpacked.at(4)) == tp);
-    REQUIRE(std::get<std::vector<bool>>(list_unpacked.at(5)) == std::vector<bool>({true, false, true}));
-    REQUIRE(std::get<std::vector<std::int64_t>>(list_unpacked.at(6)) == std::vector<std::int64_t>({63, 62, 61}));
-    REQUIRE(std::get<std::vector<double>>(list_unpacked.at(7)) == std::vector<double>({1.3, 3.1}));
-    REQUIRE(std::get<std::vector<std::string>>(list_unpacked.at(8)) == std::vector<std::string>({"a", "b", "c"}));
-    REQUIRE(std::get<std::vector<std::chrono::system_clock::time_point>>(list_unpacked.at(9)) ==
+    REQUIRE(list_unpacked.at(0).get<bool>() == true);
+    REQUIRE(list_unpacked.at(1).get<std::int64_t>() == std::int64_t(63));
+    REQUIRE(list_unpacked.at(2).get<double>() == double(1.3));
+    REQUIRE(list_unpacked.at(3).get<std::string>() == std::string("a"));
+    REQUIRE(list_unpacked.at(4).get<std::chrono::system_clock::time_point>() == tp);
+    REQUIRE(list_unpacked.at(5).get<std::vector<bool>>() == std::vector<bool>({true, false, true}));
+    REQUIRE(list_unpacked.at(6).get<std::vector<std::int64_t>>() == std::vector<std::int64_t>({63, 62, 61}));
+    REQUIRE(list_unpacked.at(7).get<std::vector<double>>() == std::vector<double>({1.3, 3.1}));
+    REQUIRE(list_unpacked.at(8).get<std::vector<std::string>>() == std::vector<std::string>({"a", "b", "c"}));
+    REQUIRE(list_unpacked.at(9).get<std::vector<std::chrono::system_clock::time_point>>() ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+    REQUIRE(list_unpacked.at(10).get<std::vector<double>>() == std::vector<double>());
 }
 
 TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
@@ -445,17 +454,17 @@ TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
     auto unpacked = msgpack::unpack(sbuf.data(), sbuf.size());
     auto dict_unpacked = unpacked->as<Dictionary>();
 
-    REQUIRE(std::get<bool>(dict_unpacked["bool"]) == true);
-    REQUIRE(std::get<std::int64_t>(dict_unpacked["int64"]) == std::int64_t(63));
-    REQUIRE(std::get<double>(dict_unpacked["double"]) == double(1.3));
-    REQUIRE(std::get<std::string>(dict_unpacked["string"]) == std::string("a"));
-    REQUIRE(std::get<std::chrono::system_clock::time_point>(dict_unpacked["time"]) == tp);
-    REQUIRE(std::get<std::vector<bool>>(dict_unpacked["array_bool"]) == std::vector<bool>({true, false, true}));
-    REQUIRE(std::get<std::vector<std::int64_t>>(dict_unpacked["array_int64"]) == std::vector<std::int64_t>({63, 62, 61}));
-    REQUIRE(std::get<std::vector<double>>(dict_unpacked["array_double"]) == std::vector<double>({1.3, 3.1}));
-    REQUIRE(std::get<std::vector<char>>(dict_unpacked["array_binary"]) == std::vector<char>({0x1, 0x2, 0x3}));
-    REQUIRE(std::get<std::vector<std::string>>(dict_unpacked["array_string"]) == std::vector<std::string>({"a", "b", "c"}));
-    REQUIRE(std::get<std::vector<std::chrono::system_clock::time_point>>(dict_unpacked["array_time"]) ==
+    REQUIRE(dict_unpacked["bool"].get<bool>() == true);
+    REQUIRE(dict_unpacked["int64"].get<std::int64_t>() == std::int64_t(63));
+    REQUIRE(dict_unpacked["double"].get<double>() == double(1.3));
+    REQUIRE(dict_unpacked["string"].get<std::string>() == std::string("a"));
+    REQUIRE(dict_unpacked["time"].get<std::chrono::system_clock::time_point>() == tp);
+    REQUIRE(dict_unpacked["array_bool"].get<std::vector<bool>>() == std::vector<bool>({true, false, true}));
+    REQUIRE(dict_unpacked["array_int64"].get<std::vector<std::int64_t>>() == std::vector<std::int64_t>({63, 62, 61}));
+    REQUIRE(dict_unpacked["array_double"].get<std::vector<double>>() == std::vector<double>({1.3, 3.1}));
+    REQUIRE(dict_unpacked["array_binary"].get<std::vector<char>>() == std::vector<char>({0x1, 0x2, 0x3}));
+    REQUIRE(dict_unpacked["array_string"].get<std::vector<std::string>>() == std::vector<std::string>({"a", "b", "c"}));
+    REQUIRE(dict_unpacked["array_time"].get<std::vector<std::chrono::system_clock::time_point>>() ==
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 }
 
