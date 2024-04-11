@@ -22,6 +22,12 @@ namespace constellation::config {
 
         // Value is directly held by variant:
         if constexpr(is_one_of<T, value_t>()) {
+            // If it's one of the supported vector types but we have a std::monostate, return an empty vector since this is
+            // what we build from an emopty msgpack array:
+            if (is_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
+                return {};
+            }
+
             return std::get<T>(*this);
         } else if constexpr(std::is_arithmetic_v<T>) {
             if(std::holds_alternative<std::int64_t>(*this)) {
@@ -40,7 +46,12 @@ namespace constellation::config {
             return enum_val.value();
         } else if constexpr(is_vector_v<T>) {
             using U = typename T::value_type;
-            if constexpr(std::is_arithmetic_v<U>) {
+
+            if(std::holds_alternative<std::monostate>(*this)) {
+                // When asking for a vector but we get NIL, let's return an empty vector of the right type because we also
+                // set std::monostate when encountering an empty msgpack array
+                return {};
+            } else if constexpr(std::is_arithmetic_v<U>) {
                 if(std::holds_alternative<std::vector<std::int64_t>>(*this)) {
                     const auto vec = std::get<std::vector<std::int64_t>>(*this);
                     return T(vec.begin(), vec.end());

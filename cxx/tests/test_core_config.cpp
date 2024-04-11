@@ -130,6 +130,20 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     REQUIRE(config.getArray<double>("empty") == std::vector<double>());
 }
 
+TEST_CASE("Handle monostate", "[core][core::config]") {
+    Configuration config;
+
+    config.set<std::monostate>("monostate", {});
+
+    REQUIRE(config.get<std::monostate>("monostate") == std::monostate {});
+    REQUIRE(config.get<std::vector<double>>("monostate") == std::vector<double> {});
+
+    REQUIRE_THROWS_AS(config.get<double>("monostate"), InvalidTypeError);
+    REQUIRE_THROWS_MATCHES(config.get<double>("monostate"),
+                           InvalidTypeError,
+                           Message("Could not convert value of type 'std::monostate' to type 'double' for key 'monostate'"));
+}
+
 TEST_CASE("Set & Get Path Values", "[core][core::config]") {
     Configuration config;
 
