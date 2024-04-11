@@ -102,6 +102,20 @@ def mock_receiver_satellite(mock_socket_sender, mock_socket_receiver):
         yield s
 
 
+@pytest.mark.forked
+def test_datatransmitter(
+    mock_data_transmitter: DataTransmitter, mock_data_receiver: DataTransmitter
+):
+    sender = mock_data_transmitter
+    rx = mock_data_receiver
+
+    sender.send_start("mock payload")
+    msg = rx.recv()
+
+    assert msg.payload == "mock payload"
+    assert msg.msgtype == CDTPMessageIdentifier.BOR
+
+
 def test_sending_package(
     mock_sender_satellite,
     mock_receiver_satellite,
