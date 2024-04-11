@@ -70,7 +70,9 @@ namespace constellation::config {
     }
 
     template <typename T> Value Value::set(const T& val) {
-        if constexpr(is_one_of<T, value_t>()) {
+        if constexpr(std::is_same_v<T, Value>) {
+            return val;
+        } else if constexpr(is_one_of<T, value_t>()) {
             return {val};
         } else if constexpr(std::is_integral_v<T>) {
             if (val > std::numeric_limits<std::int64_t>::max()) {
