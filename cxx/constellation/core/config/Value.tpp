@@ -68,4 +68,22 @@ namespace constellation::config {
             throw std::bad_variant_access();
         }
     }
+
+    template <typename T> Value Value::set(const T& val) {
+        if constexpr(is_one_of<T, value_t>()) {
+            return {val};
+        } else if constexpr(std::is_integral_v<T>) {
+            if (val > std::numeric_limits<std::int64_t>::max()) {
+                throw std::overflow_error("type overflow");
+            }
+            return {static_cast<std::int64_t>(val)};
+        } else if constexpr(std::is_floating_point_v<T>) {
+            return {static_cast<double>(val)};
+        } else if constexpr(std::is_enum_v<T>) {
+            return {utils::to_string(val)};
+        } else {
+            throw std::bad_cast();
+        }
+    }
+
 } // namespace constellation::config

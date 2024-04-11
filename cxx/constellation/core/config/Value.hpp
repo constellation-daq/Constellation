@@ -78,6 +78,15 @@ namespace constellation::config {
         template <typename T> T get() const;
 
         /**
+         * @brief Set value from provided type
+         * @return Value
+         *
+         * @throws invalid_argument If the conversion from the provided type did not succeed
+         * @throws bad_variant_access If no suitable conversion was found and direct assignment did not succeed
+         */
+        template <typename T> static inline Value set(const T& value);
+
+        /**
          * @brief Get type info of the value currently stored in the variant
          * @return Type info of the currently held value
          */
