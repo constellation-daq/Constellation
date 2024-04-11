@@ -34,10 +34,15 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 class DummySatellite : public Satellite {
+    int usr_cmd() { return 2; }
+    int usr_cmd_arg(int a) { return 2 * a; }
+
 public:
     DummySatellite() : Satellite("Dummy", "sat1") {
         support_reconfigure();
         set_status("just started!");
+        register_command("my_cmd", "A User Command", {}, &DummySatellite::usr_cmd, this);
+        register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
     }
 };
 
@@ -93,6 +98,9 @@ TEST_CASE("Get commands", "[satellite]") {
     const auto get_commands_dict = Dictionary::disassemble(*recv_msg_get_commands.getPayload());
     REQUIRE(get_commands_dict.contains("get_commands"));
     REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
+    REQUIRE(dict.contains("my_cmd"));
+    REQUIRE(std::get<std::string>(dict.at("my_cmd")) ==
+            "A User Command\nThis command requires 0 arguments.\nThis command can be called in all states.");
 
     // get_state
     sender.send_command("get_state");
@@ -118,6 +126,42 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(config.size() == 0);
     // TODO(stephan.lachnit): test with a non-empty configuration
 }
+TEST_CASE("User commands", "[satellite]") {
+    // Create and start satellite
+    auto satellite = std::make_shared<DummySatellite>();
+    auto satellite_implementation = SatelliteImplementation(satellite);
+    satellite_implementation.start();
+
+    // Create sender
+    CSCPSender sender {satellite_implementation.getPort()};
+
+    // my_cmd user command
+    sender.send_command("my_cmd");
+    auto recv_msg_usr_cmd = sender.recv();
+    REQUIRE(recv_msg_usr_cmd.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd.getVerb().second), Equals(""));
+    REQUIRE(recv_msg_usr_cmd.hasPayload());
+    const auto usrmsgpayload = recv_msg_usr_cmd.getPayload();
+    const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload->data()), usrmsgpayload->size());
+    REQUIRE(usrpayload->as<int>() == 2);
+
+    // my_usr_cmd_arg with argument as payload
+    auto usr_cmd_arg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
+    msgpack::sbuffer sbuf {};
+    List args;
+    args.push_back(4);
+    msgpack::pack(sbuf, args);
+    usr_cmd_arg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(sbuf.data()), sbuf.size()));
+    sender.send(usr_cmd_arg_msg);
+
+    auto recv_msg_usr_cmd_arg = sender.recv();
+    REQUIRE(recv_msg_usr_cmd_arg.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_arg.getVerb().second), Equals(""));
+    REQUIRE(recv_msg_usr_cmd_arg.hasPayload());
+    const auto usrargmsgpayload = recv_msg_usr_cmd_arg.getPayload();
+    const auto usrargpayload = msgpack::unpack(to_char_ptr(usrargmsgpayload->data()), usrargmsgpayload->size());
+    REQUIRE(usrargpayload->as<int>() == 8);
+}
 
 TEST_CASE("Case insensitive", "[satellite]") {
     // Create and start satellite
@@ -134,6 +178,11 @@ TEST_CASE("Case insensitive", "[satellite]") {
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
+
+    // my_cmd user command
+    sender.send_command("mY_cMd");
+    auto recv_msg_usr_cmdn = sender.recv();
+    REQUIRE(recv_msg_usr_cmdn.getVerb().first == CSCP1Message::Type::SUCCESS);
 }
 
 TEST_CASE("Transitions", "[satellite]") {
@@ -277,6 +326,40 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("NEW"));
+}
+
+TEST_CASE("Catch incorrect user command payload", "[satellite]") {
+    // Create and start satellite
+    auto satellite = std::make_shared<DummySatellite>();
+    auto satellite_implementation = SatelliteImplementation(satellite);
+    satellite_implementation.start();
+
+    // Create sender
+    CSCPSender sender {satellite_implementation.getPort()};
+
+    // my_usr_cmd_arg with wrong payload encoding
+    auto nolist_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
+    auto nolist_payload = std::make_shared<zmq::message_t>("dummy payload");
+    nolist_msg.addPayload(std::move(nolist_payload));
+    sender.send(nolist_msg);
+
+    auto recv_msg_nolist = sender.recv();
+    REQUIRE(recv_msg_nolist.getVerb().first == CSCP1Message::Type::INCOMPLETE);
+    REQUIRE_THAT(to_string(recv_msg_nolist.getVerb().second), Equals("Could not convert command payload to argument list"));
+
+    // my_usr_cmd_arg with wrong argument type
+    auto wrongarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
+    msgpack::sbuffer sbuf {};
+    List args;
+    args.push_back(std::chrono::system_clock::now());
+    msgpack::pack(sbuf, args);
+    wrongarg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(sbuf.data()), sbuf.size()));
+    sender.send(wrongarg_msg);
+
+    auto recv_msg_wrongarg = sender.recv();
+    REQUIRE(recv_msg_wrongarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
+    REQUIRE_THAT(to_string(recv_msg_wrongarg.getVerb().second),
+                 StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::time_point"));
 }
 
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
