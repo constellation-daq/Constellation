@@ -62,7 +62,7 @@ namespace constellation::config {
                 });
                 return result;
             } else {
-                // throw
+                throw std::bad_variant_access();
             }
         } else {
             throw std::bad_variant_access();
@@ -74,6 +74,9 @@ namespace constellation::config {
             return val;
         } else if constexpr(is_one_of<T, value_t>()) {
             return {val};
+        } else if constexpr(is_bounded_type_array_v<char, T> || std::is_same_v<std::string_view, T>) {
+            // special case for char-array constructed strings and string_view
+            return {std::string(val)};
         } else if constexpr(std::is_integral_v<T>) {
             if (val > std::numeric_limits<std::int64_t>::max()) {
                 throw std::overflow_error("type overflow");

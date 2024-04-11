@@ -35,6 +35,12 @@ namespace constellation::config {
     template <typename T> struct is_vector<std::vector<T>> : std::true_type {};
     template <class T> inline constexpr bool is_vector_v = is_vector<T>::value;
 
+    // Type trait for bounded C arrays of given type
+    template <typename U, typename T> struct is_bounded_type_array : std::false_type {};
+    template <typename U, typename T, std::size_t N>
+    struct is_bounded_type_array<U, T[N]> : std::conditional_t<std::is_same_v<T, U>, std::true_type, std::false_type> {};
+    template <typename U, typename T> inline constexpr bool is_bounded_type_array_v = is_bounded_type_array<U, T>::value;
+
     /**
      * Value type for Dictionary using std::variant
      *

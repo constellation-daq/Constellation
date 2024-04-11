@@ -21,6 +21,8 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
 
+using namespace std::literals::string_view_literals;
+
 using namespace Catch::Matchers;
 using namespace constellation::config;
 
@@ -40,6 +42,8 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("float", float(3.14));
 
     config.set("string", std::string("a"));
+    config.set("string_view", "b"sv);
+    config.set("char_array", "c");
 
     enum MyEnum {
         ONE,
@@ -65,6 +69,8 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.get<float>("float") == 3.14F);
 
     REQUIRE(config.get<std::string>("string") == "a");
+    REQUIRE(config.get<std::string>("string_view") == "b");
+    REQUIRE(config.get<std::string>("char_array") == "c");
 
     REQUIRE(config.get<MyEnum>("myenum") == MyEnum::ONE);
 
