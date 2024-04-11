@@ -42,9 +42,9 @@ namespace constellation::satellite {
     template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
         try {
             return config::Value::set(value);
-        } catch(std::bad_variant_access&) {
+        } catch(std::bad_cast&) {
             std::string msg;
-            msg += "Error casting provided type \"";
+            msg += "Error casting function return type \"";
             msg += utils::demangle(typeid(T));
             msg += "\" to dictionary value";
             throw std::invalid_argument(msg);

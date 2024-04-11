@@ -34,8 +34,12 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 class DummySatellite : public Satellite {
-    int usr_cmd() { return 2; }
-    int usr_cmd_arg(int a) { return 2 * a; }
+    int usr_cmd() { return value_; }
+    int usr_cmd_arg(int a) { return value_ * a; }
+
+    std::array<int, 1> usr_cmd_invalid_return() { return {value_}; }
+
+    int value_ {2};
 
 public:
     DummySatellite() : Satellite("Dummy", "sat1") {
@@ -43,6 +47,7 @@ public:
         set_status("just started!");
         register_command("my_cmd", "A User Command", {}, &DummySatellite::usr_cmd, this);
         register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
+        register_command("my_cmd_invalid_return", "Invalid User Command", {}, &DummySatellite::usr_cmd_invalid_return, this);
     }
 };
 
@@ -328,7 +333,32 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("NEW"));
 }
 
-TEST_CASE("Catch incorrect user command payload", "[satellite]") {
+TEST_CASE("Catch invalid user command registrations", "[satellite]") {
+    class MySatellite : public DummySatellite {
+        int cmd() { return val_; }
+        int val_ {2};
+
+    public:
+        MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
+    };
+    REQUIRE_THROWS_AS(std::make_shared<MySatellite>(), LogicError);
+    REQUIRE_THROWS_WITH(std::make_shared<MySatellite>(), Equals("Can not register command with empty name"));
+
+    class MySatellite2 : public DummySatellite {
+        int cmd() { return val_; }
+        int val_ {2};
+
+    public:
+        MySatellite2() {
+            register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
+            register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
+        }
+    };
+    REQUIRE_THROWS_AS(std::make_shared<MySatellite2>(), LogicError);
+    REQUIRE_THROWS_WITH(std::make_shared<MySatellite2>(), Equals("Command \"my_cmd\" is already registered"));
+}
+
+TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
     auto satellite_implementation = SatelliteImplementation(satellite);
@@ -360,6 +390,25 @@ TEST_CASE("Catch incorrect user command payload", "[satellite]") {
     REQUIRE(recv_msg_wrongarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_wrongarg.getVerb().second),
                  StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::time_point"));
+}
+
+TEST_CASE("Catch incorrect user command return value", "[satellite]") {
+    // Create and start satellite
+    auto satellite = std::make_shared<DummySatellite>();
+    auto satellite_implementation = SatelliteImplementation(satellite);
+    satellite_implementation.start();
+
+    // Create sender
+    CSCPSender sender {satellite_implementation.getPort()};
+
+    // my_usr_cmd_arg with wrong payload encoding
+    auto invalid_return = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_invalid_return"});
+    sender.send(invalid_return);
+
+    auto recv_msg_invalid_return = sender.recv();
+    REQUIRE(recv_msg_invalid_return.getVerb().first == CSCP1Message::Type::INCOMPLETE);
+    REQUIRE_THAT(to_string(recv_msg_invalid_return.getVerb().second),
+                 Equals("Error casting function return type \"std::array<int, 1ul>\" to dictionary value"));
 }
 
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
