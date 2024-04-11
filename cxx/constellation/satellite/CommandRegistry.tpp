@@ -41,7 +41,7 @@ namespace constellation::satellite {
 
     template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
         try {
-            return config::Value(value);
+            return config::Value::set(value);
         } catch(std::bad_variant_access&) {
             std::string msg;
             msg += "Error casting provided type \"";
