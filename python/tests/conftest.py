@@ -85,12 +85,20 @@ class mocket(MagicMock):
     def send(self, payload, flags=None):
         """Append buf to queue."""
         try:
-            self._get_queue(True)[self.port].append(payload)
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+                self._get_queue(True)[self.port].append(payload)
+            else:
+                self._get_queue(True)[self.port].append(
+                    [payload, "_S/END_"]
+                )  # TODO: Find a better marker
         except KeyError:
-            self._get_queue(True)[self.port] = [payload]
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+                self._get_queue(True)[self.port] = [payload]
+            else:
+                self._get_queue(True)[self.port] = [[payload, "_S/END_"]]
 
     def send_string(self, payload, flags=None):
-        self.send(payload.encode())
+        self.send(payload.encode(), flags=flags)
 
     def recv_multipart(self, flags=None):
         """Pop entry from queue."""
@@ -107,10 +115,16 @@ class mocket(MagicMock):
             ):
                 time.sleep(0.01)
         # "pop all"
-        r, self._get_queue(False)[self.port][:] = (
-            self._get_queue(False)[self.port][:],
-            [],
-        )
+        # NOTE: This does not work if more items are queued up.
+        r = []
+        RCV_MORE = True
+        while RCV_MORE:
+            dat = self._get_queue(False)[self.port].pop(0)
+            if isinstance(dat, list) and "_S/END_" in dat:
+                RCV_MORE = False
+                r.append(dat[0])
+            else:
+                r.append(dat)
         return r
 
     def recv(self, flags=None):
@@ -121,7 +135,14 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 raise zmq.ZMQError("Resource temporarily unavailable")
-            return self._get_queue(False)[self.port].pop(0)
+
+            dat = self._get_queue(False)[self.port].pop(0)
+
+            if isinstance(dat, list) and "_S/END_" in dat:
+                r = dat[0]
+            else:
+                r = dat
+            return r
         else:
             # block
             while (
@@ -129,7 +150,12 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 time.sleep(0.01)
-            return self._get_queue(False)[self.port].pop(0)
+            dat = self._get_queue(False)[self.port].pop(0)
+            if isinstance(dat, list) and "_S/END_" in dat:
+                r = dat[0]
+            else:
+                r = dat
+            return r
 
     def bind(self, host):
         self.port = int(host.split(":")[2])
