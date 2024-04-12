@@ -127,6 +127,7 @@ class MonitoringSender(BaseSatelliteFrame):
                     last_update[metric] = datetime.now()
 
             time.sleep(0.1)
+        self.log.info("Monitoring metrics thread shutting down.")
         # clean up
         self.close()
 
