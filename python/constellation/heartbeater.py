@@ -38,11 +38,11 @@ class HeartbeatSender(SatelliteStateHandler):
         """Add the CHIRP broadcaster thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["heartbeat"] = threading.Thread(
-            target=self._run, daemon=True
+            target=self._run_heartbeat, daemon=True
         )
         self.log.debug("Heartbeat sender thread prepared and added to the pool.")
 
-    def _run(self) -> None:
+    def _run_heartbeat(self) -> None:
         last = datetime.now()
         while not self._com_thread_evt.is_set():
             if (
