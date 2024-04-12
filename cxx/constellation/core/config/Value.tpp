@@ -36,7 +36,7 @@ namespace constellation::config {
                 return static_cast<T>(std::get<double>(*this));
             }
         } else if constexpr(std::is_enum_v<T>) {
-            const auto str = std::get<std::string>(*this);
+            const auto& str = std::get<std::string>(*this);
             const auto enum_val = magic_enum::enum_cast<T>(utils::transform(str, ::toupper));
 
             if(!enum_val.has_value()) {

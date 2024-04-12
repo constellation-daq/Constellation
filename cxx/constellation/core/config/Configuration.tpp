@@ -30,7 +30,7 @@ namespace constellation::config {
 
     template <typename T> T Configuration::get(const std::string& key) const {
         try {
-            const auto dictval = config_.at(key);
+            const auto& dictval = config_.at(key);
             auto val = dictval.get<T>();
             used_keys_.markUsed(key);
             return val;
