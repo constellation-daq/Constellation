@@ -8,9 +8,9 @@ import logging
 import time
 from unittest.mock import MagicMock, patch
 
-from constellation.cmdp import CMDPTransmitter, Metric, MetricsType
+from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
 
-from constellation.monitoring import (
+from constellation.core.monitoring import (
     ZeroMQSocketLogListener,
     MonitoringSender,
     schedule_metric,
@@ -49,7 +49,7 @@ def mock_monitoringsender():
         m = mocket()
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
