@@ -346,17 +346,17 @@ def main():
     logger.debug("Starting up CLI Controller!")
 
     # start server with args
-    ctrl = BaseController(  # noqa
-        name=args.name, group=args.group, interface=args.interface
-    )
+    ctrl = BaseController(name=args.name, group=args.group, interface=args.interface)
+
+    constellation = ctrl.constellation  # noqa
 
     print("\nWelcome to the Constellation CLI IPython Controller!\n")
     print(
-        "You can interact with the discovered Satellites via the `ctrl.constellation` array:"
+        "You can interact with the discovered Satellites via the `constellation` array:"
     )
-    print("          ctrl.constellation.get_state()\n")
+    print("          constellation.get_state()\n")
     print("To get help for any of its methods, call it with a question mark:")
-    print("          ctrl.constellation.get_state?\n")
+    print("          constellation.get_state?\n")
     print("Happy hacking! :)\n")
 
     # start IPython console
