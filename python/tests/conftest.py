@@ -175,6 +175,15 @@ def mock_socket_sender():
 
 
 @pytest.fixture
+def mock_socket_receiver():
+    mock = mocket()
+    mock.return_value = mock
+    mock.endpoint = 0
+    mock.port = send_port
+    yield mock
+
+
+@pytest.fixture
 def mock_cmd_transmitter(mock_socket_sender):
     t = CommandTransmitter("mock_sender", mock_socket_sender)
     yield t
