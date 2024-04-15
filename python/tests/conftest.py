@@ -115,8 +115,6 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 time.sleep(0.01)
-        # "pop all"
-        # NOTE: This does not work if more items are queued up.
         r = []
         RCV_MORE = True
         while RCV_MORE:
