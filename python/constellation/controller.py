@@ -7,6 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import logging
 import threading
+import time
 from queue import Empty
 from typing import Dict
 from functools import partial
@@ -150,13 +151,16 @@ class BaseController(CHIRPBroadcaster):
         super()._add_com_thread()
         super()._start_com_threads()
 
-        self.request(CHIRPServiceIdentifier.CONTROL)
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(
             target=self._run_task_handler, daemon=True
         )
         self._task_handler_thread.start()
+
+        # wait for threads to be ready
+        time.sleep(0.2)
+        self.request(CHIRPServiceIdentifier.CONTROL)
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
