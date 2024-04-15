@@ -4,19 +4,26 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
+import os
+import pathlib
 import threading
 import time
+from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
+import h5py
 import pytest
 from conftest import mocket
+from constellation.broadcastmanager import DiscoveredService
 from constellation.cdtp import CDTPMessageIdentifier, DataTransmitter
+from constellation.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.cscp import CommandTransmitter
-from constellation.datareceiver import DataReceiver
+from constellation.datareceiver import H5DataReceiverWriter
 from constellation.datasender import DataSender
 
 DATA_PORT = 50101
 CMD_PORT = 10101
+FILE_NAME = "mock_file.h5"
 
 
 @pytest.fixture
@@ -77,45 +84,39 @@ def mock_receiver_satellite(mock_socket_sender: mocket, mock_socket_receiver: mo
 
     def mocket_factory(*args, **kwargs):
         m = mocket()
-        m.endpoint = 1
+        m.endpoint = 0
         return m
 
-    class MockReceiverSatellite(DataReceiver):
+    class MockReceiverSatellite(H5DataReceiverWriter):
+        def __init__(self, temp_dir, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.temp_dir = temp_dir
+
         def do_initializing(self, payload: any) -> str:
-            self.mock_directory = []
-            return super().do_initializing(payload)
-
-        def do_run(self):
-            self.BOR = True
-            self.EOR = False
-            mock_file = []
-            while not self._state_thread_evt.is_set():
-                msg = self.data_queue.get(block=True, timeout=0.5)
-                if msg.msgtype == CDTPMessageIdentifier.BOR:
-                    self.BOR = False
-
-                elif msg.msgtype == CDTPMessageIdentifier.EOR:
-                    self.EOR = True
-                mock_file.append(msg)
-            self.mock_directory.append(mock_file)
+            super().do_initializing(payload)
+            self.directroy_name = self.temp_dir
+            self.file_name_pattern = FILE_NAME
+            return "Initializing"
 
     with patch("constellation.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockReceiverSatellite(
-            "mock_receiver",
-            "mockstellation",
-            cmd_port=CMD_PORT,
-            mon_port=22222,
-            hb_port=33333,
-            interface="127.0.0.1",
-        )
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
+        with TemporaryDirectory() as tmpdirname:
+            s = MockReceiverSatellite(
+                name="mock_receiver",
+                group="mockstellation",
+                cmd_port=CMD_PORT,
+                mon_port=22222,
+                hb_port=33333,
+                interface="127.0.0.1",
+                temp_dir=tmpdirname,
+            )
+            t = threading.Thread(target=s.run_satellite)
+            t.start()
+            # give the threads a chance to start
+            time.sleep(0.1)
+            yield s, tmpdirname
 
 
 @pytest.mark.forked
@@ -179,73 +180,52 @@ def test_sending_package(
 
 
 @pytest.mark.forked
-def test_receiving_package(
+def test_receive_writing_package(
     mock_data_transmitter: DataTransmitter,
     mock_receiver_satellite,
 ):
     mock = mocket()
     mock.return_value = mock
-    mock.endpoint = 0
+    mock.endpoint = 1
     mock.port = CMD_PORT
     commander = CommandTransmitter("cmd", mock)
+    service = DiscoveredService(
+        get_uuid("mock_sender"),
+        CHIRPServiceIdentifier.DATA,
+        "127.0.0.1",
+        port=DATA_PORT,
+    )
 
-    receiver = mock_receiver_satellite
+    receiver, tmpdir = mock_receiver_satellite
     tx = mock_data_transmitter
     commander.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.5)
+    receiver._add_sender(service)
+
+    payload = [1234]
+    tx.send_start(["mock_start"])
+    tx.send_data(payload)
+    tx.send_data(payload)
+    tx.send_end(["mock_end"])
+
     commander.send_request("launch")
     time.sleep(0.5)
+    assert receiver.run_number == 0
+    assert receiver.data_queue.qsize() == 4, "Could not receive all data packets."
     commander.send_request("start")
-    time.sleep(0.5)
-
+    time.sleep(1)
     assert receiver.fsm.current_state.id == "RUN", "Could not set up test environment"
-    payload = "mock payload"
-    tx.send_start(payload)
-    tx.send_data(payload)
-    tx.send_data(payload)
-    tx.send_end(payload)
-    assert len(receiver.mock_directory[0]) == 4
-    for idx in range(4):
-        assert receiver.mock_directory[0][idx] == "mock payload"
-    assert receiver.mock_directory
-
-
-"""
-@pytest.mark.forked
-def test_datareceiver(
-    mock_cmd_transmitter: CommandTransmitter, mock_data_transmitter: DataTransmitter
-):
-    receiver = H5DataReceiverWriter(
-        name="mock_name",
-        group="mock_group",
-        cmd_port=71115,
-        hb_port=71116,
-        mon_port=71117,
-        interface="*",
-    )
-    commander = mock_cmd_transmitter
-    sender = mock_data_transmitter
-    sat_thread = threading.Thread(target=receiver.run_satellite())
-    sat_thread.start()
-
-    # NOTE: Temporary solution for getting config-files
-    write_config = {}
-
-    for category in ["constellation", "satellites"]:
-        write_config.update(
-            get_config(
-                config_path="python/constellation/configs/example.toml",
-                category=category,
-                host_class="H5DataReceiverWriter",
-            )
-        )
-    commander.send_request("initialize", write_config)
+    commander.send_request("stop")
     time.sleep(0.5)
-    commander.send_request("launch")
-    time.sleep(0.5)
-    commander.send_request("start")
+    assert receiver.run_number == 1
 
-    sender.send_start()
-    for _ in range(10):
-        sender.send_data([1, 2, 3])
-"""
+    assert os.path.exists(os.path.join(tmpdir, FILE_NAME))
+    h5file = h5py.File(tmpdir / pathlib.Path(FILE_NAME))
+    assert "mock_sender" in h5file.keys()
+    assert "BOR_1" in h5file["mock_sender"].keys()
+    assert "mock_start" in str(h5file["mock_sender"]["BOR_1"][0], encoding="utf-8")
+    assert "EOR_1" in h5file["mock_sender"].keys()
+    assert "mock_end" in str(h5file["mock_sender"]["EOR_1"][0], encoding="utf-8")
+    assert "data_run_1" in h5file["mock_sender"].keys()
+    assert payload == h5file["mock_sender"]["data_run_1"][0]
+    assert payload == h5file["mock_sender"]["data_run_1"][1]
