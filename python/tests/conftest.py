@@ -28,6 +28,9 @@ mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
 
+SNDMORE_MARK = (
+    "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
+)
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
 
 
@@ -88,14 +91,12 @@ class mocket(MagicMock):
             if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
                 self._get_queue(True)[self.port].append(payload)
             else:
-                self._get_queue(True)[self.port].append(
-                    [payload, "_S/END_"]
-                )  # TODO: Find a better marker
+                self._get_queue(True)[self.port].append([payload, SNDMORE_MARK])
         except KeyError:
             if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
                 self._get_queue(True)[self.port] = [payload]
             else:
-                self._get_queue(True)[self.port] = [[payload, "_S/END_"]]
+                self._get_queue(True)[self.port] = [[payload, SNDMORE_MARK]]
 
     def send_string(self, payload, flags=None):
         self.send(payload.encode(), flags=flags)
@@ -120,7 +121,7 @@ class mocket(MagicMock):
         RCV_MORE = True
         while RCV_MORE:
             dat = self._get_queue(False)[self.port].pop(0)
-            if isinstance(dat, list) and "_S/END_" in dat:
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
                 RCV_MORE = False
                 r.append(dat[0])
             else:
@@ -138,7 +139,7 @@ class mocket(MagicMock):
 
             dat = self._get_queue(False)[self.port].pop(0)
 
-            if isinstance(dat, list) and "_S/END_" in dat:
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
                 r = dat[0]
             else:
                 r = dat
@@ -151,7 +152,7 @@ class mocket(MagicMock):
             ):
                 time.sleep(0.01)
             dat = self._get_queue(False)[self.port].pop(0)
-            if isinstance(dat, list) and "_S/END_" in dat:
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
                 r = dat[0]
             else:
                 r = dat
