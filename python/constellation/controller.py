@@ -312,10 +312,12 @@ class BaseController(CHIRPBroadcaster):
     def reentry(self):
         """Stop the controller."""
         self.log.info("Stopping controller.")
-        self._task_handler_event.set()
+        if getattr(self, "_task_handler_event", None):
+            self._task_handler_event.set()
         for _name, cmd_tm in self._transmitters.items():
             cmd_tm.socket.close()
-        self._task_handler_thread.join()
+        if getattr(self, "_task_handler_event", None):
+            self._task_handler_thread.join()
         super().reentry()
 
 
