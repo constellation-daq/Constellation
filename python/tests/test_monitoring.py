@@ -87,7 +87,7 @@ def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
 @pytest.mark.forked
 def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
     cmdp, m = mock_transmitter_a
-    m1 = Metric("mock_val", "a mocked value", "Mmocs", MetricsType.LAST_VALUE, 42)
+    m1 = Metric("mock_val", "Mmocs", MetricsType.LAST_VALUE, 42)
     assert not m1.sender
     cmdp.send(m1)
     # check that we have a packet ready to be read

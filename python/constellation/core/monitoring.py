@@ -32,7 +32,6 @@ def schedule_metric(handling: MetricsType, interval: float):
             val, unit = func(*args, **kwargs)
             m = Metric(
                 name=func.__name__,
-                description=func.__doc__,
                 unit=unit,
                 handling=handling,
                 value=val,
