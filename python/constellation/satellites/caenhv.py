@@ -9,7 +9,8 @@ import logging
 import argparse
 import coloredlogs
 
-from ..satellite import Satellite
+from ..core.satellite import Satellite
+from ..core.commandmanager import cscp_requestable
 import pycaenhv
 
 
@@ -17,7 +18,7 @@ class CaenHvSatellite(Satellite):
 
     def do_initializing(self, configuration):
         """Set up connection to HV module and configure settings."""
-        if self.caen:
+        if getattr(self, "caen", None):
             # old connection
             self.caen.disconnect()
         # SY5527 and similar: pycaenhv
@@ -41,7 +42,7 @@ class CaenHvSatellite(Satellite):
                     for par in ch.parameter_names:
                         # loop over parameters
                         # construct configuration key
-                        key = f"board{brdno}_ch{chno}_{par}"
+                        key = f"board{brdno}_ch{chno}_{par.lower()}"
                         self.log.debug("Checking configuration for key '%s'", key)
                         try:
                             # retrieve and set value
@@ -69,13 +70,29 @@ class CaenHvSatellite(Satellite):
         return "Interrupted"
 
     def fail_gracefully(self):
-        # TODO implement
+        if getattr(self, "caen", None):
+            self.caen.disconnect()
         return "error handled"
 
     def get_channel_value(self, board: int, channel: int, par: str):
         # TODO implement metric helper method
         val = 42
         return val
+
+    @cscp_requestable
+    def get_parameter(self, request):
+        """Return the value of a parameter.
+
+        Payload: dictionary with 'board', 'channel' and 'parameter' keys
+        providing the respective values.
+
+        """
+        board = request.payload["board"]
+        chno = int(request.payload["channel"])
+        par = request.payload["parameter"]
+        with self.caen as crate:
+            val = crate.boards[board].channels[chno].parameters[par]
+        return val, None, None
 
     def about(self):
         # TODO implement cmd
