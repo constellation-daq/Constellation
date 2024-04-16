@@ -14,12 +14,12 @@ from unittest.mock import MagicMock, patch
 import h5py
 import pytest
 from conftest import mocket
-from constellation.broadcastmanager import DiscoveredService
-from constellation.cdtp import CDTPMessageIdentifier, DataTransmitter
-from constellation.chirp import CHIRPServiceIdentifier, get_uuid
-from constellation.cscp import CommandTransmitter
-from constellation.datareceiver import H5DataReceiverWriter
-from constellation.datasender import DataSender
+from constellation.core.broadcastmanager import DiscoveredService
+from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
+from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
+from constellation.core.cscp import CommandTransmitter
+from constellation.core.datareceiver import H5DataReceiverWriter
+from constellation.core.datasender import DataSender
 
 DATA_PORT = 50101
 CMD_PORT = 10101
