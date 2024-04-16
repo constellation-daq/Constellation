@@ -23,7 +23,7 @@ from constellation.core.datasender import DataSender
 
 DATA_PORT = 50101
 CMD_PORT = 10101
-FILE_NAME = "mock_file.h5"
+FILE_NAME = "mock_file_{run_number}.h5"
 
 
 @pytest.fixture
@@ -201,31 +201,47 @@ def test_receive_writing_package(
     commander.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.5)
     receiver._add_sender(service)
-
-    payload = [1234]
-    tx.send_start(["mock_start"])
-    tx.send_data(payload)
-    tx.send_data(payload)
-    tx.send_end(["mock_end"])
-
     commander.send_request("launch")
     time.sleep(0.5)
-    assert receiver.run_number == 0
-    assert receiver.data_queue.qsize() == 4, "Could not receive all data packets."
-    commander.send_request("start")
-    time.sleep(1)
-    assert receiver.fsm.current_state.id == "RUN", "Could not set up test environment"
-    commander.send_request("stop")
-    time.sleep(0.5)
-    assert receiver.run_number == 1
 
-    assert os.path.exists(os.path.join(tmpdir, FILE_NAME))
-    h5file = h5py.File(tmpdir / pathlib.Path(FILE_NAME))
-    assert "mock_sender" in h5file.keys()
-    assert "BOR_1" in h5file["mock_sender"].keys()
-    assert "mock_start" in str(h5file["mock_sender"]["BOR_1"][0], encoding="utf-8")
-    assert "EOR_1" in h5file["mock_sender"].keys()
-    assert "mock_end" in str(h5file["mock_sender"]["EOR_1"][0], encoding="utf-8")
-    assert "data_run_1" in h5file["mock_sender"].keys()
-    assert payload == h5file["mock_sender"]["data_run_1"][0]
-    assert payload == h5file["mock_sender"]["data_run_1"][1]
+    payload = [1234]
+    assert receiver.run_number == 0
+
+    for run_num in range(1, 3):
+        # Send new data to handle
+        tx.send_start(["mock_start"])
+        tx.send_data(payload)
+        tx.send_data(payload)
+        tx.send_end(["mock_end"])
+        time.sleep(0.1)
+
+        # Have we received all packages?
+        assert receiver.data_queue.qsize() == 4, "Could not receive all data packets."
+
+        # Running satellite
+        commander.send_request("start")
+        time.sleep(1)
+        assert (
+            receiver.fsm.current_state.id == "RUN"
+        ), "Could not set up test environment"
+        commander.send_request("stop")
+        time.sleep(0.5)
+        assert receiver.run_number == run_num
+
+        # Does file exist and has it been written to?
+        bor = f"BOR_{run_num}"
+        eor = f"EOR_{run_num}"
+        dat = f"data_run_{run_num}"
+
+        file = FILE_NAME.format(run_number=run_num)
+        assert os.path.exists(os.path.join(tmpdir, file))
+        h5file = h5py.File(tmpdir / pathlib.Path(file))
+        assert "mock_sender" in h5file.keys()
+        assert bor in h5file["mock_sender"].keys()
+        assert "mock_start" in str(h5file["mock_sender"][bor][0], encoding="utf-8")
+        assert eor in h5file["mock_sender"].keys()
+        assert "mock_end" in str(h5file["mock_sender"][eor][0], encoding="utf-8")
+        assert dat in h5file["mock_sender"].keys()
+        assert payload == h5file["mock_sender"][dat][0]
+        assert payload == h5file["mock_sender"][dat][1]
+        h5file.close()
