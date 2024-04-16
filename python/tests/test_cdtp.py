@@ -58,7 +58,7 @@ def mock_sender_satellite(mock_chirp_socket):
                 time.sleep(0.5)
             return "Send finished"
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
@@ -98,7 +98,7 @@ def mock_receiver_satellite(mock_socket_sender: mocket, mock_socket_receiver: mo
             self.file_name_pattern = FILE_NAME
             return "Initializing"
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
