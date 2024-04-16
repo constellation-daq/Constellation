@@ -10,15 +10,15 @@ import threading
 import time
 import zmq
 
-from constellation.satellite import Satellite
+from constellation.core.satellite import Satellite
 
-from constellation.chirp import (
+from constellation.core.chirp import (
     CHIRP_PORT,
     CHIRPBeaconTransmitter,
 )
 
-from constellation.cscp import CommandTransmitter
-from constellation.controller import BaseController
+from constellation.core.cscp import CommandTransmitter
+from constellation.core.controller import BaseController
 
 # chirp
 mock_chirp_packet_queue = []
@@ -51,7 +51,7 @@ def mock_chirp_sock_recvfrom(bufsize):
 @pytest.fixture
 def mock_chirp_socket():
     """Mock CHIRP socket calls."""
-    with patch("constellation.chirp.socket.socket") as mock:
+    with patch("constellation.core.chirp.socket.socket") as mock:
         mock = mock.return_value
         mock.connected = MagicMock(return_value=True)
         mock.sendto = MagicMock(side_effect=mock_chirp_sock_sendto)
@@ -197,7 +197,7 @@ def mock_satellite(mock_chirp_socket):
         m = mocket()
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
@@ -220,7 +220,7 @@ def mock_controller(mock_chirp_socket):
         m.endpoint = 1
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
