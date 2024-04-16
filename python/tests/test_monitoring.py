@@ -20,7 +20,7 @@ from constellation.core.monitoring import (
     MonitoringListener,
 )
 
-from constellation.chirp import (
+from constellation.core.chirp import (
     CHIRPBeaconTransmitter,
     CHIRPServiceIdentifier,
     CHIRPMessageType,
@@ -77,7 +77,7 @@ def mock_monitoringlistener(mock_chirp_socket):
         m.endpoint = 1
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
