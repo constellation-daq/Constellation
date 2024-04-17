@@ -22,7 +22,7 @@ which are entered by a command and exited as soon as their action is complete. A
 in the [satellite section](/manual/concepts/satellite) of the framework concepts overview. The actions attached to these
 transitional states are implemented by overriding the virtual methods provided by the `Satellite` base class.
 
-For a new satellite, the following transitional state actions **have to be implemented**:
+For a new satellite, the following transitional state actions **should be implemented**:
 
 * `void NewSatellite::initializing()`
 * `void NewSatellite::launching()`
@@ -80,7 +80,7 @@ enabled in the constructor of the satellite:
 
 ```cpp
 MySatellite(std::string_view name) : Satellite(name) {
-   enable reconfiguration();
+   support_reconfigure();
 }
 ```
 
