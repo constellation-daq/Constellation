@@ -14,7 +14,7 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       variables:
         CCACHE_DISABLE: 1
-    - if: $CI_COMMIT_BRANCH != "main" && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
       when: never
     - when: always
 
@@ -392,7 +392,7 @@ lint:clang-scan-build:
     when: on_failure
     expire_in: 1 week
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
 lint:coverity-scan:
   extends:
@@ -414,7 +414,7 @@ lint:coverity-scan:
         --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
         --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
 # format stage
 
@@ -481,6 +481,6 @@ deploy:docs:
   needs:
     - job: docs:doxygen
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   trigger:
     project: constellation/constellation.pages.desy.de
