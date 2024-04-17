@@ -49,18 +49,18 @@ variables:
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
   variables:
-    CXX: clang++
+    CXX: ccache clang++
     CXX_LD: mold
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
   variables:
-    CXX: g++
+    CXX: ccache g++
 
 .fedora-latest:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-latest:latest
   variables:
-    CXX: clang++
+    CXX: ccache clang++
 
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
@@ -75,7 +75,7 @@ variables:
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
   variables:
-    CXX: g++
+    CXX: ccache g++
 
 # Python templates
 
@@ -101,6 +101,7 @@ variables:
   stage: build
   cache:
     - *meson-wrap-cache
+    - *ccache
   script:
     - meson setup build -Dimpl_cxx=enabled -Dcxx_tests=enabled ${BUILD_OPTIONS}
     - meson compile -C build
@@ -151,9 +152,6 @@ build:ubuntu-22.04:
   extends:
     - .build-cpp
     - .ubuntu-22.04
-  cache:
-    - *meson-wrap-cache
-    - *ccache
   variables:
     BUILD_OPTIONS: "-Dbuildtype=release"
 
