@@ -11,16 +11,16 @@ import os
 from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
-from constellation.cmdp import CMDPTransmitter, Metric, MetricsType
+from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
 
-from constellation.monitoring import (
+from constellation.core.monitoring import (
     ZeroMQSocketLogListener,
     MonitoringSender,
     schedule_metric,
     MonitoringListener,
 )
 
-from constellation.chirp import (
+from constellation.core.chirp import (
     CHIRPBeaconTransmitter,
     CHIRPServiceIdentifier,
     CHIRPMessageType,
@@ -60,7 +60,7 @@ def mock_monitoringsender():
         m = mocket()
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
@@ -77,7 +77,7 @@ def mock_monitoringlistener(mock_chirp_socket):
         m.endpoint = 1
         return m
 
-    with patch("constellation.base.zmq.Context") as mock:
+    with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
