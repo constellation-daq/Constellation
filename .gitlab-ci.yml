@@ -21,6 +21,24 @@ variables:
 
 # C++ templates
 
+# Files that should trigger C++ jobs when changed
+.cpp-rules-changes: &cpp-rules-changes
+  changes:
+    - .gitlab-ci.yml
+    - meson.build
+    - cxx/**/*
+    - subprojects/**/*
+    - .clang-tidy
+    - gcovr.cfg
+    - docs/Doxyfile
+
+# In MRs only run if above mentioned files are changed, otherwise always
+.cpp-rules: &cpp-rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *cpp-rules-changes
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
 .meson-wrap-cache: &meson-wrap-cache
   key: meson-wrap-cache
   paths:
@@ -79,6 +97,21 @@ variables:
 
 # Python templates
 
+# Files that should trigger Python jobs when changed
+.python-rules-changes: &python-rules-changes
+  changes:
+    - .gitlab-ci.yml
+    - meson.build
+    - python/**/*
+    - pyproject.toml
+
+# In MRs only run if above mentioned files are changed, otherwise always
+.python-rules: &python-rules
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *python-rules-changes
+    - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
 .python-venv:
   cache:
     - key: pip-cache
@@ -109,12 +142,14 @@ variables:
     paths:
       - build
     expire_in: 24 hour
+  <<: *cpp-rules
 
 .build-py:
   stage: build
   script:
     - pip install --no-build-isolation -e .[dev]
     - python3 -m build
+  <<: *python-rules
 
 build:alma9-cern:
   extends:
@@ -183,6 +218,7 @@ build:python-3.12:
   artifacts:
     reports:
       junit: build/meson-logs/testlog.junit.xml
+  <<: *cpp-rules
 
 .test-py:
   stage: test
@@ -192,6 +228,7 @@ build:python-3.12:
   artifacts:
     reports:
       junit: junit.xml
+  <<: *python-rules
 
 test:alma9-cern:
   extends:
@@ -285,6 +322,7 @@ lint:coverage-py:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+  <<: *python-rules
 
 lint:coverage-cpp:
   extends:
@@ -301,6 +339,7 @@ lint:coverage-cpp:
       coverage_report:
         coverage_format: cobertura
         path: build/meson-logs/coverage.xml
+  <<: *cpp-rules
 
 lint:clang-tidy:
   extends:
@@ -328,6 +367,7 @@ lint:clang-tidy-diff:
       grep -qzv ": error: " clang-tidy-diff.log
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      <<: *cpp-rules-changes
 
 lint:clang-scan-build:
   extends:
