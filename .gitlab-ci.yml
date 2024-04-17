@@ -347,8 +347,9 @@ lint:clang-scan-build:
     paths:
       - build/meson-logs/scanbuild
     when: on_failure
-    expose_as: 'clang-scan-build'
     expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "schedule"
 
 lint:coverity-scan:
   extends:
@@ -370,7 +371,7 @@ lint:coverity-scan:
         --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
         --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE=="schedule"
+    - if: $CI_COMMIT_BRANCH == "main" && $CI_PIPELINE_SOURCE == "schedule"
 
 # format stage
 
