@@ -22,6 +22,7 @@ core_files = files(
   'core/protocol.py',
   'core/satellite.py',
   'core/confighandler.py',
+  'core/H5datareader.py',
 )
 
 satellites_files = files(
