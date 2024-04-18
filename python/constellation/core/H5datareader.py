@@ -6,11 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 Base module for Constellation Satellites that receive data.
 """
 
-import h5py
 from pathlib import Path
+import h5py
 
 
 class H5DataReader:
+    """Simple data reader for H5-files."""
+
     def __init__(self, file_name) -> None:
         self.file_name = file_name
         self.file = self._open_file(file_name)
