@@ -39,6 +39,14 @@ class H5DataReader:
         """Read part of file from start to stop."""
         return self.file[group][dset][start:stop]
 
+    def read_chunk(self, group: str, dset: str, start: int, stop: int):
+        # Iterate over the chunks
+        ret = []
+        ds = self.file[group][dset]
+        for chunk_idx in ds.iter_chunks():
+            ret.append(ds[chunk_idx])
+        return ret
+
     def groups(self):
         """Fetch all groups of H5-file."""
         return self._groups(self.file)
