@@ -200,7 +200,7 @@ State FSM::initialize(TransitionPayload payload) {
             call_satellite_function(this->satellite_.get(), &Satellite::initializing, Transition::initialized, config);
         this->reactIfAllowed(transition);
     };
-    const auto config = std::get<Configuration>(payload);
+    const auto config = std::get<Configuration>(std::move(payload));
     launch_assign_thread(transitional_thread_, call_wrapper, config);
     return State::initializing;
 }
@@ -232,7 +232,7 @@ State FSM::reconfigure(TransitionPayload payload) {
             this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, partial_config);
         this->reactIfAllowed(transition);
     };
-    const auto partial_config = std::get<Configuration>(payload);
+    const auto partial_config = std::get<Configuration>(std::move(payload));
     launch_assign_thread(transitional_thread_, call_wrapper, partial_config);
     return State::reconfiguring;
 }
@@ -244,7 +244,7 @@ State FSM::start(TransitionPayload payload) {
             call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, run_nr);
         this->reactIfAllowed(transition);
     };
-    const auto run_nr = std::get<std::uint32_t>(payload);
+    const auto run_nr = std::get<std::uint32_t>(std::move(payload));
     launch_assign_thread(transitional_thread_, call_wrapper, run_nr);
     return State::starting;
 }
