@@ -33,6 +33,7 @@ class H5DataReader:
         return h5file
 
     def close(self):
+        """Close H5-file."""
         self.file.close()
 
     def read_part(self, group: str, dset: str, start: int, stop: int):
