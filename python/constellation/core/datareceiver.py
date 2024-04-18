@@ -414,21 +414,20 @@ class H5DataReceiverWriter(DataReceiver):
 def main(args=None):
     """Start the Constellation data receiver satellite."""
     import argparse
+    import coloredlogs
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--cmd-port", type=int, default=23989)
-    parser.add_argument("--mon-port", type=int, default=55556)
+    parser.add_argument("--mon-port", type=int, default=55566)
     parser.add_argument("--hb-port", type=int, default=61244)
     parser.add_argument("--interface", type=str, default="*")
     parser.add_argument("--name", type=str, default="h5_data_receiver")
     parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        level=args.log_level.upper(),
-    )
-
+    # set up logging
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
     # start server with remaining args
     s = H5DataReceiverWriter(
         cmd_port=args.cmd_port,
