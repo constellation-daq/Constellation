@@ -280,7 +280,7 @@ class H5DataReceiverWriter(DataReceiver):
                             item.payload,
                             dtype=np.dtype(item.meta.get("dtype", None)),
                         ),
-                        chunks=100,
+                        chunks=True,
                         dtype=np.dtype(item.meta.get("dtype", None)),
                         maxshape=(None,),
                     )
