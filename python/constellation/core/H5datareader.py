@@ -47,6 +47,10 @@ class H5DataReader:
             ret.append(ds[chunk_idx])
         return ret
 
+    def iter_chunks(self, group: str, dset: str):
+        """Retrieve chunk iterator"""
+        return self.file[group][dset].iter_chunks()
+
     def groups(self):
         """Fetch all groups of H5-file."""
         return self._groups(self.file)
