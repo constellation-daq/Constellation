@@ -35,19 +35,36 @@ class H5DataReader:
     def close(self):
         self.file.close()
 
-    def read_chunks(self, group: str, dset: str, start: int, stop: int):
-        return self.file[group][dset].chunks[start:stop]
+    def read_part(self, group: str, dset: str, start: int, stop: int):
+        """Read part of file from start to stop."""
+        return self.file[group][dset][start:stop]
 
     def groups(self):
+        """Fetch all groups of H5-file."""
         return self._groups(self.file)
 
     def _groups(self, file):
+        """Private method to fetch all datasets of H5-file."""
         groups = []
-        for key in self.file.keys():
-            if isinstance(key, h5py.Group):
-                groups.append(self._groups(key))
-            else:
+        for key in file.keys():
+            if isinstance(file[key], h5py.Group):
                 groups.append(key)
+                groups.append(self._groups(file[key]))
+        return groups
+
+    def datasets(self):
+        """Fetch all groups of H5-file."""
+        return self._datasets(self.file)
+
+    def _datasets(self, file):
+        """Private method to fetch all datasets of H5-file."""
+        datasets = []
+        for key in file.keys():
+            if isinstance(file[key], h5py.Group):
+                datasets.append(self._datasets(file[key]))
+            elif isinstance(file[key], h5py.Dataset):
+                datasets.append(key)
+        return datasets
 
 
 # -------------------------------------------------------------------------
