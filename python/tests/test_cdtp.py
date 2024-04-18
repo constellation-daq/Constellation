@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 import h5py
+import numpy as np
 import pytest
 from conftest import mocket
 from constellation.core.broadcastmanager import DiscoveredService
@@ -145,7 +146,6 @@ def test_sending_package(
 
     commander = CommandTransmitter("cmd", mock)
     transmitter = mock_sender_satellite
-    payloads = []
     rx = mock_data_receiver
 
     commander.send_request("initialize", {"mock key": "mock argument string"})
@@ -158,11 +158,9 @@ def test_sending_package(
         transmitter.fsm.current_state.id == "RUN"
     ), "Could not set up test environment"
 
-    msgs = []
     BOR = True
     for idx in range(11):
         msg = rx.recv()
-        msgs.append(msg)
         if BOR:
             assert msg.msgtype == CDTPMessageIdentifier.BOR
             assert msg.payload != f"mock payload {idx}"
@@ -173,7 +171,6 @@ def test_sending_package(
             # assert msg.sequence_number == idx, "Sequence number not expected order"
             # assert msg.name == "mock sender"
 
-        payloads.append(msg.payload)
     msg = rx.recv()
     assert msg.msgtype == CDTPMessageIdentifier.EOR
     assert transmitter.payload_id == 10
@@ -204,14 +201,14 @@ def test_receive_writing_package(
     commander.send_request("launch")
     time.sleep(0.5)
 
-    payload = [1234]
+    payload = np.array([1234], dtype=np.int16)
     assert receiver.run_number == 0
 
     for run_num in range(1, 3):
         # Send new data to handle
         tx.send_start(["mock_start"])
-        tx.send_data(payload)
-        tx.send_data(payload)
+        tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
+        tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
         tx.send_end(["mock_end"])
         time.sleep(0.1)
 

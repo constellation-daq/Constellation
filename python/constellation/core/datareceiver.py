@@ -237,34 +237,6 @@ class H5DataReceiverWriter(DataReceiver):
         self.directroy_name = self.config.setdefault("directory_name", "H5_file_dir")
         return "Initializing"
 
-    def write_data(self, h5file: h5py.File, item: CDTPMessage):
-        """Write data to HDF5 format
-
-        Current format: File -> Grp (name) -> Dataset (event_{eventid)
-
-        Writes data to file by adding new dataset to group name.
-
-        # TODO add a call to a "write_data" method that can be
-        # overloaded by inheriting classes
-        """
-        # Check if group already exists
-        if item.name not in h5file.keys():
-            grp = h5file.create_group(item.name)
-        else:
-            grp = h5file[item.name]
-
-        # Create dataset and write data (item) to it
-        dset = grp.create_dataset(
-            f"event_{item.meta['eventid']}",
-            data=np.frombuffer(item.payload, dtype=item.meta["dtype"]),
-            chunks=True,
-            dtype=item.meta["dtype"],
-        )
-        dset.attrs["CLASS"] = "DETECTOR_DATA"
-        for key, val in item.meta.items():
-            dset.attrs[key] = val
-        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
-
     def write_data_concat(self, h5file: h5py.File, item: CDTPMessage):
         """Write data into HDF5 format
 
@@ -301,11 +273,15 @@ class H5DataReceiverWriter(DataReceiver):
 
                 # Create dataset if it doesn't already exist
                 if title not in grp:
+
                     dset = grp.create_dataset(
                         title,
-                        data=item.payload,
-                        chunks=True,
-                        dtype=item.meta.get("dtype", None),
+                        data=np.frombuffer(
+                            item.payload,
+                            dtype=np.dtype(item.meta.get("dtype", None)),
+                        ),
+                        chunks=100,
+                        dtype=np.dtype(item.meta.get("dtype", None)),
                         maxshape=(None,),
                     )
 
@@ -315,9 +291,12 @@ class H5DataReceiverWriter(DataReceiver):
 
                 else:
                     # Extend current dataset with data obtained from item
-                    new_data = item.payload
-                    grp[title].resize((grp[title].shape[0] + len(new_data)), axis=0)
-                    grp[title][-len(new_data) :] = new_data
+                    new_data = np.frombuffer(
+                        item.payload, dtype=np.dtype(item.meta.get("dtype", None))
+                    )
+                    self.log.info("new_data is %s", new_data)
+                    grp[title].resize((grp[title].shape[0] + new_data.shape[0]), axis=0)
+                    grp[title][-new_data.shape[0] :] = new_data
 
             except Exception as e:
                 self.log.error("Failed to write to file. Exception occurred: %s", e)
@@ -347,53 +326,6 @@ class H5DataReceiverWriter(DataReceiver):
         self.log.debug(
             f"Processing data packet {item.sequence_number} from {item.name}"
         )
-
-    def write_data_virtual(self, h5file: h5py.File, item: CDTPMessage):
-        """Write data to HDF5 format
-
-        Format: h5file -> Group (name) -> Multiple Datasets (item) + Virtual Dataset
-
-        Writes data by adding a dataset containing item.payload to group name. Also builds
-        a virtual dataset from the group. This allows each data package to be kept in a separate
-        dataset along with the virtual dataset containing all other datasets concatenated.
-
-        # TODO add a call to a "write_data" method that can be
-        # overloaded by inheriting classes
-        """
-        # Check if group already exists
-        if item.name not in h5file.keys():
-            grp = h5file.create_group(item.name)
-        else:
-            grp = h5file[item.name]
-
-        dset = grp.create_dataset(
-            f"event_{item.meta['eventid']}",
-            data=np.frombuffer(item.payload, dtype=item.meta["dtype"]),
-            chunks=True,
-            dtype=item.meta["dtype"],
-        )
-        dset.attrs["CLASS"] = "DETECTOR_DATA"
-        for key, val in item.meta.items():
-            dset.attrs[key] = val
-        self.log.debug(f"Processing data packet {item.meta['packet_num']}")
-
-        # Create a virtual layout with the datasets in group
-        # TODO: this method will result in index-variable overflow, make it so only the latest X datasets are shown
-        #       or split into multiple virtual datasets at a certain point
-        layout = h5py.VirtualLayout(
-            shape=(50000,), dtype="i4"  # TODO: Replace 50000 w/ something appropriate
-        )
-        last_index = 0
-        p = re.compile(r"(\d+)")
-        for data_name in sorted(list(grp.keys()), key=lambda s: extract_num(s, p)):
-            if data_name != "vdata":
-                data_file = h5file[item.name][data_name]
-                vsource = h5py.VirtualSource(data_file)
-                layout[last_index : last_index + len(data_file)] = vsource
-                last_index += len(data_file) + 1
-        if "vdata" in grp.keys():
-            del h5file[item.name]["vdata"]
-        grp.create_virtual_dataset("vdata", layout, fillvalue=-1)
 
     def do_run(self, payload: any) -> str:
         """Handle the data enqueued by the pull threads.
