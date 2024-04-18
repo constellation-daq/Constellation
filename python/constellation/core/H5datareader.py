@@ -39,12 +39,16 @@ class H5DataReader:
         """Read part of file from start to stop."""
         return self.file[group][dset][start:stop]
 
-    def read_chunk(self, group: str, dset: str, start: int, stop: int):
-        # Iterate over the chunks
+    def read_chunks(self, group: str, dset: str, last_chunk: int):
+        """Read out chunks until last_chunk"""
         ret = []
         ds = self.file[group][dset]
+        chunk = 0
         for chunk_idx in ds.iter_chunks():
+            if chunk > last_chunk:
+                break
             ret.append(ds[chunk_idx])
+            chunk += 1
         return ret
 
     def iter_chunks(self, group: str, dset: str):
