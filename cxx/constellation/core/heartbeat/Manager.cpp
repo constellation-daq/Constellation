@@ -98,8 +98,9 @@ void Manager::run(const std::stop_token& stop_token) {
                 LOG(logger_, DEBUG) << "Missed heartbeat from " << key << ", reduced lives to " << remote.lives;
 
                 if(remote.lives == 0) {
-                    // TODO(simonspa) this parrot is dead
+                    // This parrot is dead, it is no more
                     LOG(logger_, WARNING) << "Missed heartbeats from " << key << ", no lives left";
+                    interrupt_callback_();
                 }
             }
 
