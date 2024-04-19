@@ -18,6 +18,7 @@ from constellation.core.chirp import (
 )
 
 from constellation.core.cscp import CommandTransmitter
+from constellation.core.cdtp import DataTransmitter
 from constellation.core.controller import BaseController
 
 # chirp
@@ -27,7 +28,11 @@ mock_chirp_packet_queue = []
 mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
+recv_port = 22222
 
+SNDMORE_MARK = (
+    "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
+)
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
 
 
@@ -85,12 +90,18 @@ class mocket(MagicMock):
     def send(self, payload, flags=None):
         """Append buf to queue."""
         try:
-            self._get_queue(True)[self.port].append(payload)
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+                self._get_queue(True)[self.port].append(payload)
+            else:
+                self._get_queue(True)[self.port].append([payload, SNDMORE_MARK])
         except KeyError:
-            self._get_queue(True)[self.port] = [payload]
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+                self._get_queue(True)[self.port] = [payload]
+            else:
+                self._get_queue(True)[self.port] = [[payload, SNDMORE_MARK]]
 
     def send_string(self, payload, flags=None):
-        self.send(payload.encode())
+        self.send(payload.encode(), flags=flags)
 
     def recv_multipart(self, flags=None):
         """Pop entry from queue."""
@@ -106,11 +117,15 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 time.sleep(0.01)
-        # "pop all"
-        r, self._get_queue(False)[self.port][:] = (
-            self._get_queue(False)[self.port][:],
-            [],
-        )
+        r = []
+        RCV_MORE = True
+        while RCV_MORE:
+            dat = self._get_queue(False)[self.port].pop(0)
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
+                RCV_MORE = False
+                r.append(dat[0])
+            else:
+                r.append(dat)
         return r
 
     def recv(self, flags=None):
@@ -121,7 +136,14 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 raise zmq.ZMQError("Resource temporarily unavailable")
-            return self._get_queue(False)[self.port].pop(0)
+
+            dat = self._get_queue(False)[self.port].pop(0)
+
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
+                r = dat[0]
+            else:
+                r = dat
+            return r
         else:
             # block
             while (
@@ -129,7 +151,12 @@ class mocket(MagicMock):
                 or not self._get_queue(False)[self.port]
             ):
                 time.sleep(0.01)
-            return self._get_queue(False)[self.port].pop(0)
+            dat = self._get_queue(False)[self.port].pop(0)
+            if isinstance(dat, list) and SNDMORE_MARK in dat:
+                r = dat[0]
+            else:
+                r = dat
+            return r
 
     def bind(self, host):
         self.port = int(host.split(":")[2])
@@ -150,9 +177,30 @@ def mock_socket_sender():
 
 
 @pytest.fixture
+def mock_socket_receiver():
+    mock = mocket()
+    mock.return_value = mock
+    mock.endpoint = 0
+    mock.port = send_port
+    yield mock
+
+
+@pytest.fixture
 def mock_cmd_transmitter(mock_socket_sender):
     t = CommandTransmitter("mock_sender", mock_socket_sender)
     yield t
+
+
+@pytest.fixture
+def mock_data_transmitter(mock_socket_sender):
+    t = DataTransmitter("mock_sender", mock_socket_sender)
+    yield t
+
+
+@pytest.fixture
+def mock_data_receiver(mock_socket_receiver):
+    r = DataTransmitter("mock_receiver", mock_socket_receiver)
+    yield r
 
 
 @pytest.fixture

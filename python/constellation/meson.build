@@ -10,6 +10,7 @@ core_files = files(
   'core/chp.py',
   'core/cmdp.py',
   'core/cscp.py',
+  'core/cdtp.py',
   'core/controller.py',
   'core/confighandler.py',
   'core/datareceiver.py',
