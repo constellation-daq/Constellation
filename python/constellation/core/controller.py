@@ -10,7 +10,6 @@ import threading
 import time
 from queue import Empty
 from typing import Dict
-from functools import partial
 
 import zmq
 
@@ -90,22 +89,28 @@ class SatelliteArray:
         except AttributeError:
             satcls = None
         for cmd, doc in cmds.items():
-
-            class wrapper:
-                """Class to wrap partial calls w/ signature of orig. fcn."""
-
-                def __init__(self, fcn):
-                    """Initialize with fcn as a partial() call."""
-                    self.fcn = fcn
-
-                def call(self, payload=None):
-                    """Perform call. This doc string will be overwritten."""
-                    return self.fcn(payload)
-
-            w = wrapper(partial(handler, sat=sat, satcls=satcls, cmd=cmd))
+            w = CommandWrapper(handler, sat=sat, satcls=satcls, cmd=cmd)
             # add docstring
             w.call.__func__.__doc__ = doc
             setattr(obj, cmd, w.call)
+
+
+class CommandWrapper:
+    """Class to wrap command calls.
+
+    Allows to mimic the signature of the Satellite command being wrapped.
+    """
+
+    def __init__(self, handler, sat, satcls, cmd):
+        """Initialize with fcn as a partial() call."""
+        self.fcn = handler
+        self.sat = sat
+        self.satcls = satcls
+        self.cmd = cmd
+
+    def call(self, payload=None):
+        """Perform call. This doc string will be overwritten."""
+        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)
 
 
 class SatelliteClassCommLink:
