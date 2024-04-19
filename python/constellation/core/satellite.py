@@ -140,7 +140,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_initialize(self, payload: any) -> str:
+    def _wrap_initialize(self, config: dict) -> str:
         """Wrapper for the 'initializing' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -159,8 +159,8 @@ class Satellite(
         self._state_thread_evt = None
         self._state_thread_fut = None
 
-        self.config = Configuration(payload)
-        init_msg = self.do_initializing(payload)
+        self.config = Configuration(config)
+        init_msg = self.do_initializing(self.config)
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
@@ -168,7 +168,7 @@ class Satellite(
         return init_msg
 
     @debug_log
-    def do_initializing(self, payload: any) -> str:
+    def do_initializing(self, config: Configuration) -> str:
         """Method for the device-specific code of 'initializing' transition.
 
         This should set configuration variables.
