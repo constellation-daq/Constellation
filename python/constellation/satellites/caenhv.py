@@ -47,6 +47,12 @@ class CaenHvSatellite(Satellite):
                         try:
                             # retrieve and set value
                             val = configuration[key]
+                            if par in ["Pw"]:
+                                # do not want to power up just yet
+                                continue
+                            # the board essentially only knows 'float'-type
+                            # arguments except for 'Pw':
+                            val = float(val)
                             setattr(ch, par, val)
                             self.log.debug(
                                 "Configuring %s on board %s, ch %s with value '%s'",
@@ -58,6 +64,10 @@ class CaenHvSatellite(Satellite):
                         except KeyError:
                             # nothing in the cfg, leave as it is
                             pass
+                        except ValueError as e:
+                            raise RuntimeError(
+                                f"Error in configuration for key {key}: {repr(e)}"
+                            )
 
         return "Connected and configured"
 
