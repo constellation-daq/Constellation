@@ -165,6 +165,8 @@ class Satellite(
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
                 self.log.warning("Satellite ignored configuration value: '%s'", key)
+            init_msg += " IGNORED parameters: "
+            init_msg += ",".join(self.config.get_unused_keys())
         return init_msg
 
     @debug_log
