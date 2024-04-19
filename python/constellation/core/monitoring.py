@@ -31,7 +31,12 @@ def schedule_metric(handling: MetricsType, interval: float):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            val, unit = func(*args, **kwargs)
+            res = func(*args, **kwargs)
+            if isinstance(res, tuple):
+                val, unit = res
+            else:
+                val = res
+                unit = ""
             m = Metric(
                 name=func.__name__,
                 unit=unit,
