@@ -27,7 +27,7 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 Manager::Manager(std::string_view sender)
-    : receiver_(std::bind(&Manager::process_heartbeat, this, std::placeholders::_1)), sender_(sender, 1000ms),
+    : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }), sender_(sender, 1000ms),
       logger_("CHP") {}
 
 Manager::~Manager() {
@@ -47,7 +47,7 @@ Manager::~Manager() {
 }
 
 std::function<void(State)> Manager::getCallback() {
-    return std::bind(&HeartbeatSend::updateState, &sender_, std::placeholders::_1);
+    return [ptr = &sender_](auto&& arg) { ptr->updateState(std::forward<decltype(arg)>(arg)); };
 }
 
 void Manager::process_heartbeat(const message::CHP1Message& msg) {

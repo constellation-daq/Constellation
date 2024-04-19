@@ -34,7 +34,7 @@ namespace constellation::message {
                                State state,
                                std::chrono::milliseconds interval,
                                std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : protocol_(CHP1), sender_(std::move(sender)), time_(time), state_(state), interval_(interval) {}
+            : sender_(std::move(sender)), time_(time), state_(state), interval_(interval) {}
 
         /** Return message protocol */
         constexpr Protocol getProtocol() const { return protocol_; }
@@ -66,7 +66,7 @@ namespace constellation::message {
         CNSTLN_API static CHP1Message disassemble(zmq::multipart_t& frames);
 
     private:
-        Protocol protocol_;
+        Protocol protocol_ {CHP1};
         std::string sender_;
         std::chrono::system_clock::time_point time_;
         State state_;

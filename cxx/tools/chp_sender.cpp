@@ -39,15 +39,16 @@ int main(int argc, char* argv[]) {
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
     HeartbeatSend sender {argv[2], interval};
 
+    auto sender_thread = std::jthread(std::bind_front(&HeartbeatSend::loop, &sender));
+
     std::once_flag shut_down_flag {};
-    std::jthread sender_thread;
     signal_handler_f = [&](int /*signal*/) -> void {
         std::call_once(shut_down_flag, [&]() { sender_thread.request_stop(); });
     };
+    // NOLINTBEGIN(cert-err33-c)
     std::signal(SIGTERM, &signal_hander);
     std::signal(SIGINT, &signal_hander);
-
-    sender_thread = std::jthread(std::bind_front(&HeartbeatSend::loop, &sender));
+    // NOLINTEND(cert-err33-c)
 
     if(sender_thread.joinable()) {
         sender_thread.join();

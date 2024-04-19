@@ -31,18 +31,23 @@ namespace constellation::heartbeat {
     class CNSTLN_API HeartbeatRecv {
     public:
         HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct);
-
         virtual ~HeartbeatRecv();
 
-        void callback_impl(chirp::DiscoveredService service, bool depart);
+        // No copy/move constructor/assignment
+        HeartbeatRecv(const HeartbeatRecv& other) = delete;
+        HeartbeatRecv& operator=(const HeartbeatRecv& other) = delete;
+        HeartbeatRecv(HeartbeatRecv&& other) = delete;
+        HeartbeatRecv& operator=(HeartbeatRecv&& other) = delete;
+
+        void callback_impl(const chirp::DiscoveredService& service, bool depart);
 
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
         void loop(const std::stop_token& stop_token);
 
     private:
-        void connect(chirp::DiscoveredService service);
-        void disconnect(chirp::DiscoveredService service);
+        void connect(const chirp::DiscoveredService& service);
+        void disconnect(const chirp::DiscoveredService& service);
         void disconnect_all();
 
         log::Logger logger_;

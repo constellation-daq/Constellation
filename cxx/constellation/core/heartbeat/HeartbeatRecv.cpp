@@ -35,7 +35,8 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct) : logger_("CHP"), message_callback_(fct) {
+HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct)
+    : logger_("CHP"), message_callback_(std::move(fct)) {
     // Register CHIRP callback
     chirp::Manager::getDefaultInstance()->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
     // Request currently active heartbeating services
@@ -46,7 +47,7 @@ HeartbeatRecv::~HeartbeatRecv() {
     disconnect_all();
 }
 
-void HeartbeatRecv::connect(chirp::DiscoveredService service) {
+void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
     const std::lock_guard sockets_lock {sockets_mutex_};
     const auto uri = "tcp://" + service.address.to_string() + ":" + std::to_string(service.port);
 
@@ -57,7 +58,7 @@ void HeartbeatRecv::connect(chirp::DiscoveredService service) {
     socket.set(zmq::sockopt::subscribe, "");
 
     // Register with poller:
-    zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
+    const zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
         if((ef & zmq::event_flags::pollin) != zmq::event_flags::none) {
             zmq::multipart_t zmq_msg {};
             auto received = zmq_msg.recv(sock);
@@ -97,7 +98,7 @@ void HeartbeatRecv::disconnect_all() {
     }
 }
 
-void HeartbeatRecv::disconnect(chirp::DiscoveredService service) {
+void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
     const std::lock_guard sockets_lock {sockets_mutex_};
     const auto uri = "tcp://" + service.address.to_string() + ":" + std::to_string(service.port);
 
@@ -116,7 +117,7 @@ void HeartbeatRecv::disconnect(chirp::DiscoveredService service) {
     }
 }
 
-void HeartbeatRecv::callback_impl(chirp::DiscoveredService service, bool depart) {
+void HeartbeatRecv::callback_impl(const chirp::DiscoveredService& service, bool depart) {
     const auto uri = "tcp://" + service.address.to_string() + ":" + std::to_string(service.port);
     LOG(logger_, TRACE) << "Callback for " << uri << (depart ? ", departing" : "");
 

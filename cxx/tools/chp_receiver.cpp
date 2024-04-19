@@ -20,6 +20,13 @@ using namespace constellation::log;
 using namespace constellation::message;
 using namespace std::literals::chrono_literals;
 
+// Use global std::function to work around C linkage
+std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+
+extern "C" void signal_hander(int signal) {
+    signal_handler_f(signal);
+}
+
 int main(int argc, char* argv[]) {
     // Get address via cmdline
     if(argc != 2) {
@@ -32,15 +39,25 @@ int main(int argc, char* argv[]) {
 
     Logger logger {"chp_receiver"};
 
-    auto receive = [&](const CHP1Message& msg) {
+    HeartbeatRecv receiver {[&](const CHP1Message& msg) {
         LOG(logger, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                            << ", next message in " << msg.getInterval().count();
+    }};
+
+    auto receiver_thread = std::jthread(std::bind_front(&HeartbeatRecv::loop, &receiver));
+
+    std::once_flag shut_down_flag {};
+    signal_handler_f = [&](int /*signal*/) -> void {
+        std::call_once(shut_down_flag, [&]() { receiver_thread.request_stop(); });
     };
+    // NOLINTBEGIN(cert-err33-c)
+    std::signal(SIGTERM, &signal_hander);
+    std::signal(SIGINT, &signal_hander);
+    // NOLINTEND(cert-err33-c)
 
-    HeartbeatRecv receiver {std::bind(receive, std::placeholders::_1)};
-
-    std::stop_token stop;
-    receiver.loop(stop);
+    if(receiver_thread.joinable()) {
+        receiver_thread.join();
+    }
 
     return 0;
 }

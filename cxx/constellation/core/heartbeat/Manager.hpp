@@ -46,7 +46,7 @@ namespace constellation::heartbeat {
 
         CNSTLN_API std::function<void(message::State)> getCallback();
 
-        CNSTLN_API void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = fct; }
+        CNSTLN_API void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
 
     private:
         void process_heartbeat(const message::CHP1Message& msg);
