@@ -35,6 +35,13 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
+HeartbeatRecv::HeartbeatRecv() : logger_("CHP") {
+    // Register callback
+    chirp::Manager::getDefaultInstance()->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
+    // Request currently active logging services
+    chirp::Manager::getDefaultInstance()->sendRequest(chirp::HEARTBEAT);
+}
+
 void HeartbeatRecv::callback_impl(chirp::DiscoveredService service, bool depart) {
     const auto uri = "tcp://" + service.address.to_string() + ":" + std::to_string(service.port);
     LOG(logger_, TRACE) << "Callback for " << uri;

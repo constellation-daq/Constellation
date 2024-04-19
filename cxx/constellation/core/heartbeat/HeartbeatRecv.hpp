@@ -29,7 +29,7 @@
 namespace constellation::heartbeat {
     class HeartbeatRecv {
     public:
-        HeartbeatRecv() : logger_("CHP") {}
+        HeartbeatRecv();
 
         void callback_impl(chirp::DiscoveredService service, bool depart);
 
