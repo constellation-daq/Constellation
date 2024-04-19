@@ -18,6 +18,7 @@ from constellation.core.chirp import (
 )
 
 from constellation.core.cscp import CommandTransmitter
+from constellation.core.cdtp import DataTransmitter
 from constellation.core.controller import BaseController
 
 # chirp
@@ -27,6 +28,7 @@ mock_chirp_packet_queue = []
 mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
+recv_port = 22222
 
 SNDMORE_MARK = (
     "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
@@ -187,6 +189,18 @@ def mock_socket_receiver():
 def mock_cmd_transmitter(mock_socket_sender):
     t = CommandTransmitter("mock_sender", mock_socket_sender)
     yield t
+
+
+@pytest.fixture
+def mock_data_transmitter(mock_socket_sender):
+    t = DataTransmitter("mock_sender", mock_socket_sender)
+    yield t
+
+
+@pytest.fixture
+def mock_data_receiver(mock_socket_receiver):
+    r = DataTransmitter("mock_receiver", mock_socket_receiver)
+    yield r
 
 
 @pytest.fixture

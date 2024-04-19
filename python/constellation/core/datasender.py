@@ -7,47 +7,27 @@ A base module for a Constellation Satellite that sends data.
 """
 
 import time
-import datetime
 import threading
-import os
 import logging
 from typing import Optional
 from queue import Queue, Empty
 
+import random
+import numpy as np
 import zmq
 
-from .protocol import DataTransmitter
+from .cdtp import DataTransmitter, CDTPMessageIdentifier
 from .satellite import Satellite
-
-
-class DataBlock:
-    """Class to hold data payload and meta information (map) of an event."""
-
-    def __init__(
-        self,
-        payload=None,
-        meta: dict = None,
-        recv_host: str = None,
-        recv_ts: datetime.datetime = None,
-    ):
-        """Initialize variables."""
-        self.payload = payload
-        self.meta = meta
-        self.recv_host = recv_host
-        self.recv_ts = recv_ts
-
-    def __str__(self):
-        return f"DataBlock (payload: {len(self.payload)}, \
-        meta: {len(self.meta)}, recv from host {self.recv_host} \
-        at {self.recv_ts})"
+from .broadcastmanager import CHIRPServiceIdentifier
 
 
 class PushThread(threading.Thread):
-    """Thread that pushes DataBlocks from a Queue to a ZMQ socket."""
+    """Thread that pushes CDTPMessages from a Queue to a ZMQ socket."""
 
     def __init__(
         self,
-        stopevt,
+        name: str,
+        stopevt: threading.Event,
         port: int,
         queue: Queue,
         *args,
@@ -57,39 +37,46 @@ class PushThread(threading.Thread):
         """Initialize values.
 
         Arguments:
+        - name       :: Name of the satellite.
         - stopevt    :: Event that if set lets the thread shut down.
         - port       :: The port to bind to.
-        - queue      :: The Queue to process DataBlocks from.
+        - queue      :: The Queue to process payload and meta of data runs from.
         - context    :: ZMQ context to use (optional).
         """
         super().__init__(*args, **kwargs)
+        self.name = name
         self._logger = logging.getLogger(__name__)
         self.stopevt = stopevt
         self.queue = queue
-        self.packet_num = 0
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PUSH)
         self._socket.bind(f"tcp://*:{port}")
 
     def run(self):
         """Start sending data."""
-        transmitter = DataTransmitter()
+        transmitter = DataTransmitter(self.name, self._socket)
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
-                item = self.queue.get(block=True, timeout=0.5)
+                payload, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
-                if isinstance(item, DataBlock):
-                    item.meta["packet_num"] = self.packet_num
-                    transmitter.send(item.payload, item.meta, self._socket)
-                    self._logger.debug(f"Sending packet number {self.packet_num}")
-                    self.packet_num += 1
+                if meta == CDTPMessageIdentifier.BOR:
+                    transmitter.send_start(payload=payload)
+                elif meta == CDTPMessageIdentifier.EOR:
+                    transmitter.send_end(payload=payload)
                 else:
-                    raise RuntimeError(f"Unable to handle queue item: {type(item)}")
+                    transmitter.send_data(payload=payload, meta=meta)
+                self._logger.debug(
+                    f"Sending packet number {transmitter.sequence_number}"
+                )
                 self.queue.task_done()
             except Empty:
                 # nothing to process
                 pass
+
+    def join(self, *args, **kwargs):
+        self._socket.close()
+        return super().join(*args, **kwargs)
 
 
 class DataSender(Satellite):
@@ -100,20 +87,51 @@ class DataSender(Satellite):
 
         # set up the data pusher which will transmit
         # data placed into the queue via ZMQ socket
-        self._stop_pusher = threading.Event()
         self.data_queue = Queue()
+        self.data_port = data_port
+        self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
+        self.broadcast_offers()
+
+    def do_launching(self, payload: any) -> str:
+        """Launch satellite. Start PushThread."""
+        self._stop_pusher = threading.Event()
         self._push_thread = PushThread(
+            name=self.name,
             stopevt=self._stop_pusher,
-            port=data_port,
+            port=self.data_port,
             queue=self.data_queue,
             context=self.context,
             daemon=True,  # terminate with the main thread
         )
-        self._push_thread.name = f"{self.name}_Pusher-thread"
+        # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
-        self.log.info(f"Satellite {self.name} publishing data on port {data_port}")
+        self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
+        return super().do_launching(payload)
 
-    def do_run(self):
+    def do_landing(self, payload: any) -> str:
+        """Land satellite. Stop PushThread."""
+        self._stop_pusher.set()
+        try:
+            self._push_thread.join(timeout=10)
+        except TimeoutError:
+            self.log.warning("Unable to close push thread. Process timed out.")
+        return super().do_landing(payload)
+
+    def _wrap_start(self, payload: any) -> str:
+        """Wrapper for the 'run' state of the FSM.
+
+        This method notifies the data queue of the beginning and end of the data run,
+        as well as performing basic satellite transitioning.
+
+        """
+        self.data_queue.put(("FIXME: Setup of run here?", CDTPMessageIdentifier.BOR))
+        ret = super()._wrap_start(payload)
+        self.data_queue.put(
+            ("FIXME: Info about end of run here?", CDTPMessageIdentifier.EOR)
+        )
+        return ret
+
+    def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.
 
         This method will be executed in a separate thread by the underlying
@@ -130,62 +148,59 @@ class DataSender(Satellite):
 class RandomDataSender(DataSender):
     """Constellation Satellite which pushes RANDOM data via ZMQ."""
 
-    def do_run(self):
+    def do_run(self, payload: any) -> str:
         """Example implementation that generates random values."""
-        payload = os.urandom(1024)
+        samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
+        fs = random.uniform(0, 3)
+        data_load = np.sin(2 * np.pi * fs * samples)
 
-        t0 = time.time()
+        t0 = time.time_ns()
+
         num = 0
-        while not self._stop_running.is_set():
-            meta = {"eventid": num, "time": datetime.datetime.now().isoformat()}
-            data = DataBlock(payload, meta)
-            self.data_queue.put(data)
+        while not self._state_thread_evt.is_set():
+            self.data_queue.put((data_load.tobytes(), {"dtype": f"{data_load.dtype}"}))
             self.log.debug(f"Queueing data packet {num}")
             num += 1
             time.sleep(0.5)
 
-        """
-        # Testing shut down process
-        meta = {"eventid": num, "time": datetime.datetime.now().isoformat(), "islast": True}
-        data = DataBlock(payload, meta)
-        self.data_queue.put(data)
-        self.logger.debug(f"Queueing data packet {num}")
-        num += 1
-        time.sleep(0.5) """
-
-        t1 = time.time()
+        t1 = time.time_ns()
         self.log.info(
-            f"total time for {num} evt / {num * len(payload) / 1024 / 1024}MB: {t1 - t0}s"
+            f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0)/1000000000}s"
         )
+        return "Finished acquisition"
 
 
 # -------------------------------------------------------------------------
 
 
 def main(args=None):
-    """Start the Lecroy oscilloscope device server."""
+    """Start the Constellation data sender satellite."""
     import argparse
+    import coloredlogs
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--cmd-port", type=int, default=23999)
-    parser.add_argument("--log-port", type=int, default=55556)
+    parser.add_argument("--mon-port", type=int, default=55556)
     parser.add_argument("--hb-port", type=int, default=61234)
     parser.add_argument("--data-port", type=int, default=55557)
-
+    parser.add_argument("--interface", type=str, default="*")
+    parser.add_argument("--name", type=str, default="random_data_sender")
+    parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
-    logging.basicConfig(
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-        level=args.log_level.upper(),
-    )
+    # set up logging
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
     # start server with remaining args
     s = RandomDataSender(
-        "random_data_sender",
         cmd_port=args.cmd_port,
         hb_port=args.hb_port,
-        log_port=args.log_port,
+        mon_port=args.mon_port,
         data_port=args.data_port,
+        name=args.name,
+        group=args.group,
+        interface=args.interface,
     )
     s.run_satellite()
 
