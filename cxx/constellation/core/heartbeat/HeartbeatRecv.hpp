@@ -30,7 +30,7 @@
 namespace constellation::heartbeat {
     class CNSTLN_API HeartbeatRecv {
     public:
-        HeartbeatRecv();
+        HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct);
 
         virtual ~HeartbeatRecv();
 
@@ -51,5 +51,7 @@ namespace constellation::heartbeat {
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::mutex sockets_mutex_;
         std::condition_variable cv_;
+
+        std::function<void(const message::CHP1Message&)> message_callback_;
     };
 } // namespace constellation::heartbeat

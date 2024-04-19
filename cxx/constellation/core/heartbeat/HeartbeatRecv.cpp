@@ -35,8 +35,8 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-HeartbeatRecv::HeartbeatRecv() : logger_("CHP") {
-    // Register callback
+HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct) : logger_("CHP"), message_callback_(fct) {
+    // Register CHIRP callback
     chirp::Manager::getDefaultInstance()->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
     // Request currently active heartbeating services
     chirp::Manager::getDefaultInstance()->sendRequest(chirp::HEARTBEAT);
@@ -64,10 +64,8 @@ void HeartbeatRecv::connect(chirp::DiscoveredService service) {
             if(received) {
 
                 try {
-                    auto chp_msg = CHP1Message::disassemble(zmq_msg);
-                    LOG(logger_, INFO) << chp_msg.getSender() << " reports state "
-                                       << magic_enum::enum_name(chp_msg.getState()) << ", next message in "
-                                       << chp_msg.getInterval().count();
+                    auto msg = CHP1Message::disassemble(zmq_msg);
+                    message_callback_(msg);
                 } catch(const MessageDecodingError& error) {
                     LOG(logger_, WARNING) << error.what();
                 } catch(const IncorrectMessageType& error) {
