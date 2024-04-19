@@ -147,7 +147,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     @cscp_requestable
     def initialize(self, request: CSCPMessage):
-        """Initiate initialize state transition via a CSCP request.
+        """Initiate 'initialize' state transition via a CSCP request.
 
         Takes dictionary with configuration values as argument.
 
