@@ -9,6 +9,7 @@ core_src = files(
   'config/Dictionary.cpp',
   'config/Value.cpp',
   'config/exceptions.cpp',
+  'heartbeat/HeartbeatRecv.cpp',
   'heartbeat/HeartbeatSend.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
@@ -54,6 +55,7 @@ install_headers(
 )
 
 install_headers(
+  'heartbeat/HeartbeatRecv.hpp',
   'heartbeat/HeartbeatSend.hpp',
   subdir: 'constellation/core/heartbeat',
 )
