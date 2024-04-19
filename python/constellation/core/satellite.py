@@ -21,7 +21,7 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
-from .confighandler import Configuration
+from .configuration import Configuration
 from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
 
