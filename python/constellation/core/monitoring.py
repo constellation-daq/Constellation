@@ -66,7 +66,7 @@ def get_scheduled_metrics(cls):
 
 
 class MonitoringSender(BaseSatelliteFrame):
-    """Sender class for Constellation Monitoring Distribution Protocol.
+    """Sender mixin class for Constellation Monitoring Distribution Protocol.
 
     Any method of inheriting classes that has the @schedule_metric decorator,
     will be regularly polled for new values and a corresponding Metric be sent
