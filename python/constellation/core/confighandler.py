@@ -28,6 +28,10 @@ class Configuration:
         """Return all unused configuration keys"""
         return set(self._config.keys()).difference(self._requested_keys)
 
+    def get_applied(self) -> dict:
+        """Return a dictionary of all used configuration items."""
+        return {k: self._config[k] for k in self._requested_keys}
+
     def setdefault(self, key: str, default: any = None):
         """
         Return value from requested key in config with default value if specified.
