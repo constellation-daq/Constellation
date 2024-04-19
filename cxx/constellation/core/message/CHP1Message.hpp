@@ -56,14 +56,14 @@ namespace constellation::message {
          *
          * This function moves the payload.
          */
-        CNSTLN_API zmq::message_t assemble();
+        CNSTLN_API zmq::multipart_t assemble();
 
         /**
          * Disassemble message from ZeroMQ frames
          *
          * This function moves the payload frames
          */
-        CNSTLN_API static CHP1Message disassemble(zmq::message_t& frame);
+        CNSTLN_API static CHP1Message disassemble(zmq::multipart_t& frames);
 
     private:
         Protocol protocol_;
