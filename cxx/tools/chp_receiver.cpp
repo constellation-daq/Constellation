@@ -30,7 +30,8 @@ int main(int argc, char* argv[]) {
 
     HeartbeatRecv receiver {};
 
-    receiver.main_loop();
+    std::stop_token stop;
+    receiver.loop(stop);
 
     return 0;
 }

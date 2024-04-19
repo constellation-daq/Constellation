@@ -38,7 +38,7 @@ namespace constellation::heartbeat {
 
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
-        void main_loop();
+        void loop(const std::stop_token& stop_token);
 
     private:
         void connect(chirp::DiscoveredService service);

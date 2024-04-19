@@ -42,8 +42,12 @@ namespace constellation::heartbeat {
          */
         constexpr utils::Port getPort() const { return port_; }
 
+        void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
+
         // start main_loop
         CNSTLN_API void sendHeartbeat(message::State state);
+
+        void loop(const std::stop_token& stop_token);
 
     private:
         zmq::context_t context_;
@@ -52,8 +56,6 @@ namespace constellation::heartbeat {
 
         std::string sender_;
         std::chrono::milliseconds interval_;
-
-        log::Logger logger_;
     };
 
 } // namespace constellation::heartbeat

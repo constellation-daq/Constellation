@@ -33,15 +33,12 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 HeartbeatSend::HeartbeatSend(std::string_view sender, std::chrono::milliseconds interval)
-    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(sender), interval_(interval),
-      logger_("CHP") {
+    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(sender), interval_(interval) {
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(chirp::HEARTBEAT, port_);
-    } else {
-        LOG(logger_, WARNING) << "Failed to advertise heartbeat on the network";
     }
 }
 
@@ -54,6 +51,5 @@ HeartbeatSend::~HeartbeatSend() {
 }
 
 void HeartbeatSend::sendHeartbeat(State state) {
-    LOG(logger_, INFO) << "Sending heartbeat with state " << magic_enum::enum_name(state);
     CHP1Message(sender_, state, interval_).assemble().send(pub_);
 }

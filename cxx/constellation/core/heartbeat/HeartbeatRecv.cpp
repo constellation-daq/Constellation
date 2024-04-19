@@ -137,8 +137,8 @@ void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std:
     instance->callback_impl(std::move(service), depart);
 }
 
-void HeartbeatRecv::main_loop() {
-    while(true) {
+void HeartbeatRecv::loop(const std::stop_token& stop_token) {
+    while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock(sockets_mutex_);
         cv_.wait(lock, [this] { return !sockets_.empty(); });
 
