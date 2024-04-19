@@ -21,6 +21,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .satellite import Satellite
 from .commandmanager import get_cscp_commands
+from .configuration import load_config, flatten_config
 
 
 class SatelliteArray:
@@ -336,6 +337,9 @@ def main():
     parser.add_argument("--name", type=str, default="cli_controller")
     parser.add_argument("--group", type=str, default="constellation")
     parser.add_argument("--interface", type=str, default="*")
+    parser.add_argument(
+        "-c", "--config", type=str, help="Path to the TOML configuration file to load."
+    )
 
     args = parser.parse_args()
 
@@ -357,6 +361,11 @@ def main():
     print("          constellation.get_state()\n")
     print("To get help for any of its methods, call it with a question mark:")
     print("          constellation.get_state?\n")
+
+    if args.config:
+        cfg = load_config(args.config)  # noqa
+        print("The configuration is loaded into `cfg`.\n")
+
     print("Happy hacking! :)\n")
 
     # start IPython console
