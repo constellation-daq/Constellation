@@ -59,15 +59,21 @@ void Manager::process_heartbeat(const message::CHP1Message& msg) {
     if(remote_it != remotes_.end()) {
 
         if(std::chrono::system_clock::now() - msg.getTime() > 3s) {
-            // TODO(simonspa) log a warning?
+            LOG(logger_, WARNING) << "Detected time deviation of "
+                                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
+                                                                                           msg.getTime())
+                                         .count()
+                                  << "ms to " << msg.getSender();
         }
 
         remote_it->second.interval = msg.getInterval();
         remote_it->second.last_heartbeat = std::chrono::system_clock::now();
         remote_it->second.last_state = msg.getState();
 
-        // replenish lives:
-        remote_it->second.lives = 3;
+        // Replenish lives unless we're in error state:
+        if(msg.getState() != State::ERROR) {
+            remote_it->second.lives = 3;
+        }
     } else {
         remotes_.emplace(msg.getSender(), Remote {msg.getInterval(), std::chrono::system_clock::now(), msg.getState()});
     }
@@ -88,6 +94,13 @@ void Manager::run(const std::stop_token& stop_token) {
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         auto wakeup = std::chrono::system_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
+            // Check for ERROR states:
+            if(remote.lives > 0 && remote.last_state == State::ERROR) {
+                remote.lives = 0;
+                LOG(logger_, WARNING) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
+                                      << ", interrupting";
+                interrupt_callback_();
+            }
 
             // Check if we are beyond the interval
             if(remote.lives > 0 && std::chrono::system_clock::now() > remote.last_heartbeat + remote.interval) {
