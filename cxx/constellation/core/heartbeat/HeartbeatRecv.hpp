@@ -32,6 +32,8 @@ namespace constellation::heartbeat {
     public:
         HeartbeatRecv();
 
+        virtual ~HeartbeatRecv();
+
         void callback_impl(chirp::DiscoveredService service, bool depart);
 
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
@@ -41,6 +43,7 @@ namespace constellation::heartbeat {
     private:
         void connect(chirp::DiscoveredService service);
         void disconnect(chirp::DiscoveredService service);
+        void disconnect_all();
 
         log::Logger logger_;
         zmq::context_t context_;

@@ -38,8 +38,12 @@ using namespace std::literals::chrono_literals;
 HeartbeatRecv::HeartbeatRecv() : logger_("CHP") {
     // Register callback
     chirp::Manager::getDefaultInstance()->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
-    // Request currently active logging services
+    // Request currently active heartbeating services
     chirp::Manager::getDefaultInstance()->sendRequest(chirp::HEARTBEAT);
+}
+
+HeartbeatRecv::~HeartbeatRecv() {
+    disconnect_all();
 }
 
 void HeartbeatRecv::connect(chirp::DiscoveredService service) {
@@ -77,6 +81,22 @@ void HeartbeatRecv::connect(chirp::DiscoveredService service) {
 
     sockets_.insert(std::make_pair(service, std::move(socket)));
     LOG(logger_, INFO) << "Connected to " << uri;
+}
+
+void HeartbeatRecv::disconnect_all() {
+    const std::lock_guard sockets_lock {sockets_mutex_};
+
+    // Disconnect the socket
+    for(auto socket_it = sockets_.begin(); socket_it != sockets_.end(); /* no increment */) {
+        const auto uri = "tcp://" + socket_it->first.address.to_string() + ":" + std::to_string(socket_it->first.port);
+
+        poller_.remove(zmq::socket_ref(socket_it->second));
+
+        socket_it->second.disconnect(uri);
+        socket_it->second.close();
+
+        sockets_.erase(socket_it++);
+    }
 }
 
 void HeartbeatRecv::disconnect(chirp::DiscoveredService service) {
