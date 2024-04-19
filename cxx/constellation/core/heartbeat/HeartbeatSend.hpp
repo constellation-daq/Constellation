@@ -45,8 +45,10 @@ namespace constellation::heartbeat {
 
         void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
 
-        // start main_loop
-        CNSTLN_API void sendHeartbeat(message::State state);
+        void updateState(message::State state) {
+            state_ = state;
+            cv_.notify_one();
+        }
 
         CNSTLN_API void loop(const std::stop_token& stop_token);
 
