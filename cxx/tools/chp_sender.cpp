@@ -37,17 +37,20 @@ int main(int argc, char* argv[]) {
     chirp_manager.start();
 
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
-    HeartbeatSend sender {argv[2], interval + 500ms};
+    HeartbeatSend sender {argv[2], interval};
 
     std::once_flag shut_down_flag {};
-    bool running = true;
-    signal_handler_f = [&](int /*signal*/) -> void { std::call_once(shut_down_flag, [&]() { running = false; }); };
+    std::jthread sender_thread;
+    signal_handler_f = [&](int /*signal*/) -> void {
+        std::call_once(shut_down_flag, [&]() { sender_thread.request_stop(); });
+    };
     std::signal(SIGTERM, &signal_hander);
     std::signal(SIGINT, &signal_hander);
 
-    while(running) {
-        sender.sendHeartbeat(State::ORBIT);
-        std::this_thread::sleep_for(interval);
+    sender_thread = std::jthread(std::bind_front(&HeartbeatSend::loop, &sender));
+
+    if(sender_thread.joinable()) {
+        sender_thread.join();
     }
 
     return 0;

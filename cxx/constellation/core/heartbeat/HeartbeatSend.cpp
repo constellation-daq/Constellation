@@ -51,5 +51,17 @@ HeartbeatSend::~HeartbeatSend() {
 }
 
 void HeartbeatSend::sendHeartbeat(State state) {
+    std::unique_lock<std::mutex> lock {mutex_};
+    state_ = state;
     CHP1Message(sender_, state, interval_).assemble().send(pub_);
+}
+
+void HeartbeatSend::loop(const std::stop_token& stop_token) {
+    while(!stop_token.stop_requested()) {
+        sendHeartbeat(state_);
+        std::unique_lock<std::mutex> lock(mutex_);
+        cv_.wait_until(
+            lock, std::chrono::system_clock::now() + interval_ / 2, [&]() { return stop_token.stop_requested(); });
+        lock.unlock();
+    }
 }

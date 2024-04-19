@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <condition_variable>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -47,7 +48,7 @@ namespace constellation::heartbeat {
         // start main_loop
         CNSTLN_API void sendHeartbeat(message::State state);
 
-        void loop(const std::stop_token& stop_token);
+        CNSTLN_API void loop(const std::stop_token& stop_token);
 
     private:
         zmq::context_t context_;
@@ -55,7 +56,11 @@ namespace constellation::heartbeat {
         utils::Port port_;
 
         std::string sender_;
+        message::State state_ {message::State::NEW};
         std::chrono::milliseconds interval_;
+
+        std::condition_variable cv_;
+        std::mutex mutex_;
     };
 
 } // namespace constellation::heartbeat
