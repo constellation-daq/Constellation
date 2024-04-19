@@ -9,6 +9,7 @@ core_src = files(
   'config/Dictionary.cpp',
   'config/Value.cpp',
   'config/exceptions.cpp',
+  'heartbeat/HeartbeatSend.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
@@ -50,6 +51,11 @@ install_headers(
 install_headers(
   'external/md5.h',
   subdir: 'constellation/core/external',
+)
+
+install_headers(
+  'heartbeat/HeartbeatSend.hpp',
+  subdir: 'constellation/core/heartbeat',
 )
 
 install_headers(
