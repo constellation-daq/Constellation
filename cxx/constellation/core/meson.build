@@ -11,6 +11,7 @@ core_src = files(
   'config/exceptions.cpp',
   'heartbeat/HeartbeatRecv.cpp',
   'heartbeat/HeartbeatSend.cpp',
+  'heartbeat/Manager.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
@@ -57,6 +58,7 @@ install_headers(
 install_headers(
   'heartbeat/HeartbeatRecv.hpp',
   'heartbeat/HeartbeatSend.hpp',
+  'heartbeat/Manager.hpp',
   subdir: 'constellation/core/heartbeat',
 )
 
