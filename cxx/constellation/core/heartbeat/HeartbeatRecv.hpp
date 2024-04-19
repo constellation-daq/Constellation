@@ -39,6 +39,9 @@ namespace constellation::heartbeat {
         void main_loop();
 
     private:
+        void connect(chirp::DiscoveredService service);
+        void disconnect(chirp::DiscoveredService service);
+
         log::Logger logger_;
         zmq::context_t context_;
         zmq::active_poller_t poller_;
