@@ -151,6 +151,8 @@ class BaseController(CHIRPBroadcaster):
         super().__init__(name=name, group=group, interface=interface)
 
         self._transmitters: Dict[str, CommandTransmitter] = {}
+        # lookup table for uuids to (cls, name) tuple
+        self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
         self.constellation = SatelliteArray(group, self.command)
 
@@ -203,7 +205,9 @@ class BaseController(CHIRPBroadcaster):
                     sat._uuid,
                     str(service.host_uuid),
                 )
-            self._transmitters[str(service.host_uuid)] = ct
+            uuid = str(service.host_uuid)
+            self._uuid_lookup[uuid] = (cls, name)
+            self._transmitters[uuid] = ct
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -257,11 +261,15 @@ class BaseController(CHIRPBroadcaster):
         res = {}
         for target in targets:
             self.log.debug("Host %s send command %s...", target, cmd)
-
+            # The payload to set of (known) command can be pre-processed
+            # allowing using more complex objects as arguments and a more
+            # convenient CLI user experience without impacting the protocol
+            # specs. Here, we translate to what the protocol requires.
+            p = self._preprocess_payload(payload, target, cmd)
             try:
                 ret_msg = self._transmitters[target].request_get_response(
                     command=cmd,
-                    payload=payload,
+                    payload=p,
                     meta=None,
                 )
             except KeyError:
@@ -302,6 +310,18 @@ class BaseController(CHIRPBroadcaster):
                     "payload": ret_msg.payload,
                 }
         return res
+
+    def _preprocess_payload(self, payload: any, uuid: str, cmd: str) -> any:
+        """Pre-processes payload for specific commands."""
+        if cmd == "initialize":
+            # payload needs to be a flat dictionary, but we want to allow to
+            # supply a full config -- flatten it here
+            if any(isinstance(i, dict) for i in payload.values()):
+                # have a nested dict
+                cls, name = self._uuid_lookup[uuid]
+                self.log.debug("Flattening dictionary for %s.%s", cls, name)
+                return flatten_config(payload, cls, name)
+        return payload
 
     def _run_task_handler(self):
         """Event loop for task handler-routine"""
