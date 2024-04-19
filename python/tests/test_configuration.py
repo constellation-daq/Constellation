@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import mocket
-from constellation.core.confighandler import Configuration, get_config
+from constellation.core.configuration import Configuration, get_config
 from constellation.core.cscp import CSCPMessageVerb
 from constellation.core.satellite import Satellite
 
