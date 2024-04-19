@@ -32,7 +32,9 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-HeartbeatSend::HeartbeatSend() : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), logger_("CHP") {
+HeartbeatSend::HeartbeatSend(std::string_view sender, std::chrono::milliseconds interval)
+    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(sender), interval_(interval),
+      logger_("CHP") {
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -43,6 +45,15 @@ HeartbeatSend::HeartbeatSend() : pub_(context_, zmq::socket_type::pub), port_(bi
     }
 }
 
+HeartbeatSend::~HeartbeatSend() {
+    // Send CHIRP depart message
+    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    if(chirp_manager != nullptr) {
+        chirp_manager->unregisterService(chirp::HEARTBEAT, port_);
+    }
+}
+
 void HeartbeatSend::sendHeartbeat(State state) {
-    CHP1Message("FIXME", state, std::chrono::milliseconds(10000)).assemble().send(pub_);
+    LOG(logger_, INFO) << "Sending heartbeat with state " << magic_enum::enum_name(state);
+    CHP1Message(sender_, state, interval_).assemble().send(pub_);
 }

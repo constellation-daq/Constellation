@@ -25,9 +25,9 @@ namespace constellation::heartbeat {
 
     class HeartbeatSend final {
     public:
-        CNSTLN_API HeartbeatSend();
+        CNSTLN_API HeartbeatSend(std::string_view sender, std::chrono::milliseconds interval);
 
-        CNSTLN_API ~HeartbeatSend() = default;
+        CNSTLN_API ~HeartbeatSend();
 
         // No copy/move constructor/assignment
         HeartbeatSend(const HeartbeatSend& other) = delete;
@@ -49,6 +49,9 @@ namespace constellation::heartbeat {
         zmq::context_t context_;
         zmq::socket_t pub_;
         utils::Port port_;
+
+        std::string sender_;
+        std::chrono::milliseconds interval_;
 
         log::Logger logger_;
     };
