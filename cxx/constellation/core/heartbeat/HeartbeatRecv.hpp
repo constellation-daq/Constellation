@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include <condition_variable>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -27,7 +28,7 @@
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::heartbeat {
-    class HeartbeatRecv {
+    class CNSTLN_API HeartbeatRecv {
     public:
         HeartbeatRecv();
 
@@ -43,5 +44,6 @@ namespace constellation::heartbeat {
         zmq::active_poller_t poller_;
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::mutex sockets_mutex_;
+        std::condition_variable cv_;
     };
 } // namespace constellation::heartbeat
