@@ -22,7 +22,7 @@ def config():
     for category in ["constellation", "satellites"]:
         config.update(
             get_config(
-                "python/constellation/configs/example.toml",
+                "configs/example.toml",
                 category,
                 "example_satellite",
                 "example_device2",
