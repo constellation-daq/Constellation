@@ -218,7 +218,7 @@ std::vector<std::string> Configuration::getUnusedKeys() const {
 }
 
 std::shared_ptr<zmq::message_t> Configuration::assemble(bool used_only) const {
-    auto dict = (used_only ? get_used_entries() : config_);
+    const auto dict = (used_only ? get_used_entries() : config_);
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, dict);
     return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
