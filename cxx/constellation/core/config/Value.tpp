@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <variant>
 
 #include <magic_enum.hpp>
@@ -30,7 +31,7 @@ namespace constellation::config {
         if constexpr(is_one_of<T, value_t>()) {
             // If it's one of the supported vector types but we have a std::monostate, return an empty vector since this is
             // what we build from an empty msgpack array:
-            if (is_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
+            if(is_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
                 return {};
             }
             return std::get<T>(*this);
@@ -61,10 +62,10 @@ namespace constellation::config {
 
             } else if constexpr(std::is_arithmetic_v<U>) {
                 if(std::holds_alternative<std::vector<std::int64_t>>(*this)) {
-                    const auto vec = std::get<std::vector<std::int64_t>>(*this);
+                    const auto& vec = std::get<std::vector<std::int64_t>>(*this);
                     return T(vec.begin(), vec.end());
                 } else {
-                    const auto vec = std::get<std::vector<double>>(*this);
+                    const auto& vec = std::get<std::vector<double>>(*this);
                     return T(vec.begin(), vec.end());
                 }
 
@@ -103,7 +104,7 @@ namespace constellation::config {
             return {std::string(val)};
 
         } else if constexpr(std::is_integral_v<T>) {
-            if (val > std::numeric_limits<std::int64_t>::max()) {
+            if(!std::in_range<std::int64_t>(val)) {
                 throw std::overflow_error("type overflow");
             }
             return {static_cast<std::int64_t>(val)};
@@ -120,8 +121,8 @@ namespace constellation::config {
             if constexpr(std::is_integral_v<U>) {
                 std::vector<std::int64_t> nval {};
                 nval.reserve(val.size());
-                for (auto val_elem : val) {
-                    if (val_elem > std::numeric_limits<std::int64_t>::max()) {
+                for(auto val_elem : val) {
+                    if(!std::in_range<std::int64_t>(val_elem)) {
                         throw std::overflow_error("type overflow");
                     }
                     nval.emplace_back(static_cast<std::int64_t>(val_elem));
@@ -137,9 +138,8 @@ namespace constellation::config {
                 std::vector<std::string> nval {};
                 nval.reserve(val.size());
 
-                std::for_each(val.begin(), val.end(), [&](const auto& enum_val) {
-                    nval.emplace_back(utils::to_string(enum_val));
-                });
+                std::for_each(
+                    val.begin(), val.end(), [&](const auto& enum_val) { nval.emplace_back(utils::to_string(enum_val)); });
                 return {nval};
 
             } else {
