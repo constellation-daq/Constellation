@@ -47,6 +47,7 @@
 
 using namespace constellation;
 using namespace constellation::config;
+using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
@@ -54,7 +55,8 @@ using namespace std::literals::chrono_literals;
 
 SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> satellite)
     : rep_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_)), satellite_(std::move(satellite)),
-      fsm_(satellite_), heartbeat_manager_(satellite_->getCanonicalName()), logger_("CSCP") {
+      heartbeat_manager_(std::make_shared<HeartbeatManager>(satellite_->getCanonicalName())),
+      fsm_(satellite_, heartbeat_manager_), logger_("CSCP") {
     // Set receive timeout for socket
     rep_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
     // Announce service via CHIRP
@@ -67,9 +69,8 @@ SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> sate
     LOG(logger_, INFO) << "Starting to listen to commands on port " << port_;
 
     // Start sending heartbeats
-    fsm_.setStateCallback(heartbeat_manager_.getCallback());
-    heartbeat_manager_.setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
-    heartbeat_manager_.start();
+    heartbeat_manager_->setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
+    heartbeat_manager_->start();
 }
 
 SatelliteImplementation::~SatelliteImplementation() {

@@ -81,8 +81,8 @@ namespace constellation::satellite {
         zmq::socket_t rep_;
         utils::Port port_;
         std::shared_ptr<Satellite> satellite_;
+        std::shared_ptr<heartbeat::HeartbeatManager> heartbeat_manager_;
         FSM fsm_;
-        heartbeat::HeartbeatManager heartbeat_manager_;
         log::Logger logger_;
         std::jthread main_thread_;
     };

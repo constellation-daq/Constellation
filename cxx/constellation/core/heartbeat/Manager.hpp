@@ -44,7 +44,7 @@ namespace constellation::heartbeat {
         /** Start the background thread of the manager */
         CNSTLN_API void start();
 
-        CNSTLN_API std::function<void(message::State)> getCallback();
+        CNSTLN_API void updateState(message::State state);
 
         CNSTLN_API void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
 

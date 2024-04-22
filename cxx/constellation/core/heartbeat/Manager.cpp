@@ -46,8 +46,8 @@ HeartbeatManager::~HeartbeatManager() {
     }
 }
 
-std::function<void(State)> HeartbeatManager::getCallback() {
-    return [ptr = &sender_](auto&& arg) { ptr->updateState(std::forward<decltype(arg)>(arg)); };
+void HeartbeatManager::updateState(State state) {
+    sender_.updateState(state);
 }
 
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
