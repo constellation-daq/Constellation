@@ -98,7 +98,7 @@ namespace constellation::config {
         } else if constexpr(is_one_of<T, value_t>()) {
             return {val};
 
-        } else if constexpr(is_bounded_type_array_v<char, T> || std::is_same_v<std::string_view, T>) {
+        } else if constexpr(is_bounded_type_array<char, T> || std::is_same_v<std::string_view, T>) {
             // special case for char-array constructed strings and string_view
             return {std::string(val)};
 
