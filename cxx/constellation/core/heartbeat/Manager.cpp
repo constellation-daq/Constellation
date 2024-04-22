@@ -97,8 +97,8 @@ void Manager::run(const std::stop_token& stop_token) {
             // Check for ERROR states:
             if(remote.lives > 0 && remote.last_state == State::ERROR) {
                 remote.lives = 0;
-                LOG(logger_, WARNING) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
-                                      << ", interrupting";
+                LOG(logger_, DEBUG) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
+                                    << ", interrupting";
                 interrupt_callback_();
             }
 
@@ -112,7 +112,7 @@ void Manager::run(const std::stop_token& stop_token) {
 
                 if(remote.lives == 0) {
                     // This parrot is dead, it is no more
-                    LOG(logger_, WARNING) << "Missed heartbeats from " << key << ", no lives left";
+                    LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
                     interrupt_callback_();
                 }
             }

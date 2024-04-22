@@ -172,7 +172,12 @@ void FSM::interrupt() {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
     // In a steady state, try to react to interrupt
-    reactIfAllowed(Transition::interrupt);
+    auto interrupted = reactIfAllowed(Transition::interrupt);
+
+    if(interrupted) {
+        LOG(logger_, WARNING) << "Interrupting satellite operation";
+    }
+
     // We could be in interrupting, so wait for steady state
     while(!is_steady(state_)) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
