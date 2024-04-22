@@ -11,12 +11,8 @@
 
 #include "Configuration.hpp"
 
-#include <algorithm>
-#include <cstdint>
-#include <limits>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <vector>
 
 #include <magic_enum.hpp>
@@ -34,15 +30,15 @@ namespace constellation::config {
             const auto val = dictval.get<T>();
             used_keys_.markUsed(key);
             return val;
-        } catch(std::out_of_range& e) {
-            /* Requested key has not been found in dictionary */
+        } catch(const std::out_of_range&) {
+            // Requested key has not been found in dictionary
             throw MissingKeyError(key);
-        } catch(std::bad_variant_access& e) {
-            /* Value held by the dictionary entry could not be cast to desired type */
+        } catch(const std::bad_variant_access&) {
+            // Value held by the dictionary entry could not be cast to desired type
             throw InvalidTypeError(key, config_.at(key).type(), typeid(T));
-        } catch(std::invalid_argument& e) {
-            /* Value held by the dictionary entry could not be converted to desired type */
-            throw InvalidValueError(config_.at(key).str(), key, e.what());
+        } catch(const std::invalid_argument& error) {
+            // Value held by the dictionary entry could not be converted to desired type
+            throw InvalidValueError(config_.at(key).str(), key, error.what());
         }
     }
 
@@ -67,12 +63,12 @@ namespace constellation::config {
             if(mark_used) {
                 used_keys_.markUsed(key);
             }
-        } catch(std::bad_cast& e) {
-            /* Value held by the dictionary entry could not be cast to desired type */
+        } catch(const std::bad_cast&) {
+            // Value held by the dictionary entry could not be cast to desired type
             throw InvalidTypeError(key, typeid(T), typeid(value_t));
-        } catch(std::overflow_error& e) {
+        } catch(const std::overflow_error& error) {
             // FIXME to_string utils need to be extended for us!
-            throw InvalidValueError("std::to_string(val)", key, e.what());
+            throw InvalidValueError("std::to_string(val)", key, error.what());
         }
     }
 

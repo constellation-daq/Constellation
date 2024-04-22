@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <map>
 #include <string>
 #include <type_traits>
 #include <variant>
@@ -45,7 +44,8 @@ namespace constellation::config {
     /**
      * Value type for Dictionary using std::variant
      *
-     * Allowed types: nil, bool, long int, double, string, time point and vectors thereof
+     * Allowed types: nil, bool, int64, double, string, time point, vectors of bool, int64, double, string, time point,
+     *                bytes (vector of char)
      */
     using value_t = std::variant<std::monostate,
                                  bool,
@@ -88,8 +88,8 @@ namespace constellation::config {
          * @brief Set value from provided type
          * @return Value
          *
-         * @throws invalid_argument If the conversion from the provided type did not succeed
-         * @throws bad_variant_access If no suitable conversion was found and direct assignment did not succeed
+         * @throws std::invalid_argument If the conversion from the provided type did not succeed
+         * @throws std::bad_variant_access If no suitable conversion was found and direct assignment did not succeed
          */
         template <typename T> static inline Value set(const T& value);
 
