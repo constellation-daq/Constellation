@@ -82,7 +82,7 @@ namespace constellation::satellite {
         utils::Port port_;
         std::shared_ptr<Satellite> satellite_;
         FSM fsm_;
-        heartbeat::Manager heartbeat_manager_;
+        heartbeat::HeartbeatManager heartbeat_manager_;
         log::Logger logger_;
         std::jthread main_thread_;
     };

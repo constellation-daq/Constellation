@@ -26,11 +26,11 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-Manager::Manager(std::string_view sender)
+HeartbeatManager::HeartbeatManager(std::string_view sender)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }), sender_(sender, 1000ms),
       logger_("CHP") {}
 
-Manager::~Manager() {
+HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
     receiver_thread_.request_stop();
     sender_thread_.request_stop();
@@ -46,11 +46,11 @@ Manager::~Manager() {
     }
 }
 
-std::function<void(State)> Manager::getCallback() {
+std::function<void(State)> HeartbeatManager::getCallback() {
     return [ptr = &sender_](auto&& arg) { ptr->updateState(std::forward<decltype(arg)>(arg)); };
 }
 
-void Manager::process_heartbeat(const message::CHP1Message& msg) {
+void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     LOG(logger_, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                         << ", next message in " << msg.getInterval().count();
 
@@ -79,14 +79,14 @@ void Manager::process_heartbeat(const message::CHP1Message& msg) {
     }
 }
 
-void Manager::start() {
+void HeartbeatManager::start() {
     // jthread immediately starts on construction
     receiver_thread_ = std::jthread(std::bind_front(&HeartbeatRecv::loop, &receiver_));
     sender_thread_ = std::jthread(std::bind_front(&HeartbeatSend::loop, &sender_));
-    watchdog_thread_ = std::jthread(std::bind_front(&Manager::run, this));
+    watchdog_thread_ = std::jthread(std::bind_front(&HeartbeatManager::run, this));
 }
 
-void Manager::run(const std::stop_token& stop_token) {
+void HeartbeatManager::run(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {mutex_};
 
     while(!stop_token.stop_requested()) {

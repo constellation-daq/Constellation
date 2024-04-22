@@ -27,19 +27,19 @@
 namespace constellation::heartbeat {
 
     /** Manager for CHP publishing and receiving */
-    class Manager {
+    class HeartbeatManager {
     public:
         /**
          */
-        CNSTLN_API Manager(std::string_view sender);
+        CNSTLN_API HeartbeatManager(std::string_view sender);
 
-        CNSTLN_API virtual ~Manager();
+        CNSTLN_API virtual ~HeartbeatManager();
 
         // No copy/move constructor/assignment
-        Manager(const Manager& other) = delete;
-        Manager& operator=(const Manager& other) = delete;
-        Manager(Manager&& other) = delete;
-        Manager& operator=(Manager&& other) = delete;
+        HeartbeatManager(const HeartbeatManager& other) = delete;
+        HeartbeatManager& operator=(const HeartbeatManager& other) = delete;
+        HeartbeatManager(HeartbeatManager&& other) = delete;
+        HeartbeatManager& operator=(HeartbeatManager&& other) = delete;
 
         /** Start the background thread of the manager */
         CNSTLN_API void start();
