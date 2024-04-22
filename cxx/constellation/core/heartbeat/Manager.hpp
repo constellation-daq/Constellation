@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string_view>
 #include <thread>
@@ -44,7 +45,23 @@ namespace constellation::heartbeat {
         /** Start the background thread of the manager */
         CNSTLN_API void start();
 
+        /**
+         * @brief Update the current state to be broadcasted
+         * @details This method will update the state of the FSM to be broadcasted via CHP. Updating the state will also
+         * trigger the emission of an extrasystole CHP message with the new state
+         *
+         * @param state New state
+         */
         CNSTLN_API void updateState(message::State state);
+
+        /**
+         * @brief Obtain the current state registered from a given remote
+         * @details [long description]
+         *
+         * @param remote Canonical name of the remote in question
+         * @return Currently registered state of the remote if remote is present, empty optional otherwise
+         */
+        CNSTLN_API std::optional<message::State> getRemoteState(std::string_view remote);
 
         CNSTLN_API void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
 

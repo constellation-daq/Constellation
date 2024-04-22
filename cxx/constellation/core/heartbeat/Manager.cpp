@@ -50,6 +50,15 @@ void HeartbeatManager::updateState(State state) {
     sender_.updateState(state);
 }
 
+std::optional<State> HeartbeatManager::getRemoteState(std::string_view remote) {
+    const auto remote_it = remotes_.find(remote);
+    if(remote_it != remotes_.end()) {
+        return remote_it->second.last_state;
+    } else {
+        return {};
+    }
+}
+
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     LOG(logger_, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                         << ", next message in " << msg.getInterval().count();
