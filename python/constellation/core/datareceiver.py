@@ -246,6 +246,11 @@ class H5DataReceiverWriter(DataReceiver):
 
         Writes data to file by concatenating item.payload to dataset inside group name.
         """
+        if item.sequence_number % 100 == 0:
+            self.log.debug(
+                "Processing data packet %s from %s", item.sequence_number, item.name
+            )
+
         # Check if group already exists.
         if item.msgtype == CDTPMessageIdentifier.BOR and item.name not in h5file.keys():
             self.running_sats.append(item.name)
@@ -316,9 +321,6 @@ class H5DataReceiverWriter(DataReceiver):
                     "Failed to access group for EOR. Exception occurred: %s", e
                 )
 
-        self.log.debug(
-            f"Processing data packet {item.sequence_number} from {item.name}"
-        )
 
     def do_run(self, payload: any) -> str:
         """Handle the data enqueued by the pull threads.
@@ -337,8 +339,6 @@ class H5DataReceiverWriter(DataReceiver):
                 try:
                     # blocking call but with timeout to prevent deadlocks
                     item = self.data_queue.get(block=True, timeout=0.5)
-
-                    self.log.debug(f"Received: {item}")
 
                     # if we have data, write it
                     if isinstance(item, CDTPMessage):
