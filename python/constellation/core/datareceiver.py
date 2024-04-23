@@ -140,7 +140,7 @@ class DataReceiver(Satellite):
         """Stop all threads."""
         self._stop_pull_threads(2.0)
 
-    def do_run(self, payload: any) -> str:
+    def do_run(self, run_number: int) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -237,7 +237,7 @@ class H5DataReceiverWriter(DataReceiver):
         self.directroy_name = self.config.setdefault("directory_name", "H5_file_dir")
         return "Initializing"
 
-    def write_data_concat(self, h5file: h5py.File, item: CDTPMessage):
+    def _write_data(self, h5file: h5py.File, item: CDTPMessage):
         """Write data into HDF5 format
 
         Format: h5file -> Group (name) ->   BOR Dataset
@@ -321,8 +321,7 @@ class H5DataReceiverWriter(DataReceiver):
                     "Failed to access group for EOR. Exception occurred: %s", e
                 )
 
-
-    def do_run(self, payload: any) -> str:
+    def do_run(self, run_number: int) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -331,7 +330,7 @@ class H5DataReceiverWriter(DataReceiver):
 
         """
 
-        self.run_number += 1
+        self.run_number = run_number
         h5file = self._open_file()
         try:
             # processing loop
@@ -350,7 +349,7 @@ class H5DataReceiverWriter(DataReceiver):
                                 f"Received item from {item.name} that is not part of current run"
                             )
                             continue
-                        self.write_data_concat(
+                        self._write_data(
                             h5file, item
                         )  # NOTE: Could be replaced w/ write_data_concat or write_data_virtual
                     else:
