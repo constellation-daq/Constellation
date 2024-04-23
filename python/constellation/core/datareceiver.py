@@ -250,77 +250,70 @@ class H5DataReceiverWriter(DataReceiver):
         if item.msgtype == CDTPMessageIdentifier.BOR and item.name not in h5file.keys():
             self.running_sats.append(item.name)
             try:
-                grp = h5file.create_group(item.name)
-                title = "BOR_" + str(self.run_number)
-                dset = grp.create_dataset(
-                    title,
-                    data=item.payload,
+                grp = h5file.create_group(item.name).create_group("BOR")
+                # add meta information as attributes
+                grp.update(item.meta)
+
+                if item.payload:
+                    dset = grp.create_dataset(
+                        "payload",
+                        data=item.payload,
+                        dtype=item.meta.get("dtype", None),
+                    )
+                self.log.info(
+                    "Wrote BOR packet from %s on run %s",
+                    item.name,
+                    self.run_number,
                 )
 
-                dset.attrs["CLASS"] = "DETECTOR_BOR"
-                for key, val in item.meta.items():
-                    dset.attrs[key] = val
-
             except Exception as e:
-                self.log.error(
+                self.log.exception(
                     "Failed to create group for dataset. Exception occurred: %s", e
                 )
 
         elif item.msgtype == CDTPMessageIdentifier.DAT:
             try:
                 grp = h5file[item.name]
-                title = "data_run_" + str(self.run_number)
+                title = f"data_{self.run_number}_{item.sequence_number}"
 
-                # Create dataset if it doesn't already exist
-                if title not in grp:
+                # interpret bytes as array of uint8 if nothing else was specified in the meta
+                payload = np.frombuffer(
+                    item.payload, dtype=item.meta.get("dtype", np.uint8)
+                )
 
-                    dset = grp.create_dataset(
-                        title,
-                        data=np.frombuffer(
-                            item.payload,
-                            dtype=np.dtype(item.meta.get("dtype", None)),
-                        ),
-                        chunks=True,
-                        dtype=np.dtype(item.meta.get("dtype", None)),
-                        maxshape=(None,),
-                    )
+                dset = grp.create_dataset(
+                    title,
+                    data=payload,
+                    chunks=True,
+                )
 
-                    dset.attrs["CLASS"] = "DETECTOR_DATA"
-                    for key, val in item.meta.items():
-                        dset.attrs[key] = val
-
-                else:
-                    # Extend current dataset with data obtained from item
-                    new_data = np.frombuffer(
-                        item.payload, dtype=np.dtype(item.meta.get("dtype", None))
-                    )
-                    self.log.info("new_data is %s", new_data)
-                    grp[title].resize((grp[title].shape[0] + new_data.shape[0]), axis=0)
-                    grp[title][-new_data.shape[0] :] = new_data
+                dset.attrs["CLASS"] = "DETECTOR_DATA"
+                dset.attrs.update(item.meta)
 
             except Exception as e:
                 self.log.error("Failed to write to file. Exception occurred: %s", e)
 
         elif item.msgtype == CDTPMessageIdentifier.EOR:
             try:
-                grp = h5file[item.name]
-                title = "EOR_" + str(self.run_number)
-                dset = grp.create_dataset(
-                    title,
-                    data=item.payload,
-                )
+                grp = h5file[item.name].create_group("EOR")
+                # add meta information as attributes
+                grp.update(item.meta)
 
-                dset.attrs["CLASS"] = "DETECTOR_EOR"
-                for key, val in item.meta.items():
-                    dset.attrs[key] = val
+                if item.payload:
+                    dset = grp.create_dataset(
+                        "payload",
+                        data=item.payload,
+                        dtype=item.meta.get("dtype", None),
+                    )
+
                 self.log.info(
-                    "Wrote last packet from %s on run %s",
+                    "Wrote EOR packet from %s on run %s",
                     item.name,
                     self.run_number,
                 )
             except Exception as e:
                 self.log.error(
-                    "Failed to create group for dataset. Exception occurred: %s", e
+                    "Failed to access group for EOR. Exception occurred: %s", e
                 )
 
         self.log.debug(
