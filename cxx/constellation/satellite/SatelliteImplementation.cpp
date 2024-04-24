@@ -119,7 +119,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
     std::shared_ptr<zmq::message_t> payload {};
 
-    auto command_enum = magic_enum::enum_cast<GetCommand>(command);
+    auto command_enum = magic_enum::enum_cast<GetCommand>(command, magic_enum::case_insensitive);
     if(!command_enum.has_value()) {
         return std::nullopt;
     }
@@ -202,7 +202,7 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             const std::string command_string = transform(message.getVerb().second, ::tolower);
 
             // Try to decode as transition
-            auto transition_command = magic_enum::enum_cast<TransitionCommand>(command_string);
+            auto transition_command = magic_enum::enum_cast<TransitionCommand>(command_string, magic_enum::case_insensitive);
             if(transition_command.has_value()) {
                 sendReply(fsm_.reactCommand(transition_command.value(), message.getPayload()));
                 continue;

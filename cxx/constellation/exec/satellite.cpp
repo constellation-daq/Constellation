@@ -137,8 +137,7 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Set log level
-    const auto default_level_str = transform(get_arg(parser, "level"), ::toupper);
-    const auto default_level = magic_enum::enum_cast<Level>(default_level_str);
+    const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
     if(!default_level.has_value()) {
         LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
                               << ", possible values are: " << utils::list_enum_names<Level>();
