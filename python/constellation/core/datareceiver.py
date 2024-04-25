@@ -340,7 +340,8 @@ class H5DataReceiverWriter(DataReceiver):
                 # else to do
                 if (
                     self.flush_interval > 0
-                    and datetime.datetime.now() - last_flush > self.flush_interval
+                    and (datetime.datetime.now() - last_flush).total_seconds()
+                    > self.flush_interval
                 ):
                     h5file.flush()
                     last_flush = datetime.datetime.now()
