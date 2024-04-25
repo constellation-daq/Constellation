@@ -342,20 +342,9 @@ class H5DataReceiverWriter(DataReceiver):
                     item = self.data_queue.get(block=True, timeout=0.5)
 
                     # if we have data, write it
-                    if isinstance(item, CDTPMessage):
-                        if (
-                            item.msgtype != CDTPMessageIdentifier.BOR
-                            and item.name not in self.running_sats
-                        ):
-                            self.log.warning(
-                                f"Received item from {item.name} that is not part of current run"
-                            )
-                            continue
-                        self._write_data(
-                            h5file, item
-                        )  # NOTE: Could be replaced w/ write_data_concat or write_data_virtual
-                    else:
-                        raise RuntimeError(f"Unable to handle queue item: {type(item)}")
+                    self._write_data(
+                        h5file, item
+                    )
                     self.data_queue.task_done()
 
                 except Empty:
