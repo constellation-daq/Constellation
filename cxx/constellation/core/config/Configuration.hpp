@@ -107,6 +107,24 @@ namespace constellation::config {
         Configuration(Configuration&& other) noexcept = default;
         Configuration& operator=(Configuration&& other) = default;
 
+        enum class KVPGroup : std::uint8_t {
+            /** All configuration key-value pairs, both user and internal */
+            ALL,
+            /** Configuration key-value pairs intended for framework users */
+            USER,
+            /** Configuration key-value paris intended for internal framework usage */
+            INTERNAL,
+        };
+
+        enum class KVPUsage : std::uint8_t {
+            /** Both used and unused key-value pairs */
+            ANY,
+            /** Only used key-value pairs */
+            USED,
+            /** Only unused key-value paris */
+            UNUSED,
+        };
+
         /**
          * @brief Check if key is defined
          * @param key Key to check for existence
@@ -255,13 +273,14 @@ namespace constellation::config {
         void setAlias(const std::string& new_key, const std::string& old_key, bool warn = false);
 
         /**
-         * @brief Return total number of key / value pairs
+         * @brief Get number of key-value pairs for specific group and usage setting
          *
-         * This also counts internal keys.
+         * @param group Enum to restrict group of key-value pairs to include
+         * @param usage Enum to restrict uasge of key-value pairs to include
          *
-         * @return Number of settings
+         * @return Number of key-value pairs
          */
-        std::size_t size() const { return config_.size(); }
+        std::size_t size(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
 
         /**
          * @brief Update with keys from another configuration, potentially overriding keys in this configuration
@@ -300,6 +319,16 @@ namespace constellation::config {
          * @throws std::invalid_argument If the path does not exists
          */
         static std::filesystem::path path_to_absolute(std::filesystem::path path, bool canonicalize_path);
+
+        /**
+         * @brief Calls a function for every key-value pair matching group and usage criteria
+         *
+         * @param group Enum to restrict group of key-value pairs to include
+         * @param usage Enum to restrict usage of key-value pairs to include
+         * @param f Function taking a string ref and a Value ref
+         *
+         */
+        template <typename F> void for_each(KVPGroup group, KVPUsage usage, F f) const;
 
         /**
          * @brief Get all key value pairs which have been used

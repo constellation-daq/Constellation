@@ -156,6 +156,12 @@ std::string Configuration::getText(const std::string& key) const {
     }
 }
 
+std::size_t Configuration::size(KVPGroup group, KVPUsage usage) const {
+    std::size_t size = 0;
+    for_each(group, usage, [&](const std::string&, const Value&) { ++size; });
+    return size;
+}
+
 /**
  * All keys that are already defined earlier in this configuration will be overridden.
  */

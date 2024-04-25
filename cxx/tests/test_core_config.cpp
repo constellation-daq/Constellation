@@ -57,7 +57,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("time", tp);
 
     // Check that keys are unused
-    REQUIRE(config.size() == config.getUnusedKeys().size());
+    REQUIRE(config.size() == config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED));
 
     // Read values back
     REQUIRE(config.get<bool>("bool") == true);
@@ -289,6 +289,47 @@ TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
     // Check that the key is marked as used
     REQUIRE(config.getUnusedKeys().empty());
     REQUIRE(config.get<double>("myval") == 3.14);
+}
+
+TEST_CASE("Configuration size", "[core][core::config]") {
+    using enum Configuration::KVPGroup;
+    using enum Configuration::KVPUsage;
+
+    Configuration config {};
+
+    config.set("myval1", 1);
+    config.set("myval2", 2);
+    config.set("myval3", 3);
+    config.set("_internal1", 4);
+    config.set("_internal2", 5);
+    config.set("_internal3", 6);
+    config.set("_internal4", 7);
+
+    REQUIRE(config.size(ALL, ANY) == 7);
+    REQUIRE(config.size(ALL, USED) == 0);
+    REQUIRE(config.size(ALL, UNUSED) == 7);
+    REQUIRE(config.size(USER, ANY) == 3);
+    REQUIRE(config.size(USER, USED) == 0);
+    REQUIRE(config.size(USER, UNUSED) == 3);
+    REQUIRE(config.size(INTERNAL, ANY) == 4);
+    REQUIRE(config.size(INTERNAL, USED) == 0);
+    REQUIRE(config.size(INTERNAL, UNUSED) == 4);
+
+    config.get<int>("myval1");
+    config.get<int>("myval2");
+    config.get<int>("_internal1");
+    config.get<int>("_internal2");
+    config.get<int>("_internal3");
+
+    REQUIRE(config.size(ALL, ANY) == 7);
+    REQUIRE(config.size(ALL, USED) == 5);
+    REQUIRE(config.size(ALL, UNUSED) == 2);
+    REQUIRE(config.size(USER, ANY) == 3);
+    REQUIRE(config.size(USER, USED) == 2);
+    REQUIRE(config.size(USER, UNUSED) == 1);
+    REQUIRE(config.size(INTERNAL, ANY) == 4);
+    REQUIRE(config.size(INTERNAL, USED) == 3);
+    REQUIRE(config.size(INTERNAL, UNUSED) == 1);
 }
 
 TEST_CASE("Get all Values", "[core][core::config]") {
