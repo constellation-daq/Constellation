@@ -83,6 +83,9 @@ variables:
   variables:
     CXX: ccache clang++
 
+.fedora-mingw:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
+
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
   before_script:
@@ -197,6 +200,13 @@ build:fedora-clang:
     - .fedora-clang
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+
+build:fedora-mingw:
+  extends:
+    - .build-cpp
+    - .fedora-mingw
+  variables:
+    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
 
 build:ubuntu-22.04:
   extends:
