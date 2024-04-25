@@ -26,7 +26,7 @@ namespace constellation::config {
      *
      * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
      */
-    class CNSTLN_API Configuration {
+    class Configuration {
 
         /**
          * @brief Helper class to keep track of key access
@@ -46,12 +46,12 @@ namespace constellation::config {
             /**
              * @brief Explicit copy constructor to allow copying of the map keys
              */
-            AccessMarker(const AccessMarker& other);
+            CNSTLN_API AccessMarker(const AccessMarker& other);
 
             /**
              * @brief Explicit copy assignment operator to allow copying of the map keys
              */
-            AccessMarker& operator=(const AccessMarker& other);
+            CNSTLN_API AccessMarker& operator=(const AccessMarker& other);
 
             // Default move constructor/assignment
             AccessMarker(AccessMarker&& other) noexcept = default;
@@ -62,7 +62,7 @@ namespace constellation::config {
              * @param key Key of the marker
              * @warning This operation is not thread-safe
              */
-            void registerMarker(const std::string& key);
+            CNSTLN_API void registerMarker(const std::string& key);
 
             /**
              * @brief Method to mark existing marker as accessed/used.
@@ -96,7 +96,7 @@ namespace constellation::config {
          *
          * @param dict Dictionary to construct config object from
          */
-        Configuration(const Dictionary& dict);
+        CNSTLN_API Configuration(const Dictionary& dict);
 
         // Default copy/move constructor/assignment
         Configuration(const Configuration& other) = default;
@@ -137,7 +137,7 @@ namespace constellation::config {
          * @param keys Keys to check for existence
          * @return number of existing keys from the given list
          */
-        std::size_t count(std::initializer_list<std::string> keys) const;
+        CNSTLN_API std::size_t count(std::initializer_list<std::string> keys) const;
 
         /**
          * @brief Get value of a key in requested type
@@ -191,7 +191,7 @@ namespace constellation::config {
          * @return Literal value of the key
          * @note This function does also not remove quotation marks in strings
          */
-        std::string getText(const std::string& key) const;
+        CNSTLN_API std::string getText(const std::string& key) const;
 
         /**
          * @brief Get absolute path to file with paths relative to the configuration
@@ -201,7 +201,7 @@ namespace constellation::config {
          *
          * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
-        std::filesystem::path getPath(const std::string& key, bool check_exists = false) const;
+        CNSTLN_API std::filesystem::path getPath(const std::string& key, bool check_exists = false) const;
 
         /**
          * @brief Get absolute path to file with paths relative to the configuration
@@ -212,9 +212,9 @@ namespace constellation::config {
          *
          * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
-        std::filesystem::path getPathWithExtension(const std::string& key,
-                                                   const std::string& extension,
-                                                   bool check_exists = false) const;
+        CNSTLN_API std::filesystem::path getPathWithExtension(const std::string& key,
+                                                              const std::string& extension,
+                                                              bool check_exists = false) const;
 
         /**
          * @brief Get array of absolute paths to files with paths relative to the configuration
@@ -224,7 +224,7 @@ namespace constellation::config {
          *
          * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
          */
-        std::vector<std::filesystem::path> getPathArray(const std::string& key, bool check_exists = false) const;
+        CNSTLN_API std::vector<std::filesystem::path> getPathArray(const std::string& key, bool check_exists = false) const;
 
         /**
          * @brief Set value for a key in a given type
@@ -267,7 +267,7 @@ namespace constellation::config {
          * @param warn Optionally print a warning message to notify of deprecation
          * @note This marks the old key as "used" automatically
          */
-        void setAlias(const std::string& new_key, const std::string& old_key, bool warn = false);
+        CNSTLN_API void setAlias(const std::string& new_key, const std::string& old_key, bool warn = false);
 
         /**
          * @brief Get number of key-value pairs for specific group and usage setting
@@ -277,13 +277,13 @@ namespace constellation::config {
          *
          * @return Number of key-value pairs
          */
-        std::size_t size(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
+        CNSTLN_API std::size_t size(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
 
         /**
          * @brief Get key-value pairs for specific group and usage setting
          * @return Dictionary containing the key-value pairs
          */
-        Dictionary getKVPs(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
+        CNSTLN_API Dictionary getKVPs(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
 
         /**
          * @brief Update with keys from another configuration, potentially overriding keys in this configuration
@@ -292,7 +292,7 @@ namespace constellation::config {
          *
          * @param other Configuration with updated values
          */
-        void update(const Configuration& other);
+        CNSTLN_API void update(const Configuration& other);
 
     private:
         /**

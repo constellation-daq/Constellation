@@ -65,6 +65,15 @@ std::size_t Configuration::count(std::initializer_list<std::string> keys) const 
     return found;
 }
 
+std::string Configuration::getText(const std::string& key) const {
+    try {
+        used_keys_.markUsed(key);
+        return config_.at(key).str();
+    } catch(std::out_of_range& e) {
+        throw MissingKeyError(key);
+    }
+}
+
 /**
  * For a relative path the absolute path of the configuration file is prepended. Absolute paths are not changed.
  */
@@ -106,25 +115,6 @@ std::vector<std::filesystem::path> Configuration::getPathArray(const std::string
     return path_array;
 }
 
-std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {
-    // If not a absolute path, make it an absolute path
-    if(!path.is_absolute()) {
-        // Get current directory and append the relative path
-        path = std::filesystem::current_path() / path;
-    }
-
-    // Normalize path only if we have to check if it exists
-    // NOTE: This throws an error if the path does not exist
-    if(canonicalize_path) {
-        try {
-            path = std::filesystem::canonical(path);
-        } catch(std::filesystem::filesystem_error&) {
-            throw std::invalid_argument("path " + path.string() + " not found");
-        }
-    }
-    return path;
-}
-
 /**
  *  The alias is only used if new key does not exist but old key does. The old key is automatically marked as used.
  */
@@ -143,13 +133,23 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     }
 }
 
-std::string Configuration::getText(const std::string& key) const {
-    try {
-        used_keys_.markUsed(key);
-        return config_.at(key).str();
-    } catch(std::out_of_range& e) {
-        throw MissingKeyError(key);
+std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {
+    // If not a absolute path, make it an absolute path
+    if(!path.is_absolute()) {
+        // Get current directory and append the relative path
+        path = std::filesystem::current_path() / path;
     }
+
+    // Normalize path only if we have to check if it exists
+    // NOTE: This throws an error if the path does not exist
+    if(canonicalize_path) {
+        try {
+            path = std::filesystem::canonical(path);
+        } catch(std::filesystem::filesystem_error&) {
+            throw std::invalid_argument("path " + path.string() + " not found");
+        }
+    }
+    return path;
 }
 
 std::size_t Configuration::size(KVPGroup group, KVPUsage usage) const {
