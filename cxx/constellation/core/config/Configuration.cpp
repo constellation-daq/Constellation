@@ -162,19 +162,17 @@ std::size_t Configuration::size(KVPGroup group, KVPUsage usage) const {
     return size;
 }
 
-/**
- * All keys that are already defined earlier in this configuration will be overridden.
- */
-void Configuration::merge(const Configuration& other) {
-    for(const auto& [key, value] : other.config_) {
-        set(key, value);
-    }
-}
-
 Dictionary Configuration::getKVPs(KVPGroup group, KVPUsage usage) const {
     Dictionary result {};
     for_each(group, usage, [&](const std::string& key, const Value& val) { result.emplace(key, val); });
     return result;
+}
+
+void Configuration::update(const Configuration& other) {
+    // We only update the used keys from the other configuration
+    for(const auto& [key, value] : other.getKVPs(KVPGroup::ALL, KVPUsage::USED)) {
+        set(key, value, true);
+    }
 }
 
 std::shared_ptr<zmq::message_t> Configuration::assemble(bool used_only) const {

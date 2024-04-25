@@ -445,24 +445,27 @@ TEST_CASE("Value Overflow", "[core][core::config]") {
     REQUIRE_THROWS_AS(config.set("size", val), InvalidValueError);
 }
 
-TEST_CASE("Merge Configurations", "[core][core::config]") {
-    Configuration config_a {};
-    Configuration config_b {};
+TEST_CASE("Update Configuration", "[core][core::config]") {
+    Configuration config_base {};
+    Configuration config_update {};
 
-    config_a.set("bool", true);
-    config_a.set("int64", std::int64_t(63));
+    config_base.set("bool", true);
+    config_base.set("int64", std::int64_t(63));
+    config_base.set("string", std::string("unchanged"));
 
-    config_b.set("bool", false);
-    config_b.set("uint64", std::uint64_t(64));
+    config_update.set("bool", false, false);                      // exists but not used
+    config_update.set("uint64", std::uint64_t(64), true);         // exists and used
+    config_update.set("string2", std::string("new_value"), true); // new and used
 
-    // Merge configurations
-    config_a.merge(config_b);
+    // Update configuration
+    config_base.update(config_update);
 
-    // Check that keys from config_b have been transferred:
-    REQUIRE(config_a.get<std::uint64_t>("uint64") == 64);
+    // Check that used keys from config_update were updated in config_base
+    REQUIRE(config_base.get<std::uint64_t>("uint64") == 64);
+    REQUIRE(config_base.get<std::string>("string2") == "new_value");
 
-    // Check that existing keys in config_a have been overwritten
-    REQUIRE(config_a.get<bool>("bool") == false);
+    // Check that unused key from config_update were not updated in config_base
+    REQUIRE(config_base.get<bool>("bool") == true);
 }
 
 TEST_CASE("Copy & Move Configurations", "[core][core::config]") {

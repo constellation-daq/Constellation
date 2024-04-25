@@ -283,16 +283,19 @@ namespace constellation::config {
         std::size_t size(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
 
         /**
-         * @brief Update with keys from another configuration, potentially overriding keys in this configuration
-         * @param other Configuration to merge this one with
-         */
-        void merge(const Configuration& other);
-
-        /**
          * @brief Get key-value pairs for specific group and usage setting
          * @return Dictionary containing the key-value pairs
          */
         Dictionary getKVPs(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
+
+        /**
+         * @brief Update with keys from another configuration, potentially overriding keys in this configuration
+         *
+         * @note This function only updates values that are actually used
+         *
+         * @param other Configuration with updated values
+         */
+        void update(const Configuration& other);
 
         /**
          * @brief Assemble configuration via msgpack for ZeroMQ
