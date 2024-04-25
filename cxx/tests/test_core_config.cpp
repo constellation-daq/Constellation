@@ -226,11 +226,6 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     REQUIRE(config.getText("string") == "a");
     REQUIRE(config.getText("myenum") == "ONE");
     REQUIRE(config.getText("time") == "1970-01-01 00:00:00.000000000");
-
-    // Get text with default for existing key:
-    REQUIRE(config.getText("bool", "false") == "true");
-    // Get text with default for non-existent key:
-    REQUIRE(config.getText("foo", "false") == "false");
 }
 
 TEST_CASE("Access Arrays as Text", "[core][core::config]") {

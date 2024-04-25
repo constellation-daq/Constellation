@@ -138,14 +138,14 @@ namespace constellation::config {
         /**
          * @brief Get value of a key in requested type or default value if it does not exists
          * @param key Key to get value of
-         * @param def Default value to use if key is not defined
+         * @param def Default value to set if key is not defined
          * @return Value of the key in the type of the requested template parameter
          *         or the default value if the key does not exists
          *
          * @throws InvalidKeyError If the conversion to the requested type did not succeed
          * @throws InvalidKeyError If an overflow happened while converting the key
          */
-        template <typename T> T get(const std::string& key, const T& def) const;
+        template <typename T> T get(const std::string& key, const T& def);
 
         /**
          * @brief Get values for a key containing an array
@@ -161,14 +161,14 @@ namespace constellation::config {
         /**
          * @brief Get values for a key containing an array or default array if it does not exists
          * @param key Key to get values of
-         * @param def Default value array to use if key is not defined
+         * @param def Default value array to set if key is not defined
          * @return List of values in the array in the requested template parameter
          *         or the default array if the key does not exist
          *
          * @throws InvalidKeyError If the conversion to the requested type did not succeed
          * @throws InvalidKeyError If an overflow happened while converting the key
          */
-        template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def) const;
+        template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def);
 
         /**
          * @brief Get literal value of a key as string
@@ -177,15 +177,6 @@ namespace constellation::config {
          * @note This function does also not remove quotation marks in strings
          */
         std::string getText(const std::string& key) const;
-
-        /**
-         * @brief Get literal value of a key as string or a default if it does not exists
-         * @param key Key to get values of
-         * @param def Default value to use if key is not defined
-         * @return Literal value of the key or the default value if the key does not exists
-         * @note This function does also not remove quotation marks in strings
-         */
-        std::string getText(const std::string& key, const std::string& def) const;
 
         /**
          * @brief Get absolute path to file with paths relative to the configuration

@@ -155,12 +155,6 @@ std::string Configuration::getText(const std::string& key) const {
         throw MissingKeyError(key);
     }
 }
-std::string Configuration::getText(const std::string& key, const std::string& def) const {
-    if(!has(key)) {
-        return def;
-    }
-    return getText(key);
-}
 
 /**
  * All keys that are already defined earlier in this configuration will be overridden.

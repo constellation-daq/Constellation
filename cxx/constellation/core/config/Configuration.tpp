@@ -42,18 +42,13 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> T Configuration::get(const std::string& key, const T& def) const {
-        if(has(key)) {
-            return get<T>(key);
-        }
-        return def;
+    template <typename T> T Configuration::get(const std::string& key, const T& def) {
+        setDefault<T>(key, def);
+        return get<T>(key);
     }
 
-    template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) const {
-        if(has(key)) {
-            return getArray<T>(key);
-        }
-        return def;
+    template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) {
+        return get<std::vector<T>>(key, def);
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
