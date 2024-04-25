@@ -221,22 +221,21 @@ class H5DataReceiverWriter(DataReceiver):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.run_number = 0
-
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
-        # NOTE: Necessary because of .replace() in _open_file() overwriting the string, thus losing format
-        self.file_name_pattern = ""
-        self.directroy_name = ""
 
     def do_initializing(self, payload: any) -> str:
-        """Initialize the satellite. Set pattern for file name."""
+        """Initialize and configure the satellite."""
+        # what pattern to use for the file names?
         self.file_name_pattern = self.config.setdefault(
             "file_name_pattern", "default_name_{run_number}_{date}.h5"
         )
-        self.directroy_name = self.config.setdefault("directory_name", "H5_file_dir")
-        return "Initializing"
+        # what directory to store files in?
+        self.output_path = self.config.setdefault("output_path", "data")
+        # how often will the file be flushed?
+        self.flush_interval = self.config.setdefault("flush_interval", 10.0)
+        return "Configured all values"
 
     def _write_data(self, h5file: h5py.File, item: CDTPMessage):
         """Write data into HDF5 format
@@ -342,9 +341,7 @@ class H5DataReceiverWriter(DataReceiver):
                     item = self.data_queue.get(block=True, timeout=0.5)
 
                     # if we have data, write it
-                    self._write_data(
-                        h5file, item
-                    )
+                    self._write_data(h5file, item)
                     self.data_queue.task_done()
 
                 except Empty:
@@ -370,7 +367,7 @@ class H5DataReceiverWriter(DataReceiver):
 
         self.log.debug("Creating file %s", filename)
         # Create directory path.
-        directory = pathlib.Path(self.directroy_name)  # os.path.dirname(filename)
+        directory = pathlib.Path(self.output_path)  # os.path.dirname(filename)
         try:
             os.makedirs(directory)
         except (FileExistsError, FileNotFoundError):
