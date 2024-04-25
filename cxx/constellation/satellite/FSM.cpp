@@ -198,6 +198,7 @@ State FSM::initialize(TransitionPayload payload) {
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto transition = call_satellite_function(
             this->satellite_.get(), &Satellite::initializing, Transition::initialized, std::ref(config));
+        this->satellite_->store_config(std::move(config));
         this->reactIfAllowed(transition);
     };
     launch_assign_thread(transitional_thread_, call_wrapper, std::get<Configuration>(std::move(payload)));
@@ -229,6 +230,7 @@ State FSM::reconfigure(TransitionPayload payload) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
         const auto transition = call_satellite_function(
             this->satellite_.get(), &Satellite::reconfiguring, Transition::reconfigured, std::ref(partial_config));
+        this->satellite_->update_config(partial_config);
         this->reactIfAllowed(transition);
     };
     launch_assign_thread(transitional_thread_, call_wrapper, std::get<Configuration>(std::move(payload)));

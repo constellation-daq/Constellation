@@ -90,3 +90,11 @@ Dictionary Dictionary::disassemble(const zmq::message_t& message) {
     const auto msgpack_dict = msgpack::unpack(utils::to_char_ptr(message.data()), message.size());
     return msgpack_dict->as<Dictionary>();
 }
+
+std::string Dictionary::to_string() const {
+    std::string out {};
+    for(const auto& [key, value] : *this) {
+        out += "\n " + key + " = " + value.str();
+    }
+    return out;
+}
