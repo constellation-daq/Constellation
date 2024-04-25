@@ -90,10 +90,9 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
     REQUIRE(recv_msg_get_commands.hasPayload());
-    const auto msgpayload = recv_msg_get_commands.getPayload();
-    const auto dict = Dictionary::disassemble(*msgpayload);
-    REQUIRE(dict.contains("get_commands"));
-    REQUIRE(std::get<std::string>(dict.at("stop")) == "Stop satellite");
+    const auto get_commands_dict = Dictionary::disassemble(*recv_msg_get_commands.getPayload());
+    REQUIRE(get_commands_dict.contains("get_commands"));
+    REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
 
     // get_state
     sender.send_command("get_state");
@@ -112,9 +111,12 @@ TEST_CASE("Get commands", "[satellite]") {
     // get_config
     sender.send_command("get_config");
     auto recv_msg_get_config = sender.recv();
-    REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::NOTIMPLEMENTED);
-    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Command get_config is not implemented"));
-    REQUIRE(!recv_msg_get_config.hasPayload());
+    REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Configuration attached in payload"));
+    REQUIRE(recv_msg_get_config.hasPayload());
+    const auto config = Configuration(Dictionary::disassemble(*recv_msg_get_config.getPayload()));
+    REQUIRE(config.size() == 0);
+    // TODO(stephan.lachnit): test with a non-empty configuration
 }
 
 TEST_CASE("Case insensitive", "[satellite]") {
