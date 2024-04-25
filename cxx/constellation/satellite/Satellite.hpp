@@ -40,7 +40,7 @@ namespace constellation::satellite {
          *
          * @param config Configuration of the Satellite
          */
-        virtual void initializing(const config::Configuration& config);
+        virtual void initializing(config::Configuration& config);
 
         /**
          * Launch satellite, i.e. apply configuration

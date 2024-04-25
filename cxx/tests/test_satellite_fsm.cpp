@@ -37,7 +37,7 @@ public:
     DummySatellite() : Satellite("Dummy", "sat1") { support_reconfigure(); }
     void dummy_support_reconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
     void dummy_throw_transitional() { throw_transitional_ = true; }
-    void initializing(const Configuration& config) override {
+    void initializing(Configuration& config) override {
         Satellite::initializing(config);
         transitional_state();
     }
