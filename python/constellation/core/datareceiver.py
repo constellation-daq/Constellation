@@ -233,7 +233,7 @@ class H5DataReceiverWriter(DataReceiver):
         )
         # what directory to store files in?
         self.output_path = self.config.setdefault("output_path", "data")
-        # how often will the file be flushed?
+        # how often will the file be flushed? Negative values for 'at the end of the run'
         self.flush_interval = self.config.setdefault("flush_interval", 10.0)
         return "Configured all values"
 
@@ -333,6 +333,7 @@ class H5DataReceiverWriter(DataReceiver):
         self.run_number = run_number
         h5file = self._open_file()
         self._add_version(h5file)
+        last_flush = datetime.datetime.now()
         try:
             # processing loop
             while not self._state_thread_evt.is_set() or not self.data_queue.empty():
@@ -347,6 +348,17 @@ class H5DataReceiverWriter(DataReceiver):
                 except Empty:
                     # nothing to process
                     pass
+                # time to flush data to file?
+                # NOTE: could instead move this into
+                # the 'except Empty' above (and reduce the timeout); this would
+                # not guarantee a flush but only flush when there is nothing
+                # else to do
+                if (
+                    self.flush_interval > 0
+                    and datetime.datetime.now() - last_flush > self.flush_interval
+                ):
+                    h5file.flush()
+                    last_flush = datetime.datetime.now()
         finally:
             h5file.close()
             self.running_sats = []
