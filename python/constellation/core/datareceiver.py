@@ -254,72 +254,57 @@ class H5DataReceiverWriter(DataReceiver):
         # Check if group already exists.
         if item.msgtype == CDTPMessageIdentifier.BOR and item.name not in h5file.keys():
             self.running_sats.append(item.name)
-            try:
-                grp = h5file.create_group(item.name).create_group("BOR")
-                # add meta information as attributes
-                grp.update(item.meta)
+            grp = h5file.create_group(item.name).create_group("BOR")
+            # add meta information as attributes
+            grp.update(item.meta)
 
-                if item.payload:
-                    dset = grp.create_dataset(
-                        "payload",
-                        data=item.payload,
-                        dtype=item.meta.get("dtype", None),
-                    )
-                self.log.info(
-                    "Wrote BOR packet from %s on run %s",
-                    item.name,
-                    self.run_number,
+            if item.payload:
+                dset = grp.create_dataset(
+                    "payload",
+                    data=item.payload,
+                    dtype=item.meta.get("dtype", None),
                 )
-
-            except Exception as e:
-                self.log.exception(
-                    "Failed to create group for dataset. Exception occurred: %s", e
-                )
+            self.log.info(
+                "Wrote BOR packet from %s on run %s",
+                item.name,
+                self.run_number,
+            )
 
         elif item.msgtype == CDTPMessageIdentifier.DAT:
-            try:
-                grp = h5file[item.name]
-                title = f"data_{self.run_number}_{item.sequence_number}"
+            grp = h5file[item.name]
+            title = f"data_{self.run_number}_{item.sequence_number}"
 
-                # interpret bytes as array of uint8 if nothing else was specified in the meta
-                payload = np.frombuffer(
-                    item.payload, dtype=item.meta.get("dtype", np.uint8)
-                )
+            # interpret bytes as array of uint8 if nothing else was specified in the meta
+            payload = np.frombuffer(
+                item.payload, dtype=item.meta.get("dtype", np.uint8)
+            )
 
-                dset = grp.create_dataset(
-                    title,
-                    data=payload,
-                    chunks=True,
-                )
+            dset = grp.create_dataset(
+                title,
+                data=payload,
+                chunks=True,
+            )
 
-                dset.attrs["CLASS"] = "DETECTOR_DATA"
-                dset.attrs.update(item.meta)
-
-            except Exception as e:
-                self.log.error("Failed to write to file. Exception occurred: %s", e)
+            dset.attrs["CLASS"] = "DETECTOR_DATA"
+            dset.attrs.update(item.meta)
 
         elif item.msgtype == CDTPMessageIdentifier.EOR:
-            try:
-                grp = h5file[item.name].create_group("EOR")
-                # add meta information as attributes
-                grp.update(item.meta)
+            grp = h5file[item.name].create_group("EOR")
+            # add meta information as attributes
+            grp.update(item.meta)
 
-                if item.payload:
-                    dset = grp.create_dataset(
-                        "payload",
-                        data=item.payload,
-                        dtype=item.meta.get("dtype", None),
-                    )
+            if item.payload:
+                dset = grp.create_dataset(
+                    "payload",
+                    data=item.payload,
+                    dtype=item.meta.get("dtype", None),
+                )
 
-                self.log.info(
-                    "Wrote EOR packet from %s on run %s",
-                    item.name,
-                    self.run_number,
-                )
-            except Exception as e:
-                self.log.error(
-                    "Failed to access group for EOR. Exception occurred: %s", e
-                )
+            self.log.info(
+                "Wrote EOR packet from %s on run %s",
+                item.name,
+                self.run_number,
+            )
 
     def do_run(self, run_number: int) -> str:
         """Handle the data enqueued by the pull threads.
