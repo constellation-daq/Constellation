@@ -171,54 +171,14 @@ void Configuration::merge(const Configuration& other) {
     }
 }
 
-Dictionary Configuration::getAll() const {
+Dictionary Configuration::getKVPs(KVPGroup group, KVPUsage usage) const {
     Dictionary result {};
-
-    // Loop over all configuration keys
-    for(const auto& key_value : config_) {
-        // Skip internal keys starting with an underscore
-        if(!key_value.first.empty() && key_value.first.front() == '_') {
-            continue;
-        }
-
-        result.emplace(key_value);
-    }
-
-    return result;
-}
-
-Dictionary Configuration::get_used_entries() const {
-    Dictionary result {};
-
-    // Loop over all configuration keys
-    for(const auto& key_value : config_) {
-        // Skip all unused keys
-        if(!used_keys_.isUsed(key_value.first)) {
-            continue;
-        }
-
-        result.emplace(key_value);
-    }
-
-    return result;
-}
-
-std::vector<std::string> Configuration::getUnusedKeys() const {
-    std::vector<std::string> result {};
-
-    // Loop over all configuration keys, excluding internal ones
-    for(const auto& key_value : getAll()) {
-        // Add those to result that have not been accessed:
-        if(!used_keys_.isUsed(key_value.first)) {
-            result.emplace_back(key_value.first);
-        }
-    }
-
+    for_each(group, usage, [&](const std::string& key, const Value& val) { result.emplace(key, val); });
     return result;
 }
 
 std::shared_ptr<zmq::message_t> Configuration::assemble(bool used_only) const {
-    const auto dict = (used_only ? get_used_entries() : config_);
+    const auto dict = (used_only ? getKVPs(KVPGroup::ALL, KVPUsage::USED) : config_);
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, dict);
     return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());

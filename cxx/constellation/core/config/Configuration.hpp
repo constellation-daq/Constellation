@@ -289,19 +289,10 @@ namespace constellation::config {
         void merge(const Configuration& other);
 
         /**
-         * @brief Get all key value pairs
-         * @return List of all key value pairs
+         * @brief Get key-value pairs for specific group and usage setting
+         * @return Dictionary containing the key-value pairs
          */
-        // FIXME Better name for this function
-        Dictionary getAll() const;
-
-        /**
-         * @brief Obtain all keys which have not been accessed yet
-         *
-         * This method returns all keys from the configuration object which have not yet been accessed, Default values as
-         * well as aliases are marked as used automatically and are therefore never returned.
-         */
-        std::vector<std::string> getUnusedKeys() const;
+        Dictionary getKVPs(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
 
         /**
          * @brief Assemble configuration via msgpack for ZeroMQ
@@ -329,12 +320,6 @@ namespace constellation::config {
          *
          */
         template <typename F> void for_each(KVPGroup group, KVPUsage usage, F f) const;
-
-        /**
-         * @brief Get all key value pairs which have been used
-         * @return List of all used key value pairs, including internal ones
-         */
-        Dictionary get_used_entries() const;
 
         Dictionary config_;
         mutable AccessMarker used_keys_;

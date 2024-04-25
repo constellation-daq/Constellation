@@ -79,7 +79,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.get<std::chrono::system_clock::time_point>("time") == tp);
 
     // Check that all keys have been marked as used
-    REQUIRE(config.getUnusedKeys().empty());
+    REQUIRE(config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED) == 0);
 }
 
 TEST_CASE("Set & Get Array Values", "[core][core::config]") {
@@ -287,7 +287,7 @@ TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
     config.set("myval", 3.14, true);
 
     // Check that the key is marked as used
-    REQUIRE(config.getUnusedKeys().empty());
+    REQUIRE(config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED) == 0);
     REQUIRE(config.get<double>("myval") == 3.14);
 }
 
@@ -332,19 +332,34 @@ TEST_CASE("Configuration size", "[core][core::config]") {
     REQUIRE(config.size(INTERNAL, UNUSED) == 1);
 }
 
-TEST_CASE("Get all Values", "[core][core::config]") {
+TEST_CASE("Get key-value pairs", "[core][core::config]") {
+    using enum Configuration::KVPGroup;
+    using enum Configuration::KVPUsage;
+
     Configuration config {};
 
-    config.set("myval", 3.14);
-    config.set("_internal", 1);
+    config.set("myval1", 3.14);
+    config.set("myval2", 1234);
+    config.set("myval3", false);
+    config.set("_internal1", true);
+    config.set("_internal2", 0.739);
+    config.set("_internal3", 6);
 
-    auto keys = config.getAll();
+    // Test that value are kept
+    REQUIRE(std::get<double>(config.getKVPs().at("myval1")) == 3.14);
+    REQUIRE(std::get<bool>(config.getKVPs().at("_internal1")) == true);
+    REQUIRE(std::get<std::int64_t>(config.getKVPs(USER).at("myval2")) == 1234);
+    REQUIRE_FALSE(config.getKVPs(USER).contains("_internal2"));
+    REQUIRE_FALSE(config.getKVPs(INTERNAL).contains("myval3"));
+    REQUIRE(std::get<std::int64_t>(config.getKVPs(INTERNAL).at("_internal3")) == 6);
 
-    // Check that we have "myval"
-    REQUIRE(std::get<double>(keys.at("myval")) == 3.14);
+    config.get<double>("myval1");
+    config.get<bool>("_internal1");
 
-    // Check that only one key was returned and the internal withheld:
-    REQUIRE(keys.size() == 1);
+    // Test that used / unused keys are filtered properly
+    REQUIRE(config.getKVPs(ALL, USED).size() == 2);
+    REQUIRE(config.getKVPs(USER, UNUSED).size() == 2);
+    REQUIRE(config.getKVPs(INTERNAL, USED).size() == 1);
 }
 
 TEST_CASE("Set Default Value", "[core][core::config]") {
