@@ -78,8 +78,8 @@ variables:
   variables:
     CXX: ccache g++
 
-.fedora-latest:
-  image: gitlab.desy.de:5555/constellation/build-images/fedora-latest:latest
+.fedora-clang:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
   variables:
     CXX: ccache clang++
 
@@ -191,10 +191,10 @@ build:debian-gcc:
     BUILD_OPTIONS: "-Dbuildtype=debug -Db_coverage=true -Dcpp_std=c++23"
   <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
-build:fedora-latest:
+build:fedora-clang:
   extends:
     - .build-cpp
-    - .fedora-latest
+    - .fedora-clang
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
 
@@ -274,12 +274,12 @@ test:debian-gcc:
     expire_in: 24 hour
   <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
-test:fedora-latest:
+test:fedora-clang:
   extends:
     - .test-cpp
-    - .fedora-latest
+    - .fedora-clang
   needs:
-    - job: build:fedora-latest
+    - job: build:fedora-clang
       artifacts: true
 
 test:ubuntu-22.04:
