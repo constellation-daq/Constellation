@@ -74,13 +74,13 @@ namespace constellation::config {
 
     template <typename T> void Configuration::setDefault(const std::string& key, const T& val) {
         if(!has(key)) {
-            set<T>(key, val, true);
+            set<T>(key, val, false);
         }
     }
 
     template <typename T> void Configuration::setDefaultArray(const std::string& key, const std::vector<T>& val) {
         if(!has(key)) {
-            setArray<T>(key, val, true);
+            setArray<T>(key, val, false);
         }
     }
 } // namespace constellation::config
