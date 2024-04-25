@@ -289,3 +289,11 @@ def mock_example_satellite(mock_chirp_socket):
         # give the threads a chance to start
         time.sleep(0.1)
         yield s
+
+
+def wait_for_state(fsm, state: str, timeout: float = 2.0):
+    while timeout > 0 and fsm.current_state.id != state:
+        time.sleep(0.05)
+        timeout -= 0.05
+    if timeout < 0:
+        raise RuntimeError(f"Never reached {state}")
