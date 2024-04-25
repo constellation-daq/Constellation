@@ -12,13 +12,9 @@
 #include <cstddef>
 #include <filesystem>
 #include <initializer_list>
-#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <msgpack.hpp>
-#include <zmq.hpp>
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
@@ -173,11 +169,4 @@ void Configuration::update(const Configuration& other) {
     for(const auto& [key, value] : other.getKVPs(KVPGroup::ALL, KVPUsage::USED)) {
         set(key, value, true);
     }
-}
-
-std::shared_ptr<zmq::message_t> Configuration::assemble(bool used_only) const {
-    const auto dict = (used_only ? getKVPs(KVPGroup::ALL, KVPUsage::USED) : config_);
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, dict);
-    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
 }

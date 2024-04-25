@@ -584,19 +584,11 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     // Mark one key as used:
     REQUIRE(config.get<std::int64_t>("int64") == std::int64_t(63));
 
-    // Assemble & disassemble with all keys:
-    auto msg_all = config.assemble();
-    const auto msg_all_payload = msgpack::unpack(to_char_ptr(msg_all->data()), msg_all->size());
-    const auto dict_all = msg_all_payload->as<Dictionary>();
-    REQUIRE(dict_all.size() == 3);
-    REQUIRE(dict_all.at("bool").get<bool>() == true);
-
-    // Assemble & disassemble with used keys only:
-    auto msg_used = config.assemble(true);
-    const auto msg_used_payload = msgpack::unpack(to_char_ptr(msg_used->data()), msg_used->size());
-    const auto dict_used = msg_used_payload->as<Dictionary>();
-    REQUIRE(dict_used.size() == 1);
-    REQUIRE_THROWS_AS(dict_used.at("bool"), std::out_of_range);
+    // Assemble & disassemble with all used keys:
+    const auto config_zmq = config.getKVPs(Configuration::KVPGroup::ALL, Configuration::KVPUsage::USED).assemble();
+    const auto config_unpacked = Configuration(Dictionary::disassemble(*config_zmq));
+    REQUIRE(config_unpacked.size() == 1);
+    REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

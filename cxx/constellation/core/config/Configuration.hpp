@@ -13,11 +13,8 @@
 #include <filesystem>
 #include <initializer_list>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
-
-#include <zmq.hpp>
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
@@ -296,14 +293,6 @@ namespace constellation::config {
          * @param other Configuration with updated values
          */
         void update(const Configuration& other);
-
-        /**
-         * @brief Assemble configuration via msgpack for ZeroMQ
-         *
-         * @note This does not embedded the used keys, just the tag / value pairs
-         * @param used_only Select whether to only include keys that have been used
-         */
-        std::shared_ptr<zmq::message_t> assemble(bool used_only = false) const;
 
     private:
         /**

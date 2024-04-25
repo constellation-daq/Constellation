@@ -91,8 +91,7 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
     REQUIRE(recv_msg_get_commands.hasPayload());
     const auto msgpayload = recv_msg_get_commands.getPayload();
-    const auto payload = msgpack::unpack(to_char_ptr(msgpayload->data()), msgpayload->size());
-    const auto dict = payload->as<Dictionary>();
+    const auto dict = Dictionary::disassemble(*msgpayload);
     REQUIRE(dict.contains("get_commands"));
     REQUIRE(std::get<std::string>(dict.at("stop")) == "Stop satellite");
 
@@ -146,7 +145,7 @@ TEST_CASE("Transitions", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    initialize_msg.addPayload(Configuration().assemble());
+    initialize_msg.addPayload(Dictionary().assemble());
     sender.send(initialize_msg);
 
     // Check reply
