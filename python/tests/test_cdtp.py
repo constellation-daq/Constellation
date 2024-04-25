@@ -21,6 +21,7 @@ from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.datareceiver import H5DataReceiverWriter
 from constellation.core.datasender import DataSender
+from constellation.core import __version__
 
 DATA_PORT = 50101
 CMD_PORT = 10101
@@ -251,4 +252,8 @@ def test_receive_writing_package(
         assert (
             payload == np.array(h5file["mock_sender"][dat[1]]).view(np.uint16)
         ).all()
+        assert (
+            h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()]
+            == __version__.encode()
+        )
         h5file.close()

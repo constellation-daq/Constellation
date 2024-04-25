@@ -20,6 +20,7 @@ import h5py
 import numpy as np
 import zmq
 
+from . import __version__
 from .broadcastmanager import chirp_callback, DiscoveredService
 from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
@@ -332,6 +333,7 @@ class H5DataReceiverWriter(DataReceiver):
 
         self.run_number = run_number
         h5file = self._open_file()
+        self._add_version(h5file)
         try:
             # processing loop
             while not self._state_thread_evt.is_set() or not self.data_queue.empty():
@@ -364,7 +366,7 @@ class H5DataReceiverWriter(DataReceiver):
             self.running_sats = []
             return "Finished Acquisition"
 
-    def _open_file(self):
+    def _open_file(self) -> h5py.File:
         """Open the hdf5 file and return the file object."""
         h5file = None
         filename = pathlib.Path(
@@ -398,6 +400,11 @@ class H5DataReceiverWriter(DataReceiver):
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
         return h5file
+
+    def _add_version(self, h5file: h5py.File):
+        """Add version information to file."""
+        grp = h5file.create_group(self.name)
+        grp["constellation_version"] = __version__
 
 
 # -------------------------------------------------------------------------
