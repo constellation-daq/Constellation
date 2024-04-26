@@ -23,7 +23,7 @@
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/logging/CMDPSink.hpp"
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/utils/ports.hpp"

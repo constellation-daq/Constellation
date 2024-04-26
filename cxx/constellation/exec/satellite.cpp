@@ -26,8 +26,8 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/config.hpp"
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
