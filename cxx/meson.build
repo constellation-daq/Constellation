@@ -33,6 +33,13 @@ msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
 
+# Compilation arguments
+constellation_args = []
+if host_machine.system() == 'windows'
+  # Disable parts of Windows API with conflicting macro definitions
+  constellation_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
+endif
+
 constellation_inc = include_directories('.')
 
 # RPATH for non-default install locations
