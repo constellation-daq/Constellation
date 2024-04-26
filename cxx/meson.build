@@ -11,8 +11,8 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1'],
 )
 
-# ZeroMQ
-libzmq_dep = dependency('libzmq',
+# ZeroMQ (get libzmq first to set options in case of a fallback)
+dependency('libzmq',
   default_options: [
     'drafts=true',
     'websockets=disabled',
