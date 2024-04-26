@@ -75,9 +75,9 @@ namespace constellation::config {
         }
     }
 
-    template <typename F> void Configuration::for_each(KVPGroup group, KVPUsage usage, F f) const {
-        using enum KVPGroup;
-        using enum KVPUsage;
+    template <typename F> void Configuration::for_each(Group group, Usage usage, F f) const {
+        using enum Group;
+        using enum Usage;
         for(auto& [key, value] : config_) {
             if((group == ALL || (group == USER && !key.starts_with("_")) || (group == INTERNAL && key.starts_with("_"))) &&
                (usage == ANY || (usage == USED && value.isUsed()) || (usage == UNUSED && !value.isUsed()))) {

@@ -57,7 +57,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("time", tp);
 
     // Check that keys are unused
-    REQUIRE(config.size() == config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED));
+    REQUIRE(config.size() == config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED));
 
     // Read values back
     REQUIRE(config.get<bool>("bool") == true);
@@ -79,7 +79,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.get<std::chrono::system_clock::time_point>("time") == tp);
 
     // Check that all keys have been marked as used
-    REQUIRE(config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED) == 0);
+    REQUIRE(config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED) == 0);
 }
 
 TEST_CASE("Set & Get Array Values", "[core][core::config]") {
@@ -287,13 +287,13 @@ TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
     config.set("myval", 3.14, true);
 
     // Check that the key is marked as used
-    REQUIRE(config.size(Configuration::KVPGroup::ALL, Configuration::KVPUsage::UNUSED) == 0);
+    REQUIRE(config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED) == 0);
     REQUIRE(config.get<double>("myval") == 3.14);
 }
 
 TEST_CASE("Configuration size", "[core][core::config]") {
-    using enum Configuration::KVPGroup;
-    using enum Configuration::KVPUsage;
+    using enum Configuration::Group;
+    using enum Configuration::Usage;
 
     Configuration config {};
 
@@ -333,8 +333,8 @@ TEST_CASE("Configuration size", "[core][core::config]") {
 }
 
 TEST_CASE("Get key-value pairs", "[core][core::config]") {
-    using enum Configuration::KVPGroup;
-    using enum Configuration::KVPUsage;
+    using enum Configuration::Group;
+    using enum Configuration::Usage;
 
     Configuration config {};
 
@@ -346,20 +346,20 @@ TEST_CASE("Get key-value pairs", "[core][core::config]") {
     config.set("_internal3", 6);
 
     // Test that value are kept
-    REQUIRE(std::get<double>(config.getKVPs().at("myval1")) == 3.14);
-    REQUIRE(std::get<bool>(config.getKVPs().at("_internal1")) == true);
-    REQUIRE(std::get<std::int64_t>(config.getKVPs(USER).at("myval2")) == 1234);
-    REQUIRE_FALSE(config.getKVPs(USER).contains("_internal2"));
-    REQUIRE_FALSE(config.getKVPs(INTERNAL).contains("myval3"));
-    REQUIRE(std::get<std::int64_t>(config.getKVPs(INTERNAL).at("_internal3")) == 6);
+    REQUIRE(std::get<double>(config.getDictionary().at("myval1")) == 3.14);
+    REQUIRE(std::get<bool>(config.getDictionary().at("_internal1")) == true);
+    REQUIRE(std::get<std::int64_t>(config.getDictionary(USER).at("myval2")) == 1234);
+    REQUIRE_FALSE(config.getDictionary(USER).contains("_internal2"));
+    REQUIRE_FALSE(config.getDictionary(INTERNAL).contains("myval3"));
+    REQUIRE(std::get<std::int64_t>(config.getDictionary(INTERNAL).at("_internal3")) == 6);
 
     config.get<double>("myval1");
     config.get<bool>("_internal1");
 
     // Test that used / unused keys are filtered properly
-    REQUIRE(config.getKVPs(ALL, USED).size() == 2);
-    REQUIRE(config.getKVPs(USER, UNUSED).size() == 2);
-    REQUIRE(config.getKVPs(INTERNAL, USED).size() == 1);
+    REQUIRE(config.getDictionary(ALL, USED).size() == 2);
+    REQUIRE(config.getDictionary(USER, UNUSED).size() == 2);
+    REQUIRE(config.getDictionary(INTERNAL, USED).size() == 1);
 }
 
 TEST_CASE("Set Default Value", "[core][core::config]") {
@@ -585,7 +585,7 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     REQUIRE(config.get<std::int64_t>("int64") == std::int64_t(63));
 
     // Assemble & disassemble with all used keys:
-    const auto config_zmq = config.getKVPs(Configuration::KVPGroup::ALL, Configuration::KVPUsage::USED).assemble();
+    const auto config_zmq = config.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
     const auto config_unpacked = Configuration(Dictionary::disassemble(*config_zmq));
     REQUIRE(config_unpacked.size() == 1);
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);

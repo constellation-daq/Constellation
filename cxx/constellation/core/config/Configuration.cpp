@@ -127,13 +127,13 @@ std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path
     return path;
 }
 
-std::size_t Configuration::size(KVPGroup group, KVPUsage usage) const {
+std::size_t Configuration::size(Group group, Usage usage) const {
     std::size_t size = 0;
     for_each(group, usage, [&](const std::string&, const Value&) { ++size; });
     return size;
 }
 
-Dictionary Configuration::getKVPs(KVPGroup group, KVPUsage usage) const {
+Dictionary Configuration::getDictionary(Group group, Usage usage) const {
     Dictionary result {};
     for_each(group, usage, [&](const std::string& key, const Value& val) { result.emplace(key, val); });
     return result;
@@ -141,7 +141,7 @@ Dictionary Configuration::getKVPs(KVPGroup group, KVPUsage usage) const {
 
 void Configuration::update(const Configuration& other) {
     // We only update the used keys from the other configuration
-    for(const auto& [key, value] : other.getKVPs(KVPGroup::ALL, KVPUsage::USED)) {
+    for(const auto& [key, value] : other.getDictionary(Group::ALL, Usage::USED)) {
         set(key, value, true);
     }
 }

@@ -78,7 +78,7 @@ namespace constellation::config {
         Configuration(Configuration&& other) noexcept = default;
         Configuration& operator=(Configuration&& other) = default;
 
-        enum class KVPGroup : std::uint8_t {
+        enum class Group : std::uint8_t {
             /** All configuration key-value pairs, both user and internal */
             ALL,
             /** Configuration key-value pairs intended for framework users */
@@ -87,7 +87,7 @@ namespace constellation::config {
             INTERNAL,
         };
 
-        enum class KVPUsage : std::uint8_t {
+        enum class Usage : std::uint8_t {
             /** Both used and unused key-value pairs */
             ANY,
             /** Only used key-value pairs */
@@ -251,13 +251,13 @@ namespace constellation::config {
          *
          * @return Number of key-value pairs
          */
-        CNSTLN_API std::size_t size(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
+        CNSTLN_API std::size_t size(Group group = Group::ALL, Usage usage = Usage::ANY) const;
 
         /**
-         * @brief Get key-value pairs for specific group and usage setting
+         * @brief Get dictionary with key-value pairs for specific group and usage setting
          * @return Dictionary containing the key-value pairs
          */
-        CNSTLN_API Dictionary getKVPs(KVPGroup group = KVPGroup::ALL, KVPUsage usage = KVPUsage::ANY) const;
+        CNSTLN_API Dictionary getDictionary(Group group = Group::ALL, Usage usage = Usage::ANY) const;
 
         /**
          * @brief Update with keys from another configuration, potentially overriding keys in this configuration
@@ -285,7 +285,7 @@ namespace constellation::config {
          * @param f Function taking a string ref and a Value ref
          *
          */
-        template <typename F> void for_each(KVPGroup group, KVPUsage usage, F f) const;
+        template <typename F> void for_each(Group group, Usage usage, F f) const;
 
         std::map<std::string, ConfigValue> config_;
     };
