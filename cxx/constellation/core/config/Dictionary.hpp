@@ -17,7 +17,7 @@
 #include <msgpack/pack_decl.hpp>
 #include <msgpack/sbuffer_decl.hpp>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/config/Value.hpp"
 
 namespace constellation::config {

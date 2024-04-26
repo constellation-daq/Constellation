@@ -15,7 +15,7 @@
 #include <string_view>
 #include <thread>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
