@@ -28,7 +28,7 @@ namespace constellation::config {
         try {
             const auto& dictval = config_.at(key);
             const auto val = dictval.get<T>();
-            used_keys_.markUsed(key);
+            dictval.markUsed();
             return val;
         } catch(const std::out_of_range&) {
             // Requested key has not been found in dictionary
@@ -53,11 +53,7 @@ namespace constellation::config {
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
         try {
-            config_[key] = Value::set(val);
-            used_keys_.registerMarker(key);
-            if(mark_used) {
-                used_keys_.markUsed(key);
-            }
+            config_[key] = {Value::set(val), mark_used};
         } catch(const std::bad_cast&) {
             // Value held by the dictionary entry could not be cast to desired type
             throw InvalidTypeError(key, typeid(T), typeid(value_t));
@@ -84,7 +80,7 @@ namespace constellation::config {
         using enum KVPUsage;
         for(auto& [key, value] : config_) {
             if((group == ALL || (group == USER && !key.starts_with("_")) || (group == INTERNAL && key.starts_with("_"))) &&
-               (usage == ANY || (usage == USED && used_keys_.isUsed(key)) || (usage == UNUSED && !used_keys_.isUsed(key)))) {
+               (usage == ANY || (usage == USED && value.isUsed()) || (usage == UNUSED && !value.isUsed()))) {
                 f(key, value);
             }
         }

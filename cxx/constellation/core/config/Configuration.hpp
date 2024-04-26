@@ -27,61 +27,34 @@ namespace constellation::config {
      * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
      */
     class Configuration {
-
+    private:
         /**
-         * @brief Helper class to keep track of key access
-         *
-         * This class holds all configuration keys in a map together with an atomic boolean marking whether they have been
-         * accessed already. This allows to find out which keys have not been accessed at all. This wrapper allows to use
-         * atomics for non-locking access but requires to register all keys beforehand.
+         * @brief Helper class to keep track of key-value pair access
          */
-        class AccessMarker {
+        class ConfigValue : public Value {
         public:
-            /**
-             * Default constructor
-             */
-            AccessMarker() = default;
-            ~AccessMarker() = default;
+            using Value::Value;
+            using Value::operator=;
 
             /**
-             * @brief Explicit copy constructor to allow copying of the map keys
+             * @brief Construct ConfigValue from Value with predefined usage
              */
-            CNSTLN_API AccessMarker(const AccessMarker& other);
+            ConfigValue(Value value, bool used = false) : Value(std::move(value)), used_(used) {}
 
             /**
-             * @brief Explicit copy assignment operator to allow copying of the map keys
+             * @brief Method to mark ConfigValue as used/unused
+             * @param used If the key-value pair should be marked used or unused
              */
-            CNSTLN_API AccessMarker& operator=(const AccessMarker& other);
-
-            // Default move constructor/assignment
-            AccessMarker(AccessMarker&& other) noexcept = default;
-            AccessMarker& operator=(AccessMarker&& other) = default;
+            void markUsed(bool used = true) const { used_ = used; }
 
             /**
-             * @brief Method to register a key for a new access marker
-             * @param key Key of the marker
-             * @warning This operation is not thread-safe
+             * @brief Method to retrieve of ConfigValue is used/unused
+             * @return true if used, false if unused
              */
-            CNSTLN_API void registerMarker(const std::string& key);
-
-            /**
-             * @brief Method to mark existing marker as accessed/used.
-             * @param key Key of the marker
-             * @note This is an atomic operation and thread-safe.
-             * @throws std::out_of_range if the key has not been registered beforehand
-             */
-            void markUsed(const std::string& key) { markers_.at(key).store(true); };
-
-            /**
-             * @brief Method to retrieve access status of an existing marker.
-             * @param key Key of the marker
-             * @note This is an atomic operation and thread-safe.
-             * @throws std::out_of_range if the key has not been registered beforehand
-             */
-            bool isUsed(const std::string& key) { return markers_.at(key).load(); }
+            bool isUsed() const { return used_; }
 
         private:
-            std::map<std::string, std::atomic_bool> markers_;
+            mutable bool used_ {false};
         };
 
     public:
@@ -95,8 +68,9 @@ namespace constellation::config {
          * @brief Construct a configuration object from a dictionary
          *
          * @param dict Dictionary to construct config object from
+         * @param mark_used Whether to mark the key-value pairs in the dict as used
          */
-        CNSTLN_API Configuration(const Dictionary& dict);
+        CNSTLN_API Configuration(const Dictionary& dict, bool mark_used = false);
 
         // Default copy/move constructor/assignment
         Configuration(const Configuration& other) = default;
@@ -313,8 +287,7 @@ namespace constellation::config {
          */
         template <typename F> void for_each(KVPGroup group, KVPUsage usage, F f) const;
 
-        Dictionary config_;
-        mutable AccessMarker used_keys_;
+        std::map<std::string, ConfigValue> config_;
     };
 
 } // namespace constellation::config

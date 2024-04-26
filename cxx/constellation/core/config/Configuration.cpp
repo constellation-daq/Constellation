@@ -21,35 +21,11 @@
 
 using namespace constellation::config;
 
-Configuration::Configuration(const Dictionary& dict) : config_(dict) {
-    // Register all markers:
+Configuration::Configuration(const Dictionary& dict, bool mark_used) {
     for(const auto& [key, val] : dict) {
-        used_keys_.registerMarker(key);
+        config_.emplace(key, ConfigValue(val, mark_used));
     }
 };
-
-Configuration::AccessMarker::AccessMarker(const Configuration::AccessMarker& other) {
-    for(const auto& [key, value] : other.markers_) {
-        registerMarker(key);
-        markers_.at(key).store(value.load());
-    }
-}
-
-Configuration::AccessMarker& Configuration::AccessMarker::operator=(const Configuration::AccessMarker& other) {
-    if(this == &other) {
-        return *this;
-    }
-
-    for(const auto& [key, value] : other.markers_) {
-        registerMarker(key);
-        markers_.at(key).store(value.load());
-    }
-    return *this;
-}
-
-void Configuration::AccessMarker::registerMarker(const std::string& key) {
-    markers_.emplace(key, false);
-}
 
 std::size_t Configuration::count(std::initializer_list<std::string> keys) const {
     if(keys.size() == 0) {
@@ -67,8 +43,9 @@ std::size_t Configuration::count(std::initializer_list<std::string> keys) const 
 
 std::string Configuration::getText(const std::string& key) const {
     try {
-        used_keys_.markUsed(key);
-        return config_.at(key).str();
+        const auto& dictval = config_.at(key);
+        dictval.markUsed();
+        return dictval.str();
     } catch(std::out_of_range& e) {
         throw MissingKeyError(key);
     }
@@ -124,8 +101,6 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     }
 
     config_[new_key] = config_.at(old_key);
-    used_keys_.registerMarker(new_key);
-    used_keys_.markUsed(old_key);
 
     if(warn) {
         // FIXME logging
