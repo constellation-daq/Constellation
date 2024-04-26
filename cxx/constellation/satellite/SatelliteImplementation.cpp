@@ -21,7 +21,6 @@
 #include <utility>
 
 #include <magic_enum.hpp>
-#include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
@@ -159,9 +158,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
             "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
         // TODO(stephan.lachnit): append user commands
         // Pack dict
-        msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, command_dict);
-        payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+        payload = command_dict.assemble();
         break;
     }
     case get_state: {
