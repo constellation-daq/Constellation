@@ -42,10 +42,6 @@ namespace constellation::config {
         CNSTLN_API static List disassemble(const zmq::message_t& message);
     };
 
-    template <class V> std::type_info const& get_type(V const& v) {
-        return std::visit([](auto&& x) -> decltype(auto) { return typeid(x); }, v);
-    }
-
     /**
      * Dictionary type with serialization functions for MessagePack and ZeroMQ
      */
