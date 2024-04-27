@@ -191,7 +191,7 @@ namespace constellation::message {
         /**
          * @return Metric value and type
          */
-        CNSTLN_API std::tuple<constellation::config::Value, std::string, metrics::Type> getMetric() const;
+        CNSTLN_API metrics::Metric getMetric() const;
 
         /**
          * Disassemble stats message from ZeroMQ frames

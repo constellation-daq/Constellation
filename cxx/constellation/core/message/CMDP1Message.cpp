@@ -28,6 +28,7 @@
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::utils;
 using namespace std::literals::string_literals;
 
@@ -146,7 +147,7 @@ CMDP1StatMessage::CMDP1StatMessage(std::string topic,
     setPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
 }
 
-std::tuple<constellation::config::Value, std::string, constellation::metrics::Type> CMDP1StatMessage::getMetric() const {
+Metric CMDP1StatMessage::getMetric() const {
     // Offset since we decode two separate msgpack objects
     std::size_t offset = 0;
     const auto payload = getPayload();
@@ -166,7 +167,7 @@ std::tuple<constellation::config::Value, std::string, constellation::metrics::Ty
     if(!type.has_value()) {
         throw MessageDecodingError("Invalid metric type");
     }
-    return {value, unit, type.value()};
+    return {unit, type.value(), value};
 }
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message message) : CMDP1Message(std::move(message)) {
