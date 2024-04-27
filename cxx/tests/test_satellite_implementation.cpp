@@ -370,6 +370,26 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_AS(std::make_shared<MySatellite2>(), LogicError);
     REQUIRE_THROWS_WITH(std::make_shared<MySatellite2>(), Equals("Command \"my_cmd\" is already registered"));
+
+    class MySatellite3 : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatellite3() { register_command("initialize", "A User Command", {}, &MySatellite3::cmd, this); }
+    };
+    REQUIRE_THROWS_AS(std::make_shared<MySatellite3>(), LogicError);
+    REQUIRE_THROWS_WITH(std::make_shared<MySatellite3>(), Equals("Satellite transition command with this name exists"));
+
+    class MySatellite4 : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatellite4() { register_command("get_commands", "A User Command", {}, &MySatellite4::cmd, this); }
+    };
+    REQUIRE_THROWS_AS(std::make_shared<MySatellite4>(), LogicError);
+    REQUIRE_THROWS_WITH(std::make_shared<MySatellite4>(), Equals("Standard satellite command with this name exists"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
@@ -393,11 +413,9 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong argument type
     auto wrongarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    msgpack::sbuffer sbuf {};
     List args;
     args.push_back(std::chrono::system_clock::now());
-    msgpack::pack(sbuf, args);
-    wrongarg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(sbuf.data()), sbuf.size()));
+    wrongarg_msg.addPayload(args.assemble());
     sender.send(wrongarg_msg);
 
     auto recv_msg_wrongarg = sender.recv();
@@ -407,12 +425,10 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong number of argument
     auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    msgpack::sbuffer manysbuf {};
     List manyargs;
     manyargs.push_back(3);
     manyargs.push_back(4);
-    msgpack::pack(manysbuf, manyargs);
-    manyarg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(manysbuf.data()), manysbuf.size()));
+    manyarg_msg.addPayload(manyargs.assemble());
     sender.send(manyarg_msg);
 
     auto recv_msg_manyarg = sender.recv();

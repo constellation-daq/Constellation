@@ -50,6 +50,14 @@ namespace constellation::satellite {
             throw utils::LogicError("Can not register command with empty name");
         }
 
+        if(magic_enum::enum_cast<message::GetCommand>(name).has_value()) {
+            throw utils::LogicError("Standard satellite command with this name exists");
+        }
+
+        if(magic_enum::enum_cast<message::TransitionCommand>(name).has_value()) {
+            throw utils::LogicError("Satellite transition command with this name exists");
+        }
+
         const auto [it, success] = commands_.emplace(
             name, Command {generate_call(std::move(func)), sizeof...(Args), std::move(description), states});
 
