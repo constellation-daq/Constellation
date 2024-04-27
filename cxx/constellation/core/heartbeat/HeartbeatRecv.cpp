@@ -19,7 +19,6 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/config.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"

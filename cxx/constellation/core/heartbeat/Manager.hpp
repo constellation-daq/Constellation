@@ -17,7 +17,7 @@
 #include <thread>
 #include <vector>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/logging/Logger.hpp"
