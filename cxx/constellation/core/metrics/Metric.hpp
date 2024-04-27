@@ -29,8 +29,8 @@ namespace constellation::metrics {
 
     class Metric {
     public:
-        Metric(std::string_view unit, const Type type, const config::Value& value)
-            : unit_(unit), type_(type), value_(value) {}
+        Metric(std::string_view unit, const Type type, config::Value value)
+            : unit_(unit), type_(type), value_(std::move(value)) {}
 
         virtual ~Metric() noexcept = default;
 
@@ -82,7 +82,7 @@ namespace constellation::metrics {
                     Clock::duration interval,
                     std::initializer_list<message::State> states,
                     const config::Value& value = {})
-            : MetricTimer(unit, type, states, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
+            : MetricTimer(unit, type, states, value), interval_(interval), last_trigger_(Clock::now()) {}
 
         bool condition() override;
         Clock::time_point next_trigger() const override;
