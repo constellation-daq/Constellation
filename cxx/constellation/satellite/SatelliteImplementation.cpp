@@ -21,6 +21,7 @@
 #include <utility>
 
 #include <magic_enum.hpp>
+#include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
@@ -198,8 +199,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
     config::List args {};
     try {
         if(payload && !payload->empty()) {
-            const auto msgpack_args = msgpack::unpack(to_char_ptr(payload->data()), payload->size());
-            args = msgpack_args->as<config::List>();
+            args = config::List::disassemble(*payload);
         }
 
         auto retval = satellite_->callUserCommand(fsm_.getState(), std::string(command), args);

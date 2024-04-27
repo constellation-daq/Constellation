@@ -21,7 +21,7 @@
 
 #include "exceptions.hpp"
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
