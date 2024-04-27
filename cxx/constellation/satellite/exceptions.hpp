@@ -12,6 +12,7 @@
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::satellite {
 
