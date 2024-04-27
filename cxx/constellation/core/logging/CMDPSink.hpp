@@ -21,6 +21,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/logging/Level.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/ports.hpp"
 
 namespace constellation::log {
@@ -70,6 +71,8 @@ namespace constellation::log {
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) final;
         void flush_() final {}
+
+        void sink_stats(const std::string& key, const std::shared_ptr<metrics::Metric>& metric);
 
     private:
         void subscription_loop(const std::stop_token& stop_token);
