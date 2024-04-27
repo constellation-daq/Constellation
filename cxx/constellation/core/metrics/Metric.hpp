@@ -29,10 +29,8 @@ namespace constellation::metrics {
 
     class Metric {
     public:
-        Metric(std::string_view unit, const Type type) : unit_(unit), type_(type) {};
-
         Metric(std::string_view unit, const Type type, config::Value value)
-            : unit_(unit), type_(type), value_(std::move(value)), changed_(true) {}
+            : changed_(true), unit_(unit), type_(type), value_(std::move(value)) {}
 
         virtual ~Metric() noexcept = default;
 
@@ -49,23 +47,32 @@ namespace constellation::metrics {
 
         Type type() const { return type_; }
 
-        bool check();
-        virtual Clock::time_point next_trigger() const { return Clock::time_point::max(); }
+        bool changed() const { return changed_; }
 
     protected:
-        virtual bool condition() = 0;
+        bool changed_ {false};
 
     private:
         std::string unit_ {};
         Type type_;
         config::Value value_ {};
-        bool changed_ {false};
     };
 
-    class TimedMetric : public Metric {
+    class MetricTimer : public Metric {
+    public:
+        MetricTimer(std::string_view unit, const Type type, config::Value value = {}) : Metric(unit, type, value) {}
+
+        bool check();
+        virtual Clock::time_point next_trigger() const { return Clock::time_point::max(); }
+
+    protected:
+        virtual bool condition() = 0;
+    };
+
+    class TimedMetric : public MetricTimer {
     public:
         TimedMetric(std::string_view unit, Type type, Clock::duration interval, config::Value value = {})
-            : Metric(unit, type, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
+            : MetricTimer(unit, type, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
 
         bool condition() override;
         Clock::time_point next_trigger() const override;
@@ -75,7 +82,7 @@ namespace constellation::metrics {
         Clock::time_point last_trigger_;
     };
 
-    class TriggeredMetric : public Metric {
+    class TriggeredMetric : public MetricTimer {
     public:
         TriggeredMetric(std::string_view unit, Type type, std::size_t triggers, const config::Value& value);
 
