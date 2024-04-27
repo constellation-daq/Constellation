@@ -29,8 +29,8 @@ namespace constellation::metrics {
 
     class Metric {
     public:
-        Metric(std::string_view unit, const Type type, config::Value value)
-            : unit_(unit), type_(type), value_(std::move(value)) {}
+        Metric(std::string_view unit, const Type type, const config::Value& value)
+            : unit_(unit), type_(type), value_(value) {}
 
         virtual ~Metric() noexcept = default;
 
@@ -56,7 +56,11 @@ namespace constellation::metrics {
 
     class MetricTimer : public Metric {
     public:
-        MetricTimer(std::string_view unit, const Type type, config::Value value = {}) : Metric(unit, type, value) {}
+        MetricTimer(std::string_view unit,
+                    const Type type,
+                    std::initializer_list<message::State> states,
+                    const config::Value& value = {})
+            : Metric(unit, type, value), states_(states) {}
 
         bool check(message::State state);
         virtual Clock::time_point next_trigger() const { return Clock::time_point::max(); }
@@ -73,8 +77,12 @@ namespace constellation::metrics {
 
     class TimedMetric : public MetricTimer {
     public:
-        TimedMetric(std::string_view unit, Type type, Clock::duration interval, config::Value value = {})
-            : MetricTimer(unit, type, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
+        TimedMetric(std::string_view unit,
+                    Type type,
+                    Clock::duration interval,
+                    std::initializer_list<message::State> states,
+                    const config::Value& value = {})
+            : MetricTimer(unit, type, states, std::move(value)), interval_(interval), last_trigger_(Clock::now()) {}
 
         bool condition() override;
         Clock::time_point next_trigger() const override;
@@ -86,7 +94,11 @@ namespace constellation::metrics {
 
     class TriggeredMetric : public MetricTimer {
     public:
-        TriggeredMetric(std::string_view unit, Type type, std::size_t triggers, const config::Value& value);
+        TriggeredMetric(std::string_view unit,
+                        Type type,
+                        std::size_t triggers,
+                        std::initializer_list<message::State> states,
+                        const config::Value& value);
 
         void update(const config::Value& value) override;
 
