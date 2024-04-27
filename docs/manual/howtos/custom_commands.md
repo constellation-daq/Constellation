@@ -1,8 +1,8 @@
 # Adding Custom Satellite Commands
 
 This how-to guide will walk through the process of adding and registering custom commands for a satellite in C++.
-This functionality can be used to expose additional functionality of the devices controlled by the satellite to controllers
-in the Constellation network.
+This functionality can be used to expose additional functionality of the devices that is handled by the satellite to
+controllers in the Constellation network.
 
 ## The Command Registry
 
@@ -10,9 +10,11 @@ The satellite command registry provides a facility where the satellite can regis
 to any controller connecting to the satellite. These commands are defined per individual satellite type by registering them
 in the respective constructor.
 
-Controllers can query for commands using the `get_commands` request.
+Controllers can query for commands using the `get_commands` request which returns a list of available commands and FSM
+transitions along with their descriptions.
 
-Custom commands cannot overwrite the standard commands provided by each satellite and therefore must not reuse their names.
+Custom commands cannot overwrite the standard commands provided by Constellation satellites and therefore must not reuse
+their names.
 
 ## Adding The Command
 
@@ -25,7 +27,7 @@ int MySatellite::get_channel_reading(int channel) {
 }
 ```
 
-Int he constructor of `MySatellite`, the command is registered with the command registry as follows:
+In the constructor of `MySatellite`, the command is registered with the command registry as follows:
 
 ```cpp
 MySatellite::MySatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
@@ -63,18 +65,17 @@ get_channel_reading:  This command reads the current device value from the chann
 
 The command registry can handle commands with any number of arguments and can also provide return values from the called
 functions back to the controller. Arguments do not have to be specifically denominated when registering the command. The
-command registry instead takes this information directly from the function declaration.
+command registry instead takes this information directly from the function declaration of the command to be called.
 
 ```{note}
-All parameters and return values of functions in the command registry are coded as `std::string` values and must therefore
-be able to be converted to these.
+All parameters and return values of functions in the command registry are encoded as configuration values and must therefore
+be able to be converted to and from these. A detailed information of available types is available in the configuration
+documentation.
 ```
 
-The arguments have to be provided as a list of strings in the command payload sent to the satellite.
-
-If more complex data structures should be passed back and forth, specific `to_string` and `from_string` methods might have
-to be provided by the satellite in order to code them into and from `std::string`. It should however be investigated if in
-these cases custom commands are the right approach to solving the issue at hand.
+The arguments have to be provided as a list of configuration values in the command payload sent to the satellite. Similarly,
+return values from the called functions are converted to a configuration value and are returned in the message payload to
+the calling controller.
 
 ### Allowed FSM states
 
