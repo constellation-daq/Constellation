@@ -13,15 +13,15 @@
 
 using namespace constellation::metrics;
 
-void Metric::set(const config::Value& value) {
-    if(value != value_) {
-        value_ = value;
+void MetricTimer::update(const config::Value& value) {
+    if(value != Metric::value()) {
+        set(value);
         changed_ = true;
     }
 }
 
 bool MetricTimer::check() {
-    if(!changed()) {
+    if(!changed_) {
         return false;
     }
     if(condition()) {
@@ -55,8 +55,8 @@ TriggeredMetric::TriggeredMetric(std::string_view unit, Type type, std::size_t t
     }
 }
 
-void TriggeredMetric::set(const config::Value& value) {
-    Metric::set(value);
+void TriggeredMetric::update(const config::Value& value) {
+    MetricTimer::update(value);
     current_triggers_++;
 }
 
