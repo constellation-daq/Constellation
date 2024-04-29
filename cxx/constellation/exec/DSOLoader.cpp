@@ -33,7 +33,7 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.so
     // - in installed environment: libdir/ConstellationSatellites/libXYZ.so
-    auto dso_file_name = "lib" + dso_name_ + ".so";
+    const auto dso_file_name = "lib" + dso_name_ + ".so";
     auto possible_paths = std::vector<std::filesystem::path>({
         std::filesystem::path(CNSTLN_BUILDDIR) / "cxx" / "satellites" / dso_name_ / dso_file_name,
         std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites" / dso_file_name,
@@ -44,8 +44,8 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
 
     // Check files following priority
     std::string path_str {};
-    for(auto& path : possible_paths) {
-        auto abs_path = std::filesystem::absolute(path);
+    for(const auto& path : possible_paths) {
+        const auto abs_path = std::filesystem::absolute(path);
         LOG(logger, TRACE) << "Looking for " << dso_name_ << " in " << abs_path;
         if(std::filesystem::exists(abs_path) && std::filesystem::is_regular_file(abs_path)) {
             LOG(logger, DEBUG) << "Found " << dso_name_ << " in " << abs_path;
@@ -59,8 +59,8 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
 
     // Load the DSO
     handle_ = dlopen(path_str.c_str(), RTLD_NOW);
-    auto* error_dlopen = dlerror(); // NOLINT(concurrency-mt-unsafe)
-    if(error_dlopen != nullptr) {
+    if(handle_ == nullptr) {
+        const auto* error_dlopen = dlerror(); // NOLINT(concurrency-mt-unsafe)
         throw DSOLoadingError(dso_name_, error_dlopen);
     }
 
@@ -77,8 +77,8 @@ Generator* DSOLoader::loadSatelliteGenerator() {
 
 void* DSOLoader::getRawFunctionFromDSO(const std::string& function_name) {
     void* function = dlsym(handle_, function_name.c_str());
-    auto* error_dlsym = dlerror(); // NOLINT(concurrency-mt-unsafe)
-    if(error_dlsym != nullptr) {
+    if(function == nullptr) {
+        const auto* error_dlsym = dlerror(); // NOLINT(concurrency-mt-unsafe)
         throw DSOFunctionLoadingError(function_name, dso_name_, error_dlsym);
     }
     return function;
