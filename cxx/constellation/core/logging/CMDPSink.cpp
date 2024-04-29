@@ -9,12 +9,15 @@
 
 #include "CMDPSink.hpp"
 
+#include <chrono>
+#include <cstdint>
 #include <filesystem>
+#include <mutex>
 #include <string>
-#include <string_view>
+#include <thread>
+#include <utility>
 
-#include <asio.hpp>
-#include <msgpack.hpp>
+#include <spdlog/details/log_msg.h>
 #include <zmq.hpp>
 
 #include "constellation/core/logging/Level.hpp"
@@ -27,7 +30,6 @@
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::string_literals;
 using namespace std::literals::chrono_literals;
 
 // Find path relative to cxx/, otherwise path without any parent
