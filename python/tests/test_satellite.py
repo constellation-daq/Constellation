@@ -23,7 +23,7 @@ from constellation.core.chirp import (
     CHIRPServiceIdentifier,
 )
 
-from conftest import mock_chirp_packet_queue, mocket
+from conftest import mock_chirp_packet_queue, mocket, wait_for_state
 
 
 @pytest.fixture
@@ -57,6 +57,33 @@ def mock_device_satellite(mock_chirp_socket):
         mock.return_value = mock_context
         s = MockDeviceSatellite(
             "mydevice1", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
+        )
+        t = threading.Thread(target=s.run_satellite)
+        t.start()
+        # give the threads a chance to start
+        time.sleep(0.1)
+        yield s
+
+
+@pytest.fixture
+def mock_fail_satellite(mock_chirp_socket):
+    """Mock a Satellite that fails on run."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        return m
+
+    class MockFailSatellite(Satellite):
+
+        def do_run(self, run_number):
+            raise RuntimeError("mock failure")
+
+    with patch("constellation.core.base.zmq.Context") as mock:
+        mock_context = MagicMock()
+        mock_context.socket = mocket_factory
+        mock.return_value = mock_context
+        s = MockFailSatellite(
+            "fail1", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
         )
         t = threading.Thread(target=s.run_satellite)
         t.start()
@@ -199,21 +226,57 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         "stop": "ORBIT",
         "land": "INIT",
     }
-    payload = {"mock key": "mock argument string"}
     sender = mock_cmd_transmitter
     for cmd, state in transitions.items():
+        if cmd == "initialize":
+            payload = {"mock_cfg_key": "mock config string"}
+        elif cmd == "start":
+            payload = 5001
+        else:
+            # send a dict, why not?
+            payload = {"mock key": "mock argument string"}
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
         assert "transitioning" in req.msg.lower()
         assert req.msg_verb == CSCPMessageVerb.SUCCESS
         # wait for state transition
-        timeout = 4.0
-        while timeout > 0:
-            if mock_satellite.fsm.current_state.id.lower() == state.lower():
-                break
-            time.sleep(0.05)
-            timeout -= 0.05
+
+        wait_for_state(mock_satellite.fsm, state, 4.0)
+        # check state
+        sender.send_request("get_state")
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert state.lower() in req.msg.lower()
+        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+
+
+@pytest.mark.forked
+def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
+    """Test that Satellite can fail in run."""
+    transitions = {
+        "initialize": "INIT",
+        "launch": "ORBIT",
+        "start": "RUN",
+    }
+    sender = mock_cmd_transmitter
+    for cmd, state in transitions.items():
+        if cmd == "initialize":
+            payload = {"mock_cfg_key": "mock config string"}
+        elif cmd == "start":
+            payload = 5001
+        else:
+            # send a dict, why not?
+            payload = {"mock key": "mock argument string"}
+        sender.send_request(cmd, payload)
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert "transitioning" in req.msg.lower()
+        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        # wait for state transition; should fail for RUN
+        if state == "RUN":
+            state = "ERROR"
+        wait_for_state(mock_fail_satellite.fsm, state, 1.0)
         # check state
         sender.send_request("get_state")
         time.sleep(0.2)

@@ -18,6 +18,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
@@ -180,7 +181,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto fsm = FSM(satellite);
     using constellation::message::CSCP1Message;
 
-    auto payload_frame = Configuration().assemble();
+    auto payload_frame = Dictionary().assemble();
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame

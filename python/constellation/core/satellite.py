@@ -236,18 +236,18 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_start(self, payload: any) -> str:
+    def _wrap_start(self, run_number: int) -> str:
         """Wrapper for the 'run' state of the FSM.
 
         This method performs the basic Satellite transition before passing
         control to the device-specific public method.
 
         """
-        res = self.do_starting(payload)
+        res = self.do_starting(run_number)
         # complete transitional state
         self.fsm.complete(res)
         # continue to execute DAQ in this thread
-        return self.do_run(payload)
+        return self.do_run(run_number)
 
     @debug_log
     def do_starting(self, payload: any) -> str:
@@ -293,7 +293,8 @@ class Satellite(
             # stop state thread
             if self._state_thread_evt:
                 self._state_thread_evt.set()
-                self._state_thread.join(1)
+                if self._state_thread_fut:
+                    self._state_thread_fut.result(timeout=1)
             return self.fail_gracefully()
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
