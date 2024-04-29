@@ -27,6 +27,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -170,7 +171,8 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         break;
     }
     case get_config: {
-        return_verb = {CSCP1Message::Type::NOTIMPLEMENTED, "Command get_config is not implemented"};
+        return_verb = {CSCP1Message::Type::SUCCESS, "Configuration attached in payload"};
+        payload = satellite_->getConfig().getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
         break;
     }
     default: std::unreachable();

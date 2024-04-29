@@ -52,6 +52,13 @@ namespace constellation::config {
 
         /** Disassemble dictionary from ZeroMQ */
         CNSTLN_API static Dictionary disassemble(const zmq::message_t& message);
+
+        /**
+         * @brief Convert dictionary to human readable string
+         *
+         * @return String with one line for each key-value pair starting `\n `
+         */
+        CNSTLN_API std::string to_string() const;
     };
 
 } // namespace constellation::config
