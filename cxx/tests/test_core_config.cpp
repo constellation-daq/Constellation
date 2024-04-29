@@ -82,6 +82,24 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     REQUIRE(config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED) == 0);
 }
 
+TEST_CASE("Enum Values Are Case-Insensitive", "[core][core::config]") {
+    Configuration config;
+
+    enum MyEnum {
+        ONE,
+        TWO,
+    };
+    config.set("myenum", MyEnum::ONE);
+    // Enum from string
+    config.set("myenumstr", "ONE");
+    // Enum case-insensitive from string
+    config.set("myenumstr2", "oNe");
+
+    REQUIRE(config.get<MyEnum>("myenum") == MyEnum::ONE);
+    REQUIRE(config.get<MyEnum>("myenumstr") == MyEnum::ONE);
+    REQUIRE(config.get<MyEnum>("myenumstr2") == MyEnum::ONE);
+}
+
 TEST_CASE("Set & Get Array Values", "[core][core::config]") {
     Configuration config;
 
