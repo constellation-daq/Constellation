@@ -106,11 +106,11 @@ TEST_CASE("Get commands", "[satellite]") {
     const auto get_commands_dict = Dictionary::disassemble(*recv_msg_get_commands.getPayload());
     REQUIRE(get_commands_dict.contains("get_commands"));
     REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
-    REQUIRE(dict.contains("my_cmd"));
-    REQUIRE(std::get<std::string>(dict.at("my_cmd")) ==
+    REQUIRE(get_commands_dict.contains("my_cmd"));
+    REQUIRE(std::get<std::string>(get_commands_dict.at("my_cmd")) ==
             "A User Command\nThis command requires 0 arguments.\nThis command can be called in all states.");
-    REQUIRE(dict.contains("my_cmd_state"));
-    REQUIRE(std::get<std::string>(dict.at("my_cmd_state")) ==
+    REQUIRE(get_commands_dict.contains("my_cmd_state"));
+    REQUIRE(std::get<std::string>(get_commands_dict.at("my_cmd_state")) ==
             "Command for RUN state only\nThis command requires 0 arguments.\nThis command can only be called in the "
             "following states: RUN");
 
