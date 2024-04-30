@@ -253,7 +253,7 @@ namespace constellation::satellite {
         config::Configuration config_;
         std::string run_identifier_ {};
         CommandRegistry user_commands_;
-        std::shared_ptr<metrics::MetricsManager> metrics_manager_;
+        metrics::MetricsManager metrics_manager_;
     };
 
     // Generator function that needs to be exported in a satellite library
