@@ -15,10 +15,8 @@ using namespace constellation::metrics;
 using namespace constellation::message;
 
 void MetricTimer::update(const config::Value& value) {
-    if(value != Metric::value()) {
-        set(value);
-        changed_ = true;
-    }
+    set(value);
+    changed_ = true;
 }
 
 bool MetricTimer::check(State state) {
