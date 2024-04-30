@@ -87,6 +87,16 @@ namespace constellation::log {
         CNSTLN_API void enableCMDPSending(std::string sender_name);
 
         /**
+         * Send metric via the CMDP sink
+         *
+         * @param key Metric key
+         * @param metric Metric object
+         */
+        void sendCMDPMetric(const std::string& key, const std::shared_ptr<metrics::Metric>& metric) {
+            return cmdp_sink_->sinkStats(key, metric);
+        }
+
+        /**
          * Create a new asynchronous spdlog logger
          *
          * @param topic Topic of the new logger
