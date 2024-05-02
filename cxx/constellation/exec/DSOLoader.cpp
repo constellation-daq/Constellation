@@ -32,18 +32,11 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 
 DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path hint) : dso_name_(std::move(dso_name)) {
-    // Library suffixes: Windows = .dll, MacOS = .dylib, POSIX: .so
-#ifdef _WIN32
-    const std::string dso_suffix = ".dll";
-#else
-    const std::string dso_suffix = ".so";
-#endif
-
     // Possible paths:
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.suffix
     // - in installed environment: libdir/ConstellationSatellites/libXYZ.suffix
-    const auto dso_file_name = "lib" + dso_name_ + dso_suffix;
+    const auto dso_file_name = "lib" + dso_name_ + CNSTLN_DSO_SUFFIX;
     auto possible_paths = std::vector<std::filesystem::path>({
         std::filesystem::path(CNSTLN_BUILDDIR) / "cxx" / "satellites" / dso_name_ / dso_file_name,
         std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites" / dso_file_name,

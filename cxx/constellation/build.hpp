@@ -31,4 +31,6 @@
 
 #define CNSTLN_BUILDDIR "@builddir@"
 
+#define CNSTLN_DSO_SUFFIX "@dso_suffix@"
+
 // NOLINTEND(cppcoreguidelines-macro-usage)
