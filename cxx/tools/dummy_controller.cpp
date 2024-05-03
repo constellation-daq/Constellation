@@ -18,7 +18,6 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -60,43 +59,22 @@ int main(int argc, char* argv[]) {
     req.connect(uri);
 
     while(true) {
-        std::string commandline;
-        std::cout << "Send command: ";
-        std::getline(std::cin, commandline);
-
-        // Split into command and args
-        std::istringstream iss(commandline);
-        // Obtain command:
         std::string command;
-        std::getline(iss, command, ' ');
+        std::cout << "Send command: ";
+        std::getline(std::cin, command);
 
         // Send command
         auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
         if(command == "initialize" || command == "reconfigure") {
-            std::cout << "attaching dumy configuration dictionary as payload" << std::endl;
-            Dictionary dict {};
-            dict["key"] = "value";
-            send_msg.addPayload(dict.assemble());
+            send_msg.addPayload(Dictionary().assemble());
+            std::cout << "Added empty configuration to message" << std::endl;
         } else if(command == "start") {
-            std::string runnr;
-            std::getline(iss, runnr, ' ');
-            const size_t run = stoi(runnr);
+            const std::uint32_t run_nr = 1234U;
             msgpack::sbuffer sbuf {};
-            msgpack::pack(sbuf, run);
+            msgpack::pack(sbuf, run_nr);
             send_msg.addPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
-            std::cout << "added run number " << run << " as payload" << std::endl;
-        } else {
-            List args;
-            std::string arg;
-            while(std::getline(iss, arg, ' ')) {
-                args.emplace_back(stoi(arg));
-            }
-            if(!args.empty()) {
-                std::cout << "attaching " << args.size() << " command arguments as payload array" << std::endl;
-                send_msg.addPayload(args.assemble());
-            }
+            std::cout << "Added run number " << run_nr << " to message" << std::endl;
         }
-
         send_msg.assemble().send(req);
 
         // Receive reply
@@ -119,12 +97,6 @@ int main(int argc, char* argv[]) {
                     }
                     std::cout << std::endl;
                 }
-            } catch(std::bad_cast&) {
-                auto val = Value();
-                val.msgpack_unpack(
-                    msgpack::unpack(to_char_ptr(recv_msg.getPayload()->data()), recv_msg.getPayload()->size()).get());
-                std::cout << "Payload: \t" << val.str();
-                std::cout << std::endl;
             } catch(...) {
                 std::cout << "Payload: <could not unpack payload>" << std::endl;
             }
