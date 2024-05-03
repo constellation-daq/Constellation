@@ -88,8 +88,6 @@ namespace constellation::satellite {
     /**
      * @ingroup Exceptions
      * @brief Missing arguments for user command
-     *
-     * The user command is not registered
      */
     class MissingUserCommandArguments : public UserCommandError {
     public:
@@ -107,8 +105,6 @@ namespace constellation::satellite {
     /**
      * @ingroup Exceptions
      * @brief Invalid arguments for user command
-     *
-     * The user command is not registered
      */
     class InvalidUserCommandArguments : public UserCommandError {
     public:
@@ -123,9 +119,7 @@ namespace constellation::satellite {
 
     /**
      * @ingroup Exceptions
-     * @brief Invalid arguments for user command
-     *
-     * The user command is not registered
+     * @brief Invalid return type from user command
      */
     class InvalidUserCommandResult : public UserCommandError {
     public:

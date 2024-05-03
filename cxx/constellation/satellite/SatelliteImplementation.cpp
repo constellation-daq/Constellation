@@ -218,7 +218,7 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
     } catch(UnknownUserCommand&) {
         return std::nullopt;
     } catch(InvalidUserCommand& e) {
-        // Command cannot be called
+        // Command cannot be called in current state
         return_verb = {CSCP1Message::Type::INVALID, e.what()};
     } catch(UserCommandError& e) {
         // Any other issue with executing the user command (missing arguments, wrong arguments, ...)

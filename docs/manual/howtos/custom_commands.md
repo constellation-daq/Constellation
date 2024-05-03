@@ -54,7 +54,7 @@ In addition to this information, the number of required arguments as well as the
 to the description reported by the satellite e.g. through its `get_commands` response. For the example command registered
 above, the output could look like this:
 
-```sh
+```text
 get_channel_reading:  This command reads the current device value from the channel number provided as argument. Since this
                       will reset the corresponding channel, this can only be done before the run has started.
                       This command requires 1 arguments.
