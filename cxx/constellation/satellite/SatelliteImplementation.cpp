@@ -223,6 +223,9 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
     } catch(UserCommandError& e) {
         // Any other issue with executing the user command (missing arguments, wrong arguments, ...)
         return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
+    } catch(const std::exception& e) {
+        LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\": " << e.what();
+        return std::nullopt;
     } catch(...) {
         LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\"";
         return std::nullopt;
