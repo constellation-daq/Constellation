@@ -131,11 +131,11 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
                 fsm_payload = msgpack_payload->as<std::uint32_t>();
             }
         }
-    } catch(msgpack::unpack_error& e) {
-        std::string payload_info {"Transition " + to_string(transition) + " received invalid payload: " + e.what()};
+    } catch(const msgpack::unpack_error& error) {
+        std::string payload_info {"Transition " + to_string(transition) + " received invalid payload: " + error.what()};
         LOG(logger_, WARNING) << payload_info;
         return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
-    } catch(std::bad_cast&) {
+    } catch(const std::bad_cast&) {
         std::string payload_info {"Transition " + to_string(transition) + " received incorrect payload"};
         LOG(logger_, WARNING) << payload_info;
         return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
@@ -176,7 +176,8 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
         LOG(satellite->getLogger(), CRITICAL) << "Critical failure during transition: " << error.what();
         return Transition::failure;
     } catch(...) {
-        // Something went wrong but not with a proper exception, go to error state
+        // Something went wrong but not with a proper exception, log and go to error state
+        LOG(satellite->getLogger(), CRITICAL) << "Critical failure during transition: <unknown exception>";
         return Transition::failure;
     }
 }
