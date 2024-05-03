@@ -77,14 +77,19 @@ The arguments have to be provided as a list of configuration values in the comma
 return values from the called functions are converted to a configuration value and are returned in the message payload to
 the calling controller.
 
+```{warning}
+It is discouraged to implement commands that change the configuration of the instrument or device since these changes take
+direct effect and are not reflected in the satellite configuration.
+```
+
 ### Allowed FSM states
 
 Commands may change the internal state of the satellite e.g. by altering the setting of an attached device. It may therefore
 be important for some commands to not run when the satellite state machine is in a given state.
 
-A typical example would be a high-voltage power supply, and a custom command that allows changing the current limit. While
-changing this limit while the satellite is in its `INIT` state may be unproblematic, changing it in `ORBIT` or `RUN` state
-where the voltage output is switched on may lead to the power supply tripping.
+A typical example would be a high-voltage power supply, and a custom command that allows reading the current compliance.
+While reading this limit when the satellite is in its `ORBIT` or `RUN` state will produce the correct result, reading the
+value in the `NEW` or `INIT` states where the power supply is not fully configured yet may yield wrong values.
 
 The command registry allows limiting the states in which each of the commands can be executed and will report an invalid
 command otherwise.
