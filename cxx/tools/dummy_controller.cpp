@@ -74,12 +74,9 @@ int main(int argc, char* argv[]) {
         auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
         if(command == "initialize" || command == "reconfigure") {
             std::cout << "attaching dumy configuration dictionary as payload" << std::endl;
-            Dictionary dict;
+            Dictionary dict {};
             dict["key"] = "value";
-            msgpack::sbuffer sbuf {};
-            msgpack::pack(sbuf, dict);
-            auto frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
-            send_msg.addPayload(frame);
+            send_msg.addPayload(dict.assemble());
         } else if(command == "start") {
             std::string runnr;
             std::getline(iss, runnr, ' ');
@@ -96,10 +93,7 @@ int main(int argc, char* argv[]) {
             }
             if(!args.empty()) {
                 std::cout << "attaching " << args.size() << " command arguments as payload array" << std::endl;
-                msgpack::sbuffer sbuf {};
-                msgpack::pack(sbuf, args);
-                auto frame = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
-                send_msg.addPayload(frame);
+                send_msg.addPayload(args.assemble());
             }
         }
 
