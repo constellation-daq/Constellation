@@ -13,22 +13,21 @@
 
 #include <functional>
 #include <map>
-#include <set>
-#include <sstream>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "exceptions.hpp"
+#include "constellation/core/config/Value.hpp"
+#include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
 
     template <typename T> inline T CommandRegistry::to_argument(const config::Value& value) {
         try {
             return value.get<T>();
-        } catch(std::bad_variant_access&) {
+        } catch(const std::bad_variant_access&) {
             throw InvalidUserCommandArguments(typeid(T), value.type());
         }
     }
@@ -36,7 +35,7 @@ namespace constellation::satellite {
     template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
         try {
             return config::Value::set(value);
-        } catch(std::bad_cast&) {
+        } catch(const std::bad_cast&) {
             throw InvalidUserCommandResult(typeid(T));
         }
     }
@@ -44,7 +43,7 @@ namespace constellation::satellite {
     template <typename R, typename... Args>
     inline void CommandRegistry::add(const std::string& name,
                                      std::string description,
-                                     std::initializer_list<constellation::message::State> states,
+                                     std::initializer_list<State> states,
                                      std::function<R(Args...)> func) {
         if(name.empty()) {
             throw utils::LogicError("Can not register command with empty name");
@@ -67,15 +66,15 @@ namespace constellation::satellite {
     }
 
     template <typename T, typename R, typename... Args>
-    inline void CommandRegistry::add(std::string name,
+    inline void CommandRegistry::add(const std::string& name,
                                      std::string description,
-                                     std::initializer_list<constellation::message::State> states,
+                                     std::initializer_list<State> states,
                                      R (T::*func)(Args...),
                                      T* t) {
         if(!func || !t) {
             throw utils::LogicError("Object and member function pointers must not be nullptr");
         }
-        add(std::move(name), std::move(description), states, std::function<R(Args...)>([=](Args... args) {
+        add(name, std::move(description), states, std::function<R(Args...)>([=](Args... args) {
                 return (t->*func)(args...);
             }));
     }

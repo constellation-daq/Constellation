@@ -9,23 +9,21 @@
 
 #pragma once
 
+#include <concepts>
 #include <functional>
 #include <map>
 #include <set>
-#include <sstream>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <utility>
-#include <vector>
-
-#include "exceptions.hpp"
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/type.hpp"
+#include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
 
@@ -37,7 +35,7 @@ namespace constellation::satellite {
      * number of arguments that can be converted from std::string. Return values are also possible as long as a conversion
      * to std::string is possible.
      */
-    class CNSTLN_API CommandRegistry {
+    class CommandRegistry {
     public:
         /**
          * @brief Register a command with arbitrary arguments from a functional
@@ -52,7 +50,7 @@ namespace constellation::satellite {
         template <typename R, typename... Args>
         void add(const std::string& name,
                  std::string description,
-                 std::initializer_list<constellation::message::State> states,
+                 std::initializer_list<State> states,
                  std::function<R(Args...)> func);
 
         /**
@@ -68,9 +66,9 @@ namespace constellation::satellite {
          * @tparam Args Argument types
          */
         template <typename T, typename R, typename... Args>
-        void add(std::string name,
+        void add(const std::string& name,
                  std::string description,
-                 std::initializer_list<constellation::message::State> states,
+                 std::initializer_list<State> states,
                  R (T::*func)(Args...),
                  T* t);
 
@@ -80,15 +78,15 @@ namespace constellation::satellite {
          *
          * @param state Current state of the finite state machine when this call was made
          * @param name Name of the command to be called
-         * @param args Vector with arguments encoded as std::string
-         * @return Return value of the called function encoded as std::string
+         * @param args List of arguments
+         * @return Return value of the called function
          *
          * @throws UnknownUserCommand if no command is not registered under this name
          * @throws InvalidUserCommand if the command is registered but cannot be called in the current state
          * @throws MissingUserCommandArguments if the number of arguments does not match
          * @throws std::invalid_argument if an argument or the return value could not be decoded or encoded to std::string
          */
-        config::Value call(message::State state, const std::string& name, const config::List& args);
+        CNSTLN_API config::Value call(State state, const std::string& name, const config::List& args);
 
         /**
          * @brief Generate map of commands with comprehensive description
@@ -99,7 +97,7 @@ namespace constellation::satellite {
          *
          * @return Map with command names and descriptions
          */
-        std::map<std::string, std::string> describeCommands() const;
+        CNSTLN_API std::map<std::string, std::string> describeCommands() const;
 
     private:
         using Call = std::function<config::Value(const config::List&)>;
@@ -114,39 +112,28 @@ namespace constellation::satellite {
             Call func;
             std::size_t nargs;
             std::string description;
-            std::set<constellation::message::State> valid_states;
+            std::set<State> valid_states;
         };
-
-        // Map of registered commands
-        std::unordered_map<std::string, Command> commands_;
 
         template <typename T> static inline T to_argument(const config::Value& value);
         template <typename T> static inline config::Value convert(const T& value);
 
-        // Wrapper for command with return value
+        // Wrapper for command extracting function arguments from list
         template <typename R, typename... Args> struct Wrapper {
             std::function<R(Args...)> func;
 
             config::Value operator()(const config::List& args) {
                 return call_command(args, std::index_sequence_for<Args...> {});
             }
+
             template <std::size_t... I>
             config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
-                return convert(func(to_argument<typename std::decay_t<Args>>(args.at(I))...));
-            }
-        };
-
-        // Wrapper for command without return value
-        template <typename... Args> struct Wrapper<void, Args...> {
-            std::function<void(Args...)> func;
-
-            config::Value operator()(const config::List& args) {
-                return call_command(args, std::index_sequence_for<Args...> {});
-            }
-            template <std::size_t... I>
-            config::Value call_command(const config::List& args, std::index_sequence<I...> /*unused*/) {
-                func(to_argument<typename std::decay_t<Args>>(args.at(I))...);
-                return {};
+                if constexpr(std::same_as<R, void>) {
+                    func(to_argument<typename std::decay_t<Args>>(args.at(I))...);
+                    return {};
+                } else {
+                    return convert(func(to_argument<typename std::decay_t<Args>>(args.at(I))...));
+                }
             }
         };
 
@@ -160,10 +147,15 @@ namespace constellation::satellite {
          */
         template <typename R, typename... Args>
         inline CommandRegistry::Call generate_call(std::function<R(Args...)>&& function) {
-            return Wrapper<R, Args...> {std::move(function)};
+            return Wrapper<R, Args...>(std::forward<std::function<R(Args...)>>(function));
         }
+
+    private:
+        // Map of registered commands
+        std::unordered_map<std::string, Command> commands_;
     };
 
 } // namespace constellation::satellite
 
+// Include template members
 #include "CommandRegistry.tpp"

@@ -17,6 +17,8 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/satellite/CommandRegistry.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
@@ -118,10 +120,10 @@ namespace constellation::satellite {
          *
          * @param state Current state of the satellite finite state machine
          * @param name Name of the command to be called
-         * @param args Vector of arguments for the command, encoded as std::string
-         * @return Return value of the command encoded as std::string
+         * @param args List with arguments for the command
+         * @return Return value of the command
          */
-        config::Value callUserCommand(const message::State state, const std::string& name, const config::List& args) {
+        config::Value callUserCommand(State state, const std::string& name, const config::List& args) {
             return user_commands_.call(state, name, args);
         }
 
@@ -156,9 +158,12 @@ namespace constellation::satellite {
          * @param t Pointer to the satellite object
          */
         template <typename T, typename R, typename... Args>
-        void register_command(
-            std::string name, std::string description, std::initializer_list<State> states, R (T::*func)(Args...), T* t) {
-            user_commands_.add(std::move(name), std::move(description), states, func, t);
+        void register_command(const std::string& name,
+                              std::string description,
+                              std::initializer_list<State> states,
+                              R (T::*func)(Args...),
+                              T* t) {
+            user_commands_.add(name, std::move(description), states, func, t);
         }
 
     private:

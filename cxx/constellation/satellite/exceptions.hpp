@@ -129,4 +129,5 @@ namespace constellation::satellite {
             error_message_ += "\" to dictionary value";
         }
     };
+
 } // namespace constellation::satellite

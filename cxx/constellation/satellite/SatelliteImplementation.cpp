@@ -11,6 +11,7 @@
 
 #include <cctype>
 #include <chrono>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -212,22 +213,22 @@ SatelliteImplementation::handleUserCommand(std::string_view command, const std::
             return_payload = std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
         }
         return_verb = {CSCP1Message::Type::SUCCESS, {}};
-    } catch(std::bad_cast&) {
+    } catch(const std::bad_cast&) {
         // Issue with obtaining parameters from payload
         return_verb = {CSCP1Message::Type::INCOMPLETE, "Could not convert command payload to argument list"};
-    } catch(UnknownUserCommand&) {
+    } catch(const UnknownUserCommand&) {
         return std::nullopt;
-    } catch(InvalidUserCommand& e) {
+    } catch(const InvalidUserCommand& error) {
         // Command cannot be called in current state
-        return_verb = {CSCP1Message::Type::INVALID, e.what()};
-    } catch(UserCommandError& e) {
+        return_verb = {CSCP1Message::Type::INVALID, error.what()};
+    } catch(const UserCommandError& error) {
         // Any other issue with executing the user command (missing arguments, wrong arguments, ...)
-        return_verb = {CSCP1Message::Type::INCOMPLETE, e.what()};
-    } catch(const std::exception& e) {
-        LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\": " << e.what();
+        return_verb = {CSCP1Message::Type::INCOMPLETE, error.what()};
+    } catch(const std::exception& error) {
+        LOG(logger_, DEBUG) << "Caught exception while calling user command \"" << command << "\": " << error.what();
         return std::nullopt;
     } catch(...) {
-        LOG(logger_, DEBUG) << "Caught unknown exception when calling user command \"" << command << "\"";
+        LOG(logger_, DEBUG) << "Caught unknown exception while calling user command \"" << command << "\"";
         return std::nullopt;
     }
 

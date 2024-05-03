@@ -9,17 +9,23 @@
 
 #include "CommandRegistry.hpp"
 
-#include <cctype>
+#include <map>
 #include <numeric>
+#include <string>
+#include <vector>
 
+#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/Value.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-config::Value CommandRegistry::call(message::State state, const std::string& name, const config::List& args) {
-    auto cmd = commands_.find(name);
+config::Value CommandRegistry::call(State state, const std::string& name, const config::List& args) {
+    const auto cmd = commands_.find(name);
 
     // Check if this is a known command at all
     if(cmd == commands_.end()) {
@@ -42,7 +48,7 @@ config::Value CommandRegistry::call(message::State state, const std::string& nam
 }
 
 std::map<std::string, std::string> CommandRegistry::describeCommands() const {
-    std::map<std::string, std::string> cmds;
+    std::map<std::string, std::string> cmds {};
 
     // Add all commands tot he map
     for(const auto& cmd : commands_) {
@@ -56,15 +62,19 @@ std::map<std::string, std::string> CommandRegistry::describeCommands() const {
         // Append allowed states (empty means allowed from all states)
         if(!cmd.second.valid_states.empty()) {
             description += "\nThis command can only be called in the following states: ";
-            description += std::accumulate(cmd.second.valid_states.begin(),
-                                           cmd.second.valid_states.end(),
-                                           std::string(),
-                                           [](auto a, auto s) { return a + (a.empty() ? "" : ", ") + to_string(s); });
+            description += list_strings(std::accumulate(cmd.second.valid_states.begin(),
+                                                        cmd.second.valid_states.end(),
+                                                        std::vector<std::string>(),
+                                                        [](auto vec, auto state) {
+                                                            vec.emplace_back(to_string(state));
+                                                            return vec;
+                                                        }));
         } else {
             description += "\nThis command can be called in all states.";
         }
 
         cmds.emplace(cmd.first, description);
     }
+
     return cmds;
 }
