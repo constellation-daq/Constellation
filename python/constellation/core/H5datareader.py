@@ -2,8 +2,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
-
-Base module for Constellation Satellites that receive data.
 """
 
 from pathlib import Path
@@ -38,25 +36,18 @@ class H5DataReader:
         """Close H5-file."""
         self.file.close()
 
-    def read_part(self, group: str, dset: str, start: int, stop: int):
-        """Read part of file from start to stop."""
-        return self.file[group][dset][start:stop]
-
-    def read_chunks(self, group: str, dset: str, last_chunk: int):
-        """Read out chunks until last_chunk"""
-        ret = []
-        ds = self.file[group][dset]
-        chunk = 0
-        for chunk_idx in ds.iter_chunks():
-            if chunk > last_chunk:
-                break
-            ret.append(ds[chunk_idx])
-            chunk += 1
-        return ret
-
-    def iter_chunks(self, group: str, dset: str):
-        """Retrieve chunk iterator"""
-        return self.file[group][dset].iter_chunks()
+    def read_chunks(self, group: str, datasets: list, chunk_length: int):
+        """ Read the file in chunks of length chunk_length"""
+        def chunk_iterator():
+            start = 0
+            while start < len(datasets):
+                data = []
+                for i in range(chunk_length):
+                    if start < len(datasets):
+                        data.append(self.file[group][datasets[start]][:])
+                        start += 1
+                yield data
+        return chunk_iterator()
 
     def groups(self):
         """Fetch all groups of H5-file."""
@@ -72,8 +63,8 @@ class H5DataReader:
         return groups
 
     def datasets(self):
-        """Fetch all groups of H5-file."""
-        return self._datasets(self.file)
+        """Fetch a list of all datasets of H5-file."""
+        return self._datasets(self.file)[0][2:]
 
     def _datasets(self, file):
         """Private method to fetch all datasets of H5-file."""
@@ -84,7 +75,20 @@ class H5DataReader:
             elif isinstance(file[key], h5py.Dataset):
                 datasets.append(key)
         return datasets
+    
+    def sort_dataset_list(self):
+        """ Returns a sorted list of all datasets """
+        def sequence_number_sort(data_str):
+            """Sort help function. Splits the datasetname and sort according 
+            to sequence_number """
+            parts = data_str.split('_')
+            numeric_part = int(parts[-1])
+            return numeric_part
 
+        dataset_list = self._datasets(self.file)
+        sorted_dataset_list = sorted(dataset_list[0][2:],
+                                     key=sequence_number_sort)
+        return sorted_dataset_list
 
 # -------------------------------------------------------------------------
 
@@ -101,7 +105,7 @@ def main(args=None):
 
     print("\nWelcome to the Constellation CLI IPython Reader for H5 files!\n")
     print(
-        "You can interact with your H5-file via the 'data' keyword"  # NOTE: Needs more features
+        "You can interact with your H5-file via the 'data' keyword"
     )
 
     embed()
