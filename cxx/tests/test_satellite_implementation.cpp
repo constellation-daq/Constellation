@@ -160,7 +160,7 @@ TEST_CASE("User commands", "[satellite]") {
     // my_usr_cmd_arg with argument as payload
     auto usr_cmd_arg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
     msgpack::sbuffer sbuf {};
-    List args;
+    List args {};
     args.push_back(4);
     msgpack::pack(sbuf, args);
     usr_cmd_arg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(sbuf.data()), sbuf.size()));
@@ -413,7 +413,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong argument type
     auto wrongarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    List args;
+    List args {};
     args.push_back(std::chrono::system_clock::now());
     wrongarg_msg.addPayload(args.assemble());
     sender.send(wrongarg_msg);
@@ -425,7 +425,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong number of argument
     auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    List manyargs;
+    List manyargs {};
     manyargs.push_back(3);
     manyargs.push_back(4);
     manyarg_msg.addPayload(manyargs.assemble());
