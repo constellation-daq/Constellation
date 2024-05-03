@@ -75,11 +75,11 @@ class H5DataReader:
             elif isinstance(file[key], h5py.Dataset):
                 datasets.append(key)
         return datasets
-    
+
     def sort_dataset_list(self):
         """ Returns a sorted list of all datasets """
         def sequence_number_sort(data_str):
-            """Sort help function. Splits the datasetname and sort according 
+            """Sort help function. Splits the datasetname and sort according
             to sequence_number """
             parts = data_str.split('_')
             numeric_part = int(parts[-1])
