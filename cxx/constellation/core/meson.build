@@ -62,11 +62,13 @@ install_headers(
 )
 
 install_headers(
+  'message/BaseHeader.hpp',
   'message/CDTP1Message.hpp',
   'message/CHIRPMessage.hpp',
   'message/CMDP1Message.hpp',
   'message/CSCP1Message.hpp',
-  'message/BaseHeader.hpp',
+  'message/exceptions.hpp',
+  'message/payload_buffer.hpp',
   'message/Protocol.hpp',
   'message/satellite_definitions.hpp',
   subdir: 'constellation/core/message',
