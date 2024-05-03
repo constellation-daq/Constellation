@@ -13,6 +13,7 @@
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
@@ -107,12 +108,13 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(get_commands_dict.contains("get_commands"));
     REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
     REQUIRE(get_commands_dict.contains("my_cmd"));
-    REQUIRE(std::get<std::string>(get_commands_dict.at("my_cmd")) ==
-            "A User Command\nThis command requires 0 arguments.\nThis command can be called in all states.");
+    REQUIRE_THAT(std::get<std::string>(get_commands_dict.at("my_cmd")),
+                 Equals("A User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
     REQUIRE(get_commands_dict.contains("my_cmd_state"));
-    REQUIRE(std::get<std::string>(get_commands_dict.at("my_cmd_state")) ==
-            "Command for RUN state only\nThis command requires 0 arguments.\nThis command can only be called in the "
-            "following states: RUN");
+    REQUIRE_THAT(
+        std::get<std::string>(get_commands_dict.at("my_cmd_state")),
+        Equals("Command for RUN state only\nThis command requires 0 arguments.\nThis command can only be called in the "
+               "following states: RUN"));
 
     // get_state
     sender.send_command("get_state");
@@ -355,8 +357,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
     };
-    REQUIRE_THROWS_AS(std::make_shared<MySatellite>(), LogicError);
-    REQUIRE_THROWS_WITH(std::make_shared<MySatellite>(), Equals("Can not register command with empty name"));
+    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Can not register command with empty name"));
 
     class MySatellite2 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -368,8 +369,8 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
             register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
         }
     };
-    REQUIRE_THROWS_AS(std::make_shared<MySatellite2>(), LogicError);
-    REQUIRE_THROWS_WITH(std::make_shared<MySatellite2>(), Equals("Command \"my_cmd\" is already registered"));
+    REQUIRE_THROWS_MATCHES(
+        std::make_shared<MySatellite2>(), LogicError, Message("Command \"my_cmd\" is already registered"));
 
     class MySatellite3 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -378,8 +379,8 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite3() { register_command("initialize", "A User Command", {}, &MySatellite3::cmd, this); }
     };
-    REQUIRE_THROWS_AS(std::make_shared<MySatellite3>(), LogicError);
-    REQUIRE_THROWS_WITH(std::make_shared<MySatellite3>(), Equals("Satellite transition command with this name exists"));
+    REQUIRE_THROWS_MATCHES(
+        std::make_shared<MySatellite3>(), LogicError, Message("Satellite transition command with this name exists"));
 
     class MySatellite4 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -388,8 +389,8 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite4() { register_command("get_commands", "A User Command", {}, &MySatellite4::cmd, this); }
     };
-    REQUIRE_THROWS_AS(std::make_shared<MySatellite4>(), LogicError);
-    REQUIRE_THROWS_WITH(std::make_shared<MySatellite4>(), Equals("Standard satellite command with this name exists"));
+    REQUIRE_THROWS_MATCHES(
+        std::make_shared<MySatellite4>(), LogicError, Message("Standard satellite command with this name exists"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
