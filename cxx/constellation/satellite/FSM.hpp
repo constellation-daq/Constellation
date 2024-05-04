@@ -16,7 +16,7 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -50,8 +50,8 @@ namespace constellation::satellite {
         CNSTLN_API ~FSM();
 
         // No copy/move constructor/assignment
-        FSM(FSM& other) = delete;
-        FSM& operator=(FSM other) = delete;
+        FSM(const FSM& other) = delete;
+        FSM& operator=(const FSM& other) = delete;
         FSM(FSM&& other) = delete;
         FSM& operator=(FSM&& other) = delete;
 

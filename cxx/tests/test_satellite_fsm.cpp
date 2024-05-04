@@ -7,7 +7,6 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <exception>
 #include <memory>
 #include <stop_token>
 #include <string>
@@ -19,7 +18,9 @@
 #include <zmq.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -27,6 +28,7 @@
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::satellite;
+using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 // NOLINTNEXTLINE(*-special-member-functions)
@@ -35,7 +37,7 @@ public:
     DummySatellite() : Satellite("Dummy", "sat1") { support_reconfigure(); }
     void dummy_support_reconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
     void dummy_throw_transitional() { throw_transitional_ = true; }
-    void initializing(const Configuration& config) override {
+    void initializing(Configuration& config) override {
         Satellite::initializing(config);
         transitional_state();
     }
@@ -86,7 +88,7 @@ private:
         while(!progress_fsm_) {
             if(throw_transitional_) {
                 throw_transitional_ = false;
-                throw std::exception();
+                throw Exception("Throwing in transitional state as requested");
             }
         }
     }
@@ -179,7 +181,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto fsm = FSM(satellite);
     using constellation::message::CSCP1Message;
 
-    auto payload_frame = Configuration().assemble();
+    auto payload_frame = Dictionary().assemble();
     auto ret = std::pair<constellation::message::CSCP1Message::Type, std::string>();
 
     // Initialize requires frame

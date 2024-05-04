@@ -9,71 +9,20 @@
 
 #pragma once
 
-#include <chrono>
-#include <cstdint>
 #include <map>
+#include <memory>
 #include <string>
-#include <type_traits>
-#include <variant>
 #include <vector>
 
 #include <msgpack/object_decl.hpp>
 #include <msgpack/pack_decl.hpp>
 #include <msgpack/sbuffer_decl.hpp>
+#include <zmq.hpp>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
+#include "constellation/core/config/Value.hpp"
 
 namespace constellation::config {
-
-    /** Check if a type can be held by a variant */
-    template <class T, class U> struct is_one_of;
-    template <class T, class... Ts>
-    struct is_one_of<T, std::variant<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
-
-    /**
-     * Value type for Dictionary using std::variant
-     *
-     * Allowed types: nil, bool, long int, double, string, time point and vectors thereof
-     */
-    using value_t = std::variant<std::monostate,
-                                 bool,
-                                 std::int64_t,
-                                 double,
-                                 std::string,
-                                 std::chrono::system_clock::time_point,
-                                 std::vector<bool>,
-                                 std::vector<std::int64_t>,
-                                 std::vector<double>,
-                                 std::vector<std::string>,
-                                 std::vector<std::chrono::system_clock::time_point>>;
-
-    /**
-     * @class Value
-     * @brief Augmented std::variant with MsgPack packer and unpacker routines
-     */
-    class CNSTLN_API Value : public value_t {
-    public:
-        using value_t::value_t;
-        using value_t::operator=;
-
-        /**
-         * @brief Convert value to string representation
-         * @return String representation of the value
-         */
-        std::string str() const;
-
-        /**
-         * @brief Get type info of the value currently stored in the variant
-         * @return Type info of the currently held value
-         */
-        const std::type_info& type() const;
-
-        /** Pack value with msgpack */
-        CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
-
-        /** Unpack value with msgpack */
-        CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
-    };
 
     /**
      * List type with serialization functions for MessagePack
@@ -88,7 +37,7 @@ namespace constellation::config {
     };
 
     /**
-     * Dictionary type with serialization functions for MessagePack
+     * Dictionary type with serialization functions for MessagePack and ZeroMQ
      */
     class Dictionary final : public std::map<std::string, Value> {
     public:
@@ -97,6 +46,19 @@ namespace constellation::config {
 
         /** Unpack dictionary with msgpack */
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
+
+        /** Assemble dictionary via msgpack for ZeroMQ */
+        CNSTLN_API std::shared_ptr<zmq::message_t> assemble() const;
+
+        /** Disassemble dictionary from ZeroMQ */
+        CNSTLN_API static Dictionary disassemble(const zmq::message_t& message);
+
+        /**
+         * @brief Convert dictionary to human readable string
+         *
+         * @return String with one line for each key-value pair starting `\n `
+         */
+        CNSTLN_API std::string to_string() const;
     };
 
 } // namespace constellation::config

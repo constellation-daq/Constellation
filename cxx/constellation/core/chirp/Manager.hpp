@@ -18,10 +18,10 @@
 
 #include <asio.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/chirp/BroadcastRecv.hpp"
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
-#include "constellation/core/config.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/utils/ports.hpp"
@@ -126,8 +126,8 @@ namespace constellation::chirp {
         CNSTLN_API virtual ~Manager();
 
         // No copy/move constructor/assignment
-        Manager(Manager& other) = delete;
-        Manager& operator=(Manager other) = delete;
+        Manager(const Manager& other) = delete;
+        Manager& operator=(const Manager& other) = delete;
         Manager(Manager&& other) = delete;
         Manager& operator=(Manager&& other) = delete;
 

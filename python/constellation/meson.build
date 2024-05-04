@@ -10,8 +10,9 @@ core_files = files(
   'core/chp.py',
   'core/cmdp.py',
   'core/cscp.py',
+  'core/cdtp.py',
   'core/controller.py',
-  'core/confighandler.py',
+  'core/configuration.py',
   'core/datareceiver.py',
   'core/datasender.py',
   'core/error.py',
@@ -21,8 +22,11 @@ core_files = files(
   'core/monitoring.py',
   'core/protocol.py',
   'core/satellite.py',
+<<<<<<< HEAD
   'core/confighandler.py',
   'core/H5datareader.py',
+=======
+>>>>>>> main
 )
 
 satellites_files = files(

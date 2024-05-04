@@ -18,8 +18,10 @@ importance = "low"
 [constellation.example_satellite.example_device2]
 # Device-specific system settings for network
 importance = "essential"
-start_after = "example_device1"
+start_after = "example_satellite.example_device1"
 
+[constellation.H5DataReceiverWriter]
+some_key = "some_value"
 
 [controller]
 # General system settings for controller
@@ -44,3 +46,6 @@ voltage = 5000
 [satellites.example_satellite.example_device2]
 # Device-specific system settings for satelli
 voltage = 3000
+
+[satellites.H5DataReceiverWriter]
+name_format = "test_data_{date}.h5"

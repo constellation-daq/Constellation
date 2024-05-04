@@ -19,7 +19,7 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/ports.hpp"
@@ -35,8 +35,8 @@ namespace constellation::satellite {
         CNSTLN_API ~SatelliteImplementation();
 
         // No copy/move constructor/assignment
-        SatelliteImplementation(SatelliteImplementation& other) = delete;
-        SatelliteImplementation& operator=(SatelliteImplementation other) = delete;
+        SatelliteImplementation(const SatelliteImplementation& other) = delete;
+        SatelliteImplementation& operator=(const SatelliteImplementation& other) = delete;
         SatelliteImplementation(SatelliteImplementation&& other) = delete;
         SatelliteImplementation& operator=(SatelliteImplementation&& other) = delete;
 

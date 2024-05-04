@@ -9,6 +9,7 @@ import operator
 import threading
 import time
 import zmq
+import os
 
 from constellation.core.satellite import Satellite
 
@@ -18,7 +19,9 @@ from constellation.core.chirp import (
 )
 
 from constellation.core.cscp import CommandTransmitter
+from constellation.core.cdtp import DataTransmitter
 from constellation.core.controller import BaseController
+from constellation.core.configuration import Configuration, flatten_config, load_config
 
 # chirp
 mock_chirp_packet_queue = []
@@ -27,6 +30,7 @@ mock_chirp_packet_queue = []
 mock_packet_queue_recv = {}
 mock_packet_queue_sender = {}
 send_port = 11111
+recv_port = 22222
 
 SNDMORE_MARK = (
     "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
@@ -190,6 +194,18 @@ def mock_cmd_transmitter(mock_socket_sender):
 
 
 @pytest.fixture
+def mock_data_transmitter(mock_socket_sender):
+    t = DataTransmitter("mock_sender", mock_socket_sender)
+    yield t
+
+
+@pytest.fixture
+def mock_data_receiver(mock_socket_receiver):
+    r = DataTransmitter("mock_receiver", mock_socket_receiver)
+    yield r
+
+
+@pytest.fixture
 def mock_satellite(mock_chirp_socket):
     """Create a mock Satellite base instance."""
 
@@ -228,3 +244,56 @@ def mock_controller(mock_chirp_socket):
         # give the threads a chance to start
         time.sleep(0.1)
         yield c
+
+
+@pytest.fixture
+def rawconfig():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cfg.toml")
+    yield load_config(path)
+
+
+@pytest.fixture
+def config(rawconfig):
+    """Fixture for specific configuration"""
+    config = flatten_config(
+        rawconfig,
+        "mocksat",
+        "device2",
+    )
+    yield Configuration(config)
+
+
+@pytest.fixture
+def mock_example_satellite(mock_chirp_socket):
+    """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        return m
+
+    class MockExampleSatellite(Satellite):
+        def do_initializing(self, payload):
+            self.voltage = self.config.setdefault("voltage", 10)
+            self.mode = self.config.setdefault("mode", "passionate")
+            return "finished with mock initialization"
+
+    with patch("constellation.core.base.zmq.Context") as mock:
+        mock_context = MagicMock()
+        mock_context.socket = mocket_factory
+        mock.return_value = mock_context
+        s = MockExampleSatellite(
+            "mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1"
+        )
+        t = threading.Thread(target=s.run_satellite)
+        t.start()
+        # give the threads a chance to start
+        time.sleep(0.1)
+        yield s
+
+
+def wait_for_state(fsm, state: str, timeout: float = 2.0):
+    while timeout > 0 and fsm.current_state.id != state:
+        time.sleep(0.05)
+        timeout -= 0.05
+    if timeout < 0:
+        raise RuntimeError(f"Never reached {state}")

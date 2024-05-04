@@ -15,20 +15,22 @@
 #include <string_view>
 #include <thread>
 
-#include "constellation/core/config.hpp"
+#include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
 
+    class FSM;
+
     class CNSTLN_API Satellite {
     public:
         virtual ~Satellite() = default;
 
         // No copy/move constructor/assignment
-        Satellite(Satellite& other) = delete;
-        Satellite& operator=(Satellite other) = delete;
+        Satellite(const Satellite& other) = delete;
+        Satellite& operator=(const Satellite& other) = delete;
         Satellite(Satellite&& other) = delete;
         Satellite& operator=(Satellite&& other) = delete;
 
@@ -40,7 +42,7 @@ namespace constellation::satellite {
          *
          * @param config Configuration of the Satellite
          */
-        virtual void initializing(const config::Configuration& config);
+        virtual void initializing(config::Configuration& config);
 
         /**
          * Launch satellite, i.e. apply configuration
@@ -110,6 +112,12 @@ namespace constellation::satellite {
         /** Return the canonical satellite name (type_name.satellite_name) */
         std::string getCanonicalName() const;
 
+        /** Return a const reference to the satellite configuration */
+        const config::Configuration& getConfig() const { return config_; }
+
+        /** Return a reference to the satellite logger */
+        log::Logger& getLogger() { return logger_; }
+
     protected:
         Satellite(std::string_view type_name, std::string_view satellite_name);
 
@@ -123,10 +131,21 @@ namespace constellation::satellite {
         log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
 
     private:
+        // FSM needs access to configuration
+        friend FSM;
+
+        /** Store configuration in satellite */
+        void store_config(config::Configuration&& config);
+
+        /** Updated configuration stored in satellite */
+        void update_config(const config::Configuration& partial_config);
+
+    private:
         bool support_reconfigure_ {false};
         std::string status_;
         std::string_view type_name_;
         std::string_view satellite_name_;
+        config::Configuration config_;
     };
 
     // Generator function that needs to be exported in a satellite library

@@ -7,6 +7,7 @@ core_src = files(
   'chirp/Manager.cpp',
   'config/Configuration.cpp',
   'config/Dictionary.cpp',
+  'config/Value.cpp',
   'config/exceptions.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
@@ -27,21 +28,6 @@ core_lib = library('ConstellationCore',
   install: true,
 )
 
-config_hpp_data = configuration_data()
-config_hpp_data.set('version', meson.project_version())
-config_hpp_data.set('libdir', get_option('prefix') / get_option('libdir'))
-config_hpp_data.set('builddir', meson.project_build_root())
-config_hpp = configure_file(
-  input: 'config.hpp',
-  output: 'config.hpp',
-  configuration: config_hpp_data,
-)
-
-install_headers(
-  config_hpp,
-  subdir: 'constellation/core',
-)
-
 install_headers(
   'chirp/BroadcastRecv.hpp',
   'chirp/BroadcastSend.hpp',
@@ -54,6 +40,8 @@ install_headers(
   'config/Configuration.hpp',
   'config/Configuration.tpp',
   'config/Dictionary.hpp',
+  'config/Value.hpp',
+  'config/Value.tpp',
   'config/exceptions.hpp',
   subdir: 'constellation/core/config',
 )
