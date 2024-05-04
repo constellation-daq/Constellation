@@ -34,6 +34,12 @@ namespace constellation::config {
 
         /** Unpack list with msgpack */
         CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
+
+        /** Assemble list via msgpack for ZeroMQ */
+        CNSTLN_API std::shared_ptr<zmq::message_t> assemble() const;
+
+        /** Disassemble list from ZeroMQ */
+        CNSTLN_API static List disassemble(const zmq::message_t& message);
     };
 
     /**

@@ -91,11 +91,7 @@ int main(int argc, char* argv[]) {
             try {
                 const auto dict = Dictionary::disassemble(*recv_msg.getPayload());
                 if(!dict.empty()) {
-                    std::cout << "Payload:";
-                    for(const auto& [key, value] : dict) {
-                        std::cout << "\n " << key << ": " << value.str();
-                    }
-                    std::cout << std::endl;
+                    std::cout << "Payload:" << dict.to_string() << std::endl;
                 }
             } catch(...) {
                 std::cout << "Payload: <could not unpack payload>" << std::endl;

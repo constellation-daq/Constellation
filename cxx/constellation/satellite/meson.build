@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 satellite_src = files(
+  'CommandRegistry.cpp',
   'FSM.cpp',
   'Satellite.cpp',
   'SatelliteImplementation.cpp',
@@ -31,6 +32,8 @@ satellite_dep = declare_dependency(
 )
 
 install_headers(
+  'CommandRegistry.hpp',
+  'CommandRegistry.tpp',
   'exceptions.hpp',
   'FSM.hpp',
   'fsm_definitions.hpp',

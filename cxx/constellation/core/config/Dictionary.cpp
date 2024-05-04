@@ -47,6 +47,17 @@ void List::msgpack_unpack(const msgpack::object& msgpack_object) {
     }
 }
 
+std::shared_ptr<zmq::message_t> List::assemble() const {
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, *this);
+    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+}
+
+List List::disassemble(const zmq::message_t& message) {
+    const auto msgpack_dict = msgpack::unpack(utils::to_char_ptr(message.data()), message.size());
+    return msgpack_dict->as<List>();
+}
+
 void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     msgpack_packer.pack_map(this->size());
 
