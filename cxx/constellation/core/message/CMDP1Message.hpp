@@ -85,14 +85,6 @@ namespace constellation::message {
 
     protected:
         /**
-         * Construct a new CMDP1 message
-         *
-         * @param topic Topic of the message
-         * @param header Header of the message
-         */
-        CMDP1Message(std::string topic, Header header);
-
-        /**
          * Construct a new CMDP1 message with payload
          *
          * @param topic Topic of the message
@@ -205,7 +197,7 @@ namespace constellation::message {
         CNSTLN_API static CMDP1StatMessage disassemble(zmq::multipart_t& frames);
 
     private:
-        std::string topic_;
+        std::string stat_topic_;
     };
 
 } // namespace constellation::message

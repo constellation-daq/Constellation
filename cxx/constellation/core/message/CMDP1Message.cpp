@@ -32,9 +32,6 @@ using namespace constellation::metrics;
 using namespace constellation::utils;
 using namespace std::literals::string_literals;
 
-CMDP1Message::CMDP1Message(std::string topic, CMDP1Message::Header header)
-    : topic_(std::move(topic)), header_(std::move(header)) {}
-
 CMDP1Message::CMDP1Message(std::string topic, CMDP1Message::Header header, message::PayloadBuffer&& payload)
     : topic_(std::move(topic)), header_(std::move(header)), payload_(std::move(payload)) {}
 
@@ -136,44 +133,30 @@ CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
 CMDP1StatMessage::CMDP1StatMessage(std::string topic,
                                    CMDP1Message::Header header,
                                    const std::shared_ptr<metrics::Metric>& metric)
-    : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), {}), topic_(std::move(topic)) {
-
-    // Pack the metrics payload
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, metric->value());
-    msgpack::pack(sbuf, magic_enum::enum_integer(metric->type()));
-    msgpack::pack(sbuf, metric->unit());
-
-    setPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
-}
+    : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), metric->assemble()),
+      stat_topic_(std::move(topic)) {}
 
 Metric CMDP1StatMessage::getMetric() const {
-    // Offset since we decode two separate msgpack objects
-    std::size_t offset = 0;
-    const auto payload = getPayload();
-
-    // Unpack value
-    const auto msgpack_value = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
-    const auto value = msgpack_value->as<config::Value>();
-
-    // Unpack type
-    const auto msgpack_type = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
-    const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
-
-    // Unpack unit
-    const auto msgpack_unit = msgpack::unpack(to_char_ptr(payload->data()), payload->size(), offset);
-    const auto unit = msgpack_unit->as<std::string>();
-
-    if(!type.has_value()) {
-        throw MessageDecodingError("Invalid metric type");
+    try {
+        const auto payload = getPayload();
+        if(!payload) {
+            throw MessageDecodingError("Missing message payload");
+        } else {
+            return Metric::disassemble(*payload);
+        }
+    } catch(const std::invalid_argument& e) {
+        throw MessageDecodingError(e.what());
     }
-    return {unit, type.value(), value};
 }
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message message) : CMDP1Message(std::move(message)) {
-    if(isLogMessage()) {
-        throw IncorrectMessageType("Not a metric message");
+    const auto topic = getTopic();
+    if(!topic.starts_with("STAT/")) {
+        throw MessageDecodingError("Not a metric message");
     }
+
+    // Assign topic after prefix "STAT/"
+    stat_topic_ = topic.substr(5);
 }
 
 CMDP1StatMessage CMDP1StatMessage::disassemble(zmq::multipart_t& frames) {

@@ -9,10 +9,45 @@
 
 #include "Metric.hpp"
 
+#include <msgpack.hpp>
+#include <zmq.hpp>
+
 #include <chrono>
 
 using namespace constellation::metrics;
 using namespace constellation::message;
+using namespace constellation::utils;
+
+std::shared_ptr<zmq::message_t> Metric::assemble() const {
+    msgpack::sbuffer sbuf {};
+    msgpack::pack(sbuf, this->value());
+    msgpack::pack(sbuf, magic_enum::enum_integer(this->type()));
+    msgpack::pack(sbuf, this->unit());
+    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+}
+
+Metric Metric::disassemble(const zmq::message_t& message) {
+    // Offset since we decode four separate msgpack objects
+    std::size_t offset = 0;
+
+    // Unpack value
+    const auto msgpack_value = msgpack::unpack(to_char_ptr(message.data()), message.size(), offset);
+    const auto value = msgpack_value->as<config::Value>();
+
+    // Unpack type
+    const auto msgpack_type = msgpack::unpack(to_char_ptr(message.data()), message.size(), offset);
+    const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
+
+    // Unpack unit
+    const auto msgpack_unit = msgpack::unpack(to_char_ptr(message.data()), message.size(), offset);
+    const auto unit = msgpack_unit->as<std::string>();
+
+    if(!type.has_value()) {
+        throw std::invalid_argument("Invalid metric type");
+    }
+
+    return {unit, type.value(), value};
+}
 
 void MetricTimer::update(const config::Value& value) {
     set(value);
