@@ -30,5 +30,6 @@ concepts/listener
 
 howtos/satellite_cxx
 howtos/satellite_py
+howtos/custom_commands
 howtos/port_eudaq
 ```
