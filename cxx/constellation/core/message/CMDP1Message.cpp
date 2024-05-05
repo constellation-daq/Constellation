@@ -141,9 +141,8 @@ Metric CMDP1StatMessage::getMetric() const {
         const auto payload = getPayload();
         if(!payload) {
             throw MessageDecodingError("Missing message payload");
-        } else {
-            return Metric::disassemble(*payload);
         }
+        return Metric::disassemble(*payload);
     } catch(const std::invalid_argument& e) {
         throw MessageDecodingError(e.what());
     }
