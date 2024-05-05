@@ -20,7 +20,6 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/utils/casts.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
@@ -201,7 +200,7 @@ TEST_CASE("Set & Get Path Values", "[core][core::config]") {
     // Read path array with check for existence
     REQUIRE_THROWS_MATCHES(config.getPathArray("patharray", true),
                            InvalidValueError,
-                           Message("Value [/tmp/somefile.txt,/tmp/someotherfile.txt,] of key 'patharray' is not valid: path "
+                           Message("Value [/tmp/somefile.txt, /tmp/someotherfile.txt] of key 'patharray' is not valid: path "
                                    "/tmp/somefile.txt not found"));
 
     // Attempt to read value that is not a string:
@@ -258,7 +257,7 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     config.setArray<double>("double", {1.3, 3.1});
     config.setArray<float>("float", {3.14F, 1.43F});
 
-    config.setArray<char>("binary", {0x1, 0x2, 0x3});
+    config.setArray<char>("binary", {0x1, 0xA, 0x1F});
 
     config.setArray<std::string>("string", {"a", "b", "c"});
 
@@ -271,17 +270,17 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     const std::chrono::system_clock::time_point tp {};
     config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
 
-    REQUIRE(config.getText("bool") == "[true,false,true,]");
-    REQUIRE(config.getText("int64") == "[63,62,61,]");
-    REQUIRE(config.getText("size") == "[1,2,3,]");
-    REQUIRE(config.getText("uint64") == "[64,65,66,]");
-    REQUIRE(config.getText("uint8") == "[8,7,6,]");
-    REQUIRE(config.getText("double") == "[1.3,3.1,]");
-    REQUIRE(config.getText("float") == "[3.14,1.43,]");
-    REQUIRE(config.getText("binary") == "[0x1,0x2,0x3,]");
-    REQUIRE(config.getText("string") == "[a,b,c,]");
+    REQUIRE(config.getText("bool") == "[true, false, true]");
+    REQUIRE(config.getText("int64") == "[63, 62, 61]");
+    REQUIRE(config.getText("size") == "[1, 2, 3]");
+    REQUIRE(config.getText("uint64") == "[64, 65, 66]");
+    REQUIRE(config.getText("uint8") == "[8, 7, 6]");
+    REQUIRE(config.getText("double") == "[1.3, 3.1]");
+    REQUIRE(config.getText("float") == "[3.14, 1.43]");
+    REQUIRE(config.getText("binary") == "[ 0x01 0x0A 0x1F ]");
+    REQUIRE(config.getText("string") == "[a, b, c]");
     REQUIRE(config.getText("time") ==
-            "[1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,1970-01-01 00:00:00.000000000,]");
+            "[1970-01-01 00:00:00.000000000, 1970-01-01 00:00:00.000000000, 1970-01-01 00:00:00.000000000]");
 }
 
 TEST_CASE("Count Key Appearances", "[core][core::config]") {

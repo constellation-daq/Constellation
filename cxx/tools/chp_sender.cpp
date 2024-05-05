@@ -18,7 +18,7 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
-#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;

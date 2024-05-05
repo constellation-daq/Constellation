@@ -20,7 +20,7 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std23.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
 using namespace constellation::message;
@@ -80,11 +80,8 @@ std::string BaseHeader::to_string() const {
     std::boolalpha(out);
     out << "Header: "sv << get_readable_protocol(protocol_) << '\n' //
         << "Sender: "sv << sender_ << '\n'                          //
-        << "Time:   "sv << time_ << '\n'                            //
-        << "Tags:"sv;
+        << "Time:   "sv << utils::to_string(time_) << '\n'          //
+        << "Tags:"sv << tags_.to_string();
 
-    for(const auto& entry : tags_) {
-        out << "\n "sv << entry.first << ": "sv << entry.second.str();
-    }
     return out.str();
 }
