@@ -497,13 +497,29 @@ docs:doxygen:
     - .fedora-sphinx
   script:
     - make -C docs doxygen
+  artifacts:
+    paths:
+      - docs/doxygen
+    expire_in: 24 hour
+
+docs:html:
+  extends:
+    - .docs
+    - .fedora-sphinx
+  variables:
+    SPHINXOPTS: -W --keep-going
+  script:
+    - make -C docs html
+  needs:
+    - job: docs:doxygen
+      artifacts: true
 
 # deploy stage
 
 deploy:docs:
   stage: deploy
   needs:
-    - job: docs:doxygen
+    - job: docs:html
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   trigger:
