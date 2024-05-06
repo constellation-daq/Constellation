@@ -86,11 +86,6 @@ variables:
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
 
-.fedora-sphinx:
-  image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
-  before_script:
-    - source /venv/bin/activate
-
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
@@ -144,6 +139,11 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *python-rules-changes
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
+.fedora-sphinx:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
+  before_script:
+    - source /venv/bin/activate
 
 # build stage
 
