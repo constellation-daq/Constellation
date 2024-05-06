@@ -10,8 +10,8 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
-#include <memory>
 #include <string>
+#include <utility>
 
 #include <msgpack.hpp>
 #include <zmq.hpp>
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
             const std::uint32_t run_nr = 1234U;
             msgpack::sbuffer sbuf {};
             msgpack::pack(sbuf, run_nr);
-            send_msg.addPayload(std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size()));
+            send_msg.addPayload(std::move(sbuf));
             std::cout << "Added run number " << run_nr << " to message" << std::endl;
         }
         send_msg.assemble().send(req);
@@ -89,7 +89,7 @@ int main(int argc, char* argv[]) {
         // Print payload if dict
         if(recv_msg.hasPayload()) {
             try {
-                const auto dict = Dictionary::disassemble(*recv_msg.getPayload());
+                const auto dict = Dictionary::disassemble(recv_msg.getPayload());
                 if(!dict.empty()) {
                     std::cout << "Payload:" << dict.to_string() << std::endl;
                 }

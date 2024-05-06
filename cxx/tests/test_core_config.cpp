@@ -22,11 +22,10 @@
 #include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
 
-using namespace std::literals::string_view_literals;
-
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::utils;
+using namespace std::literals::string_view_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -604,7 +603,7 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
 
     // Assemble & disassemble with all used keys:
     const auto config_zmq = config.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
-    const auto config_unpacked = Configuration(Dictionary::disassemble(*config_zmq));
+    const auto config_unpacked = Configuration(Dictionary::disassemble(config_zmq));
     REQUIRE(config_unpacked.size() == 1);
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
 }

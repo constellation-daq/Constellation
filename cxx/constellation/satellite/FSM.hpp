@@ -20,6 +20,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/message/payload_buffer.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
@@ -97,8 +98,8 @@ namespace constellation::satellite {
          * @param payload Payload frame from CSCP
          * @return Tuple containing the CSCP message type and a description
          */
-        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string>
-        reactCommand(TransitionCommand transition_command, const std::shared_ptr<zmq::message_t>& payload);
+        CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCommand(TransitionCommand transition_command,
+                                                                                    const message::payload_buffer& payload);
 
         /**
          * @brief Try to perform an interrupt as soon as possible

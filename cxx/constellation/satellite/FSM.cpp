@@ -12,7 +12,6 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
-#include <memory>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -26,6 +25,7 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/message/payload_buffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
@@ -91,7 +91,7 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
 }
 
 std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand transition_command,
-                                                             const std::shared_ptr<zmq::message_t>& payload) {
+                                                             const payload_buffer& payload) {
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
@@ -112,22 +112,22 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     // Check if payload only in initialize, reconfigure, and start
     auto should_have_payload =
         (transition == Transition::initialize || transition == Transition::reconfigure || transition == Transition::start);
-    if(should_have_payload && !payload) {
+    if(should_have_payload && payload.empty()) {
         std::string payload_info {"Transition " + to_string(transition) + " requires a payload frame"};
         LOG(logger_, WARNING) << payload_info;
         return {CSCP1Message::Type::INCOMPLETE, std::move(payload_info)};
     }
     // If there is a payload, but it is not used add a note in the reply
-    const std::string payload_note = (!should_have_payload && payload) ? " (payload frame is ignored)"s : ""s;
+    const std::string payload_note = (!should_have_payload && !payload.empty()) ? " (payload frame is ignored)"s : ""s;
 
     // Try to decode the payload:
     TransitionPayload fsm_payload {};
     try {
-        if(payload && !payload->empty()) {
+        if(!payload.empty()) {
             if(transition == Transition::initialize || transition == Transition::reconfigure) {
-                fsm_payload = Configuration(Dictionary::disassemble(*payload));
+                fsm_payload = Configuration(Dictionary::disassemble(payload));
             } else if(transition == Transition::start) {
-                const auto msgpack_payload = msgpack::unpack(utils::to_char_ptr(payload->data()), payload->size());
+                const auto msgpack_payload = msgpack::unpack(to_char_ptr(payload.span().data()), payload.span().size());
                 fsm_payload = msgpack_payload->as<std::uint32_t>();
             }
         }
