@@ -4,3 +4,4 @@
 # Documentation build directory
 /build/
 /doxygen/
+/index.md

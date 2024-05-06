@@ -33,8 +33,8 @@ status message has to be explicitly queried via a [command](#satellite-commands)
 The Constellation satellite class exposes a set of remote procedure calls, called "commands" in the following, through the
 CSCP protocol. This comprises commands to initiate state transitions of the [finite state machine](#satellite-fsm) as well as
 methods to query additional information from the satellite. A brief description of the CSCP protocol is provided
-[in the protocol section](/manual/concepts/protocols) of the user guide and the full protocol definition and grammar can be found in
-the [appendix](/protocols/cscp).
+[in the protocol section](../../reference/protocols.md) of the user guide and the full protocol definition and grammar can
+be found in the [appendix](../../protocols/cscp.md).
 
 Commands consist of a command name and an optional payload. The command name shall only contain alphanumeric characters or
 underscores and cannot start with a digit. The following commands represent the minimal set of procedures a satellite needs

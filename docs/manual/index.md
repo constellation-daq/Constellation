@@ -19,6 +19,7 @@ concepts/logging
 concepts/satellite
 concepts/controller
 concepts/listener
+concepts/statistics
 ```
 
 ```{toctree}

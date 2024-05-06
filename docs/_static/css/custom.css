@@ -1,0 +1,12 @@
+/* SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+/* SPDX-License-Identifier: CC-BY-4.0 */
+
+html[data-theme="light"] {
+    --pst-color-primary: #2da8d8ff;
+    --pst-color-secondary: #d9514eff;
+}
+
+html[data-theme="dark"] {
+    --pst-color-primary: #2da8d8ff;
+    --pst-color-secondary: #d9514eff;
+}
