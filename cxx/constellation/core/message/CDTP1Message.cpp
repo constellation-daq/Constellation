@@ -9,12 +9,21 @@
 
 #include "CDTP1Message.hpp"
 
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <stdexcept>
+#include <string>
+
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/message/payload_buffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std23.hpp"
@@ -100,7 +109,7 @@ std::string CDTP1Message::Header::to_string() const {
 }
 
 CDTP1Message::CDTP1Message(Header header, size_t frames) : header_(std::move(header)) {
-    payload_frames_.reserve(frames);
+    payload_buffers_.reserve(frames);
 }
 
 zmq::multipart_t CDTP1Message::assemble() {
@@ -109,40 +118,30 @@ zmq::multipart_t CDTP1Message::assemble() {
     // First frame: header
     msgpack::sbuffer sbuf_header {};
     msgpack::pack(sbuf_header, header_);
-    frames.addmem(sbuf_header.data(), sbuf_header.size());
+    frames.add(payload_buffer(std::move(sbuf_header)).to_zmq_msg_release());
 
-    // Second frame until Nth frame: payload
-    for(auto& frame : payload_frames_) {
-        if(!frame->empty()) {
-            zmq::message_t new_frame {};
-            new_frame.swap(*frame);
-            frames.add(std::move(new_frame));
-        }
+    // Second frame until Nth frame: always move payload (no reuse)
+    for(auto& payload_buffer : payload_buffers_) {
+        frames.add(payload_buffer.to_zmq_msg_release());
     }
-    // clear payload_frames_ member as payload has been swapped
-    payload_frames_.clear();
+    // clear payload_frames_ member as payload buffers has been released
+    payload_buffers_.clear();
     return frames;
 }
 
 CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
-    if(frames.size() < 2) {
-        // TODO(simonspa): throw
-    }
-
-    auto frame_it = frames.begin();
+    // Note: also only 1 frame is ok (e.g. EOR)
 
     // Decode header
-    const auto header = Header::disassemble({to_byte_ptr(frame_it->data()), frame_it->size()});
-    std::advance(frame_it, 1);
+    const auto header_frame = frames.pop();
+    const auto header = Header::disassemble({to_byte_ptr(header_frame.data()), header_frame.size()});
 
     // Create message, reversing space for frames
-    auto cdtp_message = CDTP1Message(header, frames.size() - 1);
+    auto cdtp_message = CDTP1Message(header, frames.size());
 
-    // Swap payload
-    for(; frame_it != frames.end(); frame_it++) {
-        auto new_frame = std::make_shared<zmq::message_t>();
-        new_frame->swap(*frame_it);
-        cdtp_message.addPayload(std::move(new_frame));
+    // Move payload frames into buffers
+    while(!frames.empty()) {
+        cdtp_message.addPayload(frames.pop());
     }
 
     return cdtp_message;

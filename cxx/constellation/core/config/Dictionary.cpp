@@ -10,16 +10,16 @@
 #include "Dictionary.hpp"
 
 #include <msgpack.hpp>
-#include <zmq.hpp>
 
-#include <memory>
 #include <span>
 #include <string>
 #include <utility>
 
+#include "constellation/core/message/payload_buffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 
 using namespace constellation::config;
+using namespace constellation::message;
 using namespace constellation::utils;
 
 void List::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
@@ -47,14 +47,14 @@ void List::msgpack_unpack(const msgpack::object& msgpack_object) {
     }
 }
 
-std::shared_ptr<zmq::message_t> List::assemble() const {
+payload_buffer List::assemble() const {
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, *this);
-    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+    return {std::move(sbuf)};
 }
 
-List List::disassemble(const zmq::message_t& message) {
-    const auto msgpack_dict = msgpack::unpack(utils::to_char_ptr(message.data()), message.size());
+List List::disassemble(const payload_buffer& message) {
+    const auto msgpack_dict = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size());
     return msgpack_dict->as<List>();
 }
 
@@ -91,14 +91,14 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
     }
 }
 
-std::shared_ptr<zmq::message_t> Dictionary::assemble() const {
+payload_buffer Dictionary::assemble() const {
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, *this);
-    return std::make_shared<zmq::message_t>(sbuf.data(), sbuf.size());
+    return {std::move(sbuf)};
 }
 
-Dictionary Dictionary::disassemble(const zmq::message_t& message) {
-    const auto msgpack_dict = msgpack::unpack(utils::to_char_ptr(message.data()), message.size());
+Dictionary Dictionary::disassemble(const payload_buffer& message) {
+    const auto msgpack_dict = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size());
     return msgpack_dict->as<Dictionary>();
 }
 

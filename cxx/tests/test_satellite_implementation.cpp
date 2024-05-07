@@ -104,7 +104,7 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
     REQUIRE(recv_msg_get_commands.hasPayload());
-    const auto get_commands_dict = Dictionary::disassemble(*recv_msg_get_commands.getPayload());
+    const auto get_commands_dict = Dictionary::disassemble(recv_msg_get_commands.getPayload());
     REQUIRE(get_commands_dict.contains("get_commands"));
     REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
     REQUIRE(get_commands_dict.contains("my_cmd"));
@@ -136,7 +136,7 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Configuration attached in payload"));
     REQUIRE(recv_msg_get_config.hasPayload());
-    const auto config = Configuration(Dictionary::disassemble(*recv_msg_get_config.getPayload()));
+    const auto config = Configuration(Dictionary::disassemble(recv_msg_get_config.getPayload()));
     REQUIRE(config.size() == 0);
     // TODO(stephan.lachnit): test with a non-empty configuration
 }
@@ -155,8 +155,8 @@ TEST_CASE("User commands", "[satellite]") {
     REQUIRE(recv_msg_usr_cmd.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd.getVerb().second), Equals(""));
     REQUIRE(recv_msg_usr_cmd.hasPayload());
-    const auto usrmsgpayload = recv_msg_usr_cmd.getPayload();
-    const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload->data()), usrmsgpayload->size());
+    const auto& usrmsgpayload = recv_msg_usr_cmd.getPayload();
+    const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload.span().data()), usrmsgpayload.span().size());
     REQUIRE(usrpayload->as<int>() == 2);
 
     // my_usr_cmd_arg with argument as payload
@@ -165,15 +165,15 @@ TEST_CASE("User commands", "[satellite]") {
     List args {};
     args.push_back(4);
     msgpack::pack(sbuf, args);
-    usr_cmd_arg_msg.addPayload(std::make_shared<zmq::message_t>(to_byte_ptr(sbuf.data()), sbuf.size()));
+    usr_cmd_arg_msg.addPayload(std::move(sbuf));
     sender.send(usr_cmd_arg_msg);
 
     auto recv_msg_usr_cmd_arg = sender.recv();
     REQUIRE(recv_msg_usr_cmd_arg.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_arg.getVerb().second), Equals(""));
     REQUIRE(recv_msg_usr_cmd_arg.hasPayload());
-    const auto usrargmsgpayload = recv_msg_usr_cmd_arg.getPayload();
-    const auto usrargpayload = msgpack::unpack(to_char_ptr(usrargmsgpayload->data()), usrargmsgpayload->size());
+    const auto& usrargmsgpayload = recv_msg_usr_cmd_arg.getPayload();
+    const auto usrargpayload = msgpack::unpack(to_char_ptr(usrargmsgpayload.span().data()), usrargmsgpayload.span().size());
     REQUIRE(usrargpayload->as<int>() == 8);
 
     // my_cmd_void user command without arguments and return value
@@ -331,8 +331,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    auto initialize_payload = std::make_shared<zmq::message_t>("dummy payload");
-    initialize_msg.addPayload(std::move(initialize_payload));
+    initialize_msg.addPayload({"dummy_payload"});
     sender.send(initialize_msg);
 
     // Check reply
@@ -404,7 +403,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong payload encoding
     auto nolist_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    auto nolist_payload = std::make_shared<zmq::message_t>("dummy payload");
+    auto nolist_payload = payload_buffer("dummy payload");
     nolist_msg.addPayload(std::move(nolist_payload));
     sender.send(nolist_msg);
 
