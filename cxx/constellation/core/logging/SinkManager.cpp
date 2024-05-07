@@ -101,12 +101,14 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     console_sink_->set_formatter(std::move(formatter));
 
     // Set colors of console sink
+#ifndef _WIN32
     console_sink_->set_color(to_spdlog_level(CRITICAL), "\x1B[31;1m"); // Bold red
     console_sink_->set_color(to_spdlog_level(STATUS), "\x1B[32;1m");   // Bold green
     console_sink_->set_color(to_spdlog_level(WARNING), "\x1B[33;1m");  // Bold yellow
     console_sink_->set_color(to_spdlog_level(INFO), "\x1B[36;1m");     // Bold cyan
     console_sink_->set_color(to_spdlog_level(DEBUG), "\x1B[36m");      // Cyan
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m");      // Grey
+#endif
 
     // Create console logger for CMDP
     cmdp_console_logger_ = std::make_shared<spdlog::async_logger>(

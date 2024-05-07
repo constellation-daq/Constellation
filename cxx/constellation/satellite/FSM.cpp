@@ -191,7 +191,7 @@ template <typename... Args> void launch_assign_thread(std::thread& thread, Args.
     thread = std::thread(args...);
 }
 
-// NOLINTBEGIN(performance-unnecessary-value-param)
+// NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 State FSM::initialize(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration config) {
@@ -205,6 +205,10 @@ State FSM::initialize(TransitionPayload payload) {
     return State::initializing;
 }
 
+State FSM::initialized(TransitionPayload /* payload */) {
+    return State::INIT;
+}
+
 State FSM::launch(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling launching function of satellite...";
@@ -213,6 +217,10 @@ State FSM::launch(TransitionPayload /* payload */) {
     };
     launch_assign_thread(transitional_thread_, call_wrapper);
     return State::launching;
+}
+
+State FSM::launched(TransitionPayload /* payload */) {
+    return State::ORBIT;
 }
 
 State FSM::land(TransitionPayload /* payload */) {
@@ -225,6 +233,10 @@ State FSM::land(TransitionPayload /* payload */) {
     return State::landing;
 }
 
+State FSM::landed(TransitionPayload /* payload */) {
+    return State::INIT;
+}
+
 State FSM::reconfigure(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
@@ -235,6 +247,10 @@ State FSM::reconfigure(TransitionPayload payload) {
     };
     launch_assign_thread(transitional_thread_, call_wrapper, std::get<Configuration>(std::move(payload)));
     return State::reconfiguring;
+}
+
+State FSM::reconfigured(TransitionPayload /* payload */) {
+    return State::ORBIT;
 }
 
 State FSM::start(TransitionPayload payload) {
@@ -271,6 +287,10 @@ State FSM::stop(TransitionPayload /* payload */) {
     return State::stopping;
 }
 
+State FSM::stopped(TransitionPayload /* payload */) {
+    return State::ORBIT;
+}
+
 State FSM::interrupt(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
@@ -280,6 +300,10 @@ State FSM::interrupt(TransitionPayload /* payload */) {
     };
     launch_assign_thread(transitional_thread_, call_wrapper, this->state_);
     return State::interrupting;
+}
+
+State FSM::interrupted(TransitionPayload /* payload */) {
+    return State::SAFE;
 }
 
 State FSM::failure(TransitionPayload /* payload */) {
@@ -292,4 +316,4 @@ State FSM::failure(TransitionPayload /* payload */) {
     return State::ERROR;
 }
 
-// NOLINTEND(performance-unnecessary-value-param)
+// NOLINTEND(performance-unnecessary-value-param,readability-convert-member-functions-to-static)

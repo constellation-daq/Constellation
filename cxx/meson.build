@@ -11,8 +11,8 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1'],
 )
 
-# ZeroMQ
-libzmq_dep = dependency('libzmq',
+# ZeroMQ (get libzmq first to set options in case of a fallback)
+dependency('libzmq',
   default_options: [
     'drafts=true',
     'websockets=disabled',
@@ -32,6 +32,13 @@ msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 
 # spdlog
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
+
+# Compilation arguments
+constellation_args = []
+if host_machine.system() == 'windows'
+  # Disable parts of Windows API with conflicting macro definitions
+  constellation_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
+endif
 
 constellation_inc = include_directories('.')
 

@@ -121,23 +121,21 @@ namespace constellation::satellite {
          */
         TransitionFunction findTransitionFunction(Transition transition);
 
-        // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
-        CNSTLN_API auto initialize(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto initialized(TransitionPayload /* payload */) -> State { return State::INIT; }
-        CNSTLN_API auto launch(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto launched(TransitionPayload /* payload */) -> State { return State::ORBIT; }
-        CNSTLN_API auto land(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto landed(TransitionPayload /* payload */) -> State { return State::INIT; }
-        CNSTLN_API auto reconfigure(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto reconfigured(TransitionPayload /* payload */) -> State { return State::ORBIT; }
-        CNSTLN_API auto start(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto started(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto stop(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto stopped(TransitionPayload /* payload */) -> State { return State::ORBIT; }
-        CNSTLN_API auto interrupt(TransitionPayload /* payload */) -> State;
-        CNSTLN_API auto interrupted(TransitionPayload /* payload */) -> State { return State::SAFE; }
-        CNSTLN_API auto failure(TransitionPayload /* payload */) -> State;
-        // NOLINTEND(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
+        CNSTLN_API auto initialize(TransitionPayload payload) -> State;
+        CNSTLN_API auto initialized(TransitionPayload payload) -> State;
+        CNSTLN_API auto launch(TransitionPayload payload) -> State;
+        CNSTLN_API auto launched(TransitionPayload payload) -> State;
+        CNSTLN_API auto land(TransitionPayload payload) -> State;
+        CNSTLN_API auto landed(TransitionPayload payload) -> State;
+        CNSTLN_API auto reconfigure(TransitionPayload payload) -> State;
+        CNSTLN_API auto reconfigured(TransitionPayload payload) -> State;
+        CNSTLN_API auto start(TransitionPayload payload) -> State;
+        CNSTLN_API auto started(TransitionPayload payload) -> State;
+        CNSTLN_API auto stop(TransitionPayload payload) -> State;
+        CNSTLN_API auto stopped(TransitionPayload payload) -> State;
+        CNSTLN_API auto interrupt(TransitionPayload payload) -> State;
+        CNSTLN_API auto interrupted(TransitionPayload payload) -> State;
+        CNSTLN_API auto failure(TransitionPayload payload) -> State;
 
         // clang-format off
         const StateTransitionMap state_transition_map_ { // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
