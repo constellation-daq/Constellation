@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Implementation of the CHP manager
+ * @brief Implementation of the heartbeat manager
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -47,9 +47,10 @@ std::optional<State> HeartbeatManager::getRemoteState(std::string_view remote) {
     const auto remote_it = remotes_.find(remote);
     if(remote_it != remotes_.end()) {
         return remote_it->second.last_state;
-    } else {
-        return {};
     }
+
+    // Remote unknown, return empty optional
+    return {};
 }
 
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {

@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
 
     Logger logger {"chp_receiver"};
 
-    HeartbeatRecv receiver {[&](const CHP1Message& msg) {
+    const HeartbeatRecv receiver {[&](const CHP1Message& msg) {
         LOG(logger, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                            << ", next message in " << msg.getInterval().count();
     }};

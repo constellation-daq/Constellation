@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief CMDP log receiver
+ * @brief Heartbeat receiver implementation
  *
- * @copyright Copyright (c) 2023 DESY and the Constellation authors.
+ * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
@@ -152,6 +152,7 @@ void HeartbeatRecv::callback_impl(const chirp::DiscoveredService& service, bool 
     cv_.notify_one();
 }
 
+// NOLINTNEXTLINE(performance-unnecessary-value-param)
 void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
     auto* instance = std::any_cast<HeartbeatRecv*>(user_data);
     instance->callback_impl(std::move(service), depart);

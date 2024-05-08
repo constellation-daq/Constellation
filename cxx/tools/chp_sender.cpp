@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
     chirp_manager.start();
 
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
-    HeartbeatSend sender {argv[2], interval};
+    const HeartbeatSend sender {argv[2], interval};
 
     // FIXME better solution to wait until we interrupt?
     std::this_thread::sleep_for(500s);
