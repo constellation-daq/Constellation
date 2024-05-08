@@ -44,20 +44,7 @@ int main(int argc, char* argv[]) {
                            << ", next message in " << msg.getInterval().count();
     }};
 
-    auto receiver_thread = std::jthread(std::bind_front(&HeartbeatRecv::loop, &receiver));
-
-    std::once_flag shut_down_flag {};
-    signal_handler_f = [&](int /*signal*/) -> void {
-        std::call_once(shut_down_flag, [&]() { receiver_thread.request_stop(); });
-    };
-    // NOLINTBEGIN(cert-err33-c)
-    std::signal(SIGTERM, &signal_hander);
-    std::signal(SIGINT, &signal_hander);
-    // NOLINTEND(cert-err33-c)
-
-    if(receiver_thread.joinable()) {
-        receiver_thread.join();
-    }
-
+    // FIXME better solution to wait until we interrupt?
+    std::this_thread::sleep_for(500s);
     return 0;
 }
