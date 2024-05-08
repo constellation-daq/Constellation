@@ -45,24 +45,37 @@ HeartbeatSend::HeartbeatSend(std::string_view sender, std::chrono::milliseconds 
 }
 
 HeartbeatSend::~HeartbeatSend() {
-    sender_thread_.request_stop();
-    cv_.notify_one();
-    if(sender_thread_.joinable()) {
-        sender_thread_.join();
-    }
 
     // Send CHIRP depart message
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
         chirp_manager->unregisterService(chirp::HEARTBEAT, port_);
     }
+
+    // Stop sender thread
+    sender_thread_.request_stop();
+    cv_.notify_one();
+    if(sender_thread_.joinable()) {
+        sender_thread_.join();
+    }
+}
+
+void HeartbeatSend::updateState(State state) {
+    // Update state and wake up sending thread
+    state_ = state;
+    cv_.notify_one();
 }
 
 void HeartbeatSend::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock(mutex_);
 
+        // Publish CHP message with current state
         CHP1Message(sender_, state_, interval_).assemble().send(pub_);
+
+        // Wait until either the interval before sending the next regular heartbeat has passed - or the state changes
+        // The state is captured in the lambda as copy upon invocation such that it represents the state when entering the
+        // waiting state
         cv_.wait_until(lock, std::chrono::system_clock::now() + interval_ / 2, [&, state = state_]() {
             return stop_token.stop_requested() || state != state_;
         });

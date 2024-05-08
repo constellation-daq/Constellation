@@ -59,20 +59,39 @@ namespace constellation::heartbeat {
         HeartbeatRecv(HeartbeatRecv&& other) = delete;
         HeartbeatRecv& operator=(HeartbeatRecv&& other) = delete;
 
-        void callback_impl(const chirp::DiscoveredService& service, bool depart);
-
+        /**
+         * @brief Callback for CHIRP service discovery
+         * @details This callback is run for every heartbeat service service discovered on or departing from the
+         * constellation. It will connect or disconnect the remote heartbeat service and register the corresponding socket
+         * with the central polling mechanism
+         *
+         * @param service Discovered service
+         * @param depart Boolean to indicate discovery or departure
+         * @param user_data Pointer to the heartbeat receiver instance
+         */
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
     private:
+        /** Callback implementation */
+        void callback_impl(const chirp::DiscoveredService& service, bool depart);
+
+        /** Main loop polling the registered sockets */
         void loop(const std::stop_token& stop_token);
+
+        /** Helper to connect to a newly discovered socket */
         void connect(const chirp::DiscoveredService& service);
+
+        /** Helper to disconnect from a departing heartbeat service */
         void disconnect(const chirp::DiscoveredService& service);
+
+        /** Disconnect from all registered heartbeat services */
         void disconnect_all();
 
         log::Logger logger_;
         zmq::context_t context_;
         zmq::active_poller_t poller_;
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
+
         std::mutex sockets_mutex_;
         std::condition_variable cv_;
         std::jthread receiver_thread_;
