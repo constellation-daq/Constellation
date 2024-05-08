@@ -27,7 +27,7 @@ if pkgconfig.found()
   }
   ''', args: libzmq_sys_pkgconfig_flags.stdout().split(), name: 'libzmq_sys_has_draft_api_poller')
 endif
-# Options for the libzmq subproject (use both in subproject and dependency in case of forcefallback)
+# Options for the libzmq and cppzmq subprojects (use both in subproject and dependency in case of forcefallback)
 libzmq_sp_default_options = [
   'drafts=true',
   'websockets=disabled',
@@ -36,14 +36,20 @@ libzmq_sp_default_options = [
   'norm=disabled',
   'warning_level=0',
 ]
+cppzmq_sp_default_options = [
+  'examples=false',
+  'tests=disabled',
+]
 if not libzmq_sys_has_draft_api_poller
-  # Override libzmq dependency to always use fallback, regardless of meson settings
+  # Override libzmq and cppzmq dependencies to always use fallback, regardless of meson settings
   libzmq_sp = subproject('libzmq', default_options: libzmq_sp_default_options)
   meson.override_dependency('libzmq', libzmq_sp.get_variable('libzmq_dep'))
+  cppzmq_sp = subproject('cppzmq', default_options: cppzmq_sp_default_options)
+  meson.override_dependency('cppzmq', cppzmq_sp.get_variable('cppzmq_dep'))
 endif
 # Get libzmq dependency first and then cppzmq dependency to ensure libzmq is setup up correctly with draft API
-dependency('libzmq', default_options: libzmq_sp_default_options)
-cppzmq_dep = dependency('cppzmq', default_options: ['examples=false', 'tests=disabled'])
+libzmq_dep = dependency('libzmq', default_options: libzmq_sp_default_options)
+cppzmq_dep = dependency('cppzmq', default_options: cppzmq_sp_default_options)
 
 # magic_enum
 magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
