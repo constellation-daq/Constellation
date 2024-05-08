@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+cpp = meson.get_compiler('cpp')
+pkgconfig = find_program('pkg-config', required: false)
+
 # argparse
 argparse_dep = dependency('argparse')
 
@@ -11,16 +14,35 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1'],
 )
 
-# ZeroMQ (get libzmq first to set options in case of a fallback)
-dependency('libzmq',
-  default_options: [
-    'drafts=true',
-    'websockets=disabled',
-    'curve=false',
-    'openpgm=disabled',
-    'norm=disabled',
-    'warning_level=0',
-])
+# ZeroMQ with draft API
+libzmq_sys_has_draft_api_poller = false
+# Check system libzmq (we cannot use dependency since we would have to overwrite it)
+if pkgconfig.found()
+  libzmq_sys_pkgconfig_flags = run_command([pkgconfig, 'libzmq', '--cflags', '--libs'], check: false)
+  libzmq_sys_has_draft_api_poller = cpp.links('''
+  #include <zmq.h>
+  int main() {
+    zmq_poller_new();
+    return 0;
+  }
+  ''', args: libzmq_sys_pkgconfig_flags.stdout().split(), name: 'libzmq_sys_has_draft_api_poller')
+endif
+# Options for the libzmq subproject (use both in subproject and dependency in case of forcefallback)
+libzmq_sp_default_options = [
+  'drafts=true',
+  'websockets=disabled',
+  'curve=false',
+  'openpgm=disabled',
+  'norm=disabled',
+  'warning_level=0',
+]
+if not libzmq_sys_has_draft_api_poller
+  # Override libzmq dependency to always use fallback, regardless of meson settings
+  libzmq_sp = subproject('libzmq', default_options: libzmq_sp_default_options)
+  meson.override_dependency('libzmq', libzmq_sp.get_variable('libzmq_dep'))
+endif
+# Get libzmq dependency first and then cppzmq dependency to ensure libzmq is setup up correctly with draft API
+dependency('libzmq', default_options: libzmq_sp_default_options)
 cppzmq_dep = dependency('cppzmq', default_options: ['examples=false', 'tests=disabled'])
 
 # magic_enum
