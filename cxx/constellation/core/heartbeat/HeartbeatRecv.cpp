@@ -36,10 +36,14 @@ using namespace std::literals::chrono_literals;
 
 HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct)
     : logger_("CHP"), message_callback_(std::move(fct)) {
-    // Register CHIRP callback
-    chirp::Manager::getDefaultInstance()->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
-    // Request currently active heartbeating services
-    chirp::Manager::getDefaultInstance()->sendRequest(chirp::HEARTBEAT);
+
+    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    if(chirp_manager != nullptr) {
+        // Register CHIRP callback
+        chirp_manager->registerDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT, this);
+        // Request currently active heartbeating services
+        chirp_manager->sendRequest(chirp::HEARTBEAT);
+    }
 }
 
 HeartbeatRecv::~HeartbeatRecv() {
