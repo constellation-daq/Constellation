@@ -29,9 +29,28 @@
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::heartbeat {
+
+    /**
+     * Receiver class for distributed heartbeats in a constellation
+     *
+     * This class registers a CHIRP callback for heartbeat services, subscribes automatically to all available and appearing
+     * services in the constellation and listens for heartbeat and extrasystole messages from remote satellites and forwards
+     * them to a callback registered upon creation of the receiver
+     */
     class CNSTLN_API HeartbeatRecv {
     public:
+        /**
+         * @brief Construct heartbeat receiver
+         *
+         * @param fct Callback function pointer for received heartbeat messages
+         */
         HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct);
+
+        /**
+         * @brief Destruct heartbeat receiver
+         *
+         * This closes all connections and unregisters the CHIRP service discovery callback
+         */
         virtual ~HeartbeatRecv();
 
         // No copy/move constructor/assignment

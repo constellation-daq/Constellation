@@ -45,11 +45,18 @@ HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fc
         chirp_manager->sendRequest(chirp::HEARTBEAT);
     }
 
-    // Start the thread
+    // Start the receiver thread
     receiver_thread_ = std::jthread(std::bind_front(&HeartbeatRecv::loop, this));
 }
 
 HeartbeatRecv::~HeartbeatRecv() {
+    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    if(chirp_manager != nullptr) {
+        // Unregister CHIRP discovery callback:
+        chirp_manager->unregisterDiscoverCallback(&HeartbeatRecv::callback, chirp::HEARTBEAT);
+    }
+
+    // Stop the receiver thread
     receiver_thread_.request_stop();
     cv_.notify_one();
 
@@ -57,6 +64,7 @@ HeartbeatRecv::~HeartbeatRecv() {
         receiver_thread_.join();
     }
 
+    // Disconnect from all remote sockets
     disconnect_all();
 }
 
