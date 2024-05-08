@@ -40,9 +40,17 @@ HeartbeatSend::HeartbeatSend(std::string_view sender, std::chrono::milliseconds 
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(chirp::HEARTBEAT, port_);
     }
+
+    sender_thread_ = std::jthread(std::bind_front(&HeartbeatSend::loop, this));
 }
 
 HeartbeatSend::~HeartbeatSend() {
+    sender_thread_.request_stop();
+    cv_.notify_one();
+    if(sender_thread_.joinable()) {
+        sender_thread_.join();
+    }
+
     // Send CHIRP depart message
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {

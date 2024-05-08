@@ -32,17 +32,10 @@ HeartbeatManager::HeartbeatManager(std::string_view sender)
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
-    receiver_thread_.request_stop();
-    sender_thread_.request_stop();
+    cv_.notify_one();
 
     if(watchdog_thread_.joinable()) {
         watchdog_thread_.join();
-    }
-    if(receiver_thread_.joinable()) {
-        receiver_thread_.join();
-    }
-    if(sender_thread_.joinable()) {
-        sender_thread_.join();
     }
 }
 
@@ -90,8 +83,6 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
 
 void HeartbeatManager::start() {
     // jthread immediately starts on construction
-    receiver_thread_ = std::jthread(std::bind_front(&HeartbeatRecv::loop, &receiver_));
-    sender_thread_ = std::jthread(std::bind_front(&HeartbeatSend::loop, &sender_));
     watchdog_thread_ = std::jthread(std::bind_front(&HeartbeatManager::run, this));
 }
 

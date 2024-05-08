@@ -93,8 +93,6 @@ namespace constellation::heartbeat {
 
         log::Logger logger_;
 
-        std::jthread receiver_thread_;
-        std::jthread sender_thread_;
         std::jthread watchdog_thread_;
     };
 } // namespace constellation::heartbeat

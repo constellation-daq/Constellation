@@ -44,9 +44,19 @@ HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fc
         // Request currently active heartbeating services
         chirp_manager->sendRequest(chirp::HEARTBEAT);
     }
+
+    // Start the thread
+    receiver_thread_ = std::jthread(std::bind_front(&HeartbeatRecv::loop, this));
 }
 
 HeartbeatRecv::~HeartbeatRecv() {
+    receiver_thread_.request_stop();
+    cv_.notify_one();
+
+    if(receiver_thread_.joinable()) {
+        receiver_thread_.join();
+    }
+
     disconnect_all();
 }
 
@@ -142,9 +152,12 @@ void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std:
 void HeartbeatRecv::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock(sockets_mutex_);
-        cv_.wait(lock, [this] { return !sockets_.empty(); });
-
+        cv_.wait(lock, [this, stop_token] { return !sockets_.empty() || stop_token.stop_requested(); });
         lock.unlock();
-        poller_.wait(1000ms);
+
+        // Poller crashes if called with no sockets attached:
+        if(!sockets_.empty()) {
+            poller_.wait(1000ms);
+        }
     }
 }

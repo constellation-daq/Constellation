@@ -43,9 +43,8 @@ namespace constellation::heartbeat {
 
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
-        void loop(const std::stop_token& stop_token);
-
     private:
+        void loop(const std::stop_token& stop_token);
         void connect(const chirp::DiscoveredService& service);
         void disconnect(const chirp::DiscoveredService& service);
         void disconnect_all();
@@ -56,6 +55,7 @@ namespace constellation::heartbeat {
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::mutex sockets_mutex_;
         std::condition_variable cv_;
+        std::jthread receiver_thread_;
 
         std::function<void(const message::CHP1Message&)> message_callback_;
     };

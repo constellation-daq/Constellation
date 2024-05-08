@@ -50,9 +50,9 @@ namespace constellation::heartbeat {
             cv_.notify_one();
         }
 
-        CNSTLN_API void loop(const std::stop_token& stop_token);
-
     private:
+        void loop(const std::stop_token& stop_token);
+
         zmq::context_t context_;
         zmq::socket_t pub_;
         utils::Port port_;
@@ -63,6 +63,7 @@ namespace constellation::heartbeat {
 
         std::condition_variable cv_;
         std::mutex mutex_;
+        std::jthread sender_thread_;
     };
 
 } // namespace constellation::heartbeat
