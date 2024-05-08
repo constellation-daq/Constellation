@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <iostream>
+#include <stop_token>
 #include <string>
 
 #include "constellation/core/chirp/Manager.hpp"
@@ -30,6 +31,7 @@ int main(int argc, char* argv[]) {
     // Get address via cmdline
     if(argc != 4) {
         std::cout << "Invalid usage: chp_sender CONSTELLATION_GROUP SENDER_NAME INTERVAL_MS" << std::endl;
+        return 1;
     }
 
     auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", argv[1], "chp_sender");
@@ -39,8 +41,17 @@ int main(int argc, char* argv[]) {
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
     const HeartbeatSend sender {argv[2], interval};
 
-    // FIXME better solution to wait until we interrupt?
-    std::this_thread::sleep_for(500s);
+    std::stop_source stop_token;
+    signal_handler_f = [&](int /*signal*/) -> void { stop_token.request_stop(); };
+
+    // NOLINTBEGIN(cert-err33-c)
+    std::signal(SIGTERM, &signal_hander);
+    std::signal(SIGINT, &signal_hander);
+    // NOLINTEND(cert-err33-c)
+
+    while(!stop_token.stop_requested()) {
+        std::this_thread::sleep_for(100ms);
+    }
 
     return 0;
 }
