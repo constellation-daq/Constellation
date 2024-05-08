@@ -67,9 +67,9 @@ namespace constellation::satellite {
         /**
          * Start satellite, i.e. prepare for immediate data taking, e.g. opening files or creating buffers
          *
-         * @param run_number Run number for the upcoming run
+         * @param run_identifier Run identifier for the upcoming run
          */
-        virtual void starting(std::uint32_t run_number);
+        virtual void starting(std::string run_identifier);
 
         /**
          * Stop satellite, i.e. prepare to return to ORBIT state, e.g. closing open files
