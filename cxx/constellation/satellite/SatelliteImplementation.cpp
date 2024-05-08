@@ -70,7 +70,6 @@ SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> sate
 
     // Start sending heartbeats
     heartbeat_manager_->setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
-    heartbeat_manager_->start();
 }
 
 SatelliteImplementation::~SatelliteImplementation() {

@@ -28,7 +28,7 @@ using namespace std::literals::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string_view sender)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }), sender_(sender, 1000ms),
-      logger_("CHP") {}
+      logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
@@ -81,11 +81,6 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     }
 }
 
-void HeartbeatManager::start() {
-    // jthread immediately starts on construction
-    watchdog_thread_ = std::jthread(std::bind_front(&HeartbeatManager::run, this));
-}
-
 void HeartbeatManager::run(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {mutex_};
 
@@ -97,9 +92,11 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
             // Check for ERROR states:
             if(remote.lives > 0 && remote.last_state == State::ERROR) {
                 remote.lives = 0;
-                LOG(logger_, DEBUG) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
-                                    << ", interrupting";
-                interrupt_callback_();
+                if(interrupt_callback_) {
+                    LOG(logger_, DEBUG) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
+                                        << ", interrupting";
+                    interrupt_callback_();
+                }
             }
 
             // Check if we are beyond the interval
@@ -110,7 +107,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 remote.last_heartbeat = std::chrono::system_clock::now();
                 LOG(logger_, DEBUG) << "Missed heartbeat from " << key << ", reduced lives to " << remote.lives;
 
-                if(remote.lives == 0) {
+                if(remote.lives == 0 && interrupt_callback_) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
                     interrupt_callback_();

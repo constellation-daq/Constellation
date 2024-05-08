@@ -42,9 +42,6 @@ namespace constellation::heartbeat {
         HeartbeatManager(HeartbeatManager&& other) = delete;
         HeartbeatManager& operator=(HeartbeatManager&& other) = delete;
 
-        /** Start the background thread of the manager */
-        CNSTLN_API void start();
-
         /**
          * @brief Update the current state to be broadcasted
          * @details This method will update the state of the FSM to be broadcasted via CHP. Updating the state will also
