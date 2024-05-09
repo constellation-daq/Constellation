@@ -73,33 +73,38 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
 
     // Connect
     LOG(logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
-    zmq::socket_t socket {context_, zmq::socket_type::sub};
-    socket.connect(service.to_uri());
-    socket.set(zmq::sockopt::subscribe, "");
+    try {
 
-    // Register with poller:
-    const zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
-        if((ef & zmq::event_flags::pollin) != zmq::event_flags::none) {
-            zmq::multipart_t zmq_msg {};
-            auto received = zmq_msg.recv(sock);
-            if(received) {
+        zmq::socket_t socket {context_, zmq::socket_type::sub};
+        socket.connect(service.to_uri());
+        socket.set(zmq::sockopt::subscribe, "");
 
-                try {
-                    auto msg = CHP1Message::disassemble(zmq_msg);
-                    message_callback_(msg);
-                } catch(const MessageDecodingError& error) {
-                    LOG(logger_, WARNING) << error.what();
-                } catch(const IncorrectMessageType& error) {
-                    LOG(logger_, WARNING) << error.what();
+        // Register with poller:
+        const zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
+            if((ef & zmq::event_flags::pollin) != zmq::event_flags::none) {
+                zmq::multipart_t zmq_msg {};
+                auto received = zmq_msg.recv(sock);
+                if(received) {
+
+                    try {
+                        auto msg = CHP1Message::disassemble(zmq_msg);
+                        message_callback_(msg);
+                    } catch(const MessageDecodingError& error) {
+                        LOG(logger_, WARNING) << error.what();
+                    } catch(const IncorrectMessageType& error) {
+                        LOG(logger_, WARNING) << error.what();
+                    }
                 }
             }
-        }
-    };
+        };
 
-    poller_.add(socket, zmq::event_flags::pollin, handler);
-
-    sockets_.insert(std::make_pair(service, std::move(socket)));
-    LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
+        poller_.add(socket, zmq::event_flags::pollin, handler);
+        sockets_.insert(std::make_pair(service, std::move(socket)));
+        LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
+    } catch(const zmq::error_t& e) {
+        // FIXME rollback registration?
+        LOG(logger_, DEBUG) << "Error when registering socket for " << service.to_uri();
+    }
 }
 
 void HeartbeatRecv::disconnect_all() {
@@ -107,10 +112,13 @@ void HeartbeatRecv::disconnect_all() {
 
     // Disconnect the socket
     for(auto socket_it = sockets_.begin(); socket_it != sockets_.end(); /* no increment */) {
-        poller_.remove(zmq::socket_ref(socket_it->second));
-
-        socket_it->second.disconnect(socket_it->first.to_uri());
-        socket_it->second.close();
+        try {
+            poller_.remove(zmq::socket_ref(socket_it->second));
+            socket_it->second.disconnect(socket_it->first.to_uri());
+            socket_it->second.close();
+        } catch(const zmq::error_t& e) {
+            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri();
+        }
 
         sockets_.erase(socket_it++);
     }
@@ -123,11 +131,14 @@ void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
     const auto socket_it = sockets_.find(service);
     if(socket_it != sockets_.end()) {
         LOG(logger_, TRACE) << "Disconnecting from " << service.to_uri() << "...";
-        // Remove from poller
-        poller_.remove(zmq::socket_ref(socket_it->second));
-
-        socket_it->second.disconnect(service.to_uri());
-        socket_it->second.close();
+        try {
+            // Remove from poller
+            poller_.remove(zmq::socket_ref(socket_it->second));
+            socket_it->second.disconnect(service.to_uri());
+            socket_it->second.close();
+        } catch(const zmq::error_t& e) {
+            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri();
+        }
 
         sockets_.erase(socket_it);
         LOG(logger_, DEBUG) << "Disconnected from " << service.to_uri();
@@ -150,7 +161,7 @@ void HeartbeatRecv::callback_impl(const chirp::DiscoveredService& service, bool 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
     auto* instance = std::any_cast<HeartbeatRecv*>(user_data);
-    instance->callback_impl(std::move(service), depart);
+    instance->callback_impl(service, depart);
 }
 
 void HeartbeatRecv::loop(const std::stop_token& stop_token) {
