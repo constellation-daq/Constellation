@@ -72,7 +72,7 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
     const std::lock_guard sockets_lock {sockets_mutex_};
 
     // Connect
-    LOG(logger_, DEBUG) << "Connecting to " << service.to_uri() << "...";
+    LOG(logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
     zmq::socket_t socket {context_, zmq::socket_type::sub};
     socket.connect(service.to_uri());
     socket.set(zmq::sockopt::subscribe, "");
@@ -99,7 +99,7 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
     poller_.add(socket, zmq::event_flags::pollin, handler);
 
     sockets_.insert(std::make_pair(service, std::move(socket)));
-    LOG(logger_, INFO) << "Connected to " << service.to_uri();
+    LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
 }
 
 void HeartbeatRecv::disconnect_all() {
@@ -122,7 +122,7 @@ void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
     // Disconnect the socket
     const auto socket_it = sockets_.find(service);
     if(socket_it != sockets_.end()) {
-        LOG(logger_, DEBUG) << "Disconnecting from " << service.to_uri() << "...";
+        LOG(logger_, TRACE) << "Disconnecting from " << service.to_uri() << "...";
         // Remove from poller
         poller_.remove(zmq::socket_ref(socket_it->second));
 
@@ -130,7 +130,7 @@ void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
         socket_it->second.close();
 
         sockets_.erase(socket_it);
-        LOG(logger_, INFO) << "Disconnected from " << service.to_uri();
+        LOG(logger_, DEBUG) << "Disconnected from " << service.to_uri();
     }
 }
 

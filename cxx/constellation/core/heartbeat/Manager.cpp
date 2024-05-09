@@ -54,7 +54,7 @@ std::optional<State> HeartbeatManager::getRemoteState(std::string_view remote) {
 }
 
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
-    LOG(logger_, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                         << ", next message in " << msg.getInterval().count();
 
     // Update or add the remote:
@@ -106,7 +106,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 remote.lives--;
                 // We have subtracted a live, so let's wait another interval:
                 remote.last_heartbeat = std::chrono::system_clock::now();
-                LOG(logger_, DEBUG) << "Missed heartbeat from " << key << ", reduced lives to " << remote.lives;
+                LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << remote.lives;
 
                 if(remote.lives == 0 && interrupt_callback_) {
                     // This parrot is dead, it is no more
