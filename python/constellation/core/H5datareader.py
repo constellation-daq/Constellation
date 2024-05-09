@@ -50,43 +50,51 @@ class H5DataReader:
         return chunk_iterator()
 
     def groups(self):
-        """Fetch all groups of H5-file."""
+        """Fetch all group names of H5-file."""
         return self._groups(self.file)
 
     def _groups(self, file):
-        """Private method to fetch all datasets of H5-file."""
+        """Private method to fetch all group names of H5-file."""
         groups = []
         for key in file.keys():
             if isinstance(file[key], h5py.Group):
                 groups.append(key)
-                groups.append(self._groups(file[key]))
         return groups
+    def get_EOR_payload(self,group):
+        """Fetch the payload of the EOR for the group"""
+        return self.file[group]['EOR']['payload'][()]
+    
+    def get_BOR_payload(self,group):
+        """Fetch the payload of the BOR for the group"""
+        return self.file[group]['BOR']['payload'][()]
+    
+    def datasets(self,group):
+        """Fetch a list of all dataset names of H5-file."""
+        return self._datasets(self.file,group)[0]
 
-    def datasets(self):
-        """Fetch a list of all datasets of H5-file."""
-        return self._datasets(self.file)[0][2:]
-
-    def _datasets(self, file):
-        """Private method to fetch all datasets of H5-file."""
+    def _datasets(self, file,group):
+        """Private method to fetch all dataset names of H5-file."""
         datasets = []
-        for key in file.keys():
-            if isinstance(file[key], h5py.Group):
-                datasets.append(self._datasets(file[key]))
-            elif isinstance(file[key], h5py.Dataset):
-                datasets.append(key)
+        # Access the dataset group
+        dataset_group = file[group]
+        for dataset_name, dataset in dataset_group.items():
+            datasets.append(dataset_name)
         return datasets
 
-    def sort_dataset_list(self):
+    def sort_dataset_list(self,group):
         """ Returns a sorted list of all datasets """
         def sequence_number_sort(data_str):
             """Sort help function. Splits the datasetname and sort according
             to sequence_number """
-            parts = data_str.split('_')
-            numeric_part = int(parts[-1])
+            if(data_str!='BOR' and data_str!='EOR'):
+                parts = data_str.split('_')
+                numeric_part = int(parts[-1])
+            else:
+                numeric_part=0
             return numeric_part
 
-        dataset_list = self._datasets(self.file)
-        sorted_dataset_list = sorted(dataset_list[0][2:],
+        dataset_list = self._datasets(self.file,group)
+        sorted_dataset_list = sorted(dataset_list,
                                      key=sequence_number_sort)
         return sorted_dataset_list
 
