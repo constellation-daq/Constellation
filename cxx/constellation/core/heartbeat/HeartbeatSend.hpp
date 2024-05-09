@@ -67,7 +67,7 @@ namespace constellation::heartbeat {
          *
          * @param state State to be broadcasted
          */
-        void updateState(message::State state);
+        CNSTLN_API void updateState(message::State state);
 
     private:
         /**

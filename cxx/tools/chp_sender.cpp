@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     chirp_manager.start();
 
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
-    const HeartbeatSend sender {argv[2], interval};
+    HeartbeatSend sender {argv[2], interval};
 
     std::stop_source stop_token;
     signal_handler_f = [&](int /*signal*/) -> void { stop_token.request_stop(); };
@@ -49,8 +49,15 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, &signal_hander);
     // NOLINTEND(cert-err33-c)
 
+    auto state = State::NEW;
     while(!stop_token.stop_requested()) {
-        std::this_thread::sleep_for(100ms);
+        std::cout << "-----------------------------------------" << std::endl;
+        // Type
+        std::string state_s {};
+        std::cout << "State:    [" << magic_enum::enum_name(state) << "] ";
+        std::getline(std::cin, state_s);
+        state = magic_enum::enum_cast<State>(state_s, magic_enum::case_insensitive).value_or(state);
+        sender.updateState(state);
     }
 
     return 0;
