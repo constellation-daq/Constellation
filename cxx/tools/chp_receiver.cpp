@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <csignal>
 #include <iostream>
 #include <stop_token>
 #include <string>

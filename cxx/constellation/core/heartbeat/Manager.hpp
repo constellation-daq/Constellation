@@ -80,7 +80,7 @@ namespace constellation::heartbeat {
          *
          * @param fct [description]
          */
-        CNSTLN_API void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
+        void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
 
     private:
         /**

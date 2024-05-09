@@ -30,10 +30,10 @@ namespace constellation::message {
          * @param state State of the sender
          * @param interval Time interval until next message is expected
          */
-        CNSTLN_API CHP1Message(std::string sender,
-                               State state,
-                               std::chrono::milliseconds interval,
-                               std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
+        CHP1Message(std::string sender,
+                    State state,
+                    std::chrono::milliseconds interval,
+                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
             : sender_(std::move(sender)), time_(time), state_(state), interval_(interval) {}
 
         /** Return message protocol */

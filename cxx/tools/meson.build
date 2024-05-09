@@ -32,12 +32,12 @@ executable('chirp_send',
 
 executable('chp_sender',
   sources: 'chp_sender.cpp',
-  dependencies: [core_dep, cppzmq_dep, magic_enum_dep],
+  dependencies: [core_dep, magic_enum_dep],
 )
 
 executable('chp_receiver',
   sources: 'chp_receiver.cpp',
-  dependencies: [core_dep, cppzmq_dep, magic_enum_dep],
+  dependencies: [core_dep, magic_enum_dep],
 )
 
 # Core / Logging
