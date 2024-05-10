@@ -75,7 +75,7 @@ def mock_fail_satellite(mock_chirp_socket):
 
     class MockFailSatellite(Satellite):
 
-        def do_run(self, run_number):
+        def do_run(self, run_identifier):
             raise RuntimeError("mock failure")
 
     with patch("constellation.core.base.zmq.Context") as mock:

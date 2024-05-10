@@ -141,7 +141,7 @@ class DataReceiver(Satellite):
         """Stop all threads."""
         self._stop_pull_threads(2.0)
 
-    def do_run(self, run_number: int) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -221,7 +221,7 @@ class H5DataReceiverWriter(DataReceiver):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.run_number = 0
+        self.run_identifier = "0"
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
 
@@ -229,7 +229,7 @@ class H5DataReceiverWriter(DataReceiver):
         """Initialize and configure the satellite."""
         # what pattern to use for the file names?
         self.file_name_pattern = self.config.setdefault(
-            "file_name_pattern", "default_name_{run_number}_{date}.h5"
+            "file_name_pattern", "default_name_{run_identifier}_{date}.h5"
         )
         # what directory to store files in?
         self.output_path = self.config.setdefault("output_path", "data")
@@ -267,12 +267,12 @@ class H5DataReceiverWriter(DataReceiver):
             self.log.info(
                 "Wrote BOR packet from %s on run %s",
                 item.name,
-                self.run_number,
+                self.run_identifier,
             )
 
         elif item.msgtype == CDTPMessageIdentifier.DAT:
             grp = h5file[item.name]
-            title = f"data_{self.run_number}_{item.sequence_number}"
+            title = f"data_{self.run_identifier}_{item.sequence_number}"
 
             # interpret bytes as array of uint8 if nothing else was specified in the meta
             payload = np.frombuffer(
@@ -303,10 +303,10 @@ class H5DataReceiverWriter(DataReceiver):
             self.log.info(
                 "Wrote EOR packet from %s on run %s",
                 item.name,
-                self.run_number,
+                self.run_identifier,
             )
 
-    def do_run(self, run_number: int) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
 
         This method will be executed in a separate thread by the underlying
@@ -315,7 +315,7 @@ class H5DataReceiverWriter(DataReceiver):
 
         """
 
-        self.run_number = run_number
+        self.run_identifier = run_identifier
         h5file = self._open_file()
         self._add_version(h5file)
         last_flush = datetime.datetime.now()
@@ -355,7 +355,7 @@ class H5DataReceiverWriter(DataReceiver):
         h5file = None
         filename = pathlib.Path(
             self.file_name_pattern.format(
-                run_number=self.run_number,
+                run_identifier=self.run_identifier,
                 date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
             )
         )

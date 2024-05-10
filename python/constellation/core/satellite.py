@@ -236,18 +236,18 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_start(self, run_number: int) -> str:
+    def _wrap_start(self, run_identifier: str) -> str:
         """Wrapper for the 'run' state of the FSM.
 
         This method performs the basic Satellite transition before passing
         control to the device-specific public method.
 
         """
-        res = self.do_starting(run_number)
+        res = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
         # continue to execute DAQ in this thread
-        return self.do_run(run_number)
+        return self.do_run(run_identifier)
 
     @debug_log
     def do_starting(self, payload: any) -> str:
