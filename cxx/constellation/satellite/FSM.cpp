@@ -280,6 +280,7 @@ State FSM::start(TransitionPayload payload) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
             call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, run_id);
+        this->satellite_->update_run_identifier(run_id);
         this->reactIfAllowed(transition);
     };
     launch_assign_thread(transitional_thread_, call_wrapper, std::get<std::string>(std::move(payload)));

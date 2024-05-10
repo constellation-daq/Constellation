@@ -133,6 +133,9 @@ namespace constellation::satellite {
         /** Return a const reference to the satellite configuration */
         const config::Configuration& getConfig() const { return config_; }
 
+        /** Return the current run identifier */
+        std::string_view getRunIdentifier() const { return run_identifier_; }
+
         /** Return a reference to the satellite logger */
         log::Logger& getLogger() { return logger_; }
 
@@ -182,12 +185,16 @@ namespace constellation::satellite {
         /** Updated configuration stored in satellite */
         void update_config(const config::Configuration& partial_config);
 
+        /** Update the run identifier */
+        void update_run_identifier(std::string_view run_identifier) { run_identifier_ = run_identifier; }
+
     private:
         bool support_reconfigure_ {false};
         std::string status_;
         std::string_view satellite_type_;
         std::string_view satellite_name_;
         config::Configuration config_;
+        std::string run_identifier_ {};
         CommandRegistry user_commands_;
     };
 
