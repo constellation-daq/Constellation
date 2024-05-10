@@ -152,8 +152,9 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
             command_dict["reconfigure"] =
                 "Reconfigure satellite (payload: partial config as flat MessagePack dict with strings as keys)";
         }
-        command_dict["start"] = "Start satellite (payload: run number as MessagePack integer)";
-        command_dict["stop"] = "Stop satellite";
+        command_dict["start"] = "Start new run (payload: run number as MessagePack integer)";
+        command_dict["stop"] = "Stop run";
+        command_dict["shutdown"] = "Shutdown satellite";
         // Get commands
         command_dict["get_name"] = "Get canonical name of satellite";
         command_dict["get_version"] = "Get Constellation version of satellite";
@@ -279,6 +280,13 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             auto user_command_reply = handleUserCommand(command_string, message.getPayload());
             if(user_command_reply.has_value()) {
                 sendReply(user_command_reply.value().first, std::move(user_command_reply.value().second));
+                continue;
+            }
+
+            // Handle shutdown command separately since we need to send the response *before* shutting down:
+            if(command_string == "shutdown") {
+                sendReply({CSCP1Message::Type::SUCCESS, "Shutting down satellite"});
+                shutDown();
                 continue;
             }
 
