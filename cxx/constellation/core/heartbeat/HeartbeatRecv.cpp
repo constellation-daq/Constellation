@@ -79,15 +79,19 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
         socket.connect(service.to_uri());
         socket.set(zmq::sockopt::subscribe, "");
 
-        // Register with poller:
+        /**
+         * This lambda is passed to the ZMQ active_poller_t to be called when a socket has a incoming message pending. Since
+         * this is set per-socket, we can pass a reference to the currently registered socket to the lambda and then directly
+         * access the socket, read the ZMQ message and pass it to the message callback.
+         */
         const zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
+            // Check if flags indicate the correct ZMQ event (pollin, incoming message):
             if((ef & zmq::event_flags::pollin) != zmq::event_flags::none) {
                 zmq::multipart_t zmq_msg {};
                 auto received = zmq_msg.recv(sock);
                 if(received) {
-
                     try {
-                        auto msg = CHP1Message::disassemble(zmq_msg);
+                        const auto msg = CHP1Message::disassemble(zmq_msg);
                         message_callback_(msg);
                     } catch(const MessageDecodingError& error) {
                         LOG(logger_, WARNING) << error.what();
@@ -98,8 +102,9 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
             }
         };
 
+        // Register the socket with the poller
         poller_.add(socket, zmq::event_flags::pollin, handler);
-        sockets_.insert(std::make_pair(service, std::move(socket)));
+        sockets_.emplace(service, std::move(socket));
         LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
     } catch(const zmq::error_t& e) {
         // FIXME rollback registration?
@@ -110,18 +115,17 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
 void HeartbeatRecv::disconnect_all() {
     const std::lock_guard sockets_lock {sockets_mutex_};
 
-    // Disconnect the socket
-    for(auto socket_it = sockets_.begin(); socket_it != sockets_.end(); /* no increment */) {
+    // Unregister all sockets from the poller, then disconnect and close them.
+    for(auto& [service, socket] : sockets_) {
         try {
-            poller_.remove(zmq::socket_ref(socket_it->second));
-            socket_it->second.disconnect(socket_it->first.to_uri());
-            socket_it->second.close();
+            poller_.remove(zmq::socket_ref(socket));
+            socket.disconnect(service.to_uri());
+            socket.close();
         } catch(const zmq::error_t& e) {
-            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri();
+            LOG(logger_, DEBUG) << "Error disconnecting socket for " << service.to_uri();
         }
-
-        sockets_.erase(socket_it++);
     }
+    sockets_.clear();
 }
 
 void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
@@ -172,6 +176,7 @@ void HeartbeatRecv::loop(const std::stop_token& stop_token) {
 
         // Poller crashes if called with no sockets attached:
         if(!sockets_.empty()) {
+            // The poller returns immediately when a socket received something, but will time out after the set period (1s):
             poller_.wait(1000ms);
         }
     }
