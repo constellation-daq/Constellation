@@ -143,7 +143,7 @@ def test_sending_package(
     wait_for_state(transmitter.fsm, "INIT")
     commander.send_request("launch")
     wait_for_state(transmitter.fsm, "ORBIT")
-    commander.send_request("start", 100102)
+    commander.send_request("start", "100102")
     wait_for_state(transmitter.fsm, "RUN")
     assert (
         transmitter.fsm.current_state.id == "RUN"
@@ -196,7 +196,7 @@ def test_receive_writing_package(
         wait_for_state(receiver.fsm, "ORBIT", 1)
 
         payload = np.array(np.arange(1000), dtype=np.int16)
-        assert receiver.run_identifier == "0"
+        assert receiver.run_identifier == ""
 
         for run_num in range(1, 3):
             # Send new data to handle
@@ -213,14 +213,14 @@ def test_receive_writing_package(
             ), "Could not receive all data packets."
 
             # Running satellite
-            commander.send_request("start", run_num)
+            commander.send_request("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
             assert (
                 receiver.fsm.current_state.id == "RUN"
             ), "Could not set up test environment"
             commander.send_request("stop")
             wait_for_state(receiver.fsm, "ORBIT", 1)
-            assert receiver.run_identifier == run_num
+            assert receiver.run_identifier == str(run_num)
 
             # Does file exist and has it been written to?
             bor = "BOR"

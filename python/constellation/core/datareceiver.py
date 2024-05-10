@@ -221,7 +221,7 @@ class H5DataReceiverWriter(DataReceiver):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.run_identifier = "0"
+        self.run_identifier = ""
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
 
