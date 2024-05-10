@@ -508,3 +508,8 @@ deploy:docs:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   trigger:
     project: constellation/constellation.pages.desy.de
+
+# SAST
+
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
