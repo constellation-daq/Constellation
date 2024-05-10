@@ -107,7 +107,8 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
         sockets_.emplace(service, std::move(socket));
         LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
     } catch(const zmq::error_t& e) {
-        // FIXME rollback registration?
+        // The socket is emplaced in the list only on success of connection and poller registration and goes out of scope
+        // when an exception is thrown. Its destructor calls close() automatically.
         LOG(logger_, DEBUG) << "Error when registering socket for " << service.to_uri();
     }
 }
