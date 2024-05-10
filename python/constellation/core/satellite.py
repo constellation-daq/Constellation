@@ -243,6 +243,7 @@ class Satellite(
         control to the device-specific public method.
 
         """
+        self.run_identifier = run_identifier
         res = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
@@ -381,6 +382,15 @@ class Satellite(
 
         """
         return __version__, None, None
+
+    @cscp_requestable
+    def get_run_id(self, _request: CSCPMessage = None) -> (str, None, None):
+        """Get current run identifier.
+
+        No payload argument.
+
+        """
+        return self.run_identifier, None, None
 
 
 # -------------------------------------------------------------------------
