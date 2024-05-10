@@ -53,7 +53,7 @@ public:
         Satellite::reconfiguring(partial_config);
         transitional_state();
     }
-    void starting(std::string run_identifier) override {
+    void starting(std::string_view run_identifier) override {
         Satellite::starting(run_identifier);
         transitional_state();
     }

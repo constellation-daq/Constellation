@@ -49,7 +49,7 @@ void Satellite::reconfiguring(const config::Configuration& /* partial_config */)
     LOG(logger_, INFO) << "Reconfiguring - default";
 }
 
-void Satellite::starting(std::string run_identifier) {
+void Satellite::starting(std::string_view run_identifier) {
     LOG(logger_, INFO) << "Starting run " << run_identifier << " - default";
 }
 

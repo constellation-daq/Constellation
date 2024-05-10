@@ -69,7 +69,7 @@ namespace constellation::satellite {
          *
          * @param run_identifier Run identifier for the upcoming run
          */
-        virtual void starting(std::string run_identifier);
+        virtual void starting(std::string_view run_identifier);
 
         /**
          * Stop satellite, i.e. prepare to return to ORBIT state, e.g. closing open files
