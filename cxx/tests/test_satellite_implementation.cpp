@@ -34,6 +34,7 @@ using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
+using namespace std::literals::string_literals;
 
 class DummySatellite : public Satellite {
     // NOLINTBEGIN(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -386,7 +387,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    initialize_msg.addPayload({"dummy_payload"});
+    initialize_msg.addPayload({"dummy_payload"s});
     sender.send(initialize_msg);
 
     // Check reply
@@ -467,7 +468,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong payload encoding
     auto nolist_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    auto nolist_payload = PayloadBuffer("dummy payload");
+    auto nolist_payload = PayloadBuffer("dummy payload"s);
     nolist_msg.addPayload(std::move(nolist_payload));
     sender.send(nolist_msg);
 
