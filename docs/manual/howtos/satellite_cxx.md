@@ -6,7 +6,7 @@ It is recommended to have a peek into the overall [concept of satellites](../con
 order to get an impression of which functionality of the application could fit into which state of the finite state machine.
 
 ```{note}
-This how-to describes the procedure of implementing a new satellite for Constellation in C++. For Python look [here](./satellite_py.md) and
+This how-to describes the procedure of implementing a new Constellation satellite in C++. For Python look [here](./satellite_py.md) and
 for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
 
@@ -79,7 +79,7 @@ However, not all parameters or all hardware is suitable for this, so this transi
 enabled in the constructor of the satellite:
 
 ```cpp
-MySatellite(std::string_view name) : Satellite(name) {
+MySatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
    support_reconfigure();
 }
 ```
