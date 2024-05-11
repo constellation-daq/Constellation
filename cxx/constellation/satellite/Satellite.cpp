@@ -25,11 +25,11 @@
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-Satellite::Satellite(std::string_view type_name, std::string_view satellite_name)
-    : logger_("SATELLITE"), type_name_(type_name), satellite_name_(satellite_name) {}
+Satellite::Satellite(std::string_view type, std::string_view name)
+    : logger_("SATELLITE"), satellite_type_(type), satellite_name_(name) {}
 
 std::string Satellite::getCanonicalName() const {
-    return to_string(type_name_) + "." + to_string(satellite_name_);
+    return to_string(satellite_type_) + "." + to_string(satellite_name_);
 }
 
 void Satellite::initializing(config::Configuration& /* config */) {

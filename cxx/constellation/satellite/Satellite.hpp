@@ -107,7 +107,7 @@ namespace constellation::satellite {
         std::string_view getStatus() const { return status_; }
 
         /** Return the name of the satellite type */
-        constexpr std::string_view getTypeName() const { return type_name_; }
+        constexpr std::string_view getType() const { return satellite_type_; }
 
         /** Return the name of the satellite */
         constexpr std::string_view getSatelliteName() const { return satellite_name_; }
@@ -137,7 +137,13 @@ namespace constellation::satellite {
         log::Logger& getLogger() { return logger_; }
 
     protected:
-        Satellite(std::string_view type_name, std::string_view satellite_name);
+        /**
+         * @brief Construct a satellite
+         *
+         * @param type Satellite type
+         * @param name Name of this satellite instance
+         */
+        Satellite(std::string_view type, std::string_view name);
 
         /** Enable or disable support for reconfigure transition (disabled by default) */
         constexpr void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
@@ -179,7 +185,7 @@ namespace constellation::satellite {
     private:
         bool support_reconfigure_ {false};
         std::string status_;
-        std::string_view type_name_;
+        std::string_view satellite_type_;
         std::string_view satellite_name_;
         config::Configuration config_;
         CommandRegistry user_commands_;
