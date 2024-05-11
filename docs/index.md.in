@@ -66,7 +66,7 @@ The finite state machine and satellite interface are designed for fast and easy 
 :::
 
 :::{grid-item-card} {octicon}`tools;1em;sd-text-info` Robust
-Constellation is based on widely adopted networking libraries such as ZMQ and MsgPack.
+Constellation is based on widely adopted networking libraries such as [ZMQ](https://zeromq.org/) and [MsgPack](https://msgpack.org/).
 :::
 ::::
 
