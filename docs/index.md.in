@@ -93,6 +93,50 @@ All communication between Constellation components is based on protocols designe
 A Constellation can consist of constituents written in any language, such as the main implementations in C++ and Python.
 :::
 ::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+
+:::{image} _static/undraw_set_preferences_kwia.svg
+:::
+
+:::{div} key-features-text
+<strong>Independent User Interfaces</strong><br/>
+Constellation works independently of connected user interfaces, which can be started and closed as needed. They are stateless and will
+reconnect to the Constellation and its satellites upon start, displaying the latest state of the network.
+:::
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+
+:::{image} _static/undraw_online_connection_6778.svg
+:::
+
+:::{div} key-features-text
+<strong>Autonomous Operation</strong><br/>
+Constellation allows autonomous operation, i.e. without a central server of user interface connected. It uses heartbeats to distribute
+information between satellites and to take action - such as entering a safe mode when identifying errors, or orchestrating launch sequences.
+:::
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+
+:::{image} _static/undraw_knowledge_re_5v9l.svg
+:::
+
+:::{div} key-features-text
+<strong>Extensively Documented</strong><br/>
+Constellation is extensively documented and provides a comprehensive user guide featuring descriptions of the basic concepts of the framework,
+how-to guides for specific tasks as well as a set of tutorials which ease starting to use it. In addition, in-depth developer documentation
+guides novel contributors.
+:::
+::::
+
 :::::
 
 ```{toctree}
