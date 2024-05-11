@@ -18,7 +18,6 @@ protocols
 
 cxx/core/index
 cxx/satellite
-cxx/chirp
 ```
 
 ```{toctree}

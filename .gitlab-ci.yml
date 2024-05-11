@@ -86,11 +86,6 @@ variables:
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
 
-.fedora-sphinx:
-  image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
-  before_script:
-    - source /venv/bin/activate
-
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
@@ -144,6 +139,11 @@ variables:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *python-rules-changes
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+
+.fedora-sphinx:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
+  before_script:
+    - source /venv/bin/activate
 
 # build stage
 
@@ -497,13 +497,29 @@ docs:doxygen:
     - .fedora-sphinx
   script:
     - make -C docs doxygen
+  artifacts:
+    paths:
+      - docs/doxygen
+    expire_in: 24 hour
+
+docs:html:
+  extends:
+    - .docs
+    - .fedora-sphinx
+  variables:
+    SPHINXOPTS: -W --keep-going
+  script:
+    - make -C docs html
+  needs:
+    - job: docs:doxygen
+      artifacts: true
 
 # deploy stage
 
 deploy:docs:
   stage: deploy
   needs:
-    - job: docs:doxygen
+    - job: docs:html
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   trigger:
