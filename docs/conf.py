@@ -58,6 +58,7 @@ favicons = [
 # myst settings
 myst_heading_anchors = 3
 myst_fence_as_directive = ["plantuml"]
+myst_enable_extensions = ["colon_fence"]
 
 # breathe settings
 breathe_projects = {
