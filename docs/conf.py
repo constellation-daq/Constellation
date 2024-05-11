@@ -24,6 +24,8 @@ extensions = [
     "myst_parser",
     "breathe",
     "sphinxcontrib.plantuml",
+    "sphinx_design",
+    "sphinx_favicon",
     "ablog",
 ]
 
@@ -35,8 +37,8 @@ source_suffix = {
 
 # HTML settings
 html_theme = "pydata_sphinx_theme"
-html_logo = docsdir.joinpath("logo.png").as_posix()
-html_static_path = ["_static"]
+html_logo = docsdir.joinpath("logo/logo.png").as_posix()
+html_static_path = ["_static", "logo"]
 html_theme_options = {
     "logo": {
         "text": project,
@@ -47,6 +49,11 @@ html_css_files = [
     "css/custom.css",
 ]
 html_show_sourcelink = False
+
+# Favicon
+favicons = [
+    "logo.svg",
+]
 
 # myst settings
 myst_heading_anchors = 3
