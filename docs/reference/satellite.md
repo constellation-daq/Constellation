@@ -50,6 +50,8 @@ corresponding payloads:
 | `stop` | - | Acknowledgement | -
 | `shutdown` | - | Acknowledgement | -
 
+Command names shall only contain alphanumeric characters or underscores and cannot start with a digit.
+
 ## FSM States
 
 The state can be encoded in a single-byte value.

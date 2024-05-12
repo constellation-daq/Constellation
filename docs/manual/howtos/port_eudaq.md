@@ -61,7 +61,7 @@ would become a Constellation exception of type `InvalidValueError`. This allows 
 tell the user e.g. in which configuration file and at which position the invalid value can be found:
 
 ```cpp
-auto power_output_percent = config->Get("power_output_percent");
+auto power_output_percent = config.get<int>("power_output_percent");
 if(power_output_percent > 100) {
     throw InvalidValueError(config, "power_output_percent", "Value too large, 100% is the maximum!");
 }
