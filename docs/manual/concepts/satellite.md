@@ -126,8 +126,8 @@ State RUN {
     State start <<entryPoint>>
     State stop <<exitPoint>>
     State running
-    start -right[dotted]-> run_loop
-    run_loop -right[dotted]-> stop
+    start -right[dotted]-> running
+    running -right[dotted]-> stop
 }
 
 @enduml
