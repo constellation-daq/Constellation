@@ -89,7 +89,7 @@ variables:
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
-    CXX: ccache g++
+    CXX: ccache g++-12
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
