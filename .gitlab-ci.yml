@@ -199,7 +199,7 @@ build:fedora-clang:
     - .build-cpp
     - .fedora-clang
   variables:
-    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized -Dcpp_stdlib=c++ -Db_sanitize=address -Db_lundef=false"
 
 build:fedora-mingw:
   extends:
