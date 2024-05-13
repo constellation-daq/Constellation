@@ -36,7 +36,7 @@ corresponding payloads:
 
 | Command | payload | verb reply | payload reply
 | ------- | ------- | ---------- | -------------
-| `get_name` | - | Name of the Satellite | -
+| `get_name` | - | Canonical name of the Satellite | -
 | `get_version` | - | Constellation version identifier string | -
 | `get_commands` | - | See payload | List of commands as MsgPack map/dictionary with command names as keys and descriptions as values
 | `get_state` | - | Current state (as string) | -
