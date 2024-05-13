@@ -62,22 +62,13 @@ ninja -C build_cov coverage-html
 ```
 
 
-## Pre-commit hooks
-
-If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
-
-Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
-
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
-
-
 ## Documentation
 
 Building the documentation requires
 * [doxygen](https://www.doxygen.nl/manual/install.html)
 * [plantuml](https://plantuml.com/starting)
 * A few [Python packages](https://packaging.python.org/en/latest/guides/section-install/):\
-ablog breathe myst-parser sphinx sphinx_design sphinxcontrib.plantuml 
+`ablog breathe myst-parser sphinx sphinx_design sphinxcontrib.plantuml`
 
 To create the documentation, run:
 
