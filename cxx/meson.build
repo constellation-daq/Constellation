@@ -60,6 +60,9 @@ msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 
 # spdlog
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
+# System libraries
+threads_dep = dependency('threads')
+dl_dep = dependency('dl', required: false)
 
 # Compilation arguments
 constellation_args = []
