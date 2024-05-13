@@ -6,11 +6,10 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 
-from .satellite import Satellite
+from constellation.core.satellite import Satellite
 import time
 import logging
-from .configuration import ConfigError, Configuration
-
+from constellation.core.configuration import ConfigError, Configuration
 
 class Example_Device1:
 
@@ -18,7 +17,6 @@ class Example_Device1:
         self.voltage = config["voltage"]
         self.ampere = config["ampere"]
         self.sample_period = config.setdefault("sample_period", default=0.1)
-
 
 class Example_Satellite(Satellite):
     def __init__(self, *args, **kwargs):
@@ -41,42 +39,37 @@ class Example_Satellite(Satellite):
             print(f"New sample at {self.device.voltage}")
         return "Finished acquisition."
 
+# -------------------------------------------------------------------------
+
 
 def main(args=None):
     """Start the base Satellite server."""
     import argparse
+    import coloredlogs
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")
     parser.add_argument("--cmd-port", type=int, default=23999)
-    parser.add_argument("--log-port", type=int, default=5556)
+    parser.add_argument("--mon-port", type=int, default=55556)
     parser.add_argument("--hb-port", type=int, default=61234)
-    parser.add_argument("--name", type=str, default="keithley")
+    parser.add_argument("--interface", type=str, default="*")
+    parser.add_argument("--name", type=str, default="satellite_demo")
     parser.add_argument("--group", type=str, default="constellation")
     args = parser.parse_args(args)
 
     # set up logging
-    logger = logging.getLogger()  # get root logger
-    formatter = logging.Formatter(
-        "%(asctime)s | %(name)s |  %(levelname)s: %(message)s"
-    )
-    # global level should be the lowest level that we want to see on any
-    # handler, even streamed via ZMQ
-    logger.setLevel(0)
-
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(args.log_level.upper())
-    stream_handler.setFormatter(formatter)
-    logger.addHandler(stream_handler)
+    logger = logging.getLogger(args.name)
+    coloredlogs.install(level=args.log_level.upper(), logger=logger)
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Example_Satellite(
-        args.name,
-        args.group,
-        args.cmd_port,
-        args.hb_port,
-        args.log_port,
+    s = Satellite(
+        name=args.name,
+        group=args.group,
+        cmd_port=args.cmd_port,
+        hb_port=args.hb_port,
+        mon_port=args.mon_port,
+        interface=args.interface,
     )
     s.run_satellite()
 
