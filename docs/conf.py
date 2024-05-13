@@ -20,13 +20,13 @@ release = "v" + version
 
 # extensions
 extensions = [
+    "ablog",
     "pydata_sphinx_theme",
     "myst_parser",
     "breathe",
     "sphinxcontrib.plantuml",
     "sphinx_design",
     "sphinx_favicon",
-    "ablog",
 ]
 
 # general settings
@@ -49,6 +49,15 @@ html_css_files = [
     "css/custom.css",
 ]
 html_show_sourcelink = False
+html_sidebars = {
+    # Blog sidebars (https://ablog.readthedocs.io/en/stable/manual/ablog-configuration-options.html#blog-sidebars)
+    "news/*": [
+        "ablog/postcard.html",
+        "ablog/recentposts.html",
+        "ablog/categories.html",
+        "ablog/archives.html",
+    ],
+}
 
 # Favicon
 favicons = [
@@ -59,6 +68,7 @@ favicons = [
 myst_heading_anchors = 3
 myst_fence_as_directive = ["plantuml"]
 myst_enable_extensions = ["colon_fence"]
+myst_update_mathjax = False
 
 # breathe settings
 breathe_projects = {
@@ -82,3 +92,4 @@ with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
 # ablog settings
 blog_path = "news"
 blog_post_pattern = ["news/*.md", "news/*.rst"]
+post_date_format = "%Y-%m-%d"
