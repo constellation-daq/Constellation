@@ -26,8 +26,6 @@ core_files = files(
 
 satellites_files = files(
   'satellites/example_satellite.py',
-  'satellites/example_satellite_upd.py',
-  'satellites/keithley/keithley_satellite.py',
   'satellites/__init__.py',
 )
 
