@@ -49,7 +49,7 @@ Repository = "https://gitlab.desy.de/constellation/constellation"
 [project.optional-dependencies]
 cli = ["ipython"]
 dev = ["build", "black", "flake8", "flake8-pyproject"]
-docs = ["sphinx", "pydata_sphinx_theme", "myst-parser", "breathe", "sphinxcontrib.plantuml", "ablog"]
+docs = ["sphinx", "pydata_sphinx_theme", "myst-parser", "breathe", "ablog", "sphinxcontrib.plantuml", "sphinx_design", "sphinx_favicon"]
 test = ["pytest", "pytest-forked", "pytest-cov", "pytest-sugar"]
 
 [tool.meson-python.args]

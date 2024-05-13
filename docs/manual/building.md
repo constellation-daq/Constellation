@@ -1,58 +1,124 @@
 # Building from Source
 
-## Requirements
+The code can be obtained from [the Constellation repository](https://gitlab.desy.de/constellation/constellation) via git.
 
-- Meson 0.61 or newer
-- GCC 12 or newer
+```sh
+git clone https://gitlab.desy.de/constellation/constellation.git
+```
+
+Constellation has two separate implementations, one in C++ and one in Python. You can select the tabs to select which implementation you prefer, and you can also install both at the same time.
+
+::::::{tab-set}
+:::::{tab-item} C++
+
+## C++ Requirements
+
+- [Meson](https://mesonbuild.com/) 0.61 or newer
+- C++20 capable compiler like GCC 12 or newer and LLVM 16 or newer
+
+::::{tab-set}
+:::{tab-item} Debian/Ubuntu
+
+```sh
+sudo apt install meson g++
+```
+
+:::
+:::{tab-item} ALMA/Fedora
+
+```sh
+sudo dnf install meson clang
+export CXX=clang++
+```
+
+:::
+:::{tab-item} MacOS
+
+Install LLVM via [Homebrew](https://brew.sh/):
+
+```sh
+brew install llvm
+export CXX="/opt/homebrew/opt/llvm/bin/clang++"
+export CC="/opt/homebrew/opt/llvm/bin/clang"
+export LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
+```
+
+:::
+:::{tab-item} Windows
+
+TODO
+
+:::
+:::{tab-item} Ubuntu 20.04
+
+Requires an upgraded GCC version:
+
+```sh
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt update
+sudo apt install meson g++-13
+export CXX="g++-13"
+```
+
+:::
+::::
 
 ## Building
-
-To build, simply run:
 
 ```sh
 meson setup build
 meson compile -C build
 ```
 
-## Unit tests
+This is already it!
 
-Unit tests can be run with:
+:::::
+:::::{tab-item} Python
+
+## Python Requirements
+
+- Python 3.11 or newer
+- [`venv`](https://docs.python.org/3/library/venv.html) module
+- HDF5 development libraries
+
+::::{tab-set}
+:::{tab-item} Debian/Ubuntu
 
 ```sh
-meson test -C build
+sudo apt install python3-venv libhdf5-dev
 ```
 
-To create a coverage reports with [`gcvor`](https://gcovr.com), run:
+:::
+:::{tab-item} ALMA/Fedora
 
-```sh
-meson setup build_cov -Db_coverage=true
-meson test -C build_cov
-ninja -C build_cov coverage-html
-```
+TODO
 
-## Pre-commit hooks
+:::
+:::{tab-item} MacOS
 
-If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
+TODO
 
-Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
+:::
+:::{tab-item} Windows
 
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
+TODO
 
-## Documentation
+:::
+::::
 
-Building the documentation requires doxygen and some Python packages, which can be installed via:
+## Setting up the Virtual Environment
 
 ```sh
 python3 -m venv venv
-source venv/bin/active
-pip install sphinx myst-parser sphinx_immaterial breathe
+source venv/bin/activate
+pip install meson-python meson ninja
 ```
 
-Finally run:
+## Installing the Package
 
 ```sh
-make -C docs/ doxygen
-make -C docs/ html
+pip install --no-build-isolation --editable .
 ```
 
-The resulting webpage can be accessed via `docs/build/html/index.html`.
+:::::
+::::::
