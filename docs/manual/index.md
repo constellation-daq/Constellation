@@ -9,7 +9,6 @@ about the stability of any features!
 :caption: Get started
 
 building
-contributing
 ```
 
 ```{toctree}
