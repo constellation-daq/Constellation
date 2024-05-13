@@ -66,7 +66,7 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Satellite(
+    s = Example_Satellite(
         name=args.name,
         group=args.group,
         cmd_port=args.cmd_port,
