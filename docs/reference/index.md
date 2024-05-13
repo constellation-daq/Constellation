@@ -9,7 +9,6 @@ only for implementing Constellation libraries in different languages, or for con
 :caption: General
 
 contributing
-devbuilding
 ```
 
 ```{toctree}
