@@ -1,11 +1,12 @@
-# Building from Source
+
+Start by obtaining the code from [the Constellation repository](https://gitlab.desy.de/constellation/constellation).
 
 ## Requirements
 
-- Meson 0.61 or newer
-- GCC 12 or newer
+- Meson 0.61 or newer (see e.g. [Getting Meson](https://mesonbuild.com/Getting-meson.html))
+- GCC 12 or newer (see e.g. [Installing GCC](https://gcc.gnu.org/install/))
 
-## Building
+## Standard build
 
 To build, simply run:
 
@@ -36,21 +37,30 @@ To install the package, run the following command inside the root of the cloned 
 pip install -e .
 ```
 
-## Unit tests
+## Building with unit tests
 
-Unit tests can be run with:
+If you want to test that everything works as intended, you can instead chose to compule with enabeled unit testing. In this case replace the steps above with
+
+```sh
+meson setup build -Dcxx_tests=enabled
+meson compile -C build
+```
+(or use `meson setup build -Dcxx_tests=enabled --reconfigure` if you had already configured without unit testing before)
+
+Now run the included unit tests with:
 
 ```sh
 meson test -C build
 ```
 
-To create a coverage reports with [`gcvor`](https://gcovr.com), run:
+To create a coverage report with [`gcvor`](https://gcovr.com), run:
 
 ```sh
 meson setup build_cov -Db_coverage=true
 meson test -C build_cov
 ninja -C build_cov coverage-html
 ```
+
 
 ## Pre-commit hooks
 
@@ -60,17 +70,16 @@ Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once i
 
 You will also need to install the validation tools, such as `black` and `flake8` for Python.
 
+
 ## Documentation
 
-Building the documentation requires doxygen and some Python packages, which can be installed via:
+Building the documentation requires
+* [doxygen](https://www.doxygen.nl/manual/install.html)
+* [plantuml](https://plantuml.com/starting)
+* A few [Python packages](https://packaging.python.org/en/latest/guides/section-install/):\
+ablog breathe myst-parser sphinx sphinx_design sphinxcontrib.plantuml 
 
-```sh
-python3 -m venv venv
-source venv/bin/active
-pip install sphinx myst-parser sphinx_immaterial breathe
-```
-
-Finally run:
+To create the documentation, run:
 
 ```sh
 make -C docs/ doxygen
