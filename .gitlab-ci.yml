@@ -89,7 +89,7 @@ variables:
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
   variables:
-    CXX: ccache g++
+    CXX: ccache g++-12
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
@@ -206,14 +206,14 @@ build:fedora-mingw:
     - .build-cpp
     - .fedora-mingw
   variables:
-    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
+    BUILD_OPTIONS: "-Dbuildtype=debug --cross .cross/mingw-ucrt.ini"
 
 build:ubuntu-22.04:
   extends:
     - .build-cpp
     - .ubuntu-22.04
   variables:
-    BUILD_OPTIONS: "-Dbuildtype=release"
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized"
 
 build:ubuntu-24.04:
   extends:
