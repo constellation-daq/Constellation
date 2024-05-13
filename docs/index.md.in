@@ -158,7 +158,7 @@ is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/co
 :maxdepth: 2
 :hidden:
 
-news/index
+news
 manual/index
 reference/index
 ```

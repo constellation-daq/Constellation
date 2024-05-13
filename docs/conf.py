@@ -51,7 +51,7 @@ html_css_files = [
 html_show_sourcelink = False
 html_sidebars = {
     # Blog sidebars (https://ablog.readthedocs.io/en/stable/manual/ablog-configuration-options.html#blog-sidebars)
-    "news/*": [
+    "news**": [
         "ablog/postcard.html",
         "ablog/recentposts.html",
         "ablog/categories.html",
@@ -80,7 +80,7 @@ breathe_default_project = "Constellation"
 plantuml_output_format = "svg_img"
 
 # remove news from toc if news/index.md does not exist
-without_news = not docsdir.joinpath("news").joinpath("index.md").exists()
+without_news = not docsdir.joinpath("news").exists()
 if without_news:
     logger.info("Building documentation without news section", color="yellow")
 with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
