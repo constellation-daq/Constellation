@@ -206,14 +206,14 @@ build:fedora-mingw:
     - .build-cpp
     - .fedora-mingw
   variables:
-    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
+    BUILD_OPTIONS: "-Dbuildtype=debug --cross .cross/mingw-ucrt.ini"
 
 build:ubuntu-22.04:
   extends:
     - .build-cpp
     - .ubuntu-22.04
   variables:
-    BUILD_OPTIONS: "-Dbuildtype=release"
+    BUILD_OPTIONS: "-Dbuildtype=debugoptimized"
 
 build:ubuntu-24.04:
   extends:
