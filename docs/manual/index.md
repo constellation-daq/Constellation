@@ -12,6 +12,12 @@ building
 ```
 
 ```{toctree}
+:caption: Tutorials
+
+tutorials/single_satellite
+```
+
+```{toctree}
 :caption: Concepts
 
 concepts/constellation
@@ -21,10 +27,6 @@ concepts/controller
 concepts/listener
 concepts/autonomy
 concepts/statistics
-```
-
-```{toctree}
-:caption: Tutorials
 ```
 
 ```{toctree}
