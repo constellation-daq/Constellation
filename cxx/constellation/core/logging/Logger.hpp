@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <source_location>
+#include <sstream>
 #include <string>
 
 #include <spdlog/async_logger.h>
