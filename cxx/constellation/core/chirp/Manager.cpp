@@ -14,6 +14,8 @@
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <stop_token>
+#include <thread>
 #include <utility>
 
 #include "constellation/core/logging/log.hpp"
