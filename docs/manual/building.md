@@ -14,6 +14,28 @@ meson setup build
 meson compile -C build
 ```
 
+### On Ubuntu 20.04
+
+The default compiler needs to be updated.
+```sh
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo apt update
+sudo apt install g++-13
+```
+
+Then the compiler version needs to be explicitly set before building: 
+```sh
+CXX=g++-13 CC=gcc-13 meson setup build
+meson compile -C build
+```
+
+## Installing the Python package
+
+To install the package, run the following command inside the root of the cloned repository:
+```sh
+pip install -e .
+```
+
 ## Unit tests
 
 Unit tests can be run with:
