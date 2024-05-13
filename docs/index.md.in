@@ -137,6 +137,19 @@ guides novel contributors.
 :::
 ::::
 
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+
+:::{image} _static/undraw_open_source_-1-qxw.svg
+:::
+
+:::{div} key-features-text
+<strong>Free & Open Source Software</strong><br/>
+Constellation is entirely free and open source software. The code is released under the [EUPL1.2](https://opensource.org/licenses/EUPL-1.2) license, and its documentation and this website are licensed under [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
+:::
+::::
+
 :::::
 
 ```{toctree}
