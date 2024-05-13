@@ -6,5 +6,6 @@ If you want to develop on Constellation, you can ensure following the coding sty
 
 Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
 
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
+Note: requires [pre-commit/identify](https://github.com/pre-commit/identify) version > 2.5.20
 
+You will also need to install the validation tools, such as `black` and `flake8` for Python.
