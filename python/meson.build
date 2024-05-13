@@ -27,10 +27,13 @@ core_files = files(
 satellites_files = files(
   'satellites/example_satellite.py',
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   'satellites/example_satellite_upd.py',
   'satellites/keithley/keithley_satellite.py',
 >>>>>>> Restructured the Python directory.
+=======
+>>>>>>> Removed extraneous lines from the python/meson.build
   'satellites/__init__.py',
 )
 
