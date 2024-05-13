@@ -39,7 +39,7 @@ satellite needs to implement:
 
 | Command        | Description
 | -------------- | -----------
-| `get_name`     | Returns the name of the queried satellite
+| `get_name`     | Returns the canonical name of the queried satellite
 | `get_version`  | Returns the Constellation version identifier the satellite has been built with
 | `get_commands` | Provides a full list of the available commands for the queried satellite
 | `get_state`    | Returns the [current state](#the-finite-state-machine) of the satellite
