@@ -22,7 +22,7 @@ core_src = files(
 core_lib = library('ConstellationCore',
   sources: core_src,
   include_directories: constellation_inc,
-  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
+  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep, threads_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
@@ -88,5 +88,5 @@ core_dep = declare_dependency(
   link_with: core_lib,
   compile_args: constellation_args,
   include_directories: constellation_inc,
-  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
+  dependencies: [asio_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep, threads_dep],
 )
