@@ -146,7 +146,9 @@ guides novel contributors.
 
 :::{div} key-features-text
 <strong>Free & Open Source Software</strong><br/>
-Constellation is entirely free and open source software. The code is released under the [EUPL1.2](https://opensource.org/licenses/EUPL-1.2) license, and its documentation and this website are licensed under [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
+Constellation is entirely free and open source software. The code is released under the [EUPL1.2](https://opensource.org/licenses/EUPL-1.2) license,
+and its documentation and this website are licensed under [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). The source code
+is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/constellation).
 :::
 ::::
 
