@@ -39,6 +39,10 @@ source_suffix = {
 html_theme = "pydata_sphinx_theme"
 html_logo = docsdir.joinpath("logo/logo.png").as_posix()
 html_static_path = ["_static", "logo"]
+
+if pathlib.Path("news/media").exists():
+    html_static_path.append("news/media")
+
 html_theme_options = {
     "logo": {
         "text": project,
