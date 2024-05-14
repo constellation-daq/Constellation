@@ -26,6 +26,8 @@ namespace constellation::message {
         CMDP1,
         /** Constellation Data Transmission Protocol v1 */
         CDTP1,
+        /** Constellation Heartbeat  Protocol v1 */
+        CHP1,
     };
     using enum Protocol;
 
@@ -40,6 +42,7 @@ namespace constellation::message {
         case CSCP1: return {"CSCP\x01"};
         case CMDP1: return {"CMDP\x01"};
         case CDTP1: return {"CDTP\x01"};
+        case CHP1: return {"CHP\x01"};
         default: std::unreachable();
         }
     }
@@ -59,6 +62,9 @@ namespace constellation::message {
         }
         if(protocol_identifier == "CDTP\x01") {
             return CDTP1;
+        }
+        if(protocol_identifier == "CHP\x01") {
+            return CHP1;
         }
         // Unknown protocol:
         throw std::invalid_argument(std::string(protocol_identifier).c_str());

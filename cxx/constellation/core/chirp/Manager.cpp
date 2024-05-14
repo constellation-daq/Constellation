@@ -42,6 +42,10 @@ bool RegisteredService::operator<(const RegisteredService& other) const {
     return port < other.port;
 }
 
+std::string DiscoveredService::to_uri() const {
+    return "tcp://" + address.to_string() + ":" + std::to_string(port);
+}
+
 bool DiscoveredService::operator<(const DiscoveredService& other) const {
     // Ignore IP when sorting, we only care about the host
     auto ord_host_id = host_id <=> other.host_id;

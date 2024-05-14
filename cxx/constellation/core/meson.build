@@ -9,11 +9,15 @@ core_src = files(
   'config/Dictionary.cpp',
   'config/Value.cpp',
   'config/exceptions.cpp',
+  'heartbeat/HeartbeatRecv.cpp',
+  'heartbeat/HeartbeatSend.cpp',
+  'heartbeat/HeartbeatManager.cpp',
   'logging/CMDPSink.cpp',
   'logging/Logger.cpp',
   'logging/SinkManager.cpp',
   'message/CDTP1Message.cpp',
   'message/CHIRPMessage.cpp',
+  'message/CHP1Message.cpp',
   'message/CMDP1Message.cpp',
   'message/CSCP1Message.cpp',
   'message/BaseHeader.cpp',
@@ -52,6 +56,13 @@ install_headers(
 )
 
 install_headers(
+  'heartbeat/HeartbeatRecv.hpp',
+  'heartbeat/HeartbeatSend.hpp',
+  'heartbeat/HeartbeatManager.hpp',
+  subdir: 'constellation/core/heartbeat',
+)
+
+install_headers(
   'logging/CMDPSink.hpp',
   'logging/Level.hpp',
   'logging/log.hpp',
@@ -65,6 +76,7 @@ install_headers(
   'message/BaseHeader.hpp',
   'message/CDTP1Message.hpp',
   'message/CHIRPMessage.hpp',
+  'message/CHP1Message.hpp',
   'message/CMDP1Message.hpp',
   'message/CSCP1Message.hpp',
   'message/exceptions.hpp',
