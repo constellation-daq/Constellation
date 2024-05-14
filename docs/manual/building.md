@@ -32,15 +32,19 @@ export CXX=clang++
 ```
 
 :::
-:::{tab-item} MacOS
+:::{tab-item} MacOS 14
 
-Install LLVM via [Homebrew](https://brew.sh/):
+Install Meson and LLVM via [Homebrew](https://brew.sh/): 
 
 ```sh
+brew install meson
 brew install llvm
-export CXX="/opt/homebrew/opt/llvm/bin/clang++"
-export CC="/opt/homebrew/opt/llvm/bin/clang"
-export LDFLAGS="-L/opt/homebrew/opt/llvm/lib/c++ -Wl,-rpath,/opt/homebrew/opt/llvm/lib/c++"
+```
+Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
+``` sh
+export CXX="${HOMEBREW_PREFIX}/opt/llvm/bin/clang++"
+export CC="${HOMEBREW_PREFIX}/opt/llvm/bin/clang"
+export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
 ```
 
 :::
