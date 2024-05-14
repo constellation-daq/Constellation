@@ -56,9 +56,11 @@ namespace constellation::heartbeat {
         constexpr utils::Port getPort() const { return port_; }
 
         /**
-         * @brief Update the heartbeat interval to a new value
+         * @brief Update the maximum heartbeat interval to a new value
          *
-         * @param interval New heartbeat interval
+         * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval
+         *
+         * @param interval New maximum heartbeat interval
          */
         void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
 
@@ -89,7 +91,7 @@ namespace constellation::heartbeat {
         std::string sender_;
         /** Currently broadcasted state */
         std::atomic<message::State> state_ {message::State::NEW};
-        /** Heartbeat broadcasting interval */
+        /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 
         std::condition_variable cv_;
