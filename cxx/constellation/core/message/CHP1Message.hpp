@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Message class for CDTP1
+ * @brief Message class for CHP1
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
 
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -53,15 +54,13 @@ namespace constellation::message {
 
         /**
          * Assemble full message to frames for ZeroMQ
-         *
-         * This function moves the payload.
          */
         CNSTLN_API zmq::multipart_t assemble();
 
         /**
          * Disassemble message from ZeroMQ frames
          *
-         * This function moves the payload frames
+         * This function moves the frames
          */
         CNSTLN_API static CHP1Message disassemble(zmq::multipart_t& frames);
 
