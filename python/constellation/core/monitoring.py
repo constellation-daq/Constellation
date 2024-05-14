@@ -225,6 +225,8 @@ class MonitoringListener(CHIRPBroadcaster):
         self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
         self._metric_transmitters: dict[str, CMDPTransmitter] = {}
 
+        self.output_path = output_path
+
         # create output directories and configure file writer logger
         if output_path:
             self.output_path = pathlib.Path(output_path)
