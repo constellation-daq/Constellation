@@ -111,6 +111,16 @@ namespace constellation::satellite {
          */
         CNSTLN_API void interrupt();
 
+        /**
+         * @brief Registering a callback to be executed when a new state was entered
+         *
+         * This function adds a new state update callback. Registered callbacks are used to distribute the state of the FSM
+         * whenever it was changed
+         *
+         * @param callback Callback taking the new state as argument
+         */
+        void registerStateCallback(std::function<void(State)> callback);
+
     private:
         /**
          * Find the transition function for a given transition in the current state
@@ -205,6 +215,9 @@ namespace constellation::satellite {
         std::thread transitional_thread_;
         std::jthread run_thread_;
         std::thread failure_thread_;
+
+        /** State update callback */
+        std::vector<std::function<void(State)>> state_callbacks_;
     };
 
 } // namespace constellation::satellite

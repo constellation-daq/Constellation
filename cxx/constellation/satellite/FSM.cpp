@@ -50,6 +50,10 @@ FSM::~FSM() {
     }
 }
 
+void FSM::registerStateCallback(std::function<void(State)> callback) {
+    state_callbacks_.emplace_back(std::move(callback));
+}
+
 FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
     // Get transition map for current state (never throws due to FSM design)
     const auto& transition_map = state_transition_map_.at(state_);
@@ -78,6 +82,11 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     // Execute transition function
     state_ = (this->*transition_function)(std::move(payload));
     LOG(logger_, STATUS) << "New state: " << to_string(state_);
+
+    // Pass state to callbacks:
+    for(const auto& callback : state_callbacks_) {
+        callback(state_);
+    }
 }
 
 bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
@@ -144,6 +153,11 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     // Execute transition function
     state_ = (this->*transition_function)(std::move(fsm_payload));
     LOG(logger_, STATUS) << "New state: " << to_string(state_);
+
+    // Pass state to callbacks:
+    for(const auto& callback : state_callbacks_) {
+        callback(state_);
+    }
 
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
