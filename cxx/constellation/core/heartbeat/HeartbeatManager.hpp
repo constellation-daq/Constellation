@@ -112,6 +112,9 @@ namespace constellation::heartbeat {
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
         std::function<void()> interrupt_callback_;
 
+        /** Default lives for a remote on detection/replenishment */
+        static constexpr std::uint8_t default_lives = 3;
+
         /**
          * @struct Remote
          * @brief Struct holding all relevant information for a remote CHP host
@@ -121,7 +124,8 @@ namespace constellation::heartbeat {
             std::chrono::milliseconds interval;
             std::chrono::system_clock::time_point last_heartbeat;
             message::State last_state;
-            std::uint8_t lives {3};
+            std::chrono::system_clock::time_point last_checked;
+            std::uint8_t lives {default_lives};
         };
 
         /** Map of remotes this manager tracks */
