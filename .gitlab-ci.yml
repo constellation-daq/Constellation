@@ -161,7 +161,7 @@ variables:
     - *ccache
   script:
     - meson setup build -Dimpl_cxx=enabled -Dcxx_tests=enabled ${BUILD_OPTIONS}
-    - meson compile -C build
+    - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
       - build
@@ -214,6 +214,7 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debug --cross .cross/mingw-ucrt.ini"
+    NINJA_OPTIONS: "-l4"
   retry: 2
 
 build:ubuntu-22.04:
@@ -222,6 +223,7 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized"
+    NINJA_OPTIONS: "-l4"
   retry: 2
 
 build:ubuntu-24.04:
