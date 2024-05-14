@@ -8,11 +8,13 @@
  */
 
 #include <any>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include <zmq.hpp>
 
