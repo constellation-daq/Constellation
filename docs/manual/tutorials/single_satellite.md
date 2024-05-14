@@ -10,10 +10,46 @@ To start a satellite, you need to provide three things:
 
 Example
 
+::::{tab-set}
+
+:::{tab-item} C++
+:sync: keyC
+
 ```sh
 ./build/cxx/constellation/exec/satellite -t prototype -g myLabPlanet -n TheFirstSatellite
 ```
 
-## Controlling your Satellite
+:::
+
+:::{tab-item} Python
+:sync: keyP
 
 tba
+:::
+
+::::
+
+::::{tab-set}
+
+:::{tab-item} C++
+:sync: keyC
+
+tba
+:::
+
+:::{tab-item} Python
+:sync: keyP
+
+```sh
+python -m constellation.core.controller --group myLabPlanet
+```
+
+Arguments for the python controller are
+
+- name -  name of controller
+- group -  group of controller
+- interface - the interface to connect to
+
+:::
+
+::::
