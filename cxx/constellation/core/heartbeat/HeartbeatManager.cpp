@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "Manager.hpp"
+#include "HeartbeatManager.hpp"
 
 #include <algorithm>
 #include <chrono>

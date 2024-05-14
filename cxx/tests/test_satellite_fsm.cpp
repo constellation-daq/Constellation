@@ -19,7 +19,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/heartbeat/Manager.hpp"
+#include "constellation/core/heartbeat/HeartbeatManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
