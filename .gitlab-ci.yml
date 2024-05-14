@@ -18,6 +18,13 @@ workflow:
       when: never
     - when: always
 
+default:
+  retry:
+    max: 2
+    when:
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 variables:
   CCACHE_DIR: $CI_PROJECT_DIR/.cache/ccache
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
@@ -207,6 +214,7 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debug --cross .cross/mingw-ucrt.ini"
+  retry: 2
 
 build:ubuntu-22.04:
   extends:
@@ -214,6 +222,7 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized"
+  retry: 2
 
 build:ubuntu-24.04:
   extends:
