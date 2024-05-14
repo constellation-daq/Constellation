@@ -44,6 +44,13 @@ html_theme_options = {
         "text": project,
     },
     "gitlab_url": "https://gitlab.desy.de/constellation/constellation",
+    "icon_links": [
+        {
+            "name": "News RSS feed",
+            "url": "news/atom.xml",
+            "icon": "fa-solid fa-rss",
+        },
+    ],
 }
 html_css_files = [
     "css/custom.css",
@@ -51,7 +58,8 @@ html_css_files = [
 html_show_sourcelink = False
 html_sidebars = {
     # Blog sidebars (https://ablog.readthedocs.io/en/stable/manual/ablog-configuration-options.html#blog-sidebars)
-    "news**": [
+    "news": ["ablog/categories.html", "ablog/archives.html"],
+    "news/**": [
         "ablog/postcard.html",
         "ablog/recentposts.html",
         "ablog/categories.html",
@@ -90,6 +98,8 @@ with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
         index_out.write(line)
 
 # ablog settings
+blog_title = project
 blog_path = "news"
 blog_post_pattern = ["news/*.md", "news/*.rst"]
 post_date_format = "%Y-%m-%d"
+blog_feed_fulltext = True
