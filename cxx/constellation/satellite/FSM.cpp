@@ -71,6 +71,11 @@ bool FSM::isAllowed(Transition transition) {
     return true;
 }
 
+bool FSM::isShutdownAllowed() {
+    // Regular shutdown only allowed from states NEW, INIT, SAFE and ERROR:
+    return (state_ == State::NEW || state_ == State::INIT || state_ == State::SAFE || state_ == State::ERROR);
+}
+
 void FSM::react(Transition transition, TransitionPayload payload) {
     // Find transition
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);

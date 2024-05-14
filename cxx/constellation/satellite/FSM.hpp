@@ -72,6 +72,13 @@ namespace constellation::satellite {
         CNSTLN_API bool isAllowed(Transition transition);
 
         /**
+         * Checks if it is allowed to shut down the  FSM in current state
+         *
+         * @return True if shutdown is possible
+         */
+        CNSTLN_API bool isShutdownAllowed();
+
+        /**
          * Perform a FSM transition
          *
          * @param transition Transition to perform

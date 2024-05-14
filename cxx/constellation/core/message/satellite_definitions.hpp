@@ -73,6 +73,7 @@ namespace constellation::message {
         get_state,
         get_status,
         get_config,
+        shutdown,
     };
 
 } // namespace constellation::message

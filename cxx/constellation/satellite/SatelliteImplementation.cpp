@@ -189,6 +189,16 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
             satellite_->getConfig().getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
         break;
     }
+    case shutdown: {
+        if(fsm_.isShutdownAllowed()) {
+            return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};
+            shutDown();
+        } else {
+            return_verb = {CSCP1Message::Type::INVALID,
+                           "Satellite cannot be shut down from current state " + to_string(fsm_.getState())};
+        }
+        break;
+    }
     default: std::unreachable();
     }
 
@@ -280,13 +290,6 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             auto user_command_reply = handleUserCommand(command_string, message.getPayload());
             if(user_command_reply.has_value()) {
                 sendReply(user_command_reply.value().first, std::move(user_command_reply.value().second));
-                continue;
-            }
-
-            // Handle shutdown command separately since we need to send the response *before* shutting down:
-            if(command_string == "shutdown") {
-                sendReply({CSCP1Message::Type::SUCCESS, "Shutting down satellite"});
-                shutDown();
                 continue;
             }
 
