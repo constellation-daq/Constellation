@@ -35,6 +35,9 @@ source_suffix = {
     ".md": "markdown",
 }
 
+# Any paths that contain templates, relative to this directory.
+templates_path = ["_templates"]
+
 # HTML settings
 html_theme = "pydata_sphinx_theme"
 html_logo = docsdir.joinpath("logo/logo.png").as_posix()
@@ -53,7 +56,7 @@ html_sidebars = {
     # Blog sidebars (https://ablog.readthedocs.io/en/stable/manual/ablog-configuration-options.html#blog-sidebars)
     "news/*": [
         "ablog/postcard.html",
-        "ablog/recentposts.html",
+        "recentposts.html",
         "ablog/categories.html",
         "ablog/archives.html",
     ],
