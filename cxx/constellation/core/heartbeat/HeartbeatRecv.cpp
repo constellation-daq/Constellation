@@ -106,7 +106,7 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
     } catch(const zmq::error_t& error) {
         // The socket is emplaced in the list only on success of connection and poller registration and goes out of scope
         // when an exception is thrown. Its  calls close() automatically.
-        LOG(logger_, DEBUG) << "Error when registering socket for " << service.to_uri() << ": " << error.what();
+        LOG(logger_, WARNING) << "Error when registering socket for " << service.to_uri() << ": " << error.what();
     }
 }
 
@@ -120,7 +120,7 @@ void HeartbeatRecv::disconnect_all() {
             socket.disconnect(service.to_uri());
             socket.close();
         } catch(const zmq::error_t& error) {
-            LOG(logger_, DEBUG) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
+            LOG(logger_, WARNING) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
         }
     }
     sockets_.clear();
@@ -139,7 +139,7 @@ void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
             socket_it->second.disconnect(service.to_uri());
             socket_it->second.close();
         } catch(const zmq::error_t& error) {
-            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": " << error.what();
+            LOG(logger_, WARNING) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": " << error.what();
         }
 
         sockets_.erase(socket_it);
