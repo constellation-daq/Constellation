@@ -94,6 +94,7 @@ This is already it!
 ## Python Requirements
 
 - Python 3.11 or newer
+- IPython
 - [`venv`](https://docs.python.org/3/library/venv.html) module
 - HDF5 development libraries
 
