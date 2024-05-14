@@ -35,6 +35,9 @@ source_suffix = {
     ".md": "markdown",
 }
 
+# Any paths that contain templates, relative to this directory.
+templates_path = ["_templates"]
+
 # HTML settings
 html_theme = "pydata_sphinx_theme"
 html_logo = docsdir.joinpath("logo/logo.png").as_posix()
@@ -65,7 +68,7 @@ html_sidebars = {
     "news": ["ablog/categories.html", "ablog/archives.html"],
     "news/**": [
         "ablog/postcard.html",
-        "ablog/recentposts.html",
+        "recentposts.html",
         "ablog/categories.html",
         "ablog/archives.html",
     ],
