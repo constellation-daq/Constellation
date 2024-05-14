@@ -143,4 +143,4 @@ The satellite **should** automatically and autonomously initiate the `interrupti
 under the following conditions:
 
 * The CHP instance reports that a previously tracked remote satellite became unavailable
-* The CHP instance reports that the state of a tracked remote satellite changed to `ERROR`
+* The CHP instance reports that the state of a tracked remote satellite changed to `ERROR` or `SAFE`

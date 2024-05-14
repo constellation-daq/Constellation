@@ -74,8 +74,8 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
         remote_it->second.last_heartbeat = std::chrono::system_clock::now();
         remote_it->second.last_state = msg.getState();
 
-        // Replenish lives unless we're in error state:
-        if(msg.getState() != State::ERROR) {
+        // Replenish lives unless we're in ERROR or SAFE state:
+        if(msg.getState() != State::ERROR && msg.getState() != State::SAFE) {
             remote_it->second.lives = 3;
         }
     } else {
@@ -91,11 +91,11 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         auto wakeup = std::chrono::system_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
-            // Check for ERROR states:
-            if(remote.lives > 0 && remote.last_state == State::ERROR) {
+            // Check for ERROR and SAFE states:
+            if(remote.lives > 0 && (remote.last_state == State::ERROR || remote.last_state == State::SAFE)) {
                 remote.lives = 0;
                 if(interrupt_callback_) {
-                    LOG(logger_, DEBUG) << "Detected state " << magic_enum::enum_name(remote.last_state) << " at " << key
+                    LOG(logger_, DEBUG) << "Detected state " << to_string(remote.last_state) << " at " << key
                                         << ", interrupting";
                     interrupt_callback_();
                 }
