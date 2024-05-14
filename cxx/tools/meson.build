@@ -37,7 +37,7 @@ executable('chp_sender',
 
 executable('chp_receiver',
   sources: 'chp_receiver.cpp',
-  dependencies: [core_dep, magic_enum_dep],
+  dependencies: [core_dep],
 )
 
 # Core / Logging

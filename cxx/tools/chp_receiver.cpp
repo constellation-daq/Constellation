@@ -7,20 +7,24 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <chrono>
 #include <csignal>
 #include <iostream>
 #include <stop_token>
 #include <string>
+#include <thread>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 // Use global std::function to work around C linkage
@@ -44,8 +48,8 @@ int main(int argc, char* argv[]) {
     Logger logger {"chp_receiver"};
 
     const HeartbeatRecv receiver {[&](const CHP1Message& msg) {
-        LOG(logger, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
-                           << ", next message in " << msg.getInterval().count();
+        LOG(logger, DEBUG) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
+                           << msg.getInterval().count();
     }};
 
     std::stop_source stop_token;

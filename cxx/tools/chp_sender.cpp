@@ -7,18 +7,23 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <chrono>
 #include <csignal>
 #include <functional>
 #include <iostream>
 #include <stop_token>
 #include <string>
 
+#include <magic_enum.hpp>
+
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
+#include "constellation/core/utils/casts.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
+using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 // Use global std::function to work around C linkage
@@ -42,7 +47,7 @@ int main(int argc, char* argv[]) {
     auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
     HeartbeatSend sender {argv[2], interval};
 
-    std::stop_source stop_token;
+    std::stop_source stop_token {};
     signal_handler_f = [&](int /*signal*/) -> void { stop_token.request_stop(); };
 
     // NOLINTBEGIN(cert-err33-c)
@@ -55,7 +60,7 @@ int main(int argc, char* argv[]) {
         std::cout << "-----------------------------------------" << std::endl;
         // Type
         std::string state_s {};
-        std::cout << "State:    [" << magic_enum::enum_name(state) << "] ";
+        std::cout << "State:    [" << to_string(state) << "] ";
         std::getline(std::cin, state_s);
         state = magic_enum::enum_cast<State>(state_s, magic_enum::case_insensitive).value_or(state);
         sender.updateState(state);
