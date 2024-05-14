@@ -18,6 +18,13 @@ workflow:
       when: never
     - when: always
 
+default:
+  retry:
+    max: 2
+    when:
+      - stuck_or_timeout_failure
+      - runner_system_failure
+
 variables:
   CCACHE_DIR: $CI_PROJECT_DIR/.cache/ccache
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
@@ -154,7 +161,7 @@ variables:
     - *ccache
   script:
     - meson setup build -Dimpl_cxx=enabled -Dcxx_tests=enabled ${BUILD_OPTIONS}
-    - meson compile -C build
+    - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
       - build
@@ -207,6 +214,8 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debug --cross .cross/mingw-ucrt.ini"
+    NINJA_OPTIONS: "-l4"
+  retry: 2
 
 build:ubuntu-22.04:
   extends:
@@ -214,6 +223,8 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_OPTIONS: "-Dbuildtype=debugoptimized"
+    NINJA_OPTIONS: "-l4"
+  retry: 2
 
 build:ubuntu-24.04:
   extends:
