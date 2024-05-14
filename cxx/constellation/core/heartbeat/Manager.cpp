@@ -27,8 +27,9 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string_view sender)
-    : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }), sender_(sender, 1000ms),
-      logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
+    : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
+      sender_(std::string(sender), 1000ms), logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
+}
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
