@@ -29,6 +29,8 @@ tba
 
 ::::
 
+## Controlling a Satellite
+
 ::::{tab-set}
 
 :::{tab-item} C++
