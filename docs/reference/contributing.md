@@ -6,24 +6,41 @@ TODO
 
 ## Setting up the Development Environment
 
+We highly recommend creating a virtual Python environment for development.
+
 ### Pre-commit Hooks
 
 If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
 
-Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
+Install pre-commit via
 
-Note: requires [pre-commit/identify](https://github.com/pre-commit/identify) version > 2.5.20
+```sh
+pip install pre-commit
+pre-commit install --install-hooks
+```
 
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
+### Development Dependencies
 
-### Optional C++ Dependencies
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
-TODO
+Meson downloads the required dependencies automatically if there are not found on the system.
+You can install these to reduce your compilation time.
 
-### Dependencies for the Documentation
+- ccache + how to setup CXX
+- meson deps, see docker images
 
-Ensure you have a valid Python virtual environment as described in [Building the Source](../manual/building.md).
-Then, install the dependencies to build the documentation:
+:::
+:::{tab-item} Python
+:sync: python
+
+```sh
+pip install -e .[dev,test]
+```
+
+:::
+:::{tab-item} Documentation
 
 ```sh
 pip install -e .[docs]
@@ -31,9 +48,14 @@ pip install -e .[docs]
 
 You will also needs Make, [doxygen](https://doxygen.nl/) and plantuml. TODO.
 
+:::
+::::
+
 ## Running the Testsuite
 
-TODO: tabs for C++ and Python
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
 If you want to test that everything works as intended, you can instead chose to compile with enabled unit testing. You can enable those with:
 
@@ -47,15 +69,45 @@ Now run the included unit tests with:
 meson test -C build
 ```
 
+:::
+:::{tab-item} Python
+:sync: python
+
+```sh
+pytest
+```
+
+:::
+::::
+
 ### Running Coverage
 
-To create a coverage report with [`gcvor`](https://gcovr.com), run:
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+Requires [`gcvor`](https://gcovr.com) and compilation with GCC.
+
+```sh
+pip install gcovr
+```
+
+To create a coverage report, run:
 
 ```sh
 meson setup build_cov -Dcxx_tests=enabled -Db_coverage=true
 meson test -C build_cov
 ninja -C build_cov coverage-html
 ```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+TODO
+
+:::
+::::
 
 ## Building the Documentation
 
