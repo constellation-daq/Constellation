@@ -70,6 +70,7 @@ Requires an upgraded GCC version:
 
 ```sh
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
 export CXX="g++-13"
