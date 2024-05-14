@@ -34,7 +34,7 @@ export CXX=clang++
 :::
 :::{tab-item} MacOS 14
 
-Install Meson and LLVM via [Homebrew](https://brew.sh/): 
+Install Meson and LLVM via [Homebrew](https://brew.sh/):
 
 ```sh
 brew install meson
