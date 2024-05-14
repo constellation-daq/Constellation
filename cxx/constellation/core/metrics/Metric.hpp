@@ -13,9 +13,8 @@
 #include <set>
 #include <string_view>
 
-#include <zmq.hpp>
-
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/message/payload_buffer.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 
 namespace constellation::metrics {
@@ -79,11 +78,11 @@ namespace constellation::metrics {
          */
         Type type() const { return type_; }
 
-        /** Assemble metric via msgpack for ZeroMQ */
-        std::shared_ptr<zmq::message_t> assemble() const;
+        /** Assemble metric via msgpack for message payload */
+        message::payload_buffer assemble() const;
 
-        /** Disassemble metric from ZeroMQ */
-        static Metric disassemble(const zmq::message_t& message);
+        /** Disassemble metric from message payload */
+        static Metric disassemble(const message::payload_buffer& message);
 
     private:
         std::string unit_ {};
