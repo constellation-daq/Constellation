@@ -138,11 +138,7 @@ CMDP1StatMessage::CMDP1StatMessage(std::string topic,
 
 Metric CMDP1StatMessage::getMetric() const {
     try {
-        const auto payload = getPayload();
-        if(!payload) {
-            throw MessageDecodingError("Missing message payload");
-        }
-        return Metric::disassemble(*payload);
+        return Metric::disassemble(getPayload());
     } catch(const std::invalid_argument& e) {
         throw MessageDecodingError(e.what());
     }
