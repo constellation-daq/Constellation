@@ -53,6 +53,17 @@ export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREF
 TODO
 
 :::
+:::{tab-item} Ubuntu 22.04
+
+Requires an upgraded GCC version:
+
+```sh
+sudo apt install meson g++-12
+export CXX="g++-12"
+```
+
+:::
+
 :::{tab-item} Ubuntu 20.04
 
 Requires an upgraded GCC version:
