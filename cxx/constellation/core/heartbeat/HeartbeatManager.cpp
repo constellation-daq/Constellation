@@ -11,25 +11,25 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstdint>
 #include <functional>
 #include <iterator>
+#include <mutex>
+#include <optional>
+#include <string>
 #include <utility>
 
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std23.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-HeartbeatManager::HeartbeatManager(std::string_view sender)
+HeartbeatManager::HeartbeatManager(std::string sender)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::string(sender), 1000ms), logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
-}
+      sender_(std::move(sender), 1000ms), logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
@@ -44,7 +44,7 @@ void HeartbeatManager::updateState(State state) {
     sender_.updateState(state);
 }
 
-std::optional<State> HeartbeatManager::getRemoteState(std::string_view remote) {
+std::optional<State> HeartbeatManager::getRemoteState(const std::string& remote) {
     const auto remote_it = remotes_.find(remote);
     if(remote_it != remotes_.end()) {
         return remote_it->second.last_state;
@@ -55,23 +55,23 @@ std::optional<State> HeartbeatManager::getRemoteState(std::string_view remote) {
 }
 
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
-    LOG(logger_, TRACE) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
-                        << ", next message in " << msg.getInterval().count();
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
+                        << msg.getInterval().count();
+
+    const auto now = std::chrono::system_clock::now();
 
     // Update or add the remote:
-    const auto remote_it = remotes_.find(msg.getSender());
+    const auto remote_it = remotes_.find(to_string(msg.getSender()));
     if(remote_it != remotes_.end()) {
 
-        if(std::chrono::system_clock::now() - msg.getTime() > 3s) {
+        if(now - msg.getTime() > 3s) [[unlikely]] {
             LOG(logger_, WARNING) << "Detected time deviation of "
-                                  << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() -
-                                                                                           msg.getTime())
-                                         .count()
+                                  << std::chrono::duration_cast<std::chrono::milliseconds>(now - msg.getTime()).count()
                                   << "ms to " << msg.getSender();
         }
 
         remote_it->second.interval = msg.getInterval();
-        remote_it->second.last_heartbeat = std::chrono::system_clock::now();
+        remote_it->second.last_heartbeat = now;
         remote_it->second.last_state = msg.getState();
 
         // Replenish lives unless we're in ERROR or SAFE state:
@@ -79,7 +79,7 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
             remote_it->second.lives = 3;
         }
     } else {
-        remotes_.emplace(msg.getSender(), Remote {msg.getInterval(), std::chrono::system_clock::now(), msg.getState()});
+        remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState()));
     }
 }
 
@@ -120,6 +120,6 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
             wakeup = std::min(wakeup, remote.last_heartbeat + remote.interval);
         }
 
-        cv_.wait_until(lock, wakeup, [&]() { return stop_token.stop_requested(); });
+        cv_.wait_until(lock, wakeup);
     }
 }

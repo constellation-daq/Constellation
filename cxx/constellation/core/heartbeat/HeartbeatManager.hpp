@@ -9,13 +9,17 @@
 
 #pragma once
 
+#include <chrono>
+#include <condition_variable>
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <mutex>
 #include <optional>
-#include <set>
-#include <string_view>
+#include <stop_token>
+#include <string>
 #include <thread>
-#include <vector>
+#include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
@@ -23,7 +27,6 @@
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
-#include "constellation/core/utils/ports.hpp"
 
 namespace constellation::heartbeat {
 
@@ -44,7 +47,7 @@ namespace constellation::heartbeat {
          *
          * @param sender Canonical name of the heartbeat sender
          */
-        CNSTLN_API HeartbeatManager(std::string_view sender);
+        CNSTLN_API HeartbeatManager(std::string sender);
 
         /** Deconstruct the manager. This stops the watchdog thread */
         CNSTLN_API virtual ~HeartbeatManager();
@@ -66,21 +69,20 @@ namespace constellation::heartbeat {
 
         /**
          * @brief Obtain the current state registered from a given remote
-         * @details [long description]
          *
          * @param remote Canonical name of the remote in question
          * @return Currently registered state of the remote if remote is present, empty optional otherwise
          */
-        CNSTLN_API std::optional<message::State> getRemoteState(std::string_view remote);
+        CNSTLN_API std::optional<message::State> getRemoteState(const std::string& remote);
 
         /**
          * @brief Set the interrupt callback
          * @details This function allows setting the interrupt callback which is invoked when a remote heartbeat sender
          * reports an ERROR state or stopped sending heartbeats
          *
-         * @param fct [description]
+         * @param callback Interrupt callback
          */
-        void setInterruptCallback(std::function<void()> fct) { interrupt_callback_ = std::move(fct); }
+        void setInterruptCallback(std::function<void()> callback) { interrupt_callback_ = std::move(callback); }
 
     private:
         /**
@@ -119,11 +121,11 @@ namespace constellation::heartbeat {
             std::chrono::milliseconds interval;
             std::chrono::system_clock::time_point last_heartbeat;
             message::State last_state;
-            std::size_t lives {3};
+            std::uint8_t lives {3};
         };
 
         /** Map of remotes this manager tracks */
-        std::map<std::string, Remote, std::less<>> remotes_;
+        std::map<std::string, Remote> remotes_;
         std::mutex mutex_;
         std::condition_variable cv_;
 
