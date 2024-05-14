@@ -85,7 +85,8 @@ void FSM::react(Transition transition, TransitionPayload payload) {
 
     // Pass state to callbacks:
     for(const auto& callback : state_callbacks_) {
-        callback(state_);
+        // Run in separate thread in case the callback takes long:
+        std::thread(callback, state_).detach();
     }
 }
 
@@ -156,7 +157,8 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
 
     // Pass state to callbacks:
     for(const auto& callback : state_callbacks_) {
-        callback(state_);
+        // Run in separate thread in case the callback takes long:
+        std::thread(callback, state_).detach();
     }
 
     // Return that command is being executed
