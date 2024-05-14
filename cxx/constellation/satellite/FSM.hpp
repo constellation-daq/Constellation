@@ -47,7 +47,6 @@ namespace constellation::satellite {
          * Construct the final state machine of a satellite
          *
          * @param satellite Satellite class with functions of transitional states
-         * @param heartbeat_manager Heartbeat manager to distribute FSM state and query remote states
          */
         FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)), logger_("FSM") {}
 

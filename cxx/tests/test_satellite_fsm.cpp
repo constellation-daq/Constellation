@@ -19,7 +19,6 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/heartbeat/HeartbeatManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
@@ -28,7 +27,6 @@
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
-using namespace constellation::heartbeat;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
@@ -104,7 +102,7 @@ private:
 
 TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     auto satellite = std::make_shared<DummySatellite>();
-    auto fsm = FSM(satellite, std::make_shared<HeartbeatManager>(satellite->getCanonicalName()));
+    auto fsm = FSM(satellite);
 
     // NEW -> INIT
     fsm.react(Transition::initialize, Configuration());
@@ -145,7 +143,7 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
 
 TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     auto satellite = std::make_shared<DummySatellite>();
-    auto fsm = FSM(satellite, std::make_shared<HeartbeatManager>(satellite->getCanonicalName()));
+    auto fsm = FSM(satellite);
 
     // Failure in transitional state
     fsm.react(Transition::initialize, Configuration());
@@ -180,7 +178,7 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
 
 TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     auto satellite = std::make_shared<DummySatellite>();
-    auto fsm = FSM(satellite, std::make_shared<HeartbeatManager>(satellite->getCanonicalName()));
+    auto fsm = FSM(satellite);
     using constellation::message::CSCP1Message;
 
     auto payload_frame = Dictionary().assemble();
@@ -216,7 +214,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
 // NOLINTNEXTLINE(*-function-size)
 TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     auto satellite = std::make_shared<DummySatellite>();
-    auto fsm = FSM(satellite, std::make_shared<HeartbeatManager>(satellite->getCanonicalName()));
+    auto fsm = FSM(satellite);
     using enum Transition;
 
     REQUIRE(fsm.getState() == State::NEW);

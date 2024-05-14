@@ -56,8 +56,8 @@ using namespace std::literals::chrono_literals;
 
 SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> satellite)
     : rep_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_)), satellite_(std::move(satellite)),
-      heartbeat_manager_(std::make_shared<HeartbeatManager>(satellite_->getCanonicalName())),
-      fsm_(satellite_, heartbeat_manager_), logger_("CSCP") {
+      heartbeat_manager_(std::make_shared<HeartbeatManager>(satellite_->getCanonicalName())), fsm_(satellite_),
+      logger_("CSCP") {
     // Set receive timeout for socket
     rep_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
     // Announce service via CHIRP
@@ -71,6 +71,7 @@ SatelliteImplementation::SatelliteImplementation(std::shared_ptr<Satellite> sate
 
     // Start sending heartbeats
     heartbeat_manager_->setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
+    fsm_.registerStateCallback(std::bind_front(&HeartbeatManager::updateState, heartbeat_manager_));
 }
 
 SatelliteImplementation::~SatelliteImplementation() {
