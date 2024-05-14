@@ -54,8 +54,8 @@ namespace constellation::satellite {
         // join main_loop
         CNSTLN_API void join();
 
-        // shut down satellite
-        CNSTLN_API void shutDown();
+        // Terminate satellite
+        CNSTLN_API void terminate();
 
     private:
         // get next command

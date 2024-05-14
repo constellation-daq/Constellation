@@ -85,7 +85,7 @@ void SatelliteImplementation::join() {
     }
 }
 
-void SatelliteImplementation::shutDown() {
+void SatelliteImplementation::terminate() {
     // Request stop on main thread
     main_thread_.request_stop();
     // TODO(stephan.lachnit): we should join the thread, but this blocks join in satellite_main...?
@@ -192,7 +192,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
     case shutdown: {
         if(fsm_.isShutdownAllowed()) {
             return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};
-            shutDown();
+            terminate();
         } else {
             return_verb = {CSCP1Message::Type::INVALID,
                            "Satellite cannot be shut down from current state " + to_string(fsm_.getState())};

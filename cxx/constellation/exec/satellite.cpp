@@ -215,7 +215,7 @@ int constellation::exec::satellite_main(int argc,
     signal_handler_f = [&](int /*signal*/) -> void {
         std::call_once(shut_down_flag, [&]() {
             LOG(logger, STATUS) << "Shutting down satellite";
-            satellite_implementation.shutDown();
+            satellite_implementation.terminate();
         });
     };
     // NOLINTBEGIN(cert-err33-c)
