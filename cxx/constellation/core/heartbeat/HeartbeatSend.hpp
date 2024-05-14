@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
@@ -87,9 +88,9 @@ namespace constellation::heartbeat {
         /** Canonical sender name */
         std::string sender_;
         /** Currently broadcasted state */
-        message::State state_ {message::State::NEW};
+        std::atomic<message::State> state_ {message::State::NEW};
         /** Heartbeat broadcasting interval */
-        std::chrono::milliseconds interval_;
+        std::atomic<std::chrono::milliseconds> interval_;
 
         std::condition_variable cv_;
         std::mutex mutex_;
