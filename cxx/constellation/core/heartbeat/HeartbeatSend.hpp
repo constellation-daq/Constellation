@@ -9,24 +9,23 @@
 
 #pragma once
 
+#include <chrono>
 #include <condition_variable>
-#include <memory>
+#include <mutex>
+#include <stop_token>
 #include <string>
-#include <string_view>
 #include <thread>
 
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/logging/Logger.hpp"
-#include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/ports.hpp"
 
 namespace constellation::heartbeat {
 
     /** Sender class which emits heartbeat messages in regular intervals as well as extrasystoles at state changes */
-    class HeartbeatSend final {
+    class HeartbeatSend {
     public:
         /**
          * @brief Construct a heartbeat sender
@@ -37,7 +36,7 @@ namespace constellation::heartbeat {
          * @param sender Canonical name of the sender
          * @param interval Interval at which the heartbeats are sent
          */
-        CNSTLN_API HeartbeatSend(std::string_view sender, std::chrono::milliseconds interval);
+        CNSTLN_API HeartbeatSend(std::string sender, std::chrono::milliseconds interval);
 
         /** Destructor which unregisters the CHIRP heartbeat service and stops the heartbeat thread */
         CNSTLN_API ~HeartbeatSend();

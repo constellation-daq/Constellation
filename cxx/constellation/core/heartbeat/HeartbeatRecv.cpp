@@ -10,9 +10,10 @@
 #include "HeartbeatRecv.hpp"
 
 #include <any>
-#include <map>
-#include <memory>
+#include <functional>
 #include <mutex>
+#include <stop_token>
+#include <thread>
 #include <utility>
 
 #include <zmq.hpp>
@@ -20,12 +21,8 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/logging/log.hpp"
-#include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
-#include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -34,8 +31,8 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct)
-    : logger_("CHP"), message_callback_(std::move(fct)) {
+HeartbeatRecv::HeartbeatRecv(std::function<void(const message::CHP1Message&)> callback)
+    : logger_("CHP"), message_callback_(std::move(callback)) {
 
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
@@ -106,10 +103,10 @@ void HeartbeatRecv::connect(const chirp::DiscoveredService& service) {
         poller_.add(socket, zmq::event_flags::pollin, handler);
         sockets_.emplace(service, std::move(socket));
         LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
-    } catch(const zmq::error_t& e) {
+    } catch(const zmq::error_t& error) {
         // The socket is emplaced in the list only on success of connection and poller registration and goes out of scope
-        // when an exception is thrown. Its destructor calls close() automatically.
-        LOG(logger_, DEBUG) << "Error when registering socket for " << service.to_uri();
+        // when an exception is thrown. Its  calls close() automatically.
+        LOG(logger_, DEBUG) << "Error when registering socket for " << service.to_uri() << ": " << error.what();
     }
 }
 
@@ -122,8 +119,8 @@ void HeartbeatRecv::disconnect_all() {
             poller_.remove(zmq::socket_ref(socket));
             socket.disconnect(service.to_uri());
             socket.close();
-        } catch(const zmq::error_t& e) {
-            LOG(logger_, DEBUG) << "Error disconnecting socket for " << service.to_uri();
+        } catch(const zmq::error_t& error) {
+            LOG(logger_, DEBUG) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
         }
     }
     sockets_.clear();
@@ -141,8 +138,8 @@ void HeartbeatRecv::disconnect(const chirp::DiscoveredService& service) {
             poller_.remove(zmq::socket_ref(socket_it->second));
             socket_it->second.disconnect(service.to_uri());
             socket_it->second.close();
-        } catch(const zmq::error_t& e) {
-            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri();
+        } catch(const zmq::error_t& error) {
+            LOG(logger_, DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": " << error.what();
         }
 
         sockets_.erase(socket_it);
@@ -171,14 +168,15 @@ void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std:
 
 void HeartbeatRecv::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock(sockets_mutex_);
+        std::unique_lock<std::mutex> lock {sockets_mutex_};
+        // CV falls through if sockets are not empty, only here to prevent hot loop when there is nothing connected
         cv_.wait(lock, [this, stop_token] { return !sockets_.empty() || stop_token.stop_requested(); });
         lock.unlock();
 
         // Poller crashes if called with no sockets attached:
         if(!sockets_.empty()) {
-            // The poller returns immediately when a socket received something, but will time out after the set period (1s):
-            poller_.wait(1000ms);
+            // The poller returns immediately when a socket received something, but will time out after the set period:
+            poller_.wait(100ms);
         }
     }
 }

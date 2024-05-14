@@ -8,25 +8,22 @@
  */
 #pragma once
 
+#include <any>
 #include <condition_variable>
+#include <functional>
 #include <map>
-#include <memory>
 #include <mutex>
+#include <stop_token>
 #include <thread>
-#include <utility>
 
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
-#include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/string.hpp"
 
 namespace constellation::heartbeat {
 
@@ -37,21 +34,21 @@ namespace constellation::heartbeat {
      * services in the constellation and listens for heartbeat and extrasystole messages from remote satellites and forwards
      * them to a callback registered upon creation of the receiver
      */
-    class CNSTLN_API HeartbeatRecv {
+    class HeartbeatRecv {
     public:
         /**
          * @brief Construct heartbeat receiver
          *
-         * @param fct Callback function pointer for received heartbeat messages
+         * @param callback Callback function pointer for received heartbeat messages
          */
-        HeartbeatRecv(std::function<void(const message::CHP1Message&)> fct);
+        CNSTLN_API HeartbeatRecv(std::function<void(const message::CHP1Message&)> callback);
 
         /**
          * @brief Destruct heartbeat receiver
          *
          * This closes all connections and unregisters the CHIRP service discovery callback
          */
-        virtual ~HeartbeatRecv();
+        CNSTLN_API ~HeartbeatRecv();
 
         // No copy/move constructor/assignment
         HeartbeatRecv(const HeartbeatRecv& other) = delete;
@@ -69,7 +66,7 @@ namespace constellation::heartbeat {
          * @param depart Boolean to indicate discovery or departure
          * @param user_data Pointer to the heartbeat receiver instance
          */
-        static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
+        CNSTLN_API static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
     private:
         /** Callback implementation */

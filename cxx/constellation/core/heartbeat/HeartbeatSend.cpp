@@ -11,29 +11,25 @@
 
 #include <chrono>
 #include <functional>
-#include <memory>
+#include <mutex>
+#include <stop_token>
 #include <string>
-#include <string_view>
+#include <thread>
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
-#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
-#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/ports.hpp"
-#include "constellation/core/utils/std23.hpp"
-#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
 
-HeartbeatSend::HeartbeatSend(std::string_view sender, std::chrono::milliseconds interval)
-    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(sender), interval_(interval) {
+HeartbeatSend::HeartbeatSend(std::string sender, std::chrono::milliseconds interval)
+    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(std::move(sender)),
+      interval_(interval) {
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -68,7 +64,7 @@ void HeartbeatSend::updateState(State state) {
 
 void HeartbeatSend::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock(mutex_);
+        std::unique_lock<std::mutex> lock {mutex_};
 
         // Publish CHP message with current state
         CHP1Message(sender_, state_, interval_).assemble().send(pub_);
