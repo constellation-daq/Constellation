@@ -72,12 +72,8 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         // Publish CHP message with current state
         CHP1Message(sender_, state_, interval).assemble().send(pub_);
 
-        // Wait until either the interval before sending the next regular heartbeat has passed - or the state changes
-        // The state is captured in the lambda as copy upon invocation such that it represents the state when entering the
-        // waiting state
-        cv_.wait_until(lock, std::chrono::system_clock::now() + interval / 2, [&, state = state_.load()]() {
-            return stop_token.stop_requested() || state != state_;
-        });
-        lock.unlock();
+        // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
+        // This happens either when the state is updated (updateState) or in the HeartbeatSend destructor.
+        cv_.wait_for(lock, interval / 2);
     }
 }
