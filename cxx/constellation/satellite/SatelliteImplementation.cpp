@@ -190,7 +190,7 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         break;
     }
     case shutdown: {
-        if(fsm_.isShutdownAllowed()) {
+        if(is_shutdown_allowed(fsm_.getState())) {
             return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};
             terminate();
         } else {
