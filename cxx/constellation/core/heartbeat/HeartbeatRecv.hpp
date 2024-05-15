@@ -9,7 +9,7 @@
 #pragma once
 
 #include <any>
-#include <condition_variable>
+#include <atomic>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -89,8 +89,8 @@ namespace constellation::heartbeat {
         zmq::active_poller_t poller_;
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
 
-        std::mutex sockets_mutex_;
-        std::condition_variable cv_;
+        std::timed_mutex sockets_mutex_;
+        std::atomic_flag af_;
         std::jthread receiver_thread_;
 
         std::function<void(const message::CHP1Message&)> message_callback_;
