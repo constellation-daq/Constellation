@@ -108,7 +108,8 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 // We have lives left, reduce them by one
                 remote.lives--;
                 remote.last_checked = now;
-                LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << remote.lives;
+                LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to "
+                                    << static_cast<int>(remote.lives);
 
                 if(remote.lives == 0 && interrupt_callback_) {
                     // This parrot is dead, it is no more
