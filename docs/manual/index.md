@@ -8,7 +8,7 @@ about the stability of any features!
 ```{toctree}
 :caption: Get started
 
-building
+install
 ```
 
 ```{toctree}

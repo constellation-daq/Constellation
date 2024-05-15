@@ -1,4 +1,4 @@
-# Building from Source
+# Installing from Source
 
 This document describes the procedure of how to install (and possibly compile) the COnstellation framework from source.
 The source code can be obtained from [the Constellation Git repository](https://gitlab.desy.de/constellation/constellation):
