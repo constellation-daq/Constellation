@@ -1,6 +1,6 @@
 # Start a satellite & control it
 
-Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols,  a Python controller can control a C++ satellite and vice versa.
+Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols, a Python controller can control a C++ satellite and vice versa.
 
 ## Starting a satellite
 
@@ -13,7 +13,7 @@ To start a satellite, you need to provide three things:
 
 - `--type, -t`. Type of satellite. This corresponds to the class name of the satellite implementation.
 - `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
-- `--group, -g`. This is the name of the constellation group this satellite should be a part of.
+- `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
 
 Example
 
@@ -26,14 +26,14 @@ Example
 :::{tab-item} Python
 :sync: keyP
 
-Remember to activate the virtual environment you created when installting the framework where necessary
+Remember to activate the virtual environment you created when installing the framework where necessary
 
-```source venv/bin/activate```
+`source venv/bin/activate`
 
 When you start a satellite, you have the option to provide a number of parameters, for example:
 
 - `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
-- `--group, -g`. This is the name of the constellation group this satellite should be a part of.
+- `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
 
 ```sh
 python -m constellation.core.controller --name TheFirstSatelline --group myLabPlanet
@@ -54,7 +54,7 @@ python -m constellation.core.controller --name TheFirstSatelline --group myLabPl
 
 To control the satellite created in the first part of this tutorial, the controller needs to be in the same group.
 
-Everything else: tba
+TODO
 
 :::
 
