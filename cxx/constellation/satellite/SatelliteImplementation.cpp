@@ -92,12 +92,12 @@ void SatelliteImplementation::join() {
     }
 }
 
-void SatelliteImplementation::shutDown() {
+void SatelliteImplementation::terminate() {
     // Request stop on main thread
     main_thread_.request_stop();
-    // TODO(stephan.lachnit): we should join the thread, but this blocks join in satellite_main...?
-    // TODO(stephan.lachnit): stop heartbeat thread
-    // Interrupt satellite -> either in SAFE or in steady state that is not ORBIT or RUN
+    // We cannot join the main thread here since this method might be called from there and would result in a race condition
+
+    // Tell the FSM to interrupt, which will go to SAFE in case of ORBIT or RUN state:
     fsm_.interrupt();
 }
 
@@ -129,16 +129,16 @@ void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::strin
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::payload_buffer>>
-SatelliteImplementation::handleGetCommand(std::string_view command) {
+SatelliteImplementation::handleStandardCommand(std::string_view command) {
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
     message::payload_buffer return_payload {};
 
-    auto command_enum = magic_enum::enum_cast<GetCommand>(command, magic_enum::case_insensitive);
+    auto command_enum = magic_enum::enum_cast<StandardCommand>(command, magic_enum::case_insensitive);
     if(!command_enum.has_value()) {
         return std::nullopt;
     }
 
-    using enum GetCommand;
+    using enum StandardCommand;
     switch(command_enum.value()) {
     case get_name: {
         return_verb = {CSCP1Message::Type::SUCCESS, satellite_->getCanonicalName()};
@@ -159,8 +159,9 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
             command_dict["reconfigure"] =
                 "Reconfigure satellite (payload: partial config as flat MessagePack dict with strings as keys)";
         }
-        command_dict["start"] = "Start satellite (payload: run number as MessagePack integer)";
-        command_dict["stop"] = "Stop satellite";
+        command_dict["start"] = "Start new run (payload: run number as MessagePack integer)";
+        command_dict["stop"] = "Stop run";
+        command_dict["shutdown"] = "Shutdown satellite";
         // Get commands
         command_dict["get_name"] = "Get canonical name of satellite";
         command_dict["get_version"] = "Get Constellation version of satellite";
@@ -193,6 +194,16 @@ SatelliteImplementation::handleGetCommand(std::string_view command) {
         return_verb = {CSCP1Message::Type::SUCCESS, "Configuration attached in payload"};
         return_payload =
             satellite_->getConfig().getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
+        break;
+    }
+    case shutdown: {
+        if(is_shutdown_allowed(fsm_.getState())) {
+            return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};
+            terminate();
+        } else {
+            return_verb = {CSCP1Message::Type::INVALID,
+                           "Satellite cannot be shut down from current state " + to_string(fsm_.getState())};
+        }
         break;
     }
     default: std::unreachable();
@@ -276,9 +287,9 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             }
 
             // Try to decode as other builtin (non-transition) commands
-            auto get_command_reply = handleGetCommand(command_string);
-            if(get_command_reply.has_value()) {
-                sendReply(get_command_reply.value().first, std::move(get_command_reply.value().second));
+            auto standard_command_reply = handleStandardCommand(command_string);
+            if(standard_command_reply.has_value()) {
+                sendReply(standard_command_reply.value().first, std::move(standard_command_reply.value().second));
                 continue;
             }
 

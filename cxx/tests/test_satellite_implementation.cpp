@@ -106,7 +106,7 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(recv_msg_get_commands.hasPayload());
     const auto get_commands_dict = Dictionary::disassemble(recv_msg_get_commands.getPayload());
     REQUIRE(get_commands_dict.contains("get_commands"));
-    REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop satellite");
+    REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop run");
     REQUIRE(get_commands_dict.contains("my_cmd"));
     REQUIRE_THAT(std::get<std::string>(get_commands_dict.at("my_cmd")),
                  Equals("A User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
@@ -231,6 +231,52 @@ TEST_CASE("Transitions", "[satellite]") {
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("INIT"));
+}
+
+TEST_CASE("Shutdown", "[satellite]") {
+    // Create and start satellite
+    auto satellite = std::make_shared<DummySatellite>();
+    auto satellite_implementation = SatelliteImplementation(satellite);
+    satellite_implementation.start();
+
+    // Create sender
+    CSCPSender sender {satellite_implementation.getPort()};
+
+    // Send initialize
+    auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
+    initialize_msg.addPayload(Dictionary().assemble());
+    sender.send(initialize_msg);
+    auto recv_msg_initialize = sender.recv();
+    REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
+
+    // Send launch
+    auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
+    sender.send(launch_msg);
+    auto recv_msg_launch = sender.recv();
+    REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(100ms);
+
+    // Try shutdown & fail
+    auto shutdown1_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
+    sender.send(shutdown1_msg);
+    auto recv_msg_shutdown1 = sender.recv();
+    REQUIRE(recv_msg_shutdown1.getVerb().first == CSCP1Message::Type::INVALID);
+    REQUIRE_THAT(to_string(recv_msg_shutdown1.getVerb().second),
+                 Equals("Satellite cannot be shut down from current state ORBIT"));
+
+    // Send land
+    auto land_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "land"});
+    sender.send(land_msg);
+    auto recv_msg_land = sender.recv();
+    REQUIRE(recv_msg_land.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(100ms);
+
+    // Try shutdown & succeed
+    auto shutdown2_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
+    sender.send(shutdown2_msg);
+    auto recv_msg_shutdown2 = sender.recv();
+    REQUIRE(recv_msg_shutdown2.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_shutdown2.getVerb().second), Equals("Shutting down satellite"));
 }
 
 TEST_CASE("Catch unknown command", "[satellite]") {

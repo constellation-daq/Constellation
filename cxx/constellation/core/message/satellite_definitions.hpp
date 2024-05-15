@@ -66,13 +66,14 @@ namespace constellation::message {
     };
 
     /** Possible get_* commands via CSCP */
-    enum class GetCommand : std::underlying_type_t<TransitionCommand> {
+    enum class StandardCommand : std::underlying_type_t<TransitionCommand> {
         get_name,
         get_version,
         get_commands,
         get_state,
         get_status,
         get_config,
+        shutdown,
     };
 
 } // namespace constellation::message
