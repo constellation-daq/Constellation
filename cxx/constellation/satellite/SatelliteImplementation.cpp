@@ -88,9 +88,9 @@ void SatelliteImplementation::join() {
 void SatelliteImplementation::terminate() {
     // Request stop on main thread
     main_thread_.request_stop();
-    // TODO(stephan.lachnit): we should join the thread, but this blocks join in satellite_main...?
-    // TODO(stephan.lachnit): stop heartbeat thread
-    // Interrupt satellite -> either in SAFE or in steady state that is not ORBIT or RUN
+    // We cannot join the main thread here since this method might be called from there and would result in a race condition
+
+    // Tell the FSM to interrupt, which will go to SAFE in case of ORBIT or RUn state:
     fsm_.interrupt();
 }
 
