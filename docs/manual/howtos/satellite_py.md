@@ -26,7 +26,6 @@ For a new satellite, the following transitional state actions **should be implem
 
 The following transitional state actions are optional:
 
-* `void NewSatellite::reconfiguring()`: implements a fast partial reconfiguration of the satellite, see below for a detailed description.
 * `def do_interrupting(self)`: this is the transition to the `SAFE` state and defaults to `do_stopping` (if necessary because current state is `RUN`), followed by `do_landing`. If desired, this can be overwritten with a custom action.
 
 For the steady state action for the `RUN` state, see below.
@@ -49,5 +48,14 @@ def do_run(self, payload: any) -> str:
 Any finalization of the measurement run should be performed in the `do_stopping` action rather than at the end of the `do_run` function, if possible.
 
 ## Logging
+
+Logging from a satellite can be done by using `self.log.LOG_LEVEL("Message")`, where possible log levels are `debug`, `info`, `warning`, `error`, `critical`.
+An example info level log message is shown below:
+
+```python
+self.log.info("Landing satellite; ramping down voltage")
+```
+
+The log messages are broadcast to listeners, and can be listened on by using e.g. `python -m constellation.core.monitoring`.
 
 ## Sending stats
