@@ -233,6 +233,52 @@ TEST_CASE("Transitions", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("INIT"));
 }
 
+TEST_CASE("Shutdown", "[satellite]") {
+    // Create and start satellite
+    auto satellite = std::make_shared<DummySatellite>();
+    auto satellite_implementation = SatelliteImplementation(satellite);
+    satellite_implementation.start();
+
+    // Create sender
+    CSCPSender sender {satellite_implementation.getPort()};
+
+    // Send initialize
+    auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
+    initialize_msg.addPayload(Dictionary().assemble());
+    sender.send(initialize_msg);
+    auto recv_msg_initialize = sender.recv();
+    REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
+
+    // Send launch
+    auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
+    sender.send(launch_msg);
+    auto recv_msg_launch = sender.recv();
+    REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(100ms);
+
+    // Try shutdown & fail
+    auto shutdown1_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
+    sender.send(shutdown1_msg);
+    auto recv_msg_shutdown1 = sender.recv();
+    REQUIRE(recv_msg_shutdown1.getVerb().first == CSCP1Message::Type::INVALID);
+    REQUIRE_THAT(to_string(recv_msg_shutdown1.getVerb().second),
+                 Equals("Satellite cannot be shut down from current state ORBIT"));
+
+    // Send land
+    auto land_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "land"});
+    sender.send(land_msg);
+    auto recv_msg_land = sender.recv();
+    REQUIRE(recv_msg_land.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(100ms);
+
+    // Try shutdown & succeed
+    auto shutdown2_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
+    sender.send(shutdown2_msg);
+    auto recv_msg_shutdown2 = sender.recv();
+    REQUIRE(recv_msg_shutdown2.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_shutdown2.getVerb().second), Equals("Shutting down satellite"));
+}
+
 TEST_CASE("Catch unknown command", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
