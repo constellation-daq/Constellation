@@ -6,13 +6,15 @@ TODO
 
 ## Setting up the Development Environment
 
-We highly recommend creating a virtual Python environment for development.
+It is highly recommended to create a virtual Python environment for development.
 
 ### Pre-commit Hooks
 
-If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
+When contributing to the development of Constellation, following the coding style can be ensured by setting up and activating
+git pre-commit hooks which check the code against a variety of code validation tools automatically when you commit your code.
 
-Install pre-commit via
+Constellation uses the `pre-commit` tool which registers, updates and runs these hooks automatically. It can be installed and
+activated via
 
 ```sh
 pip install pre-commit
@@ -25,8 +27,8 @@ pre-commit install --install-hooks
 :::{tab-item} C++
 :sync: cxx
 
-Meson downloads the required dependencies automatically if there are not found on the system.
-You can install these to reduce your compilation time.
+Meson downloads the required dependencies automatically if they are not found on the system.
+System-wide installations of the dependencies can reduce the compilation time significantly.
 
 - ccache + how to setup CXX
 - meson deps, see docker images
@@ -46,24 +48,25 @@ pip install -e .[dev,test]
 pip install -e .[docs]
 ```
 
-You will also needs Make, [doxygen](https://doxygen.nl/) and plantuml. TODO.
+For generating the code documentation and user manual, also Make, [doxygen](https://doxygen.nl/) and plantuml are required.
 
 :::
 ::::
 
-## Running the Testsuite
+## Running the Test Suite
 
 ::::{tab-set}
 :::{tab-item} C++
 :sync: cxx
 
-If you want to test that everything works as intended, you can instead chose to compile with enabled unit testing. You can enable those with:
+Constellation implements an extensive C++ test suite using [Catch2](https://github.com/catchorg/Catch2/) which needs to be
+explicitly enabled at compile time via:
 
 ```sh
 meson configure build -Dcxx_tests=enabled
 ```
 
-Now run the included unit tests with:
+The unit tests can then be executed via:
 
 ```sh
 meson test -C build
@@ -73,6 +76,8 @@ meson test -C build
 :::{tab-item} Python
 :sync: python
 
+Constellation implements an extensive test suite using `pytest` which can be executed by running:
+
 ```sh
 pytest
 ```
@@ -80,7 +85,7 @@ pytest
 :::
 ::::
 
-### Running Coverage
+### Running Coverage Checks
 
 ::::{tab-set}
 :::{tab-item} C++
