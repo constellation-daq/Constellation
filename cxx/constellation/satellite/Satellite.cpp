@@ -49,8 +49,8 @@ void Satellite::reconfiguring(const config::Configuration& /* partial_config */)
     LOG(logger_, INFO) << "Reconfiguring - default";
 }
 
-void Satellite::starting(std::uint32_t run_number) {
-    LOG(logger_, INFO) << "Starting run " << run_number << " - default";
+void Satellite::starting(std::string_view run_identifier) {
+    LOG(logger_, INFO) << "Starting run " << run_identifier << " - default";
 }
 
 void Satellite::stopping() {

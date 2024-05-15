@@ -196,6 +196,10 @@ SatelliteImplementation::handleStandardCommand(std::string_view command) {
             satellite_->getConfig().getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
         break;
     }
+    case get_run_id: {
+        return_verb = {CSCP1Message::Type::SUCCESS, to_string(satellite_->getRunIdentifier())};
+        break;
+    }
     case shutdown: {
         if(is_shutdown_allowed(fsm_.getState())) {
             return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};

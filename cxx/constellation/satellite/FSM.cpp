@@ -138,7 +138,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
                 fsm_payload = Configuration(Dictionary::disassemble(payload));
             } else if(transition == Transition::start) {
                 const auto msgpack_payload = msgpack::unpack(to_char_ptr(payload.span().data()), payload.span().size());
-                fsm_payload = msgpack_payload->as<std::uint32_t>();
+                fsm_payload = msgpack_payload->as<std::string>();
             }
         }
     } catch(const msgpack::unpack_error& error) {
@@ -276,13 +276,14 @@ State FSM::reconfigured(TransitionPayload /* payload */) {
 }
 
 State FSM::start(TransitionPayload payload) {
-    auto call_wrapper = [this](std::uint32_t run_nr) {
+    auto call_wrapper = [this](std::string run_id) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
-            call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, run_nr);
+            call_satellite_function(this->satellite_.get(), &Satellite::starting, Transition::started, run_id);
+        this->satellite_->update_run_identifier(run_id);
         this->reactIfAllowed(transition);
     };
-    launch_assign_thread(transitional_thread_, call_wrapper, std::get<std::uint32_t>(std::move(payload)));
+    launch_assign_thread(transitional_thread_, call_wrapper, std::get<std::string>(std::move(payload)));
     return State::starting;
 }
 
