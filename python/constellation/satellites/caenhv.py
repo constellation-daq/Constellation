@@ -17,7 +17,7 @@ import pycaenhv
 
 
 class CaenHvSatellite(Satellite):
-    """Satellite controlling a CAEN HV crate via `pycaenhv`.
+    """Satellite controlling a CAEN HV crate via `pycaenhv` library.
 
     Supported models include SY5527.
 
