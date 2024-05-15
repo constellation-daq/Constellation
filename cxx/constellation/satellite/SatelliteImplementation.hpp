@@ -66,7 +66,7 @@ namespace constellation::satellite {
 
         // handle get commands
         std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::payload_buffer>>
-        handleGetCommand(std::string_view command);
+        handleStandardCommand(std::string_view command);
 
         // handle user commands
         std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::payload_buffer>>

@@ -122,16 +122,16 @@ void SatelliteImplementation::sendReply(std::pair<CSCP1Message::Type, std::strin
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::payload_buffer>>
-SatelliteImplementation::handleGetCommand(std::string_view command) {
+SatelliteImplementation::handleStandardCommand(std::string_view command) {
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
     message::payload_buffer return_payload {};
 
-    auto command_enum = magic_enum::enum_cast<GetCommand>(command, magic_enum::case_insensitive);
+    auto command_enum = magic_enum::enum_cast<StandardCommand>(command, magic_enum::case_insensitive);
     if(!command_enum.has_value()) {
         return std::nullopt;
     }
 
-    using enum GetCommand;
+    using enum StandardCommand;
     switch(command_enum.value()) {
     case get_name: {
         return_verb = {CSCP1Message::Type::SUCCESS, satellite_->getCanonicalName()};
@@ -280,7 +280,7 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             }
 
             // Try to decode as other builtin (non-transition) commands
-            auto get_command_reply = handleGetCommand(command_string);
+            auto get_command_reply = handleStandardCommand(command_string);
             if(get_command_reply.has_value()) {
                 sendReply(get_command_reply.value().first, std::move(get_command_reply.value().second));
                 continue;

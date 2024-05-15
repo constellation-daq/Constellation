@@ -49,7 +49,7 @@ namespace constellation::satellite {
             throw utils::LogicError("Can not register command with empty name");
         }
 
-        if(magic_enum::enum_cast<message::GetCommand>(name).has_value()) {
+        if(magic_enum::enum_cast<message::StandardCommand>(name).has_value()) {
             throw utils::LogicError("Standard satellite command with this name exists");
         }
 
