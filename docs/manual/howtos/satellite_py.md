@@ -59,3 +59,17 @@ self.log.info("Landing satellite; ramping down voltage")
 The log messages are broadcast to listeners, and can be listened on by using e.g. `python -m constellation.core.monitoring`.
 
 ## Sending stats
+
+To send metrics (e.g. readings from a sensor), the `schedule_metrics` method can be used. The method takes a metric name, a callable function, a polling interval, and a metric type as arguments.
+
+* Callable function: Should return a single value, with the option of also returning a unit. If only a value is returned, no unit will be transmitted. If a tuple is returned, the first element is taken as the value, and the second as the unit. The callable needs to return a value (of any type) and a unit (of type string), and take no arguments. If you have a callable that requires arguments, consider using functools.partial to fill in the necessary information at scheduling time.
+* Polling interval: a float value in seconds, indicating how often the metric is transmitted.
+* Metric type: can be `LAST_VALUE`, `ACCUMULATE`, `AVERAGE`, or `RATE`. The default type is `LAST_VALUE`.
+
+An example call is shown below:
+
+```python
+self.schedule_metric("Current", self.device.get_current, interval=5.0)
+```
+
+In this example, the callable `self.device.get_current` fetches the current from a power supply, and returns a tuple of value and unit via `return current, "A"`.
