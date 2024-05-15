@@ -90,7 +90,7 @@ void SatelliteImplementation::terminate() {
     main_thread_.request_stop();
     // We cannot join the main thread here since this method might be called from there and would result in a race condition
 
-    // Tell the FSM to interrupt, which will go to SAFE in case of ORBIT or RUn state:
+    // Tell the FSM to interrupt, which will go to SAFE in case of ORBIT or RUN state:
     fsm_.interrupt();
 }
 
@@ -280,9 +280,9 @@ void SatelliteImplementation::main_loop(const std::stop_token& stop_token) {
             }
 
             // Try to decode as other builtin (non-transition) commands
-            auto get_command_reply = handleStandardCommand(command_string);
-            if(get_command_reply.has_value()) {
-                sendReply(get_command_reply.value().first, std::move(get_command_reply.value().second));
+            auto standard_command_reply = handleStandardCommand(command_string);
+            if(standard_command_reply.has_value()) {
+                sendReply(standard_command_reply.value().first, std::move(standard_command_reply.value().second));
                 continue;
             }
 
