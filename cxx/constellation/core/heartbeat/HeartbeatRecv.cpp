@@ -55,7 +55,8 @@ HeartbeatRecv::~HeartbeatRecv() {
 
     // Stop the receiver thread
     receiver_thread_.request_stop();
-    cv_.notify_one();
+    af_.test_and_set();
+    af_.notify_one();
 
     if(receiver_thread_.joinable()) {
         receiver_thread_.join();
@@ -156,8 +157,9 @@ void HeartbeatRecv::callback_impl(const chirp::DiscoveredService& service, bool 
         connect(service);
     }
 
-    // Ping the main thread
-    cv_.notify_one();
+    // Ping the loop thread
+    af_.test_and_set();
+    af_.notify_one();
 }
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -168,15 +170,26 @@ void HeartbeatRecv::callback(chirp::DiscoveredService service, bool depart, std:
 
 void HeartbeatRecv::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock {sockets_mutex_};
-        // CV falls through if sockets are not empty, only here to prevent hot loop when there is nothing connected
-        cv_.wait(lock, [this, stop_token] { return !sockets_.empty() || stop_token.stop_requested(); });
-        lock.unlock();
+        std::unique_lock lock {sockets_mutex_, std::defer_lock};
 
-        // Poller crashes if called with no sockets attached:
-        if(!sockets_.empty()) {
-            // The poller returns immediately when a socket received something, but will time out after the set period:
-            poller_.wait(100ms);
+        // Try to get the lock, if fails just continue
+        const auto locked = lock.try_lock_for(50ms);
+        if(!locked) {
+            continue;
         }
+
+        // Poller crashes if called with no sockets attached, thus check
+        if(sockets_.empty()) {
+            // Unlock so that other threads can modify sockets_
+            lock.unlock();
+            // Wait to get notified that either sockets_ was modified or a stop was requested
+            af_.wait(false);
+            af_.clear();
+            // Go to next loop iteration in case a stop was requested
+            continue;
+        }
+
+        // The poller returns immediately when a socket received something, but will time out after the set period:
+        poller_.wait(50ms);
     }
 }
