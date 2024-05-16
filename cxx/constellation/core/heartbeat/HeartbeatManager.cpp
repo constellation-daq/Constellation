@@ -20,7 +20,8 @@
 
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
-#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
@@ -56,7 +57,7 @@ std::optional<State> HeartbeatManager::getRemoteState(const std::string& remote)
 
 void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
-                        << msg.getInterval().count();
+                        << msg.getInterval();
 
     const auto now = std::chrono::system_clock::now();
 
@@ -65,9 +66,7 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     if(remote_it != remotes_.end()) {
 
         if(now - msg.getTime() > 3s) [[unlikely]] {
-            LOG(logger_, WARNING) << "Detected time deviation of "
-                                  << std::chrono::duration_cast<std::chrono::milliseconds>(now - msg.getTime()).count()
-                                  << "ms to " << msg.getSender();
+            LOG(logger_, WARNING) << "Detected time deviation of " << now - msg.getTime() << " to " << msg.getSender();
         }
 
         remote_it->second.interval = msg.getInterval();

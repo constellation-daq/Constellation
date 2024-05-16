@@ -18,7 +18,7 @@
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
-#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -49,7 +49,7 @@ int main(int argc, char* argv[]) {
 
     const HeartbeatRecv receiver {[&](const CHP1Message& msg) {
         LOG(logger, DEBUG) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
-                           << msg.getInterval().count();
+                           << to_string(msg.getInterval());
     }};
 
     std::stop_source stop_token;
