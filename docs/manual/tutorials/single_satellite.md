@@ -9,7 +9,7 @@ Satellites and controllers can be implemented in either Python and in C++. Due t
 :::{tab-item} C++
 :sync: keyC
 
-To start a satellite, you need to provide three things:
+To start a satellite, three things need to be provided:
 
 - `--type, -t`. Type of satellite. This corresponds to the class name of the satellite implementation.
 - `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
@@ -26,11 +26,11 @@ Example
 :::{tab-item} Python
 :sync: keyP
 
-Remember to activate the virtual environment you created when installing the framework where necessary
+The virtual environment that had been created when installing the framework needs to be activated where necessary
 
 `source venv/bin/activate`
 
-When you start a satellite, you have the option to provide a number of parameters, for example:
+When a satellite is started, there is the option to provide a number of parameters, for example:
 
 - `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
 - `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
@@ -75,7 +75,7 @@ To control the satellite created in the first part of this tutorial, the control
 python -m constellation.core.controller --group myLabPlanet
 ```
 
-To see how many satellites are connected, type
+To following command can be used to see how many satellites are connected:
 
 ```python
 constellation.satellites
@@ -87,7 +87,7 @@ Example output
 [<__main__.SatelliteCommLink at 0x78d5bba4fcd0>]
 ```
 
-To obtain more information on a satellite, you can address it directly.
+To obtain more information on a satellite, it can be addressed directly.
 
 ```python
 print(constellation.satellites[0].get_name())
@@ -110,7 +110,7 @@ Example output
 :::{tab-item} C++
 :sync: keyC
 
-This will follow at a later date. And then you will know how to change the state of your satellite!
+TODO
 
 :::
 
@@ -119,9 +119,9 @@ This will follow at a later date. And then you will know how to change the state
 
 Commands can be sent to single satellites, all satellites of one type, or the entire constellation.
 
-To see a list of available commands, start typing and then hit the tab key.
+The procedure to see a list of available commands is to start typing and then to hit the tab key.
 
-To initialize the satellite, you need to send it an initialize command, with a dictionary of config options as an argument.
+To initialize the satellite, it needs to be sent an initialize command, with a dictionary of config options as an argument.
 
 ```python
 constellation.satellites[0].initialize({})
@@ -133,7 +133,7 @@ Example output
 {'msg': 'transition initialize is being initiated', 'payload': None}
 ```
 
-To check on the status of the satellite after sending a command
+The following command can be used to check on the state of the satellite 
 
 ```python
 constellation.satellites[0].get_state()
@@ -145,7 +145,7 @@ Example output
 {'msg': 'init', 'payload': None}
 ```
 
-Now you know how to change the state of your satellite!
+TODO: nice wrap-up sentence that doesn't sound super odd in passive voice.
 
 :::
 
@@ -158,16 +158,14 @@ Now you know how to change the state of your satellite!
 :::{tab-item} C++
 :sync: keyC
 
-Ctrl-C FTW ;-)
-
-Just kidding, tba.
+TODO.
 
 :::
 
 :::{tab-item} Python
 :sync: keyP
 
-Type `exit` to disconnect the controller from the constellation.
+The controller can be disconnected from the constellation using the command `exit`.
 
 :::
 
