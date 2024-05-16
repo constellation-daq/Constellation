@@ -35,3 +35,7 @@ executable('satellite',
   install: true,
   install_rpath: constellation_rpath,
 )
+
+# Template files for in-repo satellite implementations
+satellite_generator_template = files('templates/generator.cpp.in')
+satellite_main_template = files('templates/main.cpp.in')
