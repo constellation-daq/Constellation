@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief C++23 library features for C++20
+ * @brief Future C++ library features for C++20 and older compilers
  *
  * @copyright Copyright (c) 2023 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -30,6 +30,22 @@ namespace std {
 #ifdef __GNUC__
         __builtin_unreachable();
 #endif
+    }
+} // namespace std
+#endif
+
+// stream formatters for std::chrono
+#ifndef __cpp_lib_format
+#include <chrono>
+#include <ostream>
+#include "constellation/core/utils/string.hpp"
+namespace std {
+    inline std::ostream& operator<<(std::ostream& stream, std::chrono::system_clock::time_point time_point) {
+        return stream << constellation::utils::to_string(time_point);
+    }
+    template <typename Rep, typename Period>
+    inline std::ostream& operator<<(std::ostream& stream, std::chrono::duration<Rep, Period> duration) {
+        return stream << constellation::utils::to_string(duration);
     }
 } // namespace std
 #endif
