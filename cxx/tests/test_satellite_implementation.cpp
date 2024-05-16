@@ -401,7 +401,16 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Can not register command with empty name"));
+    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Command name is invalid"));
+
+    class MySatelliteI : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatelliteI() { register_command("command_with_amper&sand", "A User Command", {}, &MySatelliteI::cmd, this); }
+    };
+    REQUIRE_THROWS_MATCHES(std::make_shared<MySatelliteI>(), LogicError, Message("Command name is invalid"));
 
     class MySatellite2 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
