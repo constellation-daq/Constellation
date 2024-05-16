@@ -6,56 +6,113 @@ TODO
 
 ## Setting up the Development Environment
 
+It is highly recommended to create a virtual Python environment for development.
+
 ### Pre-commit Hooks
 
-If you want to develop on Constellation, you can ensure following the coding style by setting up git pre-commit hooks which check your code against a variety of code validation tools automatically when you commit your code.
+When contributing to the development of Constellation, following the coding style can be ensured by setting up and activating
+git pre-commit hooks which check the code against a variety of code validation tools automatically when you commit your code.
 
-Install [pre-commit](https://pre-commit.com) and run `pre-commit install` once inside the Constellation repository to set up the pre-commit hooks for your local git clone.
+Constellation uses the `pre-commit` tool which registers, updates and runs these hooks automatically. It can be installed and
+activated via
 
-Note: requires [pre-commit/identify](https://github.com/pre-commit/identify) version > 2.5.20
+```sh
+pip install pre-commit
+pre-commit install --install-hooks
+```
 
-You will also need to install the validation tools, such as `black` and `flake8` for Python.
+### Development Dependencies
 
-### Optional C++ Dependencies
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
 
-TODO
+Meson downloads the required dependencies automatically if they are not found on the system.
+System-wide installations of the dependencies can reduce the compilation time significantly.
 
-### Dependencies for the Documentation
+- ccache + how to setup CXX
+- meson deps, see docker images
 
-Ensure you have a valid Python virtual environment as described in [Building the Source](../manual/building.md).
-Then, install the dependencies to build the documentation:
+:::
+:::{tab-item} Python
+:sync: python
+
+```sh
+pip install -e .[dev,test]
+```
+
+:::
+:::{tab-item} Documentation
 
 ```sh
 pip install -e .[docs]
 ```
 
-You will also needs Make, [doxygen](https://doxygen.nl/) and plantuml. TODO.
+For generating the code documentation and user manual, also Make, [doxygen](https://doxygen.nl/) and plantuml are required.
 
-## Running the Testsuite
+:::
+::::
 
-TODO: tabs for C++ and Python
+## Running the Test Suite
 
-If you want to test that everything works as intended, you can instead chose to compile with enabled unit testing. You can enable those with:
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+Constellation implements an extensive C++ test suite using [Catch2](https://github.com/catchorg/Catch2/) which needs to be
+explicitly enabled at compile time via:
 
 ```sh
 meson configure build -Dcxx_tests=enabled
 ```
 
-Now run the included unit tests with:
+The unit tests can then be executed via:
 
 ```sh
 meson test -C build
 ```
 
-### Running Coverage
+:::
+:::{tab-item} Python
+:sync: python
 
-To create a coverage report with [`gcvor`](https://gcovr.com), run:
+Constellation implements an extensive test suite using `pytest` which can be executed by running:
+
+```sh
+pytest
+```
+
+:::
+::::
+
+### Running Coverage Checks
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+Requires [`gcvor`](https://gcovr.com) and compilation with GCC.
+
+```sh
+pip install gcovr
+```
+
+To create a coverage report, run:
 
 ```sh
 meson setup build_cov -Dcxx_tests=enabled -Db_coverage=true
 meson test -C build_cov
 ninja -C build_cov coverage-html
 ```
+
+:::
+:::{tab-item} Python
+:sync: python
+
+TODO
+
+:::
+::::
 
 ## Building the Documentation
 
