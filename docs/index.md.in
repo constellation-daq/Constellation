@@ -32,12 +32,20 @@ h3:not(#hero h3) {
 
 # Constellation: The Autonomous Control and Data Acquisition System for Dynamic Experimental Setups
 
-<div id="hero">
+::::::{grid} 1 2 2 2
+:gutter: 0
+:margin: 0
+:padding: 0
+:class-container: hero
 
-<div id="hero-left">  <!-- Start Hero Left -->
-  <h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Constellation</h2>
-  <h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
-  <p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
+:::::{grid-item}
+:margin: 0
+:padding: 0 0 0 4
+:columns: 12 5 5 5
+
+<h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Constellation</h2>
+<h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
+<p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
 
 <div class="homepage-button-container">
   <div class="homepage-button-container-row">
@@ -48,44 +56,54 @@ h3:not(#hero h3) {
       <a href="./reference/index.html" class="homepage-button-link">See API Reference →</a>
   </div>
 </div>
-</div>  <!-- End Hero Left -->
 
-<div id="hero-right">  <!-- Start Hero Right -->
+:::::
+
+:::::{grid-item}
+:margin: 0
+:padding: 5 0 0 0
+:columns: 12 7 7 7
 
 ::::{grid} 1 2 2 2
+:gutter: 3
+
 :::{grid-item-card} {octicon}`repo-forked;1em;sd-text-info` Autonomous
 Constellation operates without a central server, satellites exchange heartbeats to keep in touch.
 :::
 :::{grid-item-card} {octicon}`broadcast;1em;sd-text-info` Flexible
 Automatic network discovery of satellites make it easy to add and remove satellites on the fly.
 :::
-::::
-::::{grid} 1 2 2 2
 :::{grid-item-card} {octicon}`zap;1em;sd-text-info` Fast Integration
 The finite state machine and satellite interface are designed for fast and easy integration of devices.
 :::
-
 :::{grid-item-card} {octicon}`tools;1em;sd-text-info` Robust
 Constellation is based on widely adopted networking libraries such as [ZMQ](https://zeromq.org/) and [MsgPack](https://msgpack.org/).
 :::
 ::::
 
-<!-- grid ended above, do not put anything on the right of markdown closings -->
+:::::
 
-</div>  <!-- End Hero Right -->
-</div>  <!-- End Hero -->
+::::::
 
 # Key Features
 
-:::::{grid} 1
+:::::{grid} 1 2 2 2
 :gutter: 3
 
 ::::{grid-item-card}
 :shadow: none
 :class-card: sd-border-0
+:columns: 12 2 2 2
 
 :::{image} _static/undraw_code_typing_re_p8b9.svg
 :::
+
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
 
 :::{div} key-features-text
 <strong>Built on Solid Protocols</strong><br/>
@@ -97,9 +115,17 @@ A Constellation can consist of constituents written in any language, such as the
 ::::{grid-item-card}
 :shadow: none
 :class-card: sd-border-0
+:columns: 12 2 2 2
 
 :::{image} _static/undraw_set_preferences_kwia.svg
 :::
+
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
 
 :::{div} key-features-text
 <strong>Independent User Interfaces</strong><br/>
@@ -111,9 +137,17 @@ reconnect to the Constellation and its satellites upon start, displaying the lat
 ::::{grid-item-card}
 :shadow: none
 :class-card: sd-border-0
+:columns: 12 2 2 2
 
 :::{image} _static/undraw_online_connection_6778.svg
 :::
+
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
 
 :::{div} key-features-text
 <strong>Autonomous Operation</strong><br/>
@@ -125,9 +159,17 @@ information between satellites and to take action - such as entering a safe mode
 ::::{grid-item-card}
 :shadow: none
 :class-card: sd-border-0
+:columns: 12 2 2 2
 
 :::{image} _static/undraw_knowledge_re_5v9l.svg
 :::
+
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
 
 :::{div} key-features-text
 <strong>Extensively Documented</strong><br/>
@@ -140,9 +182,17 @@ guides novel contributors.
 ::::{grid-item-card}
 :shadow: none
 :class-card: sd-border-0
+:columns: 12 2 2 2
 
 :::{image} _static/undraw_open_source_-1-qxw.svg
 :::
+
+::::
+
+::::{grid-item-card}
+:shadow: none
+:class-card: sd-border-0
+:columns: 12 10 10 10
 
 :::{div} key-features-text
 <strong>Free & Open Source Software</strong><br/>
