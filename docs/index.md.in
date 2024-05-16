@@ -32,12 +32,20 @@ h3:not(#hero h3) {
 
 # Constellation: The Autonomous Control and Data Acquisition System for Dynamic Experimental Setups
 
-<div id="hero">
+::::::{grid} 1 2 2 2
+:gutter: 0
+:margin: 0
+:padding: 0
+:class-container: hero
 
-<div id="hero-left">  <!-- Start Hero Left -->
-  <h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Constellation</h2>
-  <h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
-  <p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
+:::::{grid-item}
+:margin: 0
+:padding: 0 0 0 4
+:columns: 12 5 5 5
+
+<h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Constellation</h2>
+<h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
+<p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
 
 <div class="homepage-button-container">
   <div class="homepage-button-container-row">
@@ -48,32 +56,34 @@ h3:not(#hero h3) {
       <a href="./reference/index.html" class="homepage-button-link">See API Reference →</a>
   </div>
 </div>
-</div>  <!-- End Hero Left -->
 
-<div id="hero-right">  <!-- Start Hero Right -->
+:::::
+
+:::::{grid-item}
+:margin: 0
+:padding: 5 0 0 0
+:columns: 12 7 7 7
 
 ::::{grid} 1 2 2 2
+:gutter: 3
+
 :::{grid-item-card} {octicon}`repo-forked;1em;sd-text-info` Autonomous
 Constellation operates without a central server, satellites exchange heartbeats to keep in touch.
 :::
 :::{grid-item-card} {octicon}`broadcast;1em;sd-text-info` Flexible
 Automatic network discovery of satellites make it easy to add and remove satellites on the fly.
 :::
-::::
-::::{grid} 1 2 2 2
 :::{grid-item-card} {octicon}`zap;1em;sd-text-info` Fast Integration
 The finite state machine and satellite interface are designed for fast and easy integration of devices.
 :::
-
 :::{grid-item-card} {octicon}`tools;1em;sd-text-info` Robust
 Constellation is based on widely adopted networking libraries such as [ZMQ](https://zeromq.org/) and [MsgPack](https://msgpack.org/).
 :::
 ::::
 
-<!-- grid ended above, do not put anything on the right of markdown closings -->
+:::::
 
-</div>  <!-- End Hero Right -->
-</div>  <!-- End Hero -->
+::::::
 
 # Key Features
 
