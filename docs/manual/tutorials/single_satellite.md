@@ -1,8 +1,8 @@
-# Start a satellite & control it
+# Start a Satellite & Control It
 
 Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols, a Python controller can control a C++ satellite and vice versa.
 
-## Starting a satellite
+## Starting a Satellite
 
 ::::{tab-set}
 
@@ -43,9 +43,9 @@ python -m constellation.core.controller --name TheFirstSatelline --group myLabPl
 
 ::::
 
-## Controlling a satellite
+## Controlling a Satellite
 
-### Starting a controller
+### Starting a Controller
 
 ::::{tab-set}
 
@@ -103,7 +103,7 @@ Example output
 
 ::::
 
-### Sending commands to the satellite
+### Sending Commands to the Satellite
 
 ::::{tab-set}
 
@@ -151,7 +151,7 @@ Now you know how to change the state of your satellite!
 
 ::::
 
-### Terminating the controller
+### Terminating the Controller
 
 ::::{tab-set}
 
