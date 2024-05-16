@@ -85,7 +85,8 @@ namespace constellation::message {
 
     inline bool is_valid_command_name(const std::string& name) {
         // Alphanumeric characters, do not start with a digit
-        return (!name.empty() && std::regex_match(name, std::regex("[\\w\\d]+")) && !std::isdigit(name[0]));
+        return (!name.empty() && std::regex_match(name, std::regex("[\\w\\d]+")) &&
+                !static_cast<bool>(std::isdigit(static_cast<unsigned char>(name[0]))));
     }
 
 } // namespace constellation::message
