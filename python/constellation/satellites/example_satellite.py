@@ -12,31 +12,38 @@ import logging
 from constellation.core.configuration import ConfigError, Configuration
 
 
-class Example_Device1:
+"""
+Mock class representing a device that can be utilised by a satellite
+"""
 
-    def set_config(self, config: Configuration):
-        self.voltage = config["voltage"]
-        self.ampere = config["ampere"]
-        self.sample_period = config.setdefault("sample_period", default=0.1)
+
+class Example_Device1:
+    def __init__(self, voltage, ampere, sample_period=0.1):
+        self.voltage = voltage
+        self.ampere = ampere
+        self.sample_period = sample_period
 
 
 class Example_Satellite(Satellite):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.device = Example_Device1()
 
-    def do_initializing(self, payload: dict) -> str:
-        super().do_initializing(payload=payload)
+    def do_initializing(self, config: Configuration) -> str:
         try:
-            self.device.set_config(self.config)
+            self.device = Example_Device1(
+                config["voltage"], config["current"], config["sample_period"]
+            )
         except KeyError as e:
-            self.log.error("Configuration has no attribute %s", e)
+            self.log.error(
+                "Attribute '%s' is required but missing from the configuration.", e
+            )
             raise ConfigError
 
         return "Initialized"
 
     def do_run(self, payload: any) -> str:
         while not self._state_thread_evt.is_set():
+            """
+            Example work to be done while satellite is running
+            """
             time.sleep(self.device.sample_period)
             print(f"New sample at {self.device.voltage}")
         return "Finished acquisition."
