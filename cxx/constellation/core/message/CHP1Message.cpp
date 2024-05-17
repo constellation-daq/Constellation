@@ -54,24 +54,28 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
         throw UnexpectedProtocolError(protocol_recv, CHP1);
     }
 
-    // Unpack sender
-    const auto msgpack_sender = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto sender = msgpack_sender->as<std::string>();
+    try {
+        // Unpack sender
+        const auto msgpack_sender = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto sender = msgpack_sender->as<std::string>();
 
-    // Unpack time
-    const auto msgpack_time = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
+        // Unpack time
+        const auto msgpack_time = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
 
-    // Unpack remote state
-    const auto msgpack_state = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto state = static_cast<State>(msgpack_state->as<std::uint8_t>());
+        // Unpack remote state
+        const auto msgpack_state = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto state = static_cast<State>(msgpack_state->as<std::uint8_t>());
 
-    // Unpack time interval
-    const auto msgpack_interval = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto interval = static_cast<std::chrono::milliseconds>(msgpack_interval->as<std::uint16_t>());
+        // Unpack time interval
+        const auto msgpack_interval = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto interval = static_cast<std::chrono::milliseconds>(msgpack_interval->as<std::uint16_t>());
 
-    // Construct message
-    return {sender, state, interval, time};
+        // Construct message
+        return {sender, state, interval, time};
+    } catch(const std::bad_cast&) {
+        throw MessageDecodingError("malformed data");
+    }
 }
 
 zmq::multipart_t CHP1Message::assemble() {
