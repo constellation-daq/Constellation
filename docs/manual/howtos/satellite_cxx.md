@@ -24,15 +24,15 @@ transitional states are implemented by overriding the virtual methods provided b
 
 For a new satellite, the following transitional state actions **should be implemented**:
 
-* `void NewSatellite::initializing()`
+* `void NewSatellite::initializing(config::Configuration& config)`
 * `void NewSatellite::launching()`
 * `void NewSatellite::landing()`
-* `void NewSatellite::starting()`
+* `void NewSatellite::starting(std::string_view run_identifier)`
 * `void NewSatellite::stopping()`
 
 The following transitional state actions are optional:
 
-* `void NewSatellite::reconfiguring()`: implements a fast partial reconfiguration of the satellite, see below for a detailed description.
+* `void NewSatellite::reconfiguring(const config::Configuration& config)`: implements a fast partial reconfiguration of the satellite, see below for a detailed description.
 * `void NewSatellite::interrupting()`: this is the transition to the `SAFE` state and defaults to `stopping` (if necessary because current state is `RUN`), followed by `landing`. If desired, this can be overwritten with a custom action.
 
 For the steady state action for the `RUN` state, see below.
@@ -49,10 +49,21 @@ void NewSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         // Do work
     }
+
+    // No heavy lifting should be performed here once a stop has been requested
 }
 ```
 
-Any finalization of the measurement run should be performed in the `stopping` action rather than at the end of the `running` function, if possible.
+```{note}
+Any finalization of the measurement run should be performed in the `stopping` action rather than at the end of the `running` function, if possible:
+```
+
+```cpp
+void NewSatellite::stopping() {
+    // Perform cleanup action here
+}
+```
+
 
 ## To Reconfigure or Not To Reconfigure
 
@@ -84,7 +95,7 @@ MySatellite(std::string_view type, std::string_view name) : Satellite(type, name
 }
 ```
 
-and the corresponding transition function `reconfiguring()` needs to be implemented.
+and the corresponding transition function `reconfiguring(const config::Configuration& config)` needs to be implemented.
 
 The payload of this method is a partial configuration which contains only the keys to be changed. The satellite
 implementation should check for the validity of all keys and report in case invalid keys are found.
@@ -92,12 +103,17 @@ implementation should check for the validity of all keys and report in case inva
 ## Error Handling
 
 Any error that prevents the satellite from functioning (or from functioning *properly*) should throw an exception to notify
-the framework of the problem. The Constellation core library provides different exception types for this purpose:
+the framework of the problem. The Constellation core library provides different exception types for this purpose.
 
+### Generic Errors
+
+* `SatelliteError` is a generic exception which can be used if none of the other available exception types match the situation.
 * `CommunicationError` can be used to indicate a failed communication with attached hardware components.
+
+### Configuration Errors
+
 * `MissingKeyError` should be thrown when a mandatory configuration key is absent.
 * `InvalidValueError` should be used when a value read from the configuration is not valid.
-* `SatelliteError` is a generic exception which can be used if none of the above match the situation.
 
 The message provided with the exception should be as descriptive as possible. It will both be logged and will be used as
 status message by the satellite.
