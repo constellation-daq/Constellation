@@ -3,6 +3,7 @@
 
 import sphinx
 import pathlib
+import shutil
 
 logger = sphinx.util.logging.getLogger(__name__)
 
@@ -122,6 +123,38 @@ with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
     for line in index_in:
         if without_news and "news/index" in line:
             continue
+        index_out.write(line)
+
+# add satellites to documentation:
+satellite_files_cxx = list(pathlib.Path("../cxx/satellites").glob("**/README.md"))
+satellite_files_py = list(
+    pathlib.Path("../python/constellation/satellites").glob("**/README.md")
+)
+
+satellites_cxx = []
+satellites_py = []
+
+for path in satellite_files_cxx:
+    # FIXME need to deal with header
+    shutil.copy(
+        path, (pathlib.Path("satellites") / path.parent.name).with_suffix(".md")
+    )
+    satellites_cxx.append(path.parent.name)
+
+for path in satellite_files_py:
+    # FIXME need to deal with header
+    shutil.copy(
+        path, (pathlib.Path("satellites") / path.parent.name).with_suffix(".md")
+    )
+    satellites_py.append(path.parent.name)
+
+with (
+    open("satellites/index.md.in", "rt") as index_in,
+    open("satellites/index.md", "wt") as index_out,
+):
+    for line in index_in:
+        line = line.replace("SATELLITES_CXX", "\n".join(satellites_cxx))
+        line = line.replace("SATELLITES_PYTHON", "\n".join(satellites_py))
         index_out.write(line)
 
 # ablog settings
