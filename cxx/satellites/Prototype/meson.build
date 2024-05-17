@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-satellite_name = 'prototype'
+satellite_name = 'Prototype'
 
 satellite_sources = files(
-  'prototype.cpp',
+  'Prototype.cpp',
 )
 
 satellite_cfg_data = configuration_data()
@@ -28,7 +28,7 @@ shared_library(satellite_name,
   install_rpath: constellation_rpath,
 )
 
-executable('satellite_' + satellite_name,
+executable('Satellite' + satellite_name,
   sources: [satellite_main],
   dependencies: [exec_dep],
   install: true,

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "prototype.hpp"
+#include "Prototype.hpp"
 
 #include <string_view>
 
@@ -16,6 +16,6 @@
 
 using namespace constellation::satellite;
 
-prototype::prototype(std::string_view type, std::string_view name) : Satellite(type, name) {
+Prototype::Prototype(std::string_view type, std::string_view name) : Satellite(type, name) {
     LOG(logger_, STATUS) << "Dummy satellite " << getCanonicalName() << " created";
 }
