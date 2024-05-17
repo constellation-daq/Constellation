@@ -9,7 +9,6 @@ controllers in the Constellation network.
 :::{tab-item} C++
 :sync: keyC
 
-
 ## The Command Registry
 
 The satellite command registry provides a facility where the satellite can register arbitrary commands and expose them
@@ -124,74 +123,27 @@ A command must have the signature
 def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
 ```
 
-    The expected return values are:
-    - reply message (string)
-    - payload (any)
-    - map (dictionary) (e.g. for meta information)
+The expected return values are:
 
-In this example, the following command is added to the satellite `MySatellite`:
+- reply message (string)
+- payload (any)
+- map (dictionary) (e.g. for meta information)
 
+Adding a custom command thus also requires `from constellation.core.cscp import CSCPMessage`.
 
+In this example, the command `get_channel_reading(channel: int)` is added to a satellite:
 
-```cpp
-int MySatellite::get_channel_reading(int channel) {
-  auto value = device_->read_channel(channel);
-  return value / 10;
-}
+```python
+@cscp_requestable
+def get_channel_reading(self, request: CSCPMessage):
+    """Read the value of the channel given by the first supplied argument."""
+    paramList = request.payload
+    channel = paramList[0]
+    value = _device.read(channel)
+    return str(value / 10), None, None
 ```
 
-In the constructor of `MySatellite`, the command is registered with the command registry as follows:
-
-```cpp
-MySatellite::MySatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
-    register_command("get_channel_reading",
-                     "This command reads the current device value from the channel number provided as argument. Since this"
-                     "will reset the corresponding channel, this can only be done before the run has started.",
-                     {State::NEW, State::INIT, State::ORBIT},
-                     &MySatellite::get_channel_reading,
-                     this);
-}
-```
-
-The arguments here are, in this order, the name of the command, its description, the allowed states this command can be
-called in, the pointer to the command function and the pointer to this satellite instance. The individual parts of the
-registration process are discussed below in detail.
-
-    @cscp_requestable
-    def get_current(self, request: CSCPMessage):
-        """Read the current current. Takes no parameters"""
-        current = self.device.get_current_timestamp_voltage("current")
-        return ("Current current is " + str(current[0]) + " " + current[1]), None, None
-
-    def _get_current_is_allowed(self, request: CSCPMessage):
-        """Allow in the states INIT and ORBIT, but not during RUN"""
-        return self.fsm.current_state.id in ["INIT", "ORBIT", "RUN", "SAFE", "ERROR"]
-
-    """Class for handling incoming CSCP requests.
-
-    Commands will call specific methods of the inheriting class which should
-    have the following signature:
-
-    def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
-
-    The expected return values are:
-    - reply message (string)
-    - payload (any)
-    - map (dictionary) (e.g. for meta information)
-
-    Inheriting classes need to decorate such command methods with
-    '@cscp_requestable' to make them callable through CSCP requests.
-
-    If a method
-
-    def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
-
-    exists, it will be called first to determine whether the command is
-    currently allowed or not.
-
-    """
-
-
+The `@cscp_requestable` decorator registers the command with the command registry, and the comment block in the beginning is the description of the command, available from the command registry. The command is called via `constellation.MySatellite.get_channel_reading([1])` in the Controller, to read channel 1. Note that the parameters are given as a list which is the `payload` of the `CSCPMessage` in the custom command.
 
 ### Name and description
 
@@ -199,28 +151,10 @@ The name of the command is the handle with which it will be called from a contro
 only contain alphanumeric characters and underscores. The description should comprehensively describe the command, its
 required arguments and the return value.
 
-In addition to this information, the number of required arguments as well as the allowed states are automatically appended
-to the description reported by the satellite e.g. through its `get_commands` response. For the example command registered
-above, the output could look like this:
-
-```text
-get_channel_reading:  This command reads the current device value from the channel number provided as argument. Since this
-                      will reset the corresponding channel, this can only be done before the run has started.
-                      This command requires 1 arguments.
-                      This command can only be called in the following states: NEW, INIT, ORBIT
-```
-
 ### Command arguments and return values
 
 The command registry can handle commands with any number of arguments and can also provide return values from the called
-functions back to the controller. Arguments do not have to be specifically denominated when registering the command. The
-command registry instead takes this information directly from the function declaration of the command to be called.
-
-```{note}
-All parameters and return values of functions in the command registry are encoded as configuration values and must therefore
-be able to be converted to and from these. A detailed information of available types is available in the configuration
-documentation.
-```
+functions back to the controller.
 
 The arguments have to be provided as a list of configuration values in the command payload sent to the satellite. Similarly,
 return values from the called functions are converted to a configuration value and are returned in the message payload to
@@ -242,3 +176,17 @@ value in the `NEW` or `INIT` states where the power supply is not fully configur
 
 The command registry allows limiting the states in which each of the commands can be executed and will report an invalid
 command otherwise.
+
+This is handled by adding a method with the signature
+
+```python
+def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
+```
+
+to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether it is allowed or not. An example is shown below, limiting the usage of the `get_channel_reading` command to the states `INIT` and `ORBIT`:
+
+```python
+def _get_channel_reading_is_allowed(self, request: CSCPMessage):
+    """Allow in the states INIT and ORBIT, but not during RUN"""
+    return self.fsm.current_state.id in ["INIT", "ORBIT"]
+```
