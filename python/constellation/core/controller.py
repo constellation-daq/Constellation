@@ -19,6 +19,7 @@ from .chirp import CHIRPServiceIdentifier, get_uuid
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .satellite import Satellite
+from .base import EPILOG, ConstellationArgumentParser
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
 
@@ -351,31 +352,36 @@ class BaseController(CHIRPBroadcaster):
         super().reentry()
 
 
-def main():
-    """Start a controller."""
-    import argparse
+def main(args=None):
+    """Start a Constellation CSCP controller.
+
+    This Controller provides a command-line interface to the selected
+    Constellation group via IPython terminal.
+
+    """
     import coloredlogs
     from IPython import embed
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--name", type=str, default="cli_controller")
-    parser.add_argument("--group", type=str, default="constellation")
-    parser.add_argument("--interface", type=str, default="*")
+    parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
         "-c", "--config", type=str, help="Path to the TOML configuration file to load."
     )
-
-    args = parser.parse_args()
+    # set the default arguments
+    parser.set_defaults(name="controller")
+    # get a dict of the parsed arguments
+    args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
+
+    cfg_file = args.pop("config")
 
     logger.debug("Starting up CLI Controller!")
 
     # start server with args
-    ctrl = BaseController(name=args.name, group=args.group, interface=args.interface)
+    ctrl = BaseController(**args)
 
     constellation = ctrl.constellation  # noqa
 
@@ -387,9 +393,9 @@ def main():
     print("To get help for any of its methods, call it with a question mark:")
     print("          constellation.get_state?\n")
 
-    if args.config:
-        cfg = load_config(args.config)  # noqa
-        print("The configuration is loaded into `cfg`.\n")
+    if cfg_file:
+        cfg = load_config(cfg_file)  # noqa
+        print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
 
     print("Happy hacking! :)\n")
 

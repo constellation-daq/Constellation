@@ -14,7 +14,7 @@ from functools import wraps
 from datetime import datetime
 from logging.handlers import QueueHandler, QueueListener
 
-from .base import BaseSatelliteFrame
+from .base import BaseSatelliteFrame, ConstellationArgumentParser, EPILOG
 from .cmdp import CMDPTransmitter, Metric, MetricsType
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
@@ -360,30 +360,23 @@ class MonitoringListener(CHIRPBroadcaster):
 
 def main(args=None):
     """Start a simple log listener service."""
-    import argparse
     import coloredlogs
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--name", type=str, default="simple_monitor")
-    parser.add_argument("--group", type=str, default="constellation")
-    parser.add_argument("--interface", type=str, default="*")
+    parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
         "-o", "--output", type=str, help="The path to write log and metric data to."
     )
-
-    args = parser.parse_args(args)
+    # set the default arguments
+    parser.set_defaults(name="basic_monitor")
+    # get a dict of the parsed arguments
+    args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
 
-    mon = MonitoringListener(
-        name=args.name,
-        group=args.group,
-        interface=args.interface,
-        output_path=args.output,
-    )
+    mon = MonitoringListener(**args)
     mon.receive_metrics()
 
 
