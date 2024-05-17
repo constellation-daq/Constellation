@@ -203,10 +203,10 @@ namespace constellation::utils {
 
     template <typename MESSAGE> void SubscriberPool<MESSAGE>::loop(const std::stop_token& stop_token) {
         while(!stop_token.stop_requested()) {
-            using namespace std::literals::chrono_literals;
             std::unique_lock lock {sockets_mutex_, std::defer_lock};
 
             // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
+            using namespace std::literals::chrono_literals;
             std::this_thread::sleep_for(1ns);
 
             // Try to get the lock, if fails just continue
