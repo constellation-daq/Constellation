@@ -18,6 +18,29 @@ namespace constellation::satellite {
 
     /**
      * @ingroup Exceptions
+     * @brief Generic Satellite Error
+     *
+     * An unspecified error occurred in the user code implementation of a satellite
+     */
+    class SatelliteError : public utils::RuntimeError {
+        explicit SatelliteError(const std::string& reason) { error_message_ = reason; }
+
+    protected:
+        SatelliteError() = default;
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Satellite Error for device communication
+     *
+     * An error occurred in the user code implementation of a satellite when attempting to communicate with hardware
+     */
+    class CommunicationError : public SatelliteError {
+        explicit CommunicationError(const std::string& reason) { error_message_ = reason; }
+    };
+
+    /**
+     * @ingroup Exceptions
      * @brief Finite State Machine Error
      *
      * An error occurred in a request to the finite state machine
