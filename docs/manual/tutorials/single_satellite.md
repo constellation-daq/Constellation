@@ -81,28 +81,33 @@ To control the satellite created in the first part of this tutorial, the control
 python -m constellation.core.controller --group myLabPlanet
 ```
 
-To following command can be used to see how many satellites are connected:
+The interactive command line provides the `constellation` object which holds all information about connected satellites and
+allows their control. Just listing the satellites could e.g. be performed by running:
 
-```python
-constellation.satellites
-```
-
-Example output
-
-```sh
+```ipython
+In [1]: constellation.satellites
+Out[1]:
 [<__main__.SatelliteCommLink at 0x78d5bba4fcd0>]
 ```
 
-To obtain more information on a satellite, it can be addressed directly.
+In order to obtain more - and less cryptic - information on a specific satellite, it can be directly addressed in the list
+and a command can be sent. The response is then printed on the terminal:
 
-```python
-print(constellation.satellites[0].get_name())
+```ipython
+In [2]: print(constellation.satellites[0].get_name())
+Out[2]:
+{'msg': 'prototype.thefirstsatellite', 'payload': None}
 ```
 
-Example output
+Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
+connected:
 
-```sh
+```ipython
+In [3]: for sat in constellation.satellites:
+   ...:     print(sat.get_name())
+   ...:
 {'msg': 'prototype.thefirstsatellite', 'payload': None}
+{'msg': 'prototype.thesecondsatellite', 'payload': None}
 ```
 
 :::
