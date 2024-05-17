@@ -84,7 +84,7 @@ python -m constellation.core.controller --group myLabPlanet
 The interactive command line provides the `constellation` object which holds all information about connected satellites and
 allows their control. Just listing the satellites could e.g. be performed by running:
 
-```ipython
+```python
 In [1]: constellation.satellites
 Out[1]:
 [<__main__.SatelliteCommLink at 0x78d5bba4fcd0>]
@@ -93,7 +93,7 @@ Out[1]:
 In order to obtain more - and less cryptic - information on a specific satellite, it can be directly addressed in the list
 and a command can be sent. The response is then printed on the terminal:
 
-```ipython
+```python
 In [2]: print(constellation.satellites[0].get_name())
 Out[2]:
 {'msg': 'prototype.thefirstsatellite', 'payload': None}
@@ -102,7 +102,7 @@ Out[2]:
 Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
 connected:
 
-```ipython
+```python
 In [3]: for sat in constellation.satellites:
    ...:     print(sat.get_name())
    ...:
@@ -128,41 +128,37 @@ TODO
 :::{tab-item} Python
 :sync: keyP
 
-Commands can be sent to single satellites, all satellites of one type, or the entire constellation.
-
-The procedure to see a list of available commands is to start typing and then to hit the tab key.
+Commands can either be sent to individual satellites, all satellites of a given type, or the entire constellation.
+All available commands for the `constellation` object are available via tab completion.
 
 To initialize the satellite, it needs to be sent an initialize command, with a dictionary of config options as an argument.
+In the following example, this dictionary is empty (`{}`) and directly passed to the command.
 
 ```python
-constellation.satellites[0].initialize({})
-```
-
-Example output
-
-```sh
+In [1]: constellation.satellites[0].initialize({})
+Out[1]:
 {'msg': 'transition initialize is being initiated', 'payload': None}
 ```
 
-The following command can be used to check on the state of the satellite
+If the satellite has actually changed its state can be checked by retrieving the current state via:
 
 ```python
-constellation.satellites[0].get_state()
-```
-
-Example output
-
-```sh
+In [2]: constellation.satellites[0].get_state()
+Out[2]:
 {'msg': 'init', 'payload': None}
 ```
 
-TODO: nice wrap-up sentence that doesn't sound super odd in passive voice.
+Similarly, all satellite states can be called. A full list of available commands, along with a description of the finite
+state machine can be found in the [concepts chapter on satellites](../concepts/satellite).
 
 :::
 
 ::::
 
-### Terminating the Controller
+### Closing the Controller
+
+Controllers in Constellation do not posses state and can be closed and restarted at the discretion of the user without
+affecting the state of the satellites.
 
 ::::{tab-set}
 
@@ -176,7 +172,7 @@ TODO.
 :::{tab-item} Python
 :sync: keyP
 
-The controller can be disconnected from the constellation using the command `exit`.
+The IPython CLI controller can be disconnected from the constellation using the command `exit()`.
 
 :::
 
