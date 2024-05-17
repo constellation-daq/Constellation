@@ -1,8 +1,13 @@
 # Adding Custom Satellite Commands
 
-This how-to guide will walk through the process of adding and registering custom commands for a satellite in C++.
+This how-to guide will walk through the process of adding and registering custom commands for a satellite.
 This functionality can be used to expose additional functionality of the devices that is handled by the satellite to
 controllers in the Constellation network.
+
+::::{tab-set}
+
+:::{tab-item} C++
+:sync: keyC
 
 ## The Command Registry
 
@@ -93,3 +98,95 @@ value in the `NEW` or `INIT` states where the power supply is not fully configur
 
 The command registry allows limiting the states in which each of the commands can be executed and will report an invalid
 command otherwise.
+
+:::
+
+:::{tab-item} Python
+:sync: keyP
+
+## The Command Registry
+
+The satellite command registry provides a facility where the satellite can register arbitrary commands and expose them
+to any controller connecting to the satellite. These commands are defined per individual satellite type by registering them using the `@cscp_requestable` decorator over the method defining the command. The method needs to have a specific signature, outlined below.
+
+Controllers can query for commands using the `get_commands` request which returns a list of available commands and FSM
+transitions along with their descriptions.
+
+Custom commands cannot overwrite the standard commands provided by Constellation satellites and therefore must not reuse
+their names.
+
+## Adding The Command
+
+A command must have the signature
+
+```python
+def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
+```
+
+The expected return values are:
+
+- reply message (string)
+- payload (any)
+- map (dictionary) (e.g. for meta information)
+
+Adding a custom command thus also requires `from constellation.core.cscp import CSCPMessage`.
+
+In this example, the command `get_channel_reading(channel: int)` is added to a satellite:
+
+```python
+@cscp_requestable
+def get_channel_reading(self, request: CSCPMessage):
+    """Read the value of the channel given by the first supplied argument."""
+    paramList = request.payload
+    channel = paramList[0]
+    value = _device.read(channel)
+    return str(value / 10), None, None
+```
+
+The `@cscp_requestable` decorator registers the command with the command registry, and the comment block in the beginning is the description of the command, available from the command registry. The command is called via `constellation.MySatellite.get_channel_reading([1])` in the Controller, to read channel 1. Note that the parameters are given as a list which is the `payload` of the `CSCPMessage` in the custom command.
+
+### Name and description
+
+The name of the command is the handle with which it will be called from a controller. It should be short and descriptive and
+only contain alphanumeric characters and underscores. The description should comprehensively describe the command, its
+required arguments and the return value.
+
+### Command arguments and return values
+
+The command registry can handle commands with any number of arguments and can also provide return values from the called
+functions back to the controller.
+
+The arguments have to be provided as a list of configuration values in the command payload sent to the satellite. Similarly,
+return values from the called functions are converted to a configuration value and are returned in the message payload to
+the calling controller.
+
+```{warning}
+It is discouraged to implement commands that change the configuration of the instrument or device since these changes take
+direct effect and are not reflected in the satellite configuration.
+```
+
+### Allowed FSM states
+
+Commands may change the internal state of the satellite e.g. by altering the setting of an attached device. It may therefore
+be important for some commands to not run when the satellite state machine is in a given state.
+
+A typical example would be a high-voltage power supply, and a custom command that allows reading the current compliance.
+While reading this limit when the satellite is in its `ORBIT` or `RUN` state will produce the correct result, reading the
+value in the `NEW` or `INIT` states where the power supply is not fully configured yet may yield wrong values.
+
+The command registry allows limiting the states in which each of the commands can be executed and will report an invalid
+command otherwise.
+
+This is handled by adding a method with the signature
+
+```python
+def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
+```
+
+to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether it is allowed or not. An example is shown below, limiting the usage of the `get_channel_reading` command to the states `INIT` and `ORBIT`:
+
+```python
+def _get_channel_reading_is_allowed(self, request: CSCPMessage):
+    """Allow in the states INIT and ORBIT, but not during RUN"""
+    return self.fsm.current_state.id in ["INIT", "ORBIT"]
+```
