@@ -1,6 +1,8 @@
-# Start a Satellite & Control It
+# Starting & Controlling a Satellite
 
-Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols, a Python controller can control a C++ satellite and vice versa.
+Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols, a
+Python controller can control a C++ satellite and vice versa. The following tutorial describes how to start a single
+satellite and how to discover it and change its state with a controller.
 
 ## Starting a Satellite
 
@@ -9,16 +11,16 @@ Satellites and controllers can be implemented in either Python and in C++. Due t
 :::{tab-item} C++
 :sync: keyC
 
-To start a satellite, three things need to be provided:
+The `satellite` executable starts a new Constellation satellite and requires three command line arguments:
 
-- `--type, -t`. Type of satellite. This corresponds to the class name of the satellite implementation.
-- `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
-- `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
+- `--type, -t`: Type of satellite. This corresponds to the class name of the satellite implementation.
+- `--name, -n`: Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
+- `--group, -g`: This is the name of the Constellation group this satellite should be a part of.
 
-Example
+A call with all three parameters provided could e.g. look like follows:
 
 ```sh
-./build/cxx/constellation/exec/satellite -t prototype -n TheFirstSatellite -g myLabPlanet
+./build/cxx/constellation/exec/satellite -t Prototype -n TheFirstSatellite -g MyLabPlanet
 ```
 
 :::
@@ -26,24 +28,28 @@ Example
 :::{tab-item} Python
 :sync: keyP
 
-The virtual environment that had been created when installing the framework needs to be activated where necessary
+Before starting a Python satellite, the virtual environment created during the installation of the framework might need to be
+reactivated using `source venv/bin/activate`.
 
-`source venv/bin/activate`
-
-When a satellite is started, there is the option to provide a number of parameters, for example:
+The satellite is then directly started via its Python module. Additional parameters can be supplied, such as:
 
 - `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
 - `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
 
+Starting the example satellite implementation provided with the framework would therefore look like follows:
+
 ```sh
-python -m constellation.core.controller --name TheFirstSatelline --group myLabPlanet
+python -m constellation.satellites.example_satellite --name TheFirstSatellite --group myLabPlanet
 ```
 
 :::
 
 ::::
 
-## Controlling a Satellite
+## Controlling the Satellite
+
+A controller running in the same Constellation group is needed in order to control the satellite started in the first part
+of this tutorial. This section shows different options to perform this task.
 
 ### Starting a Controller
 
@@ -52,8 +58,6 @@ python -m constellation.core.controller --name TheFirstSatelline --group myLabPl
 :::{tab-item} C++
 :sync: keyC
 
-To control the satellite created in the first part of this tutorial, the controller needs to be in the same group.
-
 TODO
 
 :::
@@ -61,9 +65,11 @@ TODO
 :::{tab-item} Python
 :sync: keyP
 
-One option to control a satellite is the Constellation CLI IPython Controller.
+The Python implementation of Constellation provides a powerful command line interface controller using IPython. This package
+needs to be installed (`pip install ipython`) in the virtual environment that was created during the installation of the
+framework and can be reactivated using `source venv/bin/activate`.
 
-Upon starting, it is possible to pass it some (optional) arguments, for example:
+The controller is started via its Python module and requires Upon starting, it is possible to pass it some (optional) arguments, for example:
 
 - `--name`. A name for the controller (default: cli_controller)
 - `--group`. The constellation group to which the controller should belong (default: constellation)
@@ -133,7 +139,7 @@ Example output
 {'msg': 'transition initialize is being initiated', 'payload': None}
 ```
 
-The following command can be used to check on the state of the satellite 
+The following command can be used to check on the state of the satellite
 
 ```python
 constellation.satellites[0].get_state()
