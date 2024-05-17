@@ -25,7 +25,8 @@ from .broadcastmanager import chirp_callback, DiscoveredService
 from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
 from .fsm import SatelliteState
-from .satellite import Satellite
+from .satellite import Satellite, SatelliteArgumentParser
+from .base import EPILOG
 
 
 class PullThread(threading.Thread):
@@ -395,32 +396,28 @@ class H5DataReceiverWriter(DataReceiver):
 
 
 def main(args=None):
-    """Start the Constellation data receiver satellite."""
-    import argparse
+    """Start the Constellation data receiver satellite.
+
+    Data will be written in HDF5 format.
+
+    """
     import coloredlogs
 
-    parser = argparse.ArgumentParser(description=main.__doc__)
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--cmd-port", type=int, default=23989)
-    parser.add_argument("--mon-port", type=int, default=55566)
-    parser.add_argument("--hb-port", type=int, default=61244)
-    parser.add_argument("--interface", type=str, default="*")
-    parser.add_argument("--name", type=str, default="h5_data_receiver")
-    parser.add_argument("--group", type=str, default="constellation")
-    args = parser.parse_args(args)
-    # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
-    # start server with remaining args
-    s = H5DataReceiverWriter(
-        cmd_port=args.cmd_port,
-        hb_port=args.hb_port,
-        mon_port=args.mon_port,
-        name=args.name,
-        group=args.group,
-        interface=args.interface,
+    parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
+    # this sets the defaults for our "demo" Satellite
+    parser.set_defaults(
+        name="h5_data_receiver", cmd_port=23989, mon_port=55566, hb_port=61244
     )
+    # get a dict of the parsed arguments
+    args = vars(parser.parse_args(args))
 
+    # set up logging
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
+
+    # start server with remaining args
+    s = H5DataReceiverWriter(**args)
     s.run_satellite()
 
 
