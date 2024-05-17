@@ -181,6 +181,13 @@ class BaseController(CHIRPBroadcaster):
             self._add_satellite(service)
 
     def _add_satellite(self, service: DiscoveredService):
+        self.log.debug("Adding Satellite %s", service)
+        if str(service.host_uuid) in self._uuid_lookup.keys():
+            self.log.error(
+                "Satellite with name '%s.%s' already connected! Please ensure "
+                "unique Satellite names or you will not be able to communicate with all!",
+                *self._uuid_lookup[str(service.host_uuid)],
+            )
         # create socket
         socket = self.context.socket(zmq.REQ)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
