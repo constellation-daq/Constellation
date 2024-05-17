@@ -8,7 +8,6 @@
  */
 
 #include <chrono>
-#include <cstdint>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -69,11 +68,11 @@ int main(int argc, char* argv[]) {
             send_msg.addPayload(Dictionary().assemble());
             std::cout << "Added empty configuration to message" << std::endl;
         } else if(command == "start") {
-            const std::uint32_t run_nr = 1234U;
+            const std::string run_identifier = "1234";
             msgpack::sbuffer sbuf {};
-            msgpack::pack(sbuf, run_nr);
+            msgpack::pack(sbuf, run_identifier);
             send_msg.addPayload(std::move(sbuf));
-            std::cout << "Added run number " << run_nr << " to message" << std::endl;
+            std::cout << "Added run identifier \"" << run_identifier << "\" to message" << std::endl;
         }
         send_msg.assemble().send(req);
 
