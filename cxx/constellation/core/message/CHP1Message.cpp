@@ -35,26 +35,26 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
     const auto frame = frames.pop();
 
-    // Offset since we decode five separate msgpack objects
-    std::size_t offset = 0;
-
-    // Unpack protocol
-    const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-
-    // Try to decode protocol identifier into protocol
-    Protocol protocol_recv {};
     try {
-        protocol_recv = get_protocol(protocol_identifier);
-    } catch(const std::invalid_argument& error) {
-        throw InvalidProtocolError(error.what());
-    }
+        // Offset since we decode five separate msgpack objects
+        std::size_t offset = 0;
 
-    if(protocol_recv != CHP1) {
-        throw UnexpectedProtocolError(protocol_recv, CHP1);
-    }
+        // Unpack protocol
+        const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
 
-    try {
+        // Try to decode protocol identifier into protocol
+        Protocol protocol_recv {};
+        try {
+            protocol_recv = get_protocol(protocol_identifier);
+        } catch(const std::invalid_argument& error) {
+            throw InvalidProtocolError(error.what());
+        }
+
+        if(protocol_recv != CHP1) {
+            throw UnexpectedProtocolError(protocol_recv, CHP1);
+        }
+
         // Unpack sender
         const auto msgpack_sender = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
         const auto sender = msgpack_sender->as<std::string>();
@@ -73,8 +73,10 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
         // Construct message
         return {sender, state, interval, time};
-    } catch(const std::bad_cast&) {
+    } catch(const msgpack::type_error&) {
         throw MessageDecodingError("malformed data");
+    } catch(const msgpack::unpack_error&) {
+        throw MessageDecodingError("could not unpack data");
     }
 }
 
