@@ -183,9 +183,6 @@ class BaseController(CHIRPBroadcaster):
     def _add_satellite(self, service: DiscoveredService):
         # create socket
         socket = self.context.socket(zmq.REQ)
-        # configure send/recv timeouts to avoid hangs if Satellite fails
-        socket.setsockopt(zmq.SNDTIMEO, 1000)
-        socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
         ct = CommandTransmitter(self.name, socket)
         self.log.debug(
