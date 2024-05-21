@@ -60,19 +60,20 @@ class H5DataReader:
             if isinstance(file[key], h5py.Group):
                 groups.append(key)
         return groups
-    def get_EOR_payload(self,group):
+
+    def get_EOR_payload(self, group):
         """Fetch the payload of the EOR for the group"""
         return self.file[group]['EOR']['payload'][()]
-    
-    def get_BOR_payload(self,group):
+
+    def get_BOR_payload(self, group):
         """Fetch the payload of the BOR for the group"""
         return self.file[group]['BOR']['payload'][()]
-    
-    def datasets(self,group):
-        """Fetch a list of all dataset names of H5-file."""
-        return self._datasets(self.file,group)[0]
 
-    def _datasets(self, file,group):
+    def datasets(self, group):
+        """Fetch a list of all dataset names of H5-file."""
+        return self._datasets(self.file, group)[0]
+
+    def _datasets(self, file, group):
         """Private method to fetch all dataset names of H5-file."""
         datasets = []
         # Access the dataset group
@@ -81,19 +82,19 @@ class H5DataReader:
             datasets.append(dataset_name)
         return datasets
 
-    def sort_dataset_list(self,group):
+    def sort_dataset_list(self, group):
         """ Returns a sorted list of all datasets """
         def sequence_number_sort(data_str):
             """Sort help function. Splits the datasetname and sort according
             to sequence_number """
-            if(data_str!='BOR' and data_str!='EOR'):
+            if data_str != 'BOR' and data_str != 'EOR':
                 parts = data_str.split('_')
                 numeric_part = int(parts[-1])
             else:
-                numeric_part=0
+                numeric_part = 0
             return numeric_part
 
-        dataset_list = self._datasets(self.file,group)
+        dataset_list = self._datasets(self.file, group)
         sorted_dataset_list = sorted(dataset_list,
                                      key=sequence_number_sort)
         return sorted_dataset_list
