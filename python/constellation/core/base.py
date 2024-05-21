@@ -11,7 +11,7 @@ import logging
 from argparse import ArgumentParser
 from queue import Queue
 import atexit
-
+from .network import validate_interface, get_interfaces
 
 SATELLITE_LIST = []
 
@@ -55,7 +55,8 @@ class ConstellationArgumentParser(ArgumentParser):
         self.network = self.add_argument_group("Network configuration")
         self.network.add_argument(
             "--interface",
-            type=str,
+            type=validate_interface,
+            choices=get_interfaces(),
             default="*",
             help="The network interface (i.e. IP address) to bind to. "
             "Use '*' to bind to alla available interfaces "
