@@ -252,6 +252,8 @@ class MonitoringListener(CHIRPBroadcaster):
             handler.setFormatter(formatter)
             handler.setLevel(logging.DEBUG)
             self.log.addHandler(handler)
+        else:
+            self.output_path = None
 
         super()._add_com_thread()
         super()._start_com_threads()
