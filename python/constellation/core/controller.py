@@ -141,7 +141,7 @@ class SatelliteCommLink(SatelliteClassCommLink):
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str):
+    def __init__(self, group: str, **kwargs):
         """Initialize values.
 
         Arguments:
@@ -149,7 +149,7 @@ class BaseController(CHIRPBroadcaster):
         - group ::  group of controller
         - interface :: the interface to connect to
         """
-        super().__init__(name=name, group=group, interface=interface)
+        super().__init__(group=group, **kwargs)
 
         self._transmitters: Dict[str, CommandTransmitter] = {}
         # lookup table for uuids to (cls, name) tuple
@@ -181,6 +181,13 @@ class BaseController(CHIRPBroadcaster):
             self._add_satellite(service)
 
     def _add_satellite(self, service: DiscoveredService):
+        self.log.debug("Adding Satellite %s", service)
+        if str(service.host_uuid) in self._uuid_lookup.keys():
+            self.log.error(
+                "Satellite with name '%s.%s' already connected! Please ensure "
+                "unique Satellite names or you will not be able to communicate with all!",
+                *self._uuid_lookup[str(service.host_uuid)],
+            )
         # create socket
         socket = self.context.socket(zmq.REQ)
         socket.connect("tcp://" + service.address + ":" + str(service.port))
@@ -228,6 +235,7 @@ class BaseController(CHIRPBroadcaster):
             ct = self._transmitters[uuid]
             ct.socket.close()
             self._transmitters.pop(uuid)
+            self._uuid_lookup.pop(uuid)
         except KeyError:
             pass
 
