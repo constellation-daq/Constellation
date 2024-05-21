@@ -10,6 +10,7 @@ import msgpack
 import zmq
 import logging
 from enum import Enum
+from threading import Lock
 
 from .protocol import MessageHeader, Protocol
 
@@ -59,6 +60,7 @@ class CMDPTransmitter:
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CMDP)
         self._socket = socket
+        self._lock = Lock()
 
     def send(self, data: logging.LogRecord | Metric):
         if isinstance(data, logging.LogRecord):
@@ -119,7 +121,8 @@ class CMDPTransmitter:
     def recv(self, flags=0) -> logging.LogRecord | Metric | None:
         """Receive a Constellation monitoring message and return log or metric."""
         try:
-            msg = self._socket.recv_multipart(flags)
+            with self._lock:
+                msg = self._socket.recv_multipart(flags)
             topic = msg[0].decode("utf-8")
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
@@ -182,7 +185,8 @@ class CMDPTransmitter:
         """Dispatch a message via ZMQ socket."""
         topic = topic.upper()
         flags = zmq.SNDMORE | flags
-        self._socket.send_string(topic, flags)
-        self.msgheader.send(self._socket, meta=meta, flags=flags)
-        flags = flags & ~zmq.SNDMORE
-        self._socket.send(payload, flags=flags)
+        with self._lock:
+            self._socket.send_string(topic, flags)
+            self.msgheader.send(self._socket, meta=meta, flags=flags)
+            flags = flags & ~zmq.SNDMORE
+            self._socket.send(payload, flags=flags)
