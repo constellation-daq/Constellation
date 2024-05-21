@@ -14,7 +14,7 @@ from functools import wraps
 from datetime import datetime
 from logging.handlers import QueueHandler, QueueListener
 
-from .base import BaseSatelliteFrame
+from .base import BaseSatelliteFrame, ConstellationArgumentParser, EPILOG
 from .cmdp import CMDPTransmitter, Metric, MetricsType
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
@@ -201,6 +201,8 @@ class ZeroMQSocketLogListener(QueueListener):
         super().__init__(transmitter, *handlers, **kwargs)
 
     def dequeue(self, block):
+        # FIXME it is quite likely that this blocking call causes errors when
+        # shutting down as the ZMQ context is removed before this call ends.
         return self.queue.recv()
 
     def stop(self):
@@ -261,6 +263,7 @@ class MonitoringListener(CHIRPBroadcaster):
             target=self._run_task_handler, daemon=True
         )
         self._task_handler_thread.start()
+        self._metrics_receiver_shutdown = threading.Event()
 
     @chirp_callback(CHIRPServiceIdentifier.MONITORING)
     def _add_satellite_callback(self, service: DiscoveredService):
@@ -316,7 +319,7 @@ class MonitoringListener(CHIRPBroadcaster):
 
     def receive_metrics(self):
         """Main loop to receive metrics."""
-        while True:
+        while not self._metrics_receiver_shutdown.is_set():
             time.sleep(0.1)
             for uuid, tm in self._metric_transmitters.items():
                 try:
@@ -351,6 +354,8 @@ class MonitoringListener(CHIRPBroadcaster):
 
     def reentry(self):
         """Shutdown Monitor."""
+        self._metrics_receiver_shutdown.set()
+        time.sleep(0.2)
         for _uuid, listener in self._log_listeners.items():
             listener.stop()
         for _uuid, tm in self._metric_transmitters.items():
@@ -360,30 +365,23 @@ class MonitoringListener(CHIRPBroadcaster):
 
 def main(args=None):
     """Start a simple log listener service."""
-    import argparse
     import coloredlogs
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--name", type=str, default="simple_monitor")
-    parser.add_argument("--group", type=str, default="constellation")
-    parser.add_argument("--interface", type=str, default="*")
+    parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
         "-o", "--output", type=str, help="The path to write log and metric data to."
     )
-
-    args = parser.parse_args(args)
+    # set the default arguments
+    parser.set_defaults(name="basic_monitor")
+    # get a dict of the parsed arguments
+    args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
 
-    mon = MonitoringListener(
-        name=args.name,
-        group=args.group,
-        interface=args.interface,
-        output_path=args.output,
-    )
+    mon = MonitoringListener(**args)
     mon.receive_metrics()
 
 

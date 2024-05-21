@@ -17,7 +17,8 @@ import numpy as np
 import zmq
 
 from .cdtp import DataTransmitter, CDTPMessageIdentifier
-from .satellite import Satellite
+from .satellite import Satellite, SatelliteArgumentParser
+from .base import EPILOG
 from .broadcastmanager import CHIRPServiceIdentifier
 
 
@@ -173,35 +174,47 @@ class RandomDataSender(DataSender):
 # -------------------------------------------------------------------------
 
 
+class DataSenderArgumentParser(SatelliteArgumentParser):
+    """Customized Argument parser providing DataSender-specific options."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.network.add_argument(
+            "--data-port",
+            "--cdtp-port",
+            type=int,
+            help="The port for sending data via the "
+            "Constellation Data Transfer Protocol (default: %(default)s).",
+        )
+
+
 def main(args=None):
-    """Start the Constellation data sender satellite."""
-    import argparse
+    """Start the RandomDataSender demonstration satellite.
+
+    This Satellite sends random data via CDTP and can be used to test the
+    protocol.
+
+    """
     import coloredlogs
 
-    parser = argparse.ArgumentParser(description=main.__doc__)
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--cmd-port", type=int, default=23999)
-    parser.add_argument("--mon-port", type=int, default=55556)
-    parser.add_argument("--hb-port", type=int, default=61234)
-    parser.add_argument("--data-port", type=int, default=55557)
-    parser.add_argument("--interface", type=str, default="*")
-    parser.add_argument("--name", type=str, default="random_data_sender")
-    parser.add_argument("--group", type=str, default="constellation")
-    args = parser.parse_args(args)
+    parser = DataSenderArgumentParser(description=main.__doc__, epilog=EPILOG)
+    # this sets the defaults for our "demo" Satellite
+    parser.set_defaults(
+        name="random_data_sender",
+        cmd_port=23998,
+        mon_port=55555,
+        hb_port=61233,
+        data_port=45557,
+    )
+    args = vars(parser.parse_args(args))
+
     # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
 
     # start server with remaining args
-    s = RandomDataSender(
-        cmd_port=args.cmd_port,
-        hb_port=args.hb_port,
-        mon_port=args.mon_port,
-        data_port=args.data_port,
-        name=args.name,
-        group=args.group,
-        interface=args.interface,
-    )
+    s = RandomDataSender(**args)
     s.run_satellite()
 
 
