@@ -3,7 +3,7 @@
 
 import sphinx
 import pathlib
-import shutil
+import copy_satellite_docs
 
 logger = sphinx.util.logging.getLogger(__name__)
 
@@ -135,18 +135,24 @@ satellites_cxx = []
 satellites_py = []
 
 for path in satellite_files_cxx:
-    # FIXME need to deal with header
-    shutil.copy(
-        path, (pathlib.Path("satellites") / path.parent.name).with_suffix(".md")
-    )
-    satellites_cxx.append(path.parent.name)
+    with path.open(mode="r", encoding="utf-8") as in_file:
+        file_input = in_file.read()
+        file_output = copy_satellite_docs.front_matter_convert_myst(file_input)
+
+        (pathlib.Path("satellites") / path.parent.name).with_suffix(".md").write_text(
+            file_output
+        )
+        satellites_cxx.append(path.parent.name + " <" + path.parent.name + ">")
 
 for path in satellite_files_py:
-    # FIXME need to deal with header
-    shutil.copy(
-        path, (pathlib.Path("satellites") / path.parent.name).with_suffix(".md")
-    )
-    satellites_py.append(path.parent.name)
+    with path.open(mode="r", encoding="utf-8") as in_file:
+        file_input = in_file.read()
+        file_output = copy_satellite_docs.front_matter_convert_myst(file_input)
+
+        (pathlib.Path("satellites") / path.parent.name).with_suffix(".md").write_text(
+            file_output
+        )
+        satellites_py.append(path.parent.name + " <" + path.parent.name + ">")
 
 with (
     open("satellites/index.md.in", "rt") as index_in,
