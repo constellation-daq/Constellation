@@ -32,7 +32,8 @@ dependencies = [
     "python-statemachine",
     "h5py",
     "numpy",
-    "coloredlogs"
+    "coloredlogs",
+    "psutil",
 ]
 
 [project.scripts]
