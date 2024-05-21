@@ -122,7 +122,6 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._chirp_thread = None
         self._chirp_callbacks = get_chirp_callbacks(self)
 
-
     def _add_com_thread(self):
         """Add the CHIRP broadcaster thread to the communication thread pool."""
         super()._add_com_thread()
