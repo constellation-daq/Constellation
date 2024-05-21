@@ -369,7 +369,10 @@ def main(args=None):
 
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
-        "-o", "--output", type=str, help="The path to write log and metric data to."
+        "-o",
+        "--output-path",
+        type=str,
+        help="The path to write log and metric data to.",
     )
     # set the default arguments
     parser.set_defaults(name="basic_monitor")
