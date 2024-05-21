@@ -147,7 +147,8 @@ class CMDPTransmitter:
 
     def close(self) -> None:
         """Close the socket."""
-        self._socket.close()
+        with self._lock:
+            self._socket.close()
 
     def _recv_log(self, topic: str, msg: list[bytes]) -> logging.LogRecord:
         """Receive a Constellation log message."""
