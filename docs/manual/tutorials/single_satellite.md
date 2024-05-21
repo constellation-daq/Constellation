@@ -39,7 +39,7 @@ The satellite is then directly started via its Python module. Additional paramet
 Starting the example satellite implementation provided with the framework would therefore look like follows:
 
 ```sh
-python -m constellation.satellites.example_satellite --name TheFirstSatellite --group myLabPlanet
+python -m constellation.satellites.example_satellite --name TheFirstSatellite --group MyLabPlanet
 ```
 
 :::
@@ -69,7 +69,7 @@ The Python implementation of Constellation provides a powerful command line inte
 needs to be installed (`pip install ipython`) in the virtual environment that was created during the installation of the
 framework and can be reactivated using `source venv/bin/activate`.
 
-The controller is started via its Python module and requires Upon starting, it is possible to pass it some (optional) arguments, for example:
+The controller is started via its Python module, and it is possible to pass it some (optional) arguments, for example:
 
 - `--name`. A name for the controller (default: cli_controller)
 - `--group`. The constellation group to which the controller should belong (default: constellation)
@@ -82,7 +82,7 @@ python -m constellation.core.controller --group myLabPlanet
 ```
 
 The interactive command line provides the `constellation` object which holds all information about connected satellites and
-allows their control. Just listing the satellites could e.g. be performed by running:
+allows their control. Getting a list containing the satellites could e.g. be performed by running:
 
 ```python
 In [1]: constellation.satellites
@@ -140,7 +140,7 @@ Out[1]:
 {'msg': 'transition initialize is being initiated', 'payload': None}
 ```
 
-If the satellite has actually changed its state can be checked by retrieving the current state via:
+Whether the satellite has actually changed its state can be checked by retrieving the current state via:
 
 ```python
 In [2]: constellation.satellites[0].get_state()
