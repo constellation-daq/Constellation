@@ -35,43 +35,49 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
     const auto frame = frames.pop();
 
-    // Offset since we decode five separate msgpack objects
-    std::size_t offset = 0;
-
-    // Unpack protocol
-    const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-
-    // Try to decode protocol identifier into protocol
-    Protocol protocol_recv {};
     try {
-        protocol_recv = get_protocol(protocol_identifier);
-    } catch(const std::invalid_argument& error) {
-        throw InvalidProtocolError(error.what());
+        // Offset since we decode five separate msgpack objects
+        std::size_t offset = 0;
+
+        // Unpack protocol
+        const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
+
+        // Try to decode protocol identifier into protocol
+        Protocol protocol_recv {};
+        try {
+            protocol_recv = get_protocol(protocol_identifier);
+        } catch(const std::invalid_argument& error) {
+            throw InvalidProtocolError(error.what());
+        }
+
+        if(protocol_recv != CHP1) {
+            throw UnexpectedProtocolError(protocol_recv, CHP1);
+        }
+
+        // Unpack sender
+        const auto msgpack_sender = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto sender = msgpack_sender->as<std::string>();
+
+        // Unpack time
+        const auto msgpack_time = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
+
+        // Unpack remote state
+        const auto msgpack_state = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto state = static_cast<State>(msgpack_state->as<std::uint8_t>());
+
+        // Unpack time interval
+        const auto msgpack_interval = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        const auto interval = static_cast<std::chrono::milliseconds>(msgpack_interval->as<std::uint16_t>());
+
+        // Construct message
+        return {sender, state, interval, time};
+    } catch(const msgpack::type_error&) {
+        throw MessageDecodingError("malformed data");
+    } catch(const msgpack::unpack_error&) {
+        throw MessageDecodingError("could not unpack data");
     }
-
-    if(protocol_recv != CHP1) {
-        throw UnexpectedProtocolError(protocol_recv, CHP1);
-    }
-
-    // Unpack sender
-    const auto msgpack_sender = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto sender = msgpack_sender->as<std::string>();
-
-    // Unpack time
-    const auto msgpack_time = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
-
-    // Unpack remote state
-    const auto msgpack_state = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto state = static_cast<State>(msgpack_state->as<std::uint8_t>());
-
-    // Unpack time interval
-    const auto msgpack_interval = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    const auto interval = static_cast<std::chrono::milliseconds>(msgpack_interval->as<std::uint16_t>());
-
-    // Construct message
-    return {sender, state, interval, time};
 }
 
 zmq::multipart_t CHP1Message::assemble() {

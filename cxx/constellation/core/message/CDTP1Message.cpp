@@ -35,48 +35,54 @@ using namespace std::literals::string_view_literals;
 
 // Similar to Header::disassemble in Header.tpp, check when modifying
 CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte> data) {
-    // Offset since we decode four separate msgpack objects
-    std::size_t offset = 0;
-
-    // Unpack protocol
-    const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
-
-    // Try to decode protocol identifier into protocol
-    Protocol protocol_recv {};
     try {
-        protocol_recv = get_protocol(protocol_identifier);
-    } catch(std::invalid_argument& e) {
-        throw InvalidProtocolError(e.what());
+        // Offset since we decode four separate msgpack objects
+        std::size_t offset = 0;
+
+        // Unpack protocol
+        const auto msgpack_protocol_identifier = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto protocol_identifier = msgpack_protocol_identifier->as<std::string>();
+
+        // Try to decode protocol identifier into protocol
+        Protocol protocol_recv {};
+        try {
+            protocol_recv = get_protocol(protocol_identifier);
+        } catch(std::invalid_argument& e) {
+            throw InvalidProtocolError(e.what());
+        }
+
+        if(protocol_recv != CDTP1) {
+            throw UnexpectedProtocolError(protocol_recv, CDTP1);
+        }
+
+        // Unpack sender
+        const auto msgpack_sender = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto sender = msgpack_sender->as<std::string>();
+
+        // Unpack time
+        const auto msgpack_time = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
+
+        // Unpack message type
+        const auto msgpack_type = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
+        // TODO(stephan.lachnit): check range and throw if outside
+
+        // Unpack sequence number
+        const auto msgpack_seq = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto seq = msgpack_seq->as<std::uint64_t>();
+
+        // Unpack tags
+        const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
+        const auto tags = msgpack_tags->as<Dictionary>();
+
+        // Construct header
+        return {sender, time, tags, seq, type};
+    } catch(const msgpack::type_error&) {
+        throw MessageDecodingError("malformed data");
+    } catch(const msgpack::unpack_error&) {
+        throw MessageDecodingError("could not unpack data");
     }
-
-    if(protocol_recv != CDTP1) {
-        throw UnexpectedProtocolError(protocol_recv, CDTP1);
-    }
-
-    // Unpack sender
-    const auto msgpack_sender = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto sender = msgpack_sender->as<std::string>();
-
-    // Unpack time
-    const auto msgpack_time = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto time = msgpack_time->as<std::chrono::system_clock::time_point>();
-
-    // Unpack message type
-    const auto msgpack_type = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
-    // TODO(stephan.lachnit): check range and throw if outside
-
-    // Unpack sequence number
-    const auto msgpack_seq = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto seq = msgpack_seq->as<std::uint64_t>();
-
-    // Unpack tags
-    const auto msgpack_tags = msgpack::unpack(to_char_ptr(data.data()), data.size_bytes(), offset);
-    const auto tags = msgpack_tags->as<Dictionary>();
-
-    // Construct header
-    return {sender, time, tags, seq, type};
 }
 
 void CDTP1Message::Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
