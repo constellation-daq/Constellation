@@ -210,7 +210,7 @@ class ZeroMQSocketLogListener(QueueListener):
             try:
                 record = self.queue.recv()
             except zmq.ZMQError:
-                time.sleep(0.1)
+                pass
         if self._stop_recv.is_set():
             # close down
             return self._sentinel
@@ -364,7 +364,6 @@ class MonitoringListener(CHIRPBroadcaster):
                                 csv.write(f"{ts}, {m.value}, '{m.unit}'\n")
                         else:
                             print(m)
-                            print(f"{self._log_listeners}, {self._metric_sockets}")
             except KeyboardInterrupt:
                 break
 
@@ -387,14 +386,12 @@ class MonitoringListener(CHIRPBroadcaster):
     def reentry(self):
         """Shutdown Monitor."""
         self._metrics_receiver_shutdown.set()
-        time.sleep(0.1)
         for _uuid, listener in self._log_listeners.items():
             listener.stop()
         with self._poller_lock:
             for _uuid, socket in self._metric_sockets.items():
                 self.poller.unregister(socket)
                 socket.close()
-        time.sleep(1)
         super().reentry()
 
 
