@@ -20,6 +20,7 @@ core_files = files(
   'core/heartbeatchecker.py',
   'core/heartbeater.py',
   'core/monitoring.py',
+  'core/network.py',
   'core/protocol.py',
   'core/satellite.py',
 )
