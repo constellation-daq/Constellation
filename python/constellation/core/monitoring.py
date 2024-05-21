@@ -9,6 +9,7 @@ import zmq
 import threading
 import os
 import pathlib
+from uuid import UUID
 from queue import Empty
 from functools import wraps
 from datetime import datetime
@@ -225,7 +226,7 @@ class MonitoringListener(CHIRPBroadcaster):
         super().__init__(name=name, group=group, interface=interface)
 
         self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
-        self._metric_transmitters: dict[str, CMDPTransmitter] = {}
+        self._metric_sockets: dict[UUID, zmq.socket] = {}
 
         # create output directories and configure file writer logger
         if output_path:
@@ -264,6 +265,10 @@ class MonitoringListener(CHIRPBroadcaster):
         )
         self._task_handler_thread.start()
         self._metrics_receiver_shutdown = threading.Event()
+        # Set up the metric poller which will monitor all ZMQ metric
+        # subscription sockets
+        self.poller = zmq.Poller()
+        self._poller_lock = threading.Lock()
 
     @chirp_callback(CHIRPServiceIdentifier.MONITORING)
     def _add_satellite_callback(self, service: DiscoveredService):
@@ -297,7 +302,8 @@ class MonitoringListener(CHIRPBroadcaster):
         socket = self.context.socket(zmq.SUB)
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "STATS/")
-        self._metric_transmitters[uuid] = CMDPTransmitter(self.name, socket)
+        self._metric_sockets[uuid] = socket
+        self.poller.register(socket, zmq.POLLIN)
 
     def _remove_satellite(self, service: DiscoveredService):
         # departure
@@ -307,34 +313,42 @@ class MonitoringListener(CHIRPBroadcaster):
             service.host_uuid,
         )
         try:
-            self._log_listeners[uuid].stop()
-            self._log_listeners.pop(uuid)
+            listener = self._log_listeners.pop(uuid)
+            listener.stop()
         except KeyError:
             pass
         try:
-            self._metric_transmitters[uuid].close()
-            self._metric_transmitters.pop(uuid)
+            with self._poller_lock:
+                socket = self._metric_sockets.pop(uuid)
+                self.poller.unregister(socket)
+                socket.close()
         except KeyError:
             pass
 
     def receive_metrics(self):
         """Main loop to receive metrics."""
+        # set up transmitter for decoding metrics
+        transmitter = CMDPTransmitter(None, None)
+
         while not self._metrics_receiver_shutdown.is_set():
-            time.sleep(0.1)
-            for uuid, tm in self._metric_transmitters.items():
-                try:
-                    m = tm.recv(flags=zmq.NOBLOCK)
-                except Exception as e:
-                    self.log.error("Error receiving metric: %s", repr(e))
-                if not m:
-                    continue
-                if self.output_path:
-                    # append to file
-                    path = self.output_path / f"stats/{m.sender}_{m.name.lower()}.csv"
-                    with open(path, "a") as csv:
-                        csv.write(f"{m.time.to_unix()}, {m.value}, '{m.unit}'\n")
-                else:
-                    print(m)
+            try:
+                with self._poller_lock:
+                    sockets_ready = dict(self.poller.poll(timeout=250))
+                    for socket in sockets_ready.keys():
+                        binmsg = socket.recv_multipart()
+                        m = transmitter.decode_metric(binmsg[0].decode("utf-8"), binmsg)
+                        if self.output_path:
+                            # append to file
+                            fname = f"stats/{m.sender}_{m.name.lower()}.csv"
+                            path = self.output_path / fname
+                            ts = m.time.to_unix()
+                            with open(path, "a") as csv:
+                                csv.write(f"{ts}, {m.value}, '{m.unit}'\n")
+                        else:
+                            print(m)
+                            print(f"{self._log_listeners}, {self._metric_sockets}")
+            except KeyboardInterrupt:
+                break
 
     def _run_task_handler(self):
         """Event loop for task handler-routine"""
@@ -355,11 +369,14 @@ class MonitoringListener(CHIRPBroadcaster):
     def reentry(self):
         """Shutdown Monitor."""
         self._metrics_receiver_shutdown.set()
-        time.sleep(0.2)
+        time.sleep(0.1)
         for _uuid, listener in self._log_listeners.items():
             listener.stop()
-        for _uuid, tm in self._metric_transmitters.items():
-            tm.close()
+        with self._poller_lock:
+            for _uuid, socket in self._metric_sockets.items():
+                self.poller.unregister(socket)
+                socket.close()
+        time.sleep(1)
         super().reentry()
 
 
