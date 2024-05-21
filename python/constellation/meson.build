@@ -22,12 +22,15 @@ core_files = files(
   'core/monitoring.py',
   'core/protocol.py',
   'core/satellite.py',
-  'core/H5datareader.py',
+  
 )
 
 satellites_files = files(
   'satellites/example_satellite.py',
   'satellites/__init__.py',
+)
+tools_files = files(
+  'tools/H5datareader.py',
 )
 
 py.install_sources(core_files,
