@@ -47,7 +47,7 @@ def mock_chirp_sock_sendto(buf, addr):
 def mock_chirp_sock_recvfrom(bufsize):
     """Pop entry from queue."""
     try:
-        return mock_chirp_packet_queue.pop(0), ["somehost", CHIRP_PORT]
+        return mock_chirp_packet_queue.pop(0), ["localhost", CHIRP_PORT]
     except IndexError:
         raise BlockingIOError("no mock data")
 
