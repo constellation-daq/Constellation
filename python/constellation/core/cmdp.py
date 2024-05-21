@@ -131,9 +131,9 @@ class CMDPTransmitter:
                 ) from e
             return None
         if topic.startswith("STATS/"):
-            return self._recv_metric(topic, msg)
+            return self.decode_metric(topic, msg)
         elif topic.startswith("LOG/"):
-            return self._recv_log(topic, msg)
+            return self.decode_log(topic, msg)
         else:
             raise RuntimeError(
                 f"CMDPTransmitter cannot decode messages of topic '{topic}'"
@@ -150,7 +150,7 @@ class CMDPTransmitter:
         with self._lock:
             self._socket.close()
 
-    def _recv_log(self, topic: str, msg: list[bytes]) -> logging.LogRecord:
+    def decode_log(self, topic: str, msg: list[bytes]) -> logging.LogRecord:
         """Receive a Constellation log message."""
         # Read header
         sender, time, record = self.msgheader.decode(msg[1])
@@ -164,7 +164,7 @@ class CMDPTransmitter:
         record["levelname"] = topic.split("/")[1]
         return logging.makeLogRecord(record)
 
-    def _recv_metric(self, topic, msg: list) -> Metric:
+    def decode_metric(self, topic, msg: list) -> Metric:
         """Receive a Constellation STATS message and return a Metric."""
         name = topic.split("/")[1]
         # Read header
