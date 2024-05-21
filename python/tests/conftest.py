@@ -296,4 +296,6 @@ def wait_for_state(fsm, state: str, timeout: float = 2.0):
         time.sleep(0.05)
         timeout -= 0.05
     if timeout < 0:
-        raise RuntimeError(f"Never reached {state}")
+        raise RuntimeError(
+            f"Never reached {state}, now in state {fsm.current_state.id}"
+        )
