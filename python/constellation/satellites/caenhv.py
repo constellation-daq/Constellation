@@ -6,11 +6,10 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 import logging
-import argparse
 import coloredlogs
 from functools import partial
 
-from ..core.satellite import Satellite
+from ..core.satellite import Satellite, SatelliteArgumentParser
 from ..core.fsm import SatelliteState
 from ..core.commandmanager import cscp_requestable
 import pycaenhv
@@ -178,31 +177,28 @@ class CaenHvSatellite(Satellite):
 
 
 def main(args=None):
-    """Start the base Satellite server."""
-    parser = argparse.ArgumentParser(description=main.__doc__)
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--cmd-port", type=int, default=23999)
-    parser.add_argument("--mon-port", type=int, default=55556)
-    parser.add_argument("--hb-port", type=int, default=61234)
-    parser.add_argument("--interface", type=str, default="*")
-    parser.add_argument("--name", type=str, default="CaenHVModule")
-    parser.add_argument("--group", type=str, default="constellation")
-    args = parser.parse_args(args)
+    """The CAEN high-voltage Satellite for controlling a SY5527 HV crate."""
+
+    parser = SatelliteArgumentParser(
+        description=main.__doc__,
+        epilog="This is a 3rd-party component of Constellation.",
+    )
+    # this sets the defaults for our Satellite
+    parser.set_defaults(
+        name="CaenHVCrate",
+        cmd_port=23901,
+        mon_port=55501,
+        hb_port=61201,
+    )
+    args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args.name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
+    logger = logging.getLogger(args["name"])
+    log_level = args.pop("log_level")
+    coloredlogs.install(level=log_level.upper(), logger=logger)
 
-    logger.info("Starting up satellite!")
     # start server with remaining args
-    s = CaenHvSatellite(
-        name=args.name,
-        group=args.group,
-        cmd_port=args.cmd_port,
-        hb_port=args.hb_port,
-        mon_port=args.mon_port,
-        interface=args.interface,
-    )
+    s = CaenHvSatellite(**args)
     s.run_satellite()
 
 
