@@ -240,7 +240,9 @@ def mock_controller(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        c = BaseController("mock_controller", "mockstellation", "127.0.0.1")
+        c = BaseController(
+            name="mock_controller", group="mockstellation", interface="127.0.0.1"
+        )
         # give the threads a chance to start
         time.sleep(0.1)
         yield c
