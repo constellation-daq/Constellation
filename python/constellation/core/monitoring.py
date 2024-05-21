@@ -200,15 +200,29 @@ class ZeroMQSocketLogListener(QueueListener):
 
     def __init__(self, transmitter, /, *handlers, **kwargs):
         super().__init__(transmitter, *handlers, **kwargs)
+        self._stop_recv = threading.Event()
 
     def dequeue(self, block):
         # FIXME it is quite likely that this blocking call causes errors when
         # shutting down as the ZMQ context is removed before this call ends.
-        return self.queue.recv()
+        record = None
+        while not record and not self._stop_recv.is_set():
+            try:
+                record = self.queue.recv()
+            except zmq.ZMQError:
+                time.sleep(0.1)
+        if self._stop_recv.is_set():
+            # close down
+            return self._sentinel
+        return record
 
     def stop(self):
         """Close socket and stop thread."""
+        super().stop()
         self.queue.close()
+
+    def enqueue_sentinel(self):
+        self._stop_recv.set()
 
 
 class MonitoringListener(CHIRPBroadcaster):
@@ -290,6 +304,8 @@ class MonitoringListener(CHIRPBroadcaster):
         )
         # create socket for logs
         socket = self.context.socket(zmq.SUB)
+        # add timeout to avoid deadlocks
+        socket.setsockopt(zmq.RCVTIMEO, 250)
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
         listener = ZeroMQSocketLogListener(
