@@ -4,6 +4,7 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import tomllib
+import json
 
 
 class ConfigError(Exception):
@@ -51,6 +52,10 @@ class Configuration:
     def get_keys(self):
         """Return list of keys in config."""
         return list(self._config.keys())
+
+    def get_json(self):
+        """Return JSON-encoded configuration data."""
+        return json.dumps(self._config)
 
 
 def load_config(path: str) -> dict:
