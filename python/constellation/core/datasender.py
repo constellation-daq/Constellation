@@ -166,6 +166,7 @@ class DataSender(Satellite):
         # configuration dictionary as a payload
         if not self.BOR:
             self.BOR = self.config.get_json()
+        self.log.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         return super()._wrap_start(run_identifier)
 
@@ -177,6 +178,7 @@ class DataSender(Satellite):
 
         """
         res = super()._wrap_stop(payload)
+        self.log.debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return res
 
