@@ -62,9 +62,13 @@ class PushThread(threading.Thread):
                 payload, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
                 if meta == CDTPMessageIdentifier.BOR:
-                    transmitter.send_start(payload=payload)
+                    transmitter.send_start(
+                        payload=payload["payload"], meta=payload["meta"]
+                    )
                 elif meta == CDTPMessageIdentifier.EOR:
-                    transmitter.send_end(payload=payload)
+                    transmitter.send_end(
+                        payload=payload["payload"], meta=payload["meta"]
+                    )
                 else:
                     transmitter.send_data(payload=payload, meta=meta)
                 self._logger.debug(
@@ -92,6 +96,9 @@ class DataSender(Satellite):
         self.data_port = data_port
         self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
         self.broadcast_offers()
+        # beginning and end-of-run events: payloads and meta information
+        self.BOR = {"payload": None, "meta": {"dtype": None}}
+        self.EOR = {"payload": None, "meta": {"dtype": None}}
 
     def do_launching(self, payload: any) -> str:
         """Launch satellite. Start PushThread."""
@@ -125,11 +132,14 @@ class DataSender(Satellite):
         as well as performing basic satellite transitioning.
 
         """
-        self.data_queue.put(("FIXME: Setup of run here?", CDTPMessageIdentifier.BOR))
+        # Beginning of run event. If nothing was provided by the user, use the
+        # configuration dictionary as a payload
+        if not self.BOR["payload"]:
+            self.BOR["payload"] = self.config.get_json()
+            self.BOR["meta"]["dtype"] = None
+        self.data_queue.put((self.BOR, CDTPMessageIdentifier.BOR))
         ret = super()._wrap_start(payload)
-        self.data_queue.put(
-            ("FIXME: Info about end of run here?", CDTPMessageIdentifier.EOR)
-        )
+        self.data_queue.put((self.EOR, CDTPMessageIdentifier.EOR))
         return ret
 
     def do_run(self, payload: any) -> str:
