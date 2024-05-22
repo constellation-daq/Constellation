@@ -145,12 +145,18 @@ class DataSender(Satellite):
     def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.
 
+        This is only an abstract method. Inheriting classes must implement their
+        own acquisition method.
+
         This method will be executed in a separate thread by the underlying
         Satellite class. It therefore needs to monitor the self.stop_running
         Event and close itself down if the Event is set.
 
-        This is only an abstract method. Inheriting classes must implement their
-        own acquisition method.
+        If you want to transmit a payload as part of the end-of-run event (BOR),
+        set the corresponding keys in the `DataReceiver.EOR` dictionary.
+
+        This method should return a string that will be used for setting the
+        Status once the data acquisition is finished.
 
         """
         raise NotImplementedError
