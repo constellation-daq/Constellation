@@ -72,7 +72,6 @@ class DataTransmitter:
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CDTP)
         self._socket = socket
-        self.running = False
         self.sequence_number = 0
 
     def send_start(self, payload: any, meta: dict = None, flags: int = 0):
@@ -87,7 +86,6 @@ class DataTransmitter:
 
         """
         self.sequence_number = 0
-        self.running = True
         return self._dispatch(
             run_identifier=CDTPMessageIdentifier.BOR,
             payload=payload,
@@ -109,16 +107,13 @@ class DataTransmitter:
         flags: additional ZMQ socket flags to use during transmission.
 
         """
-        if self.running:
-            self.sequence_number += 1
-            return self._dispatch(
-                run_identifier=CDTPMessageIdentifier.DAT,
-                payload=payload,
-                meta=meta,
-                flags=flags,
-            )
-        msg = "Data transfer sequence not started"
-        raise RuntimeError(msg)
+        self.sequence_number += 1
+        return self._dispatch(
+            run_identifier=CDTPMessageIdentifier.DAT,
+            payload=payload,
+            meta=meta,
+            flags=flags,
+        )
 
     def send_end(self, payload: any, meta: dict = None, flags: int = 0):
         """
@@ -132,7 +127,6 @@ class DataTransmitter:
 
         """
 
-        self.running = False
         return self._dispatch(
             run_identifier=CDTPMessageIdentifier.EOR,
             payload=payload,
