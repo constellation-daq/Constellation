@@ -125,7 +125,7 @@ class DataSender(Satellite):
             self.log.warning("Unable to close push thread. Process timed out.")
         return super().do_landing(payload)
 
-    def _wrap_start(self, payload: any) -> str:
+    def _wrap_start(self, run_identifier: str) -> str:
         """Wrapper for the 'run' state of the FSM.
 
         This method notifies the data queue of the beginning and end of the data run,
@@ -138,7 +138,7 @@ class DataSender(Satellite):
             self.BOR["payload"] = self.config.get_json()
             self.BOR["meta"]["dtype"] = None
         self.data_queue.put((self.BOR, CDTPMessageIdentifier.BOR))
-        ret = super()._wrap_start(payload)
+        ret = super()._wrap_start(run_identifier)
         self.data_queue.put((self.EOR, CDTPMessageIdentifier.EOR))
         return ret
 
