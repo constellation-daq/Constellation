@@ -27,6 +27,7 @@ core_files = files(
 
 satellites_files = files(
   'satellites/example_satellite.py',
+  'satellites/caenhv/caenhv.py',
   'satellites/__init__.py',
 )
 

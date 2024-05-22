@@ -75,7 +75,7 @@ class DataTransmitter:
         self.running = False
         self.sequence_number = 0
 
-    def send_start(self, payload, flags: int = 0):
+    def send_start(self, payload: any, meta: dict = None, flags: int = 0):
         """
         Send starting message of data run over a ZMQ socket.
 
@@ -89,7 +89,10 @@ class DataTransmitter:
         self.sequence_number = 0
         self.running = True
         return self._dispatch(
-            run_identifier=CDTPMessageIdentifier.BOR, payload=payload, flags=flags
+            run_identifier=CDTPMessageIdentifier.BOR,
+            payload=payload,
+            meta=meta,
+            flags=flags,
         )
 
     def send_data(self, payload, meta: dict = {}, flags: int = 0):
@@ -117,7 +120,7 @@ class DataTransmitter:
         msg = "Data transfer sequence not started"
         raise RuntimeError(msg)
 
-    def send_end(self, payload, flags: int = 0):
+    def send_end(self, payload: any, meta: dict = None, flags: int = 0):
         """
         Send ending message of data run over a ZMQ socket.
 
@@ -131,14 +134,17 @@ class DataTransmitter:
 
         self.running = False
         return self._dispatch(
-            run_identifier=CDTPMessageIdentifier.EOR, payload=payload, flags=flags
+            run_identifier=CDTPMessageIdentifier.EOR,
+            payload=payload,
+            meta=meta,
+            flags=flags,
         )
 
     def _dispatch(
         self,
         run_identifier: CDTPMessageIdentifier,
         payload: any = None,
-        meta: dict = {},
+        meta: dict = None,
         flags: int = 0,
     ):
         """Send a payload over a ZMQ socket.
@@ -184,17 +190,21 @@ class DataTransmitter:
 
         flags: additional ZMQ socket flags to use during transmission.
 
-        Returns: payload, map (meta data), timestamp and sending host.
+        Returns: CTDPMessage
 
         """
         try:
-            datamsg = self._socket.recv_multipart(flags=flags)
+            binmsg = self._socket.recv_multipart(flags=flags)
         except zmq.ZMQError:
             return None
+        return self.decode(binmsg)
+
+    def decode(self, binmsg) -> CDTPMessage:
+        """Decode a binary message into a CTDPMessage."""
         msg = CDTPMessage()
-        msg.set_header(*self.msgheader.decode(datamsg[0]))
+        msg.set_header(*self.msgheader.decode(binmsg[0]))
         unpacker = msgpack.Unpacker()
-        unpacker.feed(datamsg[1])
+        unpacker.feed(binmsg[1])
 
         # Retrieve sequence identifier and number
         try:
@@ -207,7 +217,7 @@ class DataTransmitter:
 
         try:
             # Retrieve payload
-            unpacker.feed(datamsg[2])
+            unpacker.feed(binmsg[2])
             msg.payload = unpacker.unpack()
         except IndexError:
             pass

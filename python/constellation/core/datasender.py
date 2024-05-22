@@ -62,9 +62,13 @@ class PushThread(threading.Thread):
                 payload, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
                 if meta == CDTPMessageIdentifier.BOR:
-                    transmitter.send_start(payload=payload)
+                    transmitter.send_start(
+                        payload=payload["payload"], meta=payload["meta"]
+                    )
                 elif meta == CDTPMessageIdentifier.EOR:
-                    transmitter.send_end(payload=payload)
+                    transmitter.send_end(
+                        payload=payload["payload"], meta=payload["meta"]
+                    )
                 else:
                     transmitter.send_data(payload=payload, meta=meta)
                 self._logger.debug(
@@ -84,17 +88,46 @@ class DataSender(Satellite):
     """Constellation Satellite which pushes data via ZMQ."""
 
     def __init__(self, *args, data_port: int, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # set up the data pusher which will transmit
-        # data placed into the queue via ZMQ socket
+        # initialize local attributes first:
+        # beginning and end-of-run events: payloads and meta information
+        self._beg_of_run = {"payload": None, "meta": {"dtype": None}}
+        self._end_of_run = {"payload": None, "meta": {"dtype": None}}
+        # set up the data pusher which will transmit data placed into the queue
+        # via ZMQ socket
         self.data_queue = Queue()
         self.data_port = data_port
+        # initialize satellite
+        super().__init__(*args, **kwargs)
+        # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
         self.broadcast_offers()
 
-    def do_launching(self, payload: any) -> str:
-        """Launch satellite. Start PushThread."""
+    @property
+    def EOR(self) -> any:
+        """Get optional playload for the end-of-run event (EOR)."""
+        return self._end_of_run["payload"]
+
+    @EOR.setter
+    def EOR(self, payload: any) -> None:
+        """Set optional playload for the end-of-run event (EOR)."""
+        self._end_of_run["payload"] = payload
+
+    @property
+    def BOR(self) -> any:
+        """Get optional playload for the beginning-of-run event (BOR)."""
+        return self._beg_of_run["payload"]
+
+    @BOR.setter
+    def BOR(self, payload: any) -> None:
+        """Set optional playload for the beginning-of-run event (BOR)."""
+        self._beg_of_run["payload"] = payload
+
+    def _wrap_launch(self, payload: any) -> str:
+        """Wrapper for the 'launching' transitional state of the FSM.
+
+        This method starts the PushThread for the DataSender.
+
+        """
         self._stop_pusher = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
@@ -107,40 +140,53 @@ class DataSender(Satellite):
         # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
         self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
-        return super().do_launching(payload)
+        return super()._wrap_launch(payload)
 
-    def do_landing(self, payload: any) -> str:
-        """Land satellite. Stop PushThread."""
+    def _wrap_land(self, payload: any) -> str:
+        """Wrapper for the 'landing' transitional state of the FSM.
+
+        This method will stop the PushThread.
+
+        """
         self._stop_pusher.set()
         try:
             self._push_thread.join(timeout=10)
         except TimeoutError:
             self.log.warning("Unable to close push thread. Process timed out.")
-        return super().do_landing(payload)
+        return super()._wrap_land(payload)
 
-    def _wrap_start(self, payload: any) -> str:
+    def _wrap_start(self, run_identifier: str) -> str:
         """Wrapper for the 'run' state of the FSM.
 
         This method notifies the data queue of the beginning and end of the data run,
         as well as performing basic satellite transitioning.
 
         """
-        self.data_queue.put(("FIXME: Setup of run here?", CDTPMessageIdentifier.BOR))
-        ret = super()._wrap_start(payload)
-        self.data_queue.put(
-            ("FIXME: Info about end of run here?", CDTPMessageIdentifier.EOR)
-        )
+        # Beginning of run event. If nothing was provided by the user, use the
+        # configuration dictionary as a payload
+        if not self.BOR:
+            self.BOR = self.config.get_json()
+        self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
+        ret = super()._wrap_start(run_identifier)
+        self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return ret
 
     def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.
 
+        This is only an abstract method. Inheriting classes must implement their
+        own acquisition method.
+
         This method will be executed in a separate thread by the underlying
         Satellite class. It therefore needs to monitor the self.stop_running
         Event and close itself down if the Event is set.
 
-        This is only an abstract method. Inheriting classes must implement their
-        own acquisition method.
+        If you want to transmit a payload as part of the end-of-run event (BOR),
+        set the corresponding value via the `BOR` property before leaving this
+        method.
+
+        This method should return a string that will be used for setting the
+        Status once the data acquisition is finished.
 
         """
         raise NotImplementedError
@@ -175,7 +221,7 @@ class RandomDataSender(DataSender):
 
 
 class DataSenderArgumentParser(SatelliteArgumentParser):
-    """Customized Argument parser providing common Satellite options."""
+    """Customized Argument parser providing DataSender-specific options."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

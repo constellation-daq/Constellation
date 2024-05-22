@@ -60,21 +60,27 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
     const auto header_frame = frames.pop();
     const auto header = Header::disassemble({to_byte_ptr(header_frame.data()), header_frame.size()});
 
-    // Decode body
-    const auto body_frame = frames.pop();
-    std::size_t offset = 0;
-    const auto msgpack_type = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
-    const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
-    const auto msgpack_string = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
-    const auto string = msgpack_string->as<std::string>();
+    try {
+        // Decode body
+        const auto body_frame = frames.pop();
+        std::size_t offset = 0;
+        const auto msgpack_type = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
+        const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
+        const auto msgpack_string = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
+        const auto string = msgpack_string->as<std::string>();
 
-    // Create message
-    auto cscp1_message = CSCP1Message(header, {type, string});
+        // Create message
+        auto cscp1_message = CSCP1Message(header, {type, string});
 
-    // Move payload if available
-    if(!frames.empty()) {
-        cscp1_message.payload_ = {frames.pop()};
+        // Move payload if available
+        if(!frames.empty()) {
+            cscp1_message.payload_ = {frames.pop()};
+        }
+
+        return cscp1_message;
+    } catch(const msgpack::type_error&) {
+        throw MessageDecodingError("malformed data");
+    } catch(const msgpack::unpack_error&) {
+        throw MessageDecodingError("could not unpack data");
     }
-
-    return cscp1_message;
 }
