@@ -247,6 +247,7 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(initialize_msg);
     auto recv_msg_initialize = sender.recv();
     REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(100ms);
 
     // Send launch
     auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
