@@ -56,6 +56,14 @@ class Configuration:
         """Return list of keys in config."""
         return list(self._config.keys())
 
+    def update(self, config: dict) -> None:
+        """Update the configuration with a new dict."""
+        # update key+values of internal dict
+        self._config.update(config)
+        # remove all new keys from our set of requested keys
+        for key in config.keys():
+            self._requested_keys.discard(key)
+
 
 def load_config(path: str) -> dict:
     """Load a TOML configuration from file."""
