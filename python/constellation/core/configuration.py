@@ -13,8 +13,10 @@ class ConfigError(Exception):
 class Configuration:
     """Class to track configuration variables and requests."""
 
-    def __init__(self, config: dict = {}):
+    def __init__(self, config: dict = None):
         """Initialize configuration variables"""
+        if not config:
+            config = {}
         if not isinstance(config, dict):
             raise ConfigError
         self._config = config
