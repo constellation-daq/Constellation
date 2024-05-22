@@ -8,8 +8,8 @@ Module implementing the Constellation Data Transmission Protocol.
 
 from enum import Enum
 
-import msgpack
 import io
+import msgpack
 import zmq
 
 from .protocol import MessageHeader, Protocol
@@ -203,10 +203,10 @@ class DataTransmitter:
         # Retrieve sequence identifier and number
         try:
             msg.msgtype = CDTPMessageIdentifier(unpacker.unpack())
-        except ValueError:
+        except ValueError as exc:
             raise RuntimeError(
                 f"Received invalid sequence identifier with msg: {msg.msgtype}"
-            )
+            ) from exc
         msg.sequence_number = unpacker.unpack()
 
         try:
