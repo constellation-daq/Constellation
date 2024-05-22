@@ -30,10 +30,12 @@ class DataReceiver(Satellite):
     """Constellation Satellite which receives data via ZMQ."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        # define our attributes
         self._pull_interfaces = {}
         self._pull_sockets = {}
         self.poller = None
+        # initialize Satellite attributes
+        super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
 
     def do_initializing(self, payload: any) -> str:
