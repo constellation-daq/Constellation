@@ -166,10 +166,21 @@ class DataSender(Satellite):
         # configuration dictionary as a payload
         if not self.BOR:
             self.BOR = self.config.get_json()
+        self.log.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
-        ret = super()._wrap_start(run_identifier)
+        return super()._wrap_start(run_identifier)
+
+    def _wrap_stop(self, payload: any) -> str:
+        """Wrapper for the 'stopping' transitional state of the FSM.
+
+        Sends the EOR event after base class wrapper and `do_stopping` have
+        finished.
+
+        """
+        res = super()._wrap_stop(payload)
+        self.log.debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
-        return ret
+        return res
 
     def do_run(self, payload: any) -> str:
         """Perform the data acquisition and enqueue the results.

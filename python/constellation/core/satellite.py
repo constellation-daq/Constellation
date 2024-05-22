@@ -241,7 +241,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_stop(self, payload: any):
+    def _wrap_stop(self, payload: any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -257,7 +257,7 @@ class Satellite(
         return self.do_stopping(payload)
 
     @debug_log
-    def do_stopping(self, payload: any):
+    def do_stopping(self, payload: any) -> str:
         """Stop the data acquisition."""
         return "Acquisition stopped."
 
@@ -308,7 +308,7 @@ class Satellite(
         return "Finished acquisition."
 
     @debug_log
-    def _wrap_failure(self):
+    def _wrap_failure(self) -> str:
         """Wrapper for the 'ERROR' state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -331,13 +331,13 @@ class Satellite(
             return "Exception caught during failure handling, see logs for details."
 
     @debug_log
-    def fail_gracefully(self):
+    def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         return "Failed gracefully."
 
     @handle_error
     @debug_log
-    def _wrap_interrupt(self, payload):
+    def _wrap_interrupt(self, payload) -> str:
         """Wrapper for the 'interrupting' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -354,7 +354,7 @@ class Satellite(
         return self.do_interrupting()
 
     @debug_log
-    def do_interrupting(self):
+    def do_interrupting(self) -> str:
         """Interrupt data acquisition and move to Safe state.
 
         Defaults to calling the stop and land handlers.
@@ -365,7 +365,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_recover(self):
+    def _wrap_recover(self) -> str:
         """Wrapper for the 'recovering' transitional state of the FSM.
 
         This method does not perform any action as the SAFE->INIT transition has
