@@ -169,7 +169,7 @@ class DataSender(Satellite):
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         return super()._wrap_start(run_identifier)
 
-    def _wrap_stopping(self, payload: any) -> str:
+    def _wrap_stop(self, payload: any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
         Sends the EOR event after base class wrapper and `do_stopping` have
