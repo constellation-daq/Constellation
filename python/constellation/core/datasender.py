@@ -88,17 +88,39 @@ class DataSender(Satellite):
     """Constellation Satellite which pushes data via ZMQ."""
 
     def __init__(self, *args, data_port: int, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # set up the data pusher which will transmit
-        # data placed into the queue via ZMQ socket
+        # initialize local attributes first:
+        # beginning and end-of-run events: payloads and meta information
+        self._beg_of_run = {"payload": None, "meta": {"dtype": None}}
+        self._end_of_run = {"payload": None, "meta": {"dtype": None}}
+        # set up the data pusher which will transmit data placed into the queue
+        # via ZMQ socket
         self.data_queue = Queue()
         self.data_port = data_port
+        # initialize satellite
+        super().__init__(*args, **kwargs)
+        # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
         self.broadcast_offers()
-        # beginning and end-of-run events: payloads and meta information
-        self.BOR = {"payload": None, "meta": {"dtype": None}}
-        self.EOR = {"payload": None, "meta": {"dtype": None}}
+
+    @property
+    def EOR(self) -> any:
+        """Get optional playload for the end-of-run event (EOR)."""
+        return self._end_of_run["payload"]
+
+    @EOR.setter
+    def EOR(self, payload: any) -> None:
+        """Set optional playload for the end-of-run event (EOR)."""
+        self._end_of_run["payload"] = payload
+
+    @property
+    def BOR(self) -> any:
+        """Get optional playload for the beginning-of-run event (BOR)."""
+        return self._beg_of_run["payload"]
+
+    @BOR.setter
+    def BOR(self, payload: any) -> None:
+        """Set optional playload for the beginning-of-run event (BOR)."""
+        self._beg_of_run["payload"] = payload
 
     def _wrap_launch(self, payload: any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
@@ -142,12 +164,11 @@ class DataSender(Satellite):
         """
         # Beginning of run event. If nothing was provided by the user, use the
         # configuration dictionary as a payload
-        if not self.BOR["payload"]:
-            self.BOR["payload"] = self.config.get_json()
-            self.BOR["meta"]["dtype"] = None
-        self.data_queue.put((self.BOR, CDTPMessageIdentifier.BOR))
+        if not self.BOR:
+            self.BOR = self.config.get_json()
+        self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         ret = super()._wrap_start(run_identifier)
-        self.data_queue.put((self.EOR, CDTPMessageIdentifier.EOR))
+        self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return ret
 
     def do_run(self, payload: any) -> str:
@@ -161,7 +182,8 @@ class DataSender(Satellite):
         Event and close itself down if the Event is set.
 
         If you want to transmit a payload as part of the end-of-run event (BOR),
-        set the corresponding keys in the `DataReceiver.EOR` dictionary.
+        set the corresponding value via the `BOR` property before leaving this
+        method.
 
         This method should return a string that will be used for setting the
         Status once the data acquisition is finished.
