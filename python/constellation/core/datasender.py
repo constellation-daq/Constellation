@@ -100,8 +100,12 @@ class DataSender(Satellite):
         self.BOR = {"payload": None, "meta": {"dtype": None}}
         self.EOR = {"payload": None, "meta": {"dtype": None}}
 
-    def do_launching(self, payload: any) -> str:
-        """Launch satellite. Start PushThread."""
+    def _wrap_launch(self, payload: any) -> str:
+        """Wrapper for the 'launching' transitional state of the FSM.
+
+        This method starts the PushThread for the DataSender.
+
+        """
         self._stop_pusher = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
@@ -114,16 +118,20 @@ class DataSender(Satellite):
         # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
         self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
-        return super().do_launching(payload)
+        return super()._wrap_launch(payload)
 
-    def do_landing(self, payload: any) -> str:
-        """Land satellite. Stop PushThread."""
+    def _wrap_land(self, payload: any) -> str:
+        """Wrapper for the 'landing' transitional state of the FSM.
+
+        This method will stop the PushThread.
+
+        """
         self._stop_pusher.set()
         try:
             self._push_thread.join(timeout=10)
         except TimeoutError:
             self.log.warning("Unable to close push thread. Process timed out.")
-        return super().do_landing(payload)
+        return super()._wrap_land(payload)
 
     def _wrap_start(self, run_identifier: str) -> str:
         """Wrapper for the 'run' state of the FSM.
