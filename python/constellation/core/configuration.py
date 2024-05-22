@@ -7,6 +7,8 @@ import tomllib
 
 
 class ConfigError(Exception):
+    """Exception class for general issues with the configuration."""
+
     pass
 
 
