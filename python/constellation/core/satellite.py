@@ -198,6 +198,32 @@ class Satellite(
 
     @handle_error
     @debug_log
+    def _wrap_reconfigure(self, config: dict) -> str:
+        """Wrapper for the 'reconfigure' transitional state of the FSM.
+
+        This method performs the basic Satellite transition before passing
+        control to the device-specific public method.
+
+        """
+
+        # Merge with existing configuration. This will also update the internal
+        # set of used keys, so the user can choose to either update everything
+        # or only the 'unused'/updated keys.
+        self.config.update(config)
+        # reconfigure is not necessarily implemented; it is not in the this base
+        # class to allow checking for the exististance of the method to
+        # determine the reaction to a `reconfigure` CSCP command.
+        init_msg = self.do_reconfigure(self.config)  # noqa
+
+        if self.config.has_unused_values():
+            for key in self.config.get_unused_keys():
+                self.log.warning("Satellite ignored configuration value: '%s'", key)
+            init_msg += " IGNORED parameters: "
+            init_msg += ",".join(self.config.get_unused_keys())
+        return init_msg
+
+    @handle_error
+    @debug_log
     def _wrap_land(self, payload: any) -> str:
         """Wrapper for the 'landing' transitional state of the FSM.
 
