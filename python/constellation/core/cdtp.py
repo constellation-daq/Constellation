@@ -75,7 +75,7 @@ class DataTransmitter:
         self.running = False
         self.sequence_number = 0
 
-    def send_start(self, payload, flags: int = 0):
+    def send_start(self, payload: any, meta: dict = None, flags: int = 0):
         """
         Send starting message of data run over a ZMQ socket.
 
@@ -89,7 +89,10 @@ class DataTransmitter:
         self.sequence_number = 0
         self.running = True
         return self._dispatch(
-            run_identifier=CDTPMessageIdentifier.BOR, payload=payload, flags=flags
+            run_identifier=CDTPMessageIdentifier.BOR,
+            payload=payload,
+            meta=meta,
+            flags=flags,
         )
 
     def send_data(self, payload, meta: dict = {}, flags: int = 0):
@@ -117,7 +120,7 @@ class DataTransmitter:
         msg = "Data transfer sequence not started"
         raise RuntimeError(msg)
 
-    def send_end(self, payload, flags: int = 0):
+    def send_end(self, payload: any, meta: dict = None, flags: int = 0):
         """
         Send ending message of data run over a ZMQ socket.
 
@@ -131,7 +134,10 @@ class DataTransmitter:
 
         self.running = False
         return self._dispatch(
-            run_identifier=CDTPMessageIdentifier.EOR, payload=payload, flags=flags
+            run_identifier=CDTPMessageIdentifier.EOR,
+            payload=payload,
+            meta=meta,
+            flags=flags,
         )
 
     def _dispatch(
