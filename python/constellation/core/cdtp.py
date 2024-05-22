@@ -138,7 +138,7 @@ class DataTransmitter:
         self,
         run_identifier: CDTPMessageIdentifier,
         payload: any = None,
-        meta: dict = {},
+        meta: dict = None,
         flags: int = 0,
     ):
         """Send a payload over a ZMQ socket.
