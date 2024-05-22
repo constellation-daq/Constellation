@@ -95,7 +95,7 @@ class DataTransmitter:
             flags=flags,
         )
 
-    def send_data(self, payload, meta: dict = {}, flags: int = 0):
+    def send_data(self, payload, meta: dict = None, flags: int = 0):
         """
         Send data message of data run over a ZMQ socket.
 
