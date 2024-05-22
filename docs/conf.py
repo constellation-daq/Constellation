@@ -46,6 +46,14 @@ html_static_path = ["_static", "logo"]
 if pathlib.Path("news/media").exists():
     html_static_path.append("news/media")
 
+html_context = {
+    "gitlab_url": "https://gitlab.desy.de",
+    "gitlab_user": "constellation",
+    "gitlab_repo": "constellation",
+    "gitlab_version": "main",
+    "doc_path": "docs",
+}
+
 html_theme_options = {
     "logo": {
         "text": project,
@@ -58,11 +66,22 @@ html_theme_options = {
             "icon": "fa-solid fa-rss",
         },
     ],
+    "use_edit_page_button": True,
+    "secondary_sidebar_items": {
+        "manual/**": ["page-toc", "edit-this-page"],
+        "reference/**": ["page-toc", "edit-this-page"],
+        "protocols/**": ["page-toc", "edit-this-page"],
+        "news/**": ["page-toc"],
+    },
+    "show_prev_next": False,
 }
+
 html_css_files = [
     "css/custom.css",
 ]
+
 html_show_sourcelink = False
+
 html_sidebars = {
     # Blog sidebars (https://ablog.readthedocs.io/en/stable/manual/ablog-configuration-options.html#blog-sidebars)
     "news": ["ablog/categories.html", "ablog/archives.html"],
