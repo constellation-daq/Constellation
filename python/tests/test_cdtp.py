@@ -76,7 +76,7 @@ def mock_sender_satellite(mock_chirp_socket):
             while self.payload_id < 10:
                 self.data_queue.put((f"mock payload {self.payload_id}", {}))
                 self.payload_id += 1
-                time.sleep(0.5)
+                time.sleep(0.02)
             return "Send finished"
 
     with patch("constellation.core.base.zmq.Context") as mock:
@@ -172,6 +172,13 @@ def test_sending_package(
             # assert msg.sequence_number == idx, "Sequence number not expected order"
             # assert msg.name == "mock sender"
 
+    time.sleep(0.2)
+    # still in RUN?
+    assert transmitter.fsm.current_state.id == "RUN", "Ended RUN state early"
+    # go to stop to send EOR
+    commander.send_request("stop", "")
+    wait_for_state(transmitter.fsm, "ORBIT")
+    # EOR
     msg = rx.recv()
     assert msg.msgtype == CDTPMessageIdentifier.EOR
     assert transmitter.payload_id == 10
