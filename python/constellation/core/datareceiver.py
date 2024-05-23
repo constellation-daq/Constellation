@@ -7,7 +7,6 @@ Base module for Constellation Satellites that receive data.
 """
 
 import datetime
-import logging
 import os
 import pathlib
 
@@ -23,7 +22,7 @@ from .commandmanager import cscp_requestable
 from .cscp import CSCPMessage
 from .fsm import SatelliteState
 from .satellite import Satellite, SatelliteArgumentParser
-from .base import EPILOG
+from .base import EPILOG, setup_cli_logging
 
 
 class DataReceiver(Satellite):
@@ -342,8 +341,6 @@ def main(args=None):
     Data will be written in HDF5 format.
 
     """
-    import coloredlogs
-
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
     parser.set_defaults(
@@ -353,9 +350,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    setup_cli_logging(args["name"], args.pop("log_level"))
 
     # start server with remaining args
     s = H5DataReceiverWriter(**args)

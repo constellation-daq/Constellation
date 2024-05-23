@@ -11,6 +11,7 @@ import logging
 from argparse import ArgumentParser
 from queue import Queue
 import atexit
+import coloredlogs
 from .network import validate_interface, get_interfaces
 
 SATELLITE_LIST = []
@@ -104,6 +105,14 @@ class ConstellationLogger(logging.getLoggerClass()):
     def error(self, msg, *args, **kwargs):
         """Map error level to CRITICAL."""
         self.log(logging.CRITICAL, msg, *args, **kwargs)
+
+
+def setup_cli_logging(name: str, level: str) -> ConstellationLogger:
+    logging.setLoggerClass(ConstellationLogger)
+    logger = logging.getLogger(name)
+    log_level = level
+    coloredlogs.install(level=log_level.upper(), logger=logger)
+    return logger
 
 
 class BaseSatelliteFrame:

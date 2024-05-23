@@ -15,7 +15,12 @@ from functools import wraps
 from datetime import datetime
 from logging.handlers import QueueHandler, QueueListener
 
-from .base import BaseSatelliteFrame, ConstellationArgumentParser, EPILOG
+from .base import (
+    BaseSatelliteFrame,
+    ConstellationArgumentParser,
+    EPILOG,
+    setup_cli_logging,
+)
 from .cmdp import CMDPTransmitter, Metric, MetricsType
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
@@ -397,8 +402,6 @@ class MonitoringListener(CHIRPBroadcaster):
 
 def main(args=None):
     """Start a simple log listener service."""
-    import coloredlogs
-
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
         "-o",
@@ -412,9 +415,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    setup_cli_logging(args["name"], args.pop("log_level"))
 
     mon = MonitoringListener(**args)
     mon.receive_metrics()
