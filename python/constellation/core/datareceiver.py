@@ -24,6 +24,7 @@ from .cscp import CSCPMessage
 from .fsm import SatelliteState
 from .satellite import Satellite, SatelliteArgumentParser
 from .base import EPILOG
+from .error import debug_log, handle_error
 
 
 class DataReceiver(Satellite):
@@ -58,15 +59,31 @@ class DataReceiver(Satellite):
     def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
 
+        This is only an abstract method. Inheriting classes must implement their
+        own acquisition method.
+
+        The implementation of this method will have to monitor the
+        `self._state_thread_evt` Event and perform all necessary steps for
+        stopping the acquisition when `self._state_thread_evt.is_set()` is
+        `True` as there will be *no* call to `do_stopping` in this class. This
+        allows to e.g. wrap opening files in `with ...` or `try: ... finally:
+        ...` clauses.
+
         This method will be executed in a separate thread by the underlying
         Satellite class. It therefore needs to monitor the self.stop_running
         Event and close itself down if the Event is set.
 
-        This is only an abstract method. Inheriting classes must implement their
-        own acquisition method.
-
         """
         raise NotImplementedError
+
+    def do_stopping(self, payload: any):
+        """Unused.
+
+        In this Satellite class, this method is not used. All stopping actions
+        need to be performed from within `do_run`.
+
+        """
+        pass
 
     def fail_gracefully(self):
         """Method called when reaching 'ERROR' state."""
@@ -90,6 +107,25 @@ class DataReceiver(Satellite):
             address, port = host
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
+
+    @handle_error
+    @debug_log
+    def _wrap_stop(self, payload: any) -> str:
+        """Wrapper for the 'stopping' transitional state of the FSM.
+
+        As the DataReceiver will have to keep files open, we design the `do_run`
+        to handle all actions necessary for stopping a run.
+
+        """
+        # indicate to the current acquisition thread to stop
+        if self._state_thread_evt:
+            self._state_thread_evt.set()
+        # wait for result, waiting until done
+        self.log.info("Waiting for RUN thread to finish.")
+        self._state_thread_fut.result(timeout=None)
+        self.log.info("RUN thread finished.")
+        # NOTE: no call to `do_stopping`
+        return "Acquisition stopped"
 
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService):
@@ -222,12 +258,12 @@ class H5DataReceiverWriter(DataReceiver):
                     data=item.payload,
                     dtype=item.meta.get("dtype", None),
                 )
-
             self.log.info(
                 "Wrote EOR packet from %s on run %s",
                 item.name,
                 self.run_identifier,
             )
+            self.running_sats.remove(item.name)
 
     def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
@@ -250,11 +286,17 @@ class H5DataReceiverWriter(DataReceiver):
             # processing loop
             while (
                 not self._state_thread_evt.is_set()
-                and (datetime.datetime.now() - keep_alive).total_seconds() < 4
+                or (keep_alive
+                    and (datetime.datetime.now() - keep_alive).total_seconds() < 60)
             ):
                 # refresh keep_alive timestamp
                 if not self._state_thread_evt.is_set():
                     keep_alive = datetime.datetime.now()
+                else:
+                    if not self.running_sats:
+                        # no Satellites connected
+                        keep_alive = None
+                        self.log.info("All EORE received, stopping.")
                 # request available data from zmq poller; timeout prevents
                 # deadlock when stopping.
                 sockets_ready = dict(self.poller.poll(timeout=250))
@@ -286,6 +328,8 @@ class H5DataReceiverWriter(DataReceiver):
                     last_flush = datetime.datetime.now()
         finally:
             h5file.close()
+            if self.running_sats:
+                self.log.warning(f"Never received EORE from following Satellites: {self.running_sats}")
             self.running_sats = []
         return "Finished Acquisition"
 
