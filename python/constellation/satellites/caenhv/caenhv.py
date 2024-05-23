@@ -143,17 +143,23 @@ class CaenHvSatellite(Satellite):
 
     def _configure_monitoring(self):
         """Schedule monitoring for certain parameters."""
+        self.reset_scheduled_metrics()
         with self.caen as crate:
             for brdno, brd in crate.boards.items():
                 # loop over boards
-                self.log.info("Configuring board %s", brd)
+                self.log.info("Configuring monitoring for board %s", brd)
                 for chno, ch in enumerate(brd.channels):
                     # loop over channels
                     for par in ["IMon", "VMon"]:
                         # add a callback using partial
                         self.schedule_metric(
                             f"b{brdno}_ch{chno}_{par}",
-                            partial(self.get_channel_value(brdno, chno, par)),
+                            partial(
+                                self.get_channel_value,
+                                board=brdno,
+                                channel=chno,
+                                par=par,
+                            ),
                             10.0,
                         )
 
