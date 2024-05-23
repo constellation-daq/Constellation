@@ -282,7 +282,7 @@ class Satellite(
         return "Finished preparations, starting."
 
     @debug_log
-    def do_run(self, payload: any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
