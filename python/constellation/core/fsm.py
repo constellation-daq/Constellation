@@ -344,18 +344,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # Get the thread's return value. This raises any exception thrown in the
         # thread, which will be handled by the @handle_error decorator to put us
         # into ERROR state.
-        # TODO: test that this is the case
         res = fut.result()
         if not res:
             res = "Transition completed!"
         # try to advance the FSM for finishing transitional states
-        #
-        # TODO take into account that we might have cancelled the transition, so
-        # check whether the event is set here and abort if so
-        #
-        # TODO/NOTE the Event might also be set in case we are shutting down; then
-        # the abort FSM transition might not be allowed and we just want to
-        # close things down; take this case into account as well
         try:
             prev = self.fsm.current_state.id
             self.fsm.complete(res)
