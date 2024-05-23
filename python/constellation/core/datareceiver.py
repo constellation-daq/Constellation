@@ -38,9 +38,6 @@ class DataReceiver(Satellite):
         super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
 
-    def do_initializing(self, payload: any) -> str:
-        return super().do_initializing(payload)
-
     def do_launching(self, payload: any) -> str:
         """Set up pull sockets to listen to incoming data."""
         # Set up the data poller which will monitor all ZMQ sockets
