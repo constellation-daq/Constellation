@@ -170,6 +170,35 @@ def test_log_monitoring(mock_listener, mock_monitoringsender):
 
 
 @pytest.mark.forked
+def test_log_levels(mock_listener, mock_monitoringsender):
+    listener, stream = mock_listener
+    # ROOT logger needs to have a level set
+    logger = logging.getLogger()
+    logger.setLevel(1)
+    # get a "remote" logger
+    lr = logging.getLogger("mock_sender")
+    # log a custom level
+    lr.trace("mock trace message")
+    lr.status("mock status message")
+    time.sleep(0.1)
+    mock_packet_queue_sender[send_port][0].startswith(b"LOG/TRACE")
+    mock_packet_queue_sender[send_port][3].startswith(b"LOG/STATUS")
+    # error mapped to critical?
+    lr.error("mock critical!!!!")
+    time.sleep(0.1)
+    mock_packet_queue_sender[send_port][3].startswith(b"LOG/CRITICAL")
+    # check reconstruction
+    listener.start()
+    time.sleep(0.1)
+    assert isinstance(stream.mock_calls[0][1][0], logging.LogRecord)
+    assert isinstance(stream.mock_calls[1][1][0], logging.LogRecord)
+    assert isinstance(stream.mock_calls[2][1][0], logging.LogRecord)
+    assert stream.mock_calls[0][1][0].levelname == "TRACE"
+    assert stream.mock_calls[1][1][0].levelname == "STATUS"
+    assert stream.mock_calls[2][1][0].levelname == "CRITICAL"
+
+
+@pytest.mark.forked
 def test_monitoring_sender_init(mock_listener, mock_monitoringsender):
     m = mock_monitoringsender
     # is our method registered?
