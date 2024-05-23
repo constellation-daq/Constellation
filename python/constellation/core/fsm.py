@@ -334,13 +334,13 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         """Start a transition thread with the given fcn and arguments."""
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
-        # add a callback when transition is complete
+        # add a callback triggered when transition is complete
         self._state_thread_fut.add_done_callback(self._state_transition_thread_complete)
 
     @handle_error
     def _state_transition_thread_complete(self, fut: Future) -> None:
         """Callback method when a transition thread is done."""
-        self.log.debug("Transition completed and callback received.")
+        self.log.trace("Transition thread completed and callback received.")
         # Get the thread's return value. This raises any exception thrown in the
         # thread, which will be handled by the @handle_error decorator to put us
         # into ERROR state.

@@ -227,7 +227,7 @@ class H5DataReceiverWriter(DataReceiver):
                 grp = h5file[item.name]
             except KeyError:
                 # late joiners
-                self.log.error(f"{item.name} sent data without BOR.")
+                self.log.warning(f"{item.name} sent data without BOR.")
                 self.running_sats.append(item.name)
                 grp = h5file.create_group(item.name)
 
@@ -315,7 +315,7 @@ class H5DataReceiverWriter(DataReceiver):
                             msg = "Finishing with"
                         else:
                             msg = "Processing"
-                        self.log.debug(
+                        self.log.status(
                             "%s data packet %s from %s",
                             msg,
                             item.sequence_number,
@@ -344,7 +344,7 @@ class H5DataReceiverWriter(DataReceiver):
         """Open the hdf5 file and return the file object."""
         h5file = None
         if os.path.isfile(filename):
-            self.log.error("file already exists: %s", filename)
+            self.log.critical("file already exists: %s", filename)
             raise RuntimeError(f"file already exists: {filename}")
 
         self.log.info("Creating file %s", filename)
@@ -363,7 +363,7 @@ class H5DataReceiverWriter(DataReceiver):
         try:
             h5file = h5py.File(directory / filename, "w")
         except Exception as exception:
-            self.log.error("Unable to open %s: %s", filename, str(exception))
+            self.log.critical("Unable to open %s: %s", filename, str(exception))
             raise RuntimeError(
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
