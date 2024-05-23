@@ -253,7 +253,6 @@ class Satellite(
             self._state_thread_evt.set()
         # wait for result, will raise TimeoutError if not successful
         self._state_thread_fut.result(timeout=10)
-        self._state_thread_evt = None
         return self.do_stopping(payload)
 
     @debug_log

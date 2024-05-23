@@ -347,6 +347,13 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         res = fut.result()
         if not res:
             res = "Transition completed!"
+        if self._state_thread_evt.is_set():
+            # Cancelled; do not advance state. This handles stopping RUN state
+            # and avoids premature progression out of STOPPING
+            self._state_thread_evt = None
+            return
+        # cleanup
+        self._state_thread_evt = None
         # try to advance the FSM for finishing transitional states
         try:
             prev = self.fsm.current_state.id
@@ -359,8 +366,6 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             # no need to do more than set the status, we are in a steady
             # operational state
             self.fsm.status = res
-        # cleanup
-        self._state_thread_evt = None
 
     @cscp_requestable
     def get_state(self, _request: CSCPMessage = None) -> (str, None, None):
