@@ -95,7 +95,7 @@ class DataReceiver(Satellite):
         self.poller = None
 
     @cscp_requestable
-    def get_data_sources(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_data_sources(self, _request: CSCPMessage = None) -> (str, list[str], None):
         """Get list of connected data sources.
 
         No payload argument.
@@ -182,7 +182,7 @@ class H5DataReceiverWriter(DataReceiver):
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
 
-    def do_initializing(self, payload: any) -> str:
+    def do_initializing(self, config: dict[str]) -> str:
         """Initialize and configure the satellite."""
         # what pattern to use for the file names?
         self.file_name_pattern = self.config.setdefault(
