@@ -143,7 +143,7 @@ class DataReceiver(Satellite):
                         raise RuntimeError(
                             f"Could not write message '{item}' to file"
                         ) from e
-                    if (datetime.datetime.now() - last_msg).total_seconds() > 1.0:
+                    if (datetime.datetime.now() - last_msg).total_seconds() > 2.0:
                         if self._state_thread_evt.is_set():
                             msg = "Finishing with"
                         else:
