@@ -290,10 +290,9 @@ class H5DataReceiverWriter(DataReceiver):
         transmitter = DataTransmitter(None, None)
         try:
             # processing loop
-            while (
-                not self._state_thread_evt.is_set()
-                or (keep_alive
-                    and (datetime.datetime.now() - keep_alive).total_seconds() < 60)
+            while not self._state_thread_evt.is_set() or (
+                keep_alive
+                and (datetime.datetime.now() - keep_alive).total_seconds() < 60
             ):
                 # refresh keep_alive timestamp
                 if not self._state_thread_evt.is_set():
@@ -335,7 +334,9 @@ class H5DataReceiverWriter(DataReceiver):
         finally:
             h5file.close()
             if self.running_sats:
-                self.log.warning(f"Never received EORE from following Satellites: {self.running_sats}")
+                self.log.warning(
+                    f"Never received EORE from following Satellites: {self.running_sats}"
+                )
             self.running_sats = []
         return f"Finished acquisition to {self.filename}"
 
