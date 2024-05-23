@@ -37,13 +37,13 @@ class DataReceiver(Satellite):
         self._pull_interfaces = {}
         self._pull_sockets = {}
         self.poller = None
-        # initialize Satellite attributes
-        super().__init__(*args, **kwargs)
         self.run_identifier = ""
         # Tracker for which satellites have joined the current data run.
-        self.running_sats = []
+        self.active_satellites = []
         # metrics
         self.receiver_stats = None
+        # initialize Satellite attributes
+        super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
 
     def do_initializing(self, config: dict[str]) -> str:
@@ -112,7 +112,7 @@ class DataReceiver(Satellite):
                 if not self._state_thread_evt.is_set():
                     keep_alive = datetime.datetime.now()
                 else:
-                    if not self.running_sats:
+                    if not self.active_satellites:
                         # no Satellites connected
                         keep_alive = None
                         self.log.info("All EORE received, stopping.")
@@ -129,10 +129,10 @@ class DataReceiver(Satellite):
                     item = transmitter.decode(binmsg)
                     try:
                         if item.msgtype == CDTPMessageIdentifier.BOR:
-                            self.running_sats.append(item.name)
+                            self.active_satellites.append(item.name)
                             self._write_BOR(outfile, item)
                         elif item.msgtype == CDTPMessageIdentifier.EOR:
-                            self.running_sats.remove(item.name)
+                            self.active_satellites.remove(item.name)
                             self._write_EOR(outfile, item)
                         else:
                             self._write_data(outfile, item)
@@ -158,12 +158,12 @@ class DataReceiver(Satellite):
 
         finally:
             self._close_file(outfile)
-            if self.running_sats:
+            if self.active_satellites:
                 self.log.warning(
                     "Never received EORE from following Satellites: %s",
-                    ", ".join(self.running_sats),
+                    ", ".join(self.active_satellites),
                 )
-            self.running_sats = []
+            self.active_satellites = []
         return f"Finished acquisition to {filename}"
 
     def _write_data(self, outfile: any, item: CDTPMessage):
@@ -373,7 +373,7 @@ class H5DataReceiverWriter(DataReceiver):
         except KeyError:
             # late joiners
             self.log.warning("%s sent data without BOR.", item.name)
-            self.running_sats.append(item.name)
+            self.active_satellites.append(item.name)
             grp = outfile.create_group(item.name)
 
         title = f"data_{self.run_identifier}_{item.sequence_number}"
