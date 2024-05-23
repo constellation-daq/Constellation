@@ -318,8 +318,12 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             res = "Transition completed!"
         # try to advance the FSM for finishing transitional states
         try:
+            prev = self.fsm.current_state.id
             self.fsm.complete(res)
-            self.log.info("State transition to steady state completed.")
+            now = self.fsm.current_state.id
+            self.log.info(
+                f"State transition to steady state completed ({prev} -> {now})."
+            )
         except TransitionNotAllowed:
             # no need to do more than set the status, we are in a steady
             # operational state
@@ -353,8 +357,12 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # the abort FSM transition might not be allowed and we just want to
         # close things down; take this case into account as well
         try:
+            prev = self.fsm.current_state.id
             self.fsm.complete(res)
-            self.log.info("State transition to steady state completed.")
+            now = self.fsm.current_state.id
+            self.log.info(
+                f"State transition to steady state completed ({prev} -> {now})."
+            )
         except TransitionNotAllowed:
             # no need to do more than set the status, we are in a steady
             # operational state
