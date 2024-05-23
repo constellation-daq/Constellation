@@ -10,10 +10,12 @@ import datetime
 import logging
 import os
 import pathlib
+import sys
 
 import h5py
 import numpy as np
 import zmq
+from functools import partial
 
 from . import __version__
 from .broadcastmanager import chirp_callback, DiscoveredService
@@ -40,6 +42,8 @@ class DataReceiver(Satellite):
         self.run_identifier = ""
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
+        # metrics
+        self.receiver_stats = None
         self.request(CHIRPServiceIdentifier.DATA)
 
     def do_initializing(self, config: dict[str]) -> str:
@@ -50,6 +54,7 @@ class DataReceiver(Satellite):
         )
         # what directory to store files in?
         self.output_path = self.config.setdefault("output_path", "data")
+        self._configure_monitoring(2.0)
         return "Configured DataReceiver"
 
     def do_launching(self, payload: any) -> str:
@@ -96,6 +101,7 @@ class DataReceiver(Satellite):
         # keep the data collection alive for a few seconds after stopping
         keep_alive = datetime.datetime.now()
         transmitter = DataTransmitter(None, None)
+        self._reset_receiver_stats()
         try:
             # processing loop
             while not self._state_thread_evt.is_set() or (
@@ -116,6 +122,10 @@ class DataReceiver(Satellite):
 
                 for socket in sockets_ready.keys():
                     binmsg = socket.recv_multipart()
+                    # NOTE below we determine the size of the list of (binary)
+                    # strings, which is not exactly what went over the network
+                    self.receiver_stats["nbytes"] += sys.getsizeof(binmsg)
+                    self.receiver_stats["npackets"] += 1
                     item = transmitter.decode(binmsg)
                     try:
                         if item.msgtype == CDTPMessageIdentifier.BOR:
@@ -270,6 +280,30 @@ class DataReceiver(Satellite):
         if self.poller:
             self.poller.unregister(socket)
         socket.close()
+
+    def _reset_receiver_stats(self) -> None:
+        """Reset internal statistics used for monitoring"""
+        self.receiver_stats = {
+            "npackets": 0,
+            "nbytes": 0,
+        }
+
+    def _get_stat(self, stat: str) -> any:
+        """Get a specific metric"""
+        return self.receiver_stats[stat]
+
+    def _configure_monitoring(self, frequency: float):
+        """Schedule monitoring for certain parameters."""
+        self.reset_scheduled_metrics()
+        self._reset_receiver_stats()
+        for stat in self.receiver_stats:
+            self.log.info("Configuring monitoring for '%s' metric", stat)
+            # add a callback using partial
+            self.schedule_metric(
+                stat,
+                partial(self._get_stat, stat=stat),
+                frequency,
+            )
 
 
 class H5DataReceiverWriter(DataReceiver):

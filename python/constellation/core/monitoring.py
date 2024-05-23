@@ -137,6 +137,14 @@ class MonitoringSender(BaseSatelliteFrame):
         """Send a single metric via ZMQ."""
         return self._mon_tm.send_metric(metric)
 
+    def reset_scheduled_metrics(self):
+        """Reset all previously scheduled metrics.
+
+        Will only schedule metrics provided via decorator.
+
+        """
+        self._metrics_callbacks = get_scheduled_metrics(self)
+
     def _add_com_thread(self):
         """Add the metric sender thread to the communication thread pool."""
         super()._add_com_thread()
