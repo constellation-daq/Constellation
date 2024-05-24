@@ -325,13 +325,7 @@ class H5DataReceiverWriter(DataReceiver):
         """Write data to file"""
         grp = outfile[item.name].create_group("EOR")
         # add meta information as attributes
-        grp.update(item.meta)
-        if item.payload:
-            grp.create_dataset(
-                "payload",
-                data=item.payload,
-                dtype=item.meta.get("dtype", None),
-            )
+        grp.update(item.payload)
         self.log.info(
             "Wrote EOR packet from %s on run %s",
             item.name,
@@ -342,15 +336,8 @@ class H5DataReceiverWriter(DataReceiver):
         """Write BOR to file"""
         if item.name not in outfile.keys():
             grp = outfile.create_group(item.name).create_group("BOR")
-            # add meta information as attributes
-            grp.update(item.meta)
-
-            if item.payload:
-                grp.create_dataset(
-                    "payload",
-                    data=item.payload,
-                    dtype=item.meta.get("dtype", None),
-                )
+            # add payload dict information as attributes
+            grp.update(item.payload)
             self.log.info(
                 "Wrote BOR packet from %s on run %s",
                 item.name,

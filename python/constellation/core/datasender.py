@@ -165,7 +165,7 @@ class DataSender(Satellite):
         # Beginning of run event. If nothing was provided by the user, use the
         # configuration dictionary as a payload
         if not self.BOR:
-            self.BOR = self.config.get_json()
+            self.BOR = self.config._config
         self.log.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         return super()._wrap_start(run_identifier)
