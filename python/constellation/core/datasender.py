@@ -90,8 +90,8 @@ class DataSender(Satellite):
     def __init__(self, *args, data_port: int, **kwargs):
         # initialize local attributes first:
         # beginning and end-of-run events: payloads and meta information
-        self._beg_of_run = {"payload": None, "meta": {"dtype": None}}
-        self._end_of_run = {"payload": None, "meta": {"dtype": None}}
+        self._beg_of_run = {"payload": {}, "meta": {}}
+        self._end_of_run = {"payload": {}, "meta": {}}
         # set up the data pusher which will transmit data placed into the queue
         # via ZMQ socket
         self.data_queue = Queue()

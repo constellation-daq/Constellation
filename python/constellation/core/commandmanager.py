@@ -145,10 +145,10 @@ class CommandReceiver(BaseSatelliteFrame):
                     "WrongImplementation", CSCPMessageVerb.NOTIMPLEMENTED, repr(e)
                 )
                 continue
-            except TransitionNotAllowed:
-                self.log.error("Transition %s not allowed", req.msg)
+            except TransitionNotAllowed as e:
+                self.log.error("Transition '%s' not allowed: %s", req.msg, e)
                 self._cmd_tm.send_reply(
-                    "Transition not allowed", CSCPMessageVerb.INVALID, None
+                    f"Transition not allowed: {e}", CSCPMessageVerb.INVALID, None
                 )
                 continue
             except Exception as e:
