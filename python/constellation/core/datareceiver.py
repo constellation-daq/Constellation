@@ -292,8 +292,8 @@ class DataReceiver(Satellite):
         """Get a specific metric"""
         return self.receiver_stats[stat]
 
-    def _configure_monitoring(self, frequency: float):
-        """Schedule monitoring for certain parameters."""
+    def _configure_monitoring(self, interval: float):
+        """Schedule monitoring for internal parameters."""
         self.reset_scheduled_metrics()
         self._reset_receiver_stats()
         for stat in self.receiver_stats:
@@ -302,7 +302,7 @@ class DataReceiver(Satellite):
             self.schedule_metric(
                 stat,
                 partial(self._get_stat, stat=stat),
-                frequency,
+                interval,
             )
 
 
