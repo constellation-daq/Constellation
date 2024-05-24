@@ -236,7 +236,7 @@ def test_receive_writing_package(
 
         for run_num in range(1, 3):
             # Send new data to handle
-            tx.send_start(["mock_start"])
+            tx.send_start({"mock_cfg": 1, "other_val": "mockval"})
             # send once as byte array with and once w/o dtype
             tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
             tx.send_data(payload.tobytes())
@@ -255,7 +255,7 @@ def test_receive_writing_package(
                 receiver.fsm.current_state.id.lower() == "stopping"
             ), "Receiver stopped before receiving EORE"
             # send EORE
-            tx.send_end(["mock_end"])
+            tx.send_end({"mock_end": "whatanend"})
             wait_for_state(receiver.fsm, "ORBIT", 1)
             assert receiver.run_identifier == str(run_num)
 
@@ -264,17 +264,15 @@ def test_receive_writing_package(
             eor = "EOR"
             dat = [f"data_{run_num}_{i}" for i in range(1, 3)]
 
-            file = FILE_NAME.format(run_identifier=run_num)
-            assert os.path.exists(os.path.join(tmpdir, file))
-            h5file = h5py.File(tmpdir / pathlib.Path(file))
+            fn = FILE_NAME.format(run_identifier=run_num)
+            assert os.path.exists(os.path.join(tmpdir, fn))
+            h5file = h5py.File(tmpdir / pathlib.Path(fn))
             assert "simple_sender" in h5file.keys()
             assert bor in h5file["simple_sender"].keys()
-            assert "mock_start" in str(
-                h5file["simple_sender"][bor]["payload"][0], encoding="utf-8"
-            )
+            assert h5file["simple_sender"][bor]["mock_cfg"][()] == 1
             assert eor in h5file["simple_sender"].keys()
-            assert "mock_end" in str(
-                h5file["simple_sender"][eor]["payload"][0], encoding="utf-8"
+            assert "whatanend" in str(
+                h5file["simple_sender"][eor]["mock_end"][()], encoding="utf-8"
             )
             assert set(dat).issubset(
                 h5file["simple_sender"].keys()
@@ -296,20 +294,24 @@ def test_receive_writing_package(
 @pytest.mark.forked
 def test_receiver_stats(
     receiver_satellite,
-    data_transmitter,
     monitoringlistener,
     commander,
 ):
+    dp = 23242
+    ctx = zmq.Context()
+    socket = ctx.socket(zmq.PUSH)
+    socket.bind(f"tcp://127.0.0.1:{dp}")
+    tx = DataTransmitter("simple_sender", socket)
+
     service = DiscoveredService(
         get_uuid("simple_sender"),
         CHIRPServiceIdentifier.DATA,
         "127.0.0.1",
-        port=DATA_PORT,
+        port=dp,
     )
 
     receiver = receiver_satellite
     ml, tmpdir = monitoringlistener
-    tx = data_transmitter
     commander.request_get_response(
         "initialize", {"file_name_pattern": FILE_NAME, "output_path": tmpdir}
     )
@@ -322,7 +324,7 @@ def test_receiver_stats(
 
     for run_num in range(1, 3):
         # Send new data to handle
-        tx.send_start(["mock_start"])
+        tx.send_start({"mock_cfg": 1, "other_val": "mockval"})
         # send once as byte array with and once w/o dtype
         tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
         tx.send_data(payload.tobytes())
@@ -333,7 +335,7 @@ def test_receiver_stats(
         wait_for_state(receiver.fsm, "RUN", 1)
         commander.request_get_response("stop")
         # send EORE
-        tx.send_end(["mock_end"])
+        tx.send_end({"mock_end": 22})
         wait_for_state(receiver.fsm, "ORBIT", 1)
     time.sleep(0.5)
     assert len(receiver.receiver_stats) == 2
