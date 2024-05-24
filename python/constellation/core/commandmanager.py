@@ -204,3 +204,23 @@ class CommandReceiver(BaseSatelliteFrame):
 
         """
         return self.name, None, None
+
+    @cscp_requestable
+    def shutdown(self, _request: CSCPMessage = None):
+        """Queue the Satellite's reentry.
+
+        No payload argument.
+
+        """
+
+        # initialize shutdown with delay (so that CSCP response reaches
+        # Controller)
+        def reentry_timer(sat):
+            time.sleep(0.5)
+            sat.reentry()
+
+        # This command is put into the queue: it will only execute after
+        # previously queued actions (e.g. state transitions) have been
+        # completed.
+        self.task_queue.put((reentry_timer, [self]))
+        return f"{self.name} queued for reentry", None, None
