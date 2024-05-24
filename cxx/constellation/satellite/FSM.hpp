@@ -146,6 +146,9 @@ namespace constellation::satellite {
          */
         TransitionFunction find_transition_function(Transition transition);
 
+        /** Stop and join the run_thread */
+        void stop_run_thread();
+
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
         CNSTLN_API auto initialized(TransitionPayload payload) -> State;
         CNSTLN_API auto launch(TransitionPayload payload) -> State;
