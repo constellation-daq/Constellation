@@ -317,6 +317,7 @@ def test_receiver_stats(
         # send EORE
         tx.send_end(["mock_end"])
         wait_for_state(receiver.fsm, "ORBIT", 1)
+    time.sleep(0.5)
     assert len(receiver.receiver_stats) == 2
     assert len(receiver._metrics_callbacks) > 1
     assert len(ml._metric_sockets) == 1
