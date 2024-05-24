@@ -6,9 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import pytest
 import logging
 import time
-import threading
 import os
-from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
@@ -17,7 +15,6 @@ from constellation.core.monitoring import (
     ZeroMQSocketLogListener,
     MonitoringSender,
     schedule_metric,
-    MonitoringListener,
 )
 
 from constellation.core.chirp import (
@@ -81,24 +78,6 @@ def monitoringsender():
 
     m = MyStatProducer("mock_sender", send_port, interface="*")
     yield m
-
-
-@pytest.fixture
-def monitoringlistener():
-    """Create a MonitoringListener instance."""
-
-    with TemporaryDirectory() as tmpdirname:
-        m = MonitoringListener(
-            name="mock_monitor",
-            group="mockstellation",
-            interface="*",
-            output_path=tmpdirname,
-        )
-        t = threading.Thread(target=m.receive_metrics)
-        t.start()
-        # give the thread a chance to start
-        time.sleep(0.1)
-        yield m, tmpdirname
 
 
 @pytest.fixture

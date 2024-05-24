@@ -9,10 +9,12 @@ Base module for Constellation Satellites that receive data.
 import datetime
 import os
 import pathlib
+import sys
 
 import h5py
 import numpy as np
 import zmq
+from functools import partial
 
 from . import __version__
 from .broadcastmanager import chirp_callback, DiscoveredService
@@ -34,9 +36,25 @@ class DataReceiver(Satellite):
         self._pull_interfaces = {}
         self._pull_sockets = {}
         self.poller = None
+        self.run_identifier = ""
+        # Tracker for which satellites have joined the current data run.
+        self.active_satellites = []
+        # metrics
+        self.receiver_stats = None
         # initialize Satellite attributes
         super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
+
+    def do_initializing(self, config: dict[str]) -> str:
+        """Initialize and configure the satellite."""
+        # what pattern to use for the file names?
+        self.file_name_pattern = self.config.setdefault(
+            "file_name_pattern", "run_{run_identifier}_{date}.h5"
+        )
+        # what directory to store files in?
+        self.output_path = self.config.setdefault("output_path", "data")
+        self._configure_monitoring(2.0)
+        return "Configured DataReceiver"
 
     def do_launching(self, payload: any) -> str:
         """Set up pull sockets to listen to incoming data."""
@@ -56,10 +74,7 @@ class DataReceiver(Satellite):
         return "Closed connections to data senders."
 
     def do_run(self, run_identifier: str) -> str:
-        """Handle the data enqueued by the pull threads.
-
-        This is only an abstract method. Inheriting classes must implement their
-        own acquisition method.
+        """Handle the data enqueued by the ZMQ Poller.
 
         The implementation of this method will have to monitor the
         `self._state_thread_evt` Event and perform all necessary steps for
@@ -73,7 +88,102 @@ class DataReceiver(Satellite):
         Event and close itself down if the Event is set.
 
         """
-        raise NotImplementedError
+        self.run_identifier = run_identifier
+        filename = pathlib.Path(
+            self.file_name_pattern.format(
+                run_identifier=self.run_identifier,
+                date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            )
+        )
+        outfile = self._open_file(filename)
+        last_msg = datetime.datetime.now()
+        # keep the data collection alive for a few seconds after stopping
+        keep_alive = datetime.datetime.now()
+        transmitter = DataTransmitter(None, None)
+        self._reset_receiver_stats()
+        try:
+            # processing loop
+            while not self._state_thread_evt.is_set() or (
+                keep_alive
+                and (datetime.datetime.now() - keep_alive).total_seconds() < 60
+            ):
+                # refresh keep_alive timestamp
+                if not self._state_thread_evt.is_set():
+                    keep_alive = datetime.datetime.now()
+                else:
+                    if not self.active_satellites:
+                        # no Satellites connected
+                        keep_alive = None
+                        self.log.info("All EORE received, stopping.")
+                # request available data from zmq poller; timeout prevents
+                # deadlock when stopping.
+                sockets_ready = dict(self.poller.poll(timeout=250))
+
+                for socket in sockets_ready.keys():
+                    binmsg = socket.recv_multipart()
+                    # NOTE below we determine the size of the list of (binary)
+                    # strings, which is not exactly what went over the network
+                    self.receiver_stats["nbytes"] += sys.getsizeof(binmsg)
+                    self.receiver_stats["npackets"] += 1
+                    item = transmitter.decode(binmsg)
+                    try:
+                        if item.msgtype == CDTPMessageIdentifier.BOR:
+                            self.active_satellites.append(item.name)
+                            self._write_BOR(outfile, item)
+                        elif item.msgtype == CDTPMessageIdentifier.EOR:
+                            self.active_satellites.remove(item.name)
+                            self._write_EOR(outfile, item)
+                        else:
+                            self._write_data(outfile, item)
+                    except Exception as e:
+                        self.log.critical(
+                            "Could not write message '%s' to file: %s", item, repr(e)
+                        )
+                        raise RuntimeError(
+                            f"Could not write message '{item}' to file"
+                        ) from e
+                    if (datetime.datetime.now() - last_msg).total_seconds() > 2.0:
+                        if self._state_thread_evt.is_set():
+                            msg = "Finishing with"
+                        else:
+                            msg = "Processing"
+                        self.log.status(
+                            "%s data packet %s from %s",
+                            msg,
+                            item.sequence_number,
+                            item.name,
+                        )
+                        last_msg = datetime.datetime.now()
+
+        finally:
+            self._close_file(outfile)
+            if self.active_satellites:
+                self.log.warning(
+                    "Never received EORE from following Satellites: %s",
+                    ", ".join(self.active_satellites),
+                )
+            self.active_satellites = []
+        return f"Finished acquisition to {filename}"
+
+    def _write_data(self, outfile: any, item: CDTPMessage):
+        """Write data to file"""
+        raise NotImplementedError()
+
+    def _write_EOR(self, outfile: any, item: CDTPMessage):
+        """Write EOR to file"""
+        raise NotImplementedError()
+
+    def _write_BOR(self, outfile: any, item: CDTPMessage):
+        """Write BOR to file"""
+        raise NotImplementedError()
+
+    def _open_file(self, filename: str) -> any:
+        """Return the filehandler"""
+        raise NotImplementedError()
+
+    def _close_file(self, outfile: any) -> None:
+        """Close the filehandler"""
+        raise NotImplementedError()
 
     def do_stopping(self, payload: any):
         """Unused.
@@ -138,10 +248,9 @@ class DataReceiver(Satellite):
         """
         Adds an interface (host, port) to receive data from.
         """
-        # TODO: Name satellites instead of using host_uuid
         self._pull_interfaces[service.host_uuid] = (service.address, service.port)
         self.log.info(
-            f"Adding interface tcp://{service.address}:{service.port} to listen to."
+            "Adding interface tcp://%s:%s to listen to.", service.address, service.port
         )
         # handle late-coming satellite offers
         if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
@@ -159,7 +268,7 @@ class DataReceiver(Satellite):
 
     def _add_socket(self, uuid, address, port):
         interface = f"tcp://{address}:{port}"
-        self.log.info(f"Connecting to {interface}")
+        self.log.info("Connecting to %s", interface)
         socket = self.context.socket(zmq.PULL)
         socket.connect(interface)
         self._pull_sockets[uuid] = socket
@@ -171,46 +280,73 @@ class DataReceiver(Satellite):
             self.poller.unregister(socket)
         socket.close()
 
+    def _reset_receiver_stats(self) -> None:
+        """Reset internal statistics used for monitoring"""
+        self.receiver_stats = {
+            "npackets": 0,
+            "nbytes": 0,
+        }
+
+    def _get_stat(self, stat: str) -> any:
+        """Get a specific metric"""
+        return self.receiver_stats[stat]
+
+    def _configure_monitoring(self, interval: float):
+        """Schedule monitoring for internal parameters."""
+        self.reset_scheduled_metrics()
+        self._reset_receiver_stats()
+        for stat in self.receiver_stats:
+            self.log.info("Configuring monitoring for '%s' metric", stat)
+            # add a callback using partial
+            self.schedule_metric(
+                stat,
+                partial(self._get_stat, stat=stat),
+                interval,
+            )
+
 
 class H5DataReceiverWriter(DataReceiver):
-    """Satellite which receives data via ZMQ writing it to HDF5."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.run_identifier = ""
-        # Tracker for which satellites have joined the current data run.
-        self.running_sats = []
+    """Satellite which receives data via ZMQ and writes to HDF5."""
 
     def do_initializing(self, config: dict[str]) -> str:
         """Initialize and configure the satellite."""
-        # what pattern to use for the file names?
-        self.file_name_pattern = self.config.setdefault(
-            "file_name_pattern", "run_{run_identifier}_{date}.h5"
-        )
-        # what directory to store files in?
-        self.output_path = self.config.setdefault("output_path", "data")
-        # how often will the file be flushed? Negative values for 'at the end of the run'
+        super().do_initializing(config)
+        # how often will the file be flushed? Negative values for 'at the end of
+        # the run'
         self.flush_interval = self.config.setdefault("flush_interval", 10.0)
         return "Configured all values"
 
-    def _write_data(self, h5file: h5py.File, item: CDTPMessage):
-        """Write data into HDF5 format
+    def do_run(self, run_identifier: str) -> str:
+        """Handle the data enqueued by the ZMQ Poller."""
+        self.last_flush = datetime.datetime.now()
+        return super().do_run(run_identifier)
 
-        Format: h5file -> Group (name) ->   BOR Dataset
-                                            Single Concatenated Dataset
-                                            EOR Dataset
+    def _write_EOR(self, outfile: h5py.File, item: CDTPMessage):
+        """Write data to file"""
+        grp = outfile[item.name].create_group("EOR")
+        # add meta information as attributes
+        grp.update(item.meta)
+        if item.payload:
+            grp.create_dataset(
+                "payload",
+                data=item.payload,
+                dtype=item.meta.get("dtype", None),
+            )
+        self.log.info(
+            "Wrote EOR packet from %s on run %s",
+            item.name,
+            self.run_identifier,
+        )
 
-        Writes data to file by concatenating item.payload to dataset inside group name.
-        """
-        # Check if group already exists.
-        if item.msgtype == CDTPMessageIdentifier.BOR and item.name not in h5file.keys():
-            self.running_sats.append(item.name)
-            grp = h5file.create_group(item.name).create_group("BOR")
+    def _write_BOR(self, outfile: h5py.File, item: CDTPMessage):
+        """Write BOR to file"""
+        if item.name not in outfile.keys():
+            grp = outfile.create_group(item.name).create_group("BOR")
             # add meta information as attributes
             grp.update(item.meta)
 
             if item.payload:
-                dset = grp.create_dataset(
+                grp.create_dataset(
                     "payload",
                     data=item.payload,
                     dtype=item.meta.get("dtype", None),
@@ -221,123 +357,46 @@ class H5DataReceiverWriter(DataReceiver):
                 self.run_identifier,
             )
 
-        elif item.msgtype == CDTPMessageIdentifier.DAT:
-            try:
-                grp = h5file[item.name]
-            except KeyError:
-                # late joiners
-                self.log.warning(f"{item.name} sent data without BOR.")
-                self.running_sats.append(item.name)
-                grp = h5file.create_group(item.name)
+    def _write_data(self, outfile: h5py.File, item: CDTPMessage):
+        """Write data into HDF5 format
 
-            title = f"data_{self.run_identifier}_{item.sequence_number}"
+        Format: h5file -> Group (name) ->   BOR Dataset
+                                            Single Concatenated Dataset
+                                            EOR Dataset
 
-            # interpret bytes as array of uint8 if nothing else was specified in the meta
-            payload = np.frombuffer(
-                item.payload, dtype=item.meta.get("dtype", np.uint8)
-            )
-
-            dset = grp.create_dataset(
-                title,
-                data=payload,
-                chunks=True,
-            )
-
-            dset.attrs["CLASS"] = "DETECTOR_DATA"
-            dset.attrs.update(item.meta)
-
-        elif item.msgtype == CDTPMessageIdentifier.EOR:
-            grp = h5file[item.name].create_group("EOR")
-            # add meta information as attributes
-            grp.update(item.meta)
-
-            if item.payload:
-                dset = grp.create_dataset(
-                    "payload",
-                    data=item.payload,
-                    dtype=item.meta.get("dtype", None),
-                )
-            self.log.info(
-                "Wrote EOR packet from %s on run %s",
-                item.name,
-                self.run_identifier,
-            )
-            self.running_sats.remove(item.name)
-
-    def do_run(self, run_identifier: str) -> str:
-        """Handle the data enqueued by the pull threads.
-
-        This method will be executed in a separate thread by the underlying
-        Satellite class. It therefore needs to monitor the self.stop_running
-        Event and close itself down if the Event is set.
-
+        Writes data to file by concatenating item.payload to dataset inside group name.
         """
-
-        self.run_identifier = run_identifier
-        self.filename = pathlib.Path(
-            self.file_name_pattern.format(
-                run_identifier=self.run_identifier,
-                date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-            )
-        )
-        h5file = self._open_file(self.filename)
-        self._add_version(h5file)
-        last_flush = datetime.datetime.now()
-        last_msg = datetime.datetime.now()
-        # keep the data collection alive for a few seconds after stopping
-        keep_alive = datetime.datetime.now()
-        transmitter = DataTransmitter(None, None)
+        # Check if group already exists.
         try:
-            # processing loop
-            while not self._state_thread_evt.is_set() or (
-                keep_alive
-                and (datetime.datetime.now() - keep_alive).total_seconds() < 60
-            ):
-                # refresh keep_alive timestamp
-                if not self._state_thread_evt.is_set():
-                    keep_alive = datetime.datetime.now()
-                else:
-                    if not self.running_sats:
-                        # no Satellites connected
-                        keep_alive = None
-                        self.log.info("All EORE received, stopping.")
-                # request available data from zmq poller; timeout prevents
-                # deadlock when stopping.
-                sockets_ready = dict(self.poller.poll(timeout=250))
+            grp = outfile[item.name]
+        except KeyError:
+            # late joiners
+            self.log.warning("%s sent data without BOR.", item.name)
+            self.active_satellites.append(item.name)
+            grp = outfile.create_group(item.name)
 
-                for socket in sockets_ready.keys():
-                    binmsg = socket.recv_multipart()
-                    item = transmitter.decode(binmsg)
-                    self._write_data(h5file, item)
-                    if (datetime.datetime.now() - last_msg).total_seconds() > 1.0:
-                        if self._state_thread_evt.is_set():
-                            msg = "Finishing with"
-                        else:
-                            msg = "Processing"
-                        self.log.status(
-                            "%s data packet %s from %s",
-                            msg,
-                            item.sequence_number,
-                            item.name,
-                        )
-                        last_msg = datetime.datetime.now()
+        title = f"data_{self.run_identifier}_{item.sequence_number}"
 
-                # time to flush data to file?
-                if (
-                    self.flush_interval > 0
-                    and (datetime.datetime.now() - last_flush).total_seconds()
-                    > self.flush_interval
-                ):
-                    h5file.flush()
-                    last_flush = datetime.datetime.now()
-        finally:
-            h5file.close()
-            if self.running_sats:
-                self.log.warning(
-                    f"Never received EORE from following Satellites: {self.running_sats}"
-                )
-            self.running_sats = []
-        return f"Finished acquisition to {self.filename}"
+        # interpret bytes as array of uint8 if nothing else was specified in the meta
+        payload = np.frombuffer(item.payload, dtype=item.meta.get("dtype", np.uint8))
+
+        dset = grp.create_dataset(
+            title,
+            data=payload,
+            chunks=True,
+        )
+
+        dset.attrs["CLASS"] = "DETECTOR_DATA"
+        dset.attrs.update(item.meta)
+
+        # time to flush data to file?
+        if (
+            self.flush_interval > 0
+            and (datetime.datetime.now() - self.last_flush).total_seconds()
+            > self.flush_interval
+        ):
+            outfile.flush()
+            self.last_flush = datetime.datetime.now()
 
     def _open_file(self, filename: pathlib.Path) -> h5py.File:
         """Open the hdf5 file and return the file object."""
@@ -366,11 +425,16 @@ class H5DataReceiverWriter(DataReceiver):
             raise RuntimeError(
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
+        self._add_version(h5file)
         return h5file
 
-    def _add_version(self, h5file: h5py.File):
+    def _close_file(self, outfile: h5py.File) -> None:
+        """Close the filehandler"""
+        outfile.close()
+
+    def _add_version(self, outfile: h5py.File):
         """Add version information to file."""
-        grp = h5file.create_group(self.name)
+        grp = outfile.create_group(self.name)
         grp["constellation_version"] = __version__
 
 

@@ -25,6 +25,7 @@ from constellation.core.datasender import DataSender
 from constellation.core import __version__
 
 DATA_PORT = 50101
+MON_PORT = 22222
 CMD_PORT = 10101
 FILE_NAME = "mock_file_{run_identifier}.h5"
 
@@ -104,13 +105,17 @@ def receiver_satellite():
     """A receiver Satellite."""
 
     class MockReceiverSatellite(H5DataReceiverWriter):
-        pass
+        def do_initializing(self, config: dict[str]) -> str:
+            res = super().do_initializing(config)
+            # configure monitoring with higher frequency
+            self._configure_monitoring(0.1)
+            return res
 
     s = MockReceiverSatellite(
         name="mock_receiver",
         group="mockstellation",
         cmd_port=CMD_PORT,
-        mon_port=22222,
+        mon_port=MON_PORT,
         hb_port=33333,
         interface="127.0.0.1",
     )
@@ -286,3 +291,57 @@ def test_receive_writing_package(
                 == __version__.encode()
             )
             h5file.close()
+
+
+@pytest.mark.forked
+def test_receiver_stats(
+    receiver_satellite,
+    data_transmitter,
+    monitoringlistener,
+    commander,
+):
+    service = DiscoveredService(
+        get_uuid("simple_sender"),
+        CHIRPServiceIdentifier.DATA,
+        "127.0.0.1",
+        port=DATA_PORT,
+    )
+
+    receiver = receiver_satellite
+    ml, tmpdir = monitoringlistener
+    tx = data_transmitter
+    commander.request_get_response(
+        "initialize", {"file_name_pattern": FILE_NAME, "output_path": tmpdir}
+    )
+    wait_for_state(receiver.fsm, "INIT", 1)
+    receiver._add_sender(service)
+    commander.request_get_response("launch")
+    wait_for_state(receiver.fsm, "ORBIT", 1)
+
+    payload = np.array(np.arange(1000), dtype=np.int16)
+
+    for run_num in range(1, 3):
+        # Send new data to handle
+        tx.send_start(["mock_start"])
+        # send once as byte array with and once w/o dtype
+        tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
+        tx.send_data(payload.tobytes())
+        time.sleep(0.2)
+
+        # Running satellite
+        commander.request_get_response("start", str(run_num))
+        wait_for_state(receiver.fsm, "RUN", 1)
+        commander.request_get_response("stop")
+        # send EORE
+        tx.send_end(["mock_end"])
+        wait_for_state(receiver.fsm, "ORBIT", 1)
+    time.sleep(0.5)
+    assert len(receiver.receiver_stats) == 2
+    assert len(receiver._metrics_callbacks) > 1
+    assert len(ml._metric_sockets) == 1
+    assert os.path.exists(
+        os.path.join(tmpdir, "stats")
+    ), "Stats output directory not created"
+    assert os.path.exists(
+        os.path.join(tmpdir, "stats", "mock_receiver_nbytes.csv")
+    ), "Expected output metrics csv not found"
