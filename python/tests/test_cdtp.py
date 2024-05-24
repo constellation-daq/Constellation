@@ -128,11 +128,29 @@ def test_datatransmitter(
     sender = mock_data_transmitter
     rx = mock_data_receiver
 
-    sender.send_start("mock payload")
+    payload = "mock payload"
+    sender.send_start(payload)
     msg = rx.recv()
-
-    assert msg.payload == "mock payload"
+    assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.BOR
+
+    payload = ["mock payload", "more mock data"]
+    sender.send_data(payload)
+    msg = rx.recv()
+    assert msg.payload == payload
+    assert msg.msgtype == CDTPMessageIdentifier.DAT
+
+    payload = None
+    sender.send_data(payload)
+    msg = rx.recv()
+    assert msg.payload == payload
+    assert msg.msgtype == CDTPMessageIdentifier.DAT
+
+    payload = {"mock": True}
+    sender.send_end(payload)
+    msg = rx.recv()
+    assert msg.payload == payload
+    assert msg.msgtype == CDTPMessageIdentifier.EOR
 
 
 @pytest.mark.forked
