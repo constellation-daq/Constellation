@@ -65,9 +65,7 @@ TODO
 :::{tab-item} Python
 :sync: keyP
 
-The Python implementation of Constellation provides a powerful command line interface controller using IPython. This package
-needs to be installed (`pip install ipython`) in the virtual environment that was created during the installation of the
-framework and can be reactivated using `source venv/bin/activate`.
+The Python implementation of Constellation provides a powerful command line interface controller using IPython. This can be installed with the `cli` component (see [Installing from Source](../install.md#installing-the-constellation-package)).
 
 The controller is started via its Python module, and it is possible to pass it some (optional) arguments, for example:
 
