@@ -18,7 +18,7 @@ import zmq
 
 from .cdtp import DataTransmitter, CDTPMessageIdentifier
 from .satellite import Satellite, SatelliteArgumentParser
-from .base import EPILOG
+from .base import EPILOG, setup_cli_logging
 from .broadcastmanager import CHIRPServiceIdentifier
 
 
@@ -252,8 +252,6 @@ def main(args=None):
     protocol.
 
     """
-    import coloredlogs
-
     parser = DataSenderArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
     parser.set_defaults(
@@ -266,9 +264,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    setup_cli_logging(args["name"], args.pop("log_level"))
 
     # start server with remaining args
     s = RandomDataSender(**args)
