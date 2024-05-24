@@ -235,7 +235,6 @@ def test_receive_writing_package(
             # send once as byte array with and once w/o dtype
             tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
             tx.send_data(payload.tobytes())
-            tx.send_end(["mock_end"])
             time.sleep(0.1)
 
             # Running satellite
@@ -245,6 +244,13 @@ def test_receive_writing_package(
                 receiver.fsm.current_state.id == "RUN"
             ), "Could not set up test environment"
             commander.request_get_response("stop")
+            time.sleep(0.5)
+            # receiver should still be in 'stopping' as no EOR has been sent
+            assert (
+                receiver.fsm.current_state.id.lower() == "stopping"
+            ), "Receiver stopped before receiving EORE"
+            # send EORE
+            tx.send_end(["mock_end"])
             wait_for_state(receiver.fsm, "ORBIT", 1)
             assert receiver.run_identifier == str(run_num)
 

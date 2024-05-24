@@ -23,6 +23,7 @@ from .cscp import CSCPMessage
 from .fsm import SatelliteState
 from .satellite import Satellite, SatelliteArgumentParser
 from .base import EPILOG, setup_cli_logging
+from .error import debug_log, handle_error
 
 
 class DataReceiver(Satellite):
@@ -36,9 +37,6 @@ class DataReceiver(Satellite):
         # initialize Satellite attributes
         super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
-
-    def do_initializing(self, payload: any) -> str:
-        return super().do_initializing(payload)
 
     def do_launching(self, payload: any) -> str:
         """Set up pull sockets to listen to incoming data."""
@@ -60,15 +58,31 @@ class DataReceiver(Satellite):
     def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
 
+        This is only an abstract method. Inheriting classes must implement their
+        own acquisition method.
+
+        The implementation of this method will have to monitor the
+        `self._state_thread_evt` Event and perform all necessary steps for
+        stopping the acquisition when `self._state_thread_evt.is_set()` is
+        `True` as there will be *no* call to `do_stopping` in this class. This
+        allows to e.g. wrap opening files in `with ...` or `try: ... finally:
+        ...` clauses.
+
         This method will be executed in a separate thread by the underlying
         Satellite class. It therefore needs to monitor the self.stop_running
         Event and close itself down if the Event is set.
 
-        This is only an abstract method. Inheriting classes must implement their
-        own acquisition method.
-
         """
         raise NotImplementedError
+
+    def do_stopping(self, payload: any):
+        """Unused.
+
+        In this Satellite class, this method is not used. All stopping actions
+        need to be performed from within `do_run`.
+
+        """
+        pass
 
     def fail_gracefully(self):
         """Method called when reaching 'ERROR' state."""
@@ -80,7 +94,7 @@ class DataReceiver(Satellite):
         self.poller = None
 
     @cscp_requestable
-    def get_data_sources(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_data_sources(self, _request: CSCPMessage = None) -> (str, list[str], None):
         """Get list of connected data sources.
 
         No payload argument.
@@ -92,6 +106,25 @@ class DataReceiver(Satellite):
             address, port = host
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
+
+    @handle_error
+    @debug_log
+    def _wrap_stop(self, payload: any) -> str:
+        """Wrapper for the 'stopping' transitional state of the FSM.
+
+        As the DataReceiver will have to keep files open, we design the `do_run`
+        to handle all actions necessary for stopping a run.
+
+        """
+        # indicate to the current acquisition thread to stop
+        if self._state_thread_evt:
+            self._state_thread_evt.set()
+        # wait for result, waiting until done
+        self.log.info("Waiting for RUN thread to finish.")
+        self._state_thread_fut.result(timeout=None)
+        self.log.info("RUN thread finished.")
+        # NOTE: no call to `do_stopping`
+        return "Acquisition stopped"
 
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService):
@@ -148,7 +181,7 @@ class H5DataReceiverWriter(DataReceiver):
         # Tracker for which satellites have joined the current data run.
         self.running_sats = []
 
-    def do_initializing(self, payload: any) -> str:
+    def do_initializing(self, config: dict[str]) -> str:
         """Initialize and configure the satellite."""
         # what pattern to use for the file names?
         self.file_name_pattern = self.config.setdefault(
@@ -193,7 +226,7 @@ class H5DataReceiverWriter(DataReceiver):
                 grp = h5file[item.name]
             except KeyError:
                 # late joiners
-                self.log.error(f"{item.name} sent data without BOR.")
+                self.log.warning(f"{item.name} sent data without BOR.")
                 self.running_sats.append(item.name)
                 grp = h5file.create_group(item.name)
 
@@ -224,12 +257,12 @@ class H5DataReceiverWriter(DataReceiver):
                     data=item.payload,
                     dtype=item.meta.get("dtype", None),
                 )
-
             self.log.info(
                 "Wrote EOR packet from %s on run %s",
                 item.name,
                 self.run_identifier,
             )
+            self.running_sats.remove(item.name)
 
     def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the pull threads.
@@ -241,7 +274,13 @@ class H5DataReceiverWriter(DataReceiver):
         """
 
         self.run_identifier = run_identifier
-        h5file = self._open_file()
+        self.filename = pathlib.Path(
+            self.file_name_pattern.format(
+                run_identifier=self.run_identifier,
+                date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
+            )
+        )
+        h5file = self._open_file(self.filename)
         self._add_version(h5file)
         last_flush = datetime.datetime.now()
         last_msg = datetime.datetime.now()
@@ -250,13 +289,18 @@ class H5DataReceiverWriter(DataReceiver):
         transmitter = DataTransmitter(None, None)
         try:
             # processing loop
-            while (
-                not self._state_thread_evt.is_set()
-                and (datetime.datetime.now() - keep_alive).total_seconds() < 4
+            while not self._state_thread_evt.is_set() or (
+                keep_alive
+                and (datetime.datetime.now() - keep_alive).total_seconds() < 60
             ):
                 # refresh keep_alive timestamp
                 if not self._state_thread_evt.is_set():
                     keep_alive = datetime.datetime.now()
+                else:
+                    if not self.running_sats:
+                        # no Satellites connected
+                        keep_alive = None
+                        self.log.info("All EORE received, stopping.")
                 # request available data from zmq poller; timeout prevents
                 # deadlock when stopping.
                 sockets_ready = dict(self.poller.poll(timeout=250))
@@ -270,7 +314,7 @@ class H5DataReceiverWriter(DataReceiver):
                             msg = "Finishing with"
                         else:
                             msg = "Processing"
-                        self.log.debug(
+                        self.log.status(
                             "%s data packet %s from %s",
                             msg,
                             item.sequence_number,
@@ -288,20 +332,18 @@ class H5DataReceiverWriter(DataReceiver):
                     last_flush = datetime.datetime.now()
         finally:
             h5file.close()
+            if self.running_sats:
+                self.log.warning(
+                    f"Never received EORE from following Satellites: {self.running_sats}"
+                )
             self.running_sats = []
-        return "Finished Acquisition"
+        return f"Finished acquisition to {self.filename}"
 
-    def _open_file(self) -> h5py.File:
+    def _open_file(self, filename: pathlib.Path) -> h5py.File:
         """Open the hdf5 file and return the file object."""
         h5file = None
-        filename = pathlib.Path(
-            self.file_name_pattern.format(
-                run_identifier=self.run_identifier,
-                date=datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S"),
-            )
-        )
         if os.path.isfile(filename):
-            self.log.error("file already exists: %s", filename)
+            self.log.critical("file already exists: %s", filename)
             raise RuntimeError(f"file already exists: {filename}")
 
         self.log.info("Creating file %s", filename)
@@ -320,7 +362,7 @@ class H5DataReceiverWriter(DataReceiver):
         try:
             h5file = h5py.File(directory / filename, "w")
         except Exception as exception:
-            self.log.error("Unable to open %s: %s", filename, str(exception))
+            self.log.critical("Unable to open %s: %s", filename, str(exception))
             raise RuntimeError(
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
