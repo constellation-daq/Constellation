@@ -172,7 +172,7 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::RUN);
     fsm.react(Transition::interrupt);
-    std::this_thread::sleep_for(100ms); // Give some time call stopping and landing
+    std::this_thread::sleep_for(150ms); // Give some time call stopping and landing
     satellite->progress_fsm(fsm);
     REQUIRE(fsm.getState() == State::SAFE);
 }
