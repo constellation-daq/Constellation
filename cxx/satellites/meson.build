@@ -4,4 +4,5 @@
 satellite_libdir = get_option('libdir') / 'ConstellationSatellites'
 
 subdir('RandomSender')
+subdir('RawFileWriter')
 subdir('Sputnik')
