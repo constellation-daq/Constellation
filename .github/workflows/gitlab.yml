@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+name: DESY GitLab
+on:
+  pull_request:
+
+jobs:
+  push:
+    name: Create MR on DESY GitLab
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch DESY GitLab
+        run: |
+          git remote add gitlab https://github:$GITLAB_PROJECT_TOKEN@gitlab.desy.de/constellation/constellation.git
+          git fetch gitlab
+      - name: Push new branch
+        run: |
+          git push gitlab HEAD:github-$GITHUB_ACTOR-$GITHUB_HEAD_REF -o merge_request.create -o merge_request.target=$GITHUB_BASE_REF -o merge_request.label=github
