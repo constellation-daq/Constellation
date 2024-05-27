@@ -79,7 +79,7 @@ variables:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
   variables:
     CXX: ccache clang++
-    CXX_LD: mold
+    CXX_LD: lld
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
@@ -90,6 +90,7 @@ variables:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
   variables:
     CXX: ccache clang++
+    CXX_LD: mold
 
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
@@ -194,7 +195,7 @@ build:debian-clang:
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Dcpp_stdlib=c++ -Db_sanitize=address -Db_lundef=false"
 
 build:debian-gcc:
   extends:
@@ -211,7 +212,6 @@ build:fedora-clang:
     - .fedora-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "-Dcpp_stdlib=c++ -Db_sanitize=address -Db_lundef=false"
 
 build:fedora-mingw:
   extends:
