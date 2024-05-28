@@ -95,7 +95,8 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         const auto level_str = body.substr(4, level_endpos - 4);
 
         // Empty level means subscription to everything
-        const auto level = (level_str.empty() ? std::optional<Level>(TRACE) : magic_enum::enum_cast<Level>(level_str));
+        const auto level = (level_str.empty() ? std::optional<Level>(TRACE)
+                                              : magic_enum::enum_cast<Level>(level_str, magic_enum::case_insensitive));
 
         // Only accept valid levels
         if(!level.has_value()) {

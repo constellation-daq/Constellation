@@ -194,8 +194,7 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
     if(!logger_topic.empty()) {
         // Iterate over topic subscriptions to find minimum level for this logger
         for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
-            auto sub_topic_uc = transform(sub_topic, ::toupper); // TODO(stephan.lachnit): enforce upper-casing in the map
-            if(logger_topic.starts_with(sub_topic_uc)) {
+            if(logger_topic.starts_with(sub_topic)) {
                 // Logger is subscribed => set new minimum level
                 min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
             }
