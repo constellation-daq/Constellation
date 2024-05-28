@@ -118,10 +118,9 @@ void CMDPSink::loop(const std::stop_token& stop_token) {
                it != std::end(levels)) {
                 if(!logger.empty()) {
                     cmdp_sub_topic_levels[logger] = it->first;
+                } else {
+                    cmdp_global_level = it->first;
                 }
-
-                // Update the global level to the minimum subscribed one:
-                cmdp_global_level = std::min(cmdp_global_level, it->first);
             }
         }
 
