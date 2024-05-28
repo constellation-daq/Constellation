@@ -56,7 +56,7 @@ CMDPSink::CMDPSink() : publisher_(context_, zmq::socket_type::xpub), port_(bind_
     // Set reception timeout for subscription messages on XPUB socket
     publisher_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(300).count()));
     // Start thread monitoring the socket for subscription messages
-    subscription_thread_ = std::jthread(std::bind_front(&CMDPSink::loop, this));
+    subscription_thread_ = std::jthread(std::bind_front(&CMDPSink::subscription_loop, this));
 }
 
 CMDPSink::~CMDPSink() {
@@ -66,7 +66,7 @@ CMDPSink::~CMDPSink() {
     }
 }
 
-void CMDPSink::loop(const std::stop_token& stop_token) {
+void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         // Receive subscription message
         zmq::multipart_t recv_msg {};
@@ -103,11 +103,12 @@ void CMDPSink::loop(const std::stop_token& stop_token) {
         }
 
         const auto topic = (level_endpos != std::string::npos ? body.substr(level_endpos + 1) : std::string_view());
+        const auto topic_uc = transform(topic, ::toupper);
         if(subscribe) {
-            log_subscriptions_[std::string(topic)][level.value()] += 1;
+            log_subscriptions_[topic_uc][level.value()] += 1;
         } else {
-            if(log_subscriptions_[std::string(topic)][level.value()] > 0) {
-                log_subscriptions_[std::string(topic)][level.value()] -= 1;
+            if(log_subscriptions_[topic_uc][level.value()] > 0) {
+                log_subscriptions_[topic_uc][level.value()] -= 1;
             }
         }
 

@@ -61,7 +61,7 @@ namespace constellation::log {
         zmq::socket_t publisher_;
 
         std::jthread subscription_thread_;
-        void loop(const std::stop_token& stop_token);
+        void subscription_loop(const std::stop_token& stop_token);
         std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
 
         utils::Port port_;
