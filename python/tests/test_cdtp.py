@@ -133,13 +133,29 @@ def test_datatransmitter(
     sender = mock_data_transmitter
     rx = mock_data_receiver
 
+    # string
     payload = "mock payload"
     sender.send_start(payload)
     msg = rx.recv()
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.BOR
 
+    # simple list
     payload = ["mock payload", "more mock data"]
+    sender.send_data(payload)
+    msg = rx.recv()
+    assert msg.payload == payload
+    assert msg.msgtype == CDTPMessageIdentifier.DAT
+
+    # bytes
+    payload = np.arange(0, 1000).tobytes()
+    sender.send_data(payload)
+    msg = rx.recv()
+    assert msg.payload == payload
+    assert msg.msgtype == CDTPMessageIdentifier.DAT
+
+    # multi-frame bytes
+    payload = [np.arange(0, 1000).tobytes(), np.arange(10000, 20000).tobytes()]
     sender.send_data(payload)
     msg = rx.recv()
     assert msg.payload == payload
