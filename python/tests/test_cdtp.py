@@ -344,11 +344,11 @@ def test_receiver_stats(
         # send once as byte array with and once w/o dtype
         tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
         tx.send_data(payload.tobytes())
-        time.sleep(0.2)
 
         # Running satellite
         commander.request_get_response("start", str(run_num))
         wait_for_state(receiver.fsm, "RUN", 1)
+        time.sleep(0.2)
         commander.request_get_response("stop")
         # send EORE
         tx.send_end({"mock_end": 22})
