@@ -98,12 +98,12 @@ TEST_CASE("Log levels", "[logging]") {
     SinkManager::getInstance().updateCMDPLevels(OFF);
     REQUIRE_FALSE(logger.shouldLog(DEBUG));
 
-    // Test topic CMDP subscription
-    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LogLevels", DEBUG}});
+    // Test topic CMDP subscription - topics are uppercase
+    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}});
     REQUIRE(logger.shouldLog(DEBUG));
 
-    // Test topic CMDP subscription via matching
-    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LogLevels", DEBUG}, {"logle", TRACE}});
+    // Test topic CMDP subscription via matching - topics are uppercase
+    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}, {"LOGLE", TRACE}});
     REQUIRE(logger.shouldLog(TRACE));
 }
 
