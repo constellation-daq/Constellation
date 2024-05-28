@@ -68,6 +68,7 @@ CMDPSink::~CMDPSink() {
 
 void CMDPSink::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
+        // Receive subscription message
         zmq::multipart_t recv_msg {};
         auto received = recv_msg.recv(publisher_);
 
@@ -114,8 +115,8 @@ void CMDPSink::loop(const std::stop_token& stop_token) {
         auto cmdp_global_level = Level::OFF;
         std::map<std::string_view, Level> cmdp_sub_topic_levels;
         for(const auto& [logger, levels] : log_subscriptions_) {
-            if(auto it = std::find_if(std::begin(levels), std::end(levels), [](const auto& i) { return i.second > 0; });
-               it != std::end(levels)) {
+            auto it = std::find_if(std::begin(levels), std::end(levels), [](const auto& i) { return i.second > 0; });
+            if(it != std::end(levels)) {
                 if(!logger.empty()) {
                     cmdp_sub_topic_levels[logger] = it->first;
                 } else {
