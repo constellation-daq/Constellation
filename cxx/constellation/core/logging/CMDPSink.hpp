@@ -36,7 +36,7 @@ namespace constellation::log {
         /**
          * Deconstruct the CMDPSink
          */
-        virtual ~CMDPSink();
+        ~CMDPSink() override;
 
         /**
          * Get ephemeral port this logger sink is bound to
