@@ -9,12 +9,15 @@
 
 #pragma once
 
+#include <map>
 #include <mutex>
 #include <string>
+#include <thread>
 
 #include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
+#include "constellation/core/logging/Level.hpp"
 #include "constellation/core/utils/ports.hpp"
 
 namespace constellation::log {
@@ -59,6 +62,7 @@ namespace constellation::log {
 
         std::jthread subscription_thread_;
         void loop(const std::stop_token& stop_token);
+        std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
 
         utils::Port port_;
         std::string sender_name_;
