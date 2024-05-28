@@ -128,7 +128,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         }
 
         // Update subscriptions
-        SinkManager::getInstance().setCMDPLevelsCustom(cmdp_global_level, cmdp_sub_topic_levels);
+        SinkManager::getInstance().updateCMDPLevels(cmdp_global_level, cmdp_sub_topic_levels);
     }
 }
 

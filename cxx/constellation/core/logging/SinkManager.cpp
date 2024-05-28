@@ -208,7 +208,7 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
     logger->set_level(to_spdlog_level(min_level(console_proxy_sink->level(), min_cmdp_proxy_level)));
 }
 
-void SinkManager::setCMDPLevelsCustom(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
+void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
     cmdp_global_level_ = cmdp_global_level;
     cmdp_sub_topic_levels_ = std::move(cmdp_sub_topic_levels);
     for(auto& logger : loggers_) {
