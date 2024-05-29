@@ -53,8 +53,10 @@ std::string get_rel_file_path(std::string file_path_char) {
 
 // Bind socket to ephemeral port on construction
 CMDPSink::CMDPSink() : publisher_(context_, zmq::socket_type::xpub), port_(bind_ephemeral_port(publisher_)) {
-    // Set reception timeout for subscription messages on XPUB socket
-    publisher_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(300).count()));
+    // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
+    // while reading and cannot log at the same time.
+    publisher_.set(zmq::sockopt::rcvtimeo, 0);
+
     // Start thread monitoring the socket for subscription messages
     subscription_thread_ = std::jthread(std::bind_front(&CMDPSink::subscription_loop, this));
 }
@@ -68,12 +70,20 @@ CMDPSink::~CMDPSink() {
 
 void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
+
+        // Lock for the mutex provided by the sink base class
+        std::unique_lock socket_lock {mutex_};
+
         // Receive subscription message
         zmq::multipart_t recv_msg {};
         auto received = recv_msg.recv(publisher_);
 
+        socket_lock.unlock();
+
         // Return if timed out or wrong number of frames received:
         if(!received || recv_msg.size() != 1) {
+            // Only check every 300ms for new subscription messages:
+            std::this_thread::sleep_for(300ms);
             continue;
         }
 
