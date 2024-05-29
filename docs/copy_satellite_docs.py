@@ -35,7 +35,19 @@ def front_matter_convert_myst(string: str) -> str:
                 ":::{card} {octicon}`code-square;1em;sd-text-info` Description\n"
             )
             converted_front_matter += yaml_data["description"]
-            converted_front_matter += "\n:::"
+            converted_front_matter += "\n:::\n"
+
+        if "services" in yaml_data.keys():
+            sv = yaml_data["services"]
+            converted_front_matter += f"::::{{grid}} 1 {len(sv)} {len(sv)} {len(sv)}\n:gutter: 3\n:margin: 0\n\n"
+            for service in sv:
+                converted_front_matter += (
+                    ":::{grid-item-card} {octicon}`repo-forked;1em;sd-text-info` "
+                )
+                converted_front_matter += service
+                converted_front_matter += "\n:::\n"
+
+            converted_front_matter += "\n::::\n"
 
         # treat other header fields and add them to a table
         string = converted_front_matter + string_after_yaml

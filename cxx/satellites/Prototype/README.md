@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Prototype"
 description: "Prototype satellite demonstrating how to implement individual satellites"
+services: ["CONTROL", "MONITORING", "DATA", "HEARTBEAT"]
 ---
 
 ## Description
