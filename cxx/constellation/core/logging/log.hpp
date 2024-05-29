@@ -64,7 +64,7 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  * * LOG_FUNC_CHOOSER selects the third of its arguments as the function to be called:
  *                    * With one argument in __VA_ARGS__, this will be LOG_TO_DEFAULT
  *                    * With two arguments in __VA_ARGS__, this will be LOG_WITH_TOPIC
- *  * Finally, the respective macro is called with its argument(s)
+ * * Finally, the respective macro is called with its argument(s)
  */
 #define LOG_FUNC_CHOOSER(_f1, _f2, _f3, ...) _f3
 #define LOG_FUNC_RECOMPOSER(argsWithParentheses) LOG_FUNC_CHOOSER argsWithParentheses

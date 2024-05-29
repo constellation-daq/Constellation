@@ -46,6 +46,18 @@ TEST_CASE("Basic logging", "[logging]") {
     LOG(logger, CRITICAL) << "critical"sv;
 }
 
+TEST_CASE("Logging with default logger", "[logging]") {
+
+    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+
+    LOG(TRACE) << "trace"sv;
+    LOG(DEBUG) << "debug"sv;
+    LOG(INFO) << "info"sv;
+    LOG(STATUS) << "status"sv;
+    LOG(WARNING) << "warning"sv;
+    LOG(CRITICAL) << "critical"sv;
+}
+
 TEST_CASE("Logging from const function", "[logging]") {
 
     class LogTest {
