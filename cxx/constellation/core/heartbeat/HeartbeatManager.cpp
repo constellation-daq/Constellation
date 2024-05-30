@@ -118,7 +118,10 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
             }
 
             // Update time point until we have to wait:
-            wakeup = std::min(wakeup, remote.last_heartbeat + remote.interval);
+            wakeup = std::min(wakeup, remote.last_heartbeat + remote.interval, [](const auto t1, const auto t2) {
+                return t1 < t2 && t1 > std::chrono::system_clock::now();
+            });
+            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to " << (wakeup - now);
         }
 
         cv_.wait_until(lock, wakeup);
