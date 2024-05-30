@@ -51,9 +51,7 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  *
  * @param level Log level on which to log
  */
-#define LOG_TO_DEFAULT(level)                                                                                               \
-    if((constellation::log::Logger::getDefault()).shouldLog(level))                                                         \
-    (constellation::log::Logger::getDefault()).log(level)
+#define LOG_TO_DEFAULT(level) LOG_WITH_TOPIC(constellation::log::Logger::getDefault(), level)
 
 /**
  * Helper macros which allow to chose the correct target macro (LOG_TO_DEFAULT or LOG_WITH_TOPIC) depending on the number
