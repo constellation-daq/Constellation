@@ -190,7 +190,7 @@ void FSM::interrupt() {
 
 // Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
-Transition call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
+Transition FSM::call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
     try {
         // Call transition function of satellite
         (satellite->*func)(args...);
