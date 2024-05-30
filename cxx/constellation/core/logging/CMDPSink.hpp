@@ -38,6 +38,12 @@ namespace constellation::log {
          */
         ~CMDPSink() override;
 
+        // No copy/move constructor/assignment
+        CMDPSink(const CMDPSink& other) = delete;
+        CMDPSink& operator=(const CMDPSink& other) = delete;
+        CMDPSink(CMDPSink&& other) = delete;
+        CMDPSink& operator=(CMDPSink&& other) = delete;
+
         /**
          * Get ephemeral port this logger sink is bound to
          *
