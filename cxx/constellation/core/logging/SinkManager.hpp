@@ -101,9 +101,14 @@ namespace constellation::log {
          */
         std::shared_ptr<spdlog::async_logger> getDefaultLogger() const { return default_logger_; }
 
-        // TODO(stephan.lachnit): remove, this debug until fetching subscriptions from ZeroMQ is implemented
-        CNSTLN_API void setCMDPLevelsCustom(Level cmdp_global_level,
-                                            std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
+        /**
+         * Update individual logger levels from CMDP subscriptions
+         *
+         * @param cmdp_global_level Global subscription level
+         * @param cmdp_sub_topic_levels Map of individual logger subscription levels
+         */
+        CNSTLN_API void updateCMDPLevels(Level cmdp_global_level,
+                                         std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
 
     private:
         SinkManager();

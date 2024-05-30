@@ -136,9 +136,6 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
 
     // Create default logger without topic
     default_logger_ = createLogger("");
-
-    // TODO(stephan.lachnit): remove, this debug until the ZeroMQ is implemented
-    setCMDPLevelsCustom(TRACE, {});
 }
 
 void SinkManager::registerService(std::string sender_name) {
@@ -195,10 +192,9 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
 
     // If not default logger
     if(!logger_topic.empty()) {
-        // Iteratore over topic subscriptions to find minimum level for this logger
+        // Iterate over topic subscriptions to find minimum level for this logger
         for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
-            auto sub_topic_uc = transform(sub_topic, ::toupper); // TODO(stephan.lachnit): enforce upper-casing in the map
-            if(logger_topic.starts_with(sub_topic_uc)) {
+            if(logger_topic.starts_with(sub_topic)) {
                 // Logger is subscribed => set new minimum level
                 min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
             }
@@ -212,7 +208,7 @@ void SinkManager::setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger) {
     logger->set_level(to_spdlog_level(min_level(console_proxy_sink->level(), min_cmdp_proxy_level)));
 }
 
-void SinkManager::setCMDPLevelsCustom(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
+void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
     cmdp_global_level_ = cmdp_global_level;
     cmdp_sub_topic_levels_ = std::move(cmdp_sub_topic_levels);
     for(auto& logger : loggers_) {
