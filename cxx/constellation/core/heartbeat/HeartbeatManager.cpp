@@ -65,8 +65,9 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
     const auto remote_it = remotes_.find(to_string(msg.getSender()));
     if(remote_it != remotes_.end()) {
 
-        if(now - msg.getTime() > 3s) [[unlikely]] {
-            LOG(logger_, WARNING) << "Detected time deviation of " << now - msg.getTime() << " to " << msg.getSender();
+        const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
+        if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
+            LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
 
         remote_it->second.interval = msg.getInterval();
