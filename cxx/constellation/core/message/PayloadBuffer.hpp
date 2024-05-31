@@ -10,17 +10,21 @@
 #pragma once
 
 #include <any>
+#include <concepts>
 #include <cstddef>
 #include <memory>
+#include <ranges>
 #include <span>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 #include <msgpack/sbuffer.hpp>
 #include <zmq.hpp>
 
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/std_future.hpp"
 
 namespace constellation::message {
 
@@ -48,6 +52,7 @@ namespace constellation::message {
          * @param f Function F that takes a reference of T and returns an std::span<std::byte>
          */
         template <typename T, typename F>
+            requires std::move_constructible<T> && std::is_invocable_r_v<std::span<std::byte>, F, T&>
         PayloadBuffer(T&& t, F f) : any_ptr_(new std::any(std::forward<T>(t))), span_(f(std::any_cast<T&>(*any_ptr_))) {}
 
         /** Specialized constructor for zmq::message_t */
@@ -64,11 +69,12 @@ namespace constellation::message {
                                 return {utils::to_byte_ptr(buf_ref->data()), buf_ref->size()};
                             }) {}
 
-        /** Specialized constructor for std::string */
-        PayloadBuffer(std::string&& str)
-            : PayloadBuffer(str, [](std::string& str_ref) -> std::span<std::byte> {
-                  return {utils::to_byte_ptr(str_ref.data()), str_ref.size()};
-              }) {}
+        /** Specialized constructor for non-const ranges */
+        template <typename R>
+            requires std::ranges::contiguous_range<R> && (!std::ranges::constant_range<R>)
+        PayloadBuffer(R&& range) // NOLINT(bugprone-forwarding-reference-overload) FIXME: remove on clang-tidy>=17
+            : PayloadBuffer(std::forward<R>(range),
+                            [](R& range_ref) -> std::span<std::byte> { return utils::to_byte_span(range_ref); }) {}
 
         PayloadBuffer() = default;
 

@@ -188,6 +188,14 @@ void FSM::interrupt() {
     }
 }
 
+void FSM::stop_run_thread() {
+    LOG(logger_, DEBUG) << "Stopping running function of satellite...";
+    this->run_thread_.request_stop();
+    if(this->run_thread_.joinable()) {
+        this->run_thread_.join();
+    }
+}
+
 // Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
 Transition FSM::call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
@@ -301,10 +309,7 @@ State FSM::started(TransitionPayload /* payload */) {
 State FSM::stop(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
         // First stop of RUN thread
-        this->run_thread_.request_stop();
-        if(this->run_thread_.joinable()) {
-            this->run_thread_.join();
-        }
+        this->stop_run_thread();
 
         LOG(logger_, INFO) << "Calling stopping function of satellite...";
         const auto transition = call_satellite_function(this->satellite_.get(), &Satellite::stopping, Transition::stopped);
@@ -320,6 +325,11 @@ State FSM::stopped(TransitionPayload /* payload */) {
 
 State FSM::interrupt(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
+        // First stop RUN thread if in RUN
+        if(previous_state == State::RUN) {
+            this->stop_run_thread();
+        }
+
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
         const auto transition = call_satellite_function(
             this->satellite_.get(), &Satellite::interrupting, Transition::interrupted, previous_state);
