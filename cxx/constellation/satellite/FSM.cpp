@@ -198,11 +198,11 @@ Transition FSM::call_satellite_function(Satellite* satellite, Func func, Transit
         return success_transition;
     } catch(const std::exception& error) {
         // Something went wrong, log and go to error state
-        LOG(satellite->get_logger(), CRITICAL) << "Critical failure during transition: " << error.what();
+        LOG(satellite->logger_, CRITICAL) << "Critical failure during transition: " << error.what();
         return Transition::failure;
     } catch(...) {
         // Something went wrong but not with a proper exception, log and go to error state
-        LOG(satellite->get_logger(), CRITICAL) << "Critical failure during transition: <unknown exception>";
+        LOG(satellite->logger_, CRITICAL) << "Critical failure during transition: <unknown exception>";
         return Transition::failure;
     }
 }

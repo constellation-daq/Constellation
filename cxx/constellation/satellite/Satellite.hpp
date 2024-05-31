@@ -173,9 +173,6 @@ namespace constellation::satellite {
         // FSM needs access to configuration
         friend FSM;
 
-        /** Return a reference to the satellite logger */
-        log::Logger& get_logger() { return logger_; }
-
         /** Store configuration in satellite */
         void store_config(config::Configuration&& config);
 
