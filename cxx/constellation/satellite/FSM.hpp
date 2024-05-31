@@ -22,7 +22,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/message/payload_buffer.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 
 namespace constellation::satellite {
@@ -101,7 +101,7 @@ namespace constellation::satellite {
          * @return Tuple containing the CSCP message type and a description
          */
         CNSTLN_API std::pair<message::CSCP1Message::Type, std::string> reactCommand(TransitionCommand transition_command,
-                                                                                    const message::payload_buffer& payload);
+                                                                                    const message::PayloadBuffer& payload);
 
         /**
          * @brief Try to perform an interrupt as soon as possible
@@ -144,7 +144,7 @@ namespace constellation::satellite {
          * @return Transition function corresponding to the transition
          * @throw FSMError if the transition is not a valid transition in the current state
          */
-        TransitionFunction findTransitionFunction(Transition transition);
+        TransitionFunction find_transition_function(Transition transition);
 
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
         CNSTLN_API auto initialized(TransitionPayload payload) -> State;
