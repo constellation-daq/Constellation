@@ -25,7 +25,7 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/message/payload_buffer.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
@@ -55,7 +55,7 @@ void FSM::registerStateCallback(std::function<void(State)> callback) {
     state_callbacks_.emplace_back(std::move(callback));
 }
 
-FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
+FSM::TransitionFunction FSM::find_transition_function(Transition transition) {
     // Get transition map for current state (never throws due to FSM design)
     const auto& transition_map = state_transition_map_.at(state_);
     // Find transition
@@ -69,7 +69,7 @@ FSM::TransitionFunction FSM::findTransitionFunction(Transition transition) {
 
 bool FSM::isAllowed(Transition transition) {
     try {
-        findTransitionFunction(transition);
+        find_transition_function(transition);
     } catch(const FSMError&) {
         return false;
     }
@@ -79,7 +79,7 @@ bool FSM::isAllowed(Transition transition) {
 void FSM::react(Transition transition, TransitionPayload payload) {
     // Find transition
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
-    auto transition_function = findTransitionFunction(transition);
+    auto transition_function = find_transition_function(transition);
     // Execute transition function
     state_ = (this->*transition_function)(std::move(payload));
     LOG(logger_, STATUS) << "New state: " << to_string(state_);
@@ -102,14 +102,14 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
 }
 
 std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand transition_command,
-                                                             const payload_buffer& payload) {
+                                                             const PayloadBuffer& payload) {
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     // Check if command is a valid transition for the current state
     TransitionFunction transition_function {};
     try {
-        transition_function = findTransitionFunction(transition);
+        transition_function = find_transition_function(transition);
     } catch(const FSMError& error) {
         LOG(logger_, WARNING) << error.what();
         return {CSCP1Message::Type::INVALID, error.what()};

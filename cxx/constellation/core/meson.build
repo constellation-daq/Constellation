@@ -79,7 +79,7 @@ install_headers(
   'message/CMDP1Message.hpp',
   'message/CSCP1Message.hpp',
   'message/exceptions.hpp',
-  'message/payload_buffer.hpp',
+  'message/PayloadBuffer.hpp',
   'message/Protocol.hpp',
   'message/satellite_definitions.hpp',
   subdir: 'constellation/core/message',

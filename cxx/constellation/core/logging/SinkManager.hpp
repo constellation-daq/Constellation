@@ -37,9 +37,9 @@ namespace constellation::log {
     class SinkManager {
     private:
         // Formatter for the log level (overwrites spdlog defaults)
-        class CNSTLN_API constellation_level_formatter final : public spdlog::custom_flag_formatter {
+        class CNSTLN_API ConstellationLevelFormatter final : public spdlog::custom_flag_formatter {
         public:
-            constellation_level_formatter(bool format_short);
+            ConstellationLevelFormatter(bool format_short);
             void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
             std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
 
@@ -48,7 +48,7 @@ namespace constellation::log {
         };
 
         // Formatter for the topic (adds brackets except for the default logger)
-        class CNSTLN_API constellation_topic_formatter final : public spdlog::custom_flag_formatter {
+        class CNSTLN_API ConstellationTopicFormatter final : public spdlog::custom_flag_formatter {
         public:
             void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
             std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
@@ -118,7 +118,7 @@ namespace constellation::log {
          *
          * @param logger Logger for which to set the log level
          */
-        void setCMDPLevel(std::shared_ptr<spdlog::async_logger>& logger);
+        void set_cmdp_level(std::shared_ptr<spdlog::async_logger>& logger);
 
     private:
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
