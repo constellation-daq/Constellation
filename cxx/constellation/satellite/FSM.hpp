@@ -125,6 +125,19 @@ namespace constellation::satellite {
 
     private:
         /**
+         * Call a satellite function
+         *
+         * @param satellite Satellite the function should be called for
+         * @param func Function to be called
+         * @param success_transition Transition to be performed once the function successfully returned
+         * @param args Function arguments
+         * @return Transition after function call, either success transition or failure
+         */
+        template <typename Func, typename... Args>
+        static Transition
+        call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args);
+
+        /**
          * Find the transition function for a given transition in the current state
          *
          * @param transition Transition to search for a transition function

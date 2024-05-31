@@ -190,7 +190,7 @@ void FSM::interrupt() {
 
 // Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
-Transition call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
+Transition FSM::call_satellite_function(Satellite* satellite, Func func, Transition success_transition, Args... args) {
     try {
         // Call transition function of satellite
         (satellite->*func)(args...);
@@ -198,11 +198,11 @@ Transition call_satellite_function(Satellite* satellite, Func func, Transition s
         return success_transition;
     } catch(const std::exception& error) {
         // Something went wrong, log and go to error state
-        LOG(satellite->getLogger(), CRITICAL) << "Critical failure during transition: " << error.what();
+        LOG(satellite->logger_, CRITICAL) << "Critical failure during transition: " << error.what();
         return Transition::failure;
     } catch(...) {
         // Something went wrong but not with a proper exception, log and go to error state
-        LOG(satellite->getLogger(), CRITICAL) << "Critical failure during transition: <unknown exception>";
+        LOG(satellite->logger_, CRITICAL) << "Critical failure during transition: <unknown exception>";
         return Transition::failure;
     }
 }

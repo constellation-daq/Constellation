@@ -135,7 +135,7 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     }
 
     // Create default logger without topic
-    default_logger_ = createLogger("");
+    default_logger_ = createLogger("DEFAULT");
 }
 
 void SinkManager::registerService(std::string sender_name) {
