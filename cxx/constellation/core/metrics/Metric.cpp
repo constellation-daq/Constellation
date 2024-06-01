@@ -17,7 +17,7 @@ using namespace constellation::metrics;
 using namespace constellation::message;
 using namespace constellation::utils;
 
-payload_buffer Metric::assemble() const {
+PayloadBuffer Metric::assemble() const {
     msgpack::sbuffer sbuf {};
     msgpack::pack(sbuf, this->value());
     msgpack::pack(sbuf, magic_enum::enum_integer(this->type()));
@@ -25,7 +25,7 @@ payload_buffer Metric::assemble() const {
     return {std::move(sbuf)};
 }
 
-Metric Metric::disassemble(const message::payload_buffer& message) {
+Metric Metric::disassemble(const message::PayloadBuffer& message) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 

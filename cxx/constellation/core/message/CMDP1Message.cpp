@@ -138,7 +138,7 @@ CMDP1StatMessage::CMDP1StatMessage(std::string topic,
 
 Metric CMDP1StatMessage::getMetric() const {
     try {
-        return Metric::disassemble(getPayload());
+        return Metric::disassemble(get_payload());
     } catch(const std::invalid_argument& e) {
         throw MessageDecodingError(e.what());
     }
