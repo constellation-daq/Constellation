@@ -74,7 +74,6 @@ class CaenHvSatellite(Satellite):
                             # the board essentially only knows 'float'-type
                             # arguments except for 'Pw':
                             val = float(val)
-                            setattr(ch, par, val)
                             self.log.debug(
                                 "Configuring %s on board %s, ch %s with value '%s'",
                                 par,
@@ -89,6 +88,7 @@ class CaenHvSatellite(Satellite):
                             raise RuntimeError(
                                 f"Error in configuration for key {key}: {repr(e)}"
                             )
+                        ch.parameters[par].value = val
 
         # configure metrics sending
         self._configure_monitoring()
@@ -117,11 +117,13 @@ class CaenHvSatellite(Satellite):
             SatelliteState.NEW,
             SatelliteState.ERROR,
             SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
         ]:
             return None
         try:
             with self.caen as crate:
-                val = crate.boards[board].channels[channel].parameters[par]
+                val = crate.boards[board].channels[channel].parameters[par].value
         except Exception as e:
             val = None
             self.log.exception(e)
@@ -138,8 +140,7 @@ class CaenHvSatellite(Satellite):
         board = request.payload["board"]
         chno = int(request.payload["channel"])
         par = request.payload["parameter"]
-        with self.caen as crate:
-            val = crate.boards[board].channels[chno].parameters[par].value
+        val = self.get_channel_value(board, chno, par)
         return val, None, None
 
     @cscp_requestable
