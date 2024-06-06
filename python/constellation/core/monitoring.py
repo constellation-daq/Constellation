@@ -88,7 +88,11 @@ class MonitoringSender(BaseSatelliteFrame):
 
         # Create monitoring socket and bind interface
         socket = self.context.socket(zmq.PUB)
-        socket.bind(f"tcp://{interface}:{mon_port}")
+        if not mon_port:
+            mon_port = socket.bind_to_random_port(f"tcp://{interface}")
+        else:
+            socket.bind(f"tcp://{interface}:{mon_port}")
+
         self._mon_tm = CMDPTransmitter(name, socket)
 
         # Set up ZMQ logging

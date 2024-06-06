@@ -51,7 +51,11 @@ class PushThread(threading.Thread):
         self.queue = queue
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PUSH)
-        self._socket.bind(f"tcp://*:{port}")
+
+        if not port:
+            port = self._socket.bind_to_random_port("tcp://*")
+        else:
+            self._socket.bind(f"tcp://*:{port}")
 
     def run(self):
         """Start sending data."""
@@ -223,7 +227,7 @@ class RandomDataSender(DataSender):
 
         t1 = time.time_ns()
         self.log.info(
-            f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0)/1000000000}s"
+            f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0) / 1000000000}s"
         )
         return "Finished acquisition"
 
