@@ -168,6 +168,17 @@ TEST_CASE("User commands", "[satellite]") {
     const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload.span().data()), usrmsgpayload.span().size());
     REQUIRE(usrpayload->as<int>() == 2);
 
+    // my_cmd user command is case insensitive
+    sender.sendCommand("mY_cMd");
+    auto recv_msg_usr_cmd_case = sender.recv();
+    REQUIRE(recv_msg_usr_cmd_case.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_case.getVerb().second), Equals(""));
+    REQUIRE(recv_msg_usr_cmd_case.hasPayload());
+    const auto& usrmsgpayload_case = recv_msg_usr_cmd_case.getPayload();
+    const auto usrpayload_case =
+        msgpack::unpack(to_char_ptr(usrmsgpayload_case.span().data()), usrmsgpayload_case.span().size());
+    REQUIRE(usrpayload_case->as<int>() == 2);
+
     // my_usr_cmd_arg with argument as payload
     auto usr_cmd_arg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
     msgpack::sbuffer sbuf {};
@@ -455,6 +466,20 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(
         std::make_shared<MySatellite4>(), LogicError, Message("Standard satellite command with this name exists"));
+
+    // Command registration is case insensitive
+    class MySatellite5 : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatellite5() {
+            register_command("my_cmd", "A User Command", {}, &MySatellite5::cmd, this);
+            register_command("MY_CMD", "A User Command", {}, &MySatellite5::cmd, this);
+        }
+    };
+    REQUIRE_THROWS_MATCHES(
+        std::make_shared<MySatellite5>(), LogicError, Message("Command \"my_cmd\" is already registered"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
