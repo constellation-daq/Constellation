@@ -11,6 +11,7 @@
 
 #include <any>
 #include <cstdint>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>

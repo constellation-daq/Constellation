@@ -7,6 +7,7 @@
 #include <chrono>
 #include <ctime>
 #include <limits>
+#include <numbers>
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
