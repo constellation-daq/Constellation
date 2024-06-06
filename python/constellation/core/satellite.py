@@ -64,9 +64,9 @@ class Satellite(
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.register_offer(CHIRPServiceIdentifier.CONTROL, cmd_port)
-        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, hb_port)
-        self.register_offer(CHIRPServiceIdentifier.MONITORING, mon_port)
+        self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
+        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
         self.broadcast_offers()
 
         # Add exception handling via threading.excepthook to allow the state

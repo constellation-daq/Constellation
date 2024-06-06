@@ -78,11 +78,12 @@ class CommandReceiver(BaseSatelliteFrame):
         # set up the command channel
         sock = self.context.socket(zmq.REP)
         if not cmd_port:
-            cmd_port = sock.bind_to_random_port(f"tcp://{interface}")
+            self.cmd_port = sock.bind_to_random_port(f"tcp://{interface}")
         else:
             sock.bind(f"tcp://{interface}:{cmd_port}")
+            self.cmd_port = cmd_port
 
-        self.log.info(f"Satellite listening on command port {cmd_port}")
+        self.log.info(f"Satellite listening on command port {self.cmd_port}")
         self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
         self._cmds = get_cscp_commands(self)
