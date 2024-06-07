@@ -29,9 +29,13 @@ class HeartbeatSender(SatelliteStateHandler):
 
         # register and start heartbeater
         socket = self.context.socket(zmq.PUB)
-        host = f"tcp://{interface}:{hb_port}"
-        socket.bind(host)
-        self.log.info("Setting up heartbeater socket on %s", host)
+        if not hb_port:
+            self.hb_port = socket.bind_to_random_port(f"tcp://{interface}")
+        else:
+            socket.bind(f"tcp://{interface}:{hb_port}")
+            self.hb_port = hb_port
+
+        self.log.info(f"Setting up heartbeater on port {self.hb_port}")
         self._hb_tm = CHPTransmitter(self.name, socket)
 
     def _add_com_thread(self):
