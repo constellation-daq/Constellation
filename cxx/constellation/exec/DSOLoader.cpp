@@ -23,6 +23,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/exec/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -31,33 +32,53 @@ using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path hint) : dso_name_(std::move(dso_name)) {
+DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path hint) {
     // Possible paths:
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.suffix
     // - in installed environment: libdir/ConstellationSatellites/libXYZ.suffix
-    const auto dso_file_name = "lib" + dso_name_ + CNSTLN_DSO_SUFFIX;
-    auto possible_paths = std::vector<std::filesystem::path>({
-        std::filesystem::path(CNSTLN_BUILDDIR) / "cxx" / "satellites" / dso_name_ / dso_file_name,
-        std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites" / dso_file_name,
-    });
+    const auto dso_file_name = "lib" + dso_name + CNSTLN_DSO_SUFFIX;
+
+    auto possible_paths = std::vector<std::filesystem::path>();
+    auto add_paths = [&](std::filesystem::path path) {
+        const auto abs_path = std::filesystem::absolute(path);
+        if(std::filesystem::exists(abs_path)) {
+            for(const auto& entry : std::filesystem::recursive_directory_iterator(abs_path)) {
+                if(std::filesystem::is_regular_file(entry) && entry.path().extension() == CNSTLN_DSO_SUFFIX) {
+                    LOG(logger, TRACE) << "Adding " << entry.path() << " to library lookup";
+                    possible_paths.emplace_back(entry.path());
+                }
+            }
+        }
+    };
+
+    // Hint has highest priority:
     if(!hint.empty()) {
-        possible_paths.insert(possible_paths.begin(), std::move(hint));
+        add_paths(hint);
     }
 
+    const auto build_dir = std::filesystem::path(CNSTLN_BUILDDIR) / "cxx" / "satellites";
+    add_paths(build_dir);
+
+    const auto lib_dir = std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites";
+    add_paths(lib_dir);
+
     // Check files following priority
-    std::string path_str {};
+    std::filesystem::path library_path {};
     for(const auto& path : possible_paths) {
-        const auto abs_path = std::filesystem::absolute(path);
-        LOG(logger, TRACE) << "Looking for " << dso_name_ << " in " << abs_path;
-        if(std::filesystem::exists(abs_path) && std::filesystem::is_regular_file(abs_path)) {
-            LOG(logger, DEBUG) << "Found " << dso_name_ << " in " << abs_path;
-            path_str = abs_path.string();
+        LOG(logger, TRACE) << "Looking for " << dso_name << " in " << path;
+        if(transform(path.filename().string(), ::tolower) == transform(dso_file_name, ::tolower)) {
+            LOG(logger, DEBUG) << "Found " << dso_name << " in " << path;
+            library_path = path;
             break;
         }
     }
+
+    std::string path_str = library_path.string();
+    dso_name_ = library_path.stem().string().substr(3);
+
     if(path_str.empty()) {
-        throw DSOLoadingError(dso_name_, "Could not find " + dso_file_name);
+        throw DSOLoadingError(dso_name, "Could not find " + dso_file_name);
     }
 
     // Load the DSO
@@ -75,7 +96,7 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
     }
 #endif
 
-    LOG(logger, DEBUG) << "Loaded shared library " << dso_file_name;
+    LOG(logger, DEBUG) << "Loaded shared library " << library_path.filename();
 }
 
 DSOLoader::~DSOLoader() {

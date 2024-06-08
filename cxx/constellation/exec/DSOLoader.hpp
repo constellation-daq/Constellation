@@ -50,6 +50,8 @@ namespace constellation::exec {
          */
         CNSTLN_API satellite::Generator* loadSatelliteGenerator();
 
+        std::string_view getDSOName() { return dso_name_; }
+
     private:
         // OS-specific function to get function from DSO
         CNSTLN_API void* get_raw_function_from_dso(const std::string& function_name);
