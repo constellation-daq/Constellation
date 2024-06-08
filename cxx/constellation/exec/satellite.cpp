@@ -179,7 +179,6 @@ int constellation::exec::satellite_main(int argc,
 
     // Use properly capitalized satellite type for the canonical name:
     const auto canonical_name = loader->getDSOName() + "." + satellite_name;
-    // TODO(stephan.lachnit): check if names are valid
 
     // Log the version after all the basic checks are done
     LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
