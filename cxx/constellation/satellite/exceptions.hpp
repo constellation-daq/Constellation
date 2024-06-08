@@ -23,6 +23,7 @@ namespace constellation::satellite {
      * An unspecified error occurred in the user code implementation of a satellite
      */
     class SatelliteError : public utils::RuntimeError {
+    public:
         explicit SatelliteError(const std::string& reason) { error_message_ = reason; }
 
     protected:
@@ -36,6 +37,7 @@ namespace constellation::satellite {
      * An error occurred in the user code implementation of a satellite when attempting to communicate with hardware
      */
     class CommunicationError : public SatelliteError {
+    public:
         explicit CommunicationError(const std::string& reason) { error_message_ = reason; }
     };
 
