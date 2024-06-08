@@ -4,7 +4,7 @@
 satellite_name = 'Prototype'
 
 satellite_sources = files(
-  'Prototype.cpp',
+  'PrototypeSatellite.cpp',
 )
 
 satellite_cfg_data = configuration_data()

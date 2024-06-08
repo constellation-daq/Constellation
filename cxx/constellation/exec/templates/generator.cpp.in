@@ -12,7 +12,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/satellite/Satellite.hpp"
-#include "satellites/@SATELLITE_CLASS@/@SATELLITE_CLASS@.hpp"
+#include "satellites/@SATELLITE_CLASS@/@SATELLITE_CLASS@Satellite.hpp"
 
 using namespace constellation::satellite;
 

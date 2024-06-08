@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "Prototype.hpp"
+#include "PrototypeSatellite.hpp"
 
 #include <string_view>
 
