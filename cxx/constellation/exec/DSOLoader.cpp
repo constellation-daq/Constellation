@@ -74,12 +74,12 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
         }
     }
 
-    const std::string path_str = library_path.string();
-    dso_name_ = library_path.stem().string().substr(3);
-
-    if(path_str.empty()) {
+    if(library_path.empty()) {
         throw DSOLoadingError(dso_name, "Could not find " + dso_file_name);
     }
+
+    const std::string path_str = library_path.string();
+    dso_name_ = library_path.stem().string().substr(3);
 
     // Load the DSO
 #ifdef _WIN32
