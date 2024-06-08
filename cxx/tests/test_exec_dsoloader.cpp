@@ -25,7 +25,6 @@ using namespace std::literals::string_view_literals;
 TEST_CASE("Load library", "[exec][exec::dsoloader]") {
 
     auto logger = Logger("DSOLoader");
-
     auto loader = DSOLoader("Prototype", logger);
     REQUIRE(loader.loadSatelliteGenerator() != nullptr);
     REQUIRE_THAT(loader.getDSOName(), Equals("Prototype"));
@@ -34,7 +33,6 @@ TEST_CASE("Load library", "[exec][exec::dsoloader]") {
 TEST_CASE("Case-insensitive library loading", "[exec][exec::dsoloader]") {
 
     auto logger = Logger("DSOLoader");
-
     auto loader = DSOLoader("pRoToTyPe", logger);
     REQUIRE(loader.loadSatelliteGenerator() != nullptr);
     REQUIRE_THAT(loader.getDSOName(), Equals("Prototype"));
@@ -43,10 +41,19 @@ TEST_CASE("Case-insensitive library loading", "[exec][exec::dsoloader]") {
 TEST_CASE("Try loading missing library", "[exec][exec::dsoloader]") {
 
     auto logger = Logger("DSOLoader");
-
     REQUIRE_THROWS_MATCHES(DSOLoader("MissingLib", logger),
                            DSOLoadingError,
                            Message("Error while loading shared library \"MissingLib\": Could not find libMissingLib.so"));
+}
+
+TEST_CASE("Load wrong library", "[exec][exec::dsoloader]") {
+
+    auto logger = Logger("DSOLoader");
+    auto loader =
+        DSOLoader("ConstellationCore",
+                  logger,
+                  std::filesystem::path(CNSTLN_BUILDDIR) / "cxx" / "constellation" / "core" / "libConstellationCore.so");
+    REQUIRE_THROWS_AS(loader.loadSatelliteGenerator(), DSOFunctionLoadingError);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
