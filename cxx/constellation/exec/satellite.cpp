@@ -164,7 +164,21 @@ int constellation::exec::satellite_main(int argc,
     // Check satellite name
     const auto type_name = needs_type ? get_arg(parser, "type") : std::move(satellite_type.value().type_name);
     const auto satellite_name = get_arg(parser, "name");
-    const auto canonical_name = type_name + "." + satellite_name;
+
+    // Load satellite DSO
+    std::unique_ptr<DSOLoader> loader {};
+    Generator* satellite_generator {};
+    try {
+        loader = needs_type ? std::make_unique<DSOLoader>(type_name, logger)
+                            : std::make_unique<DSOLoader>(type_name, logger, satellite_type.value().dso_path);
+        satellite_generator = loader->loadSatelliteGenerator();
+    } catch(const DSOLoaderError& error) {
+        LOG(logger, CRITICAL) << "Error loading satellite type \"" << type_name << "\": " << error.what();
+        return 1;
+    }
+
+    // Use properly capitalized satellite type for the canonical name:
+    const auto canonical_name = loader->getDSOName() + "." + satellite_name;
     // TODO(stephan.lachnit): check if names are valid
 
     // Log the version after all the basic checks are done
@@ -184,23 +198,11 @@ int constellation::exec::satellite_main(int argc,
     // Register CMDP in CHIRP and set sender name for CMDP
     SinkManager::getInstance().registerService(canonical_name);
 
-    // Load satellite DSO
-    std::unique_ptr<DSOLoader> loader {};
-    Generator* satellite_generator {};
-    try {
-        loader = needs_type ? std::make_unique<DSOLoader>(type_name, logger)
-                            : std::make_unique<DSOLoader>(type_name, logger, satellite_type.value().dso_path);
-        satellite_generator = loader->loadSatelliteGenerator();
-    } catch(const DSOLoaderError& error) {
-        LOG(logger, CRITICAL) << "Error loading satellite type \"" << type_name << "\": " << error.what();
-        return 1;
-    }
-
     // Create satellite
     LOG(logger, STATUS) << "Starting satellite " << canonical_name;
     std::shared_ptr<Satellite> satellite {};
     try {
-        satellite = satellite_generator(type_name, satellite_name);
+        satellite = satellite_generator(loader->getDSOName(), satellite_name);
     } catch(const std::exception& error) {
         LOG(logger, CRITICAL) << "Failed to create satellite: " << error.what();
         return 1;
