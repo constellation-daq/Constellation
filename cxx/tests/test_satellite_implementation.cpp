@@ -246,7 +246,7 @@ TEST_CASE("Transitions", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_initialize.getVerb().second), Equals("Transition initialize is being initiated"));
 
     // Check state
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_for(250ms);
     sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
@@ -268,14 +268,14 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(initialize_msg);
     auto recv_msg_initialize = sender.recv();
     REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_for(250ms);
 
     // Send launch
     auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
     sender.send(launch_msg);
     auto recv_msg_launch = sender.recv();
     REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_for(250ms);
 
     // Try shutdown & fail
     auto shutdown1_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -290,7 +290,7 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(land_msg);
     auto recv_msg_land = sender.recv();
     REQUIRE(recv_msg_land.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_for(250ms);
 
     // Try shutdown & succeed
     auto shutdown2_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -408,7 +408,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
                  Equals("Transition initialize received incorrect payload"));
 
     // Check state
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_for(250ms);
     sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
