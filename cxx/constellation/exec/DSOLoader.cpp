@@ -32,7 +32,7 @@ using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path hint) {
+DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::filesystem::path& hint) {
     // Possible paths:
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.suffix
@@ -40,7 +40,7 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
     const auto dso_file_name = "lib" + dso_name + CNSTLN_DSO_SUFFIX;
 
     auto possible_paths = std::vector<std::filesystem::path>();
-    auto add_paths = [&](std::filesystem::path path) {
+    auto add_paths = [&](const std::filesystem::path& path) {
         const auto abs_path = std::filesystem::absolute(path);
         if(std::filesystem::exists(abs_path)) {
             for(const auto& entry : std::filesystem::recursive_directory_iterator(abs_path)) {
@@ -74,7 +74,7 @@ DSOLoader::DSOLoader(std::string dso_name, Logger& logger, std::filesystem::path
         }
     }
 
-    std::string path_str = library_path.string();
+    const std::string path_str = library_path.string();
     dso_name_ = library_path.stem().string().substr(3);
 
     if(path_str.empty()) {

@@ -25,7 +25,7 @@ namespace constellation::exec {
          * @param logger Logger to log DSO path on success
          * @param hint Hint to path of the DSO
          */
-        CNSTLN_API DSOLoader(std::string dso_name, log::Logger& logger, std::filesystem::path hint = {});
+        CNSTLN_API DSOLoader(const std::string& dso_name, log::Logger& logger, const std::filesystem::path& hint = {});
 
         CNSTLN_API virtual ~DSOLoader();
 
