@@ -43,10 +43,15 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     auto add_paths = [&](const std::filesystem::path& path) {
         const auto abs_path = std::filesystem::absolute(path);
         if(std::filesystem::exists(abs_path)) {
-            for(const auto& entry : std::filesystem::recursive_directory_iterator(abs_path)) {
-                if(std::filesystem::is_regular_file(entry) && entry.path().extension() == CNSTLN_DSO_SUFFIX) {
-                    LOG(logger, TRACE) << "Adding " << entry.path() << " to library lookup";
-                    possible_paths.emplace_back(entry.path());
+            if(std::filesystem::is_regular_file(abs_path) && abs_path.extension() == CNSTLN_DSO_SUFFIX) {
+                LOG(logger, TRACE) << "Adding " << abs_path << " to library lookup";
+                possible_paths.emplace_back(abs_path);
+            } else {
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(abs_path)) {
+                    if(std::filesystem::is_regular_file(entry) && entry.path().extension() == CNSTLN_DSO_SUFFIX) {
+                        LOG(logger, TRACE) << "Adding " << entry.path() << " to library lookup";
+                        possible_paths.emplace_back(entry.path());
+                    }
                 }
             }
         }
