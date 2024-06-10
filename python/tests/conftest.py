@@ -85,7 +85,8 @@ def mock_chirp_transmitter():
         self._sock = mock
 
     with patch.object(CHIRPBeaconTransmitter, "__init__", mock_init):
-        yield
+        t = CHIRPBeaconTransmitter("mock_transmitter")
+        yield t
 
 
 class mocket(MagicMock):
