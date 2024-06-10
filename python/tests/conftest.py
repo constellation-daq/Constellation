@@ -18,6 +18,7 @@ from constellation.core.satellite import Satellite
 from constellation.core.chirp import (
     CHIRP_PORT,
     CHIRPBeaconTransmitter,
+    get_uuid,
 )
 
 from constellation.core.monitoring import (
@@ -70,9 +71,21 @@ def mock_chirp_socket():
 
 
 @pytest.fixture
-def mock_chirp_transmitter(mock_chirp_socket):
-    t = CHIRPBeaconTransmitter("mock_sender", "mockstellation", "127.0.0.1")
-    yield t
+def mock_chirp_transmitter():
+    def mock_init(self, *args, **kwargs):
+        self._host_uuid = get_uuid("mock_sender")
+        self._group_uuid = get_uuid("mockstellation")
+        self._broadcasts = ["127.0.0.1"]
+        mock = MagicMock()
+        mock = mock.return_value
+        mock.connected = MagicMock(return_value=True)
+        mock.sendto = MagicMock(side_effect=mock_chirp_sock_sendto)
+        mock.recvfrom = MagicMock(side_effect=mock_chirp_sock_recvfrom)
+        self._sock = mock
+
+    with patch.object(CHIRPBeaconTransmitter, "__init__", mock_init):
+        t = CHIRPBeaconTransmitter()
+        yield t
 
 
 class mocket(MagicMock):
@@ -217,7 +230,7 @@ def mock_data_receiver(mock_socket_receiver):
 
 
 @pytest.fixture
-def mock_satellite(mock_chirp_socket):
+def mock_satellite(mock_chirp_transmitter):
     """Create a mock Satellite base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -239,7 +252,7 @@ def mock_satellite(mock_chirp_socket):
 
 
 @pytest.fixture
-def mock_controller(mock_chirp_socket):
+def mock_controller(mock_chirp_transmitter):
     """Create a mock Controller base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -277,7 +290,7 @@ def config(rawconfig):
 
 
 @pytest.fixture
-def mock_example_satellite(mock_chirp_socket):
+def mock_example_satellite(mock_chirp_transmitter):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
     def mocket_factory(*args, **kwargs):
