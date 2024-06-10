@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
+import random
 import pytest
 from unittest.mock import patch, MagicMock
 import operator
@@ -168,6 +169,11 @@ class mocket(MagicMock):
     def bind(self, host):
         self.port = int(host.split(":")[2])
         print(f"Bound Mocket on {self.port}")
+
+    def bind_to_random_port(self, host):
+        self.port = random.randrange(10000, 55555)
+        print(f"Bound Mocket on random port: {self.port}")
+        return self.port
 
     def connect(self, host):
         self.port = int(host.split(":")[2])
