@@ -73,9 +73,10 @@ def mock_chirp_socket():
 @pytest.fixture
 def mock_chirp_transmitter():
     def mock_init(self, *args, **kwargs):
-        self._host_uuid = get_uuid("mock_sender")
+        self._host_uuid = get_uuid(args[0])
         self._group_uuid = get_uuid("mockstellation")
-        self._broadcasts = ["127.0.0.1"]
+        self._broadcasts = ["localhost"]
+        self._filter_group = True
         mock = MagicMock()
         mock = mock.return_value
         mock.connected = MagicMock(return_value=True)
@@ -84,8 +85,7 @@ def mock_chirp_transmitter():
         self._sock = mock
 
     with patch.object(CHIRPBeaconTransmitter, "__init__", mock_init):
-        t = CHIRPBeaconTransmitter()
-        yield t
+        yield
 
 
 class mocket(MagicMock):
