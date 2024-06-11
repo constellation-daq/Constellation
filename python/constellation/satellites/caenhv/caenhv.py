@@ -7,10 +7,10 @@ This module provides the class for a Constellation Satellite.
 """
 from functools import partial
 
-from ..core.satellite import Satellite, SatelliteArgumentParser
-from ..core.fsm import SatelliteState
-from ..core.commandmanager import cscp_requestable
-from ..core.base import setup_cli_logging
+from constellation.core.satellite import Satellite, SatelliteArgumentParser
+from constellation.core.fsm import SatelliteState
+from constellation.core.commandmanager import cscp_requestable
+from constellation.core.base import setup_cli_logging
 import pycaenhv
 
 
@@ -60,9 +60,11 @@ class CaenHvSatellite(Satellite):
                     # loop over channels
                     for par in ch.parameter_names:
                         # loop over parameters
+                        if not ch.parameters[par].attributes["mode"] == "R/W":
+                            continue
                         # construct configuration key
                         key = f"board{brdno}_ch{chno}_{par.lower()}"
-                        self.log.debug("Checking configuration for key '%s'", key)
+                        self.log.trace("Checking configuration for key '%s'", key)
                         try:
                             # retrieve and set value
                             val = configuration[key]
@@ -72,21 +74,21 @@ class CaenHvSatellite(Satellite):
                             # the board essentially only knows 'float'-type
                             # arguments except for 'Pw':
                             val = float(val)
-                            setattr(ch, par, val)
-                            self.log.debug(
-                                "Configuring %s on board %s, ch %s with value '%s'",
-                                par,
-                                brdno,
-                                chno,
-                                val,
-                            )
                         except KeyError:
                             # nothing in the cfg, leave as it is
-                            pass
+                            continue
                         except ValueError as e:
                             raise RuntimeError(
                                 f"Error in configuration for key {key}: {repr(e)}"
                             )
+                        ch.parameters[par].value = val
+                        self.log.debug(
+                            "Configuring %s on board %s, ch %s with value '%s'",
+                            par,
+                            brdno,
+                            chno,
+                            val,
+                        )
 
         # configure metrics sending
         self._configure_monitoring()
@@ -111,15 +113,17 @@ class CaenHvSatellite(Satellite):
 
     def get_channel_value(self, board: int, channel: int, par: str):
         """Return the value of a given channel parameter."""
-        if self.fsm.current_state in [
+        if SatelliteState[self.fsm.current_state.id] in [
             SatelliteState.NEW,
             SatelliteState.ERROR,
             SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
         ]:
             return None
         try:
             with self.caen as crate:
-                val = crate.boards[board].channels[channel].parameters[par]
+                val = crate.boards[board].channels[channel].parameters[par].value
         except Exception as e:
             val = None
             self.log.exception(e)
@@ -136,9 +140,40 @@ class CaenHvSatellite(Satellite):
         board = request.payload["board"]
         chno = int(request.payload["channel"])
         par = request.payload["parameter"]
-        with self.caen as crate:
-            val = crate.boards[board].channels[chno].parameters[par].value
+        val = self.get_channel_value(board, chno, par)
         return val, None, None
+
+    @cscp_requestable
+    def get_hw_config(self, request):
+        """Read and return the current hardware configuration.
+
+        Payload: None
+
+        Returns: dictionary with all R/W parameters and their current values.
+
+        """
+        print(self.fsm.current_state)
+        if SatelliteState[self.fsm.current_state.id] in [
+            SatelliteState.NEW,
+            SatelliteState.ERROR,
+            SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
+        ]:
+            raise RuntimeError(
+                f"Command not allowed in state '{self.fsm.current_state.id}'"
+            )
+        res = {}
+        with self.caen as crate:
+            for brdno, brd in crate.boards.items():
+                for chno, ch in enumerate(brd.channels):
+                    for par in ch.parameter_names:
+                        if not ch.parameters[par].attributes["mode"] == "R/W":
+                            continue
+                        # construct configuration key
+                        key = f"board{brdno}_ch{chno}_{par.lower()}"
+                        res[key] = ch.parameters[par].value
+        return f"Read {len(res)} parameters", res, None
 
     @cscp_requestable
     def about(self, _request):
@@ -185,9 +220,9 @@ class CaenHvSatellite(Satellite):
                 self.log.info("Powering board %s", brd)
                 for chno, ch in enumerate(brd.channels):
                     key = f"board{brdno}_ch{chno}_pw"
-                    self.log.debug("Powering board %s channel %s", brdno, chno)
                     val = self.config.setdefault(key, "off")
                     if val.lower() in ["true", "on", "1", "enabled", "enable"]:
+                        self.log.debug("Powering board %s channel %s", brdno, chno)
                         ch.switch_on()
                         npowered += 1
         return npowered
