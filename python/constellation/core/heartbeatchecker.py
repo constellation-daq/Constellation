@@ -101,7 +101,7 @@ class HeartbeatChecker:
                                     f"{name} unresponsive causing interrupt callback to be called"
                                 )
                                 fail_evt.set()
-                                self._interrupt(name)
+                                self._interrupt(name, SatelliteState.DEAD)
                             # update states
                             self._set_state(name, SatelliteState.DEAD)
                         # try again later
