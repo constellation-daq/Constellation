@@ -257,8 +257,9 @@ class Satellite(
         # indicate to the current acquisition thread to stop
         if self._state_thread_evt:
             self._state_thread_evt.set()
-        # wait for result, will raise TimeoutError if not successful
-        self._state_thread_fut.result(timeout=10)
+        # wait for result, waiting until done
+        self._state_thread_fut.result(timeout=None)
+        self.log.debug("RUN thread finished, continue with STOPPING.")
         return self.do_stopping(payload)
 
     @debug_log
