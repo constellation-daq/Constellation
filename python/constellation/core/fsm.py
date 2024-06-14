@@ -4,12 +4,13 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
+from typing import Callable, Any, Tuple
 from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum, auto
-from statemachine import StateMachine
-from statemachine.exceptions import TransitionNotAllowed
-from statemachine.states import States
+from statemachine import StateMachine  # type: ignore
+from statemachine.exceptions import TransitionNotAllowed  # type: ignore
+from statemachine.states import States  # type: ignore
 
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
@@ -125,7 +126,7 @@ class SatelliteFSM(StateMachine):
 
     def write_diagram(self, filename):
         """Create a png with the FSM schematic."""
-        from statemachine.contrib.diagram import DotGraphMachine
+        from statemachine.contrib.diagram import DotGraphMachine  # type: ignore
 
         graph = DotGraphMachine(self)
         dot = graph()
@@ -133,16 +134,16 @@ class SatelliteFSM(StateMachine):
 
 
 class SatelliteStateHandler(BaseSatelliteFrame):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
         # instantiate state machine
         self.fsm = SatelliteFSM()
 
         # (transitional) state executor and event
-        self._state_thread_evt: Event = None
-        self._state_thread_exc = ThreadPoolExecutor(max_workers=1)
-        self._state_thread_fut: Future = None
+        self._state_thread_evt: Event | None = None
+        self._state_thread_exc: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
+        self._state_thread_fut: Future | None = None
 
     @debug_log
     @cscp_requestable
@@ -314,7 +315,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         return "transitioning", target, None
 
     @debug_log
-    def _start_transition(self, fcn: callable, payload: any) -> None:
+    def _start_transition(self, fcn: Callable, payload: Any) -> None:
         """Start a transition and advance FSM for transitional states."""
         res = fcn(payload)
         if not res:
@@ -334,7 +335,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
                 self.fsm.status = res
 
     @debug_log
-    def _start_transition_thread(self, fcn: callable, payload: any) -> None:
+    def _start_transition_thread(self, fcn: Callable, payload: Any) -> None:
         """Start a transition thread with the given fcn and arguments."""
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
@@ -351,6 +352,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         res = fut.result()
         if not res:
             res = "Transition completed!"
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._state_thread_evt, Event
+        ), "Thread transition Event not set up correctly"
         if self._state_thread_evt.is_set():
             # Cancelled; do not advance state. This handles stopping RUN state
             # and avoids premature progression out of STOPPING
@@ -373,7 +378,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
                 self.fsm.status = res
 
     @cscp_requestable
-    def get_state(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_state(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Return the current state of the Satellite.
 
         No payload argument.
@@ -381,7 +386,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         return self.fsm.current_state.id, None, None
 
     @cscp_requestable
-    def get_status(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_status(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Get a string describing the current status of the Satellite.
 
         No payload argument.

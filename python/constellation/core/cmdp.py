@@ -6,11 +6,14 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Monitoring Distribution Protocol.
 """
 
-import msgpack
+import msgpack  # type: ignore
 import zmq
 import logging
+import datetime
+from queue import Queue
 from enum import Enum
 from threading import Lock
+from typing import Any
 
 from .protocol import MessageHeader, Protocol
 
@@ -30,15 +33,15 @@ class Metric:
         name: str,
         unit: str,
         handling: MetricsType,
-        value: any = None,
+        value: Any = None,
     ):
-        self.name = name
-        self.unit = unit
-        self.handling = handling
-        self.value = value
-        self.sender = None
-        self.time = None
-        self.meta = None
+        self.name: str = name
+        self.unit: str = unit
+        self.handling: MetricsType = handling
+        self.value: Any = value
+        self.sender: str = ""
+        self.time: datetime.datetime = datetime.datetime.fromtimestamp(0)
+        self.meta: dict[str, Any] | None = None
 
     def as_list(self):
         """Convert metric to list."""
@@ -52,7 +55,7 @@ class Metric:
         return f"{self.name}: {self.value} [{self.unit}]{t}"
 
 
-class CMDPTransmitter:
+class CMDPTransmitter(Queue):
     """Class for sending Constellation monitoring messages via ZMQ."""
 
     def __init__(self, name: str, socket: zmq.Socket):
@@ -116,7 +119,7 @@ class CMDPTransmitter:
         topic = "STATS/" + metric.name
         payload = msgpack.packb(metric.as_list())
         meta = None
-        return self._dispatch(topic, payload, meta)
+        self._dispatch(topic, payload, meta)
 
     def recv(self, flags=0) -> logging.LogRecord | Metric | None:
         """Receive a Constellation monitoring message and return log or metric."""
@@ -142,7 +145,9 @@ class CMDPTransmitter:
     def closed(self) -> bool:
         """Return whether socket is closed or not."""
         if self._socket:
-            return self._socket.closed
+            # NOTE: according to zmq.Socket, this should return a bool; mypy thinks
+            # "str | bytes | int" though..?
+            return self._socket.closed  # type: ignore
         return True
 
     def close(self) -> None:
@@ -153,7 +158,12 @@ class CMDPTransmitter:
     def decode_log(self, topic: str, msg: list[bytes]) -> logging.LogRecord:
         """Receive a Constellation log message."""
         # Read header
-        sender, time, record = self.msgheader.decode(msg[1])
+        header = self.msgheader.decode(msg[1])
+        # assert to help mypy determine len of tuple returned
+        assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
+        sender, time, record = header
+        # assert to help mypy determine type
+        assert isinstance(record, dict)
         # receive payload
         message = msg[2].decode()
         # message == msg % args
@@ -169,7 +179,10 @@ class CMDPTransmitter:
         """Receive a Constellation STATS message and return a Metric."""
         name = topic.split("/")[1]
         # Read header
-        sender, time, record = self.msgheader.decode(msg[1])
+        header = self.msgheader.decode(msg[1])
+        # assert to help mypy determine len of tuple returned
+        assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
+        sender, time, record = header
         value, handling, unit = msgpack.unpackb(msg[2])
         m = Metric(name, unit, MetricsType(handling), value)
         m.sender = sender
@@ -181,7 +194,7 @@ class CMDPTransmitter:
         self,
         topic: str,
         payload: bytes,
-        meta: dict = None,
+        meta: dict[str, Any] | None = None,
         flags: int = 0,
     ):
         """Dispatch a message via ZMQ socket."""

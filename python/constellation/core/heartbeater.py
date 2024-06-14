@@ -38,7 +38,7 @@ class HeartbeatSender(SatelliteStateHandler):
         self.log.info(f"Setting up heartbeater on port {self.hb_port}")
         self._hb_tm = CHPTransmitter(self.name, socket)
 
-    def _add_com_thread(self):
+    def _add_com_thread(self) -> None:
         """Add the CHIRP broadcaster thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["heartbeat"] = threading.Thread(
@@ -48,6 +48,10 @@ class HeartbeatSender(SatelliteStateHandler):
 
     def _run_heartbeat(self) -> None:
         last = datetime.now()
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._com_thread_evt, threading.Event
+        ), "Thread Event not set up correctly"
         while not self._com_thread_evt.is_set():
             if (
                 (datetime.now() - last).total_seconds() > self.heartbeat_period / 1000
@@ -67,7 +71,7 @@ def main():
     """Send heartbeats."""
     import argparse
     import logging
-    import coloredlogs
+    import coloredlogs  # type: ignore
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="info")

@@ -9,6 +9,7 @@ Constellation Satellites.
 import logging
 import threading
 from functools import wraps
+from typing import Callable
 
 import time
 from uuid import UUID
@@ -121,8 +122,8 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
         # Offered and discovered services
-        self._registered_services = {}
-        self.discovered_services = []
+        self._registered_services: dict[int, CHIRPServiceIdentifier] = {}
+        self.discovered_services: list[DiscoveredService] = []
         self._chirp_thread = None
         self._chirp_callbacks = get_chirp_callbacks(self)
 
@@ -145,7 +146,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         return res
 
     def register_request(
-        self, serviceid: CHIRPServiceIdentifier, callback: callable
+        self, serviceid: CHIRPServiceIdentifier, callback: Callable
     ) -> None:
         """Register new callback for ServiceIdentifier."""
         if serviceid in self._chirp_callbacks:
@@ -174,7 +175,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             )
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_offers(self, serviceid: CHIRPServiceIdentifier = None) -> None:
+    def broadcast_offers(self, serviceid: CHIRPServiceIdentifier | None = None) -> None:
         """Broadcast all registered services matching serviceid.
 
         Specify None for all registered services.
@@ -254,6 +255,10 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
 
     def _run(self) -> None:
         """Start listening in on broadcast"""
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._com_thread_evt, threading.Event
+        ), "BroadcastManager thread Event no set up"
 
         while not self._com_thread_evt.is_set():
             msg = self._beacon.listen()

@@ -8,8 +8,10 @@ This module provides the class for a Constellation Satellite.
 
 import time
 from queue import Empty
+from typing import Tuple, Any
 import threading
 import traceback
+from concurrent.futures import Future
 
 from .fsm import SatelliteState
 from . import __version__
@@ -156,8 +158,8 @@ class Satellite(
         # timeout is exceeded joining them, the raised TimeoutError exception
         # will take us into ERROR state.
         try:
-            self._state_thread_evt.set()
-            self._state_thread_fut.result(2)
+            self._state_thread_evt.set()  # type: ignore
+            self._state_thread_fut.result(2)  # type: ignore
         except AttributeError:
             # no threads left
             pass
@@ -187,7 +189,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_launch(self, payload: any) -> str:
+    def _wrap_launch(self, payload: Any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -198,7 +200,7 @@ class Satellite(
         return self.do_launching(payload)
 
     @debug_log
-    def do_launching(self, payload: any) -> str:
+    def do_launching(self, payload: Any) -> str:
         """Prepare Satellite for data acquistions."""
         return "Launched."
 
@@ -219,7 +221,7 @@ class Satellite(
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the exististance of the method to
         # determine the reaction to a `reconfigure` CSCP command.
-        init_msg = self.do_reconfigure(self.config)  # noqa
+        init_msg = self.do_reconfigure(self.config)  # type: ignore
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
@@ -230,7 +232,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_land(self, payload: any) -> str:
+    def _wrap_land(self, payload: Any) -> str:
         """Wrapper for the 'landing' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -241,13 +243,13 @@ class Satellite(
         return self.do_landing(payload)
 
     @debug_log
-    def do_landing(self, payload: any) -> str:
+    def do_landing(self, payload: Any) -> str:
         """Return Satellite to Initialized state."""
         return "Landed."
 
     @handle_error
     @debug_log
-    def _wrap_stop(self, payload: any) -> str:
+    def _wrap_stop(self, payload: Any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -258,11 +260,13 @@ class Satellite(
         if self._state_thread_evt:
             self._state_thread_evt.set()
         # wait for result, will raise TimeoutError if not successful
+        # assert for mypy static type analysis
+        assert isinstance(self._state_thread_fut, Future)
         self._state_thread_fut.result(timeout=10)
         return self.do_stopping(payload)
 
     @debug_log
-    def do_stopping(self, payload: any) -> str:
+    def do_stopping(self, payload: Any) -> str:
         """Stop the data acquisition."""
         return "Acquisition stopped."
 
@@ -283,7 +287,7 @@ class Satellite(
         return self.do_run(run_identifier)
 
     @debug_log
-    def do_starting(self, payload: any) -> str:
+    def do_starting(self, payload: Any) -> str:
         """Final preparation for acquisition."""
         return "Finished preparations, starting."
 
@@ -308,6 +312,10 @@ class Satellite(
         """
         # the stop_running Event will be set from outside the thread when it is
         # time to close down.
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._state_thread_evt, threading.Event
+        ), "Transition thread Event not set up correctly"
         while not self._state_thread_evt.is_set():
             time.sleep(0.2)
         return "Finished acquisition."
@@ -353,6 +361,8 @@ class Satellite(
         if self._state_thread_evt:
             self._state_thread_evt.set()
             # wait for result, will raise TimeoutError if not successful
+            # assert for mypy static type analysis
+            assert isinstance(self._state_thread_fut, Future)
             self._state_thread_fut.result(timeout=10)
             self._state_thread_evt = None
         self.hb_checker.stop()
@@ -404,7 +414,9 @@ class Satellite(
     # -------------------------- #
 
     @cscp_requestable
-    def get_version(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_version(
+        self, _request: CSCPMessage | None = None
+    ) -> Tuple[str, None, None]:
         """Get Constellation version.
 
         No payload argument.
@@ -416,7 +428,7 @@ class Satellite(
         return __version__, None, None
 
     @cscp_requestable
-    def get_run_id(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_run_id(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Get current run identifier.
 
         No payload argument.

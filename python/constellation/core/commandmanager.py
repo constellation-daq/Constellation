@@ -10,14 +10,15 @@ Constellation Satellites.
 import threading
 import time
 import zmq
+from typing import Tuple, Any, Callable
 from functools import wraps
-from statemachine.exceptions import TransitionNotAllowed
+from statemachine.exceptions import TransitionNotAllowed  # type: ignore
 
 from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
 
 
-def cscp_requestable(func):
+def cscp_requestable(func: Callable) -> Callable:
     """Register a function as a supported command for CSCP.
 
     See CommandReceiver for a description of the expected signature.
@@ -29,11 +30,11 @@ def cscp_requestable(func):
         return func(*args, **kwargs)
 
     # mark function as chirp callback
-    wrapper.cscp_command = True
+    wrapper.cscp_command = True  # type: ignore
     return wrapper
 
 
-def get_cscp_commands(cls):
+def get_cscp_commands(cls: Any) -> dict[str, str]:
     """Loop over all class methods and return those marked as CSCP commands."""
     res = {}
     for func in dir(cls):
@@ -71,7 +72,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, cmd_port: int, interface: str, **kwds):
+    def __init__(self, name: str, cmd_port: int, interface: str, **kwds) -> None:
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
         super().__init__(name=name, interface=interface, **kwds)
 
@@ -88,7 +89,7 @@ class CommandReceiver(BaseSatelliteFrame):
         # cached list of supported commands
         self._cmds = get_cscp_commands(self)
 
-    def _add_com_thread(self):
+    def _add_com_thread(self) -> None:
         """Add the command receiver thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["cmd_receiver"] = threading.Thread(
@@ -96,8 +97,12 @@ class CommandReceiver(BaseSatelliteFrame):
         )
         self.log.debug("Command receiver thread prepared and added to the pool.")
 
-    def _recv_cmds(self):
+    def _recv_cmds(self) -> None:
         """Request receive loop."""
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._com_thread_evt, threading.Event
+        ), "Thread Event not set up correctly"
         while not self._com_thread_evt.is_set():
             try:
                 req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
@@ -189,7 +194,9 @@ class CommandReceiver(BaseSatelliteFrame):
         self._cmd_tm.socket.close()
 
     @cscp_requestable
-    def get_commands(self, _request: CSCPMessage = None):
+    def get_commands(
+        self, _request: CSCPMessage | None = None
+    ) -> Tuple[str, dict[str, str], None]:
         """Return all commands supported by the Satellite.
 
         No payload argument.
@@ -203,7 +210,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(self._cmds)} commands known", self._cmds, None
 
     @cscp_requestable
-    def get_class(self, _request: CSCPMessage = None):
+    def get_class(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Return the class of the Satellite.
 
         No payload argument.
@@ -212,7 +219,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return type(self).__name__, None, None
 
     @cscp_requestable
-    def get_name(self, _request: CSCPMessage = None):
+    def get_name(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
@@ -221,7 +228,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return self.name, None, None
 
     @cscp_requestable
-    def shutdown(self, _request: CSCPMessage = None):
+    def shutdown(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Queue the Satellite's reentry.
 
         No payload argument.

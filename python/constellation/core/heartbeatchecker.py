@@ -36,14 +36,20 @@ class HeartbeatChecker:
         self._callback_lock = threading.Lock()
         self._transmitters = dict[str, CHPTransmitter]()
         self._threads = dict[str, threading.Thread]()
-        self._stop_threads: threading.Event = None
+        self._stop_threads: threading.Event | None = None
         self._states_lock = threading.Lock()
         self.states = dict[str, SatelliteState]()
         self.failed = dict[str, threading.Event]()
         self.auto_recover = False  # clear fail Event if Satellite reappears?
 
-    def register(self, name, host: str, context: Optional[zmq.Context] = None) -> None:
-        """Register a heartbeat check for a specific Satellite."""
+    def register(
+        self, name, host: str, context: Optional[zmq.Context] = None
+    ) -> threading.Event:
+        """Register a heartbeat check for a specific Satellite.
+
+        Returns threading.Event that will be set when a failure occurs.
+
+        """
         ctx = context or zmq.Context()
         socket = ctx.socket(zmq.SUB)
         socket.connect(host)
@@ -67,6 +73,10 @@ class HeartbeatChecker:
         interval = self.HB_INIT_PERIOD
         last = datetime.now()
         self._set_state(name, SatelliteState.NEW)
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._stop_threads, threading.Event
+        ), "Thread Event not set up correctly"
         while not self._stop_threads.is_set():
             last_diff = (datetime.now() - last).total_seconds()
             if last_diff < interval / 1000:
@@ -128,10 +138,11 @@ class HeartbeatChecker:
 
     def _interrupt(self, name: str) -> None:
         with self._callback_lock:
-            try:
-                self._callback(name)
-            except Exception:
-                pass
+            if self._callback:
+                try:
+                    self._callback(name)
+                except Exception:
+                    pass
 
     def _reset(self) -> None:
         self._stop_threads = threading.Event()
@@ -179,7 +190,7 @@ def main():
     """Receive heartbeats from a single host."""
     import argparse
     import time
-    import coloredlogs
+    import coloredlogs  # type: ignore
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="debug")

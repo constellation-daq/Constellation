@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import threading
 import time
 from queue import Empty
-from typing import Dict
+from typing import Dict, Callable, Any, Tuple
 
 import zmq
 
@@ -50,25 +50,28 @@ class SatelliteCommLink(SatelliteClassCommLink):
 class SatelliteArray:
     """Provide object-oriented control of connected Satellites."""
 
-    def __init__(self, group: str, handler: callable):
+    def __init__(self, group: str, handler: Callable):
         self.constellation = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
         self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
-        self._satellites: list(SatelliteCommLink) = []
+        self._satellites: list[SatelliteCommLink] = []
 
     @property
     def satellites(self):
         """Return the list of known Satellite."""
         return self._satellites
 
-    def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink | None:
-        """Return a link to a Satellite given by its class and name."""
+    def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink:
+        """Return a link to a Satellite given by its class and name.
+
+        Raises KeyError if no Satellite could be found."""
         for sat in self._satellites:
             if sat._name == sat_name and sat._class_name == sat_class:
                 return sat
+        raise KeyError(f"Satellite {sat_class}.{sat_name} not found")
 
-    def _add_class(self, name: str, commands: dict[str]):
+    def _add_class(self, name: str, commands: dict[str, Any]):
         """Add a new class to the array."""
         try:
             cl = getattr(self, name)
@@ -81,7 +84,7 @@ class SatelliteArray:
         setattr(self, name, cl)
         return cl
 
-    def _add_satellite(self, name: str, cls: str, commands: dict[str]):
+    def _add_satellite(self, name: str, cls: str, commands: dict[str, str]):
         """Add a new Satellite."""
         try:
             cl = getattr(self, cls)
@@ -109,7 +112,7 @@ class SatelliteArray:
         cls = s[0]._class_name
         return name, cls
 
-    def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
+    def _add_cmds(self, obj: Any, handler: Callable, cmds: dict[str, str]):
         try:
             sat = obj._name
         except AttributeError:
@@ -121,7 +124,7 @@ class SatelliteArray:
         for cmd, doc in cmds.items():
             w = CommandWrapper(handler, sat=sat, satcls=satcls, cmd=cmd)
             # add docstring
-            w.call.__func__.__doc__ = doc
+            w.call.__func__.__doc__ = doc  # type: ignore
             setattr(obj, cmd, w.call)
 
     def _sanitize_name(self, name):
@@ -135,14 +138,14 @@ class CommandWrapper:
     Allows to mimic the signature of the Satellite command being wrapped.
     """
 
-    def __init__(self, handler, sat, satcls, cmd):
+    def __init__(self, handler: Callable, sat: str, satcls: str, cmd: str):
         """Initialize with fcn as a partial() call."""
         self.fcn = handler
         self.sat = sat
         self.satcls = satcls
         self.cmd = cmd
 
-    def call(self, payload=None):
+    def call(self, payload=None) -> Tuple[str, Any, Any]:
         """Perform call. This doc string will be overwritten."""
         return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)
 
@@ -150,7 +153,7 @@ class CommandWrapper:
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a Constellation."""
 
-    def __init__(self, group: str, **kwargs):
+    def __init__(self, group: str, **kwargs) -> None:
         """Initialize values.
 
         Arguments:
@@ -182,14 +185,14 @@ class BaseController(CHIRPBroadcaster):
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
-    def _add_satellite_callback(self, service: DiscoveredService):
+    def _add_satellite_callback(self, service: DiscoveredService) -> None:
         """Callback method connecting to satellite."""
         if not service.alive:
             self._remove_satellite(service)
         else:
             self._add_satellite(service)
 
-    def _add_satellite(self, service: DiscoveredService):
+    def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
         if str(service.host_uuid) in self._uuid_lookup.keys():
             self.log.error(
@@ -225,7 +228,7 @@ class BaseController(CHIRPBroadcaster):
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
-    def _remove_satellite(self, service: DiscoveredService):
+    def _remove_satellite(self, service: DiscoveredService) -> None:
         name, cls = None, None
         # departure
         uuid = str(service.host_uuid)
@@ -248,7 +251,7 @@ class BaseController(CHIRPBroadcaster):
         except KeyError:
             pass
 
-    def command(self, payload=None, sat=None, satcls=None, cmd=None):
+    def command(self, payload=None, sat=None, satcls=None, cmd=None) -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
@@ -326,7 +329,7 @@ class BaseController(CHIRPBroadcaster):
                 }
         return res
 
-    def _preprocess_payload(self, payload: any, uuid: str, cmd: str) -> any:
+    def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
         """Pre-processes payload for specific commands."""
         if cmd == "initialize":
             # payload needs to be a flat dictionary, but we want to allow to
@@ -341,7 +344,7 @@ class BaseController(CHIRPBroadcaster):
                 return cfg
         return payload
 
-    def _run_task_handler(self):
+    def _run_task_handler(self) -> None:
         """Event loop for task handler-routine"""
         while not self._task_handler_event.is_set():
             try:
@@ -357,7 +360,7 @@ class BaseController(CHIRPBroadcaster):
                 # nothing to process
                 pass
 
-    def reentry(self):
+    def reentry(self) -> None:
         """Stop the controller."""
         self.log.info("Stopping controller.")
         if getattr(self, "_task_handler_event", None):

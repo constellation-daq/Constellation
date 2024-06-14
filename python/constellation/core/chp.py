@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import time
 import io
-import msgpack
+import msgpack  # type: ignore
 import zmq
 from .protocol import Protocol
 

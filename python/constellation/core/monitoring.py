@@ -9,10 +9,10 @@ import zmq
 import threading
 import os
 import pathlib
-from uuid import UUID
 from queue import Empty
 from functools import wraps
 from datetime import datetime
+from typing import Callable
 from logging.handlers import QueueHandler, QueueListener
 
 from .base import (
@@ -113,7 +113,7 @@ class MonitoringSender(BaseSatelliteFrame):
     def schedule_metric(
         self,
         name: str,
-        callback: callable,
+        callback: Callable,
         interval: float,
         handling: MetricsType = MetricsType.LAST_VALUE,
     ):
@@ -246,7 +246,7 @@ class ZeroMQSocketLogListener(QueueListener):
 class MonitoringListener(CHIRPBroadcaster):
     """Simple monitor class to receive logs and metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, output_path: str = None):
+    def __init__(self, name: str, group: str, interface: str, output_path: str = ""):
         """Initialize values.
 
         Arguments:
@@ -258,11 +258,11 @@ class MonitoringListener(CHIRPBroadcaster):
         super().__init__(name=name, group=group, interface=interface)
 
         self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
-        self._metric_sockets: dict[UUID, zmq.socket] = {}
+        self._metric_sockets: dict[str, zmq.Socket] = {}
 
         # create output directories and configure file writer logger
         if output_path:
-            self.output_path = pathlib.Path(output_path)
+            self.output_path: pathlib.Path | None = pathlib.Path(output_path)
             try:
                 os.makedirs(self.output_path)
                 self.log.info("Created path %s", output_path)

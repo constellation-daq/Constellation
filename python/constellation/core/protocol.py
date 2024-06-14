@@ -6,12 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation communication protocols.
 """
 
-import msgpack
+import msgpack  # type: ignore
 import zmq
 
 import io
 import time
 from enum import StrEnum
+from typing import Any, Tuple
 
 
 class Protocol(StrEnum):
@@ -25,11 +26,15 @@ class MessageHeader:
     """Class implementing a Constellation message header."""
 
     def __init__(self, name: str, protocol: Protocol):
-        self.name = name
-        self.protocol = protocol
+        self.name: str = name
+        self.protocol: Protocol = protocol
 
     def send(
-        self, socket: zmq.Socket, flags: int = zmq.SNDMORE, meta: dict = None, **kwargs
+        self,
+        socket: zmq.Socket,
+        flags: int = zmq.SNDMORE,
+        meta: dict[str, Any] | None = None,
+        **kwargs,
     ):
         """Send a message header via socket.
 
@@ -45,7 +50,12 @@ class MessageHeader:
         """Receive header from socket and return all decoded fields."""
         return self.decode(socket.recv())
 
-    def decode(self, header):
+    def decode(
+        self, header
+    ) -> (
+        Tuple[str, msgpack.Timestamp, dict[str, Any] | None]
+        | Tuple[str, msgpack.Timestamp, int, int, dict[str, Any] | None]
+    ):
         """Decode header string and return host, timestamp and meta map."""
         unpacker = msgpack.Unpacker()
         unpacker.feed(header)
@@ -64,7 +74,7 @@ class MessageHeader:
         meta = unpacker.unpack()
         return host, timestamp, meta
 
-    def encode(self, meta: dict = None, **kwargs):
+    def encode(self, meta: dict[str, Any] | None = None, **kwargs):
         """Generate and return a header as list.
 
         Additional keyword arguments are required for protocols specifying

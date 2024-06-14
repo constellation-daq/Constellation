@@ -10,11 +10,10 @@ import threading
 import logging
 from argparse import ArgumentParser
 from queue import Queue
+from typing import cast
 import atexit
-import coloredlogs
+import coloredlogs  # type: ignore
 from .network import validate_interface, get_interfaces
-
-SATELLITE_LIST = []
 
 
 @atexit.register
@@ -68,7 +67,7 @@ class ConstellationArgumentParser(ArgumentParser):
 EPILOG = "This command is part of the Constellation Python core package."
 
 
-class ConstellationLogger(logging.getLoggerClass()):
+class ConstellationLogger(logging.getLoggerClass()):  # type: ignore
     """Custom Logger class for Constellation.
 
     Defines the following log levels:
@@ -92,24 +91,24 @@ class ConstellationLogger(logging.getLoggerClass()):
         logging.STATUS = logging.INFO + 5
         logging.addLevelName(logging.INFO + 5, "STATUS")
 
-    def trace(self, msg, *args, **kwargs):
+    def trace(self, msg, *args, **kwargs) -> None:
         """Define level for verbose information which allows to follow the call
         stack of the host program."""
-        self.log(logging.TRACE, msg, *args, **kwargs)
+        self.log(logging.TRACE, msg, *args, **kwargs)  # type: ignore
 
-    def status(self, msg, *args, **kwargs):
+    def status(self, msg, *args, **kwargs) -> None:
         """Define level for important information about the host program to the
         end user with low frequency."""
-        self.log(logging.STATUS, msg, *args, **kwargs)
+        self.log(logging.STATUS, msg, *args, **kwargs)  # type: ignore
 
-    def error(self, msg, *args, **kwargs):
+    def error(self, msg, *args, **kwargs) -> None:
         """Map error level to CRITICAL."""
-        self.log(logging.CRITICAL, msg, *args, **kwargs)
+        self.log(logging.CRITICAL, msg, *args, **kwargs)  # type: ignore
 
 
 def setup_cli_logging(name: str, level: str) -> ConstellationLogger:
     logging.setLoggerClass(ConstellationLogger)
-    logger = logging.getLogger(name)
+    logger = cast(ConstellationLogger, logging.getLogger(name))
     log_level = level
     coloredlogs.install(level=log_level.upper(), logger=logger)
     return logger
@@ -128,7 +127,7 @@ class BaseSatelliteFrame:
         # add class name to create the canonical name
         self.name = f"{type(self).__name__}.{name}"
         logging.setLoggerClass(ConstellationLogger)
-        self.log = logging.getLogger(name)
+        self.log = cast(ConstellationLogger, logging.getLogger(name))
         self.context = zmq.Context()
 
         self.interface = interface
@@ -139,13 +138,13 @@ class BaseSatelliteFrame:
         # of a tuple consisting of a callback method and an object passed as
         # argument (DiscoveredService and CSCPMessage for CHIRP and CSCP,
         # respectively).
-        self.task_queue = Queue()
+        self.task_queue: Queue = Queue()
 
         # dict to keep references to all communication service threads usually
         # running in the background
-        self._com_thread_pool: dict(str, threading.Thread) = {}
+        self._com_thread_pool: dict[str, threading.Thread] = {}
         # Event to indicate to communication service threads to stop
-        self._com_thread_evt: threading.Event = None
+        self._com_thread_evt: threading.Event | None = None
 
         # add self to list of satellites to destroy on shutdown
         global SATELLITE_LIST
@@ -167,7 +166,7 @@ class BaseSatelliteFrame:
             self.log.debug("Starting thread for %s communication", component)
             thread.start()
 
-    def _stop_com_threads(self, timeout: int = 1.5):
+    def _stop_com_threads(self, timeout: float = 1.5):
         """Stop all background communication threads within timeout [s]."""
         if self._com_thread_evt:
             self._com_thread_evt.set()
@@ -192,3 +191,6 @@ class BaseSatelliteFrame:
         self._stop_com_threads()
         self.log.debug("Terminating ZMQ context.")
         self.context.term()
+
+
+SATELLITE_LIST: list[BaseSatelliteFrame] = []

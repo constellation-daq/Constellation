@@ -27,7 +27,7 @@ def get_netmask(if_name: str):
             return if_addr.netmask
 
 
-def get_broadcast(interface: str) -> str:
+def get_broadcast(interface: str) -> list[str]:
     """Determine broadcast(s) for interface(s) based on IPv4 ip address and netmask."""
     broadcasts = []
     for intf in socket.if_nameindex():

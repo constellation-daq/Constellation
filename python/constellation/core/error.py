@@ -7,7 +7,7 @@ This module provides error handling decorators and exceptions.
 
 from functools import wraps
 import traceback
-from statemachine.exceptions import TransitionNotAllowed
+from statemachine.exceptions import TransitionNotAllowed  # type: ignore
 
 
 def handle_error(func):
