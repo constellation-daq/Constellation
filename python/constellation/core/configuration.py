@@ -5,6 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import tomllib
 import json
+import typing
 
 
 class ConfigError(Exception):
@@ -16,13 +17,11 @@ class ConfigError(Exception):
 class Configuration:
     """Class to track configuration variables and requests."""
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict[str, typing.Any] | None = None):
         """Initialize configuration variables"""
-        if not config:
-            config = {}
+        self._config: dict[str, typing.Any] = config if config else {}
         if not isinstance(config, dict):
             raise ConfigError
-        self._config = config
         self._requested_keys: set[str] = set()
 
     def has_unused_values(self):
@@ -37,7 +36,7 @@ class Configuration:
         """Return a dictionary of all used configuration items."""
         return {k: self._config[k] for k in self._requested_keys}
 
-    def setdefault(self, key: str, default: any = None):
+    def setdefault(self, key: str, default: typing.Any = None):
         """
         Return value from requested key in config with default value if specified.
         Mark key as requested in configuration.
