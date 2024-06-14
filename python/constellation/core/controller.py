@@ -14,13 +14,14 @@ import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
-
 from .cscp import CommandTransmitter
 from .error import debug_log
+from .fsm import SatelliteState
 from .satellite import Satellite
 from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
+from .heartbeatchecker import HeartbeatChecker
 
 
 class SatelliteClassCommLink:
@@ -167,6 +168,9 @@ class BaseController(CHIRPBroadcaster):
         super()._add_com_thread()
         super()._start_com_threads()
 
+        self._hb_checker = HeartbeatChecker(self._hb_failure)
+        self._hb_checker.auto_recover = True
+
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(
@@ -177,6 +181,17 @@ class BaseController(CHIRPBroadcaster):
         # wait for threads to be ready
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
+        self.request(CHIRPServiceIdentifier.HEARTBEAT)
+
+    @property
+    def states(self):
+        """Return an up-to-date dictionary of connected Satellite's status.
+
+        Based on heartbeat information.
+
+        """
+        return self._hb_checker.states
+
     @property
     def constellation(self):
         """Returns the currently active SatelliteArray of controlled Satellites."""
@@ -190,6 +205,24 @@ class BaseController(CHIRPBroadcaster):
             self._remove_satellite(service)
         else:
             self._add_satellite(service)
+
+    @debug_log
+    @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
+    def _add_satellite_heatbeat(self, service: DiscoveredService):
+        """Callback method registering satellite's heartbeat."""
+        if not service.alive:
+            return
+        uuid = str(service.host_uuid)
+        if uuid in self._transmitters:
+            # we are controlling this satellite
+            cls, name = self._uuid_lookup[uuid]
+            canonical_name = f"{cls}.{name}"
+            if not self._hb_checker.is_registered(canonical_name):
+                self._hb_checker.register(
+                    name=canonical_name,
+                    address=f"tcp://{service.address}:{service.port}",
+                )
+                self._hb_checker.start(canonical_name)
 
     def _add_satellite(self, service: DiscoveredService):
         self.log.debug("Adding Satellite %s", service)
@@ -224,6 +257,16 @@ class BaseController(CHIRPBroadcaster):
             uuid = str(service.host_uuid)
             self._uuid_lookup[uuid] = (cls, name)
             self._transmitters[uuid] = ct
+            # check if heartbeat service for satellite is known already
+            for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
+                if hbservice.host_uuid == service.host_uuid:
+                    canonical_name = f"{cls}.{name}"
+                    self._hb_checker.register(
+                        name=canonical_name,
+                        address=f"tcp://{hbservice.address}:{hbservice.port}",
+                    )
+                    self._hb_checker.start(canonical_name)
+                    break
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -249,6 +292,11 @@ class BaseController(CHIRPBroadcaster):
             self._uuid_lookup.pop(uuid)
         except KeyError:
             pass
+
+    def _hb_failure(self, name: str, state: SatelliteState) -> None:
+        """Callback for Satellites failing to send heartbeats."""
+        # TODO add filter for only those Satellites that we control
+        self.log.critical("%s has entered %s", name, state.name)
 
     def command(self, payload=None, sat=None, satcls=None, cmd=None):
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
@@ -364,8 +412,19 @@ class BaseController(CHIRPBroadcaster):
         self.log.info("Stopping controller.")
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
-        for _name, cmd_tm in self._transmitters.items():
-            cmd_tm.socket.close()
+        try:
+            for _name, cmd_tm in self._transmitters.items():
+                cmd_tm.socket.close()
+        except Exception:
+            # ignore errors; this avoids spurious error messages if e.g. the
+            # initialization of the class fails
+            pass
+        try:
+            self._hb_checker.stop()
+        except Exception as e:
+            self.log.warning(
+                "Encountered problem shutting heartbeat checker down: %s", repr(e)
+            )
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join()
         super().reentry()
