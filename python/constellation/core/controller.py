@@ -55,18 +55,16 @@ class SatelliteArray:
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
         self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
-        self._satellites: list(SatelliteCommLink) = []
+        self._satellites: dict[str, SatelliteCommLink] = {}
 
     @property
     def satellites(self):
-        """Return the list of known Satellite."""
+        """Return the dict of Satellites names and their SatelliteCommLink."""
         return self._satellites
 
     def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink | None:
         """Return a link to a Satellite given by its class and name."""
-        for sat in self._satellites:
-            if sat._name == sat_name and sat._class_name == sat_class:
-                return sat
+        return self._satellites[f"{sat_class}.{sat_name}"]
 
     def _add_class(self, name: str, commands: dict[str]):
         """Add a new class to the array."""
@@ -90,7 +88,7 @@ class SatelliteArray:
         sat = SatelliteCommLink(name, cls)
         self._add_cmds(sat, self._handler, commands)
         setattr(cl, self._sanitize_name(name), sat)
-        self._satellites.append(sat)
+        self._satellites[f"{cls}.{name}"] = sat
         return sat
 
     def _remove_satellite(self, uuid: str):
@@ -98,11 +96,11 @@ class SatelliteArray:
         name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
         delattr(getattr(self, cls), self._sanitize_name(name))
-        # clear from list
-        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
+        # clear from dict
+        self._satellites.pop(f"{cls}.{name}")
 
     def _get_name_from_uuid(self, uuid: str):
-        s = [sat for sat in self._satellites if sat._uuid == uuid]
+        s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
         name = s[0]._name
@@ -253,14 +251,14 @@ class BaseController(CHIRPBroadcaster):
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat._uuid for sat in self.constellation.satellites]
+            targets = [sat._uuid for sat in self._constellation.satellites.values()]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
         elif not sat:
             targets = [
                 sat._uuid
-                for sat in self.constellation.satellites
+                for sat in self._constellation.satellites.values()
                 if sat._class_name == satcls
             ]
             self.log.info(
