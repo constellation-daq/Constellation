@@ -124,12 +124,14 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name, **_kwds):
+    def __init__(self, name: str, interface: str, **_kwds):
         # add class name to create the canonical name
         self.name = f"{type(self).__name__}.{name}"
         logging.setLoggerClass(ConstellationLogger)
         self.log = logging.getLogger(name)
         self.context = zmq.Context()
+
+        self.interface = interface
 
         # Set up a queue for handling tasks related to incoming requests via
         # CSCP or offers via CHIRP. This makes sure that these can be performed
