@@ -25,7 +25,6 @@ from .cscp import CSCPMessage
 from .fsm import SatelliteState
 from .satellite import Satellite, SatelliteArgumentParser
 from .base import EPILOG, setup_cli_logging
-from .error import debug_log, handle_error
 
 
 class DataReceiver(Satellite):
@@ -197,7 +196,7 @@ class DataReceiver(Satellite):
         """Unused.
 
         In this Satellite class, this method is not used. All stopping actions
-        need to be performed from within `do_run`.
+        are performed from within `do_run`.
 
         """
         pass
@@ -224,25 +223,6 @@ class DataReceiver(Satellite):
             address, port = host
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
-
-    @handle_error
-    @debug_log
-    def _wrap_stop(self, payload: any) -> str:
-        """Wrapper for the 'stopping' transitional state of the FSM.
-
-        As the DataReceiver will have to keep files open, we design the `do_run`
-        to handle all actions necessary for stopping a run.
-
-        """
-        # indicate to the current acquisition thread to stop
-        if self._state_thread_evt:
-            self._state_thread_evt.set()
-        # wait for result, waiting until done
-        self.log.info("Waiting for RUN thread to finish.")
-        self._state_thread_fut.result(timeout=None)
-        self.log.info("RUN thread finished.")
-        # NOTE: no call to `do_stopping`
-        return "Acquisition stopped"
 
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService):
