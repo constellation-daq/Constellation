@@ -29,6 +29,7 @@ class PushThread(threading.Thread):
         self,
         name: str,
         stopevt: threading.Event,
+        interface: str,
         port: int,
         queue: Queue,
         *args,
@@ -53,9 +54,9 @@ class PushThread(threading.Thread):
         self._socket = ctx.socket(zmq.PUSH)
 
         if not port:
-            port = self._socket.bind_to_random_port("tcp://*")
+            port = self._socket.bind_to_random_port(f"tcp://{interface}")
         else:
-            self._socket.bind(f"tcp://*:{port}")
+            self._socket.bind(f"tcp://{interface}:{port}")
 
     def run(self):
         """Start sending data."""
@@ -136,6 +137,7 @@ class DataSender(Satellite):
         self._push_thread = PushThread(
             name=self.name,
             stopevt=self._stop_pusher,
+            interface=self.interface,
             port=self.data_port,
             queue=self.data_queue,
             context=self.context,
