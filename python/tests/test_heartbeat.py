@@ -71,7 +71,7 @@ def test_hb_check_init():
 def test_hb_check_register():
     hbc = HeartbeatChecker()
     hbc.register("mock_sender", "tcp://127.0.0.1:44444")
-    hbc.start()
+    hbc.start_all()
     time.sleep(0.5)
     assert not hbc.get_failed()
 
@@ -83,7 +83,7 @@ def test_hb_send_recv(mock_heartbeat_sender, mock_heartbeat_checker):
     hbc.HB_INIT_PERIOD = 180
     hbs.heartbeat_period = 200
     hbc.register("mock_sender", f"tcp://127.0.0.1:{HB_PORT}")
-    hbc.start()
+    hbc.start_all()
     time.sleep(0.5)
     assert not hbc.get_failed()
     hbs.fsm.initialize("running mock init")

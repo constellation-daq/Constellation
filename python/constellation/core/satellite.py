@@ -194,7 +194,7 @@ class Satellite(
         control to the device-specific public method.
 
         """
-        self.hb_checker.start()
+        self.hb_checker.start_all()
         return self.do_launching(payload)
 
     @debug_log
