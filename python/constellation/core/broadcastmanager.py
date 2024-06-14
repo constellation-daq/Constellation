@@ -43,6 +43,9 @@ def get_chirp_callbacks(cls):
     """Loop over all class methods and return those marked as CHIRP callback."""
     res = {}
     for func in dir(cls):
+        if isinstance(getattr(type(cls), func, None), property):
+            # skip properties
+            continue
         call = getattr(cls, func)
         if callable(call) and not func.startswith("__"):
             # regular method
