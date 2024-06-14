@@ -51,7 +51,7 @@ class SatelliteArray:
     """Provide object-oriented control of connected Satellites."""
 
     def __init__(self, group: str, handler: callable):
-        self.constellation = group
+        self.group = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
         self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
@@ -162,7 +162,7 @@ class BaseController(CHIRPBroadcaster):
         # lookup table for uuids to (cls, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
-        self.constellation = SatelliteArray(group, self.command)
+        self._constellation = SatelliteArray(group, self.command)
 
         super()._add_com_thread()
         super()._start_com_threads()
@@ -177,6 +177,10 @@ class BaseController(CHIRPBroadcaster):
         # wait for threads to be ready
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
+    @property
+    def constellation(self):
+        """Returns the currently active SatelliteArray of controlled Satellites."""
+        return self._constellation
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
@@ -210,7 +214,7 @@ class BaseController(CHIRPBroadcaster):
             msg = ct.request_get_response("get_commands")
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
-            sat = self.constellation._add_satellite(name, cls, msg.payload)
+            sat = self._constellation._add_satellite(name, cls, msg.payload)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
@@ -228,8 +232,8 @@ class BaseController(CHIRPBroadcaster):
         # departure
         uuid = str(service.host_uuid)
         try:
-            name, cls = self.constellation._get_name_from_uuid(uuid)
-            self.constellation._remove_satellite(uuid)
+            name, cls = self._constellation._get_name_from_uuid(uuid)
+            self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
         self.log.debug(
@@ -268,7 +272,7 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
-            targets = [self.constellation.get_satellite(satcls, sat)._uuid]
+            targets = [self._constellation.get_satellite(satcls, sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         res = {}
