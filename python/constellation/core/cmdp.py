@@ -10,7 +10,6 @@ import msgpack  # type: ignore
 import zmq
 import logging
 import datetime
-from queue import Queue
 from enum import Enum
 from threading import Lock
 from typing import Any
@@ -55,7 +54,7 @@ class Metric:
         return f"{self.name}: {self.value} [{self.unit}]{t}"
 
 
-class CMDPTransmitter(Queue):
+class CMDPTransmitter:
     """Class for sending Constellation monitoring messages via ZMQ."""
 
     def __init__(self, name: str, socket: zmq.Socket):

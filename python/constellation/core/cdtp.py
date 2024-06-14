@@ -166,7 +166,8 @@ class DataTransmitter:
 
         """
         # check that we have a valid socket
-        assert isinstance(self._socket, zmq.Socket)
+        if not self._socket:
+            return None
         try:
             binmsg = self._socket.recv_multipart(flags=flags)
         except zmq.ZMQError:
@@ -214,7 +215,8 @@ class DataTransmitter:
 
         """
         # check that we have a valid socket
-        assert isinstance(self._socket, zmq.Socket)
+        if not self._socket:
+            return
 
         if payload:
             flags = zmq.SNDMORE | flags

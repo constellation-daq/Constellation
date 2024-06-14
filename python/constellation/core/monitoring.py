@@ -12,7 +12,8 @@ import pathlib
 from queue import Empty
 from functools import wraps
 from datetime import datetime
-from typing import Callable
+from typing import Callable, cast
+from queue import Queue
 from logging.handlers import QueueHandler, QueueListener
 
 from .base import (
@@ -199,7 +200,7 @@ class ZeroMQSocketLogHandler(QueueHandler):
     """This handler sends records to a ZMQ socket."""
 
     def __init__(self, transmitter: CMDPTransmitter):
-        super().__init__(transmitter)
+        super().__init__(cast(Queue, transmitter))
 
     def enqueue(self, record):
         self.queue.send(record)
