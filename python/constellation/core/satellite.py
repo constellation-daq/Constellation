@@ -358,9 +358,10 @@ class Satellite(
         # indicate to the current acquisition thread to stop
         if self._state_thread_evt:
             self._state_thread_evt.set()
-            # wait for result, will raise TimeoutError if not successful
-            self._state_thread_fut.result(timeout=10)
+            # wait for result, will block until user code finishes
+            self._state_thread_fut.result(timeout=None)
             self._state_thread_evt = None
+        self.log.debug("RUN thread finished, continue with INTERRUPTING.")
         self.hb_checker.stop()
         return self.do_interrupting()
 
