@@ -5,8 +5,6 @@
  */
 
 #include <filesystem>
-#include <stdexcept>
-#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
@@ -18,9 +16,12 @@
 using namespace Catch::Matchers;
 using namespace constellation::log;
 using namespace constellation::exec;
-using namespace std::literals::string_view_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
+
+std::string to_dso_file_name(const std::string& dso_name) {
+    return CNSTLN_DSO_PREFIX + dso_name + CNSTLN_DSO_SUFFIX;
+}
 
 TEST_CASE("Load library", "[exec][exec::dsoloader]") {
 
@@ -41,9 +42,10 @@ TEST_CASE("Case-insensitive library loading", "[exec][exec::dsoloader]") {
 TEST_CASE("Try loading missing library", "[exec][exec::dsoloader]") {
 
     auto logger = Logger("DSOLoader");
-    REQUIRE_THROWS_MATCHES(DSOLoader("MissingLib", logger),
-                           DSOLoadingError,
-                           Message("Error while loading shared library \"MissingLib\": Could not find libMissingLib.so"));
+    REQUIRE_THROWS_MATCHES(
+        DSOLoader("MissingLib", logger),
+        DSOLoadingError,
+        Message("Error while loading shared library \"MissingLib\": Could not find " + to_dso_file_name("MissingLib")));
 }
 
 TEST_CASE("Load wrong library", "[exec][exec::dsoloader]") {
