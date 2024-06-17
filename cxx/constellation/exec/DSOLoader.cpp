@@ -93,7 +93,8 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
 
     // Load the DSO
 #ifdef _WIN32
-    handle_ = static_cast<void*>(LoadLibrary(library_path.c_str()));
+    const std::string path_str = library_path.string();
+    handle_ = static_cast<void*>(LoadLibrary(path_str.c_str()));
     if(handle_ == nullptr) {
         const auto last_win_error = std::system_category().message(GetLastError());
         throw DSOLoadingError(dso_name_, last_win_error);
