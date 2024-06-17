@@ -79,20 +79,13 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     const auto lib_dir = std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites";
     add_path(lib_dir);
 
-    // Check files following priority
-    std::filesystem::path library_path {};
-    for(const auto& path : possible_paths) {
-        LOG(logger, TRACE) << "Looking for " << dso_name << " in " << path;
-        if(transform(path.filename().string(), ::tolower) == transform(dso_file_name, ::tolower)) {
-            LOG(logger, DEBUG) << "Found " << dso_name << " in " << path;
-            library_path = path;
-            break;
-        }
-    }
-
-    if(library_path.empty()) {
+    // Did not find a matching library:
+    if(possible_paths.empty()) {
         throw DSOLoadingError(dso_name, "Could not find " + dso_file_name);
     }
+
+    // Get found path with highest priority
+    std::filesystem::path library_path = possible_paths.back();
 
     // Get actual DSO name from path
     const auto library_path_stem = library_path.stem().string();
