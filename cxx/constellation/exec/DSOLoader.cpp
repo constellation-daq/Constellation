@@ -87,7 +87,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     }
 
     // Get found path with highest priority
-    const std::filesystem::path library_path = possible_paths.back();
+    const std::filesystem::path library_path = possible_paths.front();
 
     // Get actual DSO name from path
     const auto library_path_stem = library_path.stem().string();
