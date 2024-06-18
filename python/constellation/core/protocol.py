@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation communication protocols.
 """
 
-import msgpack  # type: ignore
+import msgpack  # type: ignore[import-untyped]
 import zmq
 
 import io
@@ -31,27 +31,30 @@ class MessageHeader:
 
     def send(
         self,
-        socket: zmq.Socket,
+        socket: zmq.Socket,  # type: ignore[type-arg]
         flags: int = zmq.SNDMORE,
         meta: dict[str, Any] | None = None,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         """Send a message header via socket.
 
         meta is an optional dictionary that is sent as a map of string/value
         pairs with the header.
 
-        Returns: return value from socket.send().
-
         """
-        return socket.send(self.encode(meta, **kwargs), flags)
+        socket.send(self.encode(meta, **kwargs), flags)
 
-    def recv(self, socket: zmq.Socket, flags: int = 0):
+    def recv(
+        self, socket: zmq.Socket, flags: int = 0  # type: ignore[type-arg]
+    ) -> (
+        Tuple[str, msgpack.Timestamp, dict[str, Any] | None]
+        | Tuple[str, msgpack.Timestamp, int, int, dict[str, Any] | None]
+    ):
         """Receive header from socket and return all decoded fields."""
         return self.decode(socket.recv())
 
     def decode(
-        self, header
+        self, header: Any
     ) -> (
         Tuple[str, msgpack.Timestamp, dict[str, Any] | None]
         | Tuple[str, msgpack.Timestamp, int, int, dict[str, Any] | None]
@@ -74,7 +77,7 @@ class MessageHeader:
         meta = unpacker.unpack()
         return host, timestamp, meta
 
-    def encode(self, meta: dict[str, Any] | None = None, **kwargs):
+    def encode(self, meta: dict[str, Any] | None = None, **kwargs: Any) -> memoryview:
         """Generate and return a header as list.
 
         Additional keyword arguments are required for protocols specifying

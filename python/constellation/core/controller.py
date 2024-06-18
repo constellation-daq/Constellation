@@ -27,10 +27,10 @@ from .heartbeatchecker import HeartbeatChecker
 class SatelliteClassCommLink:
     """A link to a Satellite Class."""
 
-    def __init__(self, name):
+    def __init__(self, name: str):
         self._class_name = name
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Convert to class name."""
         return self._class_name
 
@@ -38,12 +38,12 @@ class SatelliteClassCommLink:
 class SatelliteCommLink(SatelliteClassCommLink):
     """A link to a Satellite."""
 
-    def __init__(self, name, cls):
+    def __init__(self, name: str, cls: str):
         self._name = name
         self._uuid = str(get_uuid(f"{cls}.{name}"))
         super().__init__(cls)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Convert to canonical name."""
         return f"{self._class_name}.{self._name}"
 
@@ -51,7 +51,11 @@ class SatelliteCommLink(SatelliteClassCommLink):
 class SatelliteArray:
     """Provide object-oriented control of connected Satellites."""
 
-    def __init__(self, group: str, handler: Callable):
+    def __init__(
+        self,
+        group: str,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+    ):
         self.group = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
@@ -59,7 +63,7 @@ class SatelliteArray:
         self._satellites: dict[str, SatelliteCommLink] = {}
 
     @property
-    def satellites(self):
+    def satellites(self) -> dict[str, SatelliteCommLink]:
         """Return the dict of Satellites names and their SatelliteCommLink."""
         return self._satellites
 
@@ -67,10 +71,10 @@ class SatelliteArray:
         """Return a link to a Satellite given by its class and name."""
         return self._satellites[f"{sat_class}.{sat_name}"]
 
-    def _add_class(self, name: str, commands: dict[str, Any]):
+    def _add_class(self, name: str, commands: dict[str, Any]) -> SatelliteClassCommLink:
         """Add a new class to the array."""
         try:
-            cl = getattr(self, name)
+            cl: SatelliteClassCommLink = getattr(self, name)
             return cl
         except AttributeError:
             pass
@@ -80,19 +84,21 @@ class SatelliteArray:
         setattr(self, name, cl)
         return cl
 
-    def _add_satellite(self, name: str, cls: str, commands: dict[str, str]):
+    def _add_satellite(
+        self, name: str, cls: str, commands: dict[str, str]
+    ) -> SatelliteCommLink:
         """Add a new Satellite."""
         try:
-            cl = getattr(self, cls)
+            cl: SatelliteClassCommLink = getattr(self, cls)
         except AttributeError:
             cl = self._add_class(cls, commands)
-        sat = SatelliteCommLink(name, cls)
+        sat: SatelliteCommLink = SatelliteCommLink(name, cls)
         self._add_cmds(sat, self._handler, commands)
         setattr(cl, self._sanitize_name(name), sat)
         self._satellites[f"{cls}.{name}"] = sat
         return sat
 
-    def _remove_satellite(self, uuid: str):
+    def _remove_satellite(self, uuid: str) -> None:
         """Remove a Satellite."""
         name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
@@ -100,7 +106,7 @@ class SatelliteArray:
         # clear from dict
         self._satellites.pop(f"{cls}.{name}")
 
-    def _get_name_from_uuid(self, uuid: str):
+    def _get_name_from_uuid(self, uuid: str) -> Tuple[str, str]:
         s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
@@ -108,7 +114,12 @@ class SatelliteArray:
         cls = s[0]._class_name
         return name, cls
 
-    def _add_cmds(self, obj: Any, handler: Callable, cmds: dict[str, str]):
+    def _add_cmds(
+        self,
+        obj: Any,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        cmds: dict[str, str],
+    ) -> None:
         try:
             sat = obj._name
         except AttributeError:
@@ -120,10 +131,10 @@ class SatelliteArray:
         for cmd, doc in cmds.items():
             w = CommandWrapper(handler, sat=sat, satcls=satcls, cmd=cmd)
             # add docstring
-            w.call.__func__.__doc__ = doc  # type: ignore
+            w.call.__func__.__doc__ = doc  # type: ignore[attr-defined]
             setattr(obj, cmd, w.call)
 
-    def _sanitize_name(self, name):
+    def _sanitize_name(self, name: str) -> str:
         """Remove characters not suited for Python methods from names."""
         return name.replace("-", "_")
 
@@ -134,22 +145,28 @@ class CommandWrapper:
     Allows to mimic the signature of the Satellite command being wrapped.
     """
 
-    def __init__(self, handler: Callable, sat: str, satcls: str, cmd: str):
+    def __init__(
+        self,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        sat: str,
+        satcls: str,
+        cmd: str,
+    ):
         """Initialize with fcn as a partial() call."""
         self.fcn = handler
         self.sat = sat
         self.satcls = satcls
         self.cmd = cmd
 
-    def call(self, payload=None) -> Tuple[str, Any, Any]:
+    def call(self, payload: Any = None) -> Tuple[str, Any, dict[str, Any] | None]:
         """Perform call. This doc string will be overwritten."""
-        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)
+        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)  # type: ignore[call-arg]
 
 
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a Constellation."""
 
-    def __init__(self, group: str, **kwargs) -> None:
+    def __init__(self, group: str, **kwargs: Any) -> None:
         """Initialize values.
 
         Arguments:
@@ -184,7 +201,7 @@ class BaseController(CHIRPBroadcaster):
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
 
     @property
-    def states(self):
+    def states(self) -> dict[str, SatelliteState]:
         """Return an up-to-date dictionary of connected Satellite's status.
 
         Based on heartbeat information.
@@ -193,7 +210,7 @@ class BaseController(CHIRPBroadcaster):
         return self._hb_checker.states
 
     @property
-    def constellation(self):
+    def constellation(self) -> SatelliteArray:
         """Returns the currently active SatelliteArray of controlled Satellites."""
         return self._constellation
 
@@ -298,7 +315,9 @@ class BaseController(CHIRPBroadcaster):
         # TODO add filter for only those Satellites that we control
         self.log.critical("%s has entered %s", name, state.name)
 
-    def command(self, payload=None, sat=None, satcls=None, cmd=None) -> Any:
+    def command(
+        self, payload: Any = None, sat: str = "", satcls: str = "", cmd: str = ""
+    ) -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
@@ -320,6 +339,8 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
+            assert satcls  # for typing
+            assert sat  # for typing
             targets = [self._constellation.get_satellite(satcls, sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
@@ -430,7 +451,7 @@ class BaseController(CHIRPBroadcaster):
         super().reentry()
 
 
-def main(args=None):
+def main(args: Any = None) -> None:
     """Start a Constellation CSCP controller.
 
     This Controller provides a command-line interface to the selected

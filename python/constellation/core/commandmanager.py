@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
@@ -10,15 +9,19 @@ Constellation Satellites.
 import threading
 import time
 import zmq
-from typing import Tuple, Any, Callable
+from typing import Tuple, Any, Callable, TypeVar, ParamSpec
 from functools import wraps
-from statemachine.exceptions import TransitionNotAllowed  # type: ignore
+from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
 
 from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
 
 
-def cscp_requestable(func: Callable) -> Callable:
+T = TypeVar("T")
+P = ParamSpec("P")
+
+
+def cscp_requestable(func: Callable[P, T]) -> Callable[P, T]:
     """Register a function as a supported command for CSCP.
 
     See CommandReceiver for a description of the expected signature.
@@ -26,11 +29,11 @@ def cscp_requestable(func: Callable) -> Callable:
     """
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         return func(*args, **kwargs)
 
     # mark function as chirp callback
-    wrapper.cscp_command = True  # type: ignore
+    wrapper.cscp_command = True  # type: ignore[attr-defined]
     return wrapper
 
 
@@ -75,7 +78,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, cmd_port: int, interface: str, **kwds) -> None:
+    def __init__(self, name: str, cmd_port: int, interface: str, **kwds: Any):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
         super().__init__(name=name, interface=interface, **kwds)
 
@@ -213,7 +216,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(self._cmds)} commands known", self._cmds, None
 
     @cscp_requestable
-    def get_class(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def get_class(self, _request: CSCPMessage) -> Tuple[str, None, None]:
         """Return the class of the Satellite.
 
         No payload argument.
@@ -222,7 +225,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return type(self).__name__, None, None
 
     @cscp_requestable
-    def get_name(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def get_name(self, _request: CSCPMessage) -> Tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
@@ -231,7 +234,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return self.name, None, None
 
     @cscp_requestable
-    def shutdown(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def shutdown(self, _request: CSCPMessage) -> Tuple[str, None, None]:
         """Queue the Satellite's reentry.
 
         No payload argument.
@@ -240,7 +243,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
         # initialize shutdown with delay (so that CSCP response reaches
         # Controller)
-        def reentry_timer(sat):
+        def reentry_timer(sat: BaseSatelliteFrame) -> None:
             time.sleep(0.5)
             sat.reentry()
 

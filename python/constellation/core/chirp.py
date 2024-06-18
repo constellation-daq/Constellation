@@ -103,7 +103,7 @@ class CHIRPMessage:
         bytes.write(self.port.to_bytes(length=2, byteorder="big"))
         return bytes.getvalue()
 
-    def unpack(self, msg: bytes):
+    def unpack(self, msg: bytes) -> None:
         """Decode from bytes."""
         # Check message length
         if len(msg) != 42:
@@ -187,7 +187,7 @@ class CHIRPBeaconTransmitter:
         return self._filter_group
 
     @filter.setter
-    def filter(self, val: bool):
+    def filter(self, val: bool) -> None:
         """Whether or not incoming broadcasts are filtered on group."""
         self._filter_group = val
 
@@ -230,6 +230,6 @@ class CHIRPBeaconTransmitter:
         msg.from_address = from_address[0]
         return msg
 
-    def close(self):
+    def close(self) -> None:
         """Close the socket."""
         self._sock.close()

@@ -6,10 +6,9 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Monitoring Distribution Protocol.
 """
 
-import msgpack  # type: ignore
+import msgpack  # type: ignore[import-untyped]
 import zmq
 import logging
-import datetime
 from enum import Enum
 from threading import Lock
 from typing import Any
@@ -39,14 +38,14 @@ class Metric:
         self.handling: MetricsType = handling
         self.value: Any = value
         self.sender: str = ""
-        self.time: datetime.datetime = datetime.datetime.fromtimestamp(0)
+        self.time: msgpack.Timestamp = msgpack.Timestamp(0)
         self.meta: dict[str, Any] | None = None
 
-    def as_list(self):
+    def as_list(self) -> list[Any]:
         """Convert metric to list."""
         return [self.value, self.handling.value, self.unit]
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Convert to string."""
         t = ""
         if self.time:
@@ -57,31 +56,30 @@ class Metric:
 class CMDPTransmitter:
     """Class for sending Constellation monitoring messages via ZMQ."""
 
-    def __init__(self, name: str, socket: zmq.Socket):
+    def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
         """Initialize transmitter."""
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CMDP)
         self._socket = socket
         self._lock = Lock()
 
-    def send(self, data: logging.LogRecord | Metric):
+    def send(self, data: logging.LogRecord | Metric) -> None:
+        """Send a LogRecord or a Metric."""
         if isinstance(data, logging.LogRecord):
-            return self.send_log(data)
+            self.send_log(data)
         elif isinstance(data, Metric):
-            return self.send_metric(data)
+            self.send_metric(data)
         else:
             raise RuntimeError(
                 f"CMDPTransmitter cannot send object of type '{type(data)}'"
             )
 
-    def send_log(self, record: logging.LogRecord):
+    def send_log(self, record: logging.LogRecord) -> None:
         """Send a LogRecord via an ZMQ socket.
 
         Follows the Constellation Monitoring Distribution Protocol.
 
         record: LogRecord to send.
-
-        Returns: return of zmq.Socket.send() call.
 
         """
         topic = f"LOG/{record.levelname}/{record.name}"
@@ -111,17 +109,18 @@ class CMDPTransmitter:
             "process": record.process,
         }
         payload = record.getMessage().encode()
-        return self._dispatch(topic, payload, meta)
+        self._dispatch(topic, payload, meta)
 
-    def send_metric(self, metric: Metric):
+    def send_metric(self, metric: Metric) -> None:
         """Send a metric via a ZMQ socket."""
         topic = "STATS/" + metric.name
         payload = msgpack.packb(metric.as_list())
         meta = None
         self._dispatch(topic, payload, meta)
 
-    def recv(self, flags=0) -> logging.LogRecord | Metric | None:
+    def recv(self, flags: int = 0) -> logging.LogRecord | Metric | None:
         """Receive a Constellation monitoring message and return log or metric."""
+        assert isinstance(self._socket, zmq.Socket)  # for typing
         try:
             with self._lock:
                 msg = self._socket.recv_multipart(flags)
@@ -143,14 +142,17 @@ class CMDPTransmitter:
 
     def closed(self) -> bool:
         """Return whether socket is closed or not."""
+        if not isinstance(self._socket, zmq.Socket):
+            return True
         if self._socket:
             # NOTE: according to zmq.Socket, this should return a bool; mypy thinks
             # "str | bytes | int" though..?
-            return self._socket.closed  # type: ignore
+            return bool(self._socket.closed)
         return True
 
     def close(self) -> None:
         """Close the socket."""
+        assert isinstance(self._socket, zmq.Socket)  # for typing
         with self._lock:
             self._socket.close()
 
@@ -174,7 +176,7 @@ class CMDPTransmitter:
         record["levelno"] = logging.getLevelName(topic.split("/")[1])
         return logging.makeLogRecord(record)
 
-    def decode_metric(self, topic, msg: list) -> Metric:
+    def decode_metric(self, topic: str, msg: list[Any]) -> Metric:
         """Receive a Constellation STATS message and return a Metric."""
         name = topic.split("/")[1]
         # Read header
@@ -195,8 +197,9 @@ class CMDPTransmitter:
         payload: bytes,
         meta: dict[str, Any] | None = None,
         flags: int = 0,
-    ):
+    ) -> None:
         """Dispatch a message via ZMQ socket."""
+        assert isinstance(self._socket, zmq.Socket)  # for typing
         topic = topic.upper()
         flags = zmq.SNDMORE | flags
         with self._lock:

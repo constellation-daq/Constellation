@@ -10,7 +10,7 @@ from datetime import datetime
 
 import zmq
 
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 from .fsm import SatelliteState
 from .chp import CHPTransmitter
 
@@ -31,7 +31,9 @@ class HeartbeatChecker:
     HB_INIT_LIVES = 3
     HB_INIT_PERIOD = 2000
 
-    def __init__(self, callback: Optional[Callable] = None) -> None:
+    def __init__(
+        self, callback: Optional[Callable[[str, SatelliteState], None]] = None
+    ) -> None:
         self._callback = callback
         self._callback_lock = threading.Lock()
         self._transmitters = dict[str, CHPTransmitter]()
@@ -43,7 +45,7 @@ class HeartbeatChecker:
         self.auto_recover = False  # clear fail Event if Satellite reappears?
 
     def register(
-        self, name, address: str, context: Optional[zmq.Context] = None
+        self, name: str, address: str, context: Optional[zmq.Context] = None  # type: ignore[type-arg]
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
 
@@ -66,16 +68,16 @@ class HeartbeatChecker:
         return name in self._transmitters.keys()
 
     @property
-    def states(self):
+    def states(self) -> dict[str, SatelliteState]:
         """Return a dictionary of the monitored Satellites' state."""
         return self._states
 
     @property
-    def failed(self):
-        """Return a dictionary of the failed Satellites."""
+    def fail_events(self) -> dict[str, threading.Event]:
+        """Return a dictionary of Events triggered for failed Satellites."""
         return self._failed
 
-    def _set_state(self, name: str, state: SatelliteState):
+    def _set_state(self, name: str, state: SatelliteState) -> None:
         with self._states_lock:
             self._states[name] = state
 
@@ -96,8 +98,8 @@ class HeartbeatChecker:
             if last_diff < interval / 1000:
                 time.sleep(0.1)
             else:
-                host, ts, state, new_interval = transmitter.recv()
-                if not state:
+                host, ts, stateid, new_interval = transmitter.recv()
+                if not stateid or not ts or not new_interval:
                     if last_diff > (interval / 1000) * 1.5:
                         # no message after 150% of the interval, subtract life
                         lives -= 1
@@ -119,7 +121,7 @@ class HeartbeatChecker:
                         # try again later
                         continue
                 # got a heartbeat!
-                state = SatelliteState(state)
+                state = SatelliteState(stateid)
                 interval = new_interval
                 lives = self.HB_INIT_LIVES
                 # update states
@@ -215,11 +217,11 @@ class HeartbeatChecker:
         self._reset()
 
 
-def main():
+def main(args: Any = None) -> None:
     """Receive heartbeats from a single host."""
     import argparse
     import time
-    import coloredlogs  # type: ignore
+    import coloredlogs  # type: ignore[import-untyped]
 
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("--log-level", default="debug")
@@ -231,7 +233,7 @@ def main():
     coloredlogs.install(level=args.log_level.upper(), logger=logger)
     logger.info("Starting up heartbeater!")
 
-    def callback(name):
+    def callback(name: str, _state: SatelliteState) -> None:
         logger.error(f"Service {name} failed, callback was called!")
 
     hb_checker = HeartbeatChecker(callback)

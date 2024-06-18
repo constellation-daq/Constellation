@@ -8,9 +8,9 @@ from typing import Callable, Any, Tuple
 from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
-from statemachine import StateMachine  # type: ignore
-from statemachine.exceptions import TransitionNotAllowed  # type: ignore
-from statemachine.states import States  # type: ignore
+from statemachine import StateMachine  # type: ignore[import-untyped]
+from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
+from statemachine.states import States  # type: ignore[import-untyped]
 
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
@@ -112,21 +112,21 @@ class SatelliteFSM(StateMachine):
 
     transitioned = False
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.status = "Satellite not initialized yet."
         super().__init__()
 
-    def before_transition(self, status):
+    def before_transition(self, status: str) -> None:
         """Set status before the state change."""
         self.status = status
 
-    def after_transition(self):
+    def after_transition(self) -> None:
         """Set flag indicating state change."""
         self.transitioned = True
 
-    def write_diagram(self, filename):
+    def write_diagram(self, filename: str) -> None:
         """Create a png with the FSM schematic."""
-        from statemachine.contrib.diagram import DotGraphMachine  # type: ignore
+        from statemachine.contrib.diagram import DotGraphMachine  # type: ignore[import-untyped]
 
         graph = DotGraphMachine(self)
         dot = graph()
@@ -134,7 +134,7 @@ class SatelliteFSM(StateMachine):
 
 
 class SatelliteStateHandler(BaseSatelliteFrame):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
         # instantiate state machine
@@ -143,11 +143,11 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # (transitional) state executor and event
         self._state_thread_evt: Event | None = None
         self._state_thread_exc: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
-        self._state_thread_fut: Future | None = None
+        self._state_thread_fut: Future | None = None  # type: ignore[type-arg]
 
     @debug_log
     @cscp_requestable
-    def initialize(self, request: CSCPMessage):
+    def initialize(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate 'initialize' state transition via a CSCP request.
 
         Takes dictionary with configuration values as argument.
@@ -163,7 +163,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def launch(self, request: CSCPMessage):
+    def launch(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate launch state transition via a CSCP request.
 
         No payload argument.
@@ -176,7 +176,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def land(self, request: CSCPMessage):
+    def land(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate landing state transition via a CSCP request.
 
         No payload argument.
@@ -189,7 +189,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def start(self, request: CSCPMessage):
+    def start(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate start state transition via a CSCP request.
 
         Payload: run identifier [str].
@@ -205,7 +205,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def stop(self, request: CSCPMessage):
+    def stop(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate stop state transition via a CSCP request.
 
         No payload argument.
@@ -222,7 +222,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def reconfigure(self, request: CSCPMessage):
+    def reconfigure(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate reconfigure state transition via a CSCP request.
 
         Takes dictionary with configuration values as argument.
@@ -242,7 +242,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def interrupt(self, request: CSCPMessage):
+    def interrupt(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate interrupt state transition via a CSCP request.
 
         No payload argument.
@@ -255,7 +255,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def recover(self, request: CSCPMessage):
+    def recover(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate recover state transition via a CSCP request.
 
         No payload argument.
@@ -268,7 +268,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def failure(self, request: CSCPMessage):
+    def failure(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Enter error state transition via a CSCP request.
 
         No payload argument.
@@ -281,7 +281,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     def _transition(
         self, target: str, request: CSCPMessage, thread: bool
-    ) -> tuple[str, str, None]:
+    ) -> Tuple[str, str, None]:
         """Prepare and enqeue a transition task.
 
         The task consists of the respective transition method and the request
@@ -315,7 +315,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         return "transitioning", target, None
 
     @debug_log
-    def _start_transition(self, fcn: Callable, payload: Any) -> None:
+    def _start_transition(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition and advance FSM for transitional states."""
         res = fcn(payload)
         if not res:
@@ -335,7 +335,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
                 self.fsm.status = res
 
     @debug_log
-    def _start_transition_thread(self, fcn: Callable, payload: Any) -> None:
+    def _start_transition_thread(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition thread with the given fcn and arguments."""
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
@@ -343,7 +343,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         self._state_thread_fut.add_done_callback(self._state_transition_thread_complete)
 
     @handle_error
-    def _state_transition_thread_complete(self, fut: Future) -> None:
+    def _state_transition_thread_complete(self, fut: Future) -> None:  # type: ignore[type-arg]
         """Callback method when a transition thread is done."""
         self.log.trace("Transition thread completed and callback received.")
         # Get the thread's return value. This raises any exception thrown in the

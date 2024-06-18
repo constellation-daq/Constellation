@@ -6,6 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import time
 import threading
 from datetime import datetime
+from typing import Any
 
 import zmq
 
@@ -21,7 +22,7 @@ class HeartbeatSender(SatelliteStateHandler):
         name: str,
         hb_port: int,
         interface: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
 
         super().__init__(name=name, interface=interface, **kwargs)
@@ -65,47 +66,3 @@ class HeartbeatSender(SatelliteStateHandler):
         self.log.info("HeartbeatSender thread shutting down.")
         # clean up
         self._hb_tm.close()
-
-
-def main():
-    """Send heartbeats."""
-    import argparse
-    import logging
-    import coloredlogs  # type: ignore
-
-    parser = argparse.ArgumentParser(description=main.__doc__)
-    parser.add_argument("--log-level", default="info")
-    parser.add_argument("--port", type=int, default=61234)
-    parser.add_argument("--period", type=int, default=1000)
-    parser.add_argument("--interface", type=str, default="127.0.0.1")
-    parser.add_argument(
-        "--num", type=int, default=10, help="Number of heartbeats to send."
-    )
-    args = parser.parse_args()
-
-    name = "demo_heartbeater"
-
-    # set up logging
-    logger = logging.getLogger(name)
-    coloredlogs.install(level=args.log_level.upper(), logger=logger)
-    logger.info("Starting up heartbeater!")
-
-    heartbeater = HeartbeatSender(
-        name=name, hb_port=args.port, interface=args.interface
-    )
-    heartbeater.heartbeat_period = args.period
-    heartbeater._add_com_thread()
-    heartbeater._start_com_threads()
-    ctx = zmq.Context()
-    socket = zmq.Socket(ctx, zmq.SUB)
-    socket.setsockopt_string(zmq.SUBSCRIBE, "")
-    socket.connect(f"tcp://{args.interface}:{args.port}")
-    hbs = 0
-    while args.num < 0 or hbs < args.num:
-        print(f"Waiting for heartbeat #{hbs}")
-        print(socket.recv())
-        hbs += 1
-
-
-if __name__ == "__main__":
-    main()

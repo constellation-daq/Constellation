@@ -10,14 +10,14 @@ import threading
 import logging
 from argparse import ArgumentParser
 from queue import Queue
-from typing import cast
+from typing import cast, Any
 import atexit
-import coloredlogs  # type: ignore
+import coloredlogs  # type: ignore[import-untyped]
 from .network import validate_interface, get_interfaces
 
 
 @atexit.register
-def destroy_satellites():
+def destroy_satellites() -> None:
     """Close down connections and perform orderly re-entry."""
     for sat in SATELLITE_LIST:
         sat.reentry()
@@ -26,7 +26,7 @@ def destroy_satellites():
 class ConstellationArgumentParser(ArgumentParser):
     """Customized Argument parser providing basic Satellite options."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         # generic arguments
         self.add_argument(
@@ -67,7 +67,7 @@ class ConstellationArgumentParser(ArgumentParser):
 EPILOG = "This command is part of the Constellation Python core package."
 
 
-class ConstellationLogger(logging.getLoggerClass()):  # type: ignore
+class ConstellationLogger(logging.getLoggerClass()):  # type: ignore[misc]
     """Custom Logger class for Constellation.
 
     Defines the following log levels:
@@ -83,27 +83,27 @@ class ConstellationLogger(logging.getLoggerClass()):  # type: ignore
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         """Init logger and define extra levels."""
         super().__init__(*args, **kwargs)
-        logging.TRACE = logging.DEBUG - 5
+        logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
         logging.addLevelName(logging.DEBUG - 5, "TRACE")
-        logging.STATUS = logging.INFO + 5
+        logging.STATUS = logging.INFO + 5  # type: ignore[attr-defined]
         logging.addLevelName(logging.INFO + 5, "STATUS")
 
-    def trace(self, msg, *args, **kwargs) -> None:
+    def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Define level for verbose information which allows to follow the call
         stack of the host program."""
-        self.log(logging.TRACE, msg, *args, **kwargs)  # type: ignore
+        self.log(logging.TRACE, msg, *args, **kwargs)  # type: ignore[attr-defined]
 
-    def status(self, msg, *args, **kwargs) -> None:
+    def status(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Define level for important information about the host program to the
         end user with low frequency."""
-        self.log(logging.STATUS, msg, *args, **kwargs)  # type: ignore
+        self.log(logging.STATUS, msg, *args, **kwargs)  # type: ignore[attr-defined]
 
-    def error(self, msg, *args, **kwargs) -> None:
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """Map error level to CRITICAL."""
-        self.log(logging.CRITICAL, msg, *args, **kwargs)  # type: ignore
+        self.log(logging.CRITICAL, msg, *args, **kwargs)
 
 
 def setup_cli_logging(name: str, level: str) -> ConstellationLogger:
@@ -123,7 +123,7 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name: str, interface: str, **_kwds):
+    def __init__(self, name: str, interface: str, **_kwds: Any):
         # add class name to create the canonical name
         self.name = f"{type(self).__name__}.{name}"
         logging.setLoggerClass(ConstellationLogger)
@@ -138,7 +138,7 @@ class BaseSatelliteFrame:
         # of a tuple consisting of a callback method and an object passed as
         # argument (DiscoveredService and CSCPMessage for CHIRP and CSCP,
         # respectively).
-        self.task_queue: Queue = Queue()
+        self.task_queue: Queue = Queue()  # type: ignore[type-arg]
 
         # dict to keep references to all communication service threads usually
         # running in the background
@@ -150,7 +150,7 @@ class BaseSatelliteFrame:
         global SATELLITE_LIST
         SATELLITE_LIST.append(self)
 
-    def _add_com_thread(self):
+    def _add_com_thread(self) -> None:
         """Method to add a background communication service thread to the pool.
 
         Does nothing in the base class.
@@ -159,14 +159,14 @@ class BaseSatelliteFrame:
         self.log.debug("Satellite Base class _add_thread called")
         pass
 
-    def _start_com_threads(self):
+    def _start_com_threads(self) -> None:
         """Start all background communication threads."""
         self._com_thread_evt = threading.Event()
         for component, thread in self._com_thread_pool.items():
             self.log.debug("Starting thread for %s communication", component)
             thread.start()
 
-    def _stop_com_threads(self, timeout: float = 1.5):
+    def _stop_com_threads(self, timeout: float = 1.5) -> None:
         """Stop all background communication threads within timeout [s]."""
         if self._com_thread_evt:
             self._com_thread_evt.set()
@@ -185,7 +185,7 @@ class BaseSatelliteFrame:
         self._com_thread_evt = None
         self._com_thread_pool = {}
 
-    def reentry(self):
+    def reentry(self) -> None:
         """Orderly destroy the satellite."""
         self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
