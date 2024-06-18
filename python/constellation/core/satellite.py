@@ -196,7 +196,7 @@ class Satellite(
         control to the device-specific public method.
 
         """
-        self.hb_checker.start()
+        self.hb_checker.start_all()
         return self.do_launching(payload)
 
     @debug_log
@@ -321,7 +321,7 @@ class Satellite(
         return "Finished acquisition."
 
     @debug_log
-    def _wrap_failure(self) -> str:
+    def _wrap_failure(self, *_args, **_kwargs) -> str:
         """Wrapper for the 'ERROR' state of the FSM.
 
         This method performs the basic Satellite transition before passing

@@ -7,7 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 from typing import Callable, Any, Tuple
 from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
-from enum import Enum, auto
+from enum import Enum
 from statemachine import StateMachine  # type: ignore
 from statemachine.exceptions import TransitionNotAllowed  # type: ignore
 from statemachine.states import States  # type: ignore
@@ -22,29 +22,29 @@ class SatelliteState(Enum):
     """Available states to cycle through."""
 
     # Idle state without any configuration
-    NEW = auto()
+    NEW = 0x10
     # Initialized state with configuration but not (fully) applied
-    INIT = auto()
+    INIT = 0x20
     # Prepared state where configuration is applied
-    ORBIT = auto()
+    ORBIT = 0x30
     # Running state where DAQ is running
-    RUN = auto()
+    RUN = 0x40
     # Safe fallback state if error is discovered during run
-    SAFE = auto()
+    SAFE = 0xE0
     # Error state if something went wrong
-    ERROR = auto()
+    ERROR = 0xF0
     #
     #  TRANSITIONAL STATES
     #
-    initializing = auto()
-    launching = auto()
-    landing = auto()
-    reconfiguring = auto()
-    starting = auto()
-    stopping = auto()
-    interrupting = auto()
+    initializing = 0x12
+    launching = 0x23
+    landing = 0x32
+    reconfiguring = 0x33
+    starting = 0x34
+    stopping = 0x43
+    interrupting = 0x0E
     # state if shutdown
-    DEAD = auto()
+    DEAD = 0xFF
 
 
 class SatelliteFSM(StateMachine):

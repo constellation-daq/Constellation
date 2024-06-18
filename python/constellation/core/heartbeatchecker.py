@@ -38,12 +38,12 @@ class HeartbeatChecker:
         self._threads = dict[str, threading.Thread]()
         self._stop_threads: threading.Event | None = None
         self._states_lock = threading.Lock()
-        self.states = dict[str, SatelliteState]()
-        self.failed = dict[str, threading.Event]()
+        self._states = dict[str, SatelliteState]()
+        self._failed = dict[str, threading.Event]()
         self.auto_recover = False  # clear fail Event if Satellite reappears?
 
     def register(
-        self, name, host: str, context: Optional[zmq.Context] = None
+        self, name, address: str, context: Optional[zmq.Context] = None
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
 
@@ -52,18 +52,32 @@ class HeartbeatChecker:
         """
         ctx = context or zmq.Context()
         socket = ctx.socket(zmq.SUB)
-        socket.connect(host)
+        socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         tm = CHPTransmitter(name, socket)
         evt = threading.Event()
         self._transmitters[name] = tm
-        self.failed[name] = evt
-        logger.info(f"Registered heartbeating check for {host}")
+        self._failed[name] = evt
+        logger.info(f"Registered heartbeating check for {address}")
         return evt
+
+    def is_registered(self, name: str) -> bool:
+        """Check whether a given Satellite is already registered."""
+        return name in self._transmitters.keys()
+
+    @property
+    def states(self):
+        """Return a dictionary of the monitored Satellites' state."""
+        return self._states
+
+    @property
+    def failed(self):
+        """Return a dictionary of the failed Satellites."""
+        return self._failed
 
     def _set_state(self, name: str, state: SatelliteState):
         with self._states_lock:
-            self.states[name] = state
+            self._states[name] = state
 
     def _run_thread(
         self, name: str, transmitter: CHPTransmitter, fail_evt: threading.Event
@@ -95,7 +109,7 @@ class HeartbeatChecker:
                                     f"{name} unresponsive causing interrupt callback to be called"
                                 )
                                 fail_evt.set()
-                                self._interrupt(name)
+                                self._interrupt(name, SatelliteState.DEAD)
                             # update states
                             self._set_state(name, SatelliteState.DEAD)
                         # try again later
@@ -121,7 +135,7 @@ class HeartbeatChecker:
                             f"{name} state causing interrupt callback to be called"
                         )
                         fail_evt.set()
-                        self._interrupt(name)
+                        self._interrupt(name, state)
                 else:
                     # maybe recover?
                     if self.auto_recover and fail_evt.is_set():
@@ -136,39 +150,54 @@ class HeartbeatChecker:
                 # update timestamp for this round
                 last = datetime.now()
 
-    def _interrupt(self, name: str) -> None:
+    def _interrupt(self, name: str, state: SatelliteState) -> None:
         with self._callback_lock:
             if self._callback:
                 try:
-                    self._callback(name)
+                    self._callback(name, state)
                 except Exception:
                     pass
 
     def _reset(self) -> None:
         self._stop_threads = threading.Event()
-        for evt in self.failed.values():
+        for evt in self._failed.values():
             evt.clear()
         self._threads = dict[str, threading.Thread]()
 
     def get_failed(self) -> list[str]:
         """Get a list of the names of all failed Satellites."""
         res = list[str]()
-        for name, evt in self.failed.items():
+        for name, evt in self._failed.items():
             if evt.is_set() or (
                 self._stop_threads and not self._threads[name].is_alive()
             ):
                 res.append(name)
         return res
 
-    def start(self) -> None:
-        """Start the heartbeat checking."""
+    def start(self, name: str) -> None:
+        """Start the heartbeat checking for a single registered Satellite."""
+        # prepare
+        if not self._stop_threads:
+            self._stop_threads = threading.Event()
+        self._failed[name].clear()
+        # set up thread
+        self._threads[name] = threading.Thread(
+            target=self._run_thread,
+            args=(name, self._transmitters[name], self._failed[name]),
+            daemon=True,  # kill threads when main app closes
+        )
+        # start thread
+        self._threads[name].start()
+
+    def start_all(self) -> None:
+        """Start the heartbeat checking for all registered Satellites."""
         # reset lists
         self._reset()
         # set up threads
         for name, tm in self._transmitters.items():
             self._threads[name] = threading.Thread(
                 target=self._run_thread,
-                args=(name, tm, self.failed[name]),
+                args=(name, tm, self._failed[name]),
                 daemon=True,  # kill threads when main app closes
             )
         # start threads
@@ -207,12 +236,12 @@ def main():
 
     hb_checker = HeartbeatChecker(callback)
     evt = hb_checker.register("some_satellite", f"tcp://{args.ip}:{args.port}")
-    hb_checker.start()
+    hb_checker.start_all()
 
     while True:
         failed = ", ".join(hb_checker.get_failed())
         print(
-            f"Failed heartbeats so far: {failed}, evt is set: {evt.is_set()}, states: {hb_checker.states}"
+            f"Failed heartbeats so far: {failed}, evt is set: {evt.is_set()}, states: {hb_checker._states}"
         )
         time.sleep(1)
 

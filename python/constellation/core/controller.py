@@ -14,13 +14,14 @@ import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
-
 from .cscp import CommandTransmitter
 from .error import debug_log
+from .fsm import SatelliteState
 from .satellite import Satellite
 from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
+from .heartbeatchecker import HeartbeatChecker
 
 
 class SatelliteClassCommLink:
@@ -51,25 +52,20 @@ class SatelliteArray:
     """Provide object-oriented control of connected Satellites."""
 
     def __init__(self, group: str, handler: Callable):
-        self.constellation = group
+        self.group = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
         self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
-        self._satellites: list[SatelliteCommLink] = []
+        self._satellites: dict[str, SatelliteCommLink] = {}
 
     @property
     def satellites(self):
-        """Return the list of known Satellite."""
+        """Return the dict of Satellites names and their SatelliteCommLink."""
         return self._satellites
 
     def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink:
-        """Return a link to a Satellite given by its class and name.
-
-        Raises KeyError if no Satellite could be found."""
-        for sat in self._satellites:
-            if sat._name == sat_name and sat._class_name == sat_class:
-                return sat
-        raise KeyError(f"Satellite {sat_class}.{sat_name} not found")
+        """Return a link to a Satellite given by its class and name."""
+        return self._satellites[f"{sat_class}.{sat_name}"]
 
     def _add_class(self, name: str, commands: dict[str, Any]):
         """Add a new class to the array."""
@@ -93,7 +89,7 @@ class SatelliteArray:
         sat = SatelliteCommLink(name, cls)
         self._add_cmds(sat, self._handler, commands)
         setattr(cl, self._sanitize_name(name), sat)
-        self._satellites.append(sat)
+        self._satellites[f"{cls}.{name}"] = sat
         return sat
 
     def _remove_satellite(self, uuid: str):
@@ -101,11 +97,11 @@ class SatelliteArray:
         name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
         delattr(getattr(self, cls), self._sanitize_name(name))
-        # clear from list
-        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
+        # clear from dict
+        self._satellites.pop(f"{cls}.{name}")
 
     def _get_name_from_uuid(self, uuid: str):
-        s = [sat for sat in self._satellites if sat._uuid == uuid]
+        s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
         name = s[0]._name
@@ -167,10 +163,13 @@ class BaseController(CHIRPBroadcaster):
         # lookup table for uuids to (cls, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
-        self.constellation = SatelliteArray(group, self.command)
+        self._constellation = SatelliteArray(group, self.command)
 
         super()._add_com_thread()
         super()._start_com_threads()
+
+        self._hb_checker = HeartbeatChecker(self._hb_failure)
+        self._hb_checker.auto_recover = True
 
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
@@ -182,6 +181,21 @@ class BaseController(CHIRPBroadcaster):
         # wait for threads to be ready
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
+        self.request(CHIRPServiceIdentifier.HEARTBEAT)
+
+    @property
+    def states(self):
+        """Return an up-to-date dictionary of connected Satellite's status.
+
+        Based on heartbeat information.
+
+        """
+        return self._hb_checker.states
+
+    @property
+    def constellation(self):
+        """Returns the currently active SatelliteArray of controlled Satellites."""
+        return self._constellation
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
@@ -191,6 +205,24 @@ class BaseController(CHIRPBroadcaster):
             self._remove_satellite(service)
         else:
             self._add_satellite(service)
+
+    @debug_log
+    @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
+    def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
+        """Callback method registering satellite's heartbeat."""
+        if not service.alive:
+            return
+        uuid = str(service.host_uuid)
+        if uuid in self._transmitters:
+            # we are controlling this satellite
+            cls, name = self._uuid_lookup[uuid]
+            canonical_name = f"{cls}.{name}"
+            if not self._hb_checker.is_registered(canonical_name):
+                self._hb_checker.register(
+                    name=canonical_name,
+                    address=f"tcp://{service.address}:{service.port}",
+                )
+                self._hb_checker.start(canonical_name)
 
     def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
@@ -215,7 +247,7 @@ class BaseController(CHIRPBroadcaster):
             msg = ct.request_get_response("get_commands")
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
-            sat = self.constellation._add_satellite(name, cls, msg.payload)
+            sat = self._constellation._add_satellite(name, cls, msg.payload)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
@@ -225,6 +257,16 @@ class BaseController(CHIRPBroadcaster):
             uuid = str(service.host_uuid)
             self._uuid_lookup[uuid] = (cls, name)
             self._transmitters[uuid] = ct
+            # check if heartbeat service for satellite is known already
+            for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
+                if hbservice.host_uuid == service.host_uuid:
+                    canonical_name = f"{cls}.{name}"
+                    self._hb_checker.register(
+                        name=canonical_name,
+                        address=f"tcp://{hbservice.address}:{hbservice.port}",
+                    )
+                    self._hb_checker.start(canonical_name)
+                    break
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -233,8 +275,8 @@ class BaseController(CHIRPBroadcaster):
         # departure
         uuid = str(service.host_uuid)
         try:
-            name, cls = self.constellation._get_name_from_uuid(uuid)
-            self.constellation._remove_satellite(uuid)
+            name, cls = self._constellation._get_name_from_uuid(uuid)
+            self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
         self.log.debug(
@@ -251,19 +293,24 @@ class BaseController(CHIRPBroadcaster):
         except KeyError:
             pass
 
+    def _hb_failure(self, name: str, state: SatelliteState) -> None:
+        """Callback for Satellites failing to send heartbeats."""
+        # TODO add filter for only those Satellites that we control
+        self.log.critical("%s has entered %s", name, state.name)
+
     def command(self, payload=None, sat=None, satcls=None, cmd=None) -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat._uuid for sat in self.constellation.satellites]
+            targets = [sat._uuid for sat in self._constellation.satellites.values()]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
         elif not sat:
             targets = [
                 sat._uuid
-                for sat in self.constellation.satellites
+                for sat in self._constellation.satellites.values()
                 if sat._class_name == satcls
             ]
             self.log.info(
@@ -273,7 +320,7 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
-            targets = [self.constellation.get_satellite(satcls, sat)._uuid]
+            targets = [self._constellation.get_satellite(satcls, sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         res = {}
@@ -365,8 +412,19 @@ class BaseController(CHIRPBroadcaster):
         self.log.info("Stopping controller.")
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
-        for _name, cmd_tm in self._transmitters.items():
-            cmd_tm.socket.close()
+        try:
+            for _name, cmd_tm in self._transmitters.items():
+                cmd_tm.socket.close()
+        except Exception:
+            # ignore errors; this avoids spurious error messages if e.g. the
+            # initialization of the class fails
+            pass
+        try:
+            self._hb_checker.stop()
+        except Exception as e:
+            self.log.warning(
+                "Encountered problem shutting heartbeat checker down: %s", repr(e)
+            )
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join()
         super().reentry()
