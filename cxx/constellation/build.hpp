@@ -42,10 +42,6 @@
 
 #define CNSTLN_DSO_SUFFIX "@dso_suffix@"
 
-#if defined _WIN32 || defined __CYGWIN__
-#define CNSTLN_DSO_PREFIX ""
-#else
-#define CNSTLN_DSO_PREFIX "lib"
-#endif
+#define CNSTLN_DSO_PREFIX "@dso_prefix@"
 
 // NOLINTEND(cppcoreguidelines-macro-usage)

@@ -52,6 +52,10 @@ namespace constellation::exec {
 
         std::string getDSOName() { return dso_name_; }
 
+        inline static std::string to_dso_file_name(const std::string& dso_name) {
+            return CNSTLN_DSO_PREFIX + dso_name + CNSTLN_DSO_SUFFIX;
+        }
+
     private:
         // OS-specific function to get function from DSO
         CNSTLN_API void* get_raw_function_from_dso(const std::string& function_name);

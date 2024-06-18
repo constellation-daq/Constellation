@@ -37,7 +37,8 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.suffix
     // - in installed environment: libdir/ConstellationSatellites/libXYZ.suffix
-    const auto dso_file_name = "lib" + dso_name + CNSTLN_DSO_SUFFIX;
+    const auto dso_file_name = to_dso_file_name(dso_name);
+    LOG(logger, TRACE) << "Searching paths for library with name " << dso_file_name;
 
     // List containing paths of possible DSOs (ordered after priority)
     auto possible_paths = std::vector<std::filesystem::path>();
