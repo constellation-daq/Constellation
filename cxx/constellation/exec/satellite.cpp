@@ -161,8 +161,11 @@ int constellation::exec::satellite_main(int argc,
         return 1;
     }
 
+    // Log the version after all the basic checks are done
+    LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
+
     // Check satellite name
-    const auto type_name = needs_type ? get_arg(parser, "type") : std::move(satellite_type.value().type_name);
+    auto type_name = needs_type ? get_arg(parser, "type") : std::move(satellite_type.value().type_name);
     const auto satellite_name = get_arg(parser, "name");
 
     // Load satellite DSO
@@ -178,10 +181,8 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Use properly capitalized satellite type for the canonical name:
-    const auto canonical_name = loader->getDSOName() + "." + satellite_name;
-
-    // Log the version after all the basic checks are done
-    LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
+    type_name = loader->getDSOName();
+    const auto canonical_name = type_name + "." + satellite_name;
 
     // Create CHIRP manager and set as default
     std::unique_ptr<chirp::Manager> chirp_manager {};
@@ -201,7 +202,7 @@ int constellation::exec::satellite_main(int argc,
     LOG(logger, STATUS) << "Starting satellite " << canonical_name;
     std::shared_ptr<Satellite> satellite {};
     try {
-        satellite = satellite_generator(loader->getDSOName(), satellite_name);
+        satellite = satellite_generator(type_name, satellite_name);
     } catch(const std::exception& error) {
         LOG(logger, CRITICAL) << "Failed to create satellite: " << error.what();
         return 1;
