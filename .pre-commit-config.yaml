@@ -42,6 +42,12 @@ repos:
       - id: black
         language_version: python3
 
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+    -   id: mypy
+        exclude: "^(build|subprojects|docs|python/constellation/satellites|python/tests|setup.py)"
+
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.40.0
     hooks:
