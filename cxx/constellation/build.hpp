@@ -42,4 +42,6 @@
 
 #define CNSTLN_DSO_SUFFIX "@dso_suffix@"
 
+#define CNSTLN_DSO_PREFIX "@dso_prefix@"
+
 // NOLINTEND(cppcoreguidelines-macro-usage)
