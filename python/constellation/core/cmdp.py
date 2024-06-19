@@ -120,7 +120,8 @@ class CMDPTransmitter:
 
     def recv(self, flags: int = 0) -> logging.LogRecord | Metric | None:
         """Receive a Constellation monitoring message and return log or metric."""
-        assert isinstance(self._socket, zmq.Socket)  # for typing
+        if not self._socket:
+            raise RuntimeError("Monitoring ZMQ socket misconfigured")
         try:
             with self._lock:
                 msg = self._socket.recv_multipart(flags)
@@ -152,7 +153,8 @@ class CMDPTransmitter:
 
     def close(self) -> None:
         """Close the socket."""
-        assert isinstance(self._socket, zmq.Socket)  # for typing
+        if not self._socket:
+            raise RuntimeError("Monitoring ZMQ socket misconfigured")
         with self._lock:
             self._socket.close()
 
@@ -199,7 +201,8 @@ class CMDPTransmitter:
         flags: int = 0,
     ) -> None:
         """Dispatch a message via ZMQ socket."""
-        assert isinstance(self._socket, zmq.Socket)  # for typing
+        if not self._socket:
+            raise RuntimeError("Monitoring ZMQ socket misconfigured")
         topic = topic.upper()
         flags = zmq.SNDMORE | flags
         with self._lock:
