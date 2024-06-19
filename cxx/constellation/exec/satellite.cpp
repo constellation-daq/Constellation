@@ -196,7 +196,7 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Register CMDP in CHIRP and set sender name for CMDP
-    SinkManager::getInstance().registerService(canonical_name);
+    SinkManager::getInstance().enableCMDPSending(canonical_name);
 
     // Create satellite
     LOG(logger, STATUS) << "Starting satellite " << canonical_name;
