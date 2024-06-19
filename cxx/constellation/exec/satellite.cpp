@@ -161,12 +161,12 @@ int constellation::exec::satellite_main(int argc,
         return 1;
     }
 
-    // Log the version after all the basic checks are done
-    LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
-
-    // Check satellite name
+    // Get satellite type and name
     auto type_name = needs_type ? get_arg(parser, "type") : std::move(satellite_type.value().type_name);
     const auto satellite_name = get_arg(parser, "name");
+
+    // Log the version after all the basic checks are done
+    LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
 
     // Load satellite DSO
     std::unique_ptr<DSOLoader> loader {};
