@@ -6,3 +6,6 @@ option('impl_py', type: 'feature', value: 'auto', description: 'Build Python imp
 
 option('cxx_tools', type: 'boolean', value: true, description: 'Build C++ tools')
 option('cxx_tests', type: 'feature', value: 'auto', description: 'Build C++ tests')
+
+# Satellite features
+option('satellite_caribou', type: 'feature', value: 'auto', description: 'Build Caribou Satellite')
