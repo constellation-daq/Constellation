@@ -23,7 +23,7 @@ core_files = files(
   'core/network.py',
   'core/protocol.py',
   'core/satellite.py',
-  
+
 )
 
 satellites_files = files(
