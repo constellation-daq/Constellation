@@ -47,7 +47,7 @@ repos:
     hooks:
       - id: mypy
         args: [ --no-warn-unused-ignores, --ignore-missing-imports]
-        exclude: "^(build|docs|tests|test_)|python/constellation/satellites/.*|python/constellation/tools/.*|python/tests/.*"
+        files: "python/constellation/core"
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.40.0
