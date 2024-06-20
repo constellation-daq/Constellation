@@ -16,7 +16,7 @@ For communication, the CAEN communication library, `CAENHVWrapper` as well as th
 The following parameters need to be specified in the configuration file:
 
 * `system`: the type of crate connected, e.g. `"SY5527"`.
-* `link`: the type of connection, e.g. `"TCPIP"`.
+* `link`: the type of connection, e.g. `"TCPIP"` or `"USB"`.
 * `link_argument` : additional information for the connection, e.g. the ip address `"192.168.8.2"`.
 * `user` : the user name to connect with.
 * `password` : the password to connect with.
