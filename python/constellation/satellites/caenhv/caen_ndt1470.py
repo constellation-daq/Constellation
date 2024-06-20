@@ -1,7 +1,12 @@
-"""Module for communication with CAEN's NDT1470 desktop HV power supplies.
+"""
+SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-License-Identifier: CC-BY-4.0
 
-Supports USB or TCP/IP and mimics the pycaenhv API used for CAEN's HV crate
-series.
+This module provides the classes for communication with CAEN's NDT1470 desktop
+HV power supplies.
+
+Supported are USB or TCP/IP and, for compatibility, the pycaenhv API for CAEN's
+HV crate series is used whenever possible.
 
 """
 
