@@ -9,7 +9,7 @@ import socket
 import time
 import threading
 from typing import List, Any, Dict
-import serial
+import serial  # type: ignore[import-untyped]
 
 # available parameters (to monitor) in the NDT1470
 # FIXME : this could probably be determined at runtime via request sent to device
@@ -62,7 +62,7 @@ PARAMETERS_SET = [
 NCHANNELS = 4
 
 
-def status_unpack(n: int) -> str:
+def status_unpack(n: int) -> list[str]:
     """decodes status bits (see p25 of the NDT1470 user manual (UM2027, rev.17). )"""
     bitfcn = [
         "ON",
@@ -83,7 +83,7 @@ def status_unpack(n: int) -> str:
     return [m for i, m in enumerate(bitfcn) if n & (1 << i)]
 
 
-def alarm_unpack(n: int) -> str:
+def alarm_unpack(n: int) -> list[str]:
     """Decodes board alarm status bits (see p26 of the NDT1470 user manual
     (UM2027, rev.17). )"""
     bitfcn = [
@@ -110,7 +110,7 @@ class CaenDecode:
         else:
             self.ok = False
 
-    def errmsg(self):
+    def errmsg(self) -> str:
         """decodes error message"""
         if self.ok:
             return "OK"
@@ -150,16 +150,16 @@ class CaenNDT1470Manager:
 
     """
 
-    def __init__(self):
-        self.boards: dict[CaenHVBoard] = {}
+    def __init__(self) -> None:
+        self.boards: dict[int, CaenHVBoard] = {}
         self._handle: socket.socket | serial.Serial | None = None
         self._lock = threading.Lock()
         self.connected: bool = False
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.disconnect()
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Return connection status."""
         return self.connected
 
@@ -168,20 +168,22 @@ class CaenNDT1470Manager:
         """Return current handle (socket or Serial)."""
         return self._handle
 
-    def clear_alarm(self):
+    def clear_alarm(self) -> None:
         """Clear the alarm state. Not implemented."""
         raise NotImplementedError
 
-    def kill(self):
+    def kill(self) -> None:
         """Kill powered channels."""
         raise NotImplementedError
 
-    def connect(self, link: str, link_arg: str):
+    def connect(
+        self, system: str, link: str, argument: str, user: str = "", password: str = ""
+    ) -> None:
         """Connect to a board."""
         if link == "TCPIP":
-            self._handle = self._connect_tcp(link_arg)
+            self._handle = self._connect_tcp(argument)
         elif link == "USB":
-            self._handle = self._connect_usb(link_arg)
+            self._handle = self._connect_usb(argument)
         self.connected = True
         slot = 0  # TODO : can the NDT1470 have board numbers higher than 0?
         model = "NDT1470"  # TODO : check this at runtime
@@ -190,7 +192,7 @@ class CaenNDT1470Manager:
             slot=slot,
             num_channels=NCHANNELS,
             model=model,
-            serial_number="NOTIMPLEMENTED",  # FIXME
+            serial_number=0,  # FIXME
             description="NOTIMPLEMENTED",  # FIXME
             firmware_release="NOTIMPLEMENTED",
         )  # FIXME
@@ -271,16 +273,16 @@ class CaenNDT1470Manager:
 
         """
         # appends terminating characters (carriage return and line feed)
-        msg = f"{msg}\r\n".encode()
+        data = f"{msg}\r\n".encode()
         if isinstance(self._handle, socket.socket):
-            self._handle.sendall(msg)
+            self._handle.sendall(data)
         elif isinstance(self._handle, serial.Serial):
-            self._handle.write(msg)
+            self._handle.write(data)
         else:
             raise RuntimeError("No device connected!")
         time.sleep(0.1)  # best to wait a bit before continuing..
 
-    def _receive_raw(self) -> bytes:
+    def _receive_raw(self) -> str:
         """receives (raw) response from last issued command to the device."""
         # Wait for events...
         time.sleep(0.2)  # best to wait before continuing..
@@ -291,7 +293,7 @@ class CaenNDT1470Manager:
                 buffer = self._handle.recv(1024).decode()
             except socket.error as e:
                 raise RuntimeError(f"Socket communication error: {repr(e)}") from e
-        else:
+        elif isinstance(self._handle, serial.Serial):
             # serial
             buffer = self._handle.read(1024).decode()
         return buffer
@@ -397,18 +399,18 @@ class Channel:
 
     def is_powered(self) -> bool:
         """Returns True if the channel is ON, False otherwise"""
-        res = "ON" in self.status()
+        res = "ON" in self.status
         return bool(res)
 
-    def _channel_info(self) -> dict[dict[str, Any]]:
+    def _channel_info(self) -> dict[str, "ChannelParameter"]:
         """Helper function to assemble channel information."""
         # FIXME replace hard-coded info with info retrieved from module at runtime
         # NOTE : most values are only set to mimic what pycaenhv uses
-        res: dict[str, Any] = {}
+        res: dict[str, ChannelParameter] = {}
         for par in PARAMETERS_GET:
-            res[par] = {"name": par, "mode": "R"}
+            res[par] = ChannelParameter(self, par, {"mode": "R"})
         for par in PARAMETERS_SET:
-            res[par] = {"name": par, "mode": "R/W"}
+            res[par] = ChannelParameter(self, par, {"mode": "R/W"})
         return res
 
     def __getattr__(self, name: str) -> Any:
@@ -421,7 +423,7 @@ class Channel:
 class ChannelParameter:
     """Parameter of CAEN HV/LV board channel"""
 
-    def __init__(self, channel, name: str, attributes: Dict) -> None:
+    def __init__(self, channel: Channel, name: str, attributes: Dict) -> None:
         self.channel = channel
         self.name = name
         # Set available attributes for a given parameter
