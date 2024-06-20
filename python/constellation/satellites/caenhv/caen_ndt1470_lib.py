@@ -1,8 +1,15 @@
-import serial
+"""Module for communication with CAEN's NDT1470 desktop HV power supplies.
+
+Supports USB or TCP/IP and mimics the pycaenhv API used for CAEN's HV crate
+series.
+
+"""
+
 import socket
 import time
 import threading
 from typing import List, Any, Dict
+import serial
 
 # available parameters (to monitor) in the NDT1470
 # FIXME : this could probably be determined at runtime via request sent to device
@@ -73,7 +80,7 @@ def status_unpack(n: int) -> str:
         "ILK 1 : Ch in INTERLOCK via front panel",
         "NOCAL 1 : Calibration Error",
     ]
-    return [m for i, m in enumerate(bitfcn) if (n & (1 << i))]
+    return [m for i, m in enumerate(bitfcn) if n & (1 << i)]
 
 
 def alarm_unpack(n: int) -> str:
@@ -88,7 +95,7 @@ def alarm_unpack(n: int) -> str:
         "Board in OVER POWER",
         "Internal HV Clock FAIL",
     ]
-    return [m for i, m in enumerate(bitfcn) if (n & (1 << i))]
+    return [m for i, m in enumerate(bitfcn) if n & (1 << i)]
 
 
 class CaenDecode:
@@ -107,20 +114,19 @@ class CaenDecode:
         """decodes error message"""
         if self.ok:
             return "OK"
-        elif "CMD:ERR" in self.s:
-            return "Wrong command Format or command not recognized"
-        elif "CH:ERR" in self.s:
-            return "Channel Field not present or wrong Channel value"
-        elif "PAR:ERR" in self.s:
-            return "Field parameter not present or parameter not recognized"
-        elif "VAL:ERR" in self.s:
-            return "Wrong set value (<Min or >Max)"
-        elif "LOC:ERR" in self.s:
-            return "Command SET with module in LOCAL mode"
-        elif not self.s:
+        if not self.s:
             return "Received no response"
-        else:
-            return f"UNKNOWN ERROR: received '{self.s}'"
+        err_dict: dict[str, str] = {
+            "CMD:ERR": "Wrong command Format or command not recognized",
+            "CH:ERR": "Channel Field not present or wrong Channel value",
+            "PAR:ERR": "Field parameter not present or parameter not recognized",
+            "VAL:ERR": "Wrong set value (<Min or >Max)",
+            "LOC:ERR": "Command SET with module in LOCAL mode",
+        }
+        for err, msg in err_dict.items():
+            if err in self.s:
+                return msg
+        return f"UNKNOWN ERROR: received '{self.s}'"
 
     def val(self):
         """decodes values returned from the device"""
@@ -145,8 +151,8 @@ class CaenNDT1470Manager:
     """
 
     def __init__(self):
-        self.boards = dict()
-        self._handle: socket.socket | serial.Serial = None
+        self.boards: dict[CaenHVBoard] = {}
+        self._handle: socket.socket | serial.Serial | None = None
         self._lock = threading.Lock()
         self.connected: bool = False
 
@@ -154,19 +160,24 @@ class CaenNDT1470Manager:
         self.disconnect()
 
     def is_connected(self):
+        """Return connection status."""
         return self.connected
 
     @property
-    def handle(self):
+    def handle(self) -> socket.socket | serial.Serial | None:
+        """Return current handle (socket or Serial)."""
         return self._handle
 
     def clear_alarm(self):
+        """Clear the alarm state. Not implemented."""
         raise NotImplementedError
 
     def kill(self):
+        """Kill powered channels."""
         raise NotImplementedError
 
     def connect(self, link: str, link_arg: str):
+        """Connect to a board."""
         if link == "TCPIP":
             self._handle = self._connect_tcp(link_arg)
         elif link == "USB":
@@ -202,6 +213,7 @@ class CaenNDT1470Manager:
         return serial_link
 
     def disconnect(self):
+        """Disconnect the module."""
         if self.connected:
             self._handle.close()
             self.connected = False
@@ -240,9 +252,8 @@ class CaenNDT1470Manager:
         else:
             # setting value
             cmd += f"CMD:SET,{chstr}PAR:{par},VAL:{val}"
-        self.log.debug(f"Sending cmd: {cmd}")
-        self.send_raw(cmd)
-        return CaenDecode(self.receive_raw())
+        self._send_raw(cmd)
+        return CaenDecode(self._receive_raw())
 
     def _send_raw(self, msg: str):
         """Sends a (raw) command to the device. `msg' is a string that will be
@@ -279,7 +290,7 @@ class CaenNDT1470Manager:
             try:
                 buffer = self._handle.recv(1024).decode()
             except socket.error as e:
-                raise RuntimeError("Socket communication error: %r" % e)
+                raise RuntimeError(f"Socket communication error: {repr(e)}") from e
         else:
             # serial
             buffer = self._handle.read(1024).decode()
@@ -323,10 +334,11 @@ class CaenHVBoard:
         ]
 
     @property
-    def handle(self):
-        return self.module._handle
+    def handle(self) -> socket.socket | serial.Serial | None:
+        """Return module handle."""
+        return self.module.handle
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Pretty-print the module information"""
         fw = f"{self.firmware_release[0]}.{self.firmware_release[1]}"
         main = f"{self.slot} -- {self.model}, {self.description}"
@@ -394,15 +406,16 @@ class Channel:
         # NOTE : most values are only set to mimic what pycaenhv uses
         res: dict[str, Any] = {}
         for par in PARAMETERS_GET:
-            res[par] = dict(name=par, mode="R")
+            res[par] = {"name": par, "mode": "R"}
         for par in PARAMETERS_SET:
-            res[par] = dict(name=par, mode="R/W")
+            res[par] = {"name": par, "mode": "R/W"}
         return res
 
     def __getattr__(self, name: str) -> Any:
         """Dynamically get attributes"""
         if name in self.parameters and self.parameters[name].mode in ("R", "R/W"):
             return self.parameters[name]
+        return None
 
 
 class ChannelParameter:
@@ -432,8 +445,7 @@ class ChannelParameter:
             return self.channel.module.command(
                 self.channel.module.slot, self.channel.index, self.name
             )
-        else:
-            raise ValueError(f"Trying to read write-only parameter {self.name}")
+        raise ValueError(f"Trying to read write-only parameter {self.name}")
 
     @value.setter
     def value(self, value: Any) -> None:
@@ -449,3 +461,4 @@ class ChannelParameter:
         """Dynamically reads preset attributes"""
         if name in self.attributes:
             return self.attributes[name]
+        return None
