@@ -6,12 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 from functools import partial
+from pycaenhv import CaenHVModule  # type: ignore[import-untyped]
+from caen_ndt1470 import CaenNDT1470Manager
 
 from constellation.core.satellite import Satellite, SatelliteArgumentParser
 from constellation.core.fsm import SatelliteState
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.base import setup_cli_logging
-import pycaenhv
 
 
 class CaenHvSatellite(Satellite):
@@ -31,12 +32,15 @@ class CaenHvSatellite(Satellite):
             # old connection
             self.caen.disconnect()
         # SY5527 and similar: pycaenhv
-        self.caen = pycaenhv.CaenHVModule()
         system = configuration["system"]
-        user = configuration["username"]
-        pw = configuration["password"]
         link = configuration["link"]
         link_arg = configuration["link_argument"]
+        user = configuration.setdefault("username", "")
+        pw = configuration.setdefault("password", "")
+        if "ntd1470" in system.lower():
+            self.caen: CaenNDT1470Manager | CaenHVModule = CaenNDT1470Manager()
+        else:
+            self.caen = CaenHVModule()
         self.log.info(
             "Connecting to %s via %s and %s using username '%s' and password '%s'",
             system,
