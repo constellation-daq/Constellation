@@ -76,7 +76,3 @@ def main(args=None):
     # start server with remaining args
     s = Example_Satellite(**args)
     s.run_satellite()
-
-
-if __name__ == "__main__":
-    main()
