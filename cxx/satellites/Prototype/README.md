@@ -11,7 +11,7 @@ This section describes the functions of the satellite and all relevant informati
 
 ## Parameters
 
-The following parameters are read and interpreted my this satellite. Parameters without a default value are required.
+The following parameters are read and interpreted by this satellite. Parameters without a default value are required.
 
 | Parameter     | Description | Type | Default Value |
 |---------------|-------------|------|---------------|
