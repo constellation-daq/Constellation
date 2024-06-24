@@ -3,6 +3,7 @@
 
 import sphinx
 import pathlib
+
 import copy_satellite_docs
 
 logger = sphinx.util.logging.getLogger(__name__)
@@ -10,7 +11,6 @@ logger = sphinx.util.logging.getLogger(__name__)
 # set directories
 docsdir = pathlib.Path(__file__).resolve().parent
 repodir = docsdir.parent
-srcdir = repodir
 
 # metadata
 project = "Constellation"
@@ -116,7 +116,7 @@ breathe_default_project = "Constellation"
 # PlantUML settings
 plantuml_output_format = "svg_img"
 
-# remove news from toc if news/index.md does not exist
+# Remove news from toc if news/index.md does not exist
 without_news = not docsdir.joinpath("news").exists()
 if without_news:
     logger.info("Building documentation without news section", color="yellow")
@@ -126,42 +126,38 @@ with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
             continue
         index_out.write(line)
 
-# add satellites to documentation:
-satellite_files_cxx = list(pathlib.Path("../cxx/satellites").glob("**/README.md"))
+# Remove existing satellite READMEs
+for path in (docsdir / "satellites").glob("*.md"):
+    path.unlink()
+
+# Add satellite READMEs to documentation
+satellite_files_cxx = list((repodir / "cxx" / "satellites").glob("**/README.md"))
 satellite_files_py = list(
-    pathlib.Path("../python/constellation/satellites").glob("**/README.md")
+    (repodir / "python" / "constellation" / "satellites").glob("**/README.md")
 )
 
-satellites_cxx = []
-satellites_py = []
+satellites_types_cxx = []
+satellites_types_py = []
 
 for path in satellite_files_cxx:
-    with path.open(mode="r", encoding="utf-8") as in_file:
-        file_input = in_file.read()
-        file_output = copy_satellite_docs.front_matter_convert_myst(file_input)
-
-        (pathlib.Path("satellites") / path.parent.name).with_suffix(".md").write_text(
-            file_output
-        )
-        satellites_cxx.append(path.parent.name + " <" + path.parent.name + ">")
+    satellite_type = copy_satellite_docs.convert_satellite_readme(
+        path, docsdir / "satellites"
+    )
+    satellites_types_cxx.append(f"{satellite_type} <{satellite_type}>")
 
 for path in satellite_files_py:
-    with path.open(mode="r", encoding="utf-8") as in_file:
-        file_input = in_file.read()
-        file_output = copy_satellite_docs.front_matter_convert_myst(file_input)
-
-        (pathlib.Path("satellites") / path.parent.name).with_suffix(".md").write_text(
-            file_output
-        )
-        satellites_py.append(path.parent.name + " <" + path.parent.name + ">")
+    satellite_type = copy_satellite_docs.convert_satellite_readme(
+        path, docsdir / "satellites"
+    )
+    satellites_types_py.append(f"{satellite_type} <{satellite_type}>")
 
 with (
     open("satellites/index.md.in", "rt") as index_in,
     open("satellites/index.md", "wt") as index_out,
 ):
     for line in index_in:
-        line = line.replace("SATELLITES_CXX", "\n".join(satellites_cxx))
-        line = line.replace("SATELLITES_PYTHON", "\n".join(satellites_py))
+        line = line.replace("SATELLITES_CXX", "\n".join(satellites_types_cxx))
+        line = line.replace("SATELLITES_PYTHON", "\n".join(satellites_types_py))
         index_out.write(line)
 
 # ablog settings
