@@ -2,25 +2,30 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Prototype"
-description: "Prototype satellite demonstrating how to implement individual satellites"
-services: ["CONTROL", "MONITORING", "DATA", "HEARTBEAT"]
+subtitle: "Demonstrator satellite serving as prototype for new satellites"
 ---
 
 ## Description
 
-This section will describe the functionality of the satellite and any relevant information about attached hardware and requirements thereof.
+This section describes the functions of the satellite and all relevant information about the connected hardware and its requirements. This particular satellite does absolutely nothing and only serves to provide a hollow shell for C++ satellites. New satellites can be created by copying and modifying the prototype satellite. The parameters or metrics listed below are not actually implemented, but serve as a template for the satellite documentation.
 
 ## Parameters
 
-* `my_param`: Description of this parameter with its default value and the information whether it is required or not.
+The following parameters are read and interpreted my this satellite. Parameters without a default value are required.
 
-## Configuration Example
+| Parameter     | Description | Type | Default Value |
+|---------------|-------------|------|---------------|
+| `my_param`    | Number of channels to be used | Unsigned 8-bit integer | `1024` |
+| `other_param` | Name of the communication module | String | `"antenna"` |
+
+### Configuration Example
 
 An example configuration for this satellite which could be dropped into a COnstellation configuration as a starting point
 
 ```ini
-[prototype.my_satellite]
+[Prototype.my_satellite]
 my_param = 7
+other_param = "antenna"
 ```
 
 ## Custom Commands
@@ -28,7 +33,19 @@ my_param = 7
 This section describes all custom commands the satellite exposes to the command interface. The description should contain the name and the description of the
 command as well as all of its arguments, the return value and the allowed states:
 
-* `get_channel_reading`: This command returns the reading from the given channel number
-  * Arguments: channel number (`int`)
-  * Return value: channel reading (`double`)
-  * Allowed states: `INIT`, `ORBIT`
+
+| Command     | Description | Arguments | Return Value | Allowed States |
+|-------------|-------------|-----------|--------------|----------------|
+| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `INIT`, `ORBIT` |
+| `get_module_name` | Reads the name of the communication module | - | module name, `string` | all |
+
+
+## Metrics
+
+The following metrics are distributed by this satellite and can be subscribed to. Timed metrics provide an interval in units of time, triggered metrics in number of calls.
+
+| Metric         | Description | Interval | Type |
+|----------------|-------------|----------|------|
+| `STAT/CPULOAD` | Current CPU load of the satellite host machine | 3s | AVERAGE |
+| `STAT/TEMP`    | Highest reported system temperature of the satellite | 5s | AVERAGE |
+| `STAT/EVENTS`  | Currently processed event number | 100 | LAST_VALUE |
