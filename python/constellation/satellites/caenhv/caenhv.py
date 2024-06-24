@@ -238,12 +238,7 @@ def main(args=None):
         epilog="This is a 3rd-party component of Constellation.",
     )
     # this sets the defaults for our Satellite
-    parser.set_defaults(
-        name="CaenHVCrate",
-        cmd_port=23901,
-        mon_port=55501,
-        hb_port=61201,
-    )
+    parser.set_defaults(name="CaenHVCrate")
     args = vars(parser.parse_args(args))
 
     # set up logging
