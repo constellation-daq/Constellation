@@ -30,6 +30,9 @@ def front_matter_convert_myst(string: str) -> str:
 
         converted_front_matter = "# " + yaml_data["title"] + " Satellite\n"
 
+        if "subtitle" in yaml_data.keys():
+            converted_front_matter += yaml_data["subtitle"] + "\n"
+
         if "description" in yaml_data.keys():
             converted_front_matter += (
                 ":::{card} {octicon}`code-square;1em;sd-text-info` Description\n"
