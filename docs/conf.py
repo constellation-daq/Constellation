@@ -74,6 +74,7 @@ html_theme_options = {
         "reference/**": ["page-toc", "edit-this-page"],
         "protocols/**": ["page-toc", "edit-this-page"],
         "news/**": ["page-toc"],
+        "satellites/**": ["page-toc"],
     },
     "show_prev_next": False,
 }
