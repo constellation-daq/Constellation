@@ -9,5 +9,6 @@ Core Library
    log
    config
    message
+   heartbeat
    utils
    chirp
