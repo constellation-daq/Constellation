@@ -80,9 +80,7 @@ namespace constellation::message {
         /**
          * @param payload Payload buffer containing a payload to be added as ZeroMQ message
          */
-        void addPayload(message::PayloadBuffer&& payload) {
-            payload_buffers_.emplace_back(std::forward<message::PayloadBuffer>(payload));
-        }
+        void addPayload(message::PayloadBuffer&& payload) { payload_buffers_.emplace_back(std::move(payload)); }
 
         /**
          * Assemble full message to frames for ZeroMQ
