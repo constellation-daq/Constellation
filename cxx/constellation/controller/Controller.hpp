@@ -33,8 +33,8 @@ namespace constellation::controller {
     /** Controller base class which handles connections and heartbeating */
     class CNSTLN_API Controller {
     public:
-        /** Payload of a transition function: variant with config, partial_config or run_nr */
-        using CommandPayload = std::variant<std::monostate, config::Dictionary, config::List, std::uint32_t>;
+        /** Payload of a transition function: variant with config, partial_config or run_id */
+        using CommandPayload = std::variant<std::monostate, config::Dictionary, config::List, std::string>;
 
     protected:
         /**
