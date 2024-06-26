@@ -7,6 +7,7 @@ Core Library
    :caption: Components:
 
    log
+   config
    message
    utils
    chirp
