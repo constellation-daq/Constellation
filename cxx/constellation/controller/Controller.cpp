@@ -168,7 +168,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
     return send_receive(sat->second, cmd);
 }
 
-std::map<std::string, CSCP1Message> Controller::sendCommand(CSCP1Message& cmd) {
+std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
 
     const std::lock_guard connection_lock {connection_mutex_};
     std::map<std::string, CSCP1Message> replies;
@@ -178,7 +178,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommand(CSCP1Message& cmd) {
     return replies;
 }
 
-std::map<std::string, CSCP1Message> Controller::sendCommand(const std::string& verb, const CommandPayload& payload) {
+std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb, const CommandPayload& payload) {
     auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, {verb}});
     if(std::holds_alternative<Dictionary>(payload)) {
         send_msg.addPayload(std::get<Dictionary>(payload).assemble());
@@ -189,7 +189,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommand(const std::string& v
         msgpack::pack(sbuf, std::get<std::string>(payload));
         send_msg.addPayload(std::move(sbuf));
     }
-    return sendCommand(send_msg);
+    return sendCommands(send_msg);
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name,

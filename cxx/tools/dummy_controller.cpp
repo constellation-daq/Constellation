@@ -75,7 +75,7 @@ void cli_loop(std::span<char*> args) {
             LOG(logger, DEBUG) << "Added run identifier \"" << run_identifier << "\" to message";
         }
 
-        auto responses = controller.sendCommand(send_msg);
+        auto responses = controller.sendCommands(send_msg);
         for(const auto& [sat, recv_msg] : responses) {
             // Print message
             LOG(logger, INFO) << recv_msg.getHeader().to_string() << "\n"
