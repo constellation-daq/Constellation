@@ -110,10 +110,12 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 #define LOG_ONCE_1ARG(level) LOG_ONCE_2ARGS(constellation::log::Logger::getDefault(), level)
 
 /**
- * Helper macros which allow to chose the correct target macro (LOG_TO_DEFAULT or LOG_WITH_TOPIC) depending on the number
- * of arguments provided.
+ * Helper macros which allow to chose the correct target macro (_1ARG, _2ARGS or _3ARGS) depending on the number of arguments
+ * and the macro prefix (F##) provided.
  *
- * * LOG_MACRO_CHOOSER will pass all its arguments along with the two possible target macros to LOG_FUNC_RECOMPOSER
+ * * LOG_MACRO passes the macro prefix and all arguments to the LOG_MACRO_CHOOSER
+ * * LOG_MACRO_CHOOSER will pass all its arguments along with the three possible target macros to LOG_FUNC_RECOMPOSER. It
+ *                    also resolves the actual macro name from the macro prefix provided by LOG_MACRO.
  * * LOG_FUNC_RECOMPOSER passes all arguments including parentheses to the LOG_FUNC_CHOOSER
  * * LOG_FUNC_CHOOSER selects the third of its arguments as the function to be called:
  *                    * With one argument in __VA_ARGS__, this will be LOG_TO_DEFAULT

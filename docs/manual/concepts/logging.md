@@ -60,7 +60,7 @@ In C++, a set of macros are provided for different scenarios:
 // Logging a message with the given level:
 LOG(INFO) << Received configuration";
 
-// Logging a message only once (e.g. in a loop)
+// Logging a message only once (e.g. in a loop):
 LOG_ONCE(WARNING) << "This message appears only once even if the statement "
                   << "is executed many times";
 
