@@ -67,12 +67,11 @@ namespace constellation::log {
     /**
      * Compare two logging levels and return the lower one
      *
-     * \tparam LevelL left logging level type
-     * \tparam LevelR right logging level type
-     * \param lhs Left logging level
-     * \param rhs Right logging level
-     *
-     * \return Minimum Constellation verbosity constellation::log::Level
+     * @tparam LevelL left logging level type
+     * @tparam LevelR right logging level type
+     * @param lhs Left logging level
+     * @param rhs Right logging level
+     * @return Minimum Constellation verbosity constellation::log::Level
      */
     template <typename LevelL, typename LevelR> constexpr Level min_level(LevelL lhs, LevelR rhs) {
         return static_cast<Level>(std::min(std::to_underlying(lhs), std::to_underlying(rhs)));
