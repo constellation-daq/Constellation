@@ -184,9 +184,9 @@ std::map<std::string, CSCP1Message> Controller::sendCommand(const std::string& v
         send_msg.addPayload(std::get<Dictionary>(payload).assemble());
     } else if(std::holds_alternative<List>(payload)) {
         send_msg.addPayload(std::get<List>(payload).assemble());
-    } else if(std::holds_alternative<std::uint32_t>(payload)) {
+    } else if(std::holds_alternative<std::string>(payload)) {
         msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::uint32_t>(payload));
+        msgpack::pack(sbuf, std::get<std::string>(payload));
         send_msg.addPayload(std::move(sbuf));
     }
     return sendCommand(send_msg);
@@ -200,9 +200,9 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name,
         send_msg.addPayload(std::get<Dictionary>(payload).assemble());
     } else if(std::holds_alternative<List>(payload)) {
         send_msg.addPayload(std::get<List>(payload).assemble());
-    } else if(std::holds_alternative<std::uint32_t>(payload)) {
+    } else if(std::holds_alternative<std::string>(payload)) {
         msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::uint32_t>(payload));
+        msgpack::pack(sbuf, std::get<std::string>(payload));
         send_msg.addPayload(std::move(sbuf));
     }
     return sendCommand(satellite_name, send_msg);
