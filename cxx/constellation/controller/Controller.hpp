@@ -45,7 +45,8 @@ namespace constellation::controller {
             zmq::socket_t req;
             message::MD5Hash host_id;
             satellite::State state {satellite::State::NEW};
-            std::string status {};
+            message::CSCP1Message::Type last_cmd_type {};
+            std::string last_cmd_verb {};
         };
 
     public:
