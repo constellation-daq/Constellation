@@ -34,6 +34,8 @@ namespace constellation::log {
         /**
          * Construct a new CMDPSink
          *
+         * The console logger is used to log the progress of setting up CMDP as well as its operation to the local console.
+         *
          * @param cmdp_console_logger Console logger for CMDP
          */
         CMDPSink(std::shared_ptr<spdlog::async_logger> cmdp_console_logger);
@@ -44,10 +46,12 @@ namespace constellation::log {
         ~CMDPSink() override;
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         CMDPSink(const CMDPSink& other) = delete;
         CMDPSink& operator=(const CMDPSink& other) = delete;
         CMDPSink(CMDPSink&& other) = delete;
         CMDPSink& operator=(CMDPSink&& other) = delete;
+        /// @endcond
 
         /**
          * Get ephemeral port this logger sink is bound to
