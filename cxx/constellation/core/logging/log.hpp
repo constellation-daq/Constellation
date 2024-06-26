@@ -19,6 +19,8 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
+/// @cond doxygen_suppress
+
 /** Define a new token by concatenation */
 #define LOG_CONCAT(x, y) x##y
 
@@ -108,10 +110,12 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 #define LOG_ONCE_1ARG(level) LOG_ONCE_2ARGS(constellation::log::Logger::getDefault(), level)
 
 /**
- * Helper macros which allow to chose the correct target macro (LOG_TO_DEFAULT or LOG_WITH_TOPIC) depending on the number
- * of arguments provided.
+ * Helper macros which allow to chose the correct target macro (_1ARG, _2ARGS or _3ARGS) depending on the number of arguments
+ * and the macro prefix (F##) provided.
  *
- * * LOG_MACRO_CHOOSER will pass all its arguments along with the two possible target macros to LOG_FUNC_RECOMPOSER
+ * * LOG_MACRO passes the macro prefix and all arguments to the LOG_MACRO_CHOOSER
+ * * LOG_MACRO_CHOOSER will pass all its arguments along with the three possible target macros to LOG_FUNC_RECOMPOSER. It
+ *                    also resolves the actual macro name from the macro prefix provided by LOG_MACRO.
  * * LOG_FUNC_RECOMPOSER passes all arguments including parentheses to the LOG_FUNC_CHOOSER
  * * LOG_FUNC_CHOOSER selects the third of its arguments as the function to be called:
  *                    * With one argument in __VA_ARGS__, this will be LOG_TO_DEFAULT
@@ -123,35 +127,60 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 #define LOG_MACRO_CHOOSER(F, ...) LOG_FUNC_RECOMPOSER((__VA_ARGS__, F##_3ARGS, F##_2ARGS, F##_1ARG, ))
 #define LOG_MACRO(FUNC, ...) LOG_MACRO_CHOOSER(FUNC, __VA_ARGS__)(__VA_ARGS__)
 
+/// @endcond
+
 /**
- * Logging macro which takes either one or two arguments:
+ * Logs a message for a given level either to the default logger or a defined logger. The stream expression is only
+ * evaluated if logging should take place.
  *
- * LOG(level) will log to the default logger of the framework
- * LOG(logger, level) will log to the chosen logger instance
+ * This macro takes either one or two arguments:
+ *
+ * * `LOG(level)` will log to the default logger of the framework
+ * * `LOG(logger, level)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use and `level` indicates the verbosity level on
+ * which to log.
  */
 #define LOG(...) LOG_MACRO(LOG, __VA_ARGS__)
 
 /**
- * Logging macro to log a message if a given condition is true
+ * Logs a message if a given condition is true to either the default logger or a defined logger. The given condition is
+ * evaluated after it was determined if logging should take place based on the provided level.
  *
- * LOG_IF(level) will log to the default logger of the framework
- * LOG_IF(logger, level) will log to the chosen logger instance
+ * This macro takes either two or three arguments:
+ *
+ * * `LOG_IF(level, condition)` will log to the default logger of the framework
+ * * `LOG_IF(logger, level, condition)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use, `level` indicates the verbosity level on which
+ * to log and `condition` represents the condition to be fulfilled before logging.
  */
 #define LOG_IF(...) LOG_MACRO(LOG_IF, __VA_ARGS__)
 
 /**
- * Logging macro to log a message at most N times
+ * Logs a message at most N times either to the default logger or a defined logger.
  *
- * LOG_N(level, count) will log to the default logger of the framework
- * LOG_N(logger, level, count) will log to the chosen logger instance
+ * This macro takes either two or three arguments:
+ *
+ * * `LOG_N(level, count)` will log to the default logger of the framework
+ * * `LOG_N(logger, level, count)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use, `level` indicates the verbosity level on which
+ * to log and `count` is the maximum number of times this message is logged.
  */
 #define LOG_N(...) LOG_MACRO(LOG_N, __VA_ARGS__)
 
 /**
- * Logging macro to log a message at most one time
+ * Logs a message at most one time either to the default logger or a defined logger. This macro is equivalent to LOG_N(...,
+ * 1).
  *
- * LOG_ONCE(level) will log to the default logger of the framework
- * LOG_ONCE(logger, level) will log to the chosen logger instance
+ * This macro takes either one or two arguments:
+ *
+ * * `LOG_ONCE(level)` will log to the default logger of the framework
+ * * `LOG_ONCE(logger, level)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use and `level` indicates the verbosity level on
+ * which to log.
  */
 #define LOG_ONCE(...) LOG_MACRO(LOG_ONCE, __VA_ARGS__)
 
