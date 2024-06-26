@@ -24,7 +24,9 @@
 
 namespace constellation::config {
 
-    /** Check if a type can be held by a variant */
+    /// @cond doxygen_suppress
+
+    // Check if a type can be held by a variant
     template <typename T, typename U> struct is_one_of : std::false_type {};
     template <typename T, typename... Ts>
     struct is_one_of<T, std::variant<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
@@ -38,6 +40,8 @@ namespace constellation::config {
     // Concept for bounded C arrays of given type U
     template <typename U, typename T>
     concept is_bounded_type_array = std::is_bounded_array_v<T> && std::is_same_v<std::remove_extent_t<T>, U>;
+
+    /// @endcond
 
     /**
      * Value type for Dictionary using std::variant
