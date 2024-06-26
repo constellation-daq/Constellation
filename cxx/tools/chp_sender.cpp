@@ -8,11 +8,8 @@
  */
 
 #include <chrono>
-#include <csignal>
-#include <functional>
 #include <iostream>
 #include <span>
-#include <stop_token>
 #include <string>
 
 #include <magic_enum.hpp>
@@ -27,13 +24,6 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 using namespace std::literals::string_literals;
-
-// Use global std::function to work around C linkage
-std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-
-extern "C" void signal_hander(int signal) {
-    signal_handler_f(signal);
-}
 
 void cli_loop(std::span<char*> args) {
     // Get group, name and interval via cmdline
@@ -59,16 +49,8 @@ void cli_loop(std::span<char*> args) {
 
     HeartbeatSend sender {name, interval};
 
-    std::stop_source stop_token {};
-    signal_handler_f = [&](int /*signal*/) -> void { stop_token.request_stop(); };
-
-    // NOLINTBEGIN(cert-err33-c)
-    std::signal(SIGTERM, &signal_hander);
-    std::signal(SIGINT, &signal_hander);
-    // NOLINTEND(cert-err33-c)
-
     auto state = State::NEW;
-    while(!stop_token.stop_requested()) {
+    while(true) {
         std::cout << "-----------------------------------------" << std::endl;
         // Type
         std::string state_s {};
