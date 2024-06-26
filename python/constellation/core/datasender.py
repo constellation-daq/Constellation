@@ -9,7 +9,7 @@ A base module for a Constellation Satellite that sends data.
 import time
 import threading
 import logging
-from typing import Optional
+from typing import Optional, Any
 from queue import Queue, Empty
 
 import random
@@ -31,10 +31,10 @@ class PushThread(threading.Thread):
         stopevt: threading.Event,
         interface: str,
         port: int,
-        queue: Queue,
-        *args,
-        context: Optional[zmq.Context] = None,
-        **kwargs,
+        queue: Queue,  # type: ignore[type-arg]
+        *args: Any,
+        context: Optional[zmq.Context] = None,  # type: ignore[type-arg]
+        **kwargs: Any,
     ):
         """Initialize values.
 
@@ -58,7 +58,7 @@ class PushThread(threading.Thread):
         else:
             self._socket.bind(f"tcp://{interface}:{port}")
 
-    def run(self):
+    def run(self) -> None:
         """Start sending data."""
         transmitter = DataTransmitter(self.name, self._socket)
         while not self.stopevt.is_set():
@@ -84,7 +84,7 @@ class PushThread(threading.Thread):
                 # nothing to process
                 pass
 
-    def join(self, *args, **kwargs):
+    def join(self, *args: Any, **kwargs: Any) -> Any:
         self._socket.close()
         return super().join(*args, **kwargs)
 
@@ -92,14 +92,14 @@ class PushThread(threading.Thread):
 class DataSender(Satellite):
     """Constellation Satellite which pushes data via ZMQ."""
 
-    def __init__(self, *args, data_port: int, **kwargs):
+    def __init__(self, *args: Any, data_port: int, **kwargs: Any):
         # initialize local attributes first:
         # beginning and end-of-run events: payloads and meta information
-        self._beg_of_run = {"payload": {}, "meta": {}}
-        self._end_of_run = {"payload": {}, "meta": {}}
+        self._beg_of_run: dict[str, dict[str, Any]] = {"payload": {}, "meta": {}}
+        self._end_of_run: dict[str, dict[str, Any]] = {"payload": {}, "meta": {}}
         # set up the data pusher which will transmit data placed into the queue
         # via ZMQ socket
-        self.data_queue = Queue()
+        self.data_queue: Queue = Queue()  # type: ignore[type-arg]
         self.data_port = data_port
         # initialize satellite
         super().__init__(*args, **kwargs)
@@ -108,26 +108,26 @@ class DataSender(Satellite):
         self.broadcast_offers()
 
     @property
-    def EOR(self) -> any:
+    def EOR(self) -> Any:
         """Get optional playload for the end-of-run event (EOR)."""
         return self._end_of_run["payload"]
 
     @EOR.setter
-    def EOR(self, payload: any) -> None:
+    def EOR(self, payload: Any) -> None:
         """Set optional playload for the end-of-run event (EOR)."""
         self._end_of_run["payload"] = payload
 
     @property
-    def BOR(self) -> any:
+    def BOR(self) -> Any:
         """Get optional playload for the beginning-of-run event (BOR)."""
         return self._beg_of_run["payload"]
 
     @BOR.setter
-    def BOR(self, payload: any) -> None:
+    def BOR(self, payload: Any) -> None:
         """Set optional playload for the beginning-of-run event (BOR)."""
         self._beg_of_run["payload"] = payload
 
-    def _wrap_launch(self, payload: any) -> str:
+    def _wrap_launch(self, payload: Any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
 
         This method starts the PushThread for the DataSender.
@@ -146,9 +146,10 @@ class DataSender(Satellite):
         # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
         self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
-        return super()._wrap_launch(payload)
+        res: str = super()._wrap_launch(payload)
+        return res
 
-    def _wrap_land(self, payload: any) -> str:
+    def _wrap_land(self, payload: Any) -> str:
         """Wrapper for the 'landing' transitional state of the FSM.
 
         This method will stop the PushThread.
@@ -159,7 +160,8 @@ class DataSender(Satellite):
             self._push_thread.join(timeout=10)
         except TimeoutError:
             self.log.warning("Unable to close push thread. Process timed out.")
-        return super()._wrap_land(payload)
+        res: str = super()._wrap_land(payload)
+        return res
 
     def _wrap_start(self, run_identifier: str) -> str:
         """Wrapper for the 'run' state of the FSM.
@@ -174,21 +176,22 @@ class DataSender(Satellite):
             self.BOR = self.config._config
         self.log.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
-        return super()._wrap_start(run_identifier)
+        res: str = super()._wrap_start(run_identifier)
+        return res
 
-    def _wrap_stop(self, payload: any) -> str:
+    def _wrap_stop(self, payload: Any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
         Sends the EOR event after base class wrapper and `do_stopping` have
         finished.
 
         """
-        res = super()._wrap_stop(payload)
+        res: str = super()._wrap_stop(payload)
         self.log.debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return res
 
-    def do_run(self, payload: any) -> str:
+    def do_run(self, payload: Any) -> str:
         """Perform the data acquisition and enqueue the results.
 
         This is only an abstract method. Inheriting classes must implement their
@@ -212,7 +215,7 @@ class DataSender(Satellite):
 class RandomDataSender(DataSender):
     """Constellation Satellite which pushes RANDOM data via ZMQ."""
 
-    def do_run(self, payload: any) -> str:
+    def do_run(self, payload: Any) -> str:
         """Example implementation that generates random values."""
         samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
         fs = random.uniform(0, 3)
@@ -221,6 +224,9 @@ class RandomDataSender(DataSender):
         t0 = time.time_ns()
 
         num = 0
+        # assert for mypy static type analysis
+        assert isinstance(self._state_thread_evt, threading.Event)
+
         while not self._state_thread_evt.is_set():
             self.data_queue.put((data_load.tobytes(), {"dtype": f"{data_load.dtype}"}))
             self.log.debug(f"Queueing data packet {num}")
@@ -240,7 +246,7 @@ class RandomDataSender(DataSender):
 class DataSenderArgumentParser(SatelliteArgumentParser):
     """Customized Argument parser providing DataSender-specific options."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.network.add_argument(
             "--data-port",
@@ -251,7 +257,7 @@ class DataSenderArgumentParser(SatelliteArgumentParser):
         )
 
 
-def main(args=None):
+def main(args: Any = None) -> None:
     """Start the RandomDataSender demonstration satellite.
 
     This Satellite sends random data via CDTP and can be used to test the
@@ -260,13 +266,7 @@ def main(args=None):
     """
     parser = DataSenderArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(
-        name="random_data_sender",
-        cmd_port=23998,
-        mon_port=55555,
-        hb_port=61233,
-        data_port=45557,
-    )
+    parser.set_defaults(name="random_data_sender")
     args = vars(parser.parse_args(args))
 
     # set up logging
