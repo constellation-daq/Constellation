@@ -11,6 +11,7 @@
 #include <csignal>
 #include <functional>
 #include <iostream>
+#include <span>
 #include <stop_token>
 #include <string>
 
@@ -25,6 +26,7 @@ using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
+using namespace std::literals::string_literals;
 
 // Use global std::function to work around C linkage
 std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
@@ -33,19 +35,29 @@ extern "C" void signal_hander(int signal) {
     signal_handler_f(signal);
 }
 
-int main(int argc, char* argv[]) {
-    // Get address via cmdline
-    if(argc != 4) {
-        std::cout << "Invalid usage: chp_sender CONSTELLATION_GROUP SENDER_NAME INTERVAL_MS" << std::endl;
-        return 1;
+void cli_loop(std::span<char*> args) {
+    // Get group, name and interval via cmdline
+    std::cout << "Usage: chp_sender CONSTELLATION_GROUP NAME INTERVAL_MS" << std::endl;
+
+    auto group = "constellation"s;
+    auto name = "chp_sender"s;
+    auto interval = 1000ms;
+    if(args.size() >= 2) {
+        group = args[1];
+    }
+    std::cout << "Using constellation group " << std::quoted(group) << std::endl;
+    if(args.size() >= 3) {
+        name = args[2];
+    }
+    if(args.size() >= 4) {
+        interval = std::chrono::milliseconds(std::stoi(args[3]));
     }
 
-    auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", argv[1], "chp_sender");
+    auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
     chirp_manager.setAsDefaultInstance();
     chirp_manager.start();
 
-    auto interval = std::chrono::milliseconds(std::stoi(argv[3]));
-    HeartbeatSend sender {argv[2], interval};
+    HeartbeatSend sender {name, interval};
 
     std::stop_source stop_token {};
     signal_handler_f = [&](int /*signal*/) -> void { stop_token.request_stop(); };
@@ -65,6 +77,13 @@ int main(int argc, char* argv[]) {
         state = magic_enum::enum_cast<State>(state_s, magic_enum::case_insensitive).value_or(state);
         sender.updateState(state);
     }
+}
 
+int main(int argc, char* argv[]) {
+    try {
+        cli_loop(std::span(argv, argc));
+    } catch(...) {
+        return 1;
+    }
     return 0;
 }
