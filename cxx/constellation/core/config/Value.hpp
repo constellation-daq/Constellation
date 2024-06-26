@@ -25,9 +25,10 @@
 namespace constellation::config {
 
     /** Check if a type can be held by a variant */
-    template <typename T, typename U> struct is_one_of;
+    template <typename T, typename U> struct is_one_of : std::false_type {};
     template <typename T, typename... Ts>
     struct is_one_of<T, std::variant<Ts...>> : std::bool_constant<(std::is_same_v<T, Ts> || ...)> {};
+    template <typename T, typename... Ts> inline constexpr bool is_one_of_v = is_one_of<T, Ts...>::value;
 
     // Type trait for std::vector
     template <typename T> struct is_vector : std::false_type {};
