@@ -200,15 +200,6 @@ class DataReceiver(Satellite):
         """Close the filehandler"""
         raise NotImplementedError()
 
-    def do_stopping(self, payload: Any) -> str:
-        """Unused.
-
-        In this Satellite class, this method is not used. All stopping actions
-        are performed from within `do_run`.
-
-        """
-        raise NotImplementedError
-
     def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         for uuid in self._pull_interfaces.keys():
