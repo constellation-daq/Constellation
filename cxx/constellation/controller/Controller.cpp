@@ -165,7 +165,14 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
     }
 
     // Exchange messages
-    return send_receive(sat->second, cmd);
+    auto response = send_receive(sat->second, cmd);
+
+    // Update last command info
+    auto verb = response.getVerb();
+    sat->second.last_cmd_type = verb.first;
+    sat->second.last_cmd_verb = verb.second;
+
+    return response;
 }
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
@@ -174,6 +181,11 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
     std::map<std::string, CSCP1Message> replies;
     for(auto& sat : connections_) {
         replies.emplace(sat.first, send_receive(sat.second, cmd, true));
+
+        // Update last command info
+        auto verb = replies.at(sat.first).getVerb();
+        sat.second.last_cmd_type = verb.first;
+        sat.second.last_cmd_verb = verb.second;
     }
     return replies;
 }
