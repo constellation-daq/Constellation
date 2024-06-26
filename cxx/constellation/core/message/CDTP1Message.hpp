@@ -73,8 +73,19 @@ namespace constellation::message {
          */
         CNSTLN_API CDTP1Message(Header header, std::size_t frames = 1);
 
+        /**
+         * @return Read-only reference to the CSCP1 header of the message
+         */
         constexpr const Header& getHeader() const { return header_; }
 
+        /**
+         * @return Reference to the CSCP1 header of the message
+         */
+        constexpr Header& getHeader() { return header_; }
+
+        /**
+         * @return Read-only reference to the payload of the message
+         */
         const std::vector<message::PayloadBuffer>& getPayload() const { return payload_buffers_; }
 
         /**
