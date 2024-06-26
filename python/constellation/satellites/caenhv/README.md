@@ -13,12 +13,12 @@ For communication, the CAEN communication library, `CAENHVWrapper` as well as th
 
 ## Parameters
 
-The following parameters need to be specified in the configuration file. Parameters without a default value are required.
+The following parameters need to be specified in the configuration file. System and connection parameters are required.
 
 | Parameter     | Description | Type | Default Value |
 |---------------|-------------|------|---------------|
 | `system`    | The type of crate connected, e.g. `"SY5527"` | String | - |
-| `link` | The type of connection, e.g. `"TCPIP"` | String | - |
+| `link` | The type of connection, e.g. `"TCPIP"` or `"USB"` | String | - |
 | `link_argument` | Additional information for the connection, e.g. the ip address `"192.168.8.2"` | String | - |
 | `user` | The user name to connect with | String | - |
 | `password` | The password to connect with | String | - |
