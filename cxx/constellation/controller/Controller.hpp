@@ -106,7 +106,7 @@ namespace constellation::controller {
          *
          * @return Map of satellite canonical names and their CSCP response messages
          */
-        std::map<std::string, message::CSCP1Message> sendCommand(message::CSCP1Message& cmd);
+        std::map<std::string, message::CSCP1Message> sendCommands(message::CSCP1Message& cmd);
 
         /**
          * @brief Send a command to all connected satellites
@@ -117,8 +117,8 @@ namespace constellation::controller {
          *
          * @return Map of satellite canonical names and their CSCP response messages
          */
-        std::map<std::string, message::CSCP1Message> sendCommand(const std::string& verb,
-                                                                 const CommandPayload& payload = {});
+        std::map<std::string, message::CSCP1Message> sendCommands(const std::string& verb,
+                                                                  const CommandPayload& payload = {});
 
         /**
          * @brief Helper to check if all connections are in a given state
