@@ -22,20 +22,17 @@ core_files = files(
   'core/monitoring.py',
   'core/network.py',
   'core/protocol.py',
+  'core/py.typed',
   'core/satellite.py',
 
 )
 
 satellites_files = files(
-  'satellites/example_satellite.py',
-  'satellites/caenhv/caenhv.py',
   'satellites/__init__.py',
-)
-tools_files = files(
-  'tools/H5datareader.py',
 )
 
 tools_files = files(
+  'tools/H5datareader.py',
   'tools/list_interfaces.py',
 )
 
@@ -47,3 +44,5 @@ py.install_sources(satellites_files,
 
 py.install_sources(tools_files,
   subdir: 'constellation/tools')
+
+subdir('satellites')

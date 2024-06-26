@@ -266,13 +266,7 @@ def main(args: Any = None) -> None:
     """
     parser = DataSenderArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(
-        name="random_data_sender",
-        cmd_port=23998,
-        mon_port=55555,
-        hb_port=61233,
-        data_port=45557,
-    )
+    parser.set_defaults(name="random_data_sender")
     args = vars(parser.parse_args(args))
 
     # set up logging

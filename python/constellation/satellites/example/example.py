@@ -63,9 +63,7 @@ def main(args=None):
 
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(
-        name="satellite_demo", cmd_port=23999, mon_port=55556, hb_port=61234
-    )
+    parser.set_defaults(name="satellite_demo")
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
@@ -78,7 +76,3 @@ def main(args=None):
     # start server with remaining args
     s = Example_Satellite(**args)
     s.run_satellite()
-
-
-if __name__ == "__main__":
-    main()

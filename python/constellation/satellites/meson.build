@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-__pycache__/
+subdir('caenhv')
+subdir('example')

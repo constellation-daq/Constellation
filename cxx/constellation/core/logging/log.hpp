@@ -40,7 +40,7 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  * @param logger Logger on which to log
  * @param level Log level on which to log
  */
-#define LOG_WITH_TOPIC(logger, level)                                                                                       \
+#define LOG_2ARGS(logger, level)                                                                                            \
     if((logger).shouldLog(level))                                                                                           \
     (logger).log(level)
 
@@ -51,7 +51,61 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  *
  * @param level Log level on which to log
  */
-#define LOG_TO_DEFAULT(level) LOG_WITH_TOPIC(constellation::log::Logger::getDefault(), level)
+#define LOG_1ARG(level) LOG_2ARGS(constellation::log::Logger::getDefault(), level)
+
+/**
+ * Logs a message if a given condition is true
+ *
+ * The given condition is evaluated after it was determined if logging should take place.
+ *
+ * @param logger Logger on which to log
+ * @param level Log level on which to log
+ * @param condition Condition to check before logging
+ */
+#define LOG_IF_3ARGS(logger, level, condition)                                                                              \
+    if((logger).shouldLog(level) && (condition))                                                                            \
+    (logger).log(level)
+
+/**
+ * Logs a message to the default logger if a given condition is true
+ *
+ * The given condition is evaluated after it was determined if logging should take place.
+ *
+ * @param level Log level on which to log
+ * @param condition Condition to check before logging
+ */
+#define LOG_IF_2ARGS(level, condition) LOG_IF_3ARGS(constellation::log::Logger::getDefault(), level, condition)
+
+/** Logs a message at most N times
+ *
+ * @param logger Logger on which to log
+ * @param level Log level on which to log
+ * @param count Count how often to log message at most
+ */
+#define LOG_N_3ARGS(logger, level, count)                                                                                   \
+    static std::atomic_int LOG_VAR {count};                                                                                 \
+    if(LOG_VAR > 0 && (logger).shouldLog(level))                                                                            \
+    (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
+
+/** Logs a message at most N times to the default logger
+ *
+ * @param level Log level on which to log
+ * @param count Count how often to log message at most
+ */
+#define LOG_N_2ARGS(level, count) LOG_N_3ARGS(constellation::log::Logger::getDefault(), level, count)
+
+/** Logs a message at most one time
+ *
+ * @param logger Logger on which to log
+ * @param level Log level on which to log
+ */
+#define LOG_ONCE_2ARGS(logger, level) LOG_N_3ARGS(logger, level, 1)
+
+/** Logs a message at most one time to the default logger
+ *
+ * @param level Log level on which to log
+ */
+#define LOG_ONCE_1ARG(level) LOG_ONCE_2ARGS(constellation::log::Logger::getDefault(), level)
 
 /**
  * Helper macros which allow to chose the correct target macro (LOG_TO_DEFAULT or LOG_WITH_TOPIC) depending on the number
@@ -64,9 +118,10 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  *                    * With two arguments in __VA_ARGS__, this will be LOG_WITH_TOPIC
  * * Finally, the respective macro is called with its argument(s)
  */
-#define LOG_FUNC_CHOOSER(_f1, _f2, _f3, ...) _f3
+#define LOG_FUNC_CHOOSER(_f1, _f2, _f3, _f4, ...) _f4
 #define LOG_FUNC_RECOMPOSER(argsWithParentheses) LOG_FUNC_CHOOSER argsWithParentheses
-#define LOG_MACRO_CHOOSER(...) LOG_FUNC_RECOMPOSER((__VA_ARGS__, LOG_WITH_TOPIC, LOG_TO_DEFAULT, ))
+#define LOG_MACRO_CHOOSER(F, ...) LOG_FUNC_RECOMPOSER((__VA_ARGS__, F##_3ARGS, F##_2ARGS, F##_1ARG, ))
+#define LOG_MACRO(FUNC, ...) LOG_MACRO_CHOOSER(FUNC, __VA_ARGS__)(__VA_ARGS__)
 
 /**
  * Logging macro which takes either one or two arguments:
@@ -74,37 +129,30 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
  * LOG(level) will log to the default logger of the framework
  * LOG(logger, level) will log to the chosen logger instance
  */
-#define LOG(...) LOG_MACRO_CHOOSER(__VA_ARGS__)(__VA_ARGS__)
+#define LOG(...) LOG_MACRO(LOG, __VA_ARGS__)
 
 /**
- * Logs a message if a given condition is true
+ * Logging macro to log a message if a given condition is true
  *
- * The given condition is evaluated after it was determined if logging should take place.
- *
- * @param logger Logger on which to log
- * @param level Log level on which to log
- * @param condition Condition to check before logging
+ * LOG_IF(level) will log to the default logger of the framework
+ * LOG_IF(logger, level) will log to the chosen logger instance
  */
-#define LOG_IF(logger, level, condition)                                                                                    \
-    if((logger).shouldLog(level) && (condition))                                                                            \
-    (logger).log(level)
+#define LOG_IF(...) LOG_MACRO(LOG_IF, __VA_ARGS__)
 
-/** Logs a message at most N times
+/**
+ * Logging macro to log a message at most N times
  *
- * @param logger Logger on which to log
- * @param level Log level on which to log
- * @param count Count how often to log message at most
+ * LOG_N(level, count) will log to the default logger of the framework
+ * LOG_N(logger, level, count) will log to the chosen logger instance
  */
-#define LOG_N(logger, level, count)                                                                                         \
-    static std::atomic_int LOG_VAR {count};                                                                                 \
-    if(LOG_VAR > 0 && (logger).shouldLog(level))                                                                            \
-    (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
+#define LOG_N(...) LOG_MACRO(LOG_N, __VA_ARGS__)
 
-/** Logs a message at most one time
+/**
+ * Logging macro to log a message at most one time
  *
- * @param logger Logger on which to log
- * @param level Log level on which to log
+ * LOG_ONCE(level) will log to the default logger of the framework
+ * LOG_ONCE(logger, level) will log to the chosen logger instance
  */
-#define LOG_ONCE(logger, level) LOG_N(logger, level, 1)
+#define LOG_ONCE(...) LOG_MACRO(LOG_ONCE, __VA_ARGS__)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
