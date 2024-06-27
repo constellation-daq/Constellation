@@ -25,4 +25,4 @@ from the EOR message as MessagePack dictionary.
 
 ### Framework Parameters
 
-Inherited from `DataReceiver`. (FIXME link to docs)
+Inherited from `SingleDataReceiver`. (FIXME link to docs)
