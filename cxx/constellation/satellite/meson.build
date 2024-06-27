@@ -3,7 +3,7 @@
 
 satellite_src = files(
   'BaseSatellite.cpp',
-  'data/DataReceiver.cpp',
+  'data/SingleDataReceiver.cpp',
   'data/DataSender.cpp',
   'CommandRegistry.cpp',
   'FSM.cpp',
@@ -27,7 +27,7 @@ satellite_dep = declare_dependency(
 )
 
 install_headers(
-  'data/DataReceiver.hpp',
+  'data/SingleDataReceiver.hpp',
   'data/DataSender.hpp',
   'data/exceptions.hpp',
   subdir: 'constellation/satellite/data',
