@@ -7,3 +7,4 @@ Satellite Library
    :caption: Components:
 
    satellite
+   data
