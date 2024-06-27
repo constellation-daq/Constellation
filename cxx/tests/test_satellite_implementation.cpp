@@ -34,6 +34,7 @@ using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
+using namespace std::literals::string_literals;
 
 class DummySatellite : public Satellite {
     // NOLINTBEGIN(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -64,7 +65,7 @@ public:
         req_.send(zmq_msg, send_flags);
     }
     void send(CSCP1Message& message) { message.assemble().send(req_); }
-    void send_command(std::string command) {
+    void sendCommand(std::string command) {
         auto msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, std::move(command)});
         send(msg);
     }
@@ -91,14 +92,14 @@ TEST_CASE("Get commands", "[satellite]") {
     CSCPSender sender {satellite_implementation.getPort()};
 
     // get_name
-    sender.send_command("get_name");
+    sender.sendCommand("get_name");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 
     // get_commands
-    sender.send_command("get_commands");
+    sender.sendCommand("get_commands");
     auto recv_msg_get_commands = sender.recv();
     REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
@@ -116,21 +117,21 @@ TEST_CASE("Get commands", "[satellite]") {
                "following states: RUN"));
 
     // get_state
-    sender.send_command("get_state");
+    sender.sendCommand("get_state");
     auto recv_msg_get_state = sender.recv();
     REQUIRE(recv_msg_get_state.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_state.getVerb().second), Equals("NEW"));
     REQUIRE(!recv_msg_get_state.hasPayload());
 
     // get_status
-    sender.send_command("get_status");
+    sender.sendCommand("get_status");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("just started!"));
     REQUIRE(!recv_msg_get_status.hasPayload());
 
     // get_config
-    sender.send_command("get_config");
+    sender.sendCommand("get_config");
     auto recv_msg_get_config = sender.recv();
     REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Configuration attached in payload"));
@@ -139,6 +140,15 @@ TEST_CASE("Get commands", "[satellite]") {
     REQUIRE(config.size() == 0);
     // TODO(stephan.lachnit): test with a non-empty configuration
 }
+
+TEST_CASE("Satellite name", "[satellite]") {
+    class InvalidSatellite : public Satellite {
+    public:
+        InvalidSatellite() : Satellite("Invalid", "invalid_satellite&name") {}
+    };
+    REQUIRE_THROWS_MATCHES(std::make_shared<InvalidSatellite>(), RuntimeError, Message("Satellite name is invalid"));
+}
+
 TEST_CASE("User commands", "[satellite]") {
     // Create and start satellite
     auto satellite = std::make_shared<DummySatellite>();
@@ -149,7 +159,7 @@ TEST_CASE("User commands", "[satellite]") {
     CSCPSender sender {satellite_implementation.getPort()};
 
     // my_cmd user command
-    sender.send_command("my_cmd");
+    sender.sendCommand("my_cmd");
     auto recv_msg_usr_cmd = sender.recv();
     REQUIRE(recv_msg_usr_cmd.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd.getVerb().second), Equals(""));
@@ -157,6 +167,17 @@ TEST_CASE("User commands", "[satellite]") {
     const auto& usrmsgpayload = recv_msg_usr_cmd.getPayload();
     const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload.span().data()), usrmsgpayload.span().size());
     REQUIRE(usrpayload->as<int>() == 2);
+
+    // my_cmd user command is case insensitive
+    sender.sendCommand("mY_cMd");
+    auto recv_msg_usr_cmd_case = sender.recv();
+    REQUIRE(recv_msg_usr_cmd_case.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_case.getVerb().second), Equals(""));
+    REQUIRE(recv_msg_usr_cmd_case.hasPayload());
+    const auto& usrmsgpayload_case = recv_msg_usr_cmd_case.getPayload();
+    const auto usrpayload_case =
+        msgpack::unpack(to_char_ptr(usrmsgpayload_case.span().data()), usrmsgpayload_case.span().size());
+    REQUIRE(usrpayload_case->as<int>() == 2);
 
     // my_usr_cmd_arg with argument as payload
     auto usr_cmd_arg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
@@ -176,7 +197,7 @@ TEST_CASE("User commands", "[satellite]") {
     REQUIRE(usrargpayload->as<int>() == 8);
 
     // my_cmd_void user command without arguments and return value
-    sender.send_command("my_cmd_void");
+    sender.sendCommand("my_cmd_void");
     auto recv_msg_usr_cmd_void = sender.recv();
     REQUIRE(recv_msg_usr_cmd_void.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_void.getVerb().second), Equals(""));
@@ -193,14 +214,14 @@ TEST_CASE("Case insensitive", "[satellite]") {
     CSCPSender sender {satellite_implementation.getPort()};
 
     // get_name with non-lower-case case
-    sender.send_command("GeT_nAmE");
+    sender.sendCommand("GeT_nAmE");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 
     // my_cmd user command
-    sender.send_command("mY_cMd");
+    sender.sendCommand("mY_cMd");
     auto recv_msg_usr_cmdn = sender.recv();
     REQUIRE(recv_msg_usr_cmdn.getVerb().first == CSCP1Message::Type::SUCCESS);
 }
@@ -225,8 +246,8 @@ TEST_CASE("Transitions", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_initialize.getVerb().second), Equals("Transition initialize is being initiated"));
 
     // Check state
-    std::this_thread::sleep_for(100ms);
-    sender.send_command("get_state");
+    std::this_thread::sleep_for(250ms);
+    sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("INIT"));
@@ -247,13 +268,14 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(initialize_msg);
     auto recv_msg_initialize = sender.recv();
     REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
+    std::this_thread::sleep_for(250ms);
 
     // Send launch
     auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
     sender.send(launch_msg);
     auto recv_msg_launch = sender.recv();
     REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(250ms);
 
     // Try shutdown & fail
     auto shutdown1_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -268,7 +290,7 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(land_msg);
     auto recv_msg_land = sender.recv();
     REQUIRE(recv_msg_land.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(250ms);
 
     // Try shutdown & succeed
     auto shutdown2_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -376,7 +398,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
-    initialize_msg.addPayload({"dummy_payload"});
+    initialize_msg.addPayload({"dummy_payload"s});
     sender.send(initialize_msg);
 
     // Check reply
@@ -386,8 +408,8 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
                  Equals("Transition initialize received incorrect payload"));
 
     // Check state
-    std::this_thread::sleep_for(100ms);
-    sender.send_command("get_state");
+    std::this_thread::sleep_for(250ms);
+    sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("NEW"));
@@ -401,7 +423,16 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Can not register command with empty name"));
+    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Command name is invalid"));
+
+    class MySatelliteI : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatelliteI() { register_command("command_with_amper&sand", "A User Command", {}, &MySatelliteI::cmd, this); }
+    };
+    REQUIRE_THROWS_MATCHES(std::make_shared<MySatelliteI>(), LogicError, Message("Command name is invalid"));
 
     class MySatellite2 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -435,6 +466,20 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(
         std::make_shared<MySatellite4>(), LogicError, Message("Standard satellite command with this name exists"));
+
+    // Command registration is case insensitive
+    class MySatellite5 : public DummySatellite {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
+        int cmd() { return 2; }
+
+    public:
+        MySatellite5() {
+            register_command("my_cmd", "A User Command", {}, &MySatellite5::cmd, this);
+            register_command("MY_CMD", "A User Command", {}, &MySatellite5::cmd, this);
+        }
+    };
+    REQUIRE_THROWS_MATCHES(
+        std::make_shared<MySatellite5>(), LogicError, Message("Command \"my_cmd\" is already registered"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
@@ -448,7 +493,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong payload encoding
     auto nolist_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    auto nolist_payload = payload_buffer("dummy payload");
+    auto nolist_payload = PayloadBuffer("dummy payload"s);
     nolist_msg.addPayload(std::move(nolist_payload));
     sender.send(nolist_msg);
 
@@ -482,7 +527,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
                  Equals("Command \"my_cmd_arg\" expects 1 arguments but 2 given"));
 
     // my_usr_state from wrong state
-    sender.send_command("my_cmd_state");
+    sender.sendCommand("my_cmd_state");
     auto recv_msg_usr_cmd_state = sender.recv();
     REQUIRE(recv_msg_usr_cmd_state.getVerb().first == CSCP1Message::Type::INVALID);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_state.getVerb().second),

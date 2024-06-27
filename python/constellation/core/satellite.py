@@ -8,9 +8,10 @@ This module provides the class for a Constellation Satellite.
 
 import time
 from queue import Empty
-import logging
+from typing import Tuple, Any
 import threading
 import traceback
+from concurrent.futures import Future
 
 from .fsm import SatelliteState
 from . import __version__
@@ -21,10 +22,10 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
-from .configuration import Configuration
+from .configuration import Configuration, make_lowercase
 from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
-from .base import EPILOG, ConstellationArgumentParser
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 
 
 class Satellite(
@@ -65,9 +66,9 @@ class Satellite(
         self.hb_checker = HeartbeatChecker()
 
         # register broadcast manager
-        self.register_offer(CHIRPServiceIdentifier.CONTROL, cmd_port)
-        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, hb_port)
-        self.register_offer(CHIRPServiceIdentifier.MONITORING, mon_port)
+        self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
+        self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
+        self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
         self.broadcast_offers()
 
         # Add exception handling via threading.excepthook to allow the state
@@ -84,7 +85,7 @@ class Satellite(
 
     @debug_log
     @cscp_requestable
-    def register(self, request: CSCPMessage):
+    def register(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Register a heartbeat via CSCP request."""
         name, ip, port = request.payload.split()
         callback = self.hb_checker.register
@@ -92,7 +93,7 @@ class Satellite(
         self.task_queue.put((callback, [name, f"tcp://{ip}:{port}", self.context]))
         return "registering", name, None
 
-    def run_satellite(self):
+    def run_satellite(self) -> None:
         """Main Satellite event loop with task handler-routine.
 
         This routine sequenctially executes tasks queued by the CommandReceiver
@@ -111,7 +112,12 @@ class Satellite(
                     callback(*args)
                 except Exception as e:
                     # TODO consider whether to go into error state if anything goes wrong here
-                    self.log.error("Caught exception handling task: %s", repr(e))
+                    self.log.exception(
+                        "Caught exception handling task '%s' with args '%s': %s",
+                        callback,
+                        args,
+                        repr(e),
+                    )
             except Empty:
                 # nothing to process
                 pass
@@ -121,7 +127,7 @@ class Satellite(
                 break
             time.sleep(0.01)
 
-    def reentry(self):
+    def reentry(self) -> None:
         """Orderly shutdown and destroy the Satellelite."""
         # can only exit from certain state, go into ERROR if not the case
         self.log.info("Satellite on reentry course for self-destruction.")
@@ -141,7 +147,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_initialize(self, config: dict) -> str:
+    def _wrap_initialize(self, config: dict[str, Any]) -> str:
         """Wrapper for the 'initializing' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -152,16 +158,18 @@ class Satellite(
         # timeout is exceeded joining them, the raised TimeoutError exception
         # will take us into ERROR state.
         try:
-            self._state_thread_evt.set()
-            self._state_thread_fut.result(2)
+            self._state_thread_evt.set()  # type: ignore[union-attr]
+            self._state_thread_fut.result(2)  # type: ignore[union-attr]
         except AttributeError:
             # no threads left
             pass
         self._state_thread_evt = None
         self._state_thread_fut = None
-
+        # prepare configuration
+        config = make_lowercase(config)
         self.config = Configuration(config)
-        init_msg = self.do_initializing(self.config)
+        # call device-specific user-routine
+        init_msg: str = self.do_initializing(self.config)
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
@@ -181,24 +189,24 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_launch(self, payload: any) -> str:
+    def _wrap_launch(self, payload: Any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
         control to the device-specific public method.
 
         """
-        self.hb_checker.start()
-        return self.do_launching(payload)
+        self.hb_checker.start_all()
+        return str(self.do_launching(payload))
 
     @debug_log
-    def do_launching(self, payload: any) -> str:
+    def do_launching(self, payload: Any) -> str:
         """Prepare Satellite for data acquistions."""
         return "Launched."
 
     @handle_error
     @debug_log
-    def _wrap_reconfigure(self, config: dict) -> str:
+    def _wrap_reconfigure(self, config: dict[str, Any]) -> str:
         """Wrapper for the 'reconfigure' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -213,7 +221,7 @@ class Satellite(
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the exististance of the method to
         # determine the reaction to a `reconfigure` CSCP command.
-        init_msg = self.do_reconfigure(self.config)  # noqa
+        init_msg: str = self.do_reconfigure(self.config)  # type: ignore[attr-defined]
 
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
@@ -224,7 +232,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_land(self, payload: any) -> str:
+    def _wrap_land(self, payload: Any) -> str:
         """Wrapper for the 'landing' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -232,16 +240,17 @@ class Satellite(
 
         """
         self.hb_checker.stop()
-        return self.do_landing(payload)
+        res: str = self.do_landing(payload)
+        return res
 
     @debug_log
-    def do_landing(self, payload: any) -> str:
+    def do_landing(self, payload: Any) -> str:
         """Return Satellite to Initialized state."""
         return "Landed."
 
     @handle_error
     @debug_log
-    def _wrap_stop(self, payload: any):
+    def _wrap_stop(self, payload: Any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -252,12 +261,14 @@ class Satellite(
         if self._state_thread_evt:
             self._state_thread_evt.set()
         # wait for result, will raise TimeoutError if not successful
+        # assert for mypy static type analysis
+        assert isinstance(self._state_thread_fut, Future)
         self._state_thread_fut.result(timeout=10)
-        self._state_thread_evt = None
-        return self.do_stopping(payload)
+        res: str = self.do_stopping(payload)
+        return res
 
     @debug_log
-    def do_stopping(self, payload: any):
+    def do_stopping(self, payload: Any) -> str:
         """Stop the data acquisition."""
         return "Acquisition stopped."
 
@@ -271,19 +282,20 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
-        res = self.do_starting(run_identifier)
+        res: str = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
         # continue to execute DAQ in this thread
-        return self.do_run(run_identifier)
+        res = self.do_run(run_identifier)
+        return res
 
     @debug_log
-    def do_starting(self, payload: any) -> str:
+    def do_starting(self, payload: Any) -> str:
         """Final preparation for acquisition."""
         return "Finished preparations, starting."
 
     @debug_log
-    def do_run(self, payload: any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
@@ -303,12 +315,16 @@ class Satellite(
         """
         # the stop_running Event will be set from outside the thread when it is
         # time to close down.
+        # assert for mypy static type analysis
+        assert isinstance(
+            self._state_thread_evt, threading.Event
+        ), "Transition thread Event not set up correctly"
         while not self._state_thread_evt.is_set():
             time.sleep(0.2)
         return "Finished acquisition."
 
     @debug_log
-    def _wrap_failure(self):
+    def _wrap_failure(self, *_args: Any, **_kwargs: Any) -> str:
         """Wrapper for the 'ERROR' state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -323,7 +339,8 @@ class Satellite(
                 self._state_thread_evt.set()
                 if self._state_thread_fut:
                     self._state_thread_fut.result(timeout=1)
-            return self.fail_gracefully()
+            res: str = self.fail_gracefully()
+            return res
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
         except Exception as e:
@@ -331,13 +348,13 @@ class Satellite(
             return "Exception caught during failure handling, see logs for details."
 
     @debug_log
-    def fail_gracefully(self):
+    def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         return "Failed gracefully."
 
     @handle_error
     @debug_log
-    def _wrap_interrupt(self, payload):
+    def _wrap_interrupt(self, payload: Any) -> str:
         """Wrapper for the 'interrupting' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -348,13 +365,16 @@ class Satellite(
         if self._state_thread_evt:
             self._state_thread_evt.set()
             # wait for result, will raise TimeoutError if not successful
+            # assert for mypy static type analysis
+            assert isinstance(self._state_thread_fut, Future)
             self._state_thread_fut.result(timeout=10)
             self._state_thread_evt = None
         self.hb_checker.stop()
-        return self.do_interrupting()
+        res: str = self.do_interrupting()
+        return res
 
     @debug_log
-    def do_interrupting(self):
+    def do_interrupting(self) -> str:
         """Interrupt data acquisition and move to Safe state.
 
         Defaults to calling the stop and land handlers.
@@ -365,7 +385,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_recover(self):
+    def _wrap_recover(self) -> str:
         """Wrapper for the 'recovering' transitional state of the FSM.
 
         This method does not perform any action as the SAFE->INIT transition has
@@ -374,7 +394,7 @@ class Satellite(
         """
         return "Recovered."
 
-    def _thread_exception(self, args):
+    def _thread_exception(self, args: Any) -> None:
         """Handle exceptions in threads.
 
         Change state to FAULT.
@@ -399,7 +419,9 @@ class Satellite(
     # -------------------------- #
 
     @cscp_requestable
-    def get_version(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_version(
+        self, _request: CSCPMessage | None = None
+    ) -> Tuple[str, None, None]:
         """Get Constellation version.
 
         No payload argument.
@@ -411,7 +433,7 @@ class Satellite(
         return __version__, None, None
 
     @cscp_requestable
-    def get_run_id(self, _request: CSCPMessage = None) -> (str, None, None):
+    def get_run_id(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Get current run identifier.
 
         No payload argument.
@@ -426,7 +448,7 @@ class Satellite(
 class SatelliteArgumentParser(ConstellationArgumentParser):
     """Customized Argument parser providing common Satellite options."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.network.add_argument(
             "--cmd-port",
@@ -454,27 +476,21 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
         )
 
 
-def main(args=None):
+def main(args: Any = None) -> None:
     """Start a Demo Satellite server.
 
     This Satellite only implements rudimentary functionality but can be used to
     test basic communication.
 
     """
-    import coloredlogs
-
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(
-        name="satellite_demo", cmd_port=23999, mon_port=55556, hb_port=61234
-    )
+    parser.set_defaults(name="satellite_demo")
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    logger = setup_cli_logging(args["name"], args.pop("log_level"))
 
     logger.info("Starting up satellite!")
     # start server with remaining args

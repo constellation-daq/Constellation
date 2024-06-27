@@ -5,44 +5,76 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import logging
 import threading
 import time
 from queue import Empty
-from typing import Dict
+from typing import Dict, Callable, Any, Tuple
 
 import zmq
 
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .chirp import CHIRPServiceIdentifier, get_uuid
-
 from .cscp import CommandTransmitter
 from .error import debug_log
+from .fsm import SatelliteState
 from .satellite import Satellite
-from .base import EPILOG, ConstellationArgumentParser
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
+from .heartbeatchecker import HeartbeatChecker
+
+
+class SatelliteClassCommLink:
+    """A link to a Satellite Class."""
+
+    def __init__(self, name: str):
+        self._class_name = name
+
+    def __str__(self) -> str:
+        """Convert to class name."""
+        return self._class_name
+
+
+class SatelliteCommLink(SatelliteClassCommLink):
+    """A link to a Satellite."""
+
+    def __init__(self, name: str, cls: str):
+        self._name = name
+        self._uuid = str(get_uuid(f"{cls}.{name}"))
+        super().__init__(cls)
+
+    def __str__(self) -> str:
+        """Convert to canonical name."""
+        return f"{self._class_name}.{self._name}"
 
 
 class SatelliteArray:
     """Provide object-oriented control of connected Satellites."""
 
-    def __init__(self, group: str, handler: callable):
-        self.constellation = group
+    def __init__(
+        self,
+        group: str,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+    ):
+        self.group = group
         self._handler = handler
         # initialize with the commands known to any CSCP Satellite
         self._add_cmds(self, self._handler, get_cscp_commands(Satellite))
-        self._satellites: list(SatelliteCommLink) = []
+        self._satellites: dict[str, SatelliteCommLink] = {}
 
     @property
-    def satellites(self):
-        """Return the list of known Satellite."""
+    def satellites(self) -> dict[str, SatelliteCommLink]:
+        """Return the dict of Satellites names and their SatelliteCommLink."""
         return self._satellites
 
-    def _add_class(self, name: str, commands: dict[str]):
+    def get_satellite(self, sat_class: str, sat_name: str) -> SatelliteCommLink:
+        """Return a link to a Satellite given by its class and name."""
+        return self._satellites[f"{sat_class}.{sat_name}"]
+
+    def _add_class(self, name: str, commands: dict[str, Any]) -> SatelliteClassCommLink:
         """Add a new class to the array."""
         try:
-            cl = getattr(self, name)
+            cl: SatelliteClassCommLink = getattr(self, name)
             return cl
         except AttributeError:
             pass
@@ -52,35 +84,42 @@ class SatelliteArray:
         setattr(self, name, cl)
         return cl
 
-    def _add_satellite(self, name: str, cls: str, commands: dict[str]):
+    def _add_satellite(
+        self, name: str, cls: str, commands: dict[str, str]
+    ) -> SatelliteCommLink:
         """Add a new Satellite."""
         try:
-            cl = getattr(self, cls)
+            cl: SatelliteClassCommLink = getattr(self, cls)
         except AttributeError:
             cl = self._add_class(cls, commands)
-        sat = SatelliteCommLink(name, cls)
+        sat: SatelliteCommLink = SatelliteCommLink(name, cls)
         self._add_cmds(sat, self._handler, commands)
-        setattr(cl, name, sat)
-        self._satellites.append(sat)
+        setattr(cl, self._sanitize_name(name), sat)
+        self._satellites[f"{cls}.{name}"] = sat
         return sat
 
-    def _remove_satellite(self, uuid: str):
+    def _remove_satellite(self, uuid: str) -> None:
         """Remove a Satellite."""
         name, cls = self._get_name_from_uuid(uuid)
         # remove attribute
-        delattr(getattr(self, cls), name)
-        # clear from list
-        self._satellites = [sat for sat in self._satellites if sat._uuid != uuid]
+        delattr(getattr(self, cls), self._sanitize_name(name))
+        # clear from dict
+        self._satellites.pop(f"{cls}.{name}")
 
-    def _get_name_from_uuid(self, uuid: str):
-        s = [sat for sat in self._satellites if sat._uuid == uuid]
+    def _get_name_from_uuid(self, uuid: str) -> Tuple[str, str]:
+        s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
         name = s[0]._name
         cls = s[0]._class_name
         return name, cls
 
-    def _add_cmds(self, obj: any, handler: callable, cmds: dict[str]):
+    def _add_cmds(
+        self,
+        obj: Any,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        cmds: dict[str, str],
+    ) -> None:
         try:
             sat = obj._name
         except AttributeError:
@@ -92,8 +131,12 @@ class SatelliteArray:
         for cmd, doc in cmds.items():
             w = CommandWrapper(handler, sat=sat, satcls=satcls, cmd=cmd)
             # add docstring
-            w.call.__func__.__doc__ = doc
+            w.call.__func__.__doc__ = doc  # type: ignore[attr-defined]
             setattr(obj, cmd, w.call)
+
+    def _sanitize_name(self, name: str) -> str:
+        """Remove characters not suited for Python methods from names."""
+        return name.replace("-", "_")
 
 
 class CommandWrapper:
@@ -102,46 +145,28 @@ class CommandWrapper:
     Allows to mimic the signature of the Satellite command being wrapped.
     """
 
-    def __init__(self, handler, sat, satcls, cmd):
+    def __init__(
+        self,
+        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        sat: str,
+        satcls: str,
+        cmd: str,
+    ):
         """Initialize with fcn as a partial() call."""
         self.fcn = handler
         self.sat = sat
         self.satcls = satcls
         self.cmd = cmd
 
-    def call(self, payload=None):
+    def call(self, payload: Any = None) -> Tuple[str, Any, dict[str, Any] | None]:
         """Perform call. This doc string will be overwritten."""
-        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)
-
-
-class SatelliteClassCommLink:
-    """A link to a Satellite Class."""
-
-    def __init__(self, name):
-        self._class_name = name
-
-    def __str__(self):
-        """Convert to class name."""
-        return self._class_name
-
-
-class SatelliteCommLink(SatelliteClassCommLink):
-    """A link to a Satellite."""
-
-    def __init__(self, name, cls):
-        self._name = name
-        self._uuid = str(get_uuid(f"{cls}.{name}"))
-        super().__init__(cls)
-
-    def __str__(self):
-        """Convert to canonical name."""
-        return f"{self._class_name}.{self._name}"
+        return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)  # type: ignore[call-arg]
 
 
 class BaseController(CHIRPBroadcaster):
     """Simple controller class to send commands to a Constellation."""
 
-    def __init__(self, group: str, **kwargs):
+    def __init__(self, group: str, **kwargs: Any) -> None:
         """Initialize values.
 
         Arguments:
@@ -155,10 +180,13 @@ class BaseController(CHIRPBroadcaster):
         # lookup table for uuids to (cls, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
-        self.constellation = SatelliteArray(group, self.command)
+        self._constellation = SatelliteArray(group, self.command)
 
         super()._add_com_thread()
         super()._start_com_threads()
+
+        self._hb_checker = HeartbeatChecker(self._hb_failure)
+        self._hb_checker.auto_recover = True
 
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
@@ -170,17 +198,50 @@ class BaseController(CHIRPBroadcaster):
         # wait for threads to be ready
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
+        self.request(CHIRPServiceIdentifier.HEARTBEAT)
+
+    @property
+    def states(self) -> dict[str, SatelliteState]:
+        """Return an up-to-date dictionary of connected Satellite's status.
+
+        Based on heartbeat information.
+
+        """
+        return self._hb_checker.states
+
+    @property
+    def constellation(self) -> SatelliteArray:
+        """Returns the currently active SatelliteArray of controlled Satellites."""
+        return self._constellation
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.CONTROL)
-    def _add_satellite_callback(self, service: DiscoveredService):
+    def _add_satellite_callback(self, service: DiscoveredService) -> None:
         """Callback method connecting to satellite."""
         if not service.alive:
             self._remove_satellite(service)
         else:
             self._add_satellite(service)
 
-    def _add_satellite(self, service: DiscoveredService):
+    @debug_log
+    @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
+    def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
+        """Callback method registering satellite's heartbeat."""
+        if not service.alive:
+            return
+        uuid = str(service.host_uuid)
+        if uuid in self._transmitters:
+            # we are controlling this satellite
+            cls, name = self._uuid_lookup[uuid]
+            canonical_name = f"{cls}.{name}"
+            if not self._hb_checker.is_registered(canonical_name):
+                self._hb_checker.register(
+                    name=canonical_name,
+                    address=f"tcp://{service.address}:{service.port}",
+                )
+                self._hb_checker.start(canonical_name)
+
+    def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
         if str(service.host_uuid) in self._uuid_lookup.keys():
             self.log.error(
@@ -203,7 +264,7 @@ class BaseController(CHIRPBroadcaster):
             msg = ct.request_get_response("get_commands")
             # get canonical name
             cls, name = msg.from_host.split(".", maxsplit=1)
-            sat = self.constellation._add_satellite(name, cls, msg.payload)
+            sat = self._constellation._add_satellite(name, cls, msg.payload)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
@@ -213,16 +274,26 @@ class BaseController(CHIRPBroadcaster):
             uuid = str(service.host_uuid)
             self._uuid_lookup[uuid] = (cls, name)
             self._transmitters[uuid] = ct
+            # check if heartbeat service for satellite is known already
+            for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
+                if hbservice.host_uuid == service.host_uuid:
+                    canonical_name = f"{cls}.{name}"
+                    self._hb_checker.register(
+                        name=canonical_name,
+                        address=f"tcp://{hbservice.address}:{hbservice.port}",
+                    )
+                    self._hb_checker.start(canonical_name)
+                    break
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
-    def _remove_satellite(self, service: DiscoveredService):
+    def _remove_satellite(self, service: DiscoveredService) -> None:
         name, cls = None, None
         # departure
         uuid = str(service.host_uuid)
         try:
-            name, cls = self.constellation._get_name_from_uuid(uuid)
-            self.constellation._remove_satellite(uuid)
+            name, cls = self._constellation._get_name_from_uuid(uuid)
+            self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
         self.log.debug(
@@ -239,19 +310,26 @@ class BaseController(CHIRPBroadcaster):
         except KeyError:
             pass
 
-    def command(self, payload=None, sat=None, satcls=None, cmd=None):
+    def _hb_failure(self, name: str, state: SatelliteState) -> None:
+        """Callback for Satellites failing to send heartbeats."""
+        # TODO add filter for only those Satellites that we control
+        self.log.critical("%s has entered %s", name, state.name)
+
+    def command(
+        self, payload: Any = None, sat: str = "", satcls: str = "", cmd: str = ""
+    ) -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat._uuid for sat in self.constellation.satellites]
+            targets = [sat._uuid for sat in self._constellation.satellites.values()]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
         elif not sat:
             targets = [
                 sat._uuid
-                for sat in self.constellation.satellites
+                for sat in self._constellation.satellites.values()
                 if sat._class_name == satcls
             ]
             self.log.info(
@@ -261,7 +339,9 @@ class BaseController(CHIRPBroadcaster):
                 satcls,
             )
         else:
-            targets = [getattr(getattr(self.constellation, satcls), sat)._uuid]
+            assert satcls  # for typing
+            assert sat  # for typing
+            targets = [self._constellation.get_satellite(satcls, sat)._uuid]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
         res = {}
@@ -317,19 +397,22 @@ class BaseController(CHIRPBroadcaster):
                 }
         return res
 
-    def _preprocess_payload(self, payload: any, uuid: str, cmd: str) -> any:
+    def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
         """Pre-processes payload for specific commands."""
-        if cmd == "initialize":
+        if cmd == "initialize" or cmd == "reconfigure":
             # payload needs to be a flat dictionary, but we want to allow to
             # supply a full config -- flatten it here
             if any(isinstance(i, dict) for i in payload.values()):
                 # have a nested dict
                 cls, name = self._uuid_lookup[uuid]
-                self.log.debug("Flattening dictionary for %s.%s", cls, name)
-                return flatten_config(payload, cls, name)
+                cfg = flatten_config(payload, cls, name)
+                self.log.debug(
+                    "Flattening and sending configuration for %s.%s", cls, name
+                )
+                return cfg
         return payload
 
-    def _run_task_handler(self):
+    def _run_task_handler(self) -> None:
         """Event loop for task handler-routine"""
         while not self._task_handler_event.is_set():
             try:
@@ -345,26 +428,36 @@ class BaseController(CHIRPBroadcaster):
                 # nothing to process
                 pass
 
-    def reentry(self):
+    def reentry(self) -> None:
         """Stop the controller."""
         self.log.info("Stopping controller.")
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
-        for _name, cmd_tm in self._transmitters.items():
-            cmd_tm.socket.close()
+        try:
+            for _name, cmd_tm in self._transmitters.items():
+                cmd_tm.socket.close()
+        except Exception:
+            # ignore errors; this avoids spurious error messages if e.g. the
+            # initialization of the class fails
+            pass
+        try:
+            self._hb_checker.stop()
+        except Exception as e:
+            self.log.warning(
+                "Encountered problem shutting heartbeat checker down: %s", repr(e)
+            )
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join()
         super().reentry()
 
 
-def main(args=None):
+def main(args: Any = None) -> None:
     """Start a Constellation CSCP controller.
 
     This Controller provides a command-line interface to the selected
     Constellation group via IPython terminal.
 
     """
-    import coloredlogs
     from IPython import embed
 
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
@@ -377,9 +470,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    logger = setup_cli_logging(args["name"], args.pop("log_level"))
 
     cfg_file = args.pop("config")
 

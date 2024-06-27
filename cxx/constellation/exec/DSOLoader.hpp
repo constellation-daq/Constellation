@@ -25,7 +25,7 @@ namespace constellation::exec {
          * @param logger Logger to log DSO path on success
          * @param hint Hint to path of the DSO
          */
-        CNSTLN_API DSOLoader(std::string dso_name, log::Logger& logger, std::filesystem::path hint = {});
+        CNSTLN_API DSOLoader(const std::string& dso_name, log::Logger& logger, const std::filesystem::path& hint = {});
 
         CNSTLN_API virtual ~DSOLoader();
 
@@ -42,7 +42,7 @@ namespace constellation::exec {
          */
         template <typename FunctionType> FunctionType* getFunctionFromDSO(const std::string& function_name) {
             // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-            return reinterpret_cast<FunctionType*>(getRawFunctionFromDSO(function_name));
+            return reinterpret_cast<FunctionType*>(get_raw_function_from_dso(function_name));
         }
 
         /**
@@ -50,9 +50,15 @@ namespace constellation::exec {
          */
         CNSTLN_API satellite::Generator* loadSatelliteGenerator();
 
+        std::string getDSOName() { return dso_name_; }
+
+        inline static std::string to_dso_file_name(const std::string& dso_name) {
+            return CNSTLN_DSO_PREFIX + dso_name + CNSTLN_DSO_SUFFIX;
+        }
+
     private:
         // OS-specific function to get function from DSO
-        CNSTLN_API void* getRawFunctionFromDSO(const std::string& function_name);
+        CNSTLN_API void* get_raw_function_from_dso(const std::string& function_name);
 
         std::string dso_name_;
         void* handle_;

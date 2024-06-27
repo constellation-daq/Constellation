@@ -9,19 +9,31 @@ import zmq
 import threading
 import os
 import pathlib
-from uuid import UUID
 from queue import Empty
 from functools import wraps
 from datetime import datetime
+from typing import Callable, cast, ParamSpec, TypeVar, Any, Tuple
+from queue import Queue
 from logging.handlers import QueueHandler, QueueListener
 
-from .base import BaseSatelliteFrame, ConstellationArgumentParser, EPILOG
+from .base import (
+    BaseSatelliteFrame,
+    ConstellationArgumentParser,
+    EPILOG,
+    setup_cli_logging,
+)
 from .cmdp import CMDPTransmitter, Metric, MetricsType
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 
 
-def schedule_metric(handling: MetricsType, interval: float):
+P = ParamSpec("P")
+B = TypeVar("B", bound=BaseSatelliteFrame)
+
+
+def schedule_metric(
+    handling: MetricsType, interval: float
+) -> Callable[[Callable[P, Metric]], Callable[P, Metric]]:
     """Schedule a function for callback at interval [s] and send Metric.
 
     The function should take no arguments and return a value [any] and a unit
@@ -29,9 +41,9 @@ def schedule_metric(handling: MetricsType, interval: float):
 
     """
 
-    def decorator(func):
+    def decorator(func: Callable[P, Metric]) -> Callable[P, Metric]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Metric:
             res = func(*args, **kwargs)
             if isinstance(res, tuple):
                 val, unit = res
@@ -47,13 +59,13 @@ def schedule_metric(handling: MetricsType, interval: float):
             return m
 
         # mark function as chirp callback
-        wrapper.metric_scheduled = interval
+        wrapper.metric_scheduled = interval  # type: ignore[attr-defined]
         return wrapper
 
     return decorator
 
 
-def get_scheduled_metrics(cls):
+def get_scheduled_metrics(cls: object) -> dict[str, dict[str, Any]]:
     """Loop over all class methods and return those marked as metric."""
     res = {}
     for func in dir(cls):
@@ -77,13 +89,18 @@ class MonitoringSender(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, mon_port: int, interface: str, **kwds):
+    def __init__(self, name: str, mon_port: int, interface: str, **kwds: Any):
         """Set up logging and metrics transmitters."""
         super().__init__(name=name, interface=interface, **kwds)
 
         # Create monitoring socket and bind interface
         socket = self.context.socket(zmq.PUB)
-        socket.bind(f"tcp://{interface}:{mon_port}")
+        if not mon_port:
+            self.mon_port = socket.bind_to_random_port(f"tcp://{interface}")
+        else:
+            socket.bind(f"tcp://{interface}:{mon_port}")
+            self.mon_port = mon_port
+
         self._mon_tm = CMDPTransmitter(name, socket)
 
         # Set up ZMQ logging
@@ -103,10 +120,10 @@ class MonitoringSender(BaseSatelliteFrame):
     def schedule_metric(
         self,
         name: str,
-        callback: callable,
+        callback: Callable[..., Tuple[Any, str]],
         interval: float,
         handling: MetricsType = MetricsType.LAST_VALUE,
-    ):
+    ) -> None:
         """Schedule a callback at regular intervals.
 
         The callable needs to return a value [any] and a unit [str] and take no
@@ -116,7 +133,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
         """
 
-        def wrapper():
+        def wrapper() -> Metric:
             res = callback()
             if isinstance(res, tuple):
                 val, unit = res
@@ -133,11 +150,19 @@ class MonitoringSender(BaseSatelliteFrame):
 
         self._metrics_callbacks[name] = {"function": wrapper, "interval": interval}
 
-    def send_metric(self, metric: Metric):
+    def send_metric(self, metric: Metric) -> None:
         """Send a single metric via ZMQ."""
-        return self._mon_tm.send_metric(metric)
+        self._mon_tm.send_metric(metric)
 
-    def _add_com_thread(self):
+    def reset_scheduled_metrics(self) -> None:
+        """Reset all previously scheduled metrics.
+
+        Will only schedule metrics provided via decorator.
+
+        """
+        self._metrics_callbacks = get_scheduled_metrics(self)
+
+    def _add_com_thread(self) -> None:
         """Add the metric sender thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["metric_sender"] = threading.Thread(
@@ -145,10 +170,10 @@ class MonitoringSender(BaseSatelliteFrame):
         )
         self.log.debug("Metric sender thread prepared and added to the pool.")
 
-    def _send_metrics(self):
+    def _send_metrics(self) -> None:
         """Metrics sender loop."""
-        last_update = {}
-        while not self._com_thread_evt.is_set():
+        last_update: dict[str, datetime] = {}
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
             for metric, param in self._metrics_callbacks.items():
                 update = False
                 try:
@@ -171,7 +196,7 @@ class MonitoringSender(BaseSatelliteFrame):
         # clean up
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close the ZMQ socket."""
         self.log.removeHandler(self._zmq_log_handler)
         self._mon_tm.close()
@@ -181,14 +206,14 @@ class ZeroMQSocketLogHandler(QueueHandler):
     """This handler sends records to a ZMQ socket."""
 
     def __init__(self, transmitter: CMDPTransmitter):
-        super().__init__(transmitter)
+        super().__init__(cast(Queue, transmitter))  # type: ignore[type-arg]
 
-    def enqueue(self, record):
-        self.queue.send(record)
+    def enqueue(self, record: logging.LogRecord) -> None:
+        self.queue.send(record)  # type: ignore[attr-defined]
 
-    def close(self):
-        if not self.queue.closed:
-            self.queue.close()
+    def close(self) -> None:
+        if not self.queue.closed:  # type: ignore[attr-defined]
+            self.queue.close()  # type: ignore[attr-defined]
 
 
 class ZeroMQSocketLogListener(QueueListener):
@@ -198,37 +223,37 @@ class ZeroMQSocketLogListener(QueueListener):
 
     """
 
-    def __init__(self, transmitter, /, *handlers, **kwargs):
-        super().__init__(transmitter, *handlers, **kwargs)
+    def __init__(self, transmitter: CMDPTransmitter, /, *handlers: Any, **kwargs: Any):
+        super().__init__(cast(Queue, transmitter), *handlers, **kwargs)  # type: ignore[type-arg]
         self._stop_recv = threading.Event()
 
-    def dequeue(self, block):
+    def dequeue(self, _block: bool) -> logging.LogRecord:
         # FIXME it is quite likely that this blocking call causes errors when
         # shutting down as the ZMQ context is removed before this call ends.
         record = None
         while not record and not self._stop_recv.is_set():
             try:
-                record = self.queue.recv()
+                record = self.queue.recv()  # type: ignore[attr-defined]
             except zmq.ZMQError:
                 pass
         if self._stop_recv.is_set():
             # close down
-            return self._sentinel
-        return record
+            return self._sentinel  # type: ignore[no-any-return, attr-defined]
+        return cast(logging.LogRecord, record)
 
-    def stop(self):
+    def stop(self) -> None:
         """Close socket and stop thread."""
         super().stop()
-        self.queue.close()
+        self.queue.close()  # type: ignore[attr-defined]
 
-    def enqueue_sentinel(self):
+    def enqueue_sentinel(self) -> None:
         self._stop_recv.set()
 
 
 class MonitoringListener(CHIRPBroadcaster):
     """Simple monitor class to receive logs and metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, output_path: str = None):
+    def __init__(self, name: str, group: str, interface: str, output_path: str = ""):
         """Initialize values.
 
         Arguments:
@@ -240,11 +265,11 @@ class MonitoringListener(CHIRPBroadcaster):
         super().__init__(name=name, group=group, interface=interface)
 
         self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
-        self._metric_sockets: dict[UUID, zmq.socket] = {}
+        self._metric_sockets: dict[str, zmq.Socket] = {}  # type: ignore[type-arg]
 
         # create output directories and configure file writer logger
         if output_path:
-            self.output_path = pathlib.Path(output_path)
+            self.output_path: pathlib.Path | None = pathlib.Path(output_path)
             try:
                 os.makedirs(self.output_path)
                 self.log.info("Created path %s", output_path)
@@ -287,14 +312,14 @@ class MonitoringListener(CHIRPBroadcaster):
         self._poller_lock = threading.Lock()
 
     @chirp_callback(CHIRPServiceIdentifier.MONITORING)
-    def _add_satellite_callback(self, service: DiscoveredService):
+    def _add_satellite_callback(self, service: DiscoveredService) -> None:
         """Callback method connecting to satellite."""
         if not service.alive:
             self._remove_satellite(service)
         else:
             self._add_satellite(service)
 
-    def _add_satellite(self, service: DiscoveredService):
+    def _add_satellite(self, service: DiscoveredService) -> None:
         address = "tcp://" + service.address + ":" + str(service.port)
         uuid = str(service.host_uuid)
         self.log.debug(
@@ -323,7 +348,7 @@ class MonitoringListener(CHIRPBroadcaster):
         self._metric_sockets[uuid] = socket
         self.poller.register(socket, zmq.POLLIN)
 
-    def _remove_satellite(self, service: DiscoveredService):
+    def _remove_satellite(self, service: DiscoveredService) -> None:
         # departure
         uuid = str(service.host_uuid)
         self.log.debug(
@@ -343,10 +368,10 @@ class MonitoringListener(CHIRPBroadcaster):
         except KeyError:
             pass
 
-    def receive_metrics(self):
+    def receive_metrics(self) -> None:
         """Main loop to receive metrics."""
         # set up transmitter for decoding metrics
-        transmitter = CMDPTransmitter(None, None)
+        transmitter = CMDPTransmitter("", None)
 
         while not self._metrics_receiver_shutdown.is_set():
             try:
@@ -367,9 +392,9 @@ class MonitoringListener(CHIRPBroadcaster):
             except KeyboardInterrupt:
                 break
 
-    def _run_task_handler(self):
+    def _run_task_handler(self) -> None:
         """Event loop for task handler-routine"""
-        while not self._task_handler_event.is_set():
+        while self._task_handler_event and not self._task_handler_event.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
                 task = self.task_queue.get(block=True, timeout=0.5)
@@ -383,7 +408,7 @@ class MonitoringListener(CHIRPBroadcaster):
                 # nothing to process
                 pass
 
-    def reentry(self):
+    def reentry(self) -> None:
         """Shutdown Monitor."""
         self._metrics_receiver_shutdown.set()
         for _uuid, listener in self._log_listeners.items():
@@ -395,10 +420,8 @@ class MonitoringListener(CHIRPBroadcaster):
         super().reentry()
 
 
-def main(args=None):
+def main(args: Any = None) -> None:
     """Start a simple log listener service."""
-    import coloredlogs
-
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
         "-o",
@@ -412,9 +435,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = logging.getLogger(args["name"])
-    log_level = args.pop("log_level")
-    coloredlogs.install(level=log_level.upper(), logger=logger)
+    setup_cli_logging(args["name"], args.pop("log_level"))
 
     mon = MonitoringListener(**args)
     mon.receive_metrics()

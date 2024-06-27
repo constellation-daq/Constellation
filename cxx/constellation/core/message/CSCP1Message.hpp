@@ -19,7 +19,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
-#include "constellation/core/message/payload_buffer.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
@@ -71,9 +71,14 @@ namespace constellation::message {
         CNSTLN_API CSCP1Message(Header header, std::pair<Type, std::string> verb);
 
         /**
-         * @return CSCP1 header of the message
+         * @return Read-only reference to the CSCP1 header of the message
          */
         constexpr const Header& getHeader() const { return header_; }
+
+        /**
+         * @return Reference to the CSCP1 header of the message
+         */
+        constexpr Header& getHeader() { return header_; }
 
         /**
          * @return Message verb containing the type and the command/reply string
@@ -83,7 +88,7 @@ namespace constellation::message {
         /**
          * @return Message payload
          */
-        const message::payload_buffer& getPayload() const { return payload_; }
+        const message::PayloadBuffer& getPayload() const { return payload_; }
 
         /**
          * @return True if message has payload
@@ -93,7 +98,7 @@ namespace constellation::message {
         /**
          * @param payload Payload buffer containing the payload to be added as ZeroMQ message
          */
-        void addPayload(message::payload_buffer&& payload) { payload_ = std::forward<message::payload_buffer>(payload); }
+        void addPayload(message::PayloadBuffer&& payload) { payload_ = std::move(payload); }
 
         /**
          * Assemble full message to frames for ZeroMQ
@@ -117,7 +122,7 @@ namespace constellation::message {
     private:
         Header header_;
         std::pair<Type, std::string> verb_;
-        message::payload_buffer payload_;
+        message::PayloadBuffer payload_;
     };
 
 } // namespace constellation::message

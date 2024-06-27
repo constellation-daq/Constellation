@@ -21,7 +21,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
-#include "constellation/core/message/payload_buffer.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
@@ -71,18 +71,27 @@ namespace constellation::message {
          * @param header CDTP1 header of the message
          * @param frames Number of payload frames to reserve
          */
-        CNSTLN_API CDTP1Message(Header header, size_t frames = 1);
+        CNSTLN_API CDTP1Message(Header header, std::size_t frames = 1);
 
+        /**
+         * @return Read-only reference to the CSCP1 header of the message
+         */
         constexpr const Header& getHeader() const { return header_; }
 
-        const std::vector<message::payload_buffer>& getPayload() const { return payload_buffers_; }
+        /**
+         * @return Reference to the CSCP1 header of the message
+         */
+        constexpr Header& getHeader() { return header_; }
+
+        /**
+         * @return Read-only reference to the payload of the message
+         */
+        const std::vector<message::PayloadBuffer>& getPayload() const { return payload_buffers_; }
 
         /**
          * @param payload Payload buffer containing a payload to be added as ZeroMQ message
          */
-        void addPayload(message::payload_buffer&& payload) {
-            payload_buffers_.emplace_back(std::forward<message::payload_buffer>(payload));
-        }
+        void addPayload(message::PayloadBuffer&& payload) { payload_buffers_.emplace_back(std::move(payload)); }
 
         /**
          * Assemble full message to frames for ZeroMQ
@@ -100,7 +109,7 @@ namespace constellation::message {
 
     private:
         Header header_;
-        std::vector<message::payload_buffer> payload_buffers_;
+        std::vector<message::PayloadBuffer> payload_buffers_;
     };
 
 } // namespace constellation::message

@@ -24,7 +24,7 @@ h1:not(.sd-d-none) {
   margin-bottom: 4rem;
 }
 /* Override all h3 headers that are not in hero */
-h3:not(#hero h3) {
+h3:not(.hero h3) {
   font-weight: bold;
   text-align: center;
 }
@@ -43,7 +43,7 @@ h3:not(#hero h3) {
 :padding: 0 0 0 4
 :columns: 12 5 5 5
 
-<h2 style="font-size: 60px; font-weight: bold; margin: 2rem auto 0;">Constellation</h2>
+<h2 style="font-size: 60px; font-weight: bold; margin: 2rem 0 0 0;">Constellation</h2>
 <h3 style="font-weight: bold; margin-top: 0;">Autonomous Control and <br/>Data Acquisition System</h3>
 <p>Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands.</p>
 
@@ -210,5 +210,6 @@ is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/co
 
 news
 manual/index
+Satellites <satellites/index>
 reference/index
 ```

@@ -20,7 +20,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/logging/Level.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
-#include "constellation/core/message/payload_buffer.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
 
 namespace constellation::message {
@@ -42,9 +42,14 @@ namespace constellation::message {
 
     public:
         /**
-         * @return CMDP1 header of the message
+         * @return Read-only reference to the CMDP1 header of the message
          */
         constexpr const Header& getHeader() const { return header_; }
+
+        /**
+         * @return Reference to the CMDP1 header of the message
+         */
+        constexpr Header& getHeader() { return header_; }
 
         /**
          * @return CMDP message topic
@@ -83,12 +88,12 @@ namespace constellation::message {
          * @param header Header of the message
          * @param payload Payload of the message
          */
-        CMDP1Message(std::string topic, Header header, message::payload_buffer&& payload);
+        CMDP1Message(std::string topic, Header header, message::PayloadBuffer&& payload);
 
         /**
          * @return Message payload
          */
-        const message::payload_buffer& getPayload() const { return payload_; }
+        const message::PayloadBuffer& get_payload() const { return payload_; }
 
         /**
          * Extract the log level from CMDP1 message topic
@@ -96,12 +101,12 @@ namespace constellation::message {
          * @param topic Topic of the message
          * @throw MessageDecodingError If not a valid log level
          */
-        static log::Level getLogLevelFromTopic(std::string_view topic);
+        static log::Level get_log_level_from_topic(std::string_view topic);
 
     private:
         std::string topic_;
         Header header_;
-        message::payload_buffer payload_;
+        message::PayloadBuffer payload_;
     };
 
     class CMDP1LogMessage : public CMDP1Message {
