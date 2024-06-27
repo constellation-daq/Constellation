@@ -54,6 +54,9 @@ cxx/listener/index
 
 ```{toctree}
 :caption: Python Developer API
+:maxdepth: 3
+
+python/constellation
 ```
 
 ```{raw} latex
