@@ -136,7 +136,7 @@ namespace constellation::metrics {
          * condition is met. This helps the sending thread to sleep until the next metric is sent
          * @return Time point in the future when the next metric distribution is expected
          */
-        virtual Clock::time_point next_trigger() const { return Clock::time_point::max(); }
+        virtual Clock::time_point nextTrigger() const { return Clock::time_point::max(); }
 
         /**
          * @brief Update method for the metric value
@@ -176,7 +176,7 @@ namespace constellation::metrics {
               last_check_(Clock::now()) {}
 
         bool condition() override;
-        Clock::time_point next_trigger() const override;
+        Clock::time_point nextTrigger() const override;
 
     private:
         Clock::duration interval_;
