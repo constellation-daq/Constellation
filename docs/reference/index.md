@@ -29,6 +29,9 @@ cxx/satellite
 
 ```{toctree}
 :caption: Python Developer API
+:maxdepth: 3
+
+python/constellation
 ```
 
 ```{toctree}
