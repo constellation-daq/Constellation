@@ -89,7 +89,7 @@ bool TimedMetric::condition() {
     return false;
 }
 
-Clock::time_point TimedMetric::next_trigger() const {
+Clock::time_point TimedMetric::nextTrigger() const {
     return last_check_ + interval_;
 }
 
