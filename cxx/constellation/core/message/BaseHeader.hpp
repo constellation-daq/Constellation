@@ -48,7 +48,7 @@ namespace constellation::message {
         const config::Dictionary& getTags() const { return tags_; }
 
         /** Return message tag */
-        config::Value getTag(const std::string& key) const { return tags_.at(key); }
+        template <typename T> T getTag(const std::string& key) const { return tags_.at(key).get<T>(); }
 
         /** Set message tag */
         void setTag(const std::string& key, config::Value value) { tags_[key] = std::move(value); }
