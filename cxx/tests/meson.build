@@ -108,3 +108,12 @@ test_satellite_fsm = executable('test_satellite_fsm',
 test('Satellite FSM test', test_satellite_fsm,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
+
+test_satellite_data = executable('test_satellite_data',
+  sources: 'test_satellite_data.cpp',
+  dependencies: [core_dep, satellite_dep, catch2_dep],
+)
+test('Satellite Data test', test_satellite_data,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
