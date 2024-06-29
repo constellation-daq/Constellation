@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include "constellation/build.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -22,7 +23,7 @@ namespace constellation::satellite {
      *
      * An unspecified error occurred in the user code implementation of a satellite
      */
-    class SatelliteError : public utils::RuntimeError {
+    class CNSTLN_API SatelliteError : public utils::RuntimeError {
     public:
         explicit SatelliteError(const std::string& reason) { error_message_ = reason; }
 
@@ -36,7 +37,7 @@ namespace constellation::satellite {
      *
      * An error occurred in the user code implementation of a satellite when attempting to communicate with hardware
      */
-    class CommunicationError : public SatelliteError {
+    class CNSTLN_API CommunicationError : public SatelliteError {
     public:
         explicit CommunicationError(const std::string& reason) { error_message_ = reason; }
     };
@@ -47,7 +48,7 @@ namespace constellation::satellite {
      *
      * An error occurred in a request to the finite state machine
      */
-    class FSMError : public utils::RuntimeError {
+    class CNSTLN_API FSMError : public utils::RuntimeError {
         explicit FSMError(const std::string& reason) { error_message_ = reason; }
 
     protected:
@@ -60,7 +61,7 @@ namespace constellation::satellite {
      *
      * A transition of the finite state machine was requested which is not allowed from the current state
      */
-    class InvalidFSMTransition : public FSMError {
+    class CNSTLN_API InvalidFSMTransition : public FSMError {
     public:
         explicit InvalidFSMTransition(const message::Transition transition, const message::State state) {
             error_message_ = "Transition ";
@@ -72,7 +73,7 @@ namespace constellation::satellite {
     };
 
     /** Error thrown for all user command errors */
-    class UserCommandError : public utils::RuntimeError {
+    class CNSTLN_API UserCommandError : public utils::RuntimeError {
         explicit UserCommandError(const std::string& reason) { error_message_ = reason; }
 
     protected:
@@ -85,7 +86,7 @@ namespace constellation::satellite {
      *
      * The user command is not registered
      */
-    class UnknownUserCommand : public UserCommandError {
+    class CNSTLN_API UnknownUserCommand : public UserCommandError {
     public:
         explicit UnknownUserCommand(const std::string& command) {
             error_message_ = "Unknown command \"";
@@ -100,7 +101,7 @@ namespace constellation::satellite {
      *
      * The user command is not valid in the current state of the finite state machine
      */
-    class InvalidUserCommand : public UserCommandError {
+    class CNSTLN_API InvalidUserCommand : public UserCommandError {
     public:
         explicit InvalidUserCommand(const std::string& command, const message::State state) {
             error_message_ = "Command ";
@@ -114,7 +115,7 @@ namespace constellation::satellite {
      * @ingroup Exceptions
      * @brief Missing arguments for user command
      */
-    class MissingUserCommandArguments : public UserCommandError {
+    class CNSTLN_API MissingUserCommandArguments : public UserCommandError {
     public:
         explicit MissingUserCommandArguments(const std::string& command, std::size_t args_expected, std::size_t args_given) {
             error_message_ = "Command \"";
@@ -131,7 +132,7 @@ namespace constellation::satellite {
      * @ingroup Exceptions
      * @brief Invalid arguments for user command
      */
-    class InvalidUserCommandArguments : public UserCommandError {
+    class CNSTLN_API InvalidUserCommandArguments : public UserCommandError {
     public:
         explicit InvalidUserCommandArguments(const std::type_info& argtype, const std::type_info& valuetype) {
             error_message_ = "Mismatch of argument type \"";
@@ -146,7 +147,7 @@ namespace constellation::satellite {
      * @ingroup Exceptions
      * @brief Invalid return type from user command
      */
-    class InvalidUserCommandResult : public UserCommandError {
+    class CNSTLN_API InvalidUserCommandResult : public UserCommandError {
     public:
         explicit InvalidUserCommandResult(const std::type_info& argtype) {
             error_message_ = "Error casting function return type \"";
