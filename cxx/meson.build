@@ -18,7 +18,7 @@ asio_dep = declare_dependency(
 libzmq_sys_has_draft_api_poller = false
 # Check system libzmq (we cannot use dependency since we would have to overwrite it)
 if pkgconfig.found()
-  libzmq_sys_pkgconfig_flags = run_command([pkgconfig, 'libzmq', '--cflags', '--libs'], check: false)
+  libzmq_sys_pkgconfig_flags = run_command([pkgconfig, '--shared', '--cflags', '--libs', 'libzmq'], check: false)
   libzmq_sys_has_draft_api_poller = cpp.links('''
   #include <zmq.h>
   int main() {
