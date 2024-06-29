@@ -73,7 +73,9 @@ endif
 
 # Globally add flags for static libraries
 if get_option('default_library') == 'static'
-  add_project_arguments(['-DCNSTLN_STATIC=1', '-DZMQ_STATIC=1'], language: 'cpp')
+  add_project_arguments(['-DCNSTLN_STATIC'], language: 'cpp')
+elif get_option('default_library') == 'both'
+  error('Building both static and shared libraries is not possible')
 endif
 
 constellation_inc = include_directories('.')
