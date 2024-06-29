@@ -66,7 +66,7 @@ namespace constellation::config {
      * @class Value
      * @brief Augmented std::variant with MsgPack packer and unpacker routines
      */
-    class CNSTLN_API Value : public value_t {
+    class Value : public value_t {
     public:
         using value_t::value_t;
         using value_t::operator=;
@@ -75,7 +75,7 @@ namespace constellation::config {
          * @brief Convert value to string representation
          * @return String representation of the value
          */
-        std::string str() const;
+        CNSTLN_API std::string str() const;
 
         /**
          * @brief Get value in requested type
@@ -99,7 +99,7 @@ namespace constellation::config {
          * @brief Get type info of the value currently stored in the variant
          * @return Type info of the currently held value
          */
-        const std::type_info& type() const;
+        CNSTLN_API const std::type_info& type() const;
 
         /** Pack value with msgpack */
         CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
