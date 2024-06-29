@@ -91,6 +91,8 @@ install_headers(
 )
 
 install_headers(
+  'pools/BasePool.hpp',
+  'pools/BasePool.tpp',
   'pools/SubscriberPool.hpp',
   'pools/SubscriberPool.ipp',
   subdir: 'constellation/core/pools',
