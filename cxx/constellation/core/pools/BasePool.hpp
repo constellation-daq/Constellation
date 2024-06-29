@@ -22,7 +22,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 
@@ -52,11 +52,12 @@ namespace constellation::utils {
          */
         virtual ~BasePool();
 
-        // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         BasePool(const BasePool& other) = delete;
         BasePool& operator=(const BasePool& other) = delete;
         BasePool(BasePool&& other) = delete;
         BasePool& operator=(BasePool&& other) = delete;
+        /// @endcond
 
         /**
          * @brief Callback for CHIRP service discovery
@@ -97,20 +98,22 @@ namespace constellation::utils {
         /** Helper to disconnect from a departing service */
         void disconnect(const chirp::DiscoveredService& service);
 
+
         /** Disconnect from all registered services */
         void disconnect_all();
-
-        chirp::ServiceIdentifier service_;
-
-        const log::Logger& logger_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
-        zmq::context_t context_;
-        zmq::active_poller_t poller_;
 
     protected:
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::timed_mutex sockets_mutex_;
 
     private:
+        chirp::ServiceIdentifier service_;
+
+        const log::Logger& logger_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
+
+        zmq::context_t context_;
+        zmq::active_poller_t poller_;
+
         std::atomic_flag af_;
         std::jthread pool_thread_;
 
