@@ -22,7 +22,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
-#include "constellation/core/subscriber/SubscriberPool.hpp"
+#include "constellation/core/pools/SubscriberPool.hpp"
 
 namespace constellation::heartbeat {
 

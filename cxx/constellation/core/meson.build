@@ -91,9 +91,9 @@ install_headers(
 )
 
 install_headers(
-  'subscriber/SubscriberPool.hpp',
-  'subscriber/SubscriberPool.ipp',
-  subdir: 'constellation/core/subscriber',
+  'pools/SubscriberPool.hpp',
+  'pools/SubscriberPool.ipp',
+  subdir: 'constellation/core/pools',
 )
 
 install_headers(
