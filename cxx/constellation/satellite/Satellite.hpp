@@ -21,7 +21,7 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/logging/Logger.hpp"
-#include "constellation/core/metrics/Manager.hpp"
+#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/satellite/CommandRegistry.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
 

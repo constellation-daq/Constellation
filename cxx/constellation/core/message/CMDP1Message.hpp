@@ -23,7 +23,6 @@
 #include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/Protocol.hpp"
-#include "constellation/core/metrics/Manager.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 
 namespace constellation::message {
