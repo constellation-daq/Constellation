@@ -36,17 +36,30 @@ namespace constellation::controller {
         /** Payload of a transition function: variant with config, partial_config or run_id */
         using CommandPayload = std::variant<std::monostate, config::Dictionary, config::List, std::string>;
 
+    private:
+        /** Default lives for a remote on detection/replenishment */
+        static constexpr std::uint8_t default_lives = 3;
+
     protected:
         /**
          * Connection, comprising the socket and host ID of a remote satellite as well as its last known state and status
          * message
          */
         struct Connection {
+            /** Connection */
             zmq::socket_t req;
             message::MD5Hash host_id;
+
+            /** State and last response */
             satellite::State state {satellite::State::NEW};
             message::CSCP1Message::Type last_cmd_type {};
             std::string last_cmd_verb {};
+
+            /** Heartbeat status */
+            std::chrono::milliseconds interval {1000};
+            std::chrono::system_clock::time_point last_heartbeat {std::chrono::system_clock::now()};
+            std::chrono::system_clock::time_point last_checked {std::chrono::system_clock::now()};
+            std::uint8_t lives {default_lives};
         };
 
     public:
@@ -178,6 +191,15 @@ namespace constellation::controller {
          * */
         void process_heartbeat(const message::CHP1Message& msg);
 
+        /**
+         * @brief Loop to keep track of heartbeats and remove dead connections from the list.
+         * @details The thread sleeps until the next remote is expected to have sent a heartbeat, checks if any of the
+         * heartbeats are late or missing and goes back to sleep.
+         *
+         * @param stop_token Stop token to interrupt the thread
+         */
+        void run(const std::stop_token& stop_token);
+
     protected:
         /**
          * @brief Method to propagate updates of the connections
@@ -207,6 +229,9 @@ namespace constellation::controller {
         zmq::context_t context_ {};
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
+
+        std::condition_variable cv_;
+        std::jthread watchdog_thread_;
     };
 
 } // namespace constellation::controller

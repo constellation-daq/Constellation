@@ -23,10 +23,12 @@ using namespace constellation::controller;
 using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::literals::chrono_literals;
 
 Controller::Controller(std::string_view controller_name)
     : logger_("CONTROLLER"), controller_name_(controller_name),
-      heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }) {
+      heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
+      watchdog_thread_(std::bind_front(&Controller::run, this)) {
     LOG(logger_, DEBUG) << "Registering controller callback";
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
@@ -103,14 +105,28 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 void Controller::process_heartbeat(const message::CHP1Message& msg) {
 
     const std::lock_guard connection_lock {connection_mutex_};
+    const auto now = std::chrono::system_clock::now();
 
     // Find satellite from connection list based in the heartbeat sender name
     const auto sat = connections_.find(msg.getSender());
     if(sat != connections_.end()) {
         LOG(logger_, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                             << ", next message in " << msg.getInterval().count();
-        // Update status
+
+        const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
+        if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
+            LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
+        }
+
+        // Update status and timers
+        sat->second.interval = msg.getInterval();
+        sat->second.last_heartbeat = now;
         sat->second.state = msg.getState();
+
+        // Replenish lives unless we're in ERROR or SAFE state:
+        if(msg.getState() != State::ERROR && msg.getState() != State::SAFE) {
+            sat->second.lives = default_lives;
+        }
 
         // Call update propagator
         propagate_update(connections_.size());
@@ -218,4 +234,46 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name,
         send_msg.addPayload(std::move(sbuf));
     }
     return sendCommand(satellite_name, send_msg);
+}
+
+void Controller::run(const std::stop_token& stop_token) {
+    std::unique_lock<std::mutex> lock {connection_mutex_};
+
+    while(!stop_token.stop_requested()) {
+
+        // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
+        auto wakeup = std::chrono::system_clock::now() + 3s;
+        for(auto& [key, remote] : connections_) {
+            // Check if we are beyond the interval and that we only subtract lives once every interval
+            const auto now = std::chrono::system_clock::now();
+            if(remote.lives > 0 && now - remote.last_heartbeat > remote.interval &&
+               now - remote.last_checked > remote.interval) {
+                // We have lives left, reduce them by one
+                remote.lives--;
+                remote.last_checked = now;
+                LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
+
+                if(remote.lives == 0) {
+                    // This parrot is dead, it is no more
+                    LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
+
+                    // Close connection, remove from list:
+                    remote.req.close();
+                    connections_.erase(key);
+
+                    // Call update propagator
+                    propagate_update(connections_.size());
+                }
+            }
+
+            // Update time point until we have to wait (if not in the past)
+            const auto next_heartbeat = remote.last_heartbeat + remote.interval;
+            if(next_heartbeat - now > std::chrono::system_clock::duration::zero()) {
+                wakeup = std::min(wakeup, next_heartbeat);
+            }
+            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to " << (wakeup - now);
+        }
+
+        cv_.wait_until(lock, wakeup);
+    }
 }
