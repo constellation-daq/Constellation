@@ -66,6 +66,8 @@ namespace constellation::utils {
         disconnect_all();
     }
 
+    template <typename MESSAGE> bool BasePool<MESSAGE>::shouldConnect(const chirp::DiscoveredService&) { return true; }
+
     template <typename MESSAGE> void BasePool<MESSAGE>::connect(const chirp::DiscoveredService& service) {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
@@ -77,7 +79,7 @@ namespace constellation::utils {
             socket.connect(service.to_uri());
 
             // Perform connection actions:
-            socket_connected(socket);
+            socketConnected(socket);
 
             /**
              * This lambda is passed to the ZMQ active_poller_t to be called when a socket has a incoming message pending.
@@ -123,7 +125,7 @@ namespace constellation::utils {
                 poller_.remove(zmq::socket_ref(socket));
 
                 // Perform disconnect actions:
-                socket_disconnected(socket);
+                socketDisconnected(socket);
 
                 // Disconnect and close socket
                 socket.disconnect(service.to_uri());
@@ -147,7 +149,7 @@ namespace constellation::utils {
                 poller_.remove(zmq::socket_ref(socket_it->second));
 
                 // Perform disconnect actions:
-                socket_disconnected(socket_it->second);
+                socketDisconnected(socket_it->second);
 
                 // Disconnect the socket and close it
                 socket_it->second.disconnect(service.to_uri());
@@ -168,7 +170,7 @@ namespace constellation::utils {
 
         if(depart) {
             disconnect(service);
-        } else {
+        } else if(shouldConnect(service)) {
             connect(service);
         }
 
