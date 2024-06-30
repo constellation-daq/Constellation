@@ -4,6 +4,7 @@
 satellite_src = files(
   'BaseSatellite.cpp',
   'data/SingleDataReceiver.cpp',
+  'data/DataReceiver.cpp',
   'data/DataSender.cpp',
   'CommandRegistry.cpp',
   'FSM.cpp',
