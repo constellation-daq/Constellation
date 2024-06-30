@@ -42,6 +42,7 @@ namespace constellation::utils {
          * @param service CHIRP service identifier for which a subscription should be made
          * @param logger Reference to a logger to be used for this component
          * @param callback Callback function pointer for received messages
+         * @param type ZMQ socket type to use for connecting to service, e.g. sub or pull
          */
         BasePool(chirp::ServiceIdentifier service,
                  const log::Logger& logger,
@@ -76,14 +77,14 @@ namespace constellation::utils {
          *
          * @param socket The newly connected socket
          */
-        virtual void socketConnected(zmq::socket_t& /*unused*/) {};
+        virtual void socketConnected(zmq::socket_t& socket);
 
         /**
          * @brief Method for derived classes to act on sockets before disconnecting
          *
          * @param socket The socket to be disconnected
          */
-        virtual void socketDisconnected(zmq::socket_t& /*unused*/) {};
+        virtual void socketDisconnected(zmq::socket_t& socket);
 
     private:
         /**
@@ -115,6 +116,7 @@ namespace constellation::utils {
         void disconnect_all();
 
     protected:
+        // NOLINTNEXTLINE(*-non-private-member-variables-in-classes)
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::timed_mutex sockets_mutex_;
 
