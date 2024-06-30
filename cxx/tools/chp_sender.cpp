@@ -47,9 +47,12 @@ void cli_loop(std::span<char*> args) {
     chirp_manager.setAsDefaultInstance();
     chirp_manager.start();
 
-    HeartbeatSend sender {name, interval};
-
     auto state = State::NEW;
+
+    HeartbeatSend sender {name, interval};
+    auto state_callback = [&]() { return state; };
+    sender.setStateCallback(state_callback);
+
     while(true) {
         std::cout << "-----------------------------------------" << std::endl;
         // Type
@@ -57,7 +60,6 @@ void cli_loop(std::span<char*> args) {
         std::cout << "State:    [" << to_string(state) << "] ";
         std::getline(std::cin, state_s);
         state = magic_enum::enum_cast<State>(state_s, magic_enum::case_insensitive).value_or(state);
-        sender.updateState(state);
     }
 }
 

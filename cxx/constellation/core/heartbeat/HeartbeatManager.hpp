@@ -84,6 +84,16 @@ namespace constellation::heartbeat {
          */
         void setInterruptCallback(std::function<void()> callback) { interrupt_callback_ = std::move(callback); }
 
+        /**
+         * @brief Set the state callback
+         * @details This function is used to obtain the current state of the FSM
+         *
+         * @param callback State callback
+         */
+        void setStateCallback(std::function<constellation::message::State()> callback) {
+            sender_.setStateCallback(std::move(callback));
+        }
+
     private:
         /**
          * @brief Helper to process heartbeats. This is registered as callback in the heartbeat receiver

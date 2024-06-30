@@ -41,8 +41,8 @@ HeartbeatManager::~HeartbeatManager() {
     }
 }
 
-void HeartbeatManager::updateState(State state) {
-    sender_.updateState(state);
+void HeartbeatManager::updateState(State) {
+    sender_.sendExtrasystole();
 }
 
 std::optional<State> HeartbeatManager::getRemoteState(const std::string& remote) {

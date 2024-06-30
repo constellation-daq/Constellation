@@ -56,12 +56,6 @@ HeartbeatSend::~HeartbeatSend() {
     }
 }
 
-void HeartbeatSend::updateState(State state) {
-    // Update state and wake up sending thread
-    state_ = state;
-    cv_.notify_one();
-}
-
 void HeartbeatSend::loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
@@ -69,8 +63,11 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         // Get currently configured interval
         const auto interval = interval_.load();
 
+        // Get current state
+        auto state = (state_callback_ != nullptr ? state_callback_() : State::NEW);
+
         // Publish CHP message with current state
-        CHP1Message(sender_, state_, interval).assemble().send(pub_);
+        CHP1Message(sender_, state, interval).assemble().send(pub_);
 
         // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
         // This happens either when the state is updated (updateState) or in the HeartbeatSend destructor.

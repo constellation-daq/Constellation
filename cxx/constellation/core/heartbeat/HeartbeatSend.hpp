@@ -65,11 +65,19 @@ namespace constellation::heartbeat {
         void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
 
         /**
-         * @brief Update the currently emitted state
-         *
-         * @param state State to be broadcasted
+         * @brief Request the emission of an extrasystole
          */
-        CNSTLN_API void updateState(message::State state);
+        CNSTLN_API void sendExtrasystole() { cv_.notify_one(); };
+
+        /**
+         * @brief Set the state callback
+         * @details This function is used to obtain the current state of the FSM
+         *
+         * @param callback State callback
+         */
+        CNSTLN_API void setStateCallback(std::function<constellation::message::State()> callback) {
+            state_callback_ = std::move(callback);
+        }
 
     private:
         /**
@@ -89,8 +97,10 @@ namespace constellation::heartbeat {
 
         /** Canonical sender name */
         std::string sender_;
-        /** Currently broadcasted state */
-        std::atomic<message::State> state_ {message::State::NEW};
+
+        /** Callback for current FSM state */
+        std::function<constellation::message::State()> state_callback_;
+
         /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 
