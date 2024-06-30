@@ -63,6 +63,30 @@ namespace constellation::utils {
         /// @endcond
 
         /**
+         * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
+         * derived pools may implement selection criteria
+         *
+         * @param service The discovered service
+         * @return Boolean indicating whether a connection should be opened
+         */
+        virtual bool shouldConnect(const chirp::DiscoveredService& service);
+
+        /**
+         * @brief Method for derived classes to act on newly connected sockets
+         *
+         * @param socket The newly connected socket
+         */
+        virtual void socketConnected(zmq::socket_t& /*unused*/) {};
+
+        /**
+         * @brief Method for derived classes to act on sockets before disconnecting
+         *
+         * @param socket The socket to be disconnected
+         */
+        virtual void socketDisconnected(zmq::socket_t& /*unused*/) {};
+
+    private:
+        /**
          * @brief Callback for CHIRP service discovery
          * @details This callback is run for every service of the given type discovered on or departing from the
          * constellation. It will connect or disconnect the remote service and register the corresponding socket
@@ -74,21 +98,6 @@ namespace constellation::utils {
          */
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
-        /**
-         * @brief Method for derived classes to act on newly connected sockets
-         *
-         * @param socket The newly connected socket
-         */
-        virtual void socket_connected(zmq::socket_t& /*unused*/) {};
-
-        /**
-         * @brief Method for derived classes to act on sockets before disconnecting
-         *
-         * @param socket The socket to be disconnected
-         */
-        virtual void socket_disconnected(zmq::socket_t& /*unused*/) {};
-
-    private:
         /** Callback implementation */
         void callback_impl(const chirp::DiscoveredService& service, bool depart);
 
