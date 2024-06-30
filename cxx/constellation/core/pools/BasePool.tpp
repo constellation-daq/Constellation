@@ -30,8 +30,9 @@ namespace constellation::utils {
     template <typename MESSAGE>
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
                                             const log::Logger& logger,
-                                            std::function<void(const MESSAGE&)> callback)
-        : service_(service), logger_(logger), message_callback_(std::move(callback)) {
+                                            std::function<void(const MESSAGE&)> callback,
+                                            zmq::socket_type type)
+        : service_(service), logger_(logger), message_callback_(std::move(callback)), type_(type) {
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
@@ -72,7 +73,7 @@ namespace constellation::utils {
         LOG(logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
         try {
 
-            zmq::socket_t socket {context_, zmq::socket_type::sub};
+            zmq::socket_t socket {context_, type_};
             socket.connect(service.to_uri());
 
             // Perform connection actions:

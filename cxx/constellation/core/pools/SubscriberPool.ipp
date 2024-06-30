@@ -34,7 +34,7 @@
                                             const log::Logger& logger,
                                             std::function<void(const MESSAGE&)> callback,
                                             std::initializer_list<std::string> default_topics)
-        : BasePool<MESSAGE>(service, logger, callback), default_topics_(default_topics) {}
+        : BasePool<MESSAGE>(service, logger, callback, zmq::socket_type::sub), default_topics_(default_topics) {}
 
     template <typename MESSAGE>
     void SubscriberPool<MESSAGE>::scribe(std::string_view host, std::string_view topic, bool subscribe) {

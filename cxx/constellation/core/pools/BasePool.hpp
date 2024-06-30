@@ -43,7 +43,10 @@ namespace constellation::utils {
          * @param logger Reference to a logger to be used for this component
          * @param callback Callback function pointer for received messages
          */
-        BasePool(chirp::ServiceIdentifier service, const log::Logger& logger, std::function<void(const MESSAGE&)> callback);
+        BasePool(chirp::ServiceIdentifier service,
+                 const log::Logger& logger,
+                 std::function<void(const MESSAGE&)> callback,
+                 zmq::socket_type type);
 
         /**
          * @brief Destruct BasePool
@@ -118,6 +121,7 @@ namespace constellation::utils {
         std::jthread pool_thread_;
 
         std::function<void(const MESSAGE&)> message_callback_;
+        zmq::socket_type type_;
     };
 } // namespace constellation::utils
 
