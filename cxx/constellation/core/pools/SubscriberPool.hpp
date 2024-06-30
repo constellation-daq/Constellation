@@ -54,7 +54,7 @@ namespace constellation::utils {
         void unsubscribe(std::string_view host, std::string_view topic);
 
     private:
-        void socket_connected(zmq::socket_t& socket) override;
+        void socketConnected(zmq::socket_t& socket) override;
 
         /** Sub- or unsubscribe to a topic */
         void scribe(std::string_view host, std::string_view topic, bool subscribe);
