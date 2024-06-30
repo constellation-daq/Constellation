@@ -68,6 +68,9 @@ namespace constellation::utils {
 
     template <typename MESSAGE> bool BasePool<MESSAGE>::shouldConnect(const chirp::DiscoveredService&) { return true; }
 
+    template <typename MESSAGE> void BasePool<MESSAGE>::socketConnected(zmq::socket_t&) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socketDisconnected(zmq::socket_t&) {}
+
     template <typename MESSAGE> void BasePool<MESSAGE>::connect(const chirp::DiscoveredService& service) {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
