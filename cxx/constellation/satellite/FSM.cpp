@@ -38,6 +38,11 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::string_literals;
 
+FSM::FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)), logger_("FSM") {
+    // Register state callback for satellite
+    registerStateCallback(std::bind_front(&Satellite::update_state, satellite_));
+}
+
 FSM::~FSM() {
     run_thread_.request_stop();
     if(run_thread_.joinable()) {

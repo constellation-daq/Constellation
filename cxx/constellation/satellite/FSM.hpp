@@ -48,7 +48,7 @@ namespace constellation::satellite {
          *
          * @param satellite Satellite class with functions of transitional states
          */
-        FSM(std::shared_ptr<Satellite> satellite) : satellite_(std::move(satellite)), logger_("FSM") {}
+        CNSTLN_API FSM(std::shared_ptr<Satellite> satellite);
 
         CNSTLN_API ~FSM();
 

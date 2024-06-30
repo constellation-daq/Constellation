@@ -259,6 +259,9 @@ namespace constellation::satellite {
         /** Update the run identifier */
         void update_run_identifier(std::string_view run_identifier) { run_identifier_ = run_identifier; }
 
+        /** Update the FSM state */
+        void update_state(message::State state) { metrics_manager_.updateState(state); }
+
     private:
         /** Logger to use */
         log::Logger logger_;
