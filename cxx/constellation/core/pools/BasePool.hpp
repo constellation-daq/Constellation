@@ -85,6 +85,12 @@ namespace constellation::utils {
          */
         virtual void socketDisconnected(zmq::socket_t& socket);
 
+        /**
+         * @brief Check if pool thread has thrown an exception
+         * @throw Exception thrown by pool thread, if any
+         */
+        void checkException();
+
     private:
         /**
          * @brief Callback for CHIRP service discovery
@@ -127,6 +133,7 @@ namespace constellation::utils {
     private:
         std::atomic_flag af_;
         std::jthread pool_thread_;
+        std::exception_ptr exception_ptr_ {nullptr};
 
         std::function<void(const MESSAGE&)> message_callback_;
         zmq::socket_type type_;

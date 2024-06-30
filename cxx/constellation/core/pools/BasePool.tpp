@@ -71,6 +71,14 @@ namespace constellation::utils {
     template <typename MESSAGE> void BasePool<MESSAGE>::socketConnected(zmq::socket_t&) {}
     template <typename MESSAGE> void BasePool<MESSAGE>::socketDisconnected(zmq::socket_t&) {}
 
+    template <typename MESSAGE> void BasePool<MESSAGE>::checkException() {
+        // If exception has been thrown, disconnect from all remote sockets and propagate it
+        if(exception_ptr_) {
+            disconnect_all();
+            std::rethrow_exception(exception_ptr_);
+        }
+    }
+
     template <typename MESSAGE> void BasePool<MESSAGE>::connect(const chirp::DiscoveredService& service) {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
@@ -190,33 +198,43 @@ namespace constellation::utils {
     }
 
     template <typename MESSAGE> void BasePool<MESSAGE>::loop(const std::stop_token& stop_token) {
-        while(!stop_token.stop_requested()) {
-            using namespace std::literals::chrono_literals;
-            std::unique_lock lock {sockets_mutex_, std::defer_lock};
+        try {
+            while(!stop_token.stop_requested()) {
+                using namespace std::literals::chrono_literals;
+                std::unique_lock lock {sockets_mutex_, std::defer_lock};
 
-            // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
-            std::this_thread::sleep_for(1ns);
+                // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
+                std::this_thread::sleep_for(1ns);
 
-            // Try to get the lock, if fails just continue
-            const auto locked = lock.try_lock_for(50ms);
-            if(!locked) {
-                continue;
+                // Try to get the lock, if fails just continue
+                const auto locked = lock.try_lock_for(50ms);
+                if(!locked) {
+                    continue;
+                }
+
+                // Poller crashes if called with no sockets attached, thus check
+                if(sockets_.empty()) {
+                    // Unlock so that other threads can modify sockets_
+                    lock.unlock();
+
+                    // Wait to get notified that either sockets_ was modified or a stop was requested
+                    af_.wait(false);
+                    af_.clear();
+                    // Go to next loop iteration in case a stop was requested
+                    continue;
+                }
+
+                // The poller returns immediately when a socket received something, but will time out after the set period:
+                poller_.wait(50ms);
             }
+        } catch(...) {
+            LOG(logger_, DEBUG) << "Caught exception in pool thread";
 
-            // Poller crashes if called with no sockets attached, thus check
-            if(sockets_.empty()) {
-                // Unlock so that other threads can modify sockets_
-                lock.unlock();
+            // Save exception
+            exception_ptr_ = std::current_exception();
 
-                // Wait to get notified that either sockets_ was modified or a stop was requested
-                af_.wait(false);
-                af_.clear();
-                // Go to next loop iteration in case a stop was requested
-                continue;
-            }
-
-            // The poller returns immediately when a socket received something, but will time out after the set period:
-            poller_.wait(50ms);
+            // Propagate that the worker terminated
+            af_.notify_one();
         }
     }
 } // namespace constellation::utils
