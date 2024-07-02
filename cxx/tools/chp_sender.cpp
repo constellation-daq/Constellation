@@ -47,7 +47,7 @@ void cli_loop(std::span<char*> args) {
     chirp_manager.setAsDefaultInstance();
     chirp_manager.start();
 
-    HeartbeatSend sender {name, interval};
+    HeartbeatSend sender {std::move(name), interval};
 
     auto state = State::NEW;
     while(true) {
