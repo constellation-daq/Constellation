@@ -58,7 +58,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 (datetime.now() - last).total_seconds() > self.heartbeat_period / 1000
             ) or self.fsm.transitioned:
                 last = datetime.now()
-                state = self.fsm.current_state.value
+                state = self.fsm.current_state_value.value
                 self._hb_tm.send(state, int(self.heartbeat_period * 1.1))
                 self.fsm.transitioned = False
             else:

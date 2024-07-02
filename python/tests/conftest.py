@@ -337,10 +337,10 @@ def monitoringlistener():
 
 
 def wait_for_state(fsm, state: str, timeout: float = 2.0):
-    while timeout > 0 and fsm.current_state.id != state:
+    while timeout > 0 and fsm.current_state_value.name != state:
         time.sleep(0.05)
         timeout -= 0.05
     if timeout < 0:
         raise RuntimeError(
-            f"Never reached {state}, now in state {fsm.current_state.id} with status '{fsm.status}'"
+            f"Never reached {state}, now in state {fsm.current_state_value.name} with status '{fsm.status}'"
         )

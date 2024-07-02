@@ -243,7 +243,10 @@ class DataReceiver(Satellite):
             "Adding interface tcp://%s:%s to listen to.", service.address, service.port
         )
         # handle late-coming satellite offers
-        if self.fsm.current_state.id in [SatelliteState.ORBIT, SatelliteState.RUN]:
+        if self.fsm.current_state_value in [
+            SatelliteState.ORBIT,
+            SatelliteState.RUN,
+        ]:
             self._add_socket(service.host_uuid, service.address, service.port)
 
     def _remove_sender(self, service: DiscoveredService) -> None:
