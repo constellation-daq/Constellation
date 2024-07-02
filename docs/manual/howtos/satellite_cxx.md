@@ -209,3 +209,10 @@ code to by compiled. The file should contain the following sections and variable
   ```
 
   The satellite can now be enabled with `meson configure build -Dsatellite_example=enabled`.
+
+* Meson prints a build summary when during setup and reconfiguring, which can print the satellites being built.
+  For this the satellite needs to be added to the corresponding list via:
+
+  ```meson
+  satellites_to_build += satellite_type
+  ```

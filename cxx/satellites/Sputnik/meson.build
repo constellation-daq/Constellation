@@ -42,3 +42,6 @@ executable('satellite' + satellite_type,
   install: true,
   install_rpath: constellation_rpath,
 )
+
+# Add satellite to build summary:
+satellites_to_build += satellite_type
