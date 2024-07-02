@@ -28,7 +28,7 @@
 namespace constellation::satellite {
     class Satellite;
 
-    class FSM final {
+    class FSM {
     public:
         /** Payload of a transition function: variant with config, partial_config or run identifier */
         using TransitionPayload = std::variant<std::monostate, config::Configuration, std::string>;
