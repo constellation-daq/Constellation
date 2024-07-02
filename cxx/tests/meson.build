@@ -84,7 +84,7 @@ test('Exec DSO Loader test', test_exec_dsoloader,
 
 test_satellite_fsm = executable('test_satellite_fsm',
   sources: 'test_satellite_fsm.cpp',
-  dependencies: [satellite_dep, catch2_dep],
+  dependencies: [satellite_dep, msgpack_cxx_dep, catch2_dep],
 )
 test('Satellite FSM test', test_satellite_fsm,
   args: ['--durations', 'yes', '--verbosity', 'high'],
@@ -92,7 +92,7 @@ test('Satellite FSM test', test_satellite_fsm,
 
 test_satellite_implementation = executable('test_satellite_implementation',
   sources: 'test_satellite_implementation.cpp',
-  dependencies: [satellite_dep, catch2_dep],
+  dependencies: [satellite_dep, cppzmq_dep, msgpack_cxx_dep, catch2_dep],
 )
 test('Satellite implementation test', test_satellite_implementation,
   args: ['--durations', 'yes', '--verbosity', 'high'],
