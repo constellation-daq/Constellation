@@ -149,7 +149,7 @@ code to by compiled. The file should contain the following sections and variable
 
   ```meson
   satellite_cfg_data = configuration_data()
-  satellite_cfg_data.set('SATELLITE_CLASS', satellite_type)
+  satellite_cfg_data.set('SATELLITE_TYPE', satellite_type)
   satellite_generator = configure_file(
     input: satellite_generator_template,
     output: 'generator.cpp',
