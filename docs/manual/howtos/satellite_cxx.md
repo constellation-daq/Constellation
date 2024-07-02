@@ -123,15 +123,16 @@ status message by the satellite.
 Constellation uses the [Meson build system](https://mesonbuild.com/) and setting up a `meson.build` file is required for the
 code to by compiled. The file should contain the following sections and variable definitions:
 
-* First, the type this satellite identifies as should be defined by setting `satellite_type = 'Example'`. This will be the type
-  by which new satellites are invoked and which will become part of the canonical name of each instance, e.g. `Example.MySat`.
-* Then, potential dependencies of this satellite should be resolved
+* First, potential dependencies of this satellite should be resolved
 
   ```meson
   my_dep = dependency('TheLibrary')
   ```
 
   More details on Meson dependencies can be found [elsewhere](https://mesonbuild.com/Dependencies.html).
+
+* Then, the type this satellite identifies as should be defined by setting `satellite_type = 'Example'`. This will be the type
+  by which new satellites are invoked and which will become part of the canonical name of each instance, e.g. `Example.MySat`.
 
 * The source files which need to be compiled for this satellite should be listed in the `satellite_sources` variable:
 
@@ -180,3 +181,31 @@ code to by compiled. The file should contain the following sections and variable
     install_rpath: constellation_rpath,
   )
   ```
+
+* To include the newly created `meson.build` file in the build process, it has to be added to the `cxx/satellite/meson.build`
+  file using `subdir('Example')`.
+
+* An option can be added to make it selectable if the satellite is build in the top-level `meson_options.txt` file:
+
+  ```meson
+  option('satellite_example', type: 'feature', value: 'auto', description: 'Build Example satellite')
+  ```
+
+  In the `meson.build` file for the satellite this option has to be checked.
+  These lines at the begging of the `meson.build` file result in a satellite being built by default:
+
+  ```meson
+  if get_option('satellite_example').disabled()
+    subdir_done()
+  endif
+  ```
+
+  However most satellite should not be built by default:
+
+  ```meson
+  if not get_option('satellite_example').enabled()
+    subdir_done()
+  endif
+  ```
+
+  The satellite can now be enabled with `meson configure build -Dsatellite_example=enabled`.
