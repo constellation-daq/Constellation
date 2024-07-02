@@ -195,7 +195,7 @@ def test_sending_package(
     commander.send_request("start", "100102")
     wait_for_state(transmitter.fsm, "RUN")
     assert (
-        transmitter.fsm.current_state.id == "RUN"
+        transmitter.fsm.current_state_value.name == "RUN"
     ), "Could not set up test environment"
 
     BOR = True
@@ -213,7 +213,7 @@ def test_sending_package(
 
     time.sleep(0.2)
     # still in RUN?
-    assert transmitter.fsm.current_state.id == "RUN", "Ended RUN state early"
+    assert transmitter.fsm.current_state_value.name == "RUN", "Ended RUN state early"
     # go to stop to send EOR
     commander.send_request("stop", "")
     wait_for_state(transmitter.fsm, "ORBIT")
@@ -263,13 +263,13 @@ def test_receive_writing_package(
             commander.request_get_response("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
             assert (
-                receiver.fsm.current_state.id == "RUN"
+                receiver.fsm.current_state_value.name == "RUN"
             ), "Could not set up test environment"
             commander.request_get_response("stop")
             time.sleep(0.5)
             # receiver should still be in 'stopping' as no EOR has been sent
             assert (
-                receiver.fsm.current_state.id.lower() == "stopping"
+                receiver.fsm.current_state_value.name == "stopping"
             ), "Receiver stopped before receiving EORE"
             # send EORE
             tx.send_end({"mock_end": "whatanend"})

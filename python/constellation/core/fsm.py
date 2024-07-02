@@ -322,14 +322,14 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             res = "Transition completed!"
         # try to advance the FSM for finishing transitional states
         try:
-            prev = self.fsm.current_state.id
+            prev = self.fsm.current_state_value.name
             self.fsm.complete(res)
-            now = self.fsm.current_state.id
+            now = self.fsm.current_state_value.name
             self.log.info(
                 f"State transition to steady state completed ({prev} -> {now})."
             )
         except TransitionNotAllowed:
-            if self.fsm.current_state.value != SatelliteState.ERROR.value:
+            if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
                 self.fsm.status = res
@@ -365,14 +365,14 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         self._state_thread_evt = None
         # try to advance the FSM for finishing transitional states
         try:
-            prev = self.fsm.current_state.id
+            prev = self.fsm.current_state_value.name
             self.fsm.complete(res)
-            now = self.fsm.current_state.id
+            now = self.fsm.current_state_value.name
             self.log.info(
                 f"State transition to steady state completed ({prev} -> {now})."
             )
         except TransitionNotAllowed:
-            if self.fsm.current_state.value != SatelliteState.ERROR.value:
+            if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
                 self.fsm.status = res
@@ -383,7 +383,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
         No payload argument.
         """
-        return self.fsm.current_state.id, None, None
+        return self.fsm.current_state_value.name, None, None
 
     @cscp_requestable
     def get_status(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:

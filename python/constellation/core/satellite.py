@@ -131,7 +131,7 @@ class Satellite(
         """Orderly shutdown and destroy the Satellelite."""
         # can only exit from certain state, go into ERROR if not the case
         self.log.info("Satellite on reentry course for self-destruction.")
-        if self.fsm.current_state.id not in [
+        if self.fsm.current_state_value not in [
             SatelliteState.NEW,
             SatelliteState.INIT,
             SatelliteState.SAFE,
