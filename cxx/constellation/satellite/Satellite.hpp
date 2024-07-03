@@ -50,7 +50,7 @@ namespace constellation::satellite {
          *
          * @param config Configuration of the satellite
          */
-        virtual void initializing(config::Configuration& config);
+        void initializing(config::Configuration& config) override;
 
         /**
          * @brief Launch satellite
@@ -58,7 +58,7 @@ namespace constellation::satellite {
          * In this function the configuration should be applied and the satellite prepared for data taking, for example by
          * ramping up the high voltage of a device.
          */
-        virtual void launching();
+        void launching() override;
 
         /**
          * @brief Land satellite
@@ -66,7 +66,7 @@ namespace constellation::satellite {
          * In this function should actions performed in the `launching()` function should be undone, for example by ramping
          * down the high voltage of a device.
          */
-        virtual void landing();
+        void landing() override;
 
         /**
          * @brief Reconfigure satellite
@@ -79,7 +79,7 @@ namespace constellation::satellite {
          *
          * @param partial_config Changes to the configuration of the satellite
          */
-        virtual void reconfiguring(const config::Configuration& partial_config);
+        void reconfiguring(const config::Configuration& partial_config) override;
 
         /**
          * @brief Start satellite
@@ -91,14 +91,14 @@ namespace constellation::satellite {
          *
          * @param run_identifier Run identifier for the upcoming run
          */
-        virtual void starting(std::string_view run_identifier);
+        void starting(std::string_view run_identifier) override;
 
         /**
          * @brief Stop satellite
          *
          * In this function the data acquisition of the satellite should be stopped, for example by closing the output file.
          */
-        virtual void stopping();
+        void stopping() override;
 
         /**
          * @brief Run function
@@ -107,7 +107,7 @@ namespace constellation::satellite {
          *
          * @param stop_token Token which tracks if running should be stopped or aborted
          */
-        virtual void running(const std::stop_token& stop_token);
+        void running(const std::stop_token& stop_token) override;
 
         /**
          * @brief Interrupt function
@@ -118,7 +118,7 @@ namespace constellation::satellite {
          *
          * @param previous_state State in which the satellite was being interrupted
          */
-        virtual void interrupting(State previous_state);
+        void interrupting(State previous_state) override;
 
         /**
          * @brief Failure function
@@ -127,7 +127,7 @@ namespace constellation::satellite {
          *
          * @param previous_state State in which the satellite was before experiencing a failure
          */
-        virtual void failure(State previous_state);
+        void failure(State previous_state) override;
 
     protected:
         /**
