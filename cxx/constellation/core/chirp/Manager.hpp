@@ -130,10 +130,12 @@ namespace constellation::chirp {
         CNSTLN_API virtual ~Manager();
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         Manager(const Manager& other) = delete;
         Manager& operator=(const Manager& other) = delete;
         Manager(Manager&& other) = delete;
         Manager& operator=(Manager&& other) = delete;
+        /// @endcond
 
         /**
          * @return Group ID (MD5Hash of the group name)

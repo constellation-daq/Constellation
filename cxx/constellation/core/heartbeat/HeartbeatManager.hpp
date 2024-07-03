@@ -53,10 +53,12 @@ namespace constellation::heartbeat {
         CNSTLN_API virtual ~HeartbeatManager();
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         HeartbeatManager(const HeartbeatManager& other) = delete;
         HeartbeatManager& operator=(const HeartbeatManager& other) = delete;
         HeartbeatManager(HeartbeatManager&& other) = delete;
         HeartbeatManager& operator=(HeartbeatManager&& other) = delete;
+        /// @endcond
 
         /**
          * @brief Update the current state to be broadcasted

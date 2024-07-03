@@ -43,10 +43,12 @@ namespace constellation::heartbeat {
         CNSTLN_API ~HeartbeatSend();
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         HeartbeatSend(const HeartbeatSend& other) = delete;
         HeartbeatSend& operator=(const HeartbeatSend& other) = delete;
         HeartbeatSend(HeartbeatSend&& other) = delete;
         HeartbeatSend& operator=(HeartbeatSend&& other) = delete;
+        /// @endcond
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound

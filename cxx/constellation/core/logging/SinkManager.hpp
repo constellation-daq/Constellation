@@ -60,10 +60,12 @@ namespace constellation::log {
         ~SinkManager() = default;
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         SinkManager(const SinkManager& other) = delete;
         SinkManager& operator=(const SinkManager& other) = delete;
         SinkManager(SinkManager&& other) = delete;
         SinkManager& operator=(SinkManager&& other) = delete;
+        /// @endcond
 
         /**
          * Set the global (default) console log level
