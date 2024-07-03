@@ -78,6 +78,7 @@ test_exec_dsoloader = executable('test_exec_dsoloader',
 )
 test('Exec DSO Loader test', test_exec_dsoloader,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+  depends: [sputnik_lib],
 )
 
 # Satellite
