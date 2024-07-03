@@ -19,6 +19,7 @@ WarningsAsErrors: '*'
 HeaderFilterRegex: '*.h *.hpp *.tpp'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
+  modernize-use-override.IgnoreDestructors: 'true'
   cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
   readability-identifier-naming.NamespaceCase: lower_case
   readability-identifier-naming.ClassCase: CamelCase
