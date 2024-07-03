@@ -6,13 +6,12 @@
 
 #include <chrono>
 #include <cstddef>
-#include <memory>
 #include <span>
 #include <string>
-#include <thread>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
@@ -23,10 +22,12 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/ports.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
-#include "constellation/satellite/SatelliteImplementation.hpp"
+
+#include "dummy_satellite.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
@@ -35,27 +36,6 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 using namespace std::literals::string_literals;
-
-class DummySatellite : public Satellite {
-    // NOLINTBEGIN(readability-convert-member-functions-to-static,readability-make-member-function-const)
-    int usr_cmd() { return 2; }
-    int usr_cmd_arg(int a) { return 2 * a; }
-    std::array<int, 1> usr_cmd_invalid_return() { return {2}; }
-    void usr_cmd_void() { value_ = 3; };
-    int value_ {2};
-    // NOLINTEND(readability-convert-member-functions-to-static,readability-make-member-function-const)
-
-public:
-    DummySatellite() : Satellite("Dummy", "sat1") {
-        support_reconfigure();
-        set_status("just started!");
-        register_command("my_cmd", "A User Command", {}, &DummySatellite::usr_cmd, this);
-        register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
-        register_command("my_cmd_invalid_return", "Invalid User Command", {}, &DummySatellite::usr_cmd_invalid_return, this);
-        register_command("my_cmd_void", "Command without arguments & return", {}, &DummySatellite::usr_cmd_void, this);
-        register_command("my_cmd_state", "Command for RUN state only", {State::RUN}, &DummySatellite::usr_cmd_void, this);
-    }
-};
 
 class CSCPSender {
 public:
@@ -82,20 +62,18 @@ private:
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-TEST_CASE("Get commands", "[satellite]") {
+TEST_CASE("Standard commands", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // get_name
     sender.sendCommand("get_name");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
+    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite.getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 
     // get_commands
@@ -127,7 +105,7 @@ TEST_CASE("Get commands", "[satellite]") {
     sender.sendCommand("get_status");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("just started!"));
+    REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals(""));
     REQUIRE(!recv_msg_get_status.hasPayload());
 
     // get_config
@@ -146,17 +124,15 @@ TEST_CASE("Satellite name", "[satellite]") {
     public:
         InvalidSatellite() : Satellite("Invalid", "invalid_satellite&name") {}
     };
-    REQUIRE_THROWS_MATCHES(std::make_shared<InvalidSatellite>(), RuntimeError, Message("Satellite name is invalid"));
+    REQUIRE_THROWS_MATCHES(InvalidSatellite(), RuntimeError, Message("Satellite name is invalid"));
 }
 
 TEST_CASE("User commands", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // my_cmd user command
     sender.sendCommand("my_cmd");
@@ -206,18 +182,16 @@ TEST_CASE("User commands", "[satellite]") {
 
 TEST_CASE("Case insensitive", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // get_name with non-lower-case case
     sender.sendCommand("GeT_nAmE");
     auto recv_msg_get_name = sender.recv();
     REQUIRE(recv_msg_get_name.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite->getCanonicalName()));
+    REQUIRE_THAT(to_string(recv_msg_get_name.getVerb().second), Equals(satellite.getCanonicalName()));
     REQUIRE(!recv_msg_get_name.hasPayload());
 
     // my_cmd user command
@@ -227,13 +201,11 @@ TEST_CASE("Case insensitive", "[satellite]") {
 }
 
 TEST_CASE("Transitions", "[satellite]") {
-    // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    // Create and start satellite with FSM
+    DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
@@ -246,7 +218,7 @@ TEST_CASE("Transitions", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_initialize.getVerb().second), Equals("Transition initialize is being initiated"));
 
     // Check state
-    std::this_thread::sleep_for(250ms);
+    satellite.progressFsm();
     sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
@@ -255,12 +227,10 @@ TEST_CASE("Transitions", "[satellite]") {
 
 TEST_CASE("Shutdown", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
@@ -268,14 +238,14 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(initialize_msg);
     auto recv_msg_initialize = sender.recv();
     REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(250ms);
+    satellite.progressFsm();
 
     // Send launch
     auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
     sender.send(launch_msg);
     auto recv_msg_launch = sender.recv();
     REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(250ms);
+    satellite.progressFsm();
 
     // Try shutdown & fail
     auto shutdown1_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -290,7 +260,7 @@ TEST_CASE("Shutdown", "[satellite]") {
     sender.send(land_msg);
     auto recv_msg_land = sender.recv();
     REQUIRE(recv_msg_land.getVerb().first == CSCP1Message::Type::SUCCESS);
-    std::this_thread::sleep_for(250ms);
+    satellite.progressFsm();
 
     // Try shutdown & succeed
     auto shutdown2_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "shutdown"});
@@ -302,12 +272,10 @@ TEST_CASE("Shutdown", "[satellite]") {
 
 TEST_CASE("Catch unknown command", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send with unexpected message type
     auto wrong_type_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "get_names"});
@@ -319,12 +287,10 @@ TEST_CASE("Catch unknown command", "[satellite]") {
 
 TEST_CASE("Catch unexpected message type", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send with unexpected message type
     auto wrong_type_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::SUCCESS, "get_name"});
@@ -336,12 +302,10 @@ TEST_CASE("Catch unexpected message type", "[satellite]") {
 
 TEST_CASE("Catch invalid protocol", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send with invalid protocol
     msgpack::sbuffer sbuf {};
@@ -362,12 +326,10 @@ TEST_CASE("Catch invalid protocol", "[satellite]") {
 
 TEST_CASE("Catch unexpected protocol", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send with unexpected protocol
     msgpack::sbuffer sbuf {};
@@ -389,12 +351,10 @@ TEST_CASE("Catch unexpected protocol", "[satellite]") {
 
 TEST_CASE("Catch incorrect payload", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send initialize
     auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
@@ -408,7 +368,6 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
                  Equals("Transition initialize received incorrect payload"));
 
     // Check state
-    std::this_thread::sleep_for(250ms);
     sender.sendCommand("get_state");
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
@@ -423,7 +382,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(std::make_shared<MySatellite>(), LogicError, Message("Command name is invalid"));
+    REQUIRE_THROWS_MATCHES(MySatellite(), LogicError, Message("Command name is invalid"));
 
     class MySatelliteI : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -432,7 +391,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatelliteI() { register_command("command_with_amper&sand", "A User Command", {}, &MySatelliteI::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(std::make_shared<MySatelliteI>(), LogicError, Message("Command name is invalid"));
+    REQUIRE_THROWS_MATCHES(MySatelliteI(), LogicError, Message("Command name is invalid"));
 
     class MySatellite2 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -444,8 +403,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
             register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
         }
     };
-    REQUIRE_THROWS_MATCHES(
-        std::make_shared<MySatellite2>(), LogicError, Message("Command \"my_cmd\" is already registered"));
+    REQUIRE_THROWS_MATCHES(MySatellite2(), LogicError, Message("Command \"my_cmd\" is already registered"));
 
     class MySatellite3 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -454,8 +412,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite3() { register_command("initialize", "A User Command", {}, &MySatellite3::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(
-        std::make_shared<MySatellite3>(), LogicError, Message("Satellite transition command with this name exists"));
+    REQUIRE_THROWS_MATCHES(MySatellite3(), LogicError, Message("Satellite transition command with this name exists"));
 
     class MySatellite4 : public DummySatellite {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
@@ -464,8 +421,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     public:
         MySatellite4() { register_command("get_commands", "A User Command", {}, &MySatellite4::cmd, this); }
     };
-    REQUIRE_THROWS_MATCHES(
-        std::make_shared<MySatellite4>(), LogicError, Message("Standard satellite command with this name exists"));
+    REQUIRE_THROWS_MATCHES(MySatellite4(), LogicError, Message("Standard satellite command with this name exists"));
 
     // Command registration is case insensitive
     class MySatellite5 : public DummySatellite {
@@ -478,18 +434,15 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
             register_command("MY_CMD", "A User Command", {}, &MySatellite5::cmd, this);
         }
     };
-    REQUIRE_THROWS_MATCHES(
-        std::make_shared<MySatellite5>(), LogicError, Message("Command \"my_cmd\" is already registered"));
+    REQUIRE_THROWS_MATCHES(MySatellite5(), LogicError, Message("Command \"my_cmd\" is already registered"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // my_usr_cmd_arg with wrong payload encoding
     auto nolist_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
@@ -537,12 +490,10 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
 TEST_CASE("Catch incorrect user command return value", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // my_usr_cmd_arg with wrong payload encoding
     auto invalid_return = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_invalid_return"});
@@ -556,12 +507,10 @@ TEST_CASE("Catch incorrect user command return value", "[satellite]") {
 
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
     // Create and start satellite
-    auto satellite = std::make_shared<DummySatellite>();
-    auto satellite_implementation = SatelliteImplementation(satellite);
-    satellite_implementation.start();
+    const DummySatellite satellite {};
 
     // Create sender
-    CSCPSender sender {satellite_implementation.getPort()};
+    CSCPSender sender {satellite.getCommandPort()};
 
     // Send with wrong number of frames
     msgpack::sbuffer sbuf {};

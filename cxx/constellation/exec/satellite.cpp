@@ -32,13 +32,11 @@
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/logging/SinkManager.hpp"
-#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
 #include "constellation/exec/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
-#include "constellation/satellite/SatelliteImplementation.hpp"
 
 using namespace constellation;
 using namespace constellation::exec;
@@ -208,16 +206,12 @@ int constellation::exec::satellite_main(int argc,
         return 1;
     }
 
-    // Start satellite
-    SatelliteImplementation satellite_implementation {std::move(satellite)};
-    satellite_implementation.start();
-
     // Register signal handlers
     std::once_flag shut_down_flag {};
     signal_handler_f = [&](int /*signal*/) -> void {
         std::call_once(shut_down_flag, [&]() {
             LOG(logger, STATUS) << "Terminating satellite";
-            satellite_implementation.terminate();
+            satellite->terminate();
         });
     };
     // NOLINTBEGIN(cert-err33-c)
@@ -226,7 +220,7 @@ int constellation::exec::satellite_main(int argc,
     // NOLINTEND(cert-err33-c)
 
     // Wait for signal to join
-    satellite_implementation.join();
+    satellite->join();
 
     return 0;
 }
