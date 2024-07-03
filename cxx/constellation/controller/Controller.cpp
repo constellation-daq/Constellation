@@ -72,7 +72,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         if(it != connections_.end()) {
             it->second.req.close();
             connections_.erase(it);
-            LOG(logger_, INFO) << "Satellite at " << uri << " departed";
+            LOG(logger_, DEBUG) << "Satellite at " << uri << " departed";
         }
     } else {
         // New satellite connection
@@ -94,7 +94,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         if(!success) {
             LOG(logger_, DEBUG) << "Not adding remote satellite at " << uri << ", was already registered";
         } else {
-            LOG(logger_, INFO) << "Registered remote satellite at " << uri;
+            LOG(logger_, DEBUG) << "Registered remote satellite at " << uri;
         }
     }
 
