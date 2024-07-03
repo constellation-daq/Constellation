@@ -195,8 +195,6 @@ namespace constellation::satellite {
     protected:
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
 
-        metrics::MetricsManager metrics_manager_;
-
     private:
         zmq::context_t context_;
         zmq::socket_t rep_socket_;
@@ -214,7 +212,7 @@ namespace constellation::satellite {
         std::string run_identifier_;
 
         CommandRegistry user_commands_;
-
+        metrics::MetricsManager metrics_manager_;
         heartbeat::HeartbeatManager heartbeat_manager_;
     };
 
