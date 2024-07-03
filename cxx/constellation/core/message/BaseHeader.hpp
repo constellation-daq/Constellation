@@ -30,10 +30,12 @@ namespace constellation::message {
         virtual ~BaseHeader() = default;
 
         // Default copy/move constructor/assignment
+        /// @cond doxygen_suppress
         BaseHeader(const BaseHeader& other) = default;
         BaseHeader& operator=(const BaseHeader& other) = default;
         BaseHeader(BaseHeader&& other) noexcept = default;
         BaseHeader& operator=(BaseHeader&& other) = default;
+        /// @endcond
 
         /** Return message protocol */
         constexpr Protocol getProtocol() const { return protocol_; }

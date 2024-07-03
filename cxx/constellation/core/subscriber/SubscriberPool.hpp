@@ -58,10 +58,12 @@ namespace constellation::utils {
         virtual ~SubscriberPool();
 
         // No copy/move constructor/assignment
+        /// @cond doxygen_suppress
         SubscriberPool(const SubscriberPool& other) = delete;
         SubscriberPool& operator=(const SubscriberPool& other) = delete;
         SubscriberPool(SubscriberPool&& other) = delete;
         SubscriberPool& operator=(SubscriberPool&& other) = delete;
+        /// @endcond
 
         /**
          * @brief Callback for CHIRP service discovery

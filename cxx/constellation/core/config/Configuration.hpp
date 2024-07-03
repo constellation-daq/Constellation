@@ -74,10 +74,12 @@ namespace constellation::config {
         CNSTLN_API Configuration(const Dictionary& dict, bool mark_used = false);
 
         // Default copy/move constructor/assignment
+        /// @cond doxygen_suppress
         Configuration(const Configuration& other) = default;
         Configuration& operator=(const Configuration& other) = default;
         Configuration(Configuration&& other) noexcept = default;
         Configuration& operator=(Configuration&& other) = default;
+        /// @endcond
 
         enum class Group : std::uint8_t {
             /** All configuration key-value pairs, both user and internal */
