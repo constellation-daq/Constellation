@@ -243,7 +243,12 @@ void Controller::run(const std::stop_token& stop_token) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         auto wakeup = std::chrono::system_clock::now() + 3s;
-        for(auto& [key, remote] : connections_) {
+
+        for(auto conn = connections_.begin(), next_conn = conn; conn != connections_.end(); conn = next_conn) {
+            ++next_conn;
+
+            auto& [key, remote] = *conn;
+
             // Check if we are beyond the interval and that we only subtract lives once every interval
             const auto now = std::chrono::system_clock::now();
             if(remote.lives > 0 && now - remote.last_heartbeat > remote.interval &&
@@ -259,7 +264,7 @@ void Controller::run(const std::stop_token& stop_token) {
 
                     // Close connection, remove from list:
                     remote.req.close();
-                    connections_.erase(key);
+                    connections_.erase(conn);
 
                     // Call update propagator
                     propagate_update(connections_.size());
