@@ -61,6 +61,6 @@ void Satellite::interrupting(State previous_state) {
     landing();
 }
 
-void Satellite::onFailure(State previous_state) {
+void Satellite::failure(State previous_state) {
     LOG(INFO) << "Failure from " << to_string(previous_state) << " - default";
 }

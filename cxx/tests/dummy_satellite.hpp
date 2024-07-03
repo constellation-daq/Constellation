@@ -87,7 +87,7 @@ public:
         progress_fsm_ = false;
         transitional_state();
     }
-    void onFailure(constellation::satellite::State previous_state) override { Satellite::onFailure(previous_state); }
+    void failure(constellation::satellite::State previous_state) override { Satellite::failure(previous_state); }
 
 private:
     void transitional_state() {

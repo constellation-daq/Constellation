@@ -337,8 +337,8 @@ State FSM::interrupted(TransitionPayload /* payload */) {
 
 State FSM::failure(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
-        LOG(logger_, INFO) << "Calling onFailure function of satellite...";
-        call_satellite_function(&BaseSatellite::onFailure_wrapper, Transition::failure, previous_state);
+        LOG(logger_, INFO) << "Calling failure function of satellite...";
+        call_satellite_function(&BaseSatellite::failure_wrapper, Transition::failure, previous_state);
         // Note: we do not trigger a success transition as we always go to ERROR state
     };
     launch_assign_thread(failure_thread_, call_wrapper, state_);

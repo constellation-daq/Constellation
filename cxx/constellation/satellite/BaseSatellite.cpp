@@ -412,6 +412,6 @@ void BaseSatellite::interrupting_wrapper(State previous_state) {
     interrupting(previous_state);
 }
 
-void BaseSatellite::onFailure_wrapper(State previous_state) {
-    onFailure(previous_state);
+void BaseSatellite::failure_wrapper(State previous_state) {
+    failure(previous_state);
 }

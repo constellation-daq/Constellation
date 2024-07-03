@@ -121,13 +121,13 @@ namespace constellation::satellite {
         virtual void interrupting(State previous_state);
 
         /**
-         * @brief On-Failure function
+         * @brief Failure function
          *
          * In this function a response to uncatched errors can be implemented. It is executed after entering the ERROR state.
          *
          * @param previous_state State in which the satellite was before experiencing a failure
          */
-        virtual void onFailure(State previous_state);
+        virtual void failure(State previous_state);
 
     protected:
         /**

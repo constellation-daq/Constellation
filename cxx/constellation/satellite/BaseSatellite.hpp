@@ -182,7 +182,7 @@ namespace constellation::satellite {
         virtual void stopping() = 0;
         virtual void running(const std::stop_token& stop_token) = 0;
         virtual void interrupting(State previous_state) = 0;
-        virtual void onFailure(State previous_state) = 0;
+        virtual void failure(State previous_state) = 0;
         /// @endcond
 
     private:
@@ -194,7 +194,7 @@ namespace constellation::satellite {
         void stopping_wrapper();
         void running_wrapper(const std::stop_token& stop_token);
         void interrupting_wrapper(State previous_state);
-        void onFailure_wrapper(State previous_state); // NOLINT(readability-identifier-naming)
+        void failure_wrapper(State previous_state);
 
     protected:
         log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
