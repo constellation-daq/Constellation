@@ -74,7 +74,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         CHP1Message(sender_, state_callback_(), interval).assemble().send(pub_);
 
         // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
-        // This happens either when the state is updated (updateState) or in the HeartbeatSend destructor.
+        // This happens either when an extrasystole is requested (sendExtrasystole) or in the HeartbeatSend destructor.
         cv_.wait_for(lock, interval / 2);
     }
 }
