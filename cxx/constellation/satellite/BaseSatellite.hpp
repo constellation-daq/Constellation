@@ -197,7 +197,7 @@ namespace constellation::satellite {
         void failure_wrapper(State previous_state);
 
     protected:
-        log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
+        log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
 
     private:
         zmq::context_t context_;
