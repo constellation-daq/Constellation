@@ -52,7 +52,10 @@ class SatelliteFSM(StateMachine):
 
     # Convert enum to states
     states = States.from_enum(
-        SatelliteState, initial=SatelliteState.NEW, final=SatelliteState.DEAD
+        SatelliteState,
+        initial=SatelliteState.NEW,
+        final=SatelliteState.DEAD,
+        use_enum_instance=True,
     )
 
     # Define transitions
