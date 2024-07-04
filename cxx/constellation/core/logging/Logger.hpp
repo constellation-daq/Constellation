@@ -68,7 +68,7 @@ namespace constellation::log {
 
         CNSTLN_API virtual ~Logger();
 
-        // No copy constructor/assignment
+        // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         Logger(const Logger& other) = delete;
         Logger& operator=(const Logger& other) = delete;
