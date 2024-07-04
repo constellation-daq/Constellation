@@ -12,6 +12,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -35,9 +36,12 @@ namespace constellation::heartbeat {
          * CHIRP heartbeat service.
          *
          * @param sender Canonical name of the sender
+         * @param state_callback Function that return the current state
          * @param interval Interval at which the heartbeats are sent
          */
-        CNSTLN_API HeartbeatSend(std::string sender, std::chrono::milliseconds interval);
+        CNSTLN_API HeartbeatSend(std::string sender,
+                                 std::function<message::State()> state_callback,
+                                 std::chrono::milliseconds interval);
 
         /** Destructor which unregisters the CHIRP heartbeat service and stops the heartbeat thread */
         CNSTLN_API ~HeartbeatSend();
@@ -67,11 +71,9 @@ namespace constellation::heartbeat {
         void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
 
         /**
-         * @brief Update the currently emitted state
-         *
-         * @param state State to be broadcasted
+         * @brief Send an extrasystole
          */
-        CNSTLN_API void updateState(message::State state);
+        CNSTLN_API void sendExtrasystole();
 
     private:
         /**
@@ -82,6 +84,7 @@ namespace constellation::heartbeat {
          */
         void loop(const std::stop_token& stop_token);
 
+    private:
         /** ZMQ context for the emitting socket */
         zmq::context_t context_;
         /** Publisher socket for emitting heartbeats */
@@ -91,8 +94,8 @@ namespace constellation::heartbeat {
 
         /** Canonical sender name */
         std::string sender_;
-        /** Currently broadcasted state */
-        std::atomic<message::State> state_ {message::State::NEW};
+        /** Function returning the current state */
+        std::function<message::State()> state_callback_;
         /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 

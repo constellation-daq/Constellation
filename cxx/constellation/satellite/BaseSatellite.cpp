@@ -57,7 +57,7 @@ using namespace std::literals::chrono_literals;
 BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     : logger_("SATELLITE"), socket_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(socket_)),
       satellite_type_(type), satellite_name_(name), fsm_(this), cscp_logger_("CSCP"),
-      heartbeat_manager_(getCanonicalName()) {
+      heartbeat_manager_(getCanonicalName(), [&]() { return fsm_.getState(); }) {
 
     // Check name
     if(!is_valid_name(to_string(name))) {
@@ -82,7 +82,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 
     // Start sending heartbeats
     heartbeat_manager_.setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
-    fsm_.registerStateCallback(std::bind_front(&HeartbeatManager::updateState, &heartbeat_manager_));
+    fsm_.registerStateCallback([&](State) { heartbeat_manager_.sendExtrasystole(); });
 }
 
 BaseSatellite::~BaseSatellite() {
