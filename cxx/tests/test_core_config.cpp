@@ -497,13 +497,10 @@ TEST_CASE("Update Configuration", "[core][core::config]") {
     REQUIRE(config_base.get<bool>("bool") == true);
 }
 
-TEST_CASE("Copy & Move Configurations", "[core][core::config]") {
+TEST_CASE("Move Configuration", "[core][core::config]") {
     Configuration config {};
 
     config.set("bool", true);
-
-    const Configuration config_copy = config;
-    REQUIRE(config_copy.get<bool>("bool") == true);
 
     const Configuration config_move = std::move(config);
     REQUIRE(config_move.get<bool>("bool") == true);
