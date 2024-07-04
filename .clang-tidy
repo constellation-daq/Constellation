@@ -16,7 +16,7 @@ Checks:  '-*,
           readability-*,-readability-identifier-length,-readability-function-cognitive-complexity,-readability-magic-numbers,-readability-redundant-access-specifiers,
          '
 WarningsAsErrors: '*'
-HeaderFilterRegex: '*.h *.hpp *.tpp'
+HeaderFilterRegex: '*\.(h|hpp|ipp)$'
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
   modernize-use-override.IgnoreDestructors: 'true'

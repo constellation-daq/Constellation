@@ -110,4 +110,4 @@ namespace constellation::config {
 } // namespace constellation::config
 
 // Include template members
-#include "Value.tpp"
+#include "Value.ipp"

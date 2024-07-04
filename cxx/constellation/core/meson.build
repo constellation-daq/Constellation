@@ -41,10 +41,10 @@ install_headers(
 
 install_headers(
   'config/Configuration.hpp',
-  'config/Configuration.tpp',
+  'config/Configuration.ipp',
   'config/Dictionary.hpp',
   'config/Value.hpp',
-  'config/Value.tpp',
+  'config/Value.ipp',
   'config/exceptions.hpp',
   subdir: 'constellation/core/config',
 )
@@ -87,7 +87,7 @@ install_headers(
 
 install_headers(
   'subscriber/SubscriberPool.hpp',
-  'subscriber/SubscriberPool.tpp',
+  'subscriber/SubscriberPool.ipp',
   subdir: 'constellation/core/subscriber',
 )
 

@@ -27,7 +27,7 @@ satellite_dep = declare_dependency(
 install_headers(
   'BaseSatellite.hpp',
   'CommandRegistry.hpp',
-  'CommandRegistry.tpp',
+  'CommandRegistry.ipp',
   'exceptions.hpp',
   'FSM.hpp',
   'fsm_definitions.hpp',
