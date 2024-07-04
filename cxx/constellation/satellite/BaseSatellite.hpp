@@ -87,11 +87,6 @@ namespace constellation::satellite {
         std::string_view getStatus() const { return status_; }
 
         /**
-         * @brief Return a const reference to the satellite configuration
-         */
-        const config::Configuration& getConfig() const { return config_; }
-
-        /**
          * @brief Return the current or last used run identifier
          */
         std::string_view getRunIdentifier() const { return run_identifier_; }
