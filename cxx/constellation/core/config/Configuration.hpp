@@ -73,10 +73,10 @@ namespace constellation::config {
          */
         CNSTLN_API Configuration(const Dictionary& dict, bool mark_used = false);
 
-        // Default copy/move constructor/assignment
+        // No copy constructor/assignment, default move constructor/assignment
         /// @cond doxygen_suppress
-        Configuration(const Configuration& other) = default;
-        Configuration& operator=(const Configuration& other) = default;
+        Configuration(const Configuration& other) = delete;
+        Configuration& operator=(const Configuration& other) = delete;
         Configuration(Configuration&& other) noexcept = default;
         Configuration& operator=(Configuration&& other) = default;
         /// @endcond

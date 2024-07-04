@@ -211,13 +211,13 @@ Transition FSM::call_satellite_function(Func func, Transition success_transition
 }
 
 // Joins a thread and assigns it to a new thread with given args
-template <typename... Args> void launch_assign_thread(std::thread& thread, Args... args) {
+template <typename... Args> void launch_assign_thread(std::thread& thread, Args&&... args) {
     // Join if possible to avoid std::terminate
     if(thread.joinable()) {
         thread.join();
     }
     // Launch thread
-    thread = std::thread(args...);
+    thread = std::thread(std::forward<Args>(args)...);
 }
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
