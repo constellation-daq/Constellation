@@ -144,16 +144,16 @@ int constellation::exec::satellite_main(int argc,
     SinkManager::getInstance().setGlobalConsoleLevel(default_level.value());
 
     // Check broadcast and any address
-    asio::ip::address brd_addr {};
+    asio::ip::address_v4 brd_addr {};
     try {
-        brd_addr = asio::ip::address::from_string(get_arg(parser, "brd"));
+        brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
     } catch(const asio::system_error& error) {
         LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
         return 1;
     }
-    asio::ip::address any_addr {};
+    asio::ip::address_v4 any_addr {};
     try {
-        any_addr = asio::ip::address::from_string(get_arg(parser, "any"));
+        any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
     } catch(const asio::system_error& error) {
         LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
         return 1;

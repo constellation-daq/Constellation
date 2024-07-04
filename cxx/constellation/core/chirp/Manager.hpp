@@ -43,7 +43,7 @@ namespace constellation::chirp {
     /** A service discovered by the `Manager` */
     struct DiscoveredService {
         /** Address of the discovered service */
-        asio::ip::address address;
+        asio::ip::address_v4 address;
 
         /** Host ID of the discovered service */
         message::MD5Hash host_id;
@@ -113,8 +113,8 @@ namespace constellation::chirp {
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
-        CNSTLN_API Manager(const asio::ip::address& brd_address,
-                           const asio::ip::address& any_address,
+        CNSTLN_API Manager(const asio::ip::address_v4& brd_address,
+                           const asio::ip::address_v4& any_address,
                            std::string_view group_name,
                            std::string_view host_name);
 
