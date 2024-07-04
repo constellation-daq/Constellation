@@ -62,7 +62,7 @@ namespace constellation::config {
         } catch(const std::overflow_error& error) {
             if constexpr(utils::convertible_to_string<T>) {
                 throw InvalidValueError(utils::to_string(val), key, error.what());
-            } if constexpr(utils::convertible_range_to_string<T>) {
+            } else if constexpr(utils::convertible_range_to_string<T>) {
                 throw InvalidValueError(utils::range_to_string(val), key, error.what());
             } else {
                 throw InvalidValueError("<unknown>", key, error.what());
@@ -85,7 +85,7 @@ namespace constellation::config {
     template <typename F> void Configuration::for_each(Group group, Usage usage, F f) const {
         using enum Group;
         using enum Usage;
-        for(auto& [key, value] : config_) {
+        for(const auto& [key, value] : config_) {
             if((group == ALL || (group == USER && !key.starts_with("_")) || (group == INTERNAL && key.starts_with("_"))) &&
                (usage == ANY || (usage == USED && value.isUsed()) || (usage == UNUSED && !value.isUsed()))) {
                 f(key, value);

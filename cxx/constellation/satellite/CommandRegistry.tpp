@@ -69,11 +69,8 @@ namespace constellation::satellite {
     }
 
     template <typename T, typename R, typename... Args>
-    inline void CommandRegistry::add(const std::string& name,
-                                     std::string description,
-                                     std::initializer_list<State> states,
-                                     R (T::*func)(Args...),
-                                     T* t) {
+    inline void CommandRegistry::add(
+        const std::string& name, std::string description, std::initializer_list<State> states, R (T::*func)(Args...), T* t) {
         if(!func || !t) {
             throw utils::LogicError("Object and member function pointers must not be nullptr");
         }
