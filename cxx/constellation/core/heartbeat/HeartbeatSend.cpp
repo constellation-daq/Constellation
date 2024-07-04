@@ -15,6 +15,7 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <utility>
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
@@ -27,9 +28,11 @@ using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
 
-HeartbeatSend::HeartbeatSend(std::string sender, std::chrono::milliseconds interval)
+HeartbeatSend::HeartbeatSend(std::string sender,
+                             std::function<message::State()> state_callback,
+                             std::chrono::milliseconds interval)
     : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(std::move(sender)),
-      interval_(interval) {
+      state_callback_(std::move(state_callback)), interval_(interval) {
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -56,9 +59,7 @@ HeartbeatSend::~HeartbeatSend() {
     }
 }
 
-void HeartbeatSend::updateState(State state) {
-    // Update state and wake up sending thread
-    state_ = state;
+void HeartbeatSend::sendExtrasystole() {
     cv_.notify_one();
 }
 
@@ -70,7 +71,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         const auto interval = interval_.load();
 
         // Publish CHP message with current state
-        CHP1Message(sender_, state_, interval).assemble().send(pub_);
+        CHP1Message(sender_, state_callback_(), interval).assemble().send(pub_);
 
         // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
         // This happens either when the state is updated (updateState) or in the HeartbeatSend destructor.
