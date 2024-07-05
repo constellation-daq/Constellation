@@ -21,7 +21,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -31,7 +31,7 @@ using namespace constellation::utils;
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<message::State()> state_callback,
                              std::chrono::milliseconds interval)
-    : pub_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_)), sender_(std::move(sender)),
+    : pub_socket_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)), sender_(std::move(sender)),
       state_callback_(std::move(state_callback)), interval_(interval) {
 
     // Announce service via CHIRP
@@ -71,7 +71,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         const auto interval = interval_.load();
 
         // Publish CHP message with current state
-        CHP1Message(sender_, state_callback_(), interval).assemble().send(pub_);
+        CHP1Message(sender_, state_callback_(), interval).assemble().send(pub_socket_);
 
         // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
         // This happens either when an extrasystole is requested (sendExtrasystole) or in the HeartbeatSend destructor.

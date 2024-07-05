@@ -22,7 +22,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 
 namespace constellation::heartbeat {
 
@@ -88,7 +88,7 @@ namespace constellation::heartbeat {
         /** ZMQ context for the emitting socket */
         zmq::context_t context_;
         /** Publisher socket for emitting heartbeats */
-        zmq::socket_t pub_;
+        zmq::socket_t pub_socket_;
         /** Ephemeral port selected for the heartbeat emission */
         utils::Port port_;
 

@@ -40,7 +40,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
@@ -55,7 +55,7 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
-    : logger_("SATELLITE"), socket_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(socket_)),
+    : logger_("SATELLITE"), rep_socket_(context_, zmq::socket_type::rep), port_(bind_ephemeral_port(rep_socket_)),
       satellite_type_(type), satellite_name_(name), fsm_(this), cscp_logger_("CSCP"),
       heartbeat_manager_(getCanonicalName(), [&]() { return fsm_.getState(); }) {
 
@@ -65,7 +65,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     }
 
     // Set receive timeout for CSCP socket
-    socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
+    rep_socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -113,7 +113,7 @@ void BaseSatellite::terminate() {
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     // Receive next message
     zmq::multipart_t recv_msg {};
-    auto received = recv_msg.recv(socket_);
+    auto received = recv_msg.recv(rep_socket_);
 
     // Return if timeout
     if(!received) {
@@ -133,7 +133,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
 void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb, message::PayloadBuffer payload) {
     auto msg = CSCP1Message({getCanonicalName()}, std::move(reply_verb));
     msg.addPayload(std::move(payload));
-    msg.assemble().send(socket_);
+    msg.assemble().send(rep_socket_);
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer>>
