@@ -22,6 +22,7 @@
 
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::config {
 
@@ -29,7 +30,7 @@ namespace constellation::config {
 
         // When asking for a vector but we get NIL, let's return an empty vector of the right type
         // since we also set std::monostate when encountering an empty msgpack array
-        if(is_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
+        if(utils::is_std_vector_v<T> && std::holds_alternative<std::monostate>(*this)) {
             return {};
         }
 
@@ -54,7 +55,7 @@ namespace constellation::config {
             }
             return enum_val.value();
 
-        } else if constexpr(is_vector_v<T>) {
+        } else if constexpr(utils::is_std_vector_v<T>) {
             using U = typename T::value_type;
 
             if constexpr(std::is_arithmetic_v<U>) {
@@ -109,7 +110,7 @@ namespace constellation::config {
         } else if constexpr(std::is_enum_v<T>) {
             return {utils::to_string(val)};
 
-        } else if constexpr(is_vector_v<T>) {
+        } else if constexpr(utils::is_std_vector_v<T>) {
             using U = typename T::value_type;
 
             if constexpr(std::is_integral_v<U>) {
