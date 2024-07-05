@@ -25,7 +25,7 @@
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 
 namespace constellation::chirp {
 

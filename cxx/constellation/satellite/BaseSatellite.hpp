@@ -24,7 +24,7 @@
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/satellite/CommandRegistry.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/fsm_definitions.hpp"
@@ -201,7 +201,7 @@ namespace constellation::satellite {
 
     private:
         zmq::context_t context_;
-        zmq::socket_t socket_;
+        zmq::socket_t rep_socket_;
         utils::Port port_;
 
         std::string_view satellite_type_;

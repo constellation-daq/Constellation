@@ -23,7 +23,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
-#include "constellation/core/utils/ports.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -39,25 +39,27 @@ using namespace std::literals::string_literals;
 
 class CSCPSender {
 public:
-    CSCPSender(Port port) : req_(context_, zmq::socket_type::req) { req_.connect("tcp://127.0.0.1:" + to_string(port)); }
+    CSCPSender(Port port) : req_socket_(context_, zmq::socket_type::req) {
+        req_socket_.connect("tcp://127.0.0.1:" + to_string(port));
+    }
     void send(std::span<const std::byte> message, zmq::send_flags send_flags = zmq::send_flags::none) {
         zmq::message_t zmq_msg {message.data(), message.size()};
-        req_.send(zmq_msg, send_flags);
+        req_socket_.send(zmq_msg, send_flags);
     }
-    void send(CSCP1Message& message) { message.assemble().send(req_); }
+    void send(CSCP1Message& message) { message.assemble().send(req_socket_); }
     void sendCommand(std::string command) {
         auto msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, std::move(command)});
         send(msg);
     }
     CSCP1Message recv() {
         zmq::multipart_t zmq_msgs {};
-        zmq_msgs.recv(req_);
+        zmq_msgs.recv(req_socket_);
         return CSCP1Message::disassemble(zmq_msgs);
     }
 
 private:
     zmq::context_t context_;
-    zmq::socket_t req_;
+    zmq::socket_t req_socket_;
 };
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
