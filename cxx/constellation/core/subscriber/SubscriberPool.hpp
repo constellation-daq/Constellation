@@ -129,4 +129,4 @@ namespace constellation::utils {
 } // namespace constellation::utils
 
 // Include template members
-#include "SubscriberPool.tpp"
+#include "SubscriberPool.ipp"

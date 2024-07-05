@@ -150,7 +150,7 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     REQUIRE_THAT(ret.second, Equals("Transition reconfigure is not implemented by this satellite"));
 }
 
-// NOLINTNEXTLINE(*-function-size)
+// NOLINTNEXTLINE(readability-function-size)
 TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();

@@ -323,4 +323,4 @@ namespace constellation::config {
 } // namespace constellation::config
 
 // Include template members
-#include "Configuration.tpp"
+#include "Configuration.ipp"

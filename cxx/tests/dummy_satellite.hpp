@@ -21,7 +21,7 @@
 #include "constellation/satellite/fsm_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
-// NOLINTNEXTLINE(*-special-member-functions)
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class DummySatellite : public constellation::satellite::Satellite {
 public:
     DummySatellite() : Satellite("Dummy", "sat1") {

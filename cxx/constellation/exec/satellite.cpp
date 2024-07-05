@@ -51,7 +51,7 @@ extern "C" void signal_hander(int signal) {
     signal_handler_f(signal);
 }
 
-// NOLINTNEXTLINE(*-avoid-c-arrays)
+// NOLINTNEXTLINE(modernize-avoid-c-arrays)
 void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser, bool needs_type) {
     // If not a predefined type, requires that the satellite type is specified
     if(needs_type) {
@@ -107,7 +107,7 @@ std::string get_arg(argparse::ArgumentParser& parser, std::string_view arg) noex
 }
 
 int constellation::exec::satellite_main(int argc,
-                                        char* argv[], // NOLINT(*-avoid-c-arrays)
+                                        char* argv[], // NOLINT(modernize-avoid-c-arrays)
                                         std::string_view program,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     // Ensure that ZeroMQ doesn't fail creating the CMDP sink

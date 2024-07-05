@@ -46,7 +46,7 @@ namespace constellation::utils {
          */
         Exception() = default;
 
-        // NOLINTNEXTLINE(*-non-private-member-variables-in-classes)
+        // NOLINTNEXTLINE(misc-non-private-member-variables-in-classes)
         std::string error_message_;
     };
 
