@@ -117,7 +117,6 @@ namespace constellation::utils {
         /** Helper to disconnect from a departing service */
         void disconnect(const chirp::DiscoveredService& service);
 
-
         /** Disconnect from all registered services */
         void disconnect_all();
 
@@ -144,4 +143,4 @@ namespace constellation::utils {
 } // namespace constellation::utils
 
 // Include template members
-#include "BasePool.tpp"
+#include "BasePool.ipp"
