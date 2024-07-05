@@ -27,7 +27,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 
-    namespace constellation::utils {
+namespace constellation::utils {
 
     template <typename MESSAGE>
     SubscriberPool<MESSAGE>::SubscriberPool(chirp::ServiceIdentifier service,
@@ -43,8 +43,8 @@
 
         const std::lock_guard sockets_lock {BasePool<MESSAGE>::sockets_mutex_};
 
-        const auto socket_it =
-            std::ranges::find_if(BasePool<MESSAGE>::sockets_, host_id, [&](const auto& s) { return s.first.host_id == host_id; });
+        const auto socket_it = std::ranges::find_if(
+            BasePool<MESSAGE>::sockets_, host_id, [&](const auto& s) { return s.first.host_id == host_id; });
         if(socket_it != BasePool<MESSAGE>::sockets_.end()) {
             if(subscribe) {
                 socket_it->second.subscribe(topic);
@@ -60,7 +60,6 @@
             socket.set(zmq::sockopt::subscribe, topic);
         }
     }
-
 
     template <typename MESSAGE> void SubscriberPool<MESSAGE>::subscribe(std::string_view host, std::string_view topic) {
         scribe(host, topic, true);

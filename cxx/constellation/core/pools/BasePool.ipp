@@ -29,9 +29,9 @@ namespace constellation::utils {
 
     template <typename MESSAGE>
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
-                                            const log::Logger& logger,
-                                            std::function<void(const MESSAGE&)> callback,
-                                            zmq::socket_type type)
+                                const log::Logger& logger,
+                                std::function<void(const MESSAGE&)> callback,
+                                zmq::socket_type type)
         : service_(service), logger_(logger), message_callback_(std::move(callback)), type_(type) {
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -66,7 +66,9 @@ namespace constellation::utils {
         disconnect_all();
     }
 
-    template <typename MESSAGE> bool BasePool<MESSAGE>::shouldConnect(const chirp::DiscoveredService&) { return true; }
+    template <typename MESSAGE> bool BasePool<MESSAGE>::shouldConnect(const chirp::DiscoveredService&) {
+        return true;
+    }
 
     template <typename MESSAGE> void BasePool<MESSAGE>::socketConnected(zmq::socket_t&) {}
     template <typename MESSAGE> void BasePool<MESSAGE>::socketDisconnected(zmq::socket_t&) {}
@@ -175,8 +177,7 @@ namespace constellation::utils {
         }
     }
 
-    template <typename MESSAGE>
-    void BasePool<MESSAGE>::callback_impl(const chirp::DiscoveredService& service, bool depart) {
+    template <typename MESSAGE> void BasePool<MESSAGE>::callback_impl(const chirp::DiscoveredService& service, bool depart) {
         LOG(logger_, TRACE) << "Callback for " << service.to_uri() << (depart ? ", departing" : "");
 
         if(depart) {

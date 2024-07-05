@@ -121,9 +121,8 @@ namespace constellation::utils {
         void disconnect_all();
 
     protected:
-        // NOLINTNEXTLINE(*-non-private-member-variables-in-classes)
-        std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
-        std::timed_mutex sockets_mutex_;
+        std::map<chirp::DiscoveredService, zmq::socket_t> sockets_; // NOLINT(*-non-private-member-variables-in-classes)
+        std::timed_mutex sockets_mutex_;                            // NOLINT(*-non-private-member-variables-in-classes)
 
     private:
         chirp::ServiceIdentifier service_;
