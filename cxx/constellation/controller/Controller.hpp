@@ -136,6 +136,20 @@ namespace constellation::controller {
                                                                   const CommandPayload& payload = {});
 
         /**
+         * @brief Send a command to all connected satellites
+         * @details This method allows to send command message to all connected satellites. The message is formed
+         * individually for each satellite from the provided verb and the payload entry in the map for the given satellite.
+         * Missing entries in the payload table will receive an empty payload.
+         *
+         * @param verb Command
+         * @param payloads Map of payloads for each target satellite.
+         *
+         * @return Map of satellite canonical names and their CSCP response messages
+         */
+        std::map<std::string, message::CSCP1Message> sendCommands(const std::string& verb,
+                                                                  const std::map<std::string, CommandPayload>& payloads);
+
+        /**
          * @brief Helper to check if all connections are in a given state
          *
          * @param state State to be checked for

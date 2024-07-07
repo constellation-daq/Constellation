@@ -204,13 +204,13 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
 
     const std::lock_guard connection_lock {connection_mutex_};
     std::map<std::string, CSCP1Message> replies;
-    for(auto& sat : connections_) {
-        replies.emplace(sat.first, send_receive(sat.second, cmd, true));
+    for(auto& [name, sat] : connections_) {
+        replies.emplace(name, send_receive(sat, cmd, true));
 
         // Update last command info
-        auto verb = replies.at(sat.first).getVerb();
-        sat.second.last_cmd_type = verb.first;
-        sat.second.last_cmd_verb = verb.second;
+        auto verb = replies.at(name).getVerb();
+        sat.last_cmd_type = verb.first;
+        sat.last_cmd_verb = verb.second;
     }
     return replies;
 }
@@ -227,6 +227,41 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
         send_msg.addPayload(std::move(sbuf));
     }
     return sendCommands(send_msg);
+}
+
+std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb,
+                                                             const std::map<std::string, CommandPayload>& payloads) {
+
+    const std::lock_guard connection_lock {connection_mutex_};
+    std::map<std::string, CSCP1Message> replies;
+    for(auto& [name, sat] : connections_) {
+        // Prepare message:
+        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, {verb}});
+
+        // Attempt to retrieve payload for this satellite
+        if(payloads.contains(name)) {
+            const auto& payload = payloads.at(name);
+
+            if(std::holds_alternative<Dictionary>(payload)) {
+                send_msg.addPayload(std::get<Dictionary>(payload).assemble());
+            } else if(std::holds_alternative<List>(payload)) {
+                send_msg.addPayload(std::get<List>(payload).assemble());
+            } else if(std::holds_alternative<std::string>(payload)) {
+                msgpack::sbuffer sbuf {};
+                msgpack::pack(sbuf, std::get<std::string>(payload));
+                send_msg.addPayload(std::move(sbuf));
+            }
+        }
+
+        // Send command and receive reply:
+        replies.emplace(name, send_receive(sat, send_msg));
+
+        // Update last command info
+        auto verb = replies.at(name).getVerb();
+        sat.last_cmd_type = verb.first;
+        sat.last_cmd_verb = verb.second;
+    }
+    return replies;
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name,
