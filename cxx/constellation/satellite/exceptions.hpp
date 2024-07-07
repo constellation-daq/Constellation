@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <string>
+#include <string_view>
+
 #include "constellation/build.hpp"
 #include "constellation/core/message/satellite_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -134,11 +137,11 @@ namespace constellation::satellite {
      */
     class CNSTLN_API InvalidUserCommandArguments : public UserCommandError {
     public:
-        explicit InvalidUserCommandArguments(const std::type_info& argtype, const std::type_info& valuetype) {
+        explicit InvalidUserCommandArguments(std::string_view argtype, std::string_view valuetype) {
             error_message_ = "Mismatch of argument type \"";
-            error_message_ += utils::demangle(argtype);
+            error_message_ += argtype;
             error_message_ += "\" to provided type \"";
-            error_message_ += utils::demangle(valuetype);
+            error_message_ += valuetype;
             error_message_ += "\"";
         }
     };
@@ -149,9 +152,9 @@ namespace constellation::satellite {
      */
     class CNSTLN_API InvalidUserCommandResult : public UserCommandError {
     public:
-        explicit InvalidUserCommandResult(const std::type_info& argtype) {
+        explicit InvalidUserCommandResult(std::string_view argtype) {
             error_message_ = "Error casting function return type \"";
-            error_message_ += utils::demangle(argtype);
+            error_message_ += argtype;
             error_message_ += "\" to dictionary value";
         }
     };

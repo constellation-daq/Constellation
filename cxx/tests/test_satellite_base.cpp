@@ -466,7 +466,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     auto recv_msg_wrongarg = sender.recv();
     REQUIRE(recv_msg_wrongarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_wrongarg.getVerb().second),
-                 StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::time_point"));
+                 StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::system_clock::time_point"));
 
     // my_usr_cmd_arg with wrong number of argument
     auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
@@ -504,7 +504,7 @@ TEST_CASE("Catch incorrect user command return value", "[satellite]") {
     auto recv_msg_invalid_return = sender.recv();
     REQUIRE(recv_msg_invalid_return.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_invalid_return.getVerb().second),
-                 Equals("Error casting function return type \"std::array<int, 1ul>\" to dictionary value"));
+                 Equals("Error casting function return type \"std::array<int, 1>\" to dictionary value"));
 }
 
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
