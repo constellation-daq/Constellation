@@ -26,7 +26,7 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 Controller::Controller(std::string_view controller_name)
-    : logger_("CONTROLLER"), controller_name_(controller_name),
+    : logger_("CNTRL"), controller_name_(controller_name),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       watchdog_thread_(std::bind_front(&Controller::run, this)) {
     LOG(logger_, DEBUG) << "Registering controller callback";
