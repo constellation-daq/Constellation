@@ -124,7 +124,8 @@ namespace constellation::controller {
 
         /**
          * @brief Send a command to all connected satellites
-         * @details This method allows to send an already prepared command message to all connected satellites.
+         * @details This method allows to send command message to all connected satellites. The message is formed from the
+         * provided verb and optional payload. The payload is the same for all satellites.
          *
          * @param verb Command
          * @param payload Optional payload for this command message
