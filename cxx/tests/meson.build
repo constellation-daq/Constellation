@@ -70,6 +70,16 @@ test('Core configuration test', test_core_config,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
+# Core / Utils
+
+test_core_utils = executable('test_core_utils',
+  sources: 'test_core_utils.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core utilities test', test_core_utils,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
 # Exec / DSO Loader
 
 test_exec_dsoloader = executable('test_exec_dsoloader',
