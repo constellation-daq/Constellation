@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -41,6 +42,8 @@ TEST_CASE("Test demangle", "[satellite]") {
     REQUIRE_THAT(demangle<std::string_view>(), Equals("std::string_view"));
     // std::chrono::system_clock::time_point
     REQUIRE_THAT(demangle<std::chrono::system_clock::time_point>(), Equals("std::chrono::system_clock::time_point"));
+    // std::monostate
+    REQUIRE_THAT(demangle<std::monostate>(), Equals("std::monostate"));
     // Custom class
     REQUIRE_THAT(demangle<test::TestClass>(), Equals("test::TestClass"));
     // Nesting

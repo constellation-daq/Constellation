@@ -18,6 +18,7 @@
 #include <string>
 #include <type_traits>
 #include <typeinfo>
+#include <variant>
 #include <vector>
 
 #include <cxxabi.h>
@@ -101,6 +102,10 @@ namespace constellation::utils {
         // Check if std::chrono::system_clock::time_point
         if constexpr(std::same_as<T, std::chrono::system_clock::time_point>) {
             return "std::chrono::system_clock::time_point";
+        }
+        // Check if std::monostate
+        if constexpr(std::same_as<T, std::monostate>) {
+            return "std::monostate";
         }
         // Otherwise use cxxabi
         return demangle(typeid(T));
