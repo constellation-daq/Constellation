@@ -149,6 +149,12 @@ namespace constellation::controller {
          */
         satellite::State getLowestState() const;
 
+        /**
+         * @brief Get list of currently active connections
+         * @return Set of fully-qualified canonical names of current connections
+         */
+        std::set<std::string> getConnections() const;
+
     private:
         /**
          * @brief Helper to send a message to a connect and receive the answer

@@ -135,6 +135,15 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     }
 }
 
+std::set<std::string> Controller::getConnections() const {
+    const std::lock_guard connection_lock {connection_mutex_};
+    std::set<std::string> connections;
+    for(const auto& [key, conn] : connections_) {
+        connections.insert(key);
+    }
+    return connections;
+}
+
 bool Controller::isInState(State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
