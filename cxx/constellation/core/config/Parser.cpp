@@ -74,8 +74,29 @@ std::pair<std::string, Value> ConfigParser::parseKeyValue(std::string line) {
         // Try to convert value into target type. Order matters since an integer will also correctly evaluate to a double
         auto parsed_value = parse_value(value);
 
-        // FIXME here we need to make the jump to config::Value!
+        // Attempt conversion to integer:
+        std::int64_t int_value {};
+        if(std::from_chars(parsed_value->value.data(), parsed_value->value.data() + parsed_value->value.size(), int_value)
+               .ec == std::errc {}) {
+            return std::make_pair(key, int_value);
+        }
 
+        // Attempt conversion to float:
+        double float_value {};
+        if(std::from_chars(parsed_value->value.data(), parsed_value->value.data() + parsed_value->value.size(), float_value)
+               .ec == std::errc {}) {
+            return std::make_pair(key, float_value);
+        }
+
+        // Attempt conversion to boolean:
+        bool bool_value {};
+        std::istringstream is(utils::transform(parsed_value->value, ::tolower));
+        is >> std::boolalpha >> bool_value;
+        if(!is.fail()) {
+            return std::make_pair(key, bool_value);
+        }
+
+        // Otherwise return as string:
         return std::make_pair(key, parsed_value->value);
     }
 
