@@ -74,17 +74,17 @@ std::pair<std::string, Value> ConfigParser::parseKeyValue(std::string line) {
         // Try to convert value into target type. Order matters since an integer will also correctly evaluate to a double
         auto parsed_value = parse_value(value);
 
+        // FIXME vectors
+
         // Attempt conversion to integer:
         std::int64_t int_value {};
-        if(std::from_chars(parsed_value->value.data(), parsed_value->value.data() + parsed_value->value.size(), int_value)
-               .ec == std::errc {}) {
+        if(utils::number_from_string(parsed_value->value, int_value)) {
             return std::make_pair(key, int_value);
         }
 
         // Attempt conversion to float:
         double float_value {};
-        if(std::from_chars(parsed_value->value.data(), parsed_value->value.data() + parsed_value->value.size(), float_value)
-               .ec == std::errc {}) {
+        if(utils::number_from_string(parsed_value->value, float_value)) {
             return std::make_pair(key, float_value);
         }
 
@@ -226,7 +226,7 @@ void ConfigParser::add(std::istream& stream, std::filesystem::path file_name) {
             // Line should be a section header with an alphanumeric name
             size_t idx = 1;
             for(; idx < line.length() - 1; ++idx) {
-                if(isalnum(line[idx]) == 0 && line[idx] != '_') {
+                if(isalnum(line[idx]) == 0 && line[idx] != '_' && line[idx] != '.') {
                     break;
                 }
             }

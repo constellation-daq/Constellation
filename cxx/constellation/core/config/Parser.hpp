@@ -16,8 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "Configuration.hpp"
-#include "Value.hpp"
+#include "constellation/build.hpp"
+#include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Value.hpp"
 
 namespace constellation::config {
 
@@ -28,7 +29,7 @@ namespace constellation::config {
      * - A set of section header between [ and ] brackets
      * - Key/value pairs linked to the last defined section (or the empty section if none has been defined yet)
      */
-    class ConfigParser {
+    class CNSTLN_API ConfigParser {
     public:
         /**
          * @brief Constructs a config reader without any attached streams
