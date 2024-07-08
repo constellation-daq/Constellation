@@ -75,8 +75,8 @@ namespace constellation::config {
 
         // No copy constructor/assignment, default move constructor/assignment
         /// @cond doxygen_suppress
-        Configuration(const Configuration& other) = delete;
-        Configuration& operator=(const Configuration& other) = delete;
+        Configuration(const Configuration& other) = default;
+        Configuration& operator=(const Configuration& other) = default;
         Configuration(Configuration&& other) noexcept = default;
         Configuration& operator=(Configuration&& other) = default;
         /// @endcond
