@@ -26,8 +26,28 @@ The prerequisites can be installed as follows:
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
 
+Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages for GCC and Meson can be used:
+
 ```sh
 sudo apt install meson g++
+```
+
+Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
+regular package repositories:
+
+```sh
+sudo apt install meson g++-12
+export CXX="g++-12"
+```
+
+Ubuntu 20.04 requires newer versions of GCC and Meson than available from the standard package repositories. They are available in official PPAs:
+
+```sh
+sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+sudo add-apt-repository ppa:ubuntu-support-team/meson
+sudo apt update
+sudo apt install meson g++-13
+export CXX="g++-13"
 ```
 
 :::
@@ -61,32 +81,6 @@ export CXXFLAGS="-fexperimental-library"
 :::{tab-item} Windows
 
 TODO
-
-:::
-:::{tab-item} Ubuntu 22.04
-
-Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
-regular package repositories:
-
-```sh
-sudo apt install meson g++-12
-export CXX="g++-12"
-```
-
-:::
-
-:::{tab-item} Ubuntu 20.04
-
-Ubuntu 20.04 requires a newer version of GCC than available from the standard package repositories. An installation from the
-[`ubuntu-toolchain-r` PPA](https://launchpad.net/~ubuntu-toolchain-r) is recommended:
-
-```sh
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo add-apt-repository ppa:ubuntu-support-team/meson
-sudo apt update
-sudo apt install meson g++-13
-export CXX="g++-13"
-```
 
 :::
 ::::
