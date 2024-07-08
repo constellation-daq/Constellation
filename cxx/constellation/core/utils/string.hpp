@@ -34,6 +34,21 @@
 
 namespace constellation::utils {
 
+    /**
+     * @brief Trims leading and trailing characters from a string
+     * @param str String that should be trimmed
+     * @param delims List of delimiters to trim from the string (defaults to all whitespace)
+     */
+    inline std::string trim(const std::string& str, const std::string& delims = " \t\n\r\v") {
+
+        size_t b = str.find_first_not_of(delims);
+        size_t e = str.find_last_not_of(delims);
+        if(b == std::string::npos || e == std::string::npos) {
+            return "";
+        }
+        return {str, b, e - b + 1};
+    }
+
     /** Transforms a string with a given operation */
     template <typename F> inline std::string transform(std::string_view string, F operation) {
         std::string out {};

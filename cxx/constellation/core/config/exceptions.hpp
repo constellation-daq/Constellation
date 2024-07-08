@@ -89,6 +89,43 @@ namespace constellation::config {
         }
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Indicates an error while parsing a key / value pair
+     */
+    class KeyValueParseError : public ConfigurationError {
+    public:
+        /**
+         * @brief Construct an error for a invalid key value pair
+         * @param key_value Key value pair which the parser tries to interpret
+         * @param reason Reason for the parser to fail
+         */
+        KeyValueParseError(const std::string& key_value, const std::string& reason) {
+            error_message_ = "Could not parse key / value pair '";
+            error_message_ += key_value;
+            error_message_ += ": " + reason;
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Indicates an error while parsing a configuration file
+     */
+    class ConfigParseError : public ConfigurationError {
+    public:
+        /**
+         * @brief Construct an error for a invalid configuration file
+         * @param file_name Name of the configuration file
+         * @param line_num Line number where the problem occurred
+         */
+        ConfigParseError(const std::string& file_name, int line_num) {
+            error_message_ = "Could not parse line ";
+            error_message_ += std::to_string(line_num);
+            error_message_ += " in file '" + file_name + "'";
+            error_message_ += ": not a valid section header, key/value pair or comment";
+        }
+    };
+
     // Forward declaration of Configuration class
     class Configuration;
 
