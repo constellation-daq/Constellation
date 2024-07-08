@@ -49,6 +49,20 @@ namespace constellation::utils {
         return {str, b, e - b + 1};
     }
 
+    template <typename T> bool number_from_string(const std::string_view& view, T& value) {
+        if(view.empty()) {
+            return false;
+        }
+        const char* first = view.data();
+        const char* last = view.data() + view.length();
+        std::from_chars_result res = std::from_chars(first, last, value);
+
+        if(res.ec != std::errc() || res.ptr != last) {
+            return false;
+        }
+        return true;
+    }
+
     /** Transforms a string with a given operation */
     template <typename F> inline std::string transform(std::string_view string, F operation) {
         std::string out {};
