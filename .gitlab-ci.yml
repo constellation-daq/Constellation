@@ -74,12 +74,16 @@ variables:
   variables:
     CXX: ccache clang++
     CXX_LD: lld
+    CC: ccache clang
+    CC_LD: lld
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
   variables:
     CXX: ccache clang++
     CXX_LD: lld
+    CC: ccache clang
+    CC_LD: lld
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
@@ -102,8 +106,6 @@ variables:
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
-  variables:
-    CXX: ccache g++
 
 # Python templates
 
@@ -195,7 +197,16 @@ build:debian-clang:
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Dcpp_stdlib=c++ -Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Db_sanitize=address -Db_lundef=false"
+
+build:debian-clang-libcxx:
+  extends:
+    - .build-cpp
+    - .debian-clang
+  variables:
+    BUILD_TYPE: "debugoptimized"
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Dspdlog:external_fmt=disabled -Db_sanitize=address -Db_lundef=false"
+    CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:debian-gcc:
   extends:
@@ -286,6 +297,14 @@ test:debian-clang:
     - .debian-clang
   needs:
     - job: build:debian-clang
+      artifacts: true
+
+test:debian-clang-libcxx:
+  extends:
+    - .test-cpp
+    - .debian-clang
+  needs:
+    - job: build:debian-clang-libcxx
       artifacts: true
 
 test:debian-gcc:
@@ -434,7 +453,7 @@ lint:clang-scan-build:
     CCC_CC: clang
     CCC_CXX: clang++
   script:
-    - meson setup build -Dimpl_cxx=enabled -Dbuildtype=debug
+    - meson setup build -Dimpl_cxx=enabled -Dcxx_tests=disabled -Dbuildtype=debug
     - ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:

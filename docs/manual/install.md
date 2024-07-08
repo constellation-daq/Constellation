@@ -18,7 +18,8 @@ procedure for the two versions separately, but installing both in parallel on th
 The C++ version of Constellation requires:
 
 - [Meson](https://mesonbuild.com/) 0.61 or newer
-- C++20 capable compiler like GCC 12 or newer and LLVM 16 or newer
+- C++20 capable compiler like GCC 12 or newer and clang 16 or newer
+- C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
 
 The prerequisites can be installed as follows:
 
