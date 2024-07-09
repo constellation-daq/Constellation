@@ -60,7 +60,7 @@ class HeartbeatChecker:
         self._stop_threads: threading.Event | None = None
         self._poller = zmq.Poller()
         # dict to keep states mapped to socket
-        self._states = dict[zmq.Socket, HeartbeatState]()
+        self._states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
 
         self.auto_recover = False  # clear fail Event if Satellite reappears?
 
@@ -243,7 +243,7 @@ class HeartbeatChecker:
     def close(self) -> None:
         for socket in self._states.keys():
             socket.close()
-        self._states = dict[zmq.Socket, HeartbeatState]()
+        self._states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
 
 
 def main(args: Any = None) -> None:
