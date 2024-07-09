@@ -132,7 +132,7 @@ variables:
   before_script:
     - python3 -m venv venv
     - source venv/bin/activate
-    - pip install --upgrade pip
+    - pip install --upgrade pip setuptools
     - pip install meson-python meson ninja
 
 .python-3.11:
