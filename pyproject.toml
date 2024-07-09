@@ -55,7 +55,7 @@ Repository = "https://gitlab.desy.de/constellation/constellation"
 [project.optional-dependencies]
 dev = ["build", "black", "flake8", "flake8-pyproject", "mypy", "types-psutil"]
 test = ["pytest", "pytest-forked", "pytest-cov", "pytest-sugar"]
-docs = ["sphinx", "pydata_sphinx_theme", "myst-parser", "breathe", "ablog", "sphinxcontrib.plantuml", "sphinx_design", "sphinx_favicon"]
+docs = ["sphinx", "pydata_sphinx_theme", "myst-parser", "breathe", "ablog", "sphinxcontrib.plantuml", "sphinx_design", "sphinx_favicon", "sphinx-copybutton"]
 cli = ["ipython"]
 hdf5 = ["h5py"]
 caenhv = ["pycaenhv>=0.03", "pyserial"]
