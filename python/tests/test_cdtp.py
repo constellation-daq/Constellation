@@ -370,3 +370,5 @@ def test_receiver_stats(
     assert os.path.exists(
         os.path.join(tmpdir, "stats", "mock_receiver_nbytes.csv")
     ), "Expected output metrics csv not found"
+    # close thread and connections to allow temp dir to be removed
+    ml._monitor_shutdown()
