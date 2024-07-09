@@ -25,19 +25,15 @@ class HeartbeatState:
         self.last_refresh = datetime.now(timezone.utc)
         self.state = SatelliteState.NEW
         self.failed: threading.Event = evt
-        self._started = False
 
     def refresh(self, ts: datetime | None = None) -> None:
         if not ts:
             self.last_refresh = datetime.now(timezone.utc)
         else:
             self.last_refresh = ts
-        self._started = True
 
     @property
     def seconds_since_refresh(self) -> float:
-        if not self._started:
-            return 0.0
         return (datetime.now(timezone.utc) - self.last_refresh).total_seconds()
 
 
@@ -116,6 +112,10 @@ class HeartbeatChecker:
     def _run_thread(self) -> None:
         logger.info("Starting heartbeat check thread")
         last_check = datetime.now(timezone.utc)
+
+        # refresh all tokens
+        for hb in self._states.values():
+            hb.refresh()
 
         # assert for mypy static type analysis
         assert isinstance(
