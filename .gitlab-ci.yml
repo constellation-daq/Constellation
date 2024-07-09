@@ -132,6 +132,7 @@ variables:
   before_script:
     - python3 -m venv venv
     - source venv/bin/activate
+    - pip install --upgrade pip setuptools
     - pip install meson-python meson ninja
 
 .python-3.11:
@@ -153,8 +154,6 @@ variables:
 
 .fedora-sphinx:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx:latest
-  before_script:
-    - source /venv/bin/activate
 
 # build stage
 
@@ -551,10 +550,12 @@ docs:doxygen:
 docs:html:
   extends:
     - .docs
+    - .python-venv
     - .fedora-sphinx
   variables:
     SPHINXOPTS: -W --keep-going
   script:
+    - pip install --no-build-isolation -e .[docs]
     - make -C docs html
   needs:
     - job: docs:doxygen
