@@ -251,9 +251,9 @@ def test_receive_writing_package(
         payload = np.array(np.arange(1000), dtype=np.int16)
         assert receiver.run_identifier == ""
 
-        for run_num in range(1, 3):
+        for run_num in range(1, 4):
             # Send new data to handle
-            tx.send_start({"mock_cfg": 1, "other_val": "mockval"})
+            tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
             # send once as byte array with and once w/o dtype
             tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
             tx.send_data(payload.tobytes())
@@ -262,6 +262,11 @@ def test_receive_writing_package(
             # Running satellite
             commander.request_get_response("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
+            timeout = 0.5
+            while not receiver.active_satellites or timeout < 0:
+                time.sleep(0.05)
+                timeout -= 0.05
+            assert len(receiver.active_satellites) == 1, "No BOR received!"
             assert (
                 receiver.fsm.current_state_value.name == "RUN"
             ), "Could not set up test environment"
@@ -272,7 +277,7 @@ def test_receive_writing_package(
                 receiver.fsm.current_state_value.name == "stopping"
             ), "Receiver stopped before receiving EORE"
             # send EORE
-            tx.send_end({"mock_end": "whatanend"})
+            tx.send_end({"mock_end": f"whatanend{run_num}"})
             wait_for_state(receiver.fsm, "ORBIT", 1)
             assert receiver.run_identifier == str(run_num)
 
@@ -286,7 +291,7 @@ def test_receive_writing_package(
             h5file = h5py.File(tmpdir / pathlib.Path(fn))
             assert "simple_sender" in h5file.keys()
             assert bor in h5file["simple_sender"].keys()
-            assert h5file["simple_sender"][bor]["mock_cfg"][()] == 1
+            assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
             assert eor in h5file["simple_sender"].keys()
             assert "whatanend" in str(
                 h5file["simple_sender"][eor]["mock_end"][()], encoding="utf-8"
