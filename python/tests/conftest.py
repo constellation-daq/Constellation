@@ -29,6 +29,7 @@ from constellation.core.cscp import CommandTransmitter
 from constellation.core.cdtp import DataTransmitter
 from constellation.core.controller import BaseController
 from constellation.core.configuration import Configuration, flatten_config, load_config
+from constellation.core.heartbeatchecker import HeartbeatChecker
 
 # chirp
 mock_chirp_packet_queue = []
@@ -231,7 +232,37 @@ def mock_data_receiver(mock_socket_receiver):
 
 
 @pytest.fixture
-def mock_satellite(mock_chirp_transmitter):
+def mock_heartbeat_checker():
+    """Create a mock HeartbeatChecker instance."""
+
+    mockets = []
+
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        m.endpoint = 1
+        mockets.append([m, 1])
+        return m
+
+    def poll(*args, **kwargs):
+        res = [m for m in mockets if not m[0].has_no_data()]
+        if not res:
+            time.sleep(0.25)
+        return res
+
+    with patch("constellation.core.heartbeatchecker.zmq.Context") as mock:
+        with patch("constellation.core.heartbeatchecker.zmq.Poller") as mock_p:
+            mock_context = MagicMock()
+            mock_context.socket = mocket_factory
+            mock.return_value = mock_context
+            mock_poller = MagicMock()
+            mock_poller.poll.side_effect = poll
+            mock_p.return_value = mock_poller
+            hbc = HeartbeatChecker()
+            yield hbc
+
+
+@pytest.fixture
+def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
     """Create a mock Satellite base instance."""
 
     def mocket_factory(*args, **kwargs):
