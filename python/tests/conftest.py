@@ -284,7 +284,7 @@ def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
 
 
 @pytest.fixture
-def mock_controller(mock_chirp_transmitter):
+def mock_controller(mock_chirp_transmitter, mock_heartbeat_checker):
     """Create a mock Controller base instance."""
 
     def mocket_factory(*args, **kwargs):
