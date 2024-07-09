@@ -354,6 +354,12 @@ class H5DataReceiverWriter(DataReceiver):
             self.active_satellites.append(item.name)
             grp = outfile.create_group(item.name)
 
+        if item.name not in self.active_satellites:
+            self.log.warning(
+                "%s sent data but is no longer assumed active (EOR received)",
+                item.name,
+            )
+
         title = f"data_{self.run_identifier}_{item.sequence_number}"
 
         # interpret bytes as array of uint8 if nothing else was specified in the meta

@@ -283,6 +283,7 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
+        self.log.info(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
