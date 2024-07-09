@@ -102,8 +102,9 @@ class CaenHvSatellite(Satellite):
         return f"Connected to crate and configured {len(crate.boards)} boards"
 
     def do_reconfigure(self, configuration: Configuration) -> str:
-        """Reconfigure the HV module by re-running initialization."""
-        return self.do_initializing(configuration)
+        """Reconfigure the HV module by re-running initialization and launch."""
+        self.do_initializing(configuration)
+        return self.do_launching(None)
 
     def do_launching(self, payload: Any) -> str:
         """Power up the HV."""
@@ -124,13 +125,7 @@ class CaenHvSatellite(Satellite):
 
     def get_channel_value(self, board: int, channel: int, par: str) -> Any:
         """Return the value of a given channel parameter."""
-        if self.fsm.current_state_value in [
-            SatelliteState.NEW,
-            SatelliteState.ERROR,
-            SatelliteState.DEAD,
-            SatelliteState.initializing,
-            SatelliteState.reconfiguring,
-        ]:
+        if not self._ready():
             return None
         try:
             with self.caen as crate:
@@ -140,8 +135,20 @@ class CaenHvSatellite(Satellite):
             self.log.exception(e)
         return val
 
+    def get_channel_status(self, board: int, channel: int, par: str) -> str:
+        """Return the status of a given channel."""
+        if not self._ready():
+            return ""
+        try:
+            with self.caen as crate:
+                status = crate.boards[board].channels[channel].status
+        except Exception as e:
+            status = [f"{repr(e)}"]
+            self.log.exception(e)
+        return ", ".join(status)
+
     @cscp_requestable
-    def get_parameter(self, request: CSCPMessage) -> Tuple[str, None, None]:
+    def get_parameter(self, request: CSCPMessage) -> Tuple[Any, None, None]:
         """Return the value of a parameter.
 
         Payload: dictionary with 'board', 'channel' and 'parameter' keys
@@ -154,6 +161,37 @@ class CaenHvSatellite(Satellite):
         val = self.get_channel_value(board, chno, par)
         return val, None, None
 
+    def _get_parameter_is_allowed(self, request: CSCPMessage) -> bool:
+        return self._ready()
+
+    @cscp_requestable
+    def get_hv_status(self, request: CSCPMessage) -> Tuple[str, dict[str, str], None]:
+        """Return the collected state of all channels.
+
+        Payload: None.
+
+        """
+        res = {}
+        errors = []
+        npowered = 0
+        with self.caen as crate:
+            for brdno, brd in crate.boards.items():
+                for ch in brd.channels:
+                    status = ch.status
+                    if status:
+                        res[f"board{brdno}_ch{ch.index}"] = ", ".join(status)
+                        if any(s.lower() in ["on"] for s in status):
+                            npowered += 1
+                        if any(s.lower() not in ["on"] for s in status):
+                            errors.append(f"board{brdno}_ch{ch.index}")
+        msg = f"All OK, {npowered} powered"
+        if errors:
+            msg = "{npowered} powered, additional bits set in: " + ", ".join(errors)
+        return msg, res, None
+
+    def _get_status_is_allowed(self, request: CSCPMessage) -> bool:
+        return self._ready()
+
     @cscp_requestable
     def get_hw_config(self, request: CSCPMessage) -> Tuple[str, dict[str, str], None]:
         """Read and return the current hardware configuration.
@@ -163,14 +201,7 @@ class CaenHvSatellite(Satellite):
         Returns: dictionary with all R/W parameters and their current values.
 
         """
-        print(self.fsm.current_state)
-        if self.fsm.current_state_value in [
-            SatelliteState.NEW,
-            SatelliteState.ERROR,
-            SatelliteState.DEAD,
-            SatelliteState.initializing,
-            SatelliteState.reconfiguring,
-        ]:
+        if not self._ready():
             raise RuntimeError(
                 f"Command not allowed in state '{self.fsm.current_state_value.name}'"
             )
@@ -198,6 +229,7 @@ class CaenHvSatellite(Satellite):
         with self.caen as crate:
             for brdno, brd in crate.boards.items():
                 for ch in brd.channels:
+                    self.log.debug(f"Powering down ch {ch.index} on board {brdno}")
                     ch.switch_off()
         self.log.info("All channels powered down.")
 
@@ -222,9 +254,19 @@ class CaenHvSatellite(Satellite):
                             ),
                             10.0,
                         )
+                    self.schedule_metric(
+                        f"b{brdno}_ch{chno}_status",
+                        partial(
+                            self.get_channel_status,
+                            board=brdno,
+                            channel=chno,
+                            par=par,
+                        ),
+                        30.0,
+                    )
 
     def _power_up(self) -> int:
-        """Loop over channels and power them if they were configured such."""
+        """Loop over channels and enable them according to configuration."""
         npowered = 0  # number of powered channels
         with self.caen as crate:
             for brdno, brd in crate.boards.items():
@@ -236,7 +278,25 @@ class CaenHvSatellite(Satellite):
                         self.log.debug("Powering board %s channel %s", brdno, chno)
                         ch.switch_on()
                         npowered += 1
+                    else:
+                        if ch.is_powered():
+                            self.log.info(
+                                "Powering DOWN board %s channel %s", brdno, chno
+                            )
+                            ch.switch_off()
         return npowered
+
+    def _ready(self) -> bool:
+        """From the FSM state, determine whether we are ready."""
+        if self.fsm.current_state_value in [
+            SatelliteState.NEW,
+            SatelliteState.ERROR,
+            SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
+        ]:
+            return False
+        return True
 
 
 # ---

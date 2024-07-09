@@ -354,6 +354,12 @@ class H5DataReceiverWriter(DataReceiver):
             self.active_satellites.append(item.name)
             grp = outfile.create_group(item.name)
 
+        if item.name not in self.active_satellites:
+            self.log.warning(
+                "%s sent data but is no longer assumed active (EOR received)",
+                item.name,
+            )
+
         title = f"data_{self.run_identifier}_{item.sequence_number}"
 
         # interpret bytes as array of uint8 if nothing else was specified in the meta
@@ -404,17 +410,18 @@ class H5DataReceiverWriter(DataReceiver):
             raise RuntimeError(
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
-        self._add_version(h5file)
+        self._add_metadata(h5file)
         return h5file
 
     def _close_file(self, outfile: h5py.File) -> None:
         """Close the filehandler"""
         outfile.close()
 
-    def _add_version(self, outfile: h5py.File) -> None:
-        """Add version information to file."""
+    def _add_metadata(self, outfile: h5py.File) -> None:
+        """Add metadata such as version information to file."""
         grp = outfile.create_group(self.name)
         grp["constellation_version"] = __version__
+        grp["date_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 # -------------------------------------------------------------------------

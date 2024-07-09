@@ -146,7 +146,8 @@ class CommandReceiver(BaseSatelliteFrame):
                 if not is_allowed:
                     self.log.error("Command not allowed: %s", req)
                     self._cmd_tm.send_reply(
-                        f"Not allowed: {req.msg_verb}", CSCPMessageVerb.INVALID
+                        "Command not allowed (in current state)",
+                        CSCPMessageVerb.INVALID,
                     )
                     continue
             except AttributeError:
@@ -247,7 +248,9 @@ class CommandReceiver(BaseSatelliteFrame):
         # Controller)
         def reentry_timer(sat: BaseSatelliteFrame) -> None:
             time.sleep(0.5)
-            sat.reentry()
+            import sys
+
+            sys.exit(0)
 
         # This command is put into the queue: it will only execute after
         # previously queued actions (e.g. state transitions) have been

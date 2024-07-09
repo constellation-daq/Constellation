@@ -283,6 +283,7 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
+        self.log.info(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
@@ -346,6 +347,8 @@ class Satellite(
                             "Timeout while joining state thread, continuing."
                         )
             res: str = self.fail_gracefully()
+            # close heartbeat checker
+            self.hb_checker.close()
             return res
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
