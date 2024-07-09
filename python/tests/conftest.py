@@ -153,10 +153,7 @@ class mocket(MagicMock):
     def recv(self, flags=None):
         """Pop single entry from queue."""
         if flags == zmq.NOBLOCK:
-            if (
-                self.port not in self._get_queue(False)
-                or not self._get_queue(False)[self.port]
-            ):
+            if self.has_no_data():
                 raise zmq.ZMQError("Resource temporarily unavailable")
 
             dat = self._get_queue(False)[self.port].pop(0)
@@ -168,10 +165,7 @@ class mocket(MagicMock):
             return r
         else:
             # block
-            while (
-                self.port not in self._get_queue(False)
-                or not self._get_queue(False)[self.port]
-            ):
+            while self.has_no_data():
                 time.sleep(0.01)
             dat = self._get_queue(False)[self.port].pop(0)
             if isinstance(dat, list) and SNDMORE_MARK in dat:
@@ -192,6 +186,12 @@ class mocket(MagicMock):
     def connect(self, host):
         self.port = int(host.split(":")[2])
         print(f"Bound Mocket on {self.port}")
+
+    def has_no_data(self):
+        return (
+            self.port not in self._get_queue(False)
+            or not self._get_queue(False)[self.port]
+        )
 
 
 @pytest.fixture
