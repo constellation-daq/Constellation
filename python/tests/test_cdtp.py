@@ -360,15 +360,21 @@ def test_receiver_stats(
         # send EORE
         tx.send_end({"mock_end": 22})
         wait_for_state(receiver.fsm, "ORBIT", 1)
-    time.sleep(0.5)
+    timeout = 4
+    while timeout > 0 and not len(ml._metric_sockets) > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
     assert len(receiver.receiver_stats) == 2
     assert len(receiver._metrics_callbacks) > 1
     assert len(ml._metric_sockets) == 1
     assert os.path.exists(
         os.path.join(tmpdir, "stats")
     ), "Stats output directory not created"
-    assert os.path.exists(
-        os.path.join(tmpdir, "stats", "mock_receiver_nbytes.csv")
-    ), "Expected output metrics csv not found"
+    statfile = os.path.join(tmpdir, "stats", "mock_receiver_nbytes.csv")
+    timeout = 4
+    while timeout > 0 and not os.path.exists(statfile):
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert os.path.exists(statfile), "Expected output metrics csv not found"
     # close thread and connections to allow temp dir to be removed
     ml._monitor_shutdown()
