@@ -404,17 +404,18 @@ class H5DataReceiverWriter(DataReceiver):
             raise RuntimeError(
                 f"Unable to open {filename}: {str(exception)}",
             ) from exception
-        self._add_version(h5file)
+        self._add_metadata(h5file)
         return h5file
 
     def _close_file(self, outfile: h5py.File) -> None:
         """Close the filehandler"""
         outfile.close()
 
-    def _add_version(self, outfile: h5py.File) -> None:
-        """Add version information to file."""
+    def _add_metadata(self, outfile: h5py.File) -> None:
+        """Add metadata such as version information to file."""
         grp = outfile.create_group(self.name)
         grp["constellation_version"] = __version__
+        grp["date_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 # -------------------------------------------------------------------------
