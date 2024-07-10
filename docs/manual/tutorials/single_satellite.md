@@ -156,6 +156,39 @@ state machine can be found in the [concepts chapter on satellites](../concepts/s
 :::
 ::::
 
+### Loading a Configuration File
+
+Constellation configuration files are TOML files with the configuration key-value pairs for all satellites. The individual
+satellite configurations are sent to their satellites together with the `initialize` command as dictionary.
+
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+TODO
+
+:::
+:::{tab-item} Python
+:sync: python
+
+Python provides the `tomllib` library which is used in the following to parse the TOML configuration file. The resulting
+TOML data object can be directly passed to the `initialize` method, the distribution of dictionaries to the individual
+satellites is taken care of by the controller.
+
+```python
+In [1]: import tomllib
+In [2]: with open("test2.toml", "rb") as f:
+   ...:     config = tomllib.load(f)
+In [3]: constellation.satellites[0].initialize(config)
+Out[3]:
+{'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
+ 'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
+```
+
+:::
+::::
+
+
 ### Closing the Controller
 
 Controllers in Constellation do not posses state and can be closed and restarted at the discretion of the user without
