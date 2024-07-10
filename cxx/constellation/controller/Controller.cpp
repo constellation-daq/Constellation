@@ -26,7 +26,7 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 Controller::Controller(std::string_view controller_name)
-    : logger_("CNTRL"), controller_name_(controller_name),
+    : logger_("CTRL"), controller_name_(controller_name),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       watchdog_thread_(std::bind_front(&Controller::run, this)) {
     LOG(logger_, DEBUG) << "Registering controller callback";
@@ -92,7 +92,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
         if(!success) {
-            LOG(logger_, DEBUG) << "Not adding remote satellite at " << uri << ", was already registered";
+            LOG(logger_, WARNING) << "Not adding remote satellite " << name << " at " << uri
+                                  << ", a satellite with the same canonical name was already registered";
         } else {
             LOG(logger_, DEBUG) << "Registered remote satellite at " << uri;
         }
