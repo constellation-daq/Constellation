@@ -191,7 +191,7 @@ Out[3]:
 
 ### Closing the Controller
 
-Controllers in Constellation do not posses state and can be closed and restarted at the discretion of the user without
+Controllers in Constellation do not possess state and can be closed and restarted at the discretion of the user without
 affecting the state of the satellites.
 
 ::::{tab-set}
