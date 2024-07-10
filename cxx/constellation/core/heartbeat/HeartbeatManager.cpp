@@ -30,7 +30,7 @@ using namespace std::literals::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string sender, std::function<State()> state_callback)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::move(sender), std::move(state_callback), 1000ms), logger_("CHP"),
+      sender_(std::move(sender), std::move(state_callback), 5000ms), logger_("CHP"),
       watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
 
 HeartbeatManager::~HeartbeatManager() {
