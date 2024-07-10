@@ -111,13 +111,16 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     // Find satellite from connection list based in the heartbeat sender name
     const auto sat = connections_.find(msg.getSender());
     if(sat != connections_.end()) {
-        LOG(logger_, DEBUG) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
+        LOG(logger_, TRACE) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
                             << ", next message in " << msg.getInterval().count();
 
         const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
         if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
             LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
+
+        // Check if we need to propagate an updated state:
+        bool need_propagate_update = (sat->second.state == msg.getState() ? false : true);
 
         // Update status and timers
         sat->second.interval = msg.getInterval();
@@ -130,7 +133,9 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         }
 
         // Call update propagator
-        propagate_update(connections_.size());
+        if(need_propagate_update) {
+            propagate_update(connections_.size());
+        }
     } else {
         LOG(logger_, TRACE) << "Ignoring heartbeat from " << msg.getSender() << ", satellite is not connected";
     }
