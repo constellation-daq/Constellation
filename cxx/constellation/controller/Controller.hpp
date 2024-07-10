@@ -49,6 +49,7 @@ namespace constellation::controller {
             /** Connection */
             zmq::socket_t req;
             message::MD5Hash host_id;
+            std::string uri;
 
             /** State and last response */
             satellite::State state {satellite::State::NEW};
