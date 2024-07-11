@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <string>
@@ -62,7 +63,7 @@ namespace constellation::satellite {
         /**
          * @brief Returns the current state of the FSM
          */
-        constexpr State getState() const { return state_; }
+        State getState() const { return state_.load(); }
 
         /**
          * @brief Check if a FSM transition is allowed in current state
@@ -231,7 +232,7 @@ namespace constellation::satellite {
         // clang-format on
 
     private:
-        State state_ {State::NEW};
+        std::atomic<State> state_ {State::NEW};
         BaseSatellite* satellite_;
         log::Logger logger_;
         std::thread transitional_thread_;

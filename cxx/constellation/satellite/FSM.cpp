@@ -50,13 +50,13 @@ FSM::~FSM() {
 
 FSM::TransitionFunction FSM::find_transition_function(Transition transition) const {
     // Get transition map for current state (never throws due to FSM design)
-    const auto& transition_map = state_transition_map_.at(state_);
+    const auto& transition_map = state_transition_map_.at(state_.load());
     // Find transition
     const auto transition_function_it = transition_map.find(transition);
     if(transition_function_it != transition_map.end()) [[likely]] {
         return transition_function_it->second;
     } else {
-        throw InvalidFSMTransition(transition, state_);
+        throw InvalidFSMTransition(transition, state_.load());
     }
 }
 
@@ -74,8 +74,8 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     auto transition_function = find_transition_function(transition);
     // Execute transition function
-    state_ = (this->*transition_function)(std::move(payload));
-    LOG(logger_, STATUS) << "New state: " << to_string(state_);
+    state_.store((this->*transition_function)(std::move(payload)));
+    LOG(logger_, STATUS) << "New state: " << to_string(state_.load());
 
     // Pass state to callbacks
     call_state_callbacks();
@@ -146,8 +146,8 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     }
 
     // Execute transition function
-    state_ = (this->*transition_function)(std::move(fsm_payload));
-    LOG(logger_, STATUS) << "New state: " << to_string(state_);
+    state_.store((this->*transition_function)(std::move(fsm_payload)));
+    LOG(logger_, STATUS) << "New state: " << to_string(state_.load());
 
     // Pass state to callbacks
     call_state_callbacks();
@@ -159,7 +159,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
 void FSM::interrupt() {
     LOG(logger_, STATUS) << "Interrupting...";
     //  Wait until we are in a steady state
-    while(!is_steady(state_)) {
+    while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
     // In a steady state, try to react to interrupt
@@ -170,7 +170,7 @@ void FSM::interrupt() {
     }
 
     // We could be in interrupting, so wait for steady state
-    while(!is_steady(state_)) {
+    while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
 }
@@ -178,7 +178,7 @@ void FSM::interrupt() {
 void FSM::call_state_callbacks() {
     for(const auto& callback : state_callbacks_) {
         // Run in separate thread in case the callback takes long:
-        std::thread(callback, state_).detach();
+        std::thread(callback, state_.load()).detach();
     }
 }
 
@@ -326,7 +326,7 @@ State FSM::interrupt(TransitionPayload /* payload */) {
             call_satellite_function(&BaseSatellite::interrupting_wrapper, Transition::interrupted, previous_state);
         reactIfAllowed(transition);
     };
-    launch_assign_thread(transitional_thread_, call_wrapper, state_);
+    launch_assign_thread(transitional_thread_, call_wrapper, state_.load());
     return State::interrupting;
 }
 
@@ -340,7 +340,7 @@ State FSM::failure(TransitionPayload /* payload */) {
         call_satellite_function(&BaseSatellite::failure_wrapper, Transition::failure, previous_state);
         // Note: we do not trigger a success transition as we always go to ERROR state
     };
-    launch_assign_thread(failure_thread_, call_wrapper, state_);
+    launch_assign_thread(failure_thread_, call_wrapper, state_.load());
     return State::ERROR;
 }
 
