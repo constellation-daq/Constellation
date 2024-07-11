@@ -153,30 +153,30 @@ Out[3]:
 Similarly, all satellite states can be called. A full list of available commands, along with a description of the finite
 state machine can be found in the [concepts chapter on satellites](../concepts/satellite).
 
-
-#### Using a configuration file
-
-A configuration file can be loaded into the initialiser by using the flag `--config` when launching the controller. This loads the provided configuration into a dictionary named `cfg`, which can be used e.g. when calling `initialize`. An example using the `example_satellite` is shown below, along with the used example configuration file.
-
-```python
-Controller --config python/constellation/satellites/example_config.conf
-In [1]: constellation.Example_Satellite.initialize(cfg["satellites"]["example_satellite"]["device1"])
-```
-
-```TOML
-[satellites.example_satellite.device1]
-voltage = 5
-current = 0.1
-sample_period = 3.0
-```
-
 :::
 ::::
 
 ### Loading a Configuration File
 
 Constellation configuration files are TOML files with the configuration key-value pairs for all satellites. The individual
-satellite configurations are sent to their satellites together with the `initialize` command as dictionary.
+satellite configurations are sent to their satellites together with the `initialize` command as dictionary. Their basic
+structure and syntax is the following:
+
+```toml
+[satellites]
+# General settings which apply to all satellites
+verbosity = "WARNING"
+
+[satellites.Example_Satellite]
+# Settings which apply to all satellites of type "Example_Satellite"
+sample_period = 3.0
+
+[satellites.Example_Satellite.Device1]
+# Settings which only apply to the satellite with name "Example_Satellite.Device1"
+voltage = 5
+current = 0.1
+```
+
 
 ::::{tab-set}
 :::{tab-item} C++
@@ -204,17 +204,14 @@ Out[1]:
  'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
 ```
 
-Alternatively, the configuration can be read and parsed in an already running interactive command line session.
-Python provides the `tomllib` library which is used in the following to parse the TOML configuration file. The resulting
-TOML data object can be directly passed to the `initialize` method, the distribution of dictionaries to the individual
-satellites is taken care of by the controller.
+Alternatively, the configuration can be read and parsed in an already running interactive command line session using the
+`load_config` function. The resulting dictionary can be directly passed to the `initialize` method, the distribution of
+dictionaries to the individual satellites is taken care of by the controller.
 
 ```python
-In [1]: import tomllib
-In [2]: with open("myconfiguration.toml", "rb") as f:
-   ...:     config = tomllib.load(f)
-In [3]: constellation.initialize(config)
-Out[3]:
+In [1]: cfg = load_config("myconfiguration.toml")
+In [2]: constellation.initialize(cfg)
+Out[2]:
 {'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
  'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
 ```
