@@ -171,15 +171,32 @@ TODO
 :::{tab-item} Python
 :sync: python
 
+When starting the controller, a configuration file can be passed as optional command line argument:
+
+```sh
+Controller --group myLabPlanet --config myconfiguration.toml
+```
+
+The configuration is then available as `cfg` object on the interactive command line and can be passed to the `initialize`
+function:
+
+```python
+In [1]: constellation.initialize(cfg)
+Out[1]:
+{'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
+ 'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
+```
+
+Alternatively, the configuration can be read and parsed in an already running interactive command line session.
 Python provides the `tomllib` library which is used in the following to parse the TOML configuration file. The resulting
 TOML data object can be directly passed to the `initialize` method, the distribution of dictionaries to the individual
 satellites is taken care of by the controller.
 
 ```python
 In [1]: import tomllib
-In [2]: with open("test2.toml", "rb") as f:
+In [2]: with open("myconfiguration.toml", "rb") as f:
    ...:     config = tomllib.load(f)
-In [3]: constellation.satellites[0].initialize(config)
+In [3]: constellation.initialize(config)
 Out[3]:
 {'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
  'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
