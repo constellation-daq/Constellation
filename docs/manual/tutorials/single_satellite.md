@@ -90,12 +90,15 @@ In [2]: constellation.Sputnik.TheFirstSatellite.get_name()
 Out[2]: {'msg': 'sputnik.thefirstsatellite', 'payload': None}
 ```
 
+The controller supports tab completion, and suggestions for possible commands are displayed typing e.g.
+`constellation.Sputnik.TheFirstSatellite.` and hitting the tab key.
+
 Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
 connected:
 
 ```python
 In [3]: for sat in constellation.satellites.values():
-   ...:     sat.get_name()
+   ...:     print(sat.get_name())
    ...:
 {'msg': 'sputnik.thefirstsatellite', 'payload': None}
 {'msg': 'sputnik.thesecondsatellite', 'payload': None}
@@ -165,7 +168,7 @@ structure and syntax is the following:
 ```toml
 [satellites]
 # General settings which apply to all satellites
-verbosity = "WARNING"
+confidentiality = "TOPSECRET"
 
 [satellites.Example_Satellite]
 # Settings which apply to all satellites of type "Example_Satellite"
@@ -235,7 +238,7 @@ TODO.
 :::{tab-item} Python
 :sync: python
 
-The IPython CLI controller can be disconnected from the constellation using the command `exit()` or by pressing Ctrl+D.
+The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing Ctrl+D.
 
 :::
 ::::
