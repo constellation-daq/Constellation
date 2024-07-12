@@ -36,6 +36,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
