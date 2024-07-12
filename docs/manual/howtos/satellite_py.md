@@ -82,4 +82,5 @@ To make the satellite immediately accessible via the command line, add a line wi
 ExampleSatellite = "constellation.satellites.example.example:main"
 ```
 
-By running `pip install -e .` in the Constellation root directory after adding a line for the satellite makes it directly available to the command line, e.g. as `ExampleSatellite`.
+By running `pip install --no-build-isolation -e .` in the Constellation root directory after adding a line for the satellite
+makes it directly available to the command line, e.g. as `ExampleSatellite`.
