@@ -170,12 +170,12 @@ structure and syntax is the following:
 # General settings which apply to all satellites
 confidentiality = "TOPSECRET"
 
-[satellites.Example_Satellite]
-# Settings which apply to all satellites of type "Example_Satellite"
+[satellites.ExampleSatellite]
+# Settings which apply to all satellites of type "ExampleSatellite"
 sample_period = 3.0
 
-[satellites.Example_Satellite.Device1]
-# Settings which only apply to the satellite with name "Example_Satellite.Device1"
+[satellites.ExampleSatellite.Device1]
+# Settings which only apply to the satellite with name "ExampleSatellite.Device1"
 voltage = 5
 current = 0.1
 ```

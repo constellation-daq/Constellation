@@ -19,18 +19,18 @@ Mock class representing a device that can be utilised by a satellite
 """
 
 
-class Example_Device1:
+class ExampleDevice1:
     def __init__(self, voltage, ampere, sample_period=0.1):
         self.voltage = voltage
         self.ampere = ampere
         self.sample_period = sample_period
 
 
-class Example_Satellite(Satellite):
+class ExampleSatellite(Satellite):
 
     def do_initializing(self, config: Configuration) -> str:
         try:
-            self.device = Example_Device1(
+            self.device = ExampleDevice1(
                 config["voltage"], config["current"], config["sample_period"]
             )
         except KeyError as e:
@@ -74,5 +74,5 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Example_Satellite(**args)
+    s = ExampleSatellite(**args)
     s.run_satellite()
