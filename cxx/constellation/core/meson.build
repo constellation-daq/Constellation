@@ -20,8 +20,8 @@ core_src = files(
   'message/CMDP1Message.cpp',
   'message/CSCP1Message.cpp',
   'message/BaseHeader.cpp',
-  'metrics/MetricsManager.cpp',
   'metrics/Metric.cpp',
+  'metrics/MetricsManager.cpp',
 )
 
 core_lib = library('ConstellationCore',
@@ -86,8 +86,8 @@ install_headers(
 )
 
 install_headers(
-  'metrics/MetricsManager.hpp',
   'metrics/Metric.hpp',
+  'metrics/MetricsManager.hpp',
   subdir: 'constellation/core/metrics',
 )
 
