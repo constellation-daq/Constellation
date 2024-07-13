@@ -70,8 +70,10 @@ bool FSM::isAllowed(Transition transition) const {
 }
 
 void FSM::react(Transition transition, TransitionPayload payload) {
-    // Find transition
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
+    // Acquire lock to prevent other threads from setting state
+    const std::lock_guard transition_lock {transition_mutex_};
+    // Find transition
     auto transition_function = find_transition_function(transition);
     // Execute transition function
     state_.store((this->*transition_function)(std::move(payload)));
@@ -96,6 +98,8 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     // Cast to normal transition, underlying values are identical
     auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
+    // Acquire lock to prevent other threads from setting state
+    const std::lock_guard transition_lock {transition_mutex_};
     // Check if command is a valid transition for the current state
     TransitionFunction transition_function {};
     try {

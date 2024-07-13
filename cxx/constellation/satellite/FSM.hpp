@@ -12,6 +12,7 @@
 #include <atomic>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <utility>
@@ -235,6 +236,7 @@ namespace constellation::satellite {
         std::atomic<State> state_ {State::NEW};
         BaseSatellite* satellite_;
         log::Logger logger_;
+        std::mutex transition_mutex_;
         std::thread transitional_thread_;
         std::jthread run_thread_;
         std::thread failure_thread_;
