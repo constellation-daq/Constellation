@@ -8,9 +8,9 @@
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/logging/log.hpp"
-#include "constellation/core/logging/Logger.hpp"
-#include "constellation/core/logging/SinkManager.hpp"
+#include "constellation/core/log/log.hpp"
+#include "constellation/core/log/Logger.hpp"
+#include "constellation/core/log/SinkManager.hpp"
 
 using namespace constellation::log;
 

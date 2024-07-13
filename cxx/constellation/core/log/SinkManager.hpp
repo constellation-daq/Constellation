@@ -24,8 +24,8 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "constellation/build.hpp"
-#include "constellation/core/logging/CMDPSink.hpp"
-#include "constellation/core/logging/Level.hpp"
+#include "constellation/core/log/CMDPSink.hpp"
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/networking.hpp"
 
 namespace constellation::log {

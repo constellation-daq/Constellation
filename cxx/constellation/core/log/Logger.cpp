@@ -13,7 +13,7 @@
 #include <string_view>
 #include <thread>
 
-#include "constellation/core/logging/SinkManager.hpp"
+#include "constellation/core/log/SinkManager.hpp"
 
 using namespace constellation::log;
 using namespace std::literals::chrono_literals;

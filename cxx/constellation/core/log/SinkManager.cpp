@@ -28,9 +28,9 @@
 #include <wincon.h>
 #endif
 
-#include "constellation/core/logging/CMDPSink.hpp"
-#include "constellation/core/logging/Level.hpp"
-#include "constellation/core/logging/ProxySink.hpp"
+#include "constellation/core/log/CMDPSink.hpp"
+#include "constellation/core/log/Level.hpp"
+#include "constellation/core/log/ProxySink.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 

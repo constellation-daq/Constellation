@@ -16,8 +16,8 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
-#include "constellation/core/logging/Level.hpp"
-#include "constellation/core/logging/SinkManager.hpp"
+#include "constellation/core/log/Level.hpp"
+#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 

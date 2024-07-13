@@ -19,7 +19,7 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/logging/SinkManager.hpp"
+#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/networking.hpp"

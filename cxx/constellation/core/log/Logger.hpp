@@ -17,7 +17,7 @@
 #include <spdlog/async_logger.h>
 
 #include "constellation/build.hpp"
-#include "constellation/core/logging/Level.hpp"
+#include "constellation/core/log/Level.hpp"
 
 namespace constellation::log {
     /**

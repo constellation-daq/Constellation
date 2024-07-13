@@ -18,7 +18,7 @@
 #include <string>
 #include <utility>
 
-#include "constellation/core/logging/log.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"

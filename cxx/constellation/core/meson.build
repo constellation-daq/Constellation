@@ -11,9 +11,9 @@ core_src = files(
   'config/exceptions.cpp',
   'heartbeat/HeartbeatSend.cpp',
   'heartbeat/HeartbeatManager.cpp',
-  'logging/CMDPSink.cpp',
-  'logging/Logger.cpp',
-  'logging/SinkManager.cpp',
+  'log/CMDPSink.cpp',
+  'log/Logger.cpp',
+  'log/SinkManager.cpp',
   'message/CDTP1Message.cpp',
   'message/CHIRPMessage.cpp',
   'message/CHP1Message.cpp',
@@ -62,13 +62,13 @@ install_headers(
 )
 
 install_headers(
-  'logging/CMDPSink.hpp',
-  'logging/Level.hpp',
-  'logging/log.hpp',
-  'logging/Logger.hpp',
-  'logging/ProxySink.hpp',
-  'logging/SinkManager.hpp',
-  subdir: 'constellation/core/logging',
+  'log/CMDPSink.hpp',
+  'log/Level.hpp',
+  'log/log.hpp',
+  'log/Logger.hpp',
+  'log/ProxySink.hpp',
+  'log/SinkManager.hpp',
+  subdir: 'constellation/core/log',
 )
 
 install_headers(

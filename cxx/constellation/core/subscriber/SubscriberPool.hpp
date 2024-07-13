@@ -22,7 +22,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 

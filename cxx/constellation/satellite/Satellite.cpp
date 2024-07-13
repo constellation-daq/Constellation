@@ -13,7 +13,7 @@
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/logging/log.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"

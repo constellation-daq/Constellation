@@ -20,8 +20,8 @@
 #include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
-#include "constellation/core/logging/Level.hpp"
-#include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/log/Level.hpp"
+#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/utils/networking.hpp"
 
 namespace constellation::log {
