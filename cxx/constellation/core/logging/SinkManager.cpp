@@ -75,11 +75,11 @@ SinkManager& SinkManager::getInstance() {
     return instance;
 }
 
-SinkManager::SinkManager() : cmdp_global_level_(OFF) {
+SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OFF) {
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
 
-    // Concole sink, log level set via setConsoleLevels
+    // Concole sink, log level always TRACE since only accessed via ProxySink
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink_->set_level(to_spdlog_level(TRACE));
 
@@ -125,13 +125,16 @@ void SinkManager::enableCMDPSending(std::string sender_name) {
 }
 
 std::shared_ptr<spdlog::async_logger> SinkManager::getLogger(std::string_view topic) {
+    // Acquire lock for loggers_
+    std::unique_lock loggers_lock {loggers_mutex_};
     // Check if logger with topic already exists and if so return
     for(const auto& logger : loggers_) {
         if(logger->name() == topic) {
             return logger;
         }
     }
-    // Otherwise return newly created logger
+    // If not found unlock lock and create new logger
+    loggers_lock.unlock();
     return create_logger(to_string(topic));
 }
 
@@ -142,12 +145,17 @@ std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string_vie
     // Create proxy for console sink
     auto console_proxy_sink = std::make_shared<ProxySink>(console_sink_);
 
+    // Create logger with upper-case topic
     auto logger = std::make_shared<spdlog::async_logger>(
         transform(topic, ::toupper),
         spdlog::sinks_init_list({std::move(console_proxy_sink), std::move(cmdp_proxy_sink)}),
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::overrun_oldest);
+
+    // Acquire lock for loggers_ and add to new logger
+    std::unique_lock loggers_lock {loggers_mutex_};
     loggers_.push_back(logger);
+    loggers_lock.unlock();
 
     // Calculate level of logger and its sinks
     calculate_log_level(logger);
@@ -160,8 +168,11 @@ void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& log
     auto& console_proxy_sink = logger->sinks().at(0);
     auto& cmdp_proxy_sink = logger->sinks().at(1);
 
+    // Acquire lock for level variables
+    std::unique_lock levels_lock {levels_mutex_};
+
     // For console first set proxy level to global level
-    Level new_console_level = from_spdlog_level(console_sink_->level());
+    Level new_console_level = console_global_level_;
 
     // Iterate over topic overwrites
     for(const auto& [console_topic, console_level] : console_topic_levels_) {
@@ -185,6 +196,8 @@ void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& log
         }
     }
 
+    levels_lock.unlock();
+
     // Set new levels for console and CMDP proxy
     console_proxy_sink->set_level(to_spdlog_level(new_console_level));
     cmdp_proxy_sink->set_level(to_spdlog_level(min_cmdp_proxy_level));
@@ -194,16 +207,30 @@ void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& log
 }
 
 void SinkManager::setConsoleLevels(Level global_level, std::map<std::string, Level> topic_levels) {
-    console_sink_->set_level(to_spdlog_level(global_level));
+    // Acquire lock for level variables and update them
+    std::unique_lock levels_lock {levels_mutex_};
+    console_global_level_ = global_level;
     console_topic_levels_ = std::move(topic_levels);
+    levels_lock.unlock();
+
+    // Acquire lock to prevent modification of loggers_
+    const std::lock_guard loggers_lock {loggers_mutex_};
+    // Set re-calculate log level for every logger
     for(auto& logger : loggers_) {
         calculate_log_level(logger);
     }
 }
 
 void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
+    // Acquire lock for level variables and update them
+    std::unique_lock levels_lock {levels_mutex_};
     cmdp_global_level_ = cmdp_global_level;
     cmdp_sub_topic_levels_ = std::move(cmdp_sub_topic_levels);
+    levels_lock.unlock();
+
+    // Acquire lock for loggers_
+    const std::lock_guard loggers_lock {loggers_mutex_};
+    // Set re-calculate log level for every logger
     for(auto& logger : loggers_) {
         calculate_log_level(logger);
     }

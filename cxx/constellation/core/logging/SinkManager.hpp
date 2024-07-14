@@ -12,6 +12,7 @@
 #include <ctime>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -137,10 +138,12 @@ namespace constellation::log {
         std::shared_ptr<spdlog::async_logger> default_logger_;
 
         std::vector<std::shared_ptr<spdlog::async_logger>> loggers_;
+        std::mutex loggers_mutex_;
 
+        Level console_global_level_;
         std::map<std::string, Level> console_topic_levels_;
-
         Level cmdp_global_level_;
         std::map<std::string_view, Level> cmdp_sub_topic_levels_;
+        std::mutex levels_mutex_;
     };
 } // namespace constellation::log
