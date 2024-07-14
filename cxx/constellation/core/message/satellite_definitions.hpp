@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <regex>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -78,15 +79,31 @@ namespace constellation::message {
         shutdown,
     };
 
-    inline bool is_valid_name(const std::string& name) {
-        // Alphanumeric characters and dashes
-        return (!name.empty() && std::regex_match(name, std::regex("[\\w\\d-]+")));
+    /**
+     * @brief Checks if a satellite name is valid
+     *
+     * A satellite name may contain alphanumeric characters and underscores and may not be empty.
+     */
+    inline bool is_valid_satellite_name(const std::string& satellite_name) {
+        return std::regex_match(satellite_name, std::regex("^\\w+$"));
     }
 
-    inline bool is_valid_command_name(const std::string& name) {
-        // Alphanumeric characters, do not start with a digit
-        return (!name.empty() && std::regex_match(name, std::regex("[\\w\\d]+")) &&
-                !static_cast<bool>(std::isdigit(static_cast<unsigned char>(name[0]))));
+    /**
+     * @brief Checks if a run ID is valid
+     *
+     * A run ID may contain alphanumeric characters, underscores or dashes and may not be empty.
+     */
+    inline bool is_valid_run_id(const std::string& run_id) {
+        return std::regex_match(run_id, std::regex("^[\\w-]+$"));
+    }
+
+    /**
+     * @brief Checks if a command name is valid
+     *
+     * A command may contain alphanumeric characters or underscores, and may not be empty or start with a digit.
+     */
+    inline bool is_valid_command_name(const std::string& command_name) {
+        return std::regex_match(command_name, std::regex("^\\D\\w*$"));
     }
 
 } // namespace constellation::message

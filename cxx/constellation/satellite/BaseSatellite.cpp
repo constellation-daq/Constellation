@@ -59,7 +59,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
       heartbeat_manager_(getCanonicalName(), [&]() { return fsm_.getState(); }) {
 
     // Check name
-    if(!is_valid_name(to_string(name))) {
+    if(!is_valid_satellite_name(to_string(name))) {
         throw RuntimeError("Satellite name is invalid");
     }
 
