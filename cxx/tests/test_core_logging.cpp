@@ -115,27 +115,42 @@ TEST_CASE("Logging macros with default logger", "[logging]") {
 TEST_CASE("Log levels", "[logging]") {
     auto logger = Logger("LogLevels");
 
-    SinkManager::getInstance().setConsoleLevels(STATUS, {{"LOGLEVELS", INFO}});
+    SinkManager::getInstance().setConsoleLevels(STATUS);
     SinkManager::getInstance().updateCMDPLevels(STATUS);
-
-    REQUIRE_FALSE(logger.shouldLog(DEBUG));
-    REQUIRE(logger.shouldLog(INFO));
+    REQUIRE(logger.getLogLevel() == STATUS);
 
     // Test global CMDP subscription
     SinkManager::getInstance().updateCMDPLevels(DEBUG);
-    REQUIRE(logger.shouldLog(DEBUG));
+    REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test global CMDP unsubscription
     SinkManager::getInstance().updateCMDPLevels(OFF);
-    REQUIRE_FALSE(logger.shouldLog(DEBUG));
+    REQUIRE(logger.getLogLevel() == STATUS);
 
     // Test topic CMDP subscription - topics are uppercase
     SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}});
-    REQUIRE(logger.shouldLog(DEBUG));
+    REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test topic CMDP subscription via matching - topics are uppercase
     SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}, {"LOGLE", TRACE}});
-    REQUIRE(logger.shouldLog(TRACE));
+    REQUIRE(logger.getLogLevel() == TRACE);
+
+    // Test higher CMDP topic level higher than global does not lower logger level
+    SinkManager::getInstance().updateCMDPLevels(DEBUG, {{"LOGLEVELS", INFO}});
+    REQUIRE(logger.getLogLevel() == DEBUG);
+
+    // Test higher console level than CMDP level does not lower global level
+    SinkManager::getInstance().setConsoleLevels(WARNING, {{"LOGLEVELS", CRITICAL}});
+    REQUIRE(logger.getLogLevel() == DEBUG);
+
+    // Test global console level
+    SinkManager::getInstance().updateCMDPLevels(OFF, {{"LOGLEVELS", CRITICAL}});
+    SinkManager::getInstance().setConsoleLevels(TRACE);
+    REQUIRE(logger.getLogLevel() == TRACE);
+
+    // Test topic console level overwrites global console level
+    SinkManager::getInstance().setConsoleLevels(TRACE, {{"LOGLEVELS", WARNING}});
+    REQUIRE(logger.getLogLevel() == WARNING);
 }
 
 TEST_CASE("Ephemeral CMDP port", "[logging]") {
