@@ -89,14 +89,14 @@ namespace constellation::log {
         CNSTLN_API void enableCMDPSending(std::string sender_name);
 
         /**
-         * Create a new asynchronous spdlog logger
+         * Get an asynchronous spdlog logger with a given topic
          *
-         * @param topic Topic of the new logger
-         * @param console_level Optional log level for console output to overwrite global level
-         * @return Shared pointer to the new logger
+         * This creates a new logger if no logger with the given topic exists
+         *
+         * @param topic Topic of the logger
+         * @return Shared pointer to the logger
          */
-        CNSTLN_API std::shared_ptr<spdlog::async_logger> createLogger(std::string topic,
-                                                                      std::optional<Level> console_level = std::nullopt);
+        CNSTLN_API std::shared_ptr<spdlog::async_logger> getLogger(std::string_view topic);
 
         /**
          * Return the default logger (no topic)
@@ -114,6 +114,14 @@ namespace constellation::log {
 
     private:
         SinkManager();
+
+        /**
+         * Create a new asynchronous spdlog logger
+         *
+         * @param topic Topic of the logger
+         * @return Shared pointer to the new logger
+         */
+        std::shared_ptr<spdlog::async_logger> create_logger(std::string topic);
 
         /**
          * Set the CMDP log level for a particular logger given the current subscriptions

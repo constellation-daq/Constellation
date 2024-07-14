@@ -132,29 +132,35 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     }
 
     // Create default logger without topic
-    default_logger_ = createLogger("DEFAULT");
+    default_logger_ = create_logger("DEFAULT");
 }
 
 void SinkManager::enableCMDPSending(std::string sender_name) {
     cmdp_sink_->enableSending(std::move(sender_name));
 }
 
-std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topic, std::optional<Level> console_level) {
+std::shared_ptr<spdlog::async_logger> SinkManager::getLogger(std::string_view topic) {
+    // Check if logger with topic already exists and if so return
+    for(const auto& logger : loggers_) {
+        if(logger->name() == topic) {
+            return logger;
+        }
+    }
+    // Otherwise return newly created logger
+    return create_logger(to_string(topic));
+}
+
+std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string topic) {
     // Create proxy for CMDP sink so that we can set CMDP log level separate from console log level
     auto cmdp_proxy_sink = std::make_shared<ProxySink>(cmdp_sink_);
 
-    // Create proxy for console sink if custom log level was provided
-    std::shared_ptr<spdlog::sinks::sink> console_sink {};
-    if(console_level.has_value()) {
-        console_sink = std::make_shared<ProxySink>(console_sink_);
-        console_sink->set_level(to_spdlog_level(console_level.value()));
-    } else {
-        console_sink = console_sink_;
-    }
+    // Create proxy for console sink
+    auto console_proxy_sink = std::make_shared<ProxySink>(console_sink_);
+    console_proxy_sink->set_level(console_sink_->level());
 
     auto logger = std::make_shared<spdlog::async_logger>(
         std::move(topic),
-        spdlog::sinks_init_list({std::move(console_sink), std::move(cmdp_proxy_sink)}),
+        spdlog::sinks_init_list({std::move(console_proxy_sink), std::move(cmdp_proxy_sink)}),
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::overrun_oldest);
     loggers_.push_back(logger);
@@ -166,7 +172,7 @@ std::shared_ptr<spdlog::async_logger> SinkManager::createLogger(std::string topi
 }
 
 void SinkManager::set_cmdp_level(std::shared_ptr<spdlog::async_logger>& logger) {
-    // Order of sinks given in createLogger
+    // Order of sinks given in create_logger
     auto& console_proxy_sink = logger->sinks().at(0);
     auto& cmdp_proxy_sink = logger->sinks().at(1);
 
