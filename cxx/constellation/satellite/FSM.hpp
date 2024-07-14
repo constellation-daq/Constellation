@@ -120,9 +120,7 @@ namespace constellation::satellite {
          *
          * @param callback Callback taking the new state as argument
          */
-        void registerStateCallback(std::function<void(State)> callback) {
-            state_callbacks_.emplace_back(std::move(callback));
-        }
+        CNSTLN_API void registerStateCallback(std::function<void(State)> callback);
 
     private:
         /**
@@ -243,6 +241,7 @@ namespace constellation::satellite {
 
         /** State update callback */
         std::vector<std::function<void(State)>> state_callbacks_;
+        std::mutex state_callbacks_mutex_;
     };
 
 } // namespace constellation::satellite

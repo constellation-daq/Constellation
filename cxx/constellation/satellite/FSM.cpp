@@ -10,6 +10,8 @@
 #include "FSM.hpp"
 
 #include <exception>
+#include <functional>
+#include <mutex>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -179,7 +181,13 @@ void FSM::requestInterrupt() {
     }
 }
 
+void FSM::registerStateCallback(std::function<void(State)> callback) {
+    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    state_callbacks_.emplace_back(std::move(callback));
+}
+
 void FSM::call_state_callbacks() {
+    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
     for(const auto& callback : state_callbacks_) {
         // Run in separate thread in case the callback takes long:
         std::thread(callback, state_.load()).detach();
