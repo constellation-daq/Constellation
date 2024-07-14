@@ -46,7 +46,7 @@ void cli_loop(std::span<char*> args) {
         interval = std::chrono::milliseconds(std::stoi(args[3]));
     }
 
-    SinkManager::getInstance().setGlobalConsoleLevel(WARNING);
+    SinkManager::getInstance().setConsoleLevels(WARNING);
 
     auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
     chirp_manager.setAsDefaultInstance();

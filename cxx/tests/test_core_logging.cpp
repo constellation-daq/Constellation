@@ -19,14 +19,14 @@ using namespace constellation::log;
 TEST_CASE("Delayed first message", "[logging]") {
     // First message is delayed by 500ms, so call this here for better timing analysis
     SinkManager::getInstance().updateCMDPLevels(TRACE);
-    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
+    SinkManager::getInstance().setConsoleLevels(OFF);
     auto logger = Logger("DelayedFirstMessage");
     LOG(logger, TRACE) << "";
     SinkManager::getInstance().updateCMDPLevels(OFF);
 }
 
 TEST_CASE("Default logger", "[logging]") {
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
     LOG(Logger::getDefault(), STATUS) << "Message from default logger";
     // Default logger is not destructed and thus requires manual flushing
     Logger::getDefault().flush();
@@ -35,7 +35,7 @@ TEST_CASE("Default logger", "[logging]") {
 TEST_CASE("Basic logging", "[logging]") {
     auto logger = Logger("BasicLogging");
 
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
     REQUIRE(logger.shouldLog(TRACE));
 
     LOG(logger, TRACE) << "trace"sv;
@@ -48,7 +48,7 @@ TEST_CASE("Basic logging", "[logging]") {
 
 TEST_CASE("Logging with default logger", "[logging]") {
 
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
 
     LOG(TRACE) << "trace"sv;
     LOG(DEBUG) << "debug"sv;
@@ -68,7 +68,7 @@ TEST_CASE("Logging from const function", "[logging]") {
         Logger logger_ {"ConstLogging"};
     };
 
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
     const LogTest log_test {};
     log_test.log();
 }
@@ -76,7 +76,7 @@ TEST_CASE("Logging from const function", "[logging]") {
 TEST_CASE("Logging macros", "[logging]") {
     auto logger = Logger("LoggingMacros");
 
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
 
     int count_once {0};
     int count_n {0};
@@ -95,7 +95,7 @@ TEST_CASE("Logging macros", "[logging]") {
 
 TEST_CASE("Logging macros with default logger", "[logging]") {
 
-    SinkManager::getInstance().setGlobalConsoleLevel(TRACE);
+    SinkManager::getInstance().setConsoleLevels(TRACE);
 
     int count_once {0};
     int count_n {0};
@@ -113,9 +113,9 @@ TEST_CASE("Logging macros with default logger", "[logging]") {
 }
 
 TEST_CASE("Log levels", "[logging]") {
-    auto logger = Logger("LogLevels", INFO);
+    auto logger = Logger("LogLevels");
 
-    SinkManager::getInstance().setGlobalConsoleLevel(STATUS);
+    SinkManager::getInstance().setConsoleLevels(STATUS, {{"LOGLEVELS", INFO}});
     SinkManager::getInstance().updateCMDPLevels(STATUS);
 
     REQUIRE_FALSE(logger.shouldLog(DEBUG));

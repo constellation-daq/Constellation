@@ -98,7 +98,7 @@ void cli_loop(std::span<char*> args) {
     }
 
     // Turn off console logging
-    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
+    SinkManager::getInstance().setConsoleLevels(OFF);
 
     Manager manager {brd_address, any_address, group, name};
 

@@ -9,11 +9,9 @@
 
 #include "SinkManager.hpp"
 
-#include <algorithm>
 #include <ctime>
 #include <map>
 #include <memory>
-#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -77,19 +75,11 @@ SinkManager& SinkManager::getInstance() {
     return instance;
 }
 
-void SinkManager::setGlobalConsoleLevel(Level level) {
-    console_sink_->set_level(to_spdlog_level(level));
-    // Set new levels for each logger
-    for(auto& logger : loggers_) {
-        set_cmdp_level(logger);
-    }
-}
-
 SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
 
-    // Concole sink, log level set via setGlobalConsoleLevel
+    // Concole sink, log level set via setConsoleLevels
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink_->set_level(to_spdlog_level(TRACE));
 
@@ -118,14 +108,9 @@ SinkManager::SinkManager() : cmdp_global_level_(OFF) {
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m");      // Grey
 #endif
 
-    // Create console logger for CMDP
-    cmdp_console_logger_ = std::make_shared<spdlog::async_logger>(
-        "CMDP", console_sink_, spdlog::thread_pool(), spdlog::async_overflow_policy::overrun_oldest);
-    cmdp_console_logger_->set_level(to_spdlog_level(TRACE));
-
     // CMDP sink, log level always TRACE since only accessed via ProxySink
     try {
-        cmdp_sink_ = std::make_shared<CMDPSink>(cmdp_console_logger_);
+        cmdp_sink_ = std::make_shared<CMDPSink>();
         cmdp_sink_->set_level(to_spdlog_level(TRACE));
     } catch(const zmq::error_t& error) {
         throw ZMQInitError(error.what());
@@ -150,60 +135,76 @@ std::shared_ptr<spdlog::async_logger> SinkManager::getLogger(std::string_view to
     return create_logger(to_string(topic));
 }
 
-std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string topic) {
+std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string_view topic) {
     // Create proxy for CMDP sink so that we can set CMDP log level separate from console log level
     auto cmdp_proxy_sink = std::make_shared<ProxySink>(cmdp_sink_);
 
     // Create proxy for console sink
     auto console_proxy_sink = std::make_shared<ProxySink>(console_sink_);
-    console_proxy_sink->set_level(console_sink_->level());
 
     auto logger = std::make_shared<spdlog::async_logger>(
-        std::move(topic),
+        transform(topic, ::toupper),
         spdlog::sinks_init_list({std::move(console_proxy_sink), std::move(cmdp_proxy_sink)}),
         spdlog::thread_pool(),
         spdlog::async_overflow_policy::overrun_oldest);
     loggers_.push_back(logger);
 
-    // Calculate level of CMDP sink and logger
-    set_cmdp_level(logger);
+    // Calculate level of logger and its sinks
+    calculate_log_level(logger);
 
     return logger;
 }
 
-void SinkManager::set_cmdp_level(std::shared_ptr<spdlog::async_logger>& logger) {
-    // Order of sinks given in create_logger
+void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger) {
+    // Order of sinks given in create_logger()
     auto& console_proxy_sink = logger->sinks().at(0);
     auto& cmdp_proxy_sink = logger->sinks().at(1);
 
-    // Get logger topic in upper-case
-    auto logger_topic = transform(logger->name(), ::toupper);
+    // For console first set proxy level to global level
+    Level new_console_level = from_spdlog_level(console_sink_->level());
 
-    // First set CMDP proxy level to global CMDP minimum
+    // Iterate over topic overwrites
+    for(const auto& [console_topic, console_level] : console_topic_levels_) {
+        if(logger->name() == console_topic) {
+            new_console_level = console_level;
+            break;
+        }
+    }
+
+    // For CMDP first set proxy level to global CMDP minimum
     Level min_cmdp_proxy_level = cmdp_global_level_;
 
-    // If not default logger
-    if(!logger_topic.empty()) {
+    // Ignore logger without topic as it cannot be unsubscribed
+    if(!logger->name().empty()) {
         // Iterate over topic subscriptions to find minimum level for this logger
         for(auto& [sub_topic, sub_level] : cmdp_sub_topic_levels_) {
-            if(logger_topic.starts_with(sub_topic)) {
+            if(logger->name().starts_with(sub_topic)) {
                 // Logger is subscribed => set new minimum level
                 min_cmdp_proxy_level = min_level(min_cmdp_proxy_level, sub_level);
             }
         }
     }
 
-    // Set minimum level for CMDP proxy
+    // Set new levels for console and CMDP proxy
+    console_proxy_sink->set_level(to_spdlog_level(new_console_level));
     cmdp_proxy_sink->set_level(to_spdlog_level(min_cmdp_proxy_level));
 
     // Calculate level for logger as minimum of both proxy levels
-    logger->set_level(to_spdlog_level(min_level(console_proxy_sink->level(), min_cmdp_proxy_level)));
+    logger->set_level(to_spdlog_level(min_level(new_console_level, min_cmdp_proxy_level)));
+}
+
+void SinkManager::setConsoleLevels(Level global_level, std::map<std::string, Level> topic_levels) {
+    console_sink_->set_level(to_spdlog_level(global_level));
+    console_topic_levels_ = std::move(topic_levels);
+    for(auto& logger : loggers_) {
+        calculate_log_level(logger);
+    }
 }
 
 void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
     cmdp_global_level_ = cmdp_global_level;
     cmdp_sub_topic_levels_ = std::move(cmdp_sub_topic_levels);
     for(auto& logger : loggers_) {
-        set_cmdp_level(logger);
+        calculate_log_level(logger);
     }
 }

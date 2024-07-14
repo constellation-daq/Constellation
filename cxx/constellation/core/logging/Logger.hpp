@@ -10,10 +10,9 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <source_location>
 #include <sstream>
-#include <string>
+#include <string_view>
 
 #include <spdlog/async_logger.h>
 
@@ -57,9 +56,8 @@ namespace constellation::log {
          * Constructor a new logger
          *
          * @param topic Name (topic) of the logger
-         * @param console_level Optional log level for console output to overwrite global level
          */
-        CNSTLN_API Logger(std::string topic, std::optional<Level> console_level = std::nullopt);
+        CNSTLN_API Logger(std::string_view topic);
 
         /**
          * Return the default logger

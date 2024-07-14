@@ -43,7 +43,7 @@ void cli_loop(std::span<char*> args) {
     }
     std::cout << "Using constellation group " << std::quoted(group) << std::endl;
 
-    SinkManager::getInstance().setGlobalConsoleLevel(OFF);
+    SinkManager::getInstance().setConsoleLevels(OFF);
     auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, "dummy_controller");
     chirp_manager.start();
     chirp_manager.sendRequest(chirp::ServiceIdentifier::CONTROL);
