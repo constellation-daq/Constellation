@@ -10,6 +10,7 @@
 #include "Logger.hpp"
 
 #include <chrono>
+#include <string_view>
 #include <thread>
 
 #include "constellation/core/logging/SinkManager.hpp"
@@ -17,8 +18,7 @@
 using namespace constellation::log;
 using namespace std::literals::chrono_literals;
 
-Logger::Logger(std::string topic, std::optional<Level> console_level)
-    : spdlog_logger_(SinkManager::getInstance().createLogger(std::move(topic), console_level)) {}
+Logger::Logger(std::string_view topic) : spdlog_logger_(SinkManager::getInstance().getLogger(topic)) {}
 
 Logger& Logger::getDefault() {
     static Logger instance {SinkManager::getInstance().getDefaultLogger()};
