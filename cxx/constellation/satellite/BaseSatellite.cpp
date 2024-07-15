@@ -80,7 +80,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
 
     // Start sending heartbeats
-    heartbeat_manager_.setInterruptCallback([ptr = &fsm_]() { ptr->interrupt(); });
+    heartbeat_manager_.setInterruptCallback([&]() { fsm_.requestInterrupt(); });
     fsm_.registerStateCallback([&](State) { heartbeat_manager_.sendExtrasystole(); });
 }
 
@@ -105,8 +105,8 @@ void BaseSatellite::terminate() {
 
     // We cannot join the CSCP thread here since this method might be called from there and would result in a race condition
 
-    // Tell the FSM to interrupt, which will go to SAFE in case of ORBIT or RUN state:
-    fsm_.interrupt();
+    // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state:
+    fsm_.requestInterrupt();
 }
 
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {

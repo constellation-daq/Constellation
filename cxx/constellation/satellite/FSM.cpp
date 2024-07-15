@@ -160,16 +160,16 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
 
-void FSM::interrupt() {
+void FSM::requestInterrupt() {
     LOG(logger_, STATUS) << "Interrupting...";
     //  Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
     // In a steady state, try to react to interrupt
-    auto interrupted = reactIfAllowed(Transition::interrupt);
+    const auto interrupting = reactIfAllowed(Transition::interrupt);
 
-    if(interrupted) {
+    if(interrupting) {
         LOG(logger_, WARNING) << "Interrupting satellite operation";
     }
 
