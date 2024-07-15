@@ -13,3 +13,4 @@ Core Library
    protocol
    heartbeat
    chirp
+   pools
