@@ -8,6 +8,7 @@ Module implementing the Constellation Host Identification and Reconnaissance Pro
 from hashlib import md5
 import io
 import socket
+import time
 from uuid import UUID
 from enum import Enum
 from .network import get_broadcast
@@ -213,6 +214,7 @@ class CHIRPBeaconTransmitter:
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
         for bcast in self._broadcasts:
             self._sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
+            time.sleep(0.1)
 
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
