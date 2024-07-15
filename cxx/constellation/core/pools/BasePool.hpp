@@ -26,7 +26,7 @@
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 
-namespace constellation::utils {
+namespace constellation::pools {
 
     /**
      * Abstract Base pool class
@@ -139,7 +139,7 @@ namespace constellation::utils {
         std::function<void(const MESSAGE&)> message_callback_;
         zmq::socket_type type_;
     };
-} // namespace constellation::utils
+} // namespace constellation::pools
 
 // Include template members
 #include "BasePool.ipp"

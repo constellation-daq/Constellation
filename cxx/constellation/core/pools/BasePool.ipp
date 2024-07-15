@@ -25,7 +25,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 
-namespace constellation::utils {
+namespace constellation::pools {
 
     template <typename MESSAGE>
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
@@ -238,4 +238,4 @@ namespace constellation::utils {
             af_.notify_one();
         }
     }
-} // namespace constellation::utils
+} // namespace constellation::pools

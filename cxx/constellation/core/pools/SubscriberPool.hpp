@@ -13,7 +13,7 @@
 
 #include "BasePool.hpp"
 
-namespace constellation::utils {
+namespace constellation::pools {
 
     /**
      * Abstract Subscriber pool class
@@ -60,7 +60,7 @@ namespace constellation::utils {
         void scribe(std::string_view host, std::string_view topic, bool subscribe);
         std::set<std::string> default_topics_;
     };
-} // namespace constellation::utils
+} // namespace constellation::pools
 
 // Include template members
 #include "SubscriberPool.ipp"

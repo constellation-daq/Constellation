@@ -27,7 +27,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 
-namespace constellation::utils {
+namespace constellation::pools {
 
     template <typename MESSAGE>
     SubscriberPool<MESSAGE>::SubscriberPool(chirp::ServiceIdentifier service,
@@ -69,4 +69,4 @@ namespace constellation::utils {
         scribe(host, topic, false);
     }
 
-} // namespace constellation::utils
+} // namespace constellation::pools
