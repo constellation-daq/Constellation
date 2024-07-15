@@ -80,9 +80,13 @@ install_headers(
   'message/CSCP1Message.hpp',
   'message/exceptions.hpp',
   'message/PayloadBuffer.hpp',
-  'message/Protocol.hpp',
-  'message/satellite_definitions.hpp',
   subdir: 'constellation/core/message',
+)
+
+install_headers(
+  'protocol/CSCP_definitions.hpp',
+  'protocol/Protocol.hpp',
+  subdir: 'constellation/core/protocol',
 )
 
 install_headers(

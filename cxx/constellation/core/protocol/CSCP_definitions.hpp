@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Protocol definitions for the satellite
+ * @brief Additional definitions for the CSCP protocol
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -19,7 +19,7 @@
 
 #include "constellation/core/utils/std_future.hpp"
 
-namespace constellation::message {
+namespace constellation::protocol::CSCP {
 
     /** Possible Satellite FSM states */
     enum class State : std::uint8_t {
@@ -67,7 +67,7 @@ namespace constellation::message {
         stop = std::to_underlying(Transition::stop),
     };
 
-    /** Possible get_* commands via CSCP */
+    /** Possible standard (non-transition) commands via CSCP */
     enum class StandardCommand : std::underlying_type_t<TransitionCommand> {
         get_name,
         get_version,
@@ -78,6 +78,24 @@ namespace constellation::message {
         get_run_id,
         shutdown,
     };
+
+    /**
+     * @brief Check if a state is steady
+     */
+    inline constexpr bool is_steady(State state) {
+        // In steady states the lower four bytes are 0
+        return (static_cast<unsigned int>(std::to_underlying(state)) & 0x0FU) == 0x00U;
+    }
+
+    /**
+     * @brief Check if the CSCP shutdown command is allowed from a given state
+     *
+     * Shutdown is only allowed from NEW, INIT, SAFE and ERROR.
+     */
+    inline constexpr bool is_shutdown_allowed(State state) {
+        using enum State;
+        return (state == NEW || state == INIT || state == SAFE || state == ERROR);
+    }
 
     /**
      * @brief Checks if a satellite name is valid
@@ -106,11 +124,11 @@ namespace constellation::message {
         return std::regex_match(command_name, std::regex("^\\D\\w*$"));
     }
 
-} // namespace constellation::message
+} // namespace constellation::protocol::CSCP
 
 // State enum exceeds default enum value limits of magic_enum (-128, 127)
 namespace magic_enum::customize {
-    template <> struct enum_range<constellation::message::State> {
+    template <> struct enum_range<constellation::protocol::CSCP::State> {
         static constexpr int min = 0;
         static constexpr int max = 255;
     };
