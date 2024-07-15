@@ -71,7 +71,7 @@ namespace constellation::pools {
     }
 
     template <typename MESSAGE> void BasePool<MESSAGE>::socketConnected(zmq::socket_t&) {}
-    template <typename MESSAGE> void BasePool<MESSAGE>::socketDisconnected(zmq::socket_t&) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t&) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::checkException() {
         // If exception has been thrown, disconnect from all remote sockets and propagate it
@@ -138,7 +138,7 @@ namespace constellation::pools {
                 poller_.remove(zmq::socket_ref(socket));
 
                 // Perform disconnect actions:
-                socketDisconnected(socket);
+                socket_disconnected(socket);
 
                 // Disconnect and close socket
                 socket.disconnect(service.to_uri());
@@ -162,7 +162,7 @@ namespace constellation::pools {
                 poller_.remove(zmq::socket_ref(socket_it->second));
 
                 // Perform disconnect actions:
-                socketDisconnected(socket_it->second);
+                socket_disconnected(socket_it->second);
 
                 // Disconnect the socket and close it
                 socket_it->second.disconnect(service.to_uri());

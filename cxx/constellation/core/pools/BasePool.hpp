@@ -73,6 +73,13 @@ namespace constellation::pools {
         virtual bool shouldConnect(const chirp::DiscoveredService& service);
 
         /**
+         * @brief Check if pool thread has thrown an exception
+         * @throw Exception thrown by pool thread, if any
+         */
+        void checkException();
+
+    protected:
+        /**
          * @brief Method for derived classes to act on newly connected sockets
          *
          * @param socket The newly connected socket
@@ -84,13 +91,7 @@ namespace constellation::pools {
          *
          * @param socket The socket to be disconnected
          */
-        virtual void socketDisconnected(zmq::socket_t& socket);
-
-        /**
-         * @brief Check if pool thread has thrown an exception
-         * @throw Exception thrown by pool thread, if any
-         */
-        void checkException();
+        virtual void socket_disconnected(zmq::socket_t& socket);
 
     private:
         /**
