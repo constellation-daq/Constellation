@@ -181,7 +181,7 @@ class CHIRPBeaconTransmitter:
             interface = ""
         else:
             # use broadcast address instead
-            interface = self._broadcasts.pop()
+            interface = next(iter(self._broadcasts))
         self._sock.bind((interface, CHIRP_PORT))
 
     @property
