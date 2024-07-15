@@ -29,7 +29,7 @@ def get_netmask(if_name: str) -> str | None:
     return None
 
 
-def get_broadcast(interface: str) -> list[str]:
+def get_broadcast(interface: str) -> set[str]:
     """Determine broadcast(s) for interface(s) based on IPv4 ip address and netmask."""
     broadcasts = []
     for intf in socket.if_nameindex():
@@ -42,7 +42,7 @@ def get_broadcast(interface: str) -> list[str]:
                 broadcasts.append(str(net.broadcast_address))
             except ipaddress.AddressValueError:
                 pass
-    return broadcasts
+    return set(broadcasts)
 
 
 def validate_interface(interface: str) -> str:
