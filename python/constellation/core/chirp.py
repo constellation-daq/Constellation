@@ -122,6 +122,18 @@ class CHIRPMessage:
         self.serviceid = CHIRPServiceIdentifier(int.from_bytes(msg[39:40]))
         self.port = int.from_bytes(msg[40:42], byteorder="big")
 
+    def __str__(self) -> str:
+        """Pretty-print CHIRP message."""
+        s = "CHIRP message from {} received of type {}, "
+        s += "host id {}, service id {} on port {}."
+        return s.format(
+            self.from_address,
+            self.msgtype,
+            self.host_uuid,
+            self.serviceid,
+            self.port,
+        )
+
 
 class CHIRPBeaconTransmitter:
     """Class for broadcasting CHRIP messages.
