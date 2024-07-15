@@ -20,16 +20,17 @@
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
-#include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/networking.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 
 HeartbeatSend::HeartbeatSend(std::string sender,
-                             std::function<message::State()> state_callback,
+                             std::function<CSCP::State()> state_callback,
                              std::chrono::milliseconds interval)
     : pub_socket_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)), sender_(std::move(sender)),
       state_callback_(std::move(state_callback)), interval_(interval) {

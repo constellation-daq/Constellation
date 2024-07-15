@@ -24,13 +24,17 @@
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
-#include "constellation/satellite/fsm_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::satellite {
     class BaseSatellite;
 
     class FSM {
     public:
+        using State = protocol::CSCP::State;
+        using Transition = protocol::CSCP::Transition;
+        using TransitionCommand = protocol::CSCP::TransitionCommand;
+
         /** Payload of a transition function: variant with config, partial_config or run identifier */
         using TransitionPayload = std::variant<std::monostate, config::Configuration, std::string>;
 

@@ -26,7 +26,7 @@
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/logging/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
-#include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::heartbeat {
 
@@ -48,7 +48,7 @@ namespace constellation::heartbeat {
          * @param sender Canonical name of the heartbeat sender
          * @param state_callback Function that return the current state
          */
-        CNSTLN_API HeartbeatManager(std::string sender, std::function<message::State()> state_callback);
+        CNSTLN_API HeartbeatManager(std::string sender, std::function<protocol::CSCP::State()> state_callback);
 
         /** Deconstruct the manager. This stops the watchdog thread */
         CNSTLN_API virtual ~HeartbeatManager();
@@ -72,7 +72,7 @@ namespace constellation::heartbeat {
          * @param remote Canonical name of the remote in question
          * @return Currently registered state of the remote if remote is present, empty optional otherwise
          */
-        CNSTLN_API std::optional<message::State> getRemoteState(const std::string& remote);
+        CNSTLN_API std::optional<protocol::CSCP::State> getRemoteState(const std::string& remote);
 
         /**
          * @brief Set the interrupt callback
@@ -122,7 +122,7 @@ namespace constellation::heartbeat {
             // TODO(simonspa) add importance here
             std::chrono::milliseconds interval;
             std::chrono::system_clock::time_point last_heartbeat;
-            message::State last_state;
+            protocol::CSCP::State last_state;
             std::chrono::system_clock::time_point last_checked;
             std::uint8_t lives {default_lives};
         };

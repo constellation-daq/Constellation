@@ -20,15 +20,17 @@
 
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
+using namespace constellation::protocol;
 using namespace std::literals::chrono_literals;
 
-HeartbeatManager::HeartbeatManager(std::string sender, std::function<State()> state_callback)
+HeartbeatManager::HeartbeatManager(std::string sender, std::function<CSCP::State()> state_callback)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       sender_(std::move(sender), std::move(state_callback), 5000ms), logger_("CHP"),
       watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
@@ -46,7 +48,7 @@ void HeartbeatManager::sendExtrasystole() {
     sender_.sendExtrasystole();
 }
 
-std::optional<State> HeartbeatManager::getRemoteState(const std::string& remote) {
+std::optional<CSCP::State> HeartbeatManager::getRemoteState(const std::string& remote) {
     const auto remote_it = remotes_.find(remote);
     if(remote_it != remotes_.end()) {
         return remote_it->second.last_state;
@@ -56,7 +58,7 @@ std::optional<State> HeartbeatManager::getRemoteState(const std::string& remote)
     return {};
 }
 
-void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
+void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
                         << msg.getInterval();
 
@@ -76,7 +78,7 @@ void HeartbeatManager::process_heartbeat(const message::CHP1Message& msg) {
         remote_it->second.last_state = msg.getState();
 
         // Replenish lives unless we're in ERROR or SAFE state:
-        if(msg.getState() != State::ERROR && msg.getState() != State::SAFE) {
+        if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
             remote_it->second.lives = default_lives;
         }
     } else {
@@ -93,7 +95,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
         auto wakeup = std::chrono::system_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
             // Check for ERROR and SAFE states:
-            if(remote.lives > 0 && (remote.last_state == State::ERROR || remote.last_state == State::SAFE)) {
+            if(remote.lives > 0 && (remote.last_state == CSCP::State::ERROR || remote.last_state == CSCP::State::SAFE)) {
                 remote.lives = 0;
                 if(interrupt_callback_) {
                     LOG(logger_, DEBUG) << "Detected state " << to_string(remote.last_state) << " at " << key

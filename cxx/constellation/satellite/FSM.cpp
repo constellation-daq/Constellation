@@ -24,15 +24,15 @@
 #include "constellation/core/logging/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
-#include "constellation/core/message/satellite_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/exceptions.hpp"
-#include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation::config;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::literals::string_literals;
@@ -135,7 +135,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
                 fsm_payload = Configuration(Dictionary::disassemble(payload));
             } else if(transition == Transition::start) {
                 const auto msgpack_payload = msgpack::unpack(to_char_ptr(payload.span().data()), payload.span().size());
-                if(!is_valid_run_id(msgpack_payload->as<std::string>())) {
+                if(!CSCP::is_valid_run_id(msgpack_payload->as<std::string>())) {
                     throw msgpack::unpack_error("Run identifier contains invalid characters");
                 }
                 fsm_payload = msgpack_payload->as<std::string>();
@@ -204,7 +204,7 @@ void FSM::stop_run_thread() {
 
 // Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
-Transition FSM::call_satellite_function(Func func, Transition success_transition, Args&&... args) {
+FSM::Transition FSM::call_satellite_function(Func func, Transition success_transition, Args&&... args) {
     try {
         // Call transition function of satellite
         (satellite_->*func)(std::forward<Args>(args)...);
@@ -233,7 +233,7 @@ template <typename... Args> void launch_assign_thread(std::thread& thread, Args&
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
-State FSM::initialize(TransitionPayload payload) {
+FSM::State FSM::initialize(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration&& config) {
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto transition =
@@ -244,11 +244,11 @@ State FSM::initialize(TransitionPayload payload) {
     return State::initializing;
 }
 
-State FSM::initialized(TransitionPayload /* payload */) {
+FSM::State FSM::initialized(TransitionPayload /* payload */) {
     return State::INIT;
 }
 
-State FSM::launch(TransitionPayload /* payload */) {
+FSM::State FSM::launch(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling launching function of satellite...";
         const auto transition = call_satellite_function(&BaseSatellite::launching_wrapper, Transition::launched);
@@ -258,11 +258,11 @@ State FSM::launch(TransitionPayload /* payload */) {
     return State::launching;
 }
 
-State FSM::launched(TransitionPayload /* payload */) {
+FSM::State FSM::launched(TransitionPayload /* payload */) {
     return State::ORBIT;
 }
 
-State FSM::land(TransitionPayload /* payload */) {
+FSM::State FSM::land(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
         LOG(logger_, INFO) << "Calling landing function of satellite...";
         const auto transition = call_satellite_function(&BaseSatellite::landing_wrapper, Transition::landed);
@@ -272,11 +272,11 @@ State FSM::land(TransitionPayload /* payload */) {
     return State::landing;
 }
 
-State FSM::landed(TransitionPayload /* payload */) {
+FSM::State FSM::landed(TransitionPayload /* payload */) {
     return State::INIT;
 }
 
-State FSM::reconfigure(TransitionPayload payload) {
+FSM::State FSM::reconfigure(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration&& partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
         const auto transition = call_satellite_function(
@@ -287,11 +287,11 @@ State FSM::reconfigure(TransitionPayload payload) {
     return State::reconfiguring;
 }
 
-State FSM::reconfigured(TransitionPayload /* payload */) {
+FSM::State FSM::reconfigured(TransitionPayload /* payload */) {
     return State::ORBIT;
 }
 
-State FSM::start(TransitionPayload payload) {
+FSM::State FSM::start(TransitionPayload payload) {
     auto call_wrapper = [this](std::string&& run_id) {
         LOG(logger_, INFO) << "Calling starting function of satellite...";
         const auto transition =
@@ -302,14 +302,14 @@ State FSM::start(TransitionPayload payload) {
     return State::starting;
 }
 
-State FSM::started(TransitionPayload /* payload */) {
+FSM::State FSM::started(TransitionPayload /* payload */) {
     // Start running thread async
     auto call_wrapper = [this](const std::stop_token& stop_token) { satellite_->running_wrapper(stop_token); };
     run_thread_ = std::jthread(call_wrapper);
     return State::RUN;
 }
 
-State FSM::stop(TransitionPayload /* payload */) {
+FSM::State FSM::stop(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
         // First stop of RUN thread
         stop_run_thread();
@@ -322,11 +322,11 @@ State FSM::stop(TransitionPayload /* payload */) {
     return State::stopping;
 }
 
-State FSM::stopped(TransitionPayload /* payload */) {
+FSM::State FSM::stopped(TransitionPayload /* payload */) {
     return State::ORBIT;
 }
 
-State FSM::interrupt(TransitionPayload /* payload */) {
+FSM::State FSM::interrupt(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
@@ -342,11 +342,11 @@ State FSM::interrupt(TransitionPayload /* payload */) {
     return State::interrupting;
 }
 
-State FSM::interrupted(TransitionPayload /* payload */) {
+FSM::State FSM::interrupted(TransitionPayload /* payload */) {
     return State::SAFE;
 }
 
-State FSM::failure(TransitionPayload /* payload */) {
+FSM::State FSM::failure(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
         LOG(logger_, INFO) << "Calling failure function of satellite...";
         call_satellite_function(&BaseSatellite::failure_wrapper, Transition::failure, previous_state);
