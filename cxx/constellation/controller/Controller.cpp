@@ -120,7 +120,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         }
 
         // Check if we need to propagate an updated state:
-        bool need_propagate_update = (sat->second.state == msg.getState() ? false : true);
+        const bool need_propagate_update = (sat->second.state != msg.getState());
 
         // Update status and timers
         sat->second.interval = msg.getInterval();
