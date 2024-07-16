@@ -13,15 +13,16 @@
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/logging/log.hpp"
+#include "constellation/core/log/log.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
-#include "constellation/satellite/fsm_definitions.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;
-using namespace constellation::satellite;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
@@ -87,7 +88,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         // Obtain current state
         auto send_msg_state = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
         const auto recv_msg_state = send_receive(conn, send_msg_state);
-        conn.state = magic_enum::enum_cast<State>(recv_msg_state.getVerb().second).value_or(State::NEW);
+        conn.state = magic_enum::enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
 
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
@@ -128,8 +129,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         sat->second.state = msg.getState();
 
         // Replenish lives unless we're in ERROR or SAFE state:
-        if(msg.getState() != State::ERROR && msg.getState() != State::SAFE) {
-            sat->second.lives = default_lives;
+        if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
+            sat->second.lives = protocol::CHP::Lives;
         }
 
         // Call update propagator
@@ -150,21 +151,21 @@ std::set<std::string> Controller::getConnections() const {
     return connections;
 }
 
-bool Controller::isInState(State state) const {
+bool Controller::isInState(CSCP::State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
     return std::ranges::all_of(
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
 }
 
-State Controller::getLowestState() const {
+CSCP::State Controller::getLowestState() const {
     const std::lock_guard connection_lock {connection_mutex_};
 
     if(connections_.empty()) {
-        return State::NEW;
+        return CSCP::State::NEW;
     }
 
-    State state {State::ERROR};
+    CSCP::State state {CSCP::State::ERROR};
     for(const auto& conn : connections_) {
         if(conn.second.state < state) {
             state = conn.second.state;
