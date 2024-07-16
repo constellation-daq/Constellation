@@ -79,7 +79,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 
         // Replenish lives unless we're in ERROR or SAFE state:
         if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-            remote_it->second.lives = default_lives;
+            remote_it->second.lives = protocol::CHP::Lives;
         }
     } else {
         remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));

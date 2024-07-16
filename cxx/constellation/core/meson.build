@@ -84,6 +84,7 @@ install_headers(
 )
 
 install_headers(
+  'protocol/CHP_definitions.hpp',
   'protocol/CSCP_definitions.hpp',
   'protocol/Protocol.hpp',
   subdir: 'constellation/core/protocol',

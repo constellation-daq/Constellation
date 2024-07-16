@@ -17,3 +17,12 @@
 :protected-members:
 :undoc-members:
 ```
+
+## `constellation::protocol::CHP` Namespace
+
+```{doxygennamespace} constellation::protocol::CHP
+:content-only:
+:members:
+:protected-members:
+:undoc-members:
+```
