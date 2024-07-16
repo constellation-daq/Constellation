@@ -34,7 +34,7 @@ CheckOptions:
   modernize-use-override.IgnoreDestructors: 'true'
   cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
   readability-identifier-naming.NamespaceCase: lower_case
-  readability-identifier-naming.NamespaceIgnoredRegexp: '^constellation::protocol::.+$'
+  readability-identifier-naming.NamespaceIgnoredRegexp: '^CSCP$'
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassIgnoredRegexp: '^is_.+$'
   readability-identifier-naming.PublicMethodCase: camelBack
