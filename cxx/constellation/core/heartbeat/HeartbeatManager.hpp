@@ -26,6 +26,7 @@
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::heartbeat {
@@ -111,9 +112,6 @@ namespace constellation::heartbeat {
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
         std::function<void()> interrupt_callback_;
 
-        /** Default lives for a remote on detection/replenishment */
-        static constexpr std::uint8_t default_lives = 3;
-
         /**
          * @struct Remote
          * @brief Struct holding all relevant information for a remote CHP host
@@ -124,7 +122,7 @@ namespace constellation::heartbeat {
             std::chrono::system_clock::time_point last_heartbeat;
             protocol::CSCP::State last_state;
             std::chrono::system_clock::time_point last_checked;
-            std::uint8_t lives {default_lives};
+            std::uint8_t lives {protocol::CHP::Lives};
         };
 
         /** Map of remotes this manager tracks */
