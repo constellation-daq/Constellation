@@ -23,10 +23,11 @@
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
-#include "constellation/core/logging/Logger.hpp"
+#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/satellite/fsm_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::controller {
 
@@ -52,7 +53,7 @@ namespace constellation::controller {
             std::string uri;
 
             /** State and last response */
-            satellite::State state {satellite::State::NEW};
+            protocol::CSCP::State state {protocol::CSCP::State::NEW};
             message::CSCP1Message::Type last_cmd_type {};
             std::string last_cmd_verb {};
 
@@ -60,7 +61,7 @@ namespace constellation::controller {
             std::chrono::milliseconds interval {1000};
             std::chrono::system_clock::time_point last_heartbeat {std::chrono::system_clock::now()};
             std::chrono::system_clock::time_point last_checked {std::chrono::system_clock::now()};
-            std::uint8_t lives {default_lives};
+            std::uint8_t lives {protocol::CHP::Lives};
         };
 
     public:
@@ -156,14 +157,14 @@ namespace constellation::controller {
          * @param state State to be checked for
          * @return True if all connections are in the given state, false otherwise
          */
-        bool isInState(satellite::State state) const;
+        bool isInState(protocol::CSCP::State state) const;
 
         /**
          * @brief Get lowest state of any satellite connected
          * @details This returns the lowest state of any of the satellites. Here, "lowest" refers to the state code.
          * @return Lowest state currently held
          */
-        satellite::State getLowestState() const;
+        protocol::CSCP::State getLowestState() const;
 
         /**
          * @brief Get list of currently active connections
