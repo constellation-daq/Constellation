@@ -84,7 +84,7 @@ namespace constellation::pools {
          *
          * @param socket The newly connected socket
          */
-        virtual void socketConnected(zmq::socket_t& socket);
+        virtual void socket_connected(zmq::socket_t& socket);
 
         /**
          * @brief Method for derived classes to act on sockets before disconnecting

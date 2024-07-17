@@ -70,7 +70,7 @@ namespace constellation::pools {
         return true;
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::socketConnected(zmq::socket_t&) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t&) {}
     template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t&) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::checkException() {
@@ -92,7 +92,7 @@ namespace constellation::pools {
             socket.connect(service.to_uri());
 
             // Perform connection actions:
-            socketConnected(socket);
+            socket_connected(socket);
 
             /**
              * This lambda is passed to the ZMQ active_poller_t to be called when a socket has a incoming message pending.

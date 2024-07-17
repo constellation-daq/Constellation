@@ -54,7 +54,7 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> void SubscriberPool<MESSAGE>::socketConnected(zmq::socket_t& socket) {
+    template <typename MESSAGE> void SubscriberPool<MESSAGE>::socket_connected(zmq::socket_t& socket) {
         // Directly subscribe to default topic list
         for(const auto& topic : default_topics_) {
             socket.set(zmq::sockopt::subscribe, topic);
