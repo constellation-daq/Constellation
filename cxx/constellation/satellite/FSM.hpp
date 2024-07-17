@@ -116,7 +116,7 @@ namespace constellation::satellite {
          *
          * @warning This function is not thread safe, meaning that no other react command should be called during execution.
          */
-        CNSTLN_API void requestInterrupt(const std::string& reason);
+        CNSTLN_API void requestInterrupt(std::string_view reason);
 
         /**
          * @brief Registering a callback to be executed when a new state was entered

@@ -82,7 +82,7 @@ namespace constellation::heartbeat {
          *
          * @param callback Interrupt callback
          */
-        void setInterruptCallback(std::function<void(const std::string&)> callback) {
+        void setInterruptCallback(std::function<void(std::string_view)> callback) {
             interrupt_callback_ = std::move(callback);
         }
 
@@ -112,7 +112,7 @@ namespace constellation::heartbeat {
         HeartbeatSend sender_;
 
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
-        std::function<void(const std::string&)> interrupt_callback_;
+        std::function<void(std::string_view)> interrupt_callback_;
 
         /**
          * @struct Remote

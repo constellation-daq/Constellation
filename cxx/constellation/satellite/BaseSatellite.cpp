@@ -80,7 +80,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
 
     // Start sending heartbeats
-    heartbeat_manager_.setInterruptCallback([&](const std::string& reason) { fsm_.requestInterrupt(reason); });
+    heartbeat_manager_.setInterruptCallback([&](std::string_view reason) { fsm_.requestInterrupt(reason); });
     fsm_.registerStateCallback([&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
 }
 
