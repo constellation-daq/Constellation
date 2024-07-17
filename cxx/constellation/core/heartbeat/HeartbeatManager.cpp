@@ -100,7 +100,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 if(interrupt_callback_) {
                     LOG(logger_, DEBUG) << "Detected state " << to_string(remote.last_state) << " at " << key
                                         << ", interrupting";
-                    interrupt_callback_();
+                    interrupt_callback_(key + " reports state " + to_string(remote.last_state));
                 }
             }
 
@@ -116,7 +116,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 if(remote.lives == 0 && interrupt_callback_) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
-                    interrupt_callback_();
+                    interrupt_callback_("No heartbeats detected anymore from " + key);
                 }
             }
 

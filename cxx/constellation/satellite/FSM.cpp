@@ -89,7 +89,7 @@ bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
     try {
         react(transition, std::move(payload));
     } catch(const FSMError&) {
-        LOG(logger_, INFO) << "Skipping transition " << to_string(transition);
+        LOG(logger_, DEBUG) << "Skipping transition " << to_string(transition);
         return false;
     }
     return true;
@@ -162,8 +162,9 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
 
-void FSM::requestInterrupt() {
-    LOG(logger_, STATUS) << "Interrupting...";
+void FSM::requestInterrupt(const std::string& reason) {
+    LOG(logger_, DEBUG) << "Attempting to interrupt...";
+
     //  Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
@@ -171,9 +172,7 @@ void FSM::requestInterrupt() {
     // In a steady state, try to react to interrupt
     const auto interrupting = reactIfAllowed(Transition::interrupt);
 
-    if(interrupting) {
-        LOG(logger_, WARNING) << "Interrupting satellite operation";
-    }
+    LOG_IF(logger_, WARNING, interrupting) << "Interrupting satellite operation" << (reason.empty() ? "" : ": " + reason);
 
     // We could be in interrupting, so wait for steady state
     while(!is_steady(state_.load())) {
