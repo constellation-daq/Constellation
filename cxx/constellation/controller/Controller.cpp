@@ -54,6 +54,8 @@ Controller::~Controller() {
     connections_.clear();
 }
 
+void Controller::propagate_update(std::size_t /*connections*/) {};
+
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 void Controller::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
     auto* instance = std::any_cast<Controller*>(user_data);
@@ -72,8 +74,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         });
         if(it != connections_.end()) {
             it->second.req.close();
+            LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
             connections_.erase(it);
-            LOG(logger_, DEBUG) << "Satellite at " << uri << " departed";
         }
     } else {
         // New satellite connection
@@ -93,14 +95,14 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
         if(!success) {
-            LOG(logger_, WARNING) << "Not adding remote satellite " << name << " at " << uri
+            LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
                                   << ", a satellite with the same canonical name was already registered";
         } else {
-            LOG(logger_, DEBUG) << "Registered remote satellite at " << uri;
+            LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
         }
     }
 
-    // Trigger method for propagation of connection list updates
+    // Trigger method for propagation of connection list updates in derived controller classes
     propagate_update(connections_.size());
 }
 
@@ -120,7 +122,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
 
-        // Check if we need to propagate an updated state:
+        // Check if we need to propagate an updated state later on:
         const bool need_propagate_update = (sat->second.state != msg.getState());
 
         // Update status and timers
