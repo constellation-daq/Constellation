@@ -1,14 +1,17 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+tomlplusplus_dep = dependency('tomlplusplus')
+
 controller_src = files(
+  'ConfigParser.cpp',
   'Controller.cpp',
 )
 
 controller_lib = library('ConstellationController',
   sources: controller_src,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep],
+  dependencies: [core_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, tomlplusplus_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: ['-DCNSTLN_BUILDLIB=1'],
   install: true,
@@ -22,6 +25,7 @@ controller_dep = declare_dependency(
 )
 
 install_headers(
+  'ConfigParser.hpp',
   'Controller.hpp',
   subdir: 'constellation/controller',
 )
