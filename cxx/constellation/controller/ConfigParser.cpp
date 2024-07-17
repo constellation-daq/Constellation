@@ -32,6 +32,66 @@ ConfigParser::ConfigParser(std::filesystem::path file, std::set<std::string> sat
         throw std::invalid_argument(s.str());
     }
 
+    auto parse_value = [&](const toml::key& key, auto&& val) -> std::optional<Value> {
+        if constexpr(toml::is_table<decltype(val)>) {
+            LOG(logger_, DEBUG) << "Skipping table for key " << key;
+            return {};
+        } else if constexpr(toml::is_array<decltype(val)>) {
+            if(val.is_homogeneous()) {
+                const auto& arr = val.as_array();
+                if(arr->empty()) {
+                    return std::monostate {};
+                } else if(arr->front().is_integer()) {
+                    std::vector<std::int64_t> return_value;
+                    for(auto&& elem : *arr) {
+                        return_value.push_back(elem.as_integer()->get());
+                    }
+                    return return_value;
+                } else if(arr->front().is_floating_point()) {
+                    std::vector<double> return_value;
+                    for(auto&& elem : *arr) {
+                        return_value.push_back(elem.as_floating_point()->get());
+                    }
+                    return return_value;
+                } else if(arr->front().is_boolean()) {
+                    std::vector<bool> return_value;
+                    for(auto&& elem : *arr) {
+                        return_value.push_back(elem.as_boolean()->get());
+                    }
+                    return return_value;
+                } else if(arr->front().is_string()) {
+                    std::vector<std::string> return_value;
+                    for(auto&& elem : *arr) {
+                        return_value.push_back(elem.as_string()->get());
+                    }
+                    return return_value;
+                } else {
+                    LOG(logger_, WARNING) << "Unknown type of array for key " << key;
+                    // throw
+                    return {};
+                }
+            } else {
+                LOG(logger_, WARNING) << "Array with key " << key << " is not homogeneous";
+                // throw
+                return {};
+            }
+        } else {
+            if constexpr(toml::is_integer<decltype(val)>) {
+                return val.as_integer()->get();
+            } else if constexpr(toml::is_floating_point<decltype(val)>) {
+                return val.as_floating_point()->get();
+            } else if constexpr(toml::is_boolean<decltype(val)>) {
+                return val.as_boolean()->get();
+            } else if constexpr(toml::is_string<decltype(val)>) {
+                return val.as_string()->get();
+            } else {
+                LOG(logger_, WARNING) << "Unknown value type for key " << key;
+                // throw
+                return {};
+            }
+        }
+    };
+
     for(const auto& sat : satellites) {
         // Start with empty dictionary:
         configs_.emplace(sat, Dictionary {});
@@ -109,65 +169,4 @@ Dictionary ConfigParser::getConfig(const std::string& satellite) const {
     }
 
     throw std::invalid_argument("sat not found");
-}
-
-std::optional<Value> ConfigParser::parse_value(const toml::key& key, auto&& val) const {
-
-    if constexpr(toml::is_table<decltype(val)>) {
-        LOG(logger_, DEBUG) << "Skipping table for key " << key;
-        return {};
-    } else if constexpr(toml::is_array<decltype(val)>) {
-        if(val.is_homogeneous()) {
-            const auto& arr = val.as_array();
-            if(arr->empty()) {
-                return std::monostate {};
-            } else if(arr->front().is_integer()) {
-                std::vector<std::int64_t> return_value;
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_integer()->get());
-                }
-                return return_value;
-            } else if(arr->front().is_floating_point()) {
-                std::vector<double> return_value;
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_floating_point()->get());
-                }
-                return return_value;
-            } else if(arr->front().is_boolean()) {
-                std::vector<bool> return_value;
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_boolean()->get());
-                }
-                return return_value;
-            } else if(arr->front().is_string()) {
-                std::vector<std::string> return_value;
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_string()->get());
-                }
-                return return_value;
-            } else {
-                LOG(logger_, WARNING) << "Unknown type of array for key " << key;
-                // throw
-                return {};
-            }
-        } else {
-            LOG(logger_, WARNING) << "Array with key " << key << " is not homogeneous";
-            // throw
-            return {};
-        }
-    } else {
-        if constexpr(toml::is_integer<decltype(val)>) {
-            return val.as_integer()->get();
-        } else if constexpr(toml::is_floating_point<decltype(val)>) {
-            return val.as_floating_point()->get();
-        } else if constexpr(toml::is_boolean<decltype(val)>) {
-            return val.as_boolean()->get();
-        } else if constexpr(toml::is_string<decltype(val)>) {
-            return val.as_string()->get();
-        } else {
-            LOG(logger_, WARNING) << "Unknown value type for key " << key;
-            // throw
-            return {};
-        }
-    }
 }
