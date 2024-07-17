@@ -31,8 +31,8 @@ namespace constellation::pools {
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
                                 const log::Logger& logger,
                                 std::function<void(const MESSAGE&)> callback,
-                                zmq::socket_type type)
-        : service_(service), logger_(logger), message_callback_(std::move(callback)), type_(type) {
+                                zmq::socket_type socket_type)
+        : service_(service), logger_(logger), message_callback_(std::move(callback)), socket_type_(socket_type) {
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
@@ -66,7 +66,7 @@ namespace constellation::pools {
         disconnect_all();
     }
 
-    template <typename MESSAGE> bool BasePool<MESSAGE>::shouldConnect(const chirp::DiscoveredService&) {
+    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService&) {
         return true;
     }
 
@@ -88,7 +88,7 @@ namespace constellation::pools {
         LOG(logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
         try {
 
-            zmq::socket_t socket {context_, type_};
+            zmq::socket_t socket {context_, socket_type_};
             socket.connect(service.to_uri());
 
             // Perform connection actions:
@@ -182,7 +182,7 @@ namespace constellation::pools {
 
         if(depart) {
             disconnect(service);
-        } else if(shouldConnect(service)) {
+        } else if(should_connect(service)) {
             connect(service);
         }
 

@@ -42,12 +42,12 @@ namespace constellation::pools {
          * @param service CHIRP service identifier for which a subscription should be made
          * @param logger Reference to a logger to be used for this component
          * @param callback Callback function pointer for received messages
-         * @param type ZMQ socket type to use for connecting to service, e.g. sub or pull
+         * @param socket_type ZMQ socket type to use for connecting to service, e.g. sub or pull
          */
         BasePool(chirp::ServiceIdentifier service,
                  const log::Logger& logger,
                  std::function<void(const MESSAGE&)> callback,
-                 zmq::socket_type type);
+                 zmq::socket_type socket_type);
 
         /**
          * @brief Destruct BasePool
@@ -64,21 +64,21 @@ namespace constellation::pools {
         /// @endcond
 
         /**
-         * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
-         * derived pools may implement selection criteria
-         *
-         * @param service The discovered service
-         * @return Boolean indicating whether a connection should be opened
-         */
-        virtual bool shouldConnect(const chirp::DiscoveredService& service);
-
-        /**
          * @brief Check if pool thread has thrown an exception
          * @throw Exception thrown by pool thread, if any
          */
         void checkException();
 
     protected:
+        /**
+         * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
+         * derived pools may implement selection criteria
+         *
+         * @param service The discovered service
+         * @return Boolean indicating whether a connection should be opened
+         */
+        virtual bool should_connect(const chirp::DiscoveredService& service);
+
         /**
          * @brief Method for derived classes to act on newly connected sockets
          *
@@ -138,7 +138,7 @@ namespace constellation::pools {
         std::exception_ptr exception_ptr_ {nullptr};
 
         std::function<void(const MESSAGE&)> message_callback_;
-        zmq::socket_type type_;
+        zmq::socket_type socket_type_;
     };
 } // namespace constellation::pools
 
