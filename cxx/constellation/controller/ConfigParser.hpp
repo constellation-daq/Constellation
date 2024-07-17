@@ -14,8 +14,6 @@
 #include <set>
 #include <string>
 
-#include <toml++/toml.hpp>
-
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
@@ -35,10 +33,10 @@ namespace constellation::controller {
         ~ConfigParser() = default;
 
         /// @cond doxygen_suppress
-        ConfigParser(const ConfigParser& other) = default;
-        ConfigParser& operator=(const ConfigParser& other) = default;
-        ConfigParser(ConfigParser&& other) noexcept = default;
-        ConfigParser& operator=(ConfigParser&& other) = default;
+        ConfigParser(const ConfigParser& other) = delete;
+        ConfigParser& operator=(const ConfigParser& other) = delete;
+        ConfigParser(ConfigParser&& other) noexcept = delete;
+        ConfigParser& operator=(ConfigParser&& other) = delete;
         /// @endcond
 
         bool hasConfig(const std::string& satellite) const {
@@ -49,8 +47,6 @@ namespace constellation::controller {
         std::map<std::string, config::Dictionary> getAll() { return configs_; }
 
     private:
-        std::optional<config::Value> parse_value(const toml::key& key, auto&& val) const;
-
         log::Logger logger_;
 
         std::map<std::string, config::Dictionary> configs_;
