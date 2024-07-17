@@ -31,20 +31,19 @@
 
 namespace constellation::controller {
 
-    /** Controller base class which handles connections and heartbeating */
+    /** Controller base class which handles satellite connections, command distribution and heartbeating */
     class CNSTLN_API Controller {
     public:
-        /** Payload of a transition function: variant with config, partial_config or run_id */
+        /** Payload of a command function: variant with (configuration) dictionary, (argument) list or (run id) string */
         using CommandPayload = std::variant<std::monostate, config::Dictionary, config::List, std::string>;
-
-    private:
-        /** Default lives for a remote on detection/replenishment */
-        static constexpr std::uint8_t default_lives = 3;
 
     protected:
         /**
-         * Connection, comprising the socket and host ID of a remote satellite as well as its last known state and status
-         * message
+         * @struct Connection
+         * @brief Local representation of a remote connection and state
+         * @details Remote connection, comprising the socket and host ID and URI of a remote satellite as well as its last
+         * known state, the last command response and verb. Furthermore, the current heartbeat interval, heartbeat check
+         * time points and lives are kept.
          */
         struct Connection {
             /** Connection */
@@ -68,7 +67,7 @@ namespace constellation::controller {
         /**
          * @brief Construct a controller base object
          * @details This starts the heartbeat receiver thread, registers a CHIRP service discovery callback and sends a
-         * CHIRP request beacon for CONTROl-type services
+         * CHIRP request beacon for CONTROL-type services
          *
          * @param controller_name Name of the controller
          */
@@ -80,17 +79,20 @@ namespace constellation::controller {
          */
         virtual ~Controller();
 
+        /// @cond doxygen_suppress
         // No copy/move constructor/assignment
         Controller(const Controller& other) = delete;
         Controller& operator=(const Controller& other) = delete;
         Controller(Controller&& other) = delete;
         Controller& operator=(Controller&& other) = delete;
+        /// @endcond
 
         /**
          * @brief Send a command to a single satellite
          * @details This method allows to send an already prepared command message to a connected satellite, identified via
          * its canonical name. Returns a message with verb ERROR if the satellite is not connected or the message is not a
-         * request.
+         * request. If the command was successfully transmitted to the satellite, the response message of the command is
+         * returned.
          *
          * @param satellite_name Canonical name of the target satellite
          * @param cmd Command message
@@ -102,7 +104,8 @@ namespace constellation::controller {
         /**
          * @brief Send a command to a single satellite
          * @details This method allows to send a command to a connected satellite, identified via its canonical name.
-         * Returns a message with verb ERROR if the satellite is not connected.
+         * Returns a message with verb ERROR if the satellite is not connected. If the command was successfully transmitted
+         * to the satellite, the response message of the command is returned.
          *
          * @param satellite_name Canonical name of the target satellite
          * @param verb Command
@@ -116,7 +119,8 @@ namespace constellation::controller {
 
         /**
          * @brief Send a command to all connected satellites
-         * @details This method allows to send an already prepared command message to all connected satellites.
+         * @details This method allows to send an already prepared command message to all connected satellites. The response
+         * from all satellites is returned as a map.
          *
          * @param cmd Command message
          *
@@ -127,7 +131,8 @@ namespace constellation::controller {
         /**
          * @brief Send a command to all connected satellites
          * @details This method allows to send command message to all connected satellites. The message is formed from the
-         * provided verb and optional payload. The payload is the same for all satellites.
+         * provided verb and optional payload. The payload is the same for all satellites. The response from all satellites
+         * is returned as a map.
          *
          * @param verb Command
          * @param payload Optional payload for this command message
@@ -141,7 +146,8 @@ namespace constellation::controller {
          * @brief Send a command to all connected satellites
          * @details This method allows to send command message to all connected satellites. The message is formed
          * individually for each satellite from the provided verb and the payload entry in the map for the given satellite.
-         * Missing entries in the payload table will receive an empty payload.
+         * Missing entries in the payload table will receive an empty payload. The response from all satellites is
+         * returned as a map.
          *
          * @param verb Command
          * @param payloads Map of payloads for each target satellite.
@@ -152,29 +158,40 @@ namespace constellation::controller {
                                                                   const std::map<std::string, CommandPayload>& payloads);
 
         /**
-         * @brief Helper to check if all connections are in a given state
+         * @brief Helper to check if all connected satellites are in a given state
          *
          * @param state State to be checked for
-         * @return True if all connections are in the given state, false otherwise
+         * @return True if all connected satellites are in the given state, false otherwise
          */
         bool isInState(protocol::CSCP::State state) const;
 
         /**
          * @brief Get lowest state of any satellite connected
-         * @details This returns the lowest state of any of the satellites. Here, "lowest" refers to the state code.
+         * @details This returns the lowest state of any of the satellites. Here, "lowest" refers to the state code, i.e. the
+         * underlying value of the protocol::CSCP::State enum.
          * @return Lowest state currently held
          */
         protocol::CSCP::State getLowestState() const;
 
         /**
-         * @brief Get list of currently active connections
-         * @return Set of fully-qualified canonical names of current connections
+         * @brief Get set of currently active connected satellites
+         * @return Set of fully-qualified canonical names of currently connected satellites
          */
         std::set<std::string> getConnections() const;
 
+    protected:
+        /**
+         * @brief Method to propagate updates of the connections
+         * @details This virtual method can be overridden by derived controller classes in order to be informed about
+         * updates of the attached connections such as new or departed connections as well as state and data changes
+         *
+         * @param connections Number of current satellite connections held by this controller
+         */
+        virtual void propagate_update(std::size_t connections);
+
     private:
         /**
-         * @brief Helper to send a message to a connect and receive the answer
+         * @brief Helper to send a message to a connected satellite and receive the response
          *
          * @param conn Target connection
          * @param cmd CSCP message
@@ -195,7 +212,7 @@ namespace constellation::controller {
         static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
 
         /**
-         * @brief Implementation of the service discovery callback
+         * @brief Implementation of the CONTROL service discovery callback
          * @details This implements the callback which registers new satellites via their advertised CONTROL service. For
          * newly discovered services, it connects a socket to the satellite control endpoint and registers the connection.
          * For departures, it closes the connection and removes the connection entry.
@@ -224,13 +241,6 @@ namespace constellation::controller {
         void run(const std::stop_token& stop_token);
 
     protected:
-        /**
-         * @brief Method to propagate updates of the connections
-         * @details This virtual method can be overridden by derived controller classes in order to be informed about
-         * updates of the attached connections such as new or departed connections as well as state and data changes
-         */
-        virtual void propagate_update(std::size_t /*connections*/) {};
-
         /** Logger to use */
         log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
 
