@@ -188,6 +188,15 @@ namespace constellation::controller {
          */
         std::string getRunIdentifier();
 
+        /**
+         * @brief Return the starting time of the current or last run of the constellation
+         * @details This function will go through all connected satellites and returns the latest run starting time found.
+         * The value will be the UNIX epoch begin if the satellites have just started or no satellite is connected.
+         *
+         * @return Run starting time
+         */
+        std::chrono::system_clock::time_point getRunStartTime();
+
     protected:
         /**
          * @brief Method to propagate updates of the connections
