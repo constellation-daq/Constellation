@@ -179,6 +179,15 @@ namespace constellation::controller {
          */
         std::set<std::string> getConnections() const;
 
+        /**
+         * @brief Return the current or last run identifier of the constellation
+         * @details This function will search through all connected satellites and returns the first valid run identifier
+         * found. The value will be empty if the satellites have just started or no satellite is connected.
+         *
+         * @return Run identifier
+         */
+        std::string getRunIdentifier();
+
     protected:
         /**
          * @brief Method to propagate updates of the connections
