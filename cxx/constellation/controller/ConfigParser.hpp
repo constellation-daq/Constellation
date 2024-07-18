@@ -22,33 +22,66 @@
 namespace constellation::controller {
 
     /**
-     * @brief Generic configuration object storing keys
+     * @brief Configuration parser to read TOML files and emit dictionaries for individual satellites
      *
-     * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
+     * The configuration file holds a hierarchy of tables which contain the configuration keys for all satellites of the
+     * Constellation. The dictionaries for the individual satellites need to be assembled from keys specific to the
+     * respective satellite, keys valid for the relevant satellite type and keys intended for all satellites.
      */
     class CNSTLN_API ConfigParser {
     public:
-        ConfigParser(std::filesystem::path filepath, std::set<std::string> satellites);
-        ConfigParser() = delete;
-        ~ConfigParser() = default;
+        /**
+         * @brief Constructor which reads and parses a configuration file
+         *
+         * It is necessary to also provide the set of satellites to parse this configuration for, since the TOML parse tree
+         * is specifically searched for those satellites and types because the TOML format is case-sensitive and we need
+         * insensitive matches.
+         *
+         * @param filepath Path of the configuration file to be parsed
+         * @param satellites Set of canonical names of the satellites
+         * @throws invalid_arguments in case of parsing issues.
+         */
+        ConfigParser(const std::filesystem::path& filepath, std::set<std::string> satellites);
 
         /// @cond doxygen_suppress
+        ConfigParser() = delete;
+        ~ConfigParser() = default;
         ConfigParser(const ConfigParser& other) = delete;
         ConfigParser& operator=(const ConfigParser& other) = delete;
         ConfigParser(ConfigParser&& other) noexcept = delete;
         ConfigParser& operator=(ConfigParser&& other) = delete;
         /// @endcond
 
+        /**
+         * @brief Check if a config for a specific satellite has been parsed and is available
+         *
+         * @param satellite Satellite to look for
+         * @return True if a configuration dictionary is found, false otherwise
+         */
         bool hasConfig(const std::string& satellite) const {
             return configs_.contains(utils::transform(satellite, ::tolower));
         }
 
+        /**
+         * @brief Get configuration dictionary for a given satellite
+         *
+         * @param satellite Satellite to obtain configuration dictionary for
+         * @return configuration dictionary
+         * @throws std::invalid_argument if no dictionary is available for this satellite.
+         */
         config::Dictionary getConfig(const std::string& satellite) const;
+
+        /**
+         * @brief Return all parsed dictionaries as a map
+         * @return Map of all satellites and their configuration dictionaries
+         */
         std::map<std::string, config::Dictionary> getAll() { return configs_; }
 
     private:
+        /* Logger */
         log::Logger logger_;
 
+        /* Map of parsed configuration dictionaries */
         std::map<std::string, config::Dictionary> configs_;
     };
 
