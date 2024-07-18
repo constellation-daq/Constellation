@@ -13,6 +13,7 @@
 #include <QTimer>
 
 #include "QRunControl.hpp"
+#include "QScanParameter.hpp"
 #include "ui_MissionControl.h"
 
 class RunControlGUI : public QMainWindow, public Ui::wndRun {
@@ -61,6 +62,7 @@ private:
 
     /* Scan information */
     bool scan_running_ {false};
+    QScanParameter scanparams_;
 
     static std::map<constellation::protocol::CSCP::State, QString> state_str_;
 
