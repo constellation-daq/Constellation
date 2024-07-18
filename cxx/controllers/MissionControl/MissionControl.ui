@@ -750,6 +750,18 @@
                </property>
                <item row="1" column="0">
                 <widget class="QSpinBox" name="spinBoxStart">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>125</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="minimum">
                   <number>-99999</number>
                  </property>
@@ -760,6 +772,18 @@
                </item>
                <item row="1" column="1">
                 <widget class="QSpinBox" name="spinBoxStop">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>125</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="minimum">
                   <number>-99999</number>
                  </property>
@@ -770,6 +794,18 @@
                </item>
                <item row="1" column="2">
                 <widget class="QSpinBox" name="spinBoxStep">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>125</width>
+                   <height>0</height>
+                  </size>
+                 </property>
                  <property name="minimum">
                   <number>1</number>
                  </property>
@@ -849,7 +885,7 @@
             <widget class="QComboBox" name="comboBoxSatellites">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-               <horstretch>1</horstretch>
+               <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
              </property>
