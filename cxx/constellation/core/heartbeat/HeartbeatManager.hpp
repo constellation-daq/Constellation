@@ -48,8 +48,12 @@ namespace constellation::heartbeat {
          *
          * @param sender Canonical name of the heartbeat sender
          * @param state_callback Function that return the current state
+         * @param interrupt_callback Interrupt callback which is invoked when a remote heartbeat sender reports an ERROR
+         * state or stopped sending heartbeats
          */
-        CNSTLN_API HeartbeatManager(std::string sender, std::function<protocol::CSCP::State()> state_callback);
+        CNSTLN_API HeartbeatManager(std::string sender,
+                                    std::function<protocol::CSCP::State()> state_callback,
+                                    std::function<void(std::string_view)> interrupt_callback);
 
         /** Deconstruct the manager. This stops the watchdog thread */
         CNSTLN_API virtual ~HeartbeatManager();
@@ -74,15 +78,6 @@ namespace constellation::heartbeat {
          * @return Currently registered state of the remote if remote is present, empty optional otherwise
          */
         CNSTLN_API std::optional<protocol::CSCP::State> getRemoteState(const std::string& remote);
-
-        /**
-         * @brief Set the interrupt callback
-         * @details This function allows setting the interrupt callback which is invoked when a remote heartbeat sender
-         * reports an ERROR state or stopped sending heartbeats
-         *
-         * @param callback Interrupt callback
-         */
-        void setInterruptCallback(std::function<void()> callback) { interrupt_callback_ = std::move(callback); }
 
     private:
         /**
@@ -110,7 +105,7 @@ namespace constellation::heartbeat {
         HeartbeatSend sender_;
 
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
-        std::function<void()> interrupt_callback_;
+        std::function<void(std::string_view)> interrupt_callback_;
 
         /**
          * @struct Remote

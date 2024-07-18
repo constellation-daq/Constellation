@@ -30,10 +30,12 @@ using namespace constellation::utils;
 using namespace constellation::protocol;
 using namespace std::literals::chrono_literals;
 
-HeartbeatManager::HeartbeatManager(std::string sender, std::function<CSCP::State()> state_callback)
+HeartbeatManager::HeartbeatManager(std::string sender,
+                                   std::function<CSCP::State()> state_callback,
+                                   std::function<void(std::string_view)> interrupt_callback)
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::move(sender), std::move(state_callback), 5000ms), logger_("CHP"),
-      watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
+      sender_(std::move(sender), std::move(state_callback), 5000ms), interrupt_callback_(std::move(interrupt_callback)),
+      logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {}
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
@@ -100,7 +102,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 if(interrupt_callback_) {
                     LOG(logger_, DEBUG) << "Detected state " << to_string(remote.last_state) << " at " << key
                                         << ", interrupting";
-                    interrupt_callback_();
+                    interrupt_callback_(key + " reports state " + to_string(remote.last_state));
                 }
             }
 
@@ -116,7 +118,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 if(remote.lives == 0 && interrupt_callback_) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
-                    interrupt_callback_();
+                    interrupt_callback_("No signs of life detected anymore from " + key);
                 }
             }
 
