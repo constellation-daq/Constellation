@@ -153,6 +153,20 @@ std::set<std::string> Controller::getConnections() const {
     return connections;
 }
 
+std::string Controller::getRunIdentifier() {
+    const std::lock_guard connection_lock {connection_mutex_};
+    for(auto& [name, sat] : connections_) {
+        // Obtain run identifier:
+        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_id"});
+        const auto recv_msg = send_receive(sat, send_msg);
+        const auto runid = recv_msg.getVerb().second;
+        if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS && !runid.empty()) {
+            return std::string(runid);
+        }
+    }
+    return {};
+}
+
 bool Controller::isInState(CSCP::State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
