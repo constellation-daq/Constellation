@@ -118,8 +118,11 @@ RunControlGUI::RunControlGUI(std::string_view controller_name, std::string_view 
     // Scan features:
     viewParameters->setModel(&scanparams_);
 
-    // Connect connection update signal and call it once:
+    // Connect connection update signal:
     connect(&runcontrol_, &QRunControl::connectionsChanged, this, &RunControlGUI::update_satellite_dropdown);
+    connect(&runcontrol_, &QRunControl::connectionsChanged, this, [&](std::size_t num) {
+        labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
+    });
     update_satellite_dropdown();
 
     // Connect comboBox and stack:
