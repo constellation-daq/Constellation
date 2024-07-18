@@ -20,10 +20,10 @@
 using namespace constellation::controller;
 using namespace constellation::config;
 
-ConfigParser::ConfigParser(std::filesystem::path file, std::set<std::string> satellites) : logger_("CFGPARSER") {
+ConfigParser::ConfigParser(const std::filesystem::path& file, std::set<std::string> satellites) : logger_("CFGPARSER") {
 
     LOG(logger_, DEBUG) << "Parsing configuration file " << file;
-    toml::table tbl;
+    toml::table tbl {};
     try {
         tbl = toml::parse_file(file.string());
     } catch(const toml::parse_error& err) {
@@ -42,25 +42,25 @@ ConfigParser::ConfigParser(std::filesystem::path file, std::set<std::string> sat
                 if(arr->empty()) {
                     return std::monostate {};
                 } else if(arr->front().is_integer()) {
-                    std::vector<std::int64_t> return_value;
+                    std::vector<std::int64_t> return_value {};
                     for(auto&& elem : *arr) {
                         return_value.push_back(elem.as_integer()->get());
                     }
                     return return_value;
                 } else if(arr->front().is_floating_point()) {
-                    std::vector<double> return_value;
+                    std::vector<double> return_value {};
                     for(auto&& elem : *arr) {
                         return_value.push_back(elem.as_floating_point()->get());
                     }
                     return return_value;
                 } else if(arr->front().is_boolean()) {
-                    std::vector<bool> return_value;
+                    std::vector<bool> return_value {};
                     for(auto&& elem : *arr) {
                         return_value.push_back(elem.as_boolean()->get());
                     }
                     return return_value;
                 } else if(arr->front().is_string()) {
-                    std::vector<std::string> return_value;
+                    std::vector<std::string> return_value {};
                     for(auto&& elem : *arr) {
                         return_value.push_back(elem.as_string()->get());
                     }
