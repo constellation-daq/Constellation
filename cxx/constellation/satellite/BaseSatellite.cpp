@@ -180,6 +180,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         command_dict["get_status"] = "Get status of satellite";
         command_dict["get_config"] =
             "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
+        command_dict["get_run_id"] = "Current or last run identifier";
 
         // Append user commands
         const auto user_commands = user_commands_.describeCommands();
