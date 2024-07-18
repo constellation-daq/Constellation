@@ -108,7 +108,7 @@ void BaseSatellite::terminate() {
     // We cannot join the CSCP thread here since this method might be called from there and would result in a race condition
 
     // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state:
-    fsm_.requestInterrupt("Stopping satellite");
+    fsm_.requestInterrupt("Shutting down satellite");
 }
 
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
