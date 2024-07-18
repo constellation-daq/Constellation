@@ -275,7 +275,7 @@
               <item row="1" column="4">
                <widget class="QPushButton" name="btnLog">
                 <property name="enabled">
-                 <bool>false</bool>
+                 <bool>true</bool>
                 </property>
                 <property name="toolTip">
                  <string>Send a log message</string>
@@ -353,11 +353,41 @@
               <item row="1" column="3">
                <widget class="QComboBox" name="comboBoxLogLevel">
                 <property name="currentIndex">
-                 <number>-1</number>
+                 <number>2</number>
                 </property>
                 <property name="maxVisibleItems">
                  <number>6</number>
                 </property>
+                <item>
+                 <property name="text">
+                  <string>TRACE</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>DEBUG</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>INFO</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>WARNING</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>STATUS</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>CRITICAL</string>
+                 </property>
+                </item>
                </widget>
               </item>
              </layout>
