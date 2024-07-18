@@ -115,12 +115,26 @@ RunControlGUI::RunControlGUI(std::string_view controller_name, std::string_view 
     });
     connect(runSequence, &QSpinBox::valueChanged, this, [&](int i) { update_run_identifier(runIdentifier->text(), i); });
 
+    // Connect connection update signal and call it once:
+    connect(&runcontrol_, &QRunControl::connectionsChanged, this, &RunControlGUI::update_satellite_dropdown);
+    update_satellite_dropdown();
+
+    // Connect comboBox and stack:
+    connect(comboBoxType, &QComboBox::currentIndexChanged, stackedWidgetType, &QStackedWidget::setCurrentIndex);
+
     // Connect connection update signal:
     connect(&runcontrol_, &QRunControl::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
 
     gui_settings_.setValue("successexit", 0);
+}
+
+void RunControlGUI::update_satellite_dropdown() {
+    comboBoxSatellites->clear();
+    for(const auto& sat : runcontrol_.getConnections()) {
+        comboBoxSatellites->addItem(QString::fromStdString(sat));
+    }
 }
 
 void RunControlGUI::update_run_identifier(const QString& text, int number) {
@@ -139,6 +153,38 @@ void RunControlGUI::update_run_identifier(const QString& text, int number) {
     gui_settings_.setValue("run/sequence", number);
 
     LOG(logger_, DEBUG) << "Updated run identifier to " << current_run_.toStdString();
+}
+
+void RunControlGUI::on_btnAddParameter_clicked() {
+    // Get satellite: & parameter
+    auto satellite = comboBoxSatellites->currentText();
+    auto parameter = lineEditParameter->text();
+
+    if(parameter.isEmpty()) {
+        QMessageBox::warning(NULL, "ERROR", "Parameter name cannot be empty.");
+        return;
+    }
+
+    // Get currently selected type:
+    if(stackedWidgetType->currentIndex() == 0) {
+        auto start = spinBoxStart->value();
+        auto stop = spinBoxStop->value();
+        auto step = spinBoxStep->value();
+        std::vector<int> steps(std::abs(stop - start) / step + 1);
+        std::generate(steps.begin(), steps.end(), [n = start, step, dir = (stop > start)]() mutable {
+            auto c = n;
+            n += (dir ? step : -1 * step);
+            return c;
+        });
+        LOG(logger_, STATUS) << "Clicked INT for " << satellite.toStdString() << " on " << parameter.toStdString();
+        for(const auto& i : steps) {
+            LOG(logger_, STATUS) << i;
+        }
+    } else if(stackedWidgetType->currentIndex() == 1) {
+        LOG(logger_, STATUS) << "Clicked FLOAT for " << satellite.toStdString() << " on " << parameter.toStdString();
+    } else {
+        LOG(logger_, STATUS) << "Clicked STR for " << satellite.toStdString() << " on " << parameter.toStdString();
+    }
 }
 
 void RunControlGUI::on_btnInit_clicked() {
@@ -250,6 +296,12 @@ void RunControlGUI::updateInfos() {
     btnStart->setEnabled(state == CSCP::State::ORBIT);
     btnStop->setEnabled(state == CSCP::State::RUN);
     btnShutdown->setEnabled(state == CSCP::State::SAFE || state == CSCP::State::INIT || state == CSCP::State::NEW);
+
+    // Scan buttons
+    btnStartScan->setEnabled(state == CSCP::State::ORBIT && !scan_running_);
+    btnInterruptScan->setEnabled(scan_running_);
+    btnGenerateScan->setEnabled(!scan_running_ && tableQueue->rowCount() == 0);
+    btnClearScan->setEnabled(!scan_running_ && tableQueue->rowCount() != 0);
 
     // Deactivate run identifier fields during run:
     runIdentifier->setEnabled(state != CSCP::State::RUN && state != CSCP::State::starting && state != CSCP::State::stopping);

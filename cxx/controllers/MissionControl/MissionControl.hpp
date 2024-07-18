@@ -31,6 +31,8 @@ private slots:
 
     void update_run_identifier(const QString& text, int number);
 
+    void update_satellite_dropdown();
+
     void on_btnInit_clicked();
     void on_btnLand_clicked();
     void on_btnConfig_clicked();
@@ -41,6 +43,8 @@ private slots:
     void on_btnLog_clicked();
     void on_btnLoadConf_clicked();
     void onCustomContextMenu(const QPoint& point);
+
+    void on_btnAddParameter_clicked();
 
 private:
     std::map<std::string, constellation::controller::Controller::CommandPayload> parseConfigFile(QString file);
@@ -54,6 +58,9 @@ private:
     /* Run identifier */
     QString current_run_;
     QDateTime run_start_time_;
+
+    /* Scan information */
+    bool scan_running_ {false};
 
     static std::map<constellation::protocol::CSCP::State, QString> state_str_;
 
