@@ -11,11 +11,11 @@ qt_dep = dependency(get_option('qt_version'), modules: ['Core', 'Gui', 'Widgets'
 inc = include_directories('.')
 
 ui_files = qt.compile_ui(sources: 'MissionControl.ui')
-moc_files = qt.compile_moc(headers: ['QController.hpp', 'MissionControl.hpp'])
+moc_files = qt.compile_moc(headers: ['QController.hpp', 'QScanParameter.hpp', 'MissionControl.hpp'])
 qrc_files = qt.compile_resources(sources: 'MissionControl.qrc')
 
 executable('MissionControl',
-  sources: ['MissionControl.cpp', 'QController.cpp', ui_files, moc_files, qrc_files],
+  sources: ['MissionControl.cpp', 'QController.cpp', 'QScanParameter.cpp', ui_files, moc_files, qrc_files],
   include_directories: inc,
   dependencies: [exec_dep, argparse_dep, qt_dep, controller_dep],
   install: true,

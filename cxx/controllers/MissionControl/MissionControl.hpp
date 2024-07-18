@@ -34,6 +34,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 #include "QController.hpp"
+#include "QScanParameter.hpp"
 #include "ui_MissionControl.h"
 
 class ConnectionItemDelegate : public QStyledItemDelegate {
@@ -200,6 +201,7 @@ private:
 
     /* Scan information */
     bool scan_running_ {false};
+    QScanParameter scanparams_;
 
     /** UI timer for refreshing certain elements such as the run duration */
     QTimer display_timer_;
