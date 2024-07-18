@@ -167,6 +167,30 @@ std::string Controller::getRunIdentifier() {
     return {};
 }
 
+std::chrono::system_clock::time_point Controller::getRunStartTime() {
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    std::chrono::system_clock::time_point time;
+    for(auto& [name, sat] : connections_) {
+        // Obtain run starting time:
+        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_time"});
+        const auto recv_msg = send_receive(sat, send_msg);
+
+        try {
+            const auto value = Value::disassemble(recv_msg.getPayload());
+            if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS &&
+               std::holds_alternative<std::chrono::system_clock::time_point>(value)) {
+                if(value.get<std::chrono::system_clock::time_point>() > time) {
+                    time = value.get<std::chrono::system_clock::time_point>();
+                }
+            }
+        } catch(const msgpack::unpack_error&) {
+            continue;
+        }
+    }
+    return time;
+}
+
 bool Controller::isInState(CSCP::State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
