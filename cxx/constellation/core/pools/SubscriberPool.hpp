@@ -28,13 +28,13 @@ namespace constellation::pools {
          * @brief Construct SubscriberPool
          *
          * @param service CHIRP service identifier for which a subscription should be made
-         * @param logger Reference to a logger to be used for this component
+         * @param log_topic Logger topic to be used for this component
          * @param callback Callback function pointer for received messages
          * @param default_topics List of default subscription topics to which this component subscribes directly upon
          *        opening the socket
          */
         SubscriberPool(chirp::ServiceIdentifier service,
-                       const log::Logger& logger,
+                       std::string_view log_topic,
                        std::function<void(const MESSAGE&)> callback,
                        std::initializer_list<std::string> default_topics = {});
 

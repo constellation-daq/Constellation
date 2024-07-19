@@ -31,10 +31,10 @@ namespace constellation::pools {
 
     template <typename MESSAGE>
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
-                                const log::Logger& logger,
+                                std::string_view log_topic,
                                 std::function<void(const MESSAGE&)> callback,
                                 zmq::socket_type socket_type)
-        : service_(service), logger_(logger), message_callback_(std::move(callback)), socket_type_(socket_type) {
+        : logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
