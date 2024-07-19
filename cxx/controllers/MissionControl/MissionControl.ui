@@ -175,7 +175,7 @@
           <item>
            <widget class="QLabel" name="labelState">
             <property name="frameShape">
-             <enum>QFrame::Shape::NoFrame</enum>
+             <enum>QFrame::NoFrame</enum>
             </property>
             <property name="text">
              <string>&lt;font color='gray'&gt;&lt;b&gt;New&lt;/b&gt;&lt;/font&gt;</string>
@@ -603,7 +603,7 @@
       </widget>
       <widget class="QWidget" name="tabScan">
        <attribute name="title">
-        <string>Scanning</string>
+        <string>Measurement Queue</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="1" column="1">
@@ -954,7 +954,7 @@
            <item row="5" column="0" colspan="4">
             <widget class="QTreeView" name="viewParameters">
              <property name="horizontalScrollBarPolicy">
-              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+              <enum>Qt::ScrollBarAsNeeded</enum>
              </property>
              <property name="rootIsDecorated">
               <bool>false</bool>
@@ -1117,6 +1117,28 @@
   <tabstop>btnReset</tabstop>
   <tabstop>btnShutdown</tabstop>
   <tabstop>viewConn</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>comboBoxSatellites</tabstop>
+  <tabstop>lineEditParameter</tabstop>
+  <tabstop>comboBoxType</tabstop>
+  <tabstop>doubleSpinBoxStart</tabstop>
+  <tabstop>doubleSpinBoxStop</tabstop>
+  <tabstop>doubleSpinBoxStep</tabstop>
+  <tabstop>spinBoxStart</tabstop>
+  <tabstop>spinBoxStop</tabstop>
+  <tabstop>spinBoxStep</tabstop>
+  <tabstop>lineEditParamValues</tabstop>
+  <tabstop>checkBoxParamTrue</tabstop>
+  <tabstop>checkBoxParamFalse</tabstop>
+  <tabstop>btnAddParameter</tabstop>
+  <tabstop>btnClearParams</tabstop>
+  <tabstop>viewParameters</tabstop>
+  <tabstop>checkBoxScanTogether</tabstop>
+  <tabstop>btnGenerateScan</tabstop>
+  <tabstop>btnStartScan</tabstop>
+  <tabstop>btnInterruptScan</tabstop>
+  <tabstop>btnClearScan</tabstop>
+  <tabstop>tableQueue</tabstop>
  </tabstops>
  <resources>
   <include location="MissionControl.qrc"/>
