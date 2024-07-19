@@ -7,11 +7,10 @@ Module implementing the Constellation Host Identification and Reconnaissance Pro
 
 from hashlib import md5
 import io
-import socket
 import time
 from uuid import UUID
 from enum import Enum
-from .network import get_broadcast
+from .network import get_broadcast, get_broadcast_socket, decode_ancdata, ANC_BUF_SIZE
 
 
 CHIRP_PORT = 7123
@@ -92,6 +91,7 @@ class CHIRPMessage:
         self.serviceid = serviceid
         self.port = port
         self.from_address: str = ""
+        self.dest_address: str = ""
 
     def pack(self) -> bytes:
         """Serialize message to raw bytes."""
@@ -161,17 +161,10 @@ class CHIRPBeaconTransmitter:
         # NOTE: Socket options are often OS-specific; the ones below were chosen
         # for supporting Linux-based systems.
         #
-        self._sock = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP
-        )
-        # on socket layer (SOL_SOCKET), enable re-using address in case
-        # already bound (REUSEPORT)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        # enable broadcasting
-        self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        # non-blocking (i.e. a timeout of 0.0 seconds for recv calls)
-        self._sock.setblocking(False)
+        self._sock = get_broadcast_socket()
+        # blocking (i.e. with a timeout for recv calls)
+        self._sock.setblocking(True)
+        self._sock.settimeout(0.1)
         # determine to what address(es) to send broadcasts to
         self._broadcasts = get_broadcast(interface)
         # bind to specified interface(s) to listen to incoming broadcast.
@@ -219,8 +212,11 @@ class CHIRPBeaconTransmitter:
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
         try:
-            buf, from_address = self._sock.recvfrom(1024)
-        except BlockingIOError:
+            buf, ancdata, flags, from_address = self._sock.recvmsg(
+                1024,
+                ANC_BUF_SIZE,
+            )
+        except (BlockingIOError, TimeoutError):
             # no data waiting for us
             return None
 
@@ -242,6 +238,7 @@ class CHIRPBeaconTransmitter:
             return None
 
         msg.from_address = from_address[0]
+        msg.dest_address, _destport = decode_ancdata(ancdata)
         return msg
 
     def close(self) -> None:
