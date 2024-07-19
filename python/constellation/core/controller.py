@@ -198,6 +198,7 @@ class BaseController(CHIRPBroadcaster):
         # wait for threads to be ready
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
+        time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
 
     @property
