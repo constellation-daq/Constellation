@@ -199,13 +199,35 @@ namespace constellation::controller {
 
     protected:
         /**
-         * @brief Method to propagate updates of the connections
+         * @brief Method to propagate updates of connection data
          * @details This virtual method can be overridden by derived controller classes in order to be informed about
-         * updates of the attached connections such as new or departed connections as well as state and data changes
+         * data updates of the attached connections such as state changes. The parameter holds the position of the updated
+         * data row.
          *
+         * @param position Index of the connection which has received an update
+         */
+        virtual void propagate_update(std::size_t position);
+
+        /**
+         * @brief Method to indicate the addition or deletion of connections
+         * @details This virtual method can be overridden by derived controller classes in order to be informed about
+         * updates of the attached connections such as new or departed connections. This function is called before the
+         * connections list is altered.
+         *
+         * @param added Boolean to indicate whether data is going to be added or removed
+         */
+        virtual void prepare_update(bool added);
+
+        /**
+         * @brief Method to finalize the addition or deletion of connections
+         * @details This virtual method can be overridden by derived controller classes in order to be informed about
+         * the conclusion of a connection list update such as new or departed connections. This function is called after the
+         * connection list has been altered.
+         *
+         * @param added Boolean to indicate whether data has been added or removed
          * @param connections Number of current satellite connections held by this controller
          */
-        virtual void propagate_update(std::size_t connections);
+        virtual void finalize_update(bool added, std::size_t connections);
 
     private:
         /**
