@@ -166,17 +166,11 @@ class CHIRPBeaconTransmitter:
         self._sock.settimeout(0.1)
         # determine to what address(es) to send broadcasts to
         self._broadcast_addrs = list(get_broadcast(interface))
-        self._broadcast_sockets = []
         # bind to specified interface(s) to listen to incoming broadcast.
         # NOTE: only support for IPv4 is implemented
         if interface == "*":
             # INADDR_ANY for IPv4
             interface = ""
-            # need to create separate sockets for *sending* broadcasts
-            for addr in self._broadcast_addrs:
-                sock = get_broadcast_socket()
-                sock.bind((addr, CHIRP_PORT))
-                self._broadcast_sockets.append(sock)
         else:
             # use broadcast address instead
             interface = self._broadcast_addrs[0]
@@ -214,14 +208,8 @@ class CHIRPBeaconTransmitter:
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
         if not dest_address:
             # send to all
-            for idx, bcast in enumerate(self._broadcast_addrs):
-                if self._broadcast_sockets:
-                    # have multiple sockets to broadcast to
-                    sock = self._broadcast_sockets[idx]
-                else:
-                    # only single interface
-                    sock = self._sock
-                sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
+            for bcast in self._broadcast_addrs:
+                self._sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
         else:
             self._sock.sendto(msg.pack(), (dest_address, CHIRP_PORT))
 
@@ -260,5 +248,3 @@ class CHIRPBeaconTransmitter:
     def close(self) -> None:
         """Close the socket."""
         self._sock.close()
-        for sock in self._broadcast_sockets:
-            sock.close()
