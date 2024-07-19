@@ -204,7 +204,9 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self.log.debug("Broadcasting service OFFER on %s for %s", port, sid)
+                self.log.debug(
+                    "Broadcasting service OFFER on '%s':%s for %s", dest_addr, port, sid
+                )
                 self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port, dest_addr)
 
     def broadcast_requests(self) -> None:
