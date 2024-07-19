@@ -7,7 +7,6 @@ Module implementing the Constellation Host Identification and Reconnaissance Pro
 
 from hashlib import md5
 import io
-import time
 from uuid import UUID
 from enum import Enum
 from .network import get_broadcast, get_broadcast_socket, decode_ancdata, ANC_BUF_SIZE
@@ -166,15 +165,22 @@ class CHIRPBeaconTransmitter:
         self._sock.setblocking(True)
         self._sock.settimeout(0.1)
         # determine to what address(es) to send broadcasts to
-        self._broadcasts = get_broadcast(interface)
+        self._broadcast_addrs = list(get_broadcast(interface))
+        self._broadcast_sockets = []
         # bind to specified interface(s) to listen to incoming broadcast.
         # NOTE: only support for IPv4 is implemented
         if interface == "*":
             # INADDR_ANY for IPv4
             interface = ""
+            # need to create separate sockets for *sending* broadcasts
+            for addr in self._broadcast_addrs:
+                sock = get_broadcast_socket()
+                sock.bind((addr, CHIRP_PORT))
+                self._broadcast_sockets.append(sock)
         else:
             # use broadcast address instead
-            interface = list(self._broadcasts)[0]
+            interface = self._broadcast_addrs[0]
+        # one socket for listening
         self._sock.bind((interface, CHIRP_PORT))
 
     @property
@@ -202,12 +208,23 @@ class CHIRPBeaconTransmitter:
         serviceid: CHIRPServiceIdentifier,
         msgtype: CHIRPMessageType,
         port: int = 0,
+        dest_address: str = "",
     ) -> None:
         """Broadcast a given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
-        for bcast in self._broadcasts:
-            self._sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
-            time.sleep(0.1)
+        if not dest_address:
+            print(f"Sending to all about {msg}")
+            # send to all
+            for idx, bcast in enumerate(self._broadcast_addrs):
+                if self._broadcast_sockets:
+                    # have multiple sockets to broadcast to
+                    sock = self._broadcast_sockets[idx]
+                else:
+                    # only single interface
+                    sock = self._sock
+                sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
+        else:
+            self._sock.sendto(msg.pack(), (dest_address, CHIRP_PORT))
 
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
@@ -244,3 +261,5 @@ class CHIRPBeaconTransmitter:
     def close(self) -> None:
         """Close the socket."""
         self._sock.close()
+        for sock in self._broadcast_sockets:
+            sock.close()
