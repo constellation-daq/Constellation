@@ -54,7 +54,9 @@ Controller::~Controller() {
     connections_.clear();
 }
 
-void Controller::propagate_update(std::size_t /*connections*/) {};
+void Controller::propagate_update(std::size_t /*position*/) {};
+void Controller::prepare_update(bool /*added*/) {};
+void Controller::finalize_update(bool /*added*/, std::size_t /*connections*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 void Controller::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
@@ -65,6 +67,9 @@ void Controller::callback(chirp::DiscoveredService service, bool depart, std::an
 void Controller::callback_impl(const constellation::chirp::DiscoveredService& service, bool depart) {
 
     const std::lock_guard connection_lock {connection_mutex_};
+
+    // Allow derived controller to prepare for data update:
+    prepare_update(!depart);
 
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
@@ -103,7 +108,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
     }
 
     // Trigger method for propagation of connection list updates in derived controller classes
-    propagate_update(connections_.size());
+    finalize_update(!depart, connections_.size());
 }
 
 void Controller::process_heartbeat(const message::CHP1Message& msg) {
@@ -137,7 +142,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
 
         // Call update propagator
         if(need_propagate_update) {
-            propagate_update(connections_.size());
+            propagate_update(std::distance(connections_.begin(), sat));
         }
     } else {
         LOG(logger_, TRACE) << "Ignoring heartbeat from " << msg.getSender() << ", satellite is not connected";
@@ -353,12 +358,15 @@ void Controller::run(const std::stop_token& stop_token) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
 
+                    // Allow derived controller to prepare for data update:
+                    prepare_update(false);
+
                     // Close connection, remove from list:
                     remote.req.close();
                     connections_.erase(conn);
 
-                    // Call update propagator
-                    propagate_update(connections_.size());
+                    // Trigger method for propagation of connection list updates in derived controller classes
+                    finalize_update(false, connections_.size());
                 }
             }
 
