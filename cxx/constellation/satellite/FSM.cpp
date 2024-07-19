@@ -204,20 +204,21 @@ void FSM::stop_run_thread() {
 // Calls the transition function of a satellite and return success transition if completed or failure on exception
 template <typename Func, typename... Args>
 FSM::Transition FSM::call_satellite_function(Func func, Transition success_transition, Args&&... args) {
+    std::string error_message {};
     try {
         // Call transition function of satellite
         (satellite_->*func)(std::forward<Args>(args)...);
         // Finish transition
         return success_transition;
     } catch(const std::exception& error) {
-        // Something went wrong, log and go to error state
-        LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: " << error.what();
-        return Transition::failure;
+        error_message = error.what();
     } catch(...) {
-        // Something went wrong but not with a proper exception, log and go to error state
-        LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: <unknown exception>";
-        return Transition::failure;
+        error_message = "<unknown exception>";
     }
+    // Something went wrong, log and go to error state
+    LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: " << error_message;
+    satellite_->set_status("Critical failure during transition: " + error_message);
+    return Transition::failure;
 }
 
 // Joins a thread and assigns it to a new thread with given args
