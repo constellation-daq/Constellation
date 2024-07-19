@@ -213,7 +213,6 @@ class CHIRPBeaconTransmitter:
         """Broadcast a given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
         if not dest_address:
-            print(f"Sending to all about {msg}")
             # send to all
             for idx, bcast in enumerate(self._broadcast_addrs):
                 if self._broadcast_sockets:
