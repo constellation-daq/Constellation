@@ -68,12 +68,12 @@ namespace constellation::pools {
         disconnect_all();
     }
 
-    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService&) {
+    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService& /*service*/) {
         return true;
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t&) {}
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t&) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t& /*socket*/) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t& /*socket*/) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::checkException() {
         // If exception has been thrown, disconnect from all remote sockets and propagate it
