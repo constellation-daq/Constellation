@@ -65,6 +65,11 @@ namespace constellation::pools {
         /// @endcond
 
         /**
+         * @brief Start the pool thread and send the CHIRP requests
+         */
+        void start();
+
+        /**
          * @brief Check if pool thread has thrown an exception
          * @throw Exception thrown by pool thread, if any
          */
