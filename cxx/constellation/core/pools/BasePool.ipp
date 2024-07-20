@@ -36,8 +36,10 @@ namespace constellation::pools {
                                 zmq::socket_type socket_type)
         : logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {}
 
-
     template <typename MESSAGE> void BasePool<MESSAGE>::start() {
+
+        // Start the pool thread
+        pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
@@ -46,9 +48,6 @@ namespace constellation::pools {
             // Request currently active services
             chirp_manager->sendRequest(service_);
         }
-
-        // Start the pool thread
-        pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
     }
 
     template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
