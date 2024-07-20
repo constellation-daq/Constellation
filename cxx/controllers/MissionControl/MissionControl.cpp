@@ -134,6 +134,9 @@ RunControlGUI::RunControlGUI(std::string_view controller_name, std::string_view 
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
 
+    // Connect queue type and stack:
+    connect(comboBoxQueue, &QComboBox::currentIndexChanged, stackedWidgetQueue, &QStackedWidget::setCurrentIndex);
+
     gui_settings_.setValue("successexit", 0);
 }
 
