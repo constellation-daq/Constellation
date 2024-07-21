@@ -65,17 +65,17 @@ namespace constellation::pools {
         /// @endcond
 
         /**
-         * @brief Start the pool thread and send the CHIRP requests
-         */
-        void start();
-
-        /**
          * @brief Check if pool thread has thrown an exception
          * @throw Exception thrown by pool thread, if any
          */
         void checkException();
 
     protected:
+        /**
+         * @brief Start the pool thread and send the CHIRP requests
+         */
+        void start();
+
         /**
          * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
          * derived pools may implement selection criteria
