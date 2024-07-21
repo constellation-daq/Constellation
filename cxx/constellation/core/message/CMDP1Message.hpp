@@ -188,7 +188,7 @@ namespace constellation::message {
         /**
          * @return Metric value and type
          */
-        CNSTLN_API metrics::Metric getMetric() const;
+        CNSTLN_API metrics::Metric getMetric() const { return metric_; }
 
         /**
          * Disassemble stats message from ZeroMQ frames
@@ -203,6 +203,7 @@ namespace constellation::message {
 
     private:
         std::string stat_topic_;
+        metrics::Metric metric_;
     };
 
 } // namespace constellation::message

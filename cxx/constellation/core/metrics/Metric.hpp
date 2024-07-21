@@ -48,12 +48,12 @@ namespace constellation::metrics {
          *
          * @param unit Unit of this metric as human readable string
          * @param type Type of the metric
-         * @param value Initial value
+         * @param initial_value Initial value
          */
         Metric(std::string unit, Type type, config::Value&& initial_value)
             : unit_(std::move(unit)), type_(type), value_(std::move(initial_value)) {}
 
-        Metric() = delete;
+        Metric() : type_(LAST_VALUE), value_(std::monostate {}) {};
         virtual ~Metric() noexcept = default;
 
         // Default copy/move constructor/assignment

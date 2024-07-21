@@ -140,15 +140,7 @@ CMDP1StatMessage::CMDP1StatMessage(std::string topic,
                                    CMDP1Message::Header header,
                                    const std::shared_ptr<metrics::Metric>& metric)
     : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), metric->assemble()),
-      stat_topic_(std::move(topic)) {}
-
-Metric CMDP1StatMessage::getMetric() const {
-    try {
-        return Metric::disassemble(get_payload());
-    } catch(const std::invalid_argument& e) {
-        throw MessageDecodingError(e.what());
-    }
-}
+      stat_topic_(std::move(topic)), metric_(*metric) {}
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
     if(!isStatMessage()) {
@@ -157,6 +149,12 @@ CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::m
 
     // Assign topic after prefix "STAT/"
     stat_topic_ = getTopic().substr(5);
+
+    try {
+        metric_ = Metric::disassemble(get_payload());
+    } catch(const std::invalid_argument& e) {
+        throw MessageDecodingError(e.what());
+    }
 }
 
 CMDP1StatMessage CMDP1StatMessage::disassemble(zmq::multipart_t& frames) {
