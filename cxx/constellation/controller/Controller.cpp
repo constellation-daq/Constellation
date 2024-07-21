@@ -54,6 +54,7 @@ Controller::~Controller() {
     connections_.clear();
 }
 
+void Controller::reached_state(CSCP::State /*state*/) {};
 void Controller::propagate_update(std::size_t /*position*/) {};
 void Controller::prepare_update(bool /*added*/) {};
 void Controller::finalize_update(bool /*added*/, std::size_t /*connections*/) {};
@@ -127,8 +128,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
 
-        // Check if we need to propagate an updated state later on:
-        const bool need_propagate_update = (sat->second.state != msg.getState());
+        // Check if a state has changed and we need to calculate and propagate updates:
+        const bool state_updated = (sat->second.state != msg.getState());
 
         // Update status and timers
         sat->second.interval = msg.getInterval();
@@ -140,9 +141,17 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             sat->second.lives = protocol::CHP::Lives;
         }
 
-        // Call update propagator
-        if(need_propagate_update) {
+        // A state was changed, propagate this:
+        if(state_updated) {
+            // Notify derived classes of change
             propagate_update(std::distance(connections_.begin(), sat));
+
+            // Check if this new state is a global one:
+            if(std::ranges::all_of(connections_.cbegin(), connections_.cend(), [&msg](const auto& conn) {
+                   return conn.second.state == msg.getState();
+               })) {
+                reached_state(msg.getState());
+            }
         }
     } else {
         LOG(logger_, TRACE) << "Ignoring heartbeat from " << msg.getSender() << ", satellite is not connected";

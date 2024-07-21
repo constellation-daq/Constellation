@@ -199,6 +199,16 @@ namespace constellation::controller {
 
     protected:
         /**
+         * @brief Method called whenever a new global state has been reached
+         * @details A global state is a situation when all connected satellites share a common state. Whenever such a state
+         * is reached by a state update of a satellite,t his method is called. This can e.g. be used to emit signals for
+         * user interfaces or to trigger further actions.
+         *
+         * @param state The new global state of the constellation
+         */
+        virtual void reached_state(protocol::CSCP::State state);
+
+        /**
          * @brief Method to propagate updates of connection data
          * @details This virtual method can be overridden by derived controller classes in order to be informed about
          * data updates of the attached connections such as state changes. The parameter holds the position of the updated
