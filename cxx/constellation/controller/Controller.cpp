@@ -56,7 +56,7 @@ Controller::~Controller() {
 
 void Controller::reached_state(CSCP::State /*state*/) {};
 void Controller::propagate_update(std::size_t /*position*/) {};
-void Controller::prepare_update(bool /*added*/) {};
+void Controller::prepare_update(bool /*added*/, std::size_t /*position*/) {};
 void Controller::finalize_update(bool /*added*/, std::size_t /*connections*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -69,9 +69,6 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
     const std::lock_guard connection_lock {connection_mutex_};
 
-    // Allow derived controller to prepare for data update:
-    prepare_update(!depart);
-
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
     if(depart) {
@@ -79,9 +76,15 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             return sat.second.host_id == service.host_id;
         });
         if(it != connections_.end()) {
+            // Allow derived controller to prepare for data update:
+            prepare_update(false, std::distance(connections_.begin(), it));
+
             it->second.req.close();
             LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
             connections_.erase(it);
+
+            // Trigger method for propagation of connection list updates in derived controller classes
+            finalize_update(false, connections_.size());
         }
     } else {
         // New satellite connection
@@ -100,16 +103,20 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
+
         if(!success) {
             LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
                                   << ", a satellite with the same canonical name was already registered";
         } else {
+            // Allow derived controller to prepare for data update:
+            prepare_update(true, std::distance(connections_.begin(), it));
+
             LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
+
+            // Trigger method for propagation of connection list updates in derived controller classes
+            finalize_update(true, connections_.size());
         }
     }
-
-    // Trigger method for propagation of connection list updates in derived controller classes
-    finalize_update(!depart, connections_.size());
 }
 
 void Controller::process_heartbeat(const message::CHP1Message& msg) {
@@ -368,7 +375,7 @@ void Controller::run(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
 
                     // Allow derived controller to prepare for data update:
-                    prepare_update(false);
+                    prepare_update(false, std::distance(connections_.begin(), conn));
 
                     // Close connection, remove from list:
                     remote.req.close();
