@@ -239,7 +239,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             # now reconnecting. But then the bookkeeping has to be done higher up.
         else:
             # add service to internal list and queue callback (if registered)
-            self.log.info(
+            self.log.debug(
                 "Received new OFFER for service: %s on host %s:%s",
                 msg.serviceid.name,
                 msg.from_address,
