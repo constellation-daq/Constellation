@@ -31,10 +31,15 @@ namespace constellation::pools {
 
     template <typename MESSAGE>
     BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
-                                const log::Logger& logger,
+                                std::string_view log_topic,
                                 std::function<void(const MESSAGE&)> callback,
                                 zmq::socket_type socket_type)
-        : service_(service), logger_(logger), message_callback_(std::move(callback)), socket_type_(socket_type) {
+        : logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {}
+
+    template <typename MESSAGE> void BasePool<MESSAGE>::start() {
+
+        // Start the pool thread
+        pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
@@ -43,9 +48,6 @@ namespace constellation::pools {
             // Request currently active services
             chirp_manager->sendRequest(service_);
         }
-
-        // Start the pool thread
-        pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
     }
 
     template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
@@ -68,12 +70,12 @@ namespace constellation::pools {
         disconnect_all();
     }
 
-    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService&) {
+    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService& /*service*/) {
         return true;
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t&) {}
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t&) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t& /*socket*/) {}
+    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t& /*socket*/) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::checkException() {
         // If exception has been thrown, disconnect from all remote sockets and propagate it

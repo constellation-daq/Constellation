@@ -41,12 +41,12 @@ namespace constellation::pools {
          * @brief Construct BasePool
          *
          * @param service CHIRP service identifier for which a subscription should be made
-         * @param logger Reference to a logger to be used for this component
+         * @param log_topic Logger topic to be used for this component
          * @param callback Callback function pointer for received messages
          * @param socket_type ZMQ socket type to use for connecting to service, e.g. sub or pull
          */
         BasePool(chirp::ServiceIdentifier service,
-                 const log::Logger& logger,
+                 std::string_view log_topic,
                  std::function<void(const MESSAGE&)> callback,
                  zmq::socket_type socket_type);
 
@@ -71,6 +71,11 @@ namespace constellation::pools {
         void checkException();
 
     protected:
+        /**
+         * @brief Start the pool thread and send the CHIRP requests
+         */
+        void start();
+
         /**
          * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
          * derived pools may implement selection criteria
@@ -126,10 +131,10 @@ namespace constellation::pools {
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_; // NOLINT(*-non-private-member-variables-in-classes)
         std::timed_mutex sockets_mutex_;                            // NOLINT(*-non-private-member-variables-in-classes)
 
+        log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
+
     private:
         chirp::ServiceIdentifier service_;
-
-        const log::Logger& logger_; // NOLINT(cppcoreguidelines-avoid-const-or-ref-data-members)
 
         zmq::context_t context_;
         zmq::active_poller_t poller_;
