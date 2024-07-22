@@ -130,6 +130,7 @@ RunControlGUI::RunControlGUI(std::string_view controller_name, std::string_view 
     connect(btnClearParams, &QPushButton::clicked, &scanparams_, &QScanParameter::clear);
 
     // Connect connection update signal:
+    connect(&runcontrol_, &QRunControl::connectionsChanged, this, &RunControlGUI::update_satellite_dropdown);
     connect(&runcontrol_, &QRunControl::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
