@@ -34,7 +34,7 @@ def test_satellite_access_via_array(mock_controller, mock_satellite):
 @pytest.mark.forked
 def test_satellite_hb_state(mock_controller, mock_satellite):
     """Test heartbeat state check."""
-    timeout = 2
+    timeout = 4
     while timeout > 0 and len(mock_controller.states) < 1:
         time.sleep(0.05)
         timeout -= 0.05

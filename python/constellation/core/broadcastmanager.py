@@ -8,9 +8,10 @@ Constellation Satellites.
 
 import threading
 from functools import wraps
-from typing import Callable, TypeVar, ParamSpec, Any
+from typing import Callable, TypeVar, ParamSpec, Any, Optional
 
 import time
+import random
 from uuid import UUID
 
 from .base import BaseSatelliteFrame
@@ -192,16 +193,22 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             )
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_offers(self, serviceid: CHIRPServiceIdentifier | None = None) -> None:
+    def broadcast_offers(
+        self, serviceid: Optional[CHIRPServiceIdentifier] = None, dest_addr: str = ""
+    ) -> None:
         """Broadcast all registered services matching serviceid.
 
         Specify None for all registered services.
 
+        If a destination address dest_addr is provided, broadcast only to that network address.
+
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self.log.debug("Broadcasting service OFFER on %s for %s", port, sid)
-                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
+                self.log.debug(
+                    "Broadcasting service OFFER on '%s':%s for %s", dest_addr, port, sid
+                )
+                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port, dest_addr)
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
@@ -222,16 +229,17 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         )
         if service in self.discovered_services:
             self.log.debug(
-                "Service already discovered: %s on host %s",
+                "Service already discovered: %s on host %s:%s",
                 msg.serviceid,
                 msg.from_address,
+                msg.port,
             )
             # NOTE we might want to call the callback method for this service
             # anyway, in case this host was down (without sending DEPART) and is
             # now reconnecting. But then the bookkeeping has to be done higher up.
         else:
             # add service to internal list and queue callback (if registered)
-            self.log.info(
+            self.log.debug(
                 "Received new OFFER for service: %s on host %s:%s",
                 msg.serviceid.name,
                 msg.from_address,
@@ -280,12 +288,17 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         while not self._com_thread_evt.is_set():
             msg = self._beacon.listen()
             if not msg:
-                time.sleep(0.1)
                 continue
 
             # Check Message Type
             if msg.msgtype == CHIRPMessageType.REQUEST:
-                self.broadcast_offers(msg.serviceid)
+                # wait a short moment to spread out responses somewhat
+                time.sleep(random.random() / 5.0)
+                self.broadcast_offers(
+                    serviceid=msg.serviceid,
+                    # only answer to address we received the msg on
+                    dest_addr=msg.dest_address,
+                )
                 continue
 
             if msg.msgtype == CHIRPMessageType.OFFER:
