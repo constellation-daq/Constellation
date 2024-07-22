@@ -11,6 +11,7 @@ from functools import wraps
 from typing import Callable, TypeVar, ParamSpec, Any, Optional
 
 import time
+import random
 from uuid import UUID
 
 from .base import BaseSatelliteFrame
@@ -291,6 +292,8 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
 
             # Check Message Type
             if msg.msgtype == CHIRPMessageType.REQUEST:
+                # wait a short moment to spread out responses somewhat
+                time.sleep(random.random() / 5.0)
                 self.broadcast_offers(
                     serviceid=msg.serviceid,
                     # only answer to address we received the msg on
