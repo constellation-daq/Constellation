@@ -9,6 +9,7 @@ import threading
 import time
 from queue import Empty
 from typing import Dict, Callable, Any, Tuple
+from enum import Enum
 
 import zmq
 
@@ -22,6 +23,26 @@ from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
 from .heartbeatchecker import HeartbeatChecker
+
+
+class ControllerState(Enum):
+    """Global Controller state."""
+
+    NEW = 0x10, "😀"
+    INIT = 0x20, "👌"
+    ORBIT = 0x30, "🛰"
+    RUN = 0x40, "🏃"
+    ERROR = 0xF0, "🤯"
+    TRANSITIONING = 0x55, "👷"
+
+    def __new__(cls: Any, value: str, name: str) -> Any:
+        member = object.__new__(cls)
+        member._value_ = value
+        member.emoji = name
+        return member
+
+    def __int__(self) -> int:
+        return int(self.value)
 
 
 class SatelliteClassCommLink:
@@ -46,6 +67,15 @@ class SatelliteCommLink(SatelliteClassCommLink):
     def __str__(self) -> str:
         """Convert to canonical name."""
         return f"{self._class_name}.{self._name}"
+
+    def _repr_pretty_(
+        self, p: Any, cycle: bool
+    ) -> None:  # p is a pretty printer from IPython
+        if cycle:
+            # this is not a container, so this should not happen!
+            pass
+        else:
+            p.text(f"SatelliteCommLink(name={self._name}, class={self._class_name})")
 
 
 class SatelliteArray:
@@ -138,6 +168,18 @@ class SatelliteArray:
         """Remove characters not suited for Python methods from names."""
         return name.replace("-", "_")
 
+    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+        if cycle:
+            # not a container, so this should never be true
+            pass
+        else:
+            with p.group(len(self.group) + 2, f"{self.group.capitalize()}([", "])"):
+                for idx, item in enumerate(self.satellites.keys()):
+                    if idx:
+                        p.text(",")
+                        p.breakable()
+                    p.pretty(item)
+
 
 class CommandWrapper:
     """Class to wrap command calls.
@@ -206,12 +248,81 @@ class BaseController(CHIRPBroadcaster):
 
     @property
     def states(self) -> dict[str, SatelliteState]:
-        """Return an up-to-date dictionary of connected Satellite's status.
+        """Return an up-to-date dictionary of connected Satellite's state.
 
         Based on heartbeat information.
 
         """
         return self._hb_checker.states
+
+    @property
+    def state(self) -> ControllerState:
+        """Return the global state of all connected Satellite's state.
+
+        Based on heartbeat information.
+
+        """
+        if len(self.states) == 0:
+            return ControllerState.NEW
+        # if any Satellite is in ERROR, the global state will be in ERROR as well
+        if any(
+            state in self.states.values()
+            for state in [
+                SatelliteState.ERROR,
+                SatelliteState.DEAD,
+                SatelliteState.SAFE,
+            ]
+        ):
+            return ControllerState.ERROR
+        # any transitional states?
+        if any(
+            state in self.states.values()
+            for state in [
+                SatelliteState.initializing,
+                SatelliteState.launching,
+                SatelliteState.landing,
+                SatelliteState.reconfiguring,
+                SatelliteState.starting,
+                SatelliteState.stopping,
+                SatelliteState.interrupting,
+            ]
+        ):
+            return ControllerState.TRANSITIONING
+        # now go by lowest steady state of any satellite:
+        for target in [
+            ControllerState.NEW,
+            ControllerState.INIT,
+            ControllerState.ORBIT,
+            ControllerState.RUN,
+        ]:
+            if any(state.value == target.value for state in self.states.values()):
+                return target
+        # something went wrong..?
+        return ControllerState.ERROR
+
+    @property
+    def status(self) -> str:
+        """Return the global status summary of the Constellation.
+
+        Based on heartbeat information.
+
+        """
+        res = []
+        for state in SatelliteState:
+            sats = [sat for sat, stat in self.states.items() if stat == state]
+            if sats:
+                res.append(
+                    f"{len(sats)} Satellite{'s are' if len(sats) > 1 else ' is'} in {state.name}"
+                )
+        if len(self.states) != len(self.constellation.satellites):
+            miss = len(self.constellation.satellites) - len(self.states)
+            res.append(
+                f"{miss} connected Satellite{'s are' if len(sats) > 1 else ' is'} missing heartbeat information"
+            )
+        prefix = f"{len(self.constellation.satellites)} connected: "
+        if len(res) == 1:
+            return prefix + "All " + res[0]
+        return prefix + ", ".join(res)
 
     @property
     def constellation(self) -> SatelliteArray:
@@ -327,7 +438,6 @@ class BaseController(CHIRPBroadcaster):
 
     def _hb_failure(self, name: str, state: SatelliteState) -> None:
         """Callback for Satellites failing to send heartbeats."""
-        # TODO add filter for only those Satellites that we control
         self.log.critical("%s has entered %s", name, state.name)
 
     def command(
@@ -465,6 +575,12 @@ class BaseController(CHIRPBroadcaster):
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join()
         super().reentry()
+
+    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+        nsat = len(self.constellation.satellites)
+        p.text(
+            f"{self.group} Controller for {nsat} Satellites, current state is {self.state.name}"
+        )
 
 
 def main(args: Any = None) -> None:
