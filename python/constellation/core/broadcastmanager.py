@@ -131,6 +131,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         :type group: str
         """
         super().__init__(name=name, interface=interface, **kwds)
+        self.group = group
         self._stop_broadcasting = threading.Event()
         self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
