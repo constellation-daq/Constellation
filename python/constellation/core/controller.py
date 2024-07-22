@@ -251,7 +251,16 @@ class BaseController(CHIRPBroadcaster):
                 *self._uuid_lookup[str(service.host_uuid)],
             )
         # create socket
-        socket = self.context.socket(zmq.REQ)
+        try:
+            socket = self.context.socket(zmq.REQ)
+        except zmq.ZMQError as e:
+            if "Too many open files" in e.strerror:
+                self.log.error(
+                    "System reports too many open files: cannot open further connections.\n"
+                    "Please consider increasing the limit of your OS."
+                    "On Linux systems, use 'ulimit' to set a higher value."
+                )
+            raise e
         socket.connect("tcp://" + service.address + ":" + str(service.port))
         ct = CommandTransmitter(self.name, socket)
         self.log.debug(
