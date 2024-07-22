@@ -199,6 +199,9 @@ class BaseController(CHIRPBroadcaster):
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
         time.sleep(0.2)
+        while self._beacon.busy:
+            # still receiving chirp packets from last request
+            time.sleep(0.05)
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
 
     @property
