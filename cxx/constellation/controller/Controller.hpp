@@ -225,6 +225,7 @@ namespace constellation::controller {
          * connections list is altered.
          *
          * @param added Boolean to indicate whether data is going to be added or removed
+         * @param position Index of the connection which will be added or removed
          */
         virtual void prepare_update(bool added, std::size_t position);
 
