@@ -23,6 +23,7 @@ from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
 from .heartbeatchecker import HeartbeatChecker
+from . import __version__
 
 
 class ControllerState(Enum):
@@ -590,7 +591,9 @@ def main(args: Any = None) -> None:
     Constellation group via IPython terminal.
 
     """
-    from IPython import embed
+    from IPython.terminal.prompts import Prompts, Token
+    from traitlets.config.loader import Config
+    from IPython.terminal.embed import InteractiveShellEmbed
 
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument(
@@ -627,8 +630,66 @@ def main(args: Any = None) -> None:
 
     print("Happy hacking! :)\n")
 
-    # start IPython console
-    embed()
+    #  ___ ____        _   _                            _
+    # |_ _|  _ \ _   _| |_| |__   ___  _ __    ___  ___| |_ _   _ _ __
+    #  | || |_) | | | | __| '_ \ / _ \| '_ \  / __|/ _ \ __| | | | '_ \
+    #  | ||  __/| |_| | |_| | | | (_) | | | | \__ \  __/ |_| |_| | |_) |
+    # |___|_|    \__, |\__|_| |_|\___/|_| |_| |___/\___|\__|\__,_| .__/
+    #            |___/                                           |_|
+
+    class ControllerPrompt(Prompts):
+        """Customized prompt."""
+
+        def in_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+            return [
+                (Token, ""),
+                # show version
+                (Token.Generic.Subheading, "📡 v"),
+                (Token.Generic.Subheading, __version__),
+                (Token, " "),
+                # show number of satellites
+                (Token.Prompt, "🛰 "),
+                (Token.Prompt, str(len(constellation.satellites))),
+                # show current state
+                (Token, " "),
+                (Token.Name.Class, ctrl.state.emoji + " " + ctrl.state.name),  # type: ignore[attr-defined]
+                (Token, " "),
+                (Token.Name.Entity, "ipython"),
+                (Token, "\n"),
+                (
+                    (
+                        Token.Prompt
+                        if self.shell.last_execution_succeeded
+                        and ctrl.state not in [ControllerState.ERROR]
+                        else Token.Generic.Error
+                    ),
+                    f"{ctrl.group} ❯ ",
+                ),
+            ]
+
+        def out_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+            return []
+
+    cfg = Config()
+    cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt  # type: ignore[attr-defined]
+    # Now create an instance of the embeddable shell. The first argument is a
+    # string with options exactly as you would type them if you were starting
+    # IPython at the system command line. Any parameters you want to define for
+    # configuration can thus be specified here.
+    ipshell = InteractiveShellEmbed(
+        config=cfg,
+        banner1="Starting IPython Controller for Constellation",
+        exit_msg="Have a nice day!",
+    )
+
+    # You can then call ipshell() anywhere you need it (with an optional
+    # message):
+    ipshell(
+        "***Called from top level. "
+        "Hit Ctrl-D to exit interpreter and continue program.\n"
+        "Note that if you use %kill_embedded, you can fully deactivate\n"
+        "This embedded instance so it will never turn on again"
+    )
 
 
 if __name__ == "__main__":
