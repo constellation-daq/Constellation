@@ -155,6 +155,9 @@ class CHIRPBeaconTransmitter:
         # whether or not to filter broadcasts on group
         self._filter_group = True
 
+        # whether or not there are incoming packets
+        self.busy = False
+
         # Create UPP broadcasting socket
         #
         # NOTE: Socket options are often OS-specific; the ones below were chosen
@@ -163,7 +166,7 @@ class CHIRPBeaconTransmitter:
         self._sock = get_broadcast_socket()
         # blocking (i.e. with a timeout for recv calls)
         self._sock.setblocking(True)
-        self._sock.settimeout(0.1)
+        self._sock.settimeout(0.05)
         # determine to what address(es) to send broadcasts to
         self._broadcast_addrs = list(get_broadcast(interface))
         # bind to specified interface(s) to listen to incoming broadcast.
@@ -206,12 +209,14 @@ class CHIRPBeaconTransmitter:
     ) -> None:
         """Broadcast a given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
+        self.busy = True
         if not dest_address:
             # send to all
             for bcast in self._broadcast_addrs:
                 self._sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
         else:
             self._sock.sendto(msg.pack(), (dest_address, CHIRP_PORT))
+        self.busy = False
 
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
@@ -220,8 +225,10 @@ class CHIRPBeaconTransmitter:
                 1024,
                 ANC_BUF_SIZE,
             )
+            self.busy = True
         except (BlockingIOError, TimeoutError):
             # no data waiting for us
+            self.busy = False
             return None
 
         # Unpack msg
