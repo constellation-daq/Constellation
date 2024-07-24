@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+#include <msgpack.hpp>
+
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"

@@ -18,7 +18,7 @@ controller_lib = library('ConstellationController',
 controller_dep = declare_dependency(
   link_with: controller_lib,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep, magic_enum_dep],
+  dependencies: [core_dep, cppzmq_dep],
 )
 
 install_headers(

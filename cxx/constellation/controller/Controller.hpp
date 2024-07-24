@@ -16,9 +16,7 @@
 #include <string_view>
 #include <thread>
 
-#include <msgpack.hpp>
 #include <zmq.hpp>
-#include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
