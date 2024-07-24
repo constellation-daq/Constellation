@@ -8,6 +8,7 @@ from typing import Callable, Any, Tuple
 from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
+from datetime import datetime, timezone
 from statemachine import StateMachine  # type: ignore[import-untyped]
 from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
 from statemachine.states import States  # type: ignore[import-untyped]
@@ -113,10 +114,14 @@ class SatelliteFSM(StateMachine):
     shutdown |= states.ERROR.to(states.DEAD)
     shutdown |= states.SAFE.to(states.DEAD)
 
-    transitioned = False
-
     def __init__(self) -> None:
+        # current status (i.e. state description)
         self.status = "Satellite not initialized yet."
+        # flag indicated a finished state transition;
+        # used by (and acknowledged by) Heartbeater.
+        self.transitioned = False
+        # timestamp for last state change
+        self.last_changed = datetime.now(timezone.utc)
         super().__init__()
 
     def before_transition(self, status: str) -> None:
@@ -126,6 +131,7 @@ class SatelliteFSM(StateMachine):
     def after_transition(self) -> None:
         """Set flag indicating state change."""
         self.transitioned = True
+        self.last_changed = datetime.now(timezone.utc)
 
     def write_diagram(self, filename: str) -> None:
         """Create a png with the FSM schematic."""
@@ -381,18 +387,24 @@ class SatelliteStateHandler(BaseSatelliteFrame):
                 self.fsm.status = res
 
     @cscp_requestable
-    def get_state(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def get_state(
+        self, _request: CSCPMessage | None = None
+    ) -> Tuple[str, None, dict[str, Any]]:
         """Return the current state of the Satellite.
 
         No payload argument.
         """
-        return self.fsm.current_state_value.name, None, None
+        meta = {"last_changed": self.fsm.last_changed.isoformat()}
+        return self.fsm.current_state_value.name, None, meta
 
     @cscp_requestable
-    def get_status(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def get_status(
+        self, _request: CSCPMessage | None = None
+    ) -> Tuple[str, None, dict[str, Any]]:
         """Get a string describing the current status of the Satellite.
 
         No payload argument.
 
         """
-        return self.fsm.status, None, None
+        meta = {"last_changed": self.fsm.last_changed.isoformat()}
+        return self.fsm.status, None, meta
