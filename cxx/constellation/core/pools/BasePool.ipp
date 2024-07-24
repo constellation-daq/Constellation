@@ -26,6 +26,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/utils/networking.hpp"
 
 namespace constellation::pools {
 
@@ -92,7 +93,7 @@ namespace constellation::pools {
         LOG(logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
         try {
 
-            zmq::socket_t socket {context_, socket_type_};
+            zmq::socket_t socket {*utils::global_zmq_context(), socket_type_};
             socket.connect(service.to_uri());
 
             // Perform connection actions:

@@ -58,8 +58,7 @@ void cli_loop(std::span<char*> args) {
     auto uri = "tcp://" + discovered_services[0].address.to_string() + ":" + to_string(discovered_services[0].port);
     std::cout << "Connecting to " << uri << std::endl;
 
-    zmq::context_t context {};
-    zmq::socket_t req_socket {context, zmq::socket_type::req};
+    zmq::socket_t req_socket {*global_zmq_context(), zmq::socket_type::req};
 
     req_socket.connect(uri);
 

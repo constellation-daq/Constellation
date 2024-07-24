@@ -136,7 +136,6 @@ namespace constellation::pools {
     private:
         chirp::ServiceIdentifier service_;
 
-        zmq::context_t context_;
         zmq::active_poller_t poller_;
 
         std::atomic_flag af_;

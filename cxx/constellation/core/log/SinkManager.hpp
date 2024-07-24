@@ -132,6 +132,8 @@ namespace constellation::log {
         void calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger);
 
     private:
+        std::shared_ptr<zmq::context_t> zmq_context_;
+
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 

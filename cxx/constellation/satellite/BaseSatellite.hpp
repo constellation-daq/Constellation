@@ -195,7 +195,6 @@ namespace constellation::satellite {
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
 
     private:
-        zmq::context_t context_;
         zmq::socket_t rep_socket_;
         utils::Port port_;
 

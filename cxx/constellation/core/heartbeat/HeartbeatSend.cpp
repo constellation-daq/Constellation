@@ -32,8 +32,8 @@ using namespace constellation::utils;
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
                              std::chrono::milliseconds interval)
-    : pub_socket_(context_, zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)), sender_(std::move(sender)),
-      state_callback_(std::move(state_callback)), interval_(interval) {
+    : pub_socket_(*global_zmq_context(), zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)),
+      sender_(std::move(sender)), state_callback_(std::move(state_callback)), interval_(interval) {
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();

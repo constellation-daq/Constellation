@@ -85,8 +85,6 @@ namespace constellation::heartbeat {
         void loop(const std::stop_token& stop_token);
 
     private:
-        /** ZMQ context for the emitting socket */
-        zmq::context_t context_;
         /** Publisher socket for emitting heartbeats */
         zmq::socket_t pub_socket_;
         /** Ephemeral port selected for the heartbeat emission */
