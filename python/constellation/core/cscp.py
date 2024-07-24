@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Satellite Control Protocol.
 """
 
-from typing import Any
+from typing import Any, Optional
 import io
 from enum import Enum
 import zmq
@@ -34,12 +34,13 @@ class CSCPMessageVerb(Enum):
 class CSCPMessage:
     """Class holding details of a received CSCP command."""
 
-    msg: str = ""
-    msg_verb: CSCPMessageVerb | None = None
-    from_host: str = ""
-    timestamp: msgpack.Timestamp | None = None
-    header_meta: dict[str, Any] | None = None
-    payload: Any = None
+    def __init__(self) -> None:
+        self.msg: str = ""
+        self.msg_verb: Optional[CSCPMessageVerb] = None
+        self.from_host: str = ""
+        self.timestamp: Optional[msgpack.Timestamp] = None
+        self.header_meta: Optional[dict[str, Any]] = None
+        self.payload: Any = None
 
     def set_header(
         self, from_host: str, timestamp: msgpack.Timestamp, meta: dict[str, Any] | None
