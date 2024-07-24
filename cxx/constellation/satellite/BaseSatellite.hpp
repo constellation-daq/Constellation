@@ -167,6 +167,11 @@ namespace constellation::satellite {
          */
         void update_config(const config::Configuration& partial_config);
 
+        /**
+         * @brief Set a new status message
+         */
+        void set_status(std::string status) { status_ = std::move(status); }
+
     public:
         /// @cond doxygen_suppress
         virtual void initializing(config::Configuration& config) = 0;
