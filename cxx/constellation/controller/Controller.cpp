@@ -12,6 +12,11 @@
 #include <string>
 #include <string_view>
 
+#include <magic_enum.hpp>
+#include <msgpack.hpp>
+#include <zmq.hpp>
+#include <zmq_addon.hpp>
+
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
