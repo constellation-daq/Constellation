@@ -43,7 +43,10 @@ class CSCPMessage:
         self.payload: Any = None
 
     def set_header(
-        self, from_host: str, timestamp: msgpack.Timestamp, meta: dict[str, Any] | None
+        self,
+        from_host: str,
+        timestamp: msgpack.Timestamp,
+        meta: Optional[dict[str, Any]],
     ) -> None:
         """Sets information retrieved from a message header."""
         self.from_host = from_host
@@ -71,7 +74,7 @@ class CommandTransmitter:
         self.socket = socket
 
     def send_request(
-        self, command: str, payload: Any = None, meta: dict[str, Any] | None = None
+        self, command: str, payload: Any = None, meta: Optional[dict[str, Any]] = None
     ) -> None:
         """Send a command request to a Satellite with an optional payload.
 
@@ -114,7 +117,7 @@ class CommandTransmitter:
         response: str,
         msgtype: CSCPMessageVerb,
         payload: Any = None,
-        meta: dict[str, Any] | None = None,
+        meta: Optional[dict[str, Any]] = None,
     ) -> None:
         """Send a reply to a previous command with an optional payload.
 
@@ -168,7 +171,7 @@ class CommandTransmitter:
         msg: str,
         msgtype: CSCPMessageVerb,
         payload: Any = None,
-        meta: dict[str, Any] | None = None,
+        meta: Optional[dict[str, Any]] = None,
         flags: int = 0,
     ) -> None:
         """Dispatch a message via ZMQ socket."""
