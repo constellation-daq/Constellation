@@ -34,7 +34,7 @@ using namespace std::literals::chrono_literals;
 Controller::Controller(std::string_view controller_name)
     : logger_("CTRL"), controller_name_(controller_name),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      watchdog_thread_(std::bind_front(&Controller::run, this)) {
+      watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {
     LOG(logger_, DEBUG) << "Registering controller callback";
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
@@ -351,7 +351,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::strin
     return sendCommand(satellite_name, send_msg);
 }
 
-void Controller::run(const std::stop_token& stop_token) {
+void Controller::controller_loop(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
 
     while(!stop_token.stop_requested()) {
