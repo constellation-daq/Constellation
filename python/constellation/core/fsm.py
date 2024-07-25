@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from statemachine import StateMachine  # type: ignore[import-untyped]
 from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
 from statemachine.states import States  # type: ignore[import-untyped]
-from msgpack import Timestamp
+from msgpack import Timestamp  # type: ignore[import-untyped]
 
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
