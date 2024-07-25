@@ -223,8 +223,9 @@ namespace constellation::controller {
          *
          * @param type Type of the connection update performed
          * @param position Index of the connection which has received an update
+         * @param total Total number of current connections
          */
-        virtual void propagate_update(UpdateType type, std::size_t position);
+        virtual void propagate_update(UpdateType type, std::size_t position, std::size_t total);
 
     private:
         /**
