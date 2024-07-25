@@ -60,7 +60,7 @@ Controller::~Controller() {
 }
 
 void Controller::reached_state(CSCP::State /*state*/) {};
-void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/) {};
+void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/, std::size_t /*total*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
 void Controller::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
@@ -87,7 +87,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             connections_.erase(it);
 
             // Trigger method for propagation of connection list updates in derived controller classes
-            propagate_update(UpdateType::REMOVED, position);
+            propagate_update(UpdateType::REMOVED, position, connections_.size());
         }
     } else {
         // New satellite connection
@@ -114,7 +114,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
 
             // Trigger method for propagation of connection list updates in derived controller classes
-            propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it));
+            propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
         }
     }
 }
@@ -151,7 +151,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         // A state was changed, propagate this:
         if(state_updated) {
             // Notify derived classes of change
-            propagate_update(UpdateType::UPDATED, std::distance(connections_.begin(), sat));
+            propagate_update(UpdateType::UPDATED, std::distance(connections_.begin(), sat), connections_.size());
 
             // Check if this new state is a global one:
             if(std::ranges::all_of(connections_.cbegin(), connections_.cend(), [&msg](const auto& conn) {
@@ -382,7 +382,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     connections_.erase(conn);
 
                     // Trigger method for propagation of connection list updates in derived controller classes
-                    propagate_update(UpdateType::REMOVED, position);
+                    propagate_update(UpdateType::REMOVED, position, connections_.size());
                 }
             }
 
