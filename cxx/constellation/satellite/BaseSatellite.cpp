@@ -194,6 +194,10 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     }
     case get_state: {
         return_verb = {CSCP1Message::Type::SUCCESS, to_string(fsm_.getState())};
+        msgpack::sbuffer sbuf {};
+        msgpack::pack(sbuf, std::to_underlying(fsm_.getState()));
+        msgpack::pack(sbuf, fsm_.getLastChanged());
+        return_payload = {std::move(sbuf)};
         break;
     }
     case get_status: {
