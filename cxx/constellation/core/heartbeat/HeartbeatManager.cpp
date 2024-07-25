@@ -39,8 +39,6 @@ HeartbeatManager::HeartbeatManager(std::string sender,
 
 HeartbeatManager::~HeartbeatManager() {
     watchdog_thread_.request_stop();
-    cv_.notify_one();
-
     if(watchdog_thread_.joinable()) {
         watchdog_thread_.join();
     }
@@ -90,11 +88,13 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 
 void HeartbeatManager::run(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {mutex_};
+    auto wakeup = std::chrono::system_clock::now() + 3s;
 
-    while(!stop_token.stop_requested()) {
+    // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
+    while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
-        auto wakeup = std::chrono::system_clock::now() + 3s;
+        wakeup = std::chrono::system_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
             // Check for ERROR and SAFE states:
             if(remote.lives > 0 && (remote.last_state == CSCP::State::ERROR || remote.last_state == CSCP::State::SAFE)) {
@@ -127,9 +127,8 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
             if(next_heartbeat - now > std::chrono::system_clock::duration::zero()) {
                 wakeup = std::min(wakeup, next_heartbeat);
             }
-            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to " << (wakeup - now);
+            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "
+                                << std::chrono::duration_cast<std::chrono::milliseconds>(wakeup - now);
         }
-
-        cv_.wait_until(lock, wakeup);
     }
 }

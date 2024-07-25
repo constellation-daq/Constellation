@@ -54,7 +54,6 @@ HeartbeatSend::~HeartbeatSend() {
 
     // Stop sender thread
     sender_thread_.request_stop();
-    cv_.notify_one();
     if(sender_thread_.joinable()) {
         sender_thread_.join();
     }
@@ -65,17 +64,12 @@ void HeartbeatSend::sendExtrasystole() {
 }
 
 void HeartbeatSend::loop(const std::stop_token& stop_token) {
-    while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock {mutex_};
+    std::unique_lock<std::mutex> lock {mutex_};
 
-        // Get currently configured interval
-        const auto interval = interval_.load();
+    // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
+    while(!cv_.wait_for(lock, stop_token, interval_.load() / 2, [&]() { return stop_token.stop_requested(); })) {
 
         // Publish CHP message with current state
-        CHP1Message(sender_, state_callback_(), interval).assemble().send(pub_socket_);
-
-        // Wait until either the interval before sending the next regular heartbeat has passed - or the CV is notified.
-        // This happens either when an extrasystole is requested (sendExtrasystole) or in the HeartbeatSend destructor.
-        cv_.wait_for(lock, interval / 2);
+        CHP1Message(sender_, state_callback_(), interval_.load()).assemble().send(pub_socket_);
     }
 }
