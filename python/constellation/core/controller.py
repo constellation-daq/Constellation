@@ -737,14 +737,14 @@ def main(args: Any = None) -> None:
         def out_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
             return []
 
-    cfg = Config()
-    cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt  # type: ignore[attr-defined]
+    ipython_cfg = Config()
+    ipython_cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt
     # Now create an instance of the embeddable shell. The first argument is a
     # string with options exactly as you would type them if you were starting
     # IPython at the system command line. Any parameters you want to define for
     # configuration can thus be specified here.
     ipshell = InteractiveShellEmbed(
-        config=cfg,
+        config=ipython_cfg,
         banner1="Starting IPython Controller for Constellation",
         exit_msg="Have a nice day!",
     )
