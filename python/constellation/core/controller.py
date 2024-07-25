@@ -8,7 +8,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import threading
 import time
 from queue import Empty
-from typing import Dict, Callable, Any, Tuple
+from typing import Dict, Callable, Any, Tuple, Optional
 from enum import Enum
 
 import zmq
@@ -85,7 +85,9 @@ class SatelliteArray:
     def __init__(
         self,
         group: str,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        handler: Callable[
+            [str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]
+        ],
     ):
         self.group = group
         self._handler = handler
@@ -148,7 +150,9 @@ class SatelliteArray:
     def _add_cmds(
         self,
         obj: Any,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        handler: Callable[
+            [str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]
+        ],
         cmds: dict[str, str],
     ) -> None:
         try:
@@ -190,7 +194,9 @@ class CommandWrapper:
 
     def __init__(
         self,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, dict[str, Any] | None]],
+        handler: Callable[
+            [str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]
+        ],
         sat: str,
         satcls: str,
         cmd: str,
@@ -201,9 +207,68 @@ class CommandWrapper:
         self.satcls = satcls
         self.cmd = cmd
 
-    def call(self, payload: Any = None) -> Tuple[str, Any, dict[str, Any] | None]:
+    def call(self, payload: Any = None) -> Tuple[str, Any, Optional[dict[str, Any]]]:
         """Perform call. This doc string will be overwritten."""
         return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)  # type: ignore[call-arg]
+
+
+class SatelliteResponse:
+    """Class to hold the response of a Satellite to a CSCP command."""
+
+    def __init__(self) -> None:
+        self.success: bool = True
+        self.meta: Optional[dict[str, Any]] = None
+        self.payload: Any = None
+        self.errmsg: str = ""
+        self.msg: str = ""
+
+    def __str__(self) -> str:
+        """Pretty-print request."""
+        if not self.success:
+            return f"Failed: {self.errmsg}"
+        s = "'{}'{}{}"
+        return s.format(
+            self.msg,
+            f" with a payload {self.payload}" if self.payload else "",
+            f" with a meta header {self.meta}" if self.meta else "",
+        )
+
+    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+        if cycle:
+            # not a container, so this should never be true
+            pass
+        else:
+            if not self.success:
+                p.text(f"SatelliteResponse(success=False, errmsg='{self.errmsg}'")
+            else:
+                p.text("SatelliteResponse(")
+                p.breakable()
+                p.text(f"msg='{self.msg}'")
+            if isinstance(self.payload, dict):
+                p.text(", ")
+                p.breakable()
+                with p.group(9, "payload={", "}"):
+                    for idx, (key, item) in enumerate(self.payload.items()):
+                        if idx:
+                            p.text(",")
+                            p.breakable()
+                        p.text(f'"{key}": ')
+                        p.pretty(item)
+            else:
+                if self.payload:
+                    p.text(f", payload={str(self.payload)}")
+            if self.meta:
+                p.text(", ")
+                p.breakable()
+                with p.group(4, "meta={", "}"):
+                    for idx, (key, item) in enumerate(self.meta.items()):
+                        if idx:
+                            p.text(",")
+                            p.breakable()
+                        p.text(f'"{key}": ')
+                        p.pretty(item)
+            p.breakable()
+            p.text(")")
 
 
 class BaseController(CHIRPBroadcaster):
@@ -448,13 +513,13 @@ class BaseController(CHIRPBroadcaster):
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat._uuid for sat in self._constellation.satellites.values()]
+            targets = [sat for sat in self._constellation.satellites.values()]
             self.log.info(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
         elif not sat:
             targets = [
-                sat._uuid
+                sat
                 for sat in self._constellation.satellites.values()
                 if sat._class_name == satcls
             ]
@@ -467,19 +532,21 @@ class BaseController(CHIRPBroadcaster):
         else:
             assert satcls  # for typing
             assert sat  # for typing
-            targets = [self._constellation.get_satellite(satcls, sat)._uuid]
+            targets = [self._constellation.get_satellite(satcls, sat)]
             self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
 
-        res = {}
+        res: dict[str, SatelliteResponse] = {}
         for target in targets:
             self.log.debug("Host %s send command %s...", target, cmd)
             # The payload to set of (known) command can be pre-processed
             # allowing using more complex objects as arguments and a more
             # convenient CLI user experience without impacting the protocol
             # specs. Here, we translate to what the protocol requires.
-            p = self._preprocess_payload(payload, target, cmd)
+            p = self._preprocess_payload(payload, target._uuid, cmd)
+            sat_response = SatelliteResponse()
+            ret_msg = None
             try:
-                ret_msg = self._transmitters[target].request_get_response(
+                ret_msg = self._transmitters[target._uuid].request_get_response(
                     command=cmd,
                     payload=p,
                     meta=None,
@@ -492,7 +559,8 @@ class BaseController(CHIRPBroadcaster):
                     satcls,
                     sat,
                 )
-                continue
+                sat_response.success = False
+                sat_response.errmsg = "No transmitter available"
             except RuntimeError as e:
                 self.log.error(
                     "Command %s failed for %s (%s.%s): %s",
@@ -502,25 +570,27 @@ class BaseController(CHIRPBroadcaster):
                     sat,
                     repr(e),
                 )
-                continue
-            self.log.debug(
-                "%s responded: %s",
-                ret_msg.from_host,
-                ret_msg.msg,
-            )
-            if ret_msg.header_meta:
-                self.log.debug("    header: %s", ret_msg.header_meta)
-            if ret_msg.payload:
-                self.log.debug("    payload: %s", ret_msg.payload)
+                sat_response.success = False
+                sat_response.errmsg = repr(e)
+            if ret_msg:
+                self.log.debug(
+                    "%s responded: %s",
+                    ret_msg.from_host,
+                    ret_msg.msg,
+                )
+                if ret_msg.header_meta:
+                    self.log.debug("    header: %s", ret_msg.header_meta)
+                if ret_msg.payload:
+                    self.log.debug("    payload: %s", ret_msg.payload)
+                sat_response.msg = ret_msg.msg
+                sat_response.payload = ret_msg.payload
+                sat_response.meta = ret_msg.header_meta
             if sat:
                 # simplify return value for single satellite
-                res = {"msg": ret_msg.msg, "payload": ret_msg.payload}
+                return sat_response
             else:
                 # append
-                res[ret_msg.from_host] = {
-                    "msg": ret_msg.msg,
-                    "payload": ret_msg.payload,
-                }
+                res[str(target)] = sat_response
         return res
 
     def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
@@ -580,7 +650,7 @@ class BaseController(CHIRPBroadcaster):
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:
         nsat = len(self.constellation.satellites)
         p.text(
-            f"{self.group} Controller for {nsat} Satellites, current state is {self.state.name}"
+            f"Controller(group='{self.group}') for {nsat} Satellites, current state is {self.state.name}"
         )
 
 
