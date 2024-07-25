@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from statemachine import StateMachine  # type: ignore[import-untyped]
 from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
 from statemachine.states import States  # type: ignore[import-untyped]
+from msgpack import Timestamp
 
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
@@ -389,22 +390,25 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @cscp_requestable
     def get_state(
         self, _request: CSCPMessage | None = None
-    ) -> Tuple[str, None, dict[str, Any]]:
+    ) -> Tuple[str, dict[str, Any], None]:
         """Return the current state of the Satellite.
 
         No payload argument.
+
+        Payload of the response contains 'last_changed'
         """
-        meta = {"last_changed": self.fsm.last_changed.isoformat()}
-        return self.fsm.current_state_value.name, None, meta
+        payload = {
+            "last_changed": Timestamp.from_datetime(self.fsm.last_changed),
+            "last_changed_iso": self.fsm.last_changed.isoformat(),
+            "value": self.fsm.current_state_value.value,
+        }
+        return self.fsm.current_state_value.name, payload, None
 
     @cscp_requestable
-    def get_status(
-        self, _request: CSCPMessage | None = None
-    ) -> Tuple[str, None, dict[str, Any]]:
+    def get_status(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
         """Get a string describing the current status of the Satellite.
 
         No payload argument.
 
         """
-        meta = {"last_changed": self.fsm.last_changed.isoformat()}
-        return self.fsm.status, None, meta
+        return self.fsm.status, None, None
