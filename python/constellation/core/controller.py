@@ -511,7 +511,7 @@ class BaseController(CHIRPBroadcaster):
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
             targets = [sat for sat in self._constellation.satellites.values()]
-            self.log.info(
+            self.log.debug(
                 "Sending %s to all %s connected Satellites.", cmd, len(targets)
             )
         elif not sat:
@@ -520,7 +520,7 @@ class BaseController(CHIRPBroadcaster):
                 for sat in self._constellation.satellites.values()
                 if sat._class_name == satcls
             ]
-            self.log.info(
+            self.log.debug(
                 "Sending %s to all %s connected Satellites of class %s.",
                 cmd,
                 len(targets),
@@ -530,7 +530,7 @@ class BaseController(CHIRPBroadcaster):
             assert satcls  # for typing
             assert sat  # for typing
             targets = [self._constellation.get_satellite(satcls, sat)]
-            self.log.info("Sending %s to Satellite %s.", cmd, targets[0])
+            self.log.debug("Sending %s to Satellite %s.", cmd, targets[0])
 
         res: dict[str, SatelliteResponse] = {}
         for target in targets:
@@ -623,7 +623,7 @@ class BaseController(CHIRPBroadcaster):
 
     def reentry(self) -> None:
         """Stop the controller."""
-        self.log.info("Stopping controller.")
+        self.log.debug("Stopping controller.")
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
         try:
@@ -687,15 +687,15 @@ def main(args: Any = None) -> None:
     print(
         "You can interact with the discovered Satellites via the `constellation` array:"
     )
-    print("          constellation.get_state()\n")
+    print("         > constellation.get_state()\n")
     print("To get help for any of its methods, call it with a question mark:")
-    print("          constellation.get_state?\n")
+    print("         > constellation.get_state?\n")
 
     if cfg_file:
         cfg = load_config(cfg_file)  # noqa
         print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
 
-    print("Happy hacking! :)\n")
+    print("   Happy hacking! :)\n")
 
     #  ___ ____        _   _                            _
     # |_ _|  _ \ _   _| |_| |__   ___  _ __    ___  ___| |_ _   _ _ __
@@ -751,12 +751,7 @@ def main(args: Any = None) -> None:
 
     # You can then call ipshell() anywhere you need it (with an optional
     # message):
-    ipshell(
-        "***Called from top level. "
-        "Hit Ctrl-D to exit interpreter and continue program.\n"
-        "Note that if you use %kill_embedded, you can fully deactivate\n"
-        "This embedded instance so it will never turn on again"
-    )
+    ipshell()
 
 
 if __name__ == "__main__":
