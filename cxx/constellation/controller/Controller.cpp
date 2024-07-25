@@ -353,11 +353,13 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::strin
 
 void Controller::controller_loop(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
+    auto wakeup = std::chrono::system_clock::now() + 3s;
 
-    while(!stop_token.stop_requested()) {
+    // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
+    while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
-        auto wakeup = std::chrono::system_clock::now() + 3s;
+        wakeup = std::chrono::system_clock::now() + 3s;
 
         for(auto conn = connections_.begin(), next_conn = conn; conn != connections_.end(); conn = next_conn) {
             ++next_conn;
@@ -394,9 +396,8 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
             if(next_heartbeat - now > std::chrono::system_clock::duration::zero()) {
                 wakeup = std::min(wakeup, next_heartbeat);
             }
-            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to " << (wakeup - now);
+            LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "
+                                << std::chrono::duration_cast<std::chrono::milliseconds>(wakeup - now);
         }
-
-        cv_.wait_until(lock, wakeup);
     }
 }
