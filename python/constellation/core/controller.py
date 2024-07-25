@@ -236,14 +236,13 @@ class SatelliteResponse:
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:
         if cycle:
             # not a container, so this should never be true
-            pass
-        else:
-            if not self.success:
-                p.text(f"SatelliteResponse(success=False, errmsg='{self.errmsg}'")
-            else:
-                p.text("SatelliteResponse(")
-                p.breakable()
-                p.text(f"msg='{self.msg}'")
+            return
+        if not self.success:
+            p.text(f"SatelliteResponse(success=False, errmsg='{self.errmsg}')")
+            return
+        with p.group(19, "SatelliteResponse(", ")"):
+            p.breakable()
+            p.text(f"msg='{self.msg}'")
             if isinstance(self.payload, dict):
                 p.text(", ")
                 p.breakable()
@@ -267,8 +266,6 @@ class SatelliteResponse:
                             p.breakable()
                         p.text(f'"{key}": ')
                         p.pretty(item)
-            p.breakable()
-            p.text(")")
 
 
 class BaseController(CHIRPBroadcaster):
