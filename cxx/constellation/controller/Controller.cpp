@@ -193,10 +193,10 @@ std::string_view Controller::getRunIdentifier() {
     return {};
 }
 
-std::chrono::system_clock::time_point Controller::getRunStartTime() {
+std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime() {
     const std::lock_guard connection_lock {connection_mutex_};
 
-    std::chrono::system_clock::time_point time;
+    std::optional<std::chrono::system_clock::time_point> time;
     for(auto& [name, sat] : connections_) {
         // Obtain run starting time:
         auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_time"});
