@@ -40,7 +40,7 @@ objects.
 | `get_name` | - | Canonical name of the Satellite | -
 | `get_version` | - | Constellation version identifier string | -
 | `get_commands` | - | Acknowledgement | List of commands as MsgPack map/dictionary with command names as keys and descriptions as values
-| `get_state` | - | Current state (as string) | -
+| `get_state` | - | Current state (as string) | Current state encoded as MsgPack integer and when the state last changed as MsgPack timepoint
 | `get_status` | - | Current status | -
 | `get_config` | - | Acknowledgement | Satellite configuration as flat MsgPack map/dictionary
 | `get_run_id` | - | Current or last run identifier (as string) | -
