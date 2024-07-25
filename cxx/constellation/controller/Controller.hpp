@@ -112,7 +112,7 @@ namespace constellation::controller {
          * @return CSCP response message
          */
         message::CSCP1Message sendCommand(std::string_view satellite_name,
-                                          const std::string& verb,
+                                          std::string verb,
                                           const CommandPayload& payload = {});
 
         /**
@@ -137,8 +137,7 @@ namespace constellation::controller {
          *
          * @return Map of satellite canonical names and their CSCP response messages
          */
-        std::map<std::string, message::CSCP1Message> sendCommands(const std::string& verb,
-                                                                  const CommandPayload& payload = {});
+        std::map<std::string, message::CSCP1Message> sendCommands(std::string verb, const CommandPayload& payload = {});
 
         /**
          * @brief Send a command to all connected satellites
@@ -184,7 +183,7 @@ namespace constellation::controller {
          *
          * @return Run identifier
          */
-        std::string getRunIdentifier();
+        std::string_view getRunIdentifier();
 
         /**
          * @brief Return the starting time of the current or last run of the constellation
