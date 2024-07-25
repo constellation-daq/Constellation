@@ -286,7 +286,7 @@ namespace constellation::controller {
          *
          * @param stop_token Stop token to interrupt the thread
          */
-        void run(const std::stop_token& stop_token);
+        void controller_loop(const std::stop_token& stop_token);
 
     protected:
         /** Logger to use */
