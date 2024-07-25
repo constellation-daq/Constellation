@@ -75,7 +75,7 @@ SinkManager& SinkManager::getInstance() {
     return instance;
 }
 
-SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OFF) {
+SinkManager::SinkManager() : zmq_context_(global_zmq_context()), console_global_level_(TRACE), cmdp_global_level_(OFF) {
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
 
