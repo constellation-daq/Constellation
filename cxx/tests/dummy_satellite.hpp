@@ -46,7 +46,7 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         progress_fsm_ = false;
-        LOG(DEBUG) << "Progressed FSM, new state" << constellation::utils::to_string(getState());
+        LOG(DEBUG) << "Progressed FSM, new state " << constellation::utils::to_string(getState());
     }
 
     void setSupportReconfigure(bool support_reconfigure) { Satellite::support_reconfigure(support_reconfigure); }
