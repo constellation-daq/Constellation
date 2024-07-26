@@ -45,8 +45,8 @@ namespace constellation::pools {
         const std::lock_guard sockets_lock {BasePool<MESSAGE>::sockets_mutex_};
 
         const auto socket_it = std::ranges::find_if(
-            BasePool<MESSAGE>::sockets_, host_id, [&](const auto& s) { return s.first.host_id == host_id; });
-        if(socket_it != BasePool<MESSAGE>::sockets_.end()) {
+            BasePool<MESSAGE>::get_sockets(), host_id, [&](const auto& s) { return s.first.host_id == host_id; });
+        if(socket_it != BasePool<MESSAGE>::get_sockets().end()) {
             if(subscribe) {
                 socket_it->second.subscribe(topic);
             } else {

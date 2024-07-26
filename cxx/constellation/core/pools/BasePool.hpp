@@ -11,7 +11,6 @@
 
 #include <any>
 #include <atomic>
-#include <condition_variable>
 #include <functional>
 #include <map>
 #include <mutex>
@@ -99,6 +98,20 @@ namespace constellation::pools {
          */
         virtual void socket_disconnected(zmq::socket_t& socket);
 
+        /**
+         * @brief Return all connected sockets
+         *
+         * @warning Read access to the sockets needs to be protected with `sockets_mutex_`
+         *
+         * @return Maps that maps the discovered service to the corresponding ZeroMQ sockets
+         */
+        const std::map<chirp::DiscoveredService, zmq::socket_t>& get_sockets() const { return sockets_; }
+
+    protected:
+        std::mutex sockets_mutex_; // NOLINT(*-non-private-member-variables-in-classes)
+
+        log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
+
     private:
         /**
          * @brief Callback for CHIRP service discovery
@@ -127,18 +140,14 @@ namespace constellation::pools {
         /** Disconnect from all registered services */
         void disconnect_all();
 
-    protected:
-        std::map<chirp::DiscoveredService, zmq::socket_t> sockets_; // NOLINT(*-non-private-member-variables-in-classes)
-        std::timed_mutex sockets_mutex_;                            // NOLINT(*-non-private-member-variables-in-classes)
-
-        log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
-
     private:
         chirp::ServiceIdentifier service_;
 
         zmq::active_poller_t poller_;
 
-        std::atomic_flag af_;
+        std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
+        std::atomic_bool sockets_empty_ {true};
+
         std::jthread pool_thread_;
         std::exception_ptr exception_ptr_ {nullptr};
 
