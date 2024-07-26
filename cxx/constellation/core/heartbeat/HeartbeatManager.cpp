@@ -50,6 +50,7 @@ void HeartbeatManager::sendExtrasystole() {
 }
 
 std::optional<CSCP::State> HeartbeatManager::getRemoteState(const std::string& remote) {
+    const std::lock_guard lock {mutex_};
     const auto remote_it = remotes_.find(remote);
     if(remote_it != remotes_.end()) {
         return remote_it->second.last_state;
@@ -64,6 +65,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
                         << msg.getInterval();
 
     const auto now = std::chrono::system_clock::now();
+    const std::lock_guard lock {mutex_};
 
     // Update or add the remote:
     const auto remote_it = remotes_.find(to_string(msg.getSender()));
