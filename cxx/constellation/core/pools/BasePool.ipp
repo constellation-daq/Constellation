@@ -204,6 +204,9 @@ namespace constellation::pools {
             while(!stop_token.stop_requested()) {
                 using namespace std::literals::chrono_literals;
 
+                // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
+                std::this_thread::sleep_for(1ns);
+
                 // The poller doesn't work if no socket registered
                 if(sockets_empty_.load()) {
                     std::this_thread::sleep_for(50ms);
