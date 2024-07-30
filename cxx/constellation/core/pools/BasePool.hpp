@@ -29,10 +29,10 @@
 namespace constellation::pools {
 
     /**
-     * Abstract Base pool class
+     * @brief Abstract Base pool class
      *
      * This class registers a CHIRP callback for the services defined via the template parameter, listens to incoming
-     * messages and forwards them to a callback registered upon creation of the socket
+     * messages and forwards them to a callback registered upon creation of the socket.
      */
     template <typename MESSAGE> class BasePool {
     public:
@@ -69,12 +69,17 @@ namespace constellation::pools {
          */
         void checkException();
 
-    protected:
         /**
          * @brief Start the pool thread and send the CHIRP requests
          */
         void start();
 
+        /**
+         * @brief Stop the pool thread
+         */
+        void stop();
+
+    protected:
         /**
          * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
          * derived pools may implement selection criteria

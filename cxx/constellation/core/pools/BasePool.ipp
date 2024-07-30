@@ -38,7 +38,6 @@ namespace constellation::pools {
         : logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::start() {
-
         // Start the pool thread
         pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
@@ -51,7 +50,7 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
+    template <typename MESSAGE> void BasePool<MESSAGE>::stop() {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
             // Unregister CHIRP discovery callback:
@@ -66,6 +65,10 @@ namespace constellation::pools {
 
         // Disconnect from all remote sockets
         disconnect_all();
+    }
+
+    template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
+        stop();
     }
 
     template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService& /*service*/) {
