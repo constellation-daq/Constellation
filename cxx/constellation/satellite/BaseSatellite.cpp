@@ -43,6 +43,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation;
 using namespace constellation::config;
@@ -377,6 +378,11 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
     initializing(config);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::initializing(config);
+    }
+
     // Store config after initializing
     store_config(std::move(config));
 }
@@ -392,6 +398,11 @@ void BaseSatellite::landing_wrapper() {
 void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_config) {
     reconfiguring(partial_config);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::reconfiguring(partial_config);
+    }
+
     // Update stored config after reconfigure
     update_config(partial_config);
 }
@@ -399,12 +410,22 @@ void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_c
 void BaseSatellite::starting_wrapper(std::string run_identifier) {
     starting(run_identifier);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::starting(run_identifier);
+    }
+
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
 }
 
 void BaseSatellite::stopping_wrapper() {
     stopping();
+
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::stopping();
+    }
 }
 
 void BaseSatellite::running_wrapper(const std::stop_token& stop_token) {

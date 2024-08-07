@@ -4,6 +4,7 @@
 satellite_src = files(
   'BaseSatellite.cpp',
   'CommandRegistry.cpp',
+  'TransmitterSatellite.cpp',
   'FSM.cpp',
   'Satellite.cpp',
 )
@@ -28,6 +29,7 @@ install_headers(
   'BaseSatellite.hpp',
   'CommandRegistry.hpp',
   'CommandRegistry.ipp',
+  'TransmitterSatellite.hpp',
   'exceptions.hpp',
   'FSM.hpp',
   'Satellite.hpp',

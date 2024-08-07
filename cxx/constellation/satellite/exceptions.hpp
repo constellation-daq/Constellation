@@ -159,4 +159,26 @@ namespace constellation::satellite {
         }
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Error when sending a message timed out
+     */
+    class SendTimeoutError : public SatelliteError {
+    public:
+        explicit SendTimeoutError(const std::string& what, std::chrono::seconds timeout) {
+            error_message_ = "Failed sending " + what + " after " + utils::to_string<std::chrono::seconds>(timeout);
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error when receiving a message timed out
+     */
+    class RecvTimeoutError : public satellite::SatelliteError {
+    public:
+        explicit RecvTimeoutError(const std::string& what, std::chrono::seconds timeout) {
+            error_message_ = "Failed receiving " + what + " after " + utils::to_string<std::chrono::seconds>(timeout);
+        }
+    };
+
 } // namespace constellation::satellite
