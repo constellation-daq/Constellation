@@ -3,7 +3,7 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-This module provides the class for a Constellation Satellite.
+Provides the class for the Mariner9 example satellite
 """
 
 from constellation.core.satellite import Satellite, SatelliteArgumentParser
@@ -14,23 +14,18 @@ from constellation.core.configuration import ConfigError, Configuration
 from constellation.core.base import EPILOG
 
 
-"""
-Mock class representing a device that can be utilised by a satellite
-"""
-
-
-class ExampleDevice1:
+class CanopusStarTracker:
     def __init__(self, voltage, ampere, sample_period=0.1):
         self.voltage = voltage
         self.ampere = ampere
         self.sample_period = sample_period
 
 
-class ExampleSatellite(Satellite):
+class Mariner9(Satellite):
 
     def do_initializing(self, config: Configuration) -> str:
         try:
-            self.device = ExampleDevice1(
+            self.device = CanopusStarTracker(
                 config["voltage"], config["current"], config["sample_period"]
             )
         except KeyError as e:
@@ -74,5 +69,5 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = ExampleSatellite(**args)
+    s = Mariner9(**args)
     s.run_satellite()
