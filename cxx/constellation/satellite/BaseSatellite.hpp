@@ -95,7 +95,7 @@ namespace constellation::satellite {
         /**
          * @brief Return the ephemeral port number to which the CSCP socket is bound to
          */
-        constexpr utils::Port getCommandPort() const { return port_; }
+        constexpr utils::Port getCommandPort() const { return cscp_port_; }
 
         /**
          * @brief Return the FSM of the satellite
@@ -205,8 +205,8 @@ namespace constellation::satellite {
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
 
     private:
-        zmq::socket_t rep_socket_;
-        utils::Port port_;
+        zmq::socket_t cscp_rep_socket_;
+        utils::Port cscp_port_;
 
         std::string_view satellite_type_;
         std::string_view satellite_name_;
