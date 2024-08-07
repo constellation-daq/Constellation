@@ -474,6 +474,7 @@ lint:coverity-scan:
         --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
         --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
         --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
+  timeout: 2h
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
