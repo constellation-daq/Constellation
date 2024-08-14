@@ -382,7 +382,7 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 }
 
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
-    class MySatellite : public DummySatellite {
+    class MySatellite : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
@@ -391,7 +391,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(MySatellite(), LogicError, Message("Command name is invalid"));
 
-    class MySatelliteI : public DummySatellite {
+    class MySatelliteI : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
@@ -400,7 +400,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(MySatelliteI(), LogicError, Message("Command name is invalid"));
 
-    class MySatellite2 : public DummySatellite {
+    class MySatellite2 : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
@@ -412,7 +412,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(MySatellite2(), LogicError, Message("Command \"my_cmd\" is already registered"));
 
-    class MySatellite3 : public DummySatellite {
+    class MySatellite3 : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
@@ -421,7 +421,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     };
     REQUIRE_THROWS_MATCHES(MySatellite3(), LogicError, Message("Satellite transition command with this name exists"));
 
-    class MySatellite4 : public DummySatellite {
+    class MySatellite4 : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
@@ -431,7 +431,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     REQUIRE_THROWS_MATCHES(MySatellite4(), LogicError, Message("Standard satellite command with this name exists"));
 
     // Command registration is case insensitive
-    class MySatellite5 : public DummySatellite {
+    class MySatellite5 : public DummySatellite<> {
         // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
         int cmd() { return 2; }
 
