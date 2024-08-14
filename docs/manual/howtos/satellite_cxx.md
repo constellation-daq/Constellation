@@ -10,17 +10,17 @@ This how-to describes the procedure of implementing a new Constellation satellit
 for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
 
-## Sending or Receiving Data
+## Transmitting or Receiving Data
 
-The first decision that needs to be taken is whether the satellite will produce and transmit data, or if it will receive and
-process data from other satellites.
+The first decision that needs to be taken if the satellite will produce and transmit data, if it will receive and process
+data from other satellites or not take part in data transmission at all.
 
 ## Implementing the FSM Transitions
 
 In Constellation, actions such as device configuration and initialization are realized through so-called transitional states
 which are entered by a command and exited as soon as their action is complete. A more detailed description on this can be found
 in the [satellite section](../concepts/satellite.md) of the framework concepts overview. The actions attached to these
-transitional states are implemented by overriding the virtual methods provided by the `Satellite` base class.
+transitional states are implemented by overriding the virtual methods provided by the {cpp:class}`Satellite <constellation::satellite::Satellite>` base class.
 
 For a new satellite, the following transitional state actions **should be implemented**:
 
@@ -68,7 +68,6 @@ void ExampleSatellite::stopping() {
     // Perform cleanup action here
 }
 ```
-
 
 ## To Reconfigure or Not To Reconfigure
 
@@ -122,6 +121,27 @@ the framework of the problem. The Constellation core library provides different 
 
 The message provided with the exception should be as descriptive as possible. It will both be logged and will be used as
 status message by the satellite.
+
+## Transmitting Data
+
+The {cpp:class}`TransmitterSatellite <constellation::satellite::TransmitterSatellite>` base class provides functions to send
+data. To use it the inheritance can simply be changed from {cpp:class}`Satellite <constellation::satellite::Satellite>`.
+
+To send data in the `RUN` state, a new data message can be created with {cpp:func}`TransmitterSatellite::newDataMessage() <constellation::satellite::TransmitterSatellite::newDataMessage()>`.
+Data can be added to the message as new data frame with {cpp:func}`DataMessage::addFrame() <constellation::satellite::TransmitterSatellite::DataMessage::addFrame()>`,
+which requires requires creating a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
+For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
+Optionally tags can be added to the data message for additional meta information using {cpp:func}`DataMessage::addTag() <constellation::satellite::TransmitterSatellite::DataMessage::addTag()>`.
+Finally the message can be send using {cpp:func}`TransmitterSatellite::sendDataMessage() <constellation::satellite::TransmitterSatellite::sendDataMessage()>`,
+which returns if the message was sent (or added to the send queue) successfully. This return value has to be checked, since
+a return value of `false` indicates that the message could not be sent due to a slow receiver. In this case, one can either
+discard the message, try to send it again or throw an exception to abort the run.
+
+### Adding Metadata to a Run
+
+Arbitrary metadata can be attached to the run, which will be send in the EOR message. This might include things like a
+firmware version of a detector. To set this run metadata, a {cpp:class}`Dictionary <constellation::config::Dictionary>` has
+to be created and set via {cpp:func}`TransmitterSatellite::setRunMetadata() <constellation::satellite::TransmitterSatellite::setRunMetadata()>`.
 
 ## Building the Satellite
 
