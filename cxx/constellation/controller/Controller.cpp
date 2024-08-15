@@ -41,9 +41,13 @@ Controller::Controller(std::string_view controller_name)
         chirp_manager->registerDiscoverCallback(&Controller::callback, chirp::CONTROL, this);
         chirp_manager->sendRequest(chirp::CONTROL);
     }
+
+    // Start heartbeat receiver:
+    heartbeat_receiver_.start();
 }
 
 Controller::~Controller() {
+    heartbeat_receiver_.stop();
 
     // Unregister callback
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
