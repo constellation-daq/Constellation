@@ -38,7 +38,6 @@ namespace constellation::pools {
         : logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {}
 
     template <typename MESSAGE> void BasePool<MESSAGE>::start() {
-
         // Start the pool thread
         pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
@@ -51,7 +50,7 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
+    template <typename MESSAGE> void BasePool<MESSAGE>::stop() {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
             // Unregister CHIRP discovery callback:
@@ -60,15 +59,16 @@ namespace constellation::pools {
 
         // Stop the pool thread
         pool_thread_.request_stop();
-        af_.test_and_set();
-        af_.notify_one();
-
         if(pool_thread_.joinable()) {
             pool_thread_.join();
         }
 
         // Disconnect from all remote sockets
         disconnect_all();
+    }
+
+    template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
+        stop();
     }
 
     template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService& /*service*/) {
@@ -125,6 +125,7 @@ namespace constellation::pools {
             // Register the socket with the poller
             poller_.add(socket, zmq::event_flags::pollin, handler);
             sockets_.emplace(service, std::move(socket));
+            sockets_empty_.store(false);
             LOG(logger_, DEBUG) << "Connected to " << service.to_uri();
         } catch(const zmq::error_t& error) {
             // The socket is emplaced in the list only on success of connection and poller registration and goes out of scope
@@ -153,6 +154,7 @@ namespace constellation::pools {
             }
         }
         sockets_.clear();
+        sockets_empty_.store(true);
     }
 
     template <typename MESSAGE> void BasePool<MESSAGE>::disconnect(const chirp::DiscoveredService& service) {
@@ -178,6 +180,7 @@ namespace constellation::pools {
             }
 
             sockets_.erase(socket_it);
+            sockets_empty_.store(sockets_.empty());
             LOG(logger_, DEBUG) << "Disconnected from " << service.to_uri();
         }
     }
@@ -190,10 +193,6 @@ namespace constellation::pools {
         } else if(should_connect(service)) {
             connect(service);
         }
-
-        // Ping the loop thread
-        af_.test_and_set();
-        af_.notify_one();
     }
 
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -207,28 +206,17 @@ namespace constellation::pools {
         try {
             while(!stop_token.stop_requested()) {
                 using namespace std::literals::chrono_literals;
-                std::unique_lock lock {sockets_mutex_, std::defer_lock};
 
                 // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
                 std::this_thread::sleep_for(1ns);
 
-                // Try to get the lock, if fails just continue
-                const auto locked = lock.try_lock_for(50ms);
-                if(!locked) {
+                // The poller doesn't work if no socket registered
+                if(sockets_empty_.load()) {
+                    std::this_thread::sleep_for(50ms);
                     continue;
                 }
 
-                // Poller crashes if called with no sockets attached, thus check
-                if(sockets_.empty()) {
-                    // Unlock so that other threads can modify sockets_
-                    lock.unlock();
-
-                    // Wait to get notified that either sockets_ was modified or a stop was requested
-                    af_.wait(false);
-                    af_.clear();
-                    // Go to next loop iteration in case a stop was requested
-                    continue;
-                }
+                const std::lock_guard lock {sockets_mutex_};
 
                 // The poller returns immediately when a socket received something, but will time out after the set period:
                 poller_.wait(50ms);
@@ -238,9 +226,6 @@ namespace constellation::pools {
 
             // Save exception
             exception_ptr_ = std::current_exception();
-
-            // Propagate that the worker terminated
-            af_.notify_one();
         }
     }
 } // namespace constellation::pools
