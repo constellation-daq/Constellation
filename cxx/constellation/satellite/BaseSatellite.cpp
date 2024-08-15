@@ -44,6 +44,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation;
@@ -388,6 +389,11 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
     initializing(config);
 
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::initializing_receiver(config);
+    }
+
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::initializing_transmitter(config);
@@ -408,6 +414,11 @@ void BaseSatellite::landing_wrapper() {
 void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_config) {
     reconfiguring(partial_config);
 
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::reconfiguring_receiver(partial_config);
+    }
+
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::reconfiguring_transmitter(partial_config);
@@ -420,6 +431,11 @@ void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_c
 void BaseSatellite::starting_wrapper(std::string run_identifier) {
     starting(run_identifier);
 
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::starting_receiver();
+    }
+
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::starting_transmitter(run_identifier, config_);
@@ -431,6 +447,11 @@ void BaseSatellite::starting_wrapper(std::string run_identifier) {
 
 void BaseSatellite::stopping_wrapper() {
     stopping();
+
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::stopping_receiver();
+    }
 
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
