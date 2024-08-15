@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
 #include <utility>
 
 #include <zmq.hpp>
@@ -140,7 +141,8 @@ namespace constellation::satellite {
          * @param command Command string to try to handle as standard command
          * @return CSCP reply verb and message payload if a standard command
          */
-        std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer>>
+        std::optional<
+            std::tuple<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer, config::Dictionary>>
         handle_standard_command(std::string_view command);
 
         /**

@@ -19,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <tuple>
 #include <utility>
 #include <variant>
 
@@ -139,10 +140,11 @@ void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_
     msg.assemble().send(rep_socket_);
 }
 
-std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer>>
+std::optional<std::tuple<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer, config::Dictionary>>
 BaseSatellite::handle_standard_command(std::string_view command) {
     std::pair<message::CSCP1Message::Type, std::string> return_verb {};
     message::PayloadBuffer return_payload {};
+    config::Dictionary return_tags {};
 
     auto command_enum = magic_enum::enum_cast<CSCP::StandardCommand>(command, magic_enum::case_insensitive);
     if(!command_enum.has_value()) {
@@ -228,7 +230,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     default: std::unreachable();
     }
 
-    return std::make_pair(return_verb, std::move(return_payload));
+    return std::make_tuple(return_verb, std::move(return_payload), std::move(return_tags));
 }
 
 std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer>>
@@ -309,7 +311,9 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             // Try to decode as other builtin (non-transition) commands
             auto standard_command_reply = handle_standard_command(command_string);
             if(standard_command_reply.has_value()) {
-                send_reply(standard_command_reply.value().first, std::move(standard_command_reply.value().second));
+                send_reply(std::get<0>(standard_command_reply.value()),
+                           std::move(std::get<1>(standard_command_reply.value())),
+                           std::move(std::get<2>(standard_command_reply.value())));
                 continue;
             }
 
