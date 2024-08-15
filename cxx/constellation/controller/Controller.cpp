@@ -197,17 +197,19 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
 
     std::optional<std::chrono::system_clock::time_point> time;
     for(auto& [name, sat] : connections_) {
-        // Obtain run starting time:
-        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_time"});
+        // Obtain run starting time from get_state command metadata:
+        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
         const auto recv_msg = send_receive(sat, send_msg);
 
         try {
-            const auto value = Value::disassemble(recv_msg.getPayload());
-            if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS &&
-               std::holds_alternative<std::chrono::system_clock::time_point>(value)) {
-                if(value.get<std::chrono::system_clock::time_point>() > time) {
-                    time = value.get<std::chrono::system_clock::time_point>();
-                }
+            const auto state = magic_enum::enum_cast<CSCP::State>(recv_msg.getVerb().second).value_or(CSCP::State::NEW);
+            const auto& header = recv_msg.getHeader();
+            if(state == CSCP::State::RUN && header.hasTag("last_changed")) {
+                const auto timestamp = header.getTag<std::chrono::system_clock::time_point>("last_changed");
+                LOG(logger_, DEBUG) << "Run started for " << std::quoted(header.getSender()) << " at "
+                                    << utils::to_string(timestamp);
+                // Use latest available timestamp:
+                time = std::max(timestamp, time.value_or(timestamp));
             }
         } catch(const msgpack::unpack_error&) {
             continue;
