@@ -135,7 +135,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
 void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb,
                                message::PayloadBuffer payload,
                                config::Dictionary tags) {
-    auto msg = CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), tags}, std::move(reply_verb));
+    auto msg = CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), std::move(tags)}, std::move(reply_verb));
     msg.addPayload(std::move(payload));
     msg.assemble().send(rep_socket_);
 }
@@ -198,7 +198,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     }
     case get_state: {
         return_verb = {CSCP1Message::Type::SUCCESS, to_string(fsm_.getState())};
-        return_payload = Value::set(fsm_.getState()).assemble();
+        return_payload = Value::set(std::to_underlying(fsm_.getState())).assemble();
         return_tags["last_changed"] = fsm_.getLastChanged();
         return_tags["last_changed_iso"] = utils::to_string(fsm_.getLastChanged());
         break;

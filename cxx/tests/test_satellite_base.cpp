@@ -105,14 +105,9 @@ TEST_CASE("Standard commands", "[satellite]") {
     REQUIRE(recv_msg_get_state.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_state.getVerb().second), Equals("NEW"));
     const auto& recv_get_state_payload = recv_msg_get_state.getPayload();
-    std::size_t recv_get_state_offset = 0;
-    auto recv_get_state_msgpack_state = msgpack::unpack(
-        to_char_ptr(recv_get_state_payload.span().data()), recv_get_state_payload.span().size(), recv_get_state_offset);
+    auto recv_get_state_msgpack_state =
+        msgpack::unpack(to_char_ptr(recv_get_state_payload.span().data()), recv_get_state_payload.span().size());
     REQUIRE(recv_get_state_msgpack_state->as<std::underlying_type_t<CSCP::State>>() == std::to_underlying(CSCP::State::NEW));
-    const auto recv_get_state_msgpack_last_changed = msgpack::unpack(
-        to_char_ptr(recv_get_state_payload.span().data()), recv_get_state_payload.span().size(), recv_get_state_offset);
-    REQUIRE(recv_get_state_msgpack_last_changed->as<std::chrono::system_clock::time_point>() <
-            std::chrono::system_clock::now());
 
     // get_status
     sender.sendCommand("get_status");
