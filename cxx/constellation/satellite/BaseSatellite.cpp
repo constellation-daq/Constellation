@@ -131,8 +131,10 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     return message;
 }
 
-void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb, message::PayloadBuffer payload) {
-    auto msg = CSCP1Message({getCanonicalName()}, std::move(reply_verb));
+void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb,
+                               message::PayloadBuffer payload,
+                               config::Dictionary tags) {
+    auto msg = CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), tags}, std::move(reply_verb));
     msg.addPayload(std::move(payload));
     msg.assemble().send(rep_socket_);
 }

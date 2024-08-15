@@ -128,8 +128,11 @@ namespace constellation::satellite {
          *
          * @param reply_verb CSCP reply verb
          * @param payload Optional message payload
+         * @param tags Header metadata
          */
-        void send_reply(std::pair<message::CSCP1Message::Type, std::string> reply_verb, message::PayloadBuffer payload = {});
+        void send_reply(std::pair<message::CSCP1Message::Type, std::string> reply_verb,
+                        message::PayloadBuffer payload = {},
+                        config::Dictionary tags = {});
 
         /**
          * @brief Handle standard CSCP commands
