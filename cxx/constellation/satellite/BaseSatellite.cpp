@@ -85,10 +85,12 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
 
     // Register state callback for extrasystoles
-    fsm_.registerStateCallback([&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
+    fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
 }
 
 BaseSatellite::~BaseSatellite() {
+    fsm_.unregisterStateCallback("extrasystoles");
+
     cscp_thread_.request_stop();
     join();
 }

@@ -131,9 +131,19 @@ namespace constellation::satellite {
          * This function adds a new state update callback. Registered callbacks are used to distribute the state of the FSM
          * whenever it was changed
          *
+         * @param identifier Identifier string for this callback
          * @param callback Callback taking the new state as argument
          */
-        CNSTLN_API void registerStateCallback(std::function<void(State)> callback);
+        CNSTLN_API void registerStateCallback(const std::string& identifier, std::function<void(State)> callback);
+
+        /**
+         * @brief Unregistering a state callback
+         *
+         * This function removed the state update callback with the given identifier
+         *
+         * @param identifier Identifier string for this callback
+         */
+        CNSTLN_API void unregisterStateCallback(const std::string& identifier);
 
     private:
         /**
@@ -260,7 +270,7 @@ namespace constellation::satellite {
         std::thread failure_thread_;
 
         /** State update callback */
-        std::vector<std::function<void(State)>> state_callbacks_;
+        std::map<std::string, std::function<void(State)>> state_callbacks_;
         std::mutex state_callbacks_mutex_;
     };
 
