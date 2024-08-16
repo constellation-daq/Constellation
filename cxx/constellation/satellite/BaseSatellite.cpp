@@ -446,12 +446,13 @@ void BaseSatellite::starting_wrapper(std::string run_identifier) {
 }
 
 void BaseSatellite::stopping_wrapper() {
-    stopping();
-
+    // stopping from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
         receiver_ptr->ReceiverSatellite::stopping_receiver();
     }
+
+    stopping();
 
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {

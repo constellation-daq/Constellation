@@ -63,12 +63,6 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
 }
 
 void ReceiverSatellite::starting_receiver() {
-    // Request DATA services via CHIRP in case we missed something
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
-    if(chirp_manager != nullptr) {
-        chirp_manager->sendRequest(chirp::DATA);
-    }
-
     // Start BasePool thread
     startPool();
 }
