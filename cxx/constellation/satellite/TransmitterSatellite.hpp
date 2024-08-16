@@ -54,6 +54,13 @@ namespace constellation::satellite {
              */
             void addTag(const std::string& key, config::Value value) { getHeader().setTag(key, std::move(value)); }
 
+            /**
+             * @brief Obtain current number of frames in this message
+             *
+             * @return Current number of data frames
+             */
+            std::size_t countFrames() const { return countPayloadFrames(); }
+
         private:
             // TransmitterSatellite needs access to constructor
             friend TransmitterSatellite;
