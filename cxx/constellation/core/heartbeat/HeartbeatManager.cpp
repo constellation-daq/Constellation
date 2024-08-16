@@ -37,11 +37,11 @@ HeartbeatManager::HeartbeatManager(std::string sender,
     : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       sender_(std::move(sender), std::move(state_callback), 5000ms), interrupt_callback_(std::move(interrupt_callback)),
       logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
-    receiver_.start();
+    receiver_.startPool();
 }
 
 HeartbeatManager::~HeartbeatManager() {
-    receiver_.stop();
+    receiver_.stopPool();
 
     watchdog_thread_.request_stop();
     if(watchdog_thread_.joinable()) {

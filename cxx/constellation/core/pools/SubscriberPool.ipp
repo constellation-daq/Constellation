@@ -11,21 +11,16 @@
 
 #include "SubscriberPool.hpp"
 
-#include <any>
 #include <functional>
+#include <initializer_list>
 #include <mutex>
-#include <set>
-#include <stop_token>
-#include <thread>
+#include <string>
+#include <string_view>
 #include <utility>
 
 #include <zmq.hpp>
-#include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/log/log.hpp"
-#include "constellation/core/message/CHIRPMessage.hpp"
-#include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 
 namespace constellation::pools {
 

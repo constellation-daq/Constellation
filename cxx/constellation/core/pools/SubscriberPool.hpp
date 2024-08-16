@@ -10,9 +10,13 @@
 #pragma once
 
 #include <functional>
+#include <initializer_list>
 #include <set>
+#include <string>
+#include <string_view>
 
-#include "BasePool.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/pools/BasePool.hpp"
 
 namespace constellation::pools {
 
