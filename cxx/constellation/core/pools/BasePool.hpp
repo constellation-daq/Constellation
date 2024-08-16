@@ -20,11 +20,8 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/message/CHP1Message.hpp"
-#include "constellation/core/message/exceptions.hpp"
 
 namespace constellation::pools {
 
@@ -67,17 +64,17 @@ namespace constellation::pools {
          * @brief Check if pool thread has thrown an exception
          * @throw Exception thrown by pool thread, if any
          */
-        void checkException();
+        void checkPoolException();
 
         /**
          * @brief Start the pool thread and send the CHIRP requests
          */
-        void start();
+        void startPool();
 
         /**
          * @brief Stop the pool thread
          */
-        void stop();
+        void stopPool();
 
     protected:
         /**
@@ -115,7 +112,7 @@ namespace constellation::pools {
     protected:
         std::mutex sockets_mutex_; // NOLINT(*-non-private-member-variables-in-classes)
 
-        log::Logger logger_; // NOLINT(*-non-private-member-variables-in-classes)
+        log::Logger pool_logger_; // NOLINT(*-non-private-member-variables-in-classes)
 
     private:
         /**
