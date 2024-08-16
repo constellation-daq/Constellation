@@ -44,6 +44,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation;
 using namespace constellation::config;
@@ -55,8 +56,8 @@ using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
 BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
-    : logger_("SATELLITE"), rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
-      port_(bind_ephemeral_port(rep_socket_)), satellite_type_(type), satellite_name_(name), fsm_(this),
+    : logger_("SATELLITE"), cscp_rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
+      cscp_port_(bind_ephemeral_port(cscp_rep_socket_)), satellite_type_(type), satellite_name_(name), fsm_(this),
       cscp_logger_("CSCP"), heartbeat_manager_(
                                 getCanonicalName(),
                                 [&]() { return fsm_.getState(); },
@@ -68,17 +69,17 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     }
 
     // Set receive timeout for CSCP socket
-    rep_socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
+    cscp_rep_socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(chirp::CONTROL, port_);
+        chirp_manager->registerService(chirp::CONTROL, cscp_port_);
     } else {
         LOG(cscp_logger_, WARNING)
             << "Failed to advertise command receiver on the network, satellite might not be discovered";
     }
-    LOG(cscp_logger_, INFO) << "Starting to listen to commands on port " << port_;
+    LOG(cscp_logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
 
     // Start receiving CSCP commands
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
@@ -115,7 +116,7 @@ void BaseSatellite::terminate() {
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     // Receive next message
     zmq::multipart_t recv_msg {};
-    auto received = recv_msg.recv(rep_socket_);
+    auto received = recv_msg.recv(cscp_rep_socket_);
 
     // Return if timeout
     if(!received) {
@@ -137,7 +138,7 @@ void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_
                                config::Dictionary tags) {
     auto msg = CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), std::move(tags)}, std::move(reply_verb));
     msg.addPayload(std::move(payload));
-    msg.assemble().send(rep_socket_);
+    msg.assemble().send(cscp_rep_socket_);
 }
 
 std::optional<std::tuple<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer, config::Dictionary>>
@@ -385,6 +386,11 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
     initializing(config);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::initializing_transmitter(config);
+    }
+
     // Store config after initializing
     store_config(std::move(config));
 }
@@ -400,6 +406,11 @@ void BaseSatellite::landing_wrapper() {
 void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_config) {
     reconfiguring(partial_config);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::reconfiguring_transmitter(partial_config);
+    }
+
     // Update stored config after reconfigure
     update_config(partial_config);
 }
@@ -407,12 +418,22 @@ void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_c
 void BaseSatellite::starting_wrapper(std::string run_identifier) {
     starting(run_identifier);
 
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::starting_transmitter(run_identifier, config_);
+    }
+
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
 }
 
 void BaseSatellite::stopping_wrapper() {
     stopping();
+
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::stopping_transmitter();
+    }
 }
 
 void BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
