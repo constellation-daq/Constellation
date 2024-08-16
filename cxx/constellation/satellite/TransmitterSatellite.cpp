@@ -17,6 +17,7 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/utils/networking.hpp"
@@ -79,10 +80,11 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     }
 }
 
-void TransmitterSatellite::starting_transmitter(std::string_view /* run_identifier */, const config::Configuration& config) {
+void TransmitterSatellite::starting_transmitter(std::string_view run_identifier, const config::Configuration& config) {
     // Reset run metadata and sequence counter
     seq_ = 0;
     run_metadata_ = {};
+    run_metadata_["run_id"] = Value::set(run_identifier);
 
     // Create CDTP1 message for BOR
     CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR}, 1};
