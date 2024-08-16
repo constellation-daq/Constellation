@@ -225,6 +225,14 @@ bool Controller::isInState(CSCP::State state) const {
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
 }
 
+bool Controller::isInGlobalState() const {
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    return std::ranges::adjacent_find(connections_.cbegin(), connections_.cend(), [](auto const& x, auto const& y) {
+               return x.second.state != y.second.state;
+           }) == connections_.cend();
+}
+
 CSCP::State Controller::getLowestState() const {
     const std::lock_guard connection_lock {connection_mutex_};
 

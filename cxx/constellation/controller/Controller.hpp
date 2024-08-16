@@ -173,6 +173,13 @@ namespace constellation::controller {
         bool isInState(protocol::CSCP::State state) const;
 
         /**
+         * @brief Helper to check if the constellation is in a coherent global state of if states are mixed
+         *
+         * @return True if all connected satellites are in the same state, false if states are mixed
+         */
+        bool isInGlobalState() const;
+
+        /**
          * @brief Get lowest state of any satellite connected
          * @details This returns the lowest state of any of the satellites. Here, "lowest" refers to the state code, i.e. the
          * underlying value of the protocol::CSCP::State enum.
