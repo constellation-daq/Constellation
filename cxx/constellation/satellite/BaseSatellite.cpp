@@ -200,7 +200,6 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         return_verb = {CSCP1Message::Type::SUCCESS, to_string(fsm_.getState())};
         return_payload = Value::set(std::to_underlying(fsm_.getState())).assemble();
         return_tags["last_changed"] = fsm_.getLastChanged();
-        return_tags["last_changed_iso"] = utils::to_string(fsm_.getLastChanged());
         break;
     }
     case get_status: {
