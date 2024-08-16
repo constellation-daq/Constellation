@@ -11,6 +11,7 @@
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
@@ -242,6 +243,19 @@ TEST_CASE("Message Assembly / Disassembly (CDTP1)", "[core][core::message]") {
 
     REQUIRE_THAT(cdtp1_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCDTP"));
     REQUIRE(cdtp1_msg2.getPayload().empty());
+}
+
+TEST_CASE("Message Assembly / Disassembly (CDTP1, wrong number of frames)", "[core][core::message]") {
+    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::BOR}, 2};
+    cdtp1_msg.addPayload("frame1"s);
+    cdtp1_msg.addPayload("frame2"s);
+
+    auto frames = cdtp1_msg.assemble();
+
+    REQUIRE_THROWS_MATCHES(
+        CDTP1Message::disassemble(frames),
+        MessageDecodingError,
+        Message("Error decoding message: Wrong number of frames for BOR, exactly one payload frame expected"));
 }
 
 TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
