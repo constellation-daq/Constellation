@@ -98,6 +98,7 @@ TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
     cscp1_header.setTag("test_d", std::numbers::pi);
     cscp1_header.setTag("test_s", "String"s);
     cscp1_header.setTag("test_t", tp);
+    cscp1_header.setTag("Test_C", 0);
 
     // Pack header
     msgpack::sbuffer sbuf {};
@@ -107,12 +108,14 @@ TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
     const auto cscp1_header_unpacked = CSCP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
 
     // Compare unpacked header
-    REQUIRE(cscp1_header_unpacked.getTags().size() == 5);
+    REQUIRE(cscp1_header_unpacked.getTags().size() == 6);
     REQUIRE(cscp1_header_unpacked.getTag<bool>("test_b"));
     REQUIRE(cscp1_header_unpacked.getTag<std::int64_t>("test_i") == std::numeric_limits<std::int64_t>::max());
     REQUIRE(cscp1_header_unpacked.getTag<double>("test_d") == std::numbers::pi);
     REQUIRE_THAT(cscp1_header_unpacked.getTag<std::string>("test_s"), Equals("String"));
     REQUIRE(cscp1_header_unpacked.getTag<std::chrono::system_clock::time_point>("test_t") == tp);
+    REQUIRE(cscp1_header_unpacked.hasTag("tEst_C"));
+    REQUIRE(cscp1_header_unpacked.getTag<int>("teSt_c") == 0);
 }
 
 TEST_CASE("Header Packing / Unpacking (invalid protocol)", "[core][core::message]") {
