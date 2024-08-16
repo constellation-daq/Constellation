@@ -39,17 +39,14 @@ namespace constellation::pools {
         // Start the pool thread
         pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
-        // Call callback for all already discovered services
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
-            const auto discovered_services = chirp_manager->getDiscoveredServices(chirp::DATA);
+            // Call callback for all already discovered services
+            const auto discovered_services = chirp_manager->getDiscoveredServices(service_);
             for(const auto& discovered_service : discovered_services) {
                 callback_impl(discovered_service, false);
             }
-        }
 
-        auto* chirp_manager = chirp::Manager::getDefaultInstance();
-        if(chirp_manager != nullptr) {
             // Register CHIRP callback
             chirp_manager->registerDiscoverCallback(&BasePool::callback, service_, this);
             // Request currently active services
