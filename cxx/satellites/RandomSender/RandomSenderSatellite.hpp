@@ -20,7 +20,7 @@
 
 class RandomSenderSatellite final : public constellation::satellite::TransmitterSatellite {
 public:
-    RandomSenderSatellite(std::string_view type_name, std::string_view satellite_name);
+    RandomSenderSatellite(std::string_view type, std::string_view name);
 
     void initializing(constellation::config::Configuration& config) final;
     void reconfiguring(const constellation::config::Configuration& partial_config) final;

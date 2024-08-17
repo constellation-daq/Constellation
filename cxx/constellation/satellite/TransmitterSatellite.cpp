@@ -10,11 +10,13 @@
 #include "TransmitterSatellite.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 
 #include <zmq.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Value.hpp"

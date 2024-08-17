@@ -27,8 +27,8 @@ using namespace constellation::config;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-RandomSenderSatellite::RandomSenderSatellite(std::string_view type_name, std::string_view satellite_name)
-    : TransmitterSatellite(type_name, satellite_name), byte_rng_(generate_random_seed()) {
+RandomSenderSatellite::RandomSenderSatellite(std::string_view type, std::string_view name)
+    : TransmitterSatellite(type, name), byte_rng_(generate_random_seed()) {
     support_reconfigure();
 }
 
