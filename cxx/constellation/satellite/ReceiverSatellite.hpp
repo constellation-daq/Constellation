@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstdint>
+#include <mutex>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -23,6 +26,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -33,6 +37,13 @@ namespace constellation::satellite {
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
           private pools::BasePool<message::CDTP1Message, chirp::DATA, zmq::socket_type::pull> {
+    private:
+        enum class TransmitterState : std::uint8_t {
+            NOT_CONNECTED,
+            BOR_RECEIVED,
+            EOR_RECEIVED,
+        };
+
     protected:
         /**
          * @brief Construct a data receiving satellite
@@ -94,6 +105,7 @@ namespace constellation::satellite {
          * @brief Initialize receiver components of satellite
          *
          * Reads the following config parameters:
+         * * `_data_eor_timeout`
          * * `_data_transmitters`
          *
          * @param config Configuration of the satellite
@@ -104,6 +116,7 @@ namespace constellation::satellite {
          * @brief Reconfigure receiver components of satellite
          *
          * Supports reconfiguring of the following config parameters:
+         * * `_data_eor_timeout`
          * * `_data_transmitters`
          *
          * @param partial_config Changes to the configuration of the satellite
@@ -120,9 +133,16 @@ namespace constellation::satellite {
         /**
          * @brief Stop receiver components of satellite
          *
-         * This function stops the BasePool thread.
+         * This function stops the BasePool thread and waits for the EOR messages.
+         *
+         * @throw RecvTimeoutError If EOR of sallites that send a BOR is not received after timeout
          */
         void stopping_receiver();
+
+        /**
+         * @brief Reset the states of all (configured) data transmitters to `NOT_CONNECTED`
+         */
+        void reset_data_transmitter_states();
 
         /**
          * @brief Callback function for BasePool to handle CDTP messages
@@ -131,9 +151,33 @@ namespace constellation::satellite {
          */
         void handle_cdtp_message(const message::CDTP1Message& message);
 
+        /**
+         * @brief Handle BOR message before passing it to `receive_bor()`
+         *
+         * @throw InvalidCDTPMessageType If already a BOR received
+         */
+        void handle_bor_message(const message::CDTP1Message& bor_message);
+
+        /**
+         * @brief Handle DATA message before passing it to `receive_data()`
+         *
+         * @throw InvalidCDTPMessageType If no BOR received yet
+         */
+        void handle_data_message(const message::CDTP1Message& data_message);
+
+        /**
+         * @brief Handle EOR message before passing it to `receive_eor()`
+         *
+         * @throw InvalidCDTPMessageType If no BOR received yet
+         */
+        void handle_eor_message(const message::CDTP1Message& eor_message);
+
     private:
         log::Logger cdtp_logger_;
+        std::chrono::seconds data_eor_timeout_ {};
         std::vector<std::string> data_transmitters_;
+        utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
+        std::mutex data_transmitter_states_mutex_;
     };
 
 } // namespace constellation::satellite
