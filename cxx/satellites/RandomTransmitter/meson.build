@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Build satellite only if feature is enabled:
-if not get_option('satellite_random_sender').enabled()
+if not get_option('satellite_random_transmitter').enabled()
   subdir_done()
 endif
 
-satellite_type = 'RandomSender'
+satellite_type = 'RandomTransmitter'
 
 satellite_sources = files(
-  'RandomSenderSatellite.cpp',
+  'RandomTransmitterSatellite.cpp',
 )
 
 # Automatic generation of library interface and satellite executable:

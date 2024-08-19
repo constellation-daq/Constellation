@@ -1,17 +1,17 @@
 ---
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
-title: "RandomSender"
-subtitle: "A satellite that sends random data"
+title: "RandomTransmitter"
+subtitle: "A satellite that transmits random data"
 ---
 
 ## Building
 
-The RandomSender satellite has no additional dependencies.
+The RandomTransmitter satellite has no additional dependencies.
 It is not build by default, building can be enabled via:
 
 ```sh
-meson configure build -Dsatellite_random_sender=enabled
+meson configure build -Dsatellite_random_transmitter=enabled
 ```
 
 ## Parameters
