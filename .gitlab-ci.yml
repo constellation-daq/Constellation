@@ -155,7 +155,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
-    - meson setup build -Dcxx_tests=enabled -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_satellites.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
@@ -508,7 +508,7 @@ format:clang-format:
     - .format
     - .debian-clang
   script:
-    - meson setup build -Dcxx_tests=enabled
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_satellites.sh)
     - ninja -C build clang-format-check
 
 format:reuse:
