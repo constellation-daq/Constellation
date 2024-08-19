@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <functional>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -42,6 +43,10 @@ namespace constellation::satellite {
             NOT_CONNECTED,
             BOR_RECEIVED,
             EOR_RECEIVED,
+        };
+        struct TransmitterStateSeq {
+            TransmitterState state;
+            std::uint64_t seq;
         };
 
     protected:
@@ -192,6 +197,7 @@ namespace constellation::satellite {
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
+        std::uint64_t seqs_missed_ {};
     };
 
 } // namespace constellation::satellite
