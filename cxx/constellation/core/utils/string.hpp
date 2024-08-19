@@ -138,7 +138,7 @@ namespace constellation::utils {
 
     /** Converts a range to a string with custom to_string function and delimiter */
     template <typename R, typename F>
-        requires std::ranges::range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
+        requires std::ranges::bidirectional_range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
     inline std::string range_to_string(const R& range, F to_string_func, const std::string& delim = ", ") {
         std::string out {};
         if(!std::ranges::empty(range)) {
@@ -151,7 +151,7 @@ namespace constellation::utils {
 
     /** Converts a range to a string with custom delimiter */
     template <typename R>
-        requires std::ranges::range<R> && convertible_to_string<std::ranges::range_value_t<R>>
+        requires std::ranges::bidirectional_range<R> && convertible_to_string<std::ranges::range_value_t<R>>
     inline std::string range_to_string(const R& range, const std::string& delim = ", ") {
         return range_to_string(range, to_string<std::ranges::range_value_t<R>>, delim);
     }
