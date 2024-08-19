@@ -41,7 +41,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/networking.hpp"
-#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
@@ -465,9 +465,22 @@ void BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
 }
 
 void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
+    // stopping from receiver needs to come first to wait for all EORs
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        LOG(logger_, DEBUG) << "Interrupting: execute interrupting_receiver";
+        receiver_ptr->ReceiverSatellite::interrupting_receiver();
+    }
+
     interrupting(previous_state);
 }
 
 void BaseSatellite::failure_wrapper(CSCP::State previous_state) {
+    // failure from receiver needs to come first to stop BasePool thread
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::failure_receiver();
+    }
+
     failure(previous_state);
 }

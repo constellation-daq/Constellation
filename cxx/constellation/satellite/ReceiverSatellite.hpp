@@ -140,6 +140,20 @@ namespace constellation::satellite {
         void stopping_receiver();
 
         /**
+         * @brief Interrupt receiver components of satellite
+         *
+         * This function calls the `stopping_receiver()` method, but emits fake EOR messages instead of throwing.
+         */
+        void interrupting_receiver();
+
+        /**
+         * @brief Failure function for receiver components of satellite
+         *
+         * This function stops the BasePool thread.
+         */
+        void failure_receiver();
+
+        /**
          * @brief Reset the states of all (configured) data transmitters to `NOT_CONNECTED`
          */
         void reset_data_transmitter_states();

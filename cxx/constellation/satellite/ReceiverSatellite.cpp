@@ -138,6 +138,38 @@ void ReceiverSatellite::stopping_receiver() {
     stopPool();
 }
 
+void ReceiverSatellite::interrupting_receiver() {
+    // Stop as usual but do not throw if not all EOR messages received
+    try {
+        stopping_receiver();
+    } catch(const RecvTimeoutError&) {
+        // Stop BasePool thread and disconnect all connected sockets
+        stopPool();
+
+        // Filter for data transmitters that did not send an EOR
+        auto data_transmitter_no_eor = std::ranges::views::keys(
+            std::ranges::views::filter(data_transmitter_states_, [](const auto& data_transmitter_p) {
+                return data_transmitter_p.second == TransmitterState::BOR_RECEIVED;
+            }));
+
+        // Note: we do not have a biderectional range so the content needs to be copied to a vector
+        LOG(cdtp_logger_, WARNING) << "Not all EOR messages received, emitting substitute EOR messages for "
+                                   << range_to_string(std::ranges::to<std::vector>(data_transmitter_no_eor));
+
+        for(const auto& data_transmitter : data_transmitter_no_eor) {
+            LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
+            auto run_metadata = Dictionary();
+            run_metadata["substitute_eor"] = true;
+            receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
+        }
+    }
+}
+
+void ReceiverSatellite::failure_receiver() {
+    // Stop BasePool thread and disconnect all connected sockets
+    stopPool();
+}
+
 void ReceiverSatellite::reset_data_transmitter_states() {
     const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
     data_transmitter_states_.clear();
