@@ -48,6 +48,9 @@ void ReceiverSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         // Check and rethrow exception from BasePool
         checkPoolException();
+
+        // Wait a bit to avoid hot loop
+        std::this_thread::sleep_for(100ms);
     }
 }
 
