@@ -58,7 +58,7 @@ bool TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& me
     // Send data but do not wait for receiver
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     const auto sent = message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
-    if(!sent) {
+    if(!sent) [[unlikely]] {
         LOG(cdtp_logger_, DEBUG) << "Could not send message " << message.getHeader().getSequenceNumber();
     }
 

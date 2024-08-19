@@ -191,7 +191,7 @@ void ReceiverSatellite::handle_cdtp_message(const CDTP1Message& message) {
         handle_bor_message(message);
         break;
     }
-    case DATA: {
+    [[likely]] case DATA : {
         LOG(cdtp_logger_, TRACE) << "Received data message " << message.getHeader().getSequenceNumber() << " from "
                                  << message.getHeader().getSender();
         handle_data_message(message);
@@ -210,7 +210,7 @@ void ReceiverSatellite::handle_bor_message(const CDTP1Message& bor_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(bor_message.getHeader().getSender());
     // Check that transmitter is not connected yet
-    if(data_transmitter_it->second.state != TransmitterState::NOT_CONNECTED) {
+    if(data_transmitter_it->second.state != TransmitterState::NOT_CONNECTED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP1Message::Type::BOR, "already received BOR");
     }
     data_transmitter_it->second.state = TransmitterState::BOR_RECEIVED;
@@ -223,7 +223,7 @@ void ReceiverSatellite::handle_data_message(const CDTP1Message& data_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     const auto data_transmitter_it = data_transmitter_states_.find(data_message.getHeader().getSender());
     // Check that BOR was received
-    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) {
+    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP1Message::Type::DATA, "did not receive BOR");
     }
     // Store sequence number and missed messages
@@ -238,7 +238,7 @@ void ReceiverSatellite::handle_eor_message(const CDTP1Message& eor_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(eor_message.getHeader().getSender());
     // Check that BOR was received
-    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) {
+    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP1Message::Type::EOR, "did not receive BOR");
     }
     data_transmitter_it->second.state = TransmitterState::EOR_RECEIVED;
