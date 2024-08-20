@@ -237,7 +237,7 @@ namespace constellation::pools {
                 const std::lock_guard lock {sockets_mutex_};
 
                 // The poller returns immediately when a socket received something, but will time out after the set period:
-                poller_.wait(50ms);
+                poller_events_.store(poller_.wait(50ms));
             }
         } catch(...) {
             LOG(pool_logger_, DEBUG) << "Caught exception in pool thread";
