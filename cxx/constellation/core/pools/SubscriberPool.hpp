@@ -42,7 +42,7 @@ namespace constellation::pools {
          *        opening the socket
          */
         SubscriberPool(std::string_view log_topic,
-                       std::function<void(const MESSAGE&)> callback,
+                       std::function<void(MESSAGE&&)> callback,
                        std::initializer_list<std::string> default_topics = {});
 
         /**

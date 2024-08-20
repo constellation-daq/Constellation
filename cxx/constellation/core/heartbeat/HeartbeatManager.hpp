@@ -88,7 +88,7 @@ namespace constellation::heartbeat {
          *
          * @param msg Received CHP message from remote service
          * */
-        void process_heartbeat(const message::CHP1Message& msg);
+        void process_heartbeat(message::CHP1Message&& msg);
 
         /**
          * @brief Main loop of the manager which checks for heartbeats of registered remotes.

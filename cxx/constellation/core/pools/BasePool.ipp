@@ -30,8 +30,7 @@
 namespace constellation::pools {
 
     template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
-    BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::BasePool(std::string_view log_topic,
-                                                      std::function<void(const MESSAGE&)> callback)
+    BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::BasePool(std::string_view log_topic, std::function<void(MESSAGE&&)> callback)
         : pool_logger_(log_topic), message_callback_(std::move(callback)) {}
 
     template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
@@ -123,8 +122,7 @@ namespace constellation::pools {
                     auto received = zmq_msg.recv(sock);
                     if(received) {
                         try {
-                            const auto msg = MESSAGE::disassemble(zmq_msg);
-                            message_callback_(msg);
+                            message_callback_(MESSAGE::disassemble(zmq_msg));
                         } catch(const message::MessageDecodingError& error) {
                             LOG(pool_logger_, WARNING) << error.what();
                         } catch(const message::IncorrectMessageType& error) {

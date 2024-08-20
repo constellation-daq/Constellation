@@ -43,7 +43,7 @@ namespace constellation::pools {
          * @param log_topic Logger topic to be used for this component
          * @param callback Callback function pointer for received messages
          */
-        BasePool(std::string_view log_topic, std::function<void(const MESSAGE&)> callback);
+        BasePool(std::string_view log_topic, std::function<void(MESSAGE&&)> callback);
 
         /**
          * @brief Destruct BasePool
@@ -150,7 +150,7 @@ namespace constellation::pools {
         zmq::active_poller_t poller_;
         std::atomic_size_t poller_events_;
 
-        std::function<void(const MESSAGE&)> message_callback_;
+        std::function<void(MESSAGE&&)> message_callback_;
 
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::atomic_bool sockets_empty_ {true};
