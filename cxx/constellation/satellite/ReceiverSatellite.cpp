@@ -91,6 +91,17 @@ void ReceiverSatellite::starting_receiver() {
 }
 
 void ReceiverSatellite::stopping_receiver() {
+    // Wait until no more events returned by poller
+    while(pollerEvents() > 0) {
+        LOG(cdtp_logger_, TRACE) << "Poller still returned events, waiting before checking for EOR arrivals";
+
+        // Wait a bit to avoid hot loop
+        std::this_thread::sleep_for(100ms);
+    }
+    // Now start EOR timer
+    LOG(cdtp_logger_, DEBUG) << "Starting timeout for EOR arrivals (" << data_eor_timeout_ << ")";
+    const TimeoutTimer timer {data_eor_timeout_};
+
     // Warn about transmitters that never sent a BOR message
     if(cdtp_logger_.shouldLog(WARNING)) {
         const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
@@ -107,8 +118,6 @@ void ReceiverSatellite::stopping_receiver() {
         LOG_IF(cdtp_logger_, WARNING, seqs_missed_ > 0)
             << "Missed " << seqs_missed_ << " messages, data might be incomplete";
     }
-
-    const TimeoutTimer timer {data_eor_timeout_};
 
     // Loop until all data transmitters that sent a BOR also sent an EOR
     while(true) {
