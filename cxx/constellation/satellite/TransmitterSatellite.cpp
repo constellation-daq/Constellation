@@ -86,7 +86,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     // Reset run metadata and sequence counter
     seq_ = 0;
     run_metadata_ = {};
-    run_metadata_["run_id"] = Value::set(run_identifier);
+    setRunMetadataTag("run_id", run_identifier);
 
     // Create CDTP1 message for BOR
     CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR}, 1};
