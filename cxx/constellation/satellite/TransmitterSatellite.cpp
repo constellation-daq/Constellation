@@ -73,7 +73,7 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
     if(partial_config.has("_data_bor_timeout")) {
-        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_chirp_timeout"));
+        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_bor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
     }
     if(partial_config.has("_data_eor_timeout")) {
