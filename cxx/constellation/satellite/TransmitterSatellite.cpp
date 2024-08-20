@@ -100,6 +100,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     if(!sent) {
         throw SendTimeoutError("BOR message", data_bor_timeout_);
     }
+    LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
 
     // Reset timeout for data sending
     set_send_timeout();
@@ -118,4 +119,5 @@ void TransmitterSatellite::stopping_transmitter() {
     if(!sent) {
         throw SendTimeoutError("EOR message", data_eor_timeout_);
     }
+    LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 }
