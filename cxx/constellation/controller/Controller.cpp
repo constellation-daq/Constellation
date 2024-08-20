@@ -43,11 +43,11 @@ Controller::Controller(std::string_view controller_name)
     }
 
     // Start heartbeat receiver:
-    heartbeat_receiver_.start();
+    heartbeat_receiver_.startPool();
 }
 
 Controller::~Controller() {
-    heartbeat_receiver_.stop();
+    heartbeat_receiver_.stopPool();
 
     // Unregister callback
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
