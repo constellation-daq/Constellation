@@ -30,21 +30,20 @@ namespace constellation::pools {
      *
      * This class registers a CHIRP callback for the services defined via the template parameter, listens to incoming
      * messages and forwards them to a callback registered upon creation of the socket.
+     *
+     * @tparam MESSAGE Constellation Message class to be decoded
+     * @tparam SERVICE CHIRP service to connect to
+     * @tparam SOCKET_TYPE ZeroMQ socket type of connection
      */
-    template <typename MESSAGE> class BasePool {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE> class BasePool {
     public:
         /**
          * @brief Construct BasePool
          *
-         * @param service CHIRP service identifier for which a subscription should be made
          * @param log_topic Logger topic to be used for this component
          * @param callback Callback function pointer for received messages
-         * @param socket_type ZMQ socket type to use for connecting to service, e.g. sub or pull
          */
-        BasePool(chirp::ServiceIdentifier service,
-                 std::string_view log_topic,
-                 std::function<void(const MESSAGE&)> callback,
-                 zmq::socket_type socket_type);
+        BasePool(std::string_view log_topic, std::function<void(const MESSAGE&)> callback);
 
         /**
          * @brief Destruct BasePool
@@ -143,20 +142,16 @@ namespace constellation::pools {
         void disconnect_all();
 
     private:
-        chirp::ServiceIdentifier service_;
-
         zmq::active_poller_t poller_;
+        std::function<void(const MESSAGE&)> message_callback_;
 
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;
         std::atomic_bool sockets_empty_ {true};
 
         std::jthread pool_thread_;
         std::exception_ptr exception_ptr_ {nullptr};
-
-        std::function<void(const MESSAGE&)> message_callback_;
-        zmq::socket_type socket_type_;
     };
 } // namespace constellation::pools
 
 // Include template members
-#include "BasePool.ipp"
+#include "BasePool.ipp" // IWYU pragma: keep
