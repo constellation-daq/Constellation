@@ -75,6 +75,11 @@ namespace constellation::pools {
          */
         void stopPool();
 
+        /**
+         * @brief Return number of events returned by `poller_.wait()`
+         */
+        std::size_t pollerEvents() { return poller_events_.load(); }
+
     protected:
         /**
          * @brief Method to select which services to connect to. By default this pool connects to all discovered services,
@@ -143,6 +148,8 @@ namespace constellation::pools {
 
     private:
         zmq::active_poller_t poller_;
+        std::atomic_size_t poller_events_;
+
         std::function<void(const MESSAGE&)> message_callback_;
 
         std::map<chirp::DiscoveredService, zmq::socket_t> sockets_;

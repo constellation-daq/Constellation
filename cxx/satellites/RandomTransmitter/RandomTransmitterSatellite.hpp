@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Random data sender satellites
+ * @brief Random data transmitting satellite
  *
  * @copyright Copyright (c) 2024 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -18,9 +18,9 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
-class RandomSenderSatellite final : public constellation::satellite::TransmitterSatellite {
+class RandomTransmitterSatellite final : public constellation::satellite::TransmitterSatellite {
 public:
-    RandomSenderSatellite(std::string_view type_name, std::string_view satellite_name);
+    RandomTransmitterSatellite(std::string_view type, std::string_view name);
 
     void initializing(constellation::config::Configuration& config) final;
     void reconfiguring(const constellation::config::Configuration& partial_config) final;
