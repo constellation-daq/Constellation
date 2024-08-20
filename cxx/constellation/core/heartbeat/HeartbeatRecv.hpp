@@ -35,7 +35,7 @@ namespace constellation::heartbeat {
      *
      * @note Needs to be started with `start()` and stopped with `stop()`
      */
-    class HeartbeatRecv : public pools::SubscriberPool<message::CHP1Message> {
+    class HeartbeatRecv : public pools::SubscriberPool<message::CHP1Message, chirp::HEARTBEAT> {
     public:
         /**
          * @brief Construct heartbeat receiver
@@ -43,6 +43,6 @@ namespace constellation::heartbeat {
          * @param callback Callback function pointer for received heartbeat messages
          */
         HeartbeatRecv(std::function<void(const message::CHP1Message&)> callback)
-            : SubscriberPool<message::CHP1Message>(chirp::HEARTBEAT, "CHP", std::move(callback), {""}) {}
+            : SubscriberPool<message::CHP1Message, chirp::HEARTBEAT>("CHP", std::move(callback), {""}) {}
     };
 } // namespace constellation::heartbeat

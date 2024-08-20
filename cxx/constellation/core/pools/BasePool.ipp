@@ -15,6 +15,7 @@
 #include <functional>
 #include <mutex>
 #include <stop_token>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -28,37 +29,37 @@
 
 namespace constellation::pools {
 
-    template <typename MESSAGE>
-    BasePool<MESSAGE>::BasePool(chirp::ServiceIdentifier service,
-                                std::string_view log_topic,
-                                std::function<void(const MESSAGE&)> callback,
-                                zmq::socket_type socket_type)
-        : pool_logger_(log_topic), service_(service), message_callback_(std::move(callback)), socket_type_(socket_type) {}
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::BasePool(std::string_view log_topic,
+                                                      std::function<void(const MESSAGE&)> callback)
+        : pool_logger_(log_topic), message_callback_(std::move(callback)) {}
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::startPool() {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::startPool() {
         // Start the pool thread
         pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
 
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
             // Call callback for all already discovered services
-            const auto discovered_services = chirp_manager->getDiscoveredServices(service_);
+            const auto discovered_services = chirp_manager->getDiscoveredServices(SERVICE);
             for(const auto& discovered_service : discovered_services) {
                 callback_impl(discovered_service, false);
             }
 
             // Register CHIRP callback
-            chirp_manager->registerDiscoverCallback(&BasePool::callback, service_, this);
+            chirp_manager->registerDiscoverCallback(&BasePool::callback, SERVICE, this);
             // Request currently active services
-            chirp_manager->sendRequest(service_);
+            chirp_manager->sendRequest(SERVICE);
         }
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::stopPool() {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::stopPool() {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
             // Unregister CHIRP discovery callback:
-            chirp_manager->unregisterDiscoverCallback(&BasePool::callback, service_);
+            chirp_manager->unregisterDiscoverCallback(&BasePool::callback, SERVICE);
         }
 
         // Stop the pool thread
@@ -71,18 +72,24 @@ namespace constellation::pools {
         disconnect_all();
     }
 
-    template <typename MESSAGE> BasePool<MESSAGE>::~BasePool() {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::~BasePool() {
         stopPool();
     }
 
-    template <typename MESSAGE> bool BasePool<MESSAGE>::should_connect(const chirp::DiscoveredService& /*service*/) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    bool BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::should_connect(const chirp::DiscoveredService& /*service*/) {
         return true;
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_connected(zmq::socket_t& /*socket*/) {}
-    template <typename MESSAGE> void BasePool<MESSAGE>::socket_disconnected(zmq::socket_t& /*socket*/) {}
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::socket_connected(zmq::socket_t& /*socket*/) {}
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::checkPoolException() {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::socket_disconnected(zmq::socket_t& /*socket*/) {}
+
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::checkPoolException() {
         // If exception has been thrown, disconnect from all remote sockets and propagate it
         if(exception_ptr_) {
             disconnect_all();
@@ -90,14 +97,15 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::connect(const chirp::DiscoveredService& service) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::connect(const chirp::DiscoveredService& service) {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
         // Connect
         LOG(pool_logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
         try {
 
-            zmq::socket_t socket {*utils::global_zmq_context(), socket_type_};
+            zmq::socket_t socket {*utils::global_zmq_context(), SOCKET_TYPE};
             socket.connect(service.to_uri());
 
             // Perform connection actions:
@@ -138,7 +146,8 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::disconnect_all() {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::disconnect_all() {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
         // Unregister all sockets from the poller, then disconnect and close them.
@@ -161,7 +170,8 @@ namespace constellation::pools {
         sockets_empty_.store(true);
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::disconnect(const chirp::DiscoveredService& service) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::disconnect(const chirp::DiscoveredService& service) {
         const std::lock_guard sockets_lock {sockets_mutex_};
 
         // Disconnect the socket
@@ -189,7 +199,8 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::callback_impl(const chirp::DiscoveredService& service, bool depart) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback_impl(const chirp::DiscoveredService& service, bool depart) {
         LOG(pool_logger_, TRACE) << "Callback for " << service.to_uri() << (depart ? ", departing" : "");
 
         if(depart) {
@@ -200,13 +211,16 @@ namespace constellation::pools {
     }
 
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    template <typename MESSAGE>
-    void BasePool<MESSAGE>::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback(chirp::DiscoveredService service,
+                                                           bool depart,
+                                                           std::any user_data) {
         auto* instance = std::any_cast<BasePool*>(user_data);
         instance->callback_impl(service, depart);
     }
 
-    template <typename MESSAGE> void BasePool<MESSAGE>::loop(const std::stop_token& stop_token) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::loop(const std::stop_token& stop_token) {
         try {
             while(!stop_token.stop_requested()) {
                 using namespace std::literals::chrono_literals;
