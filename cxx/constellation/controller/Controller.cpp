@@ -249,7 +249,13 @@ CSCP::State Controller::getLowestState() const {
     return state;
 }
 
-CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool keep_payload) {
+CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool keep_payload) const {
+
+    // Check if this is a request message
+    if(cmd.getVerb().first != CSCP1Message::Type::REQUEST) {
+        return {{controller_name_}, {CSCP1Message::Type::ERROR, "Can only send command messages of type REQUEST"}};
+    }
+
     // Possible keep payload, we might send multiple command messages:
     cmd.assemble(keep_payload).send(conn.req);
     zmq::multipart_t recv_zmq_msg {};
@@ -259,11 +265,6 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Message& cmd) {
     const std::lock_guard connection_lock {connection_mutex_};
-
-    // Check if this is a request message
-    if(cmd.getVerb().first != CSCP1Message::Type::REQUEST) {
-        return {{controller_name_}, {CSCP1Message::Type::ERROR, "Can only send command messages of type REQUEST"}};
-    }
 
     // Find satellite by canonical name:
     const auto sat = connections_.find(satellite_name);
@@ -280,6 +281,20 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
     sat->second.last_cmd_verb = verb.second;
 
     return response;
+}
+
+CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
+    auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
+    if(std::holds_alternative<Dictionary>(payload)) {
+        send_msg.addPayload(std::get<Dictionary>(payload).assemble());
+    } else if(std::holds_alternative<List>(payload)) {
+        send_msg.addPayload(std::get<List>(payload).assemble());
+    } else if(std::holds_alternative<std::string>(payload)) {
+        msgpack::sbuffer sbuf {};
+        msgpack::pack(sbuf, std::get<std::string>(payload));
+        send_msg.addPayload(std::move(sbuf));
+    }
+    return sendCommand(satellite_name, send_msg);
 }
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
@@ -344,20 +359,6 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
         sat.last_cmd_verb = verb.second;
     }
     return replies;
-}
-
-CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
-    auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
-    if(std::holds_alternative<Dictionary>(payload)) {
-        send_msg.addPayload(std::get<Dictionary>(payload).assemble());
-    } else if(std::holds_alternative<List>(payload)) {
-        send_msg.addPayload(std::get<List>(payload).assemble());
-    } else if(std::holds_alternative<std::string>(payload)) {
-        msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::string>(payload));
-        send_msg.addPayload(std::move(sbuf));
-    }
-    return sendCommand(satellite_name, send_msg);
 }
 
 void Controller::controller_loop(const std::stop_token& stop_token) {

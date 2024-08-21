@@ -245,7 +245,7 @@ namespace constellation::controller {
          *
          * @return CSCP response message
          */
-        static message::CSCP1Message send_receive(Connection& conn, message::CSCP1Message& cmd, bool keep_payload = false);
+        message::CSCP1Message send_receive(Connection& conn, message::CSCP1Message& cmd, bool keep_payload = false) const;
 
         /**
          * @brief Callback helper for CHIPR service discovery
