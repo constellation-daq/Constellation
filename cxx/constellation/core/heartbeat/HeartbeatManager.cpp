@@ -12,17 +12,18 @@
 #include <algorithm>
 #include <chrono>
 #include <functional>
-#include <iterator>
 #include <mutex>
 #include <optional>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/message/CHP1Message.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::heartbeat;
@@ -53,7 +54,7 @@ void HeartbeatManager::sendExtrasystole() {
     sender_.sendExtrasystole();
 }
 
-std::optional<CSCP::State> HeartbeatManager::getRemoteState(const std::string& remote) {
+std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view remote) {
     const std::lock_guard lock {mutex_};
     const auto remote_it = remotes_.find(remote);
     if(remote_it != remotes_.end()) {
@@ -72,7 +73,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const std::lock_guard lock {mutex_};
 
     // Update or add the remote:
-    const auto remote_it = remotes_.find(to_string(msg.getSender()));
+    const auto remote_it = remotes_.find(msg.getSender());
     if(remote_it != remotes_.end()) {
 
         const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
