@@ -24,4 +24,4 @@ meson configure build -Dsatellite_random_transmitter=enabled
 
 ### Framework Parameters
 
-Inherited from `TransmitterSatellite`. (FIXME link to docs)
+Inherited from [`TransmitterSatellite`](../reference/cxx/satellite/satellite.md#transmittersatellite-configuration-parameters).

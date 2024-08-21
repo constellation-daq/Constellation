@@ -20,4 +20,4 @@ None
 
 ### Framework Parameters
 
-Inherited from `ReceiverSatellite`. (FIXME link to docs)
+Inherited from [`ReceiverSatellite`](../reference/cxx/satellite/satellite.md#receiversatellite-configuration-parameters).
