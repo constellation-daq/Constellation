@@ -263,6 +263,20 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
     return CSCP1Message::disassemble(recv_zmq_msg);
 }
 
+CSCP1Message Controller::build_message(std::string verb, const CommandPayload& payload) const {
+    auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
+    if(std::holds_alternative<Dictionary>(payload)) {
+        send_msg.addPayload(std::get<Dictionary>(payload).assemble());
+    } else if(std::holds_alternative<List>(payload)) {
+        send_msg.addPayload(std::get<List>(payload).assemble());
+    } else if(std::holds_alternative<std::string>(payload)) {
+        msgpack::sbuffer sbuf {};
+        msgpack::pack(sbuf, std::get<std::string>(payload));
+        send_msg.addPayload(std::move(sbuf));
+    }
+    return send_msg;
+}
+
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Message& cmd) {
     const std::lock_guard connection_lock {connection_mutex_};
 
@@ -284,16 +298,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
-    auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
-    if(std::holds_alternative<Dictionary>(payload)) {
-        send_msg.addPayload(std::get<Dictionary>(payload).assemble());
-    } else if(std::holds_alternative<List>(payload)) {
-        send_msg.addPayload(std::get<List>(payload).assemble());
-    } else if(std::holds_alternative<std::string>(payload)) {
-        msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::string>(payload));
-        send_msg.addPayload(std::move(sbuf));
-    }
+    auto send_msg = build_message(std::move(verb), payload);
     return sendCommand(satellite_name, send_msg);
 }
 
@@ -313,16 +318,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
 }
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(std::string verb, const CommandPayload& payload) {
-    auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
-    if(std::holds_alternative<Dictionary>(payload)) {
-        send_msg.addPayload(std::get<Dictionary>(payload).assemble());
-    } else if(std::holds_alternative<List>(payload)) {
-        send_msg.addPayload(std::get<List>(payload).assemble());
-    } else if(std::holds_alternative<std::string>(payload)) {
-        msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::string>(payload));
-        send_msg.addPayload(std::move(sbuf));
-    }
+    auto send_msg = build_message(std::move(verb), payload);
     return sendCommands(send_msg);
 }
 
@@ -333,22 +329,8 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
     std::map<std::string, CSCP1Message> replies;
     for(auto& [name, sat] : connections_) {
         // Prepare message:
-        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb});
-
-        // Attempt to retrieve payload for this satellite
-        if(payloads.contains(name)) {
-            const auto& payload = payloads.at(name);
-
-            if(std::holds_alternative<Dictionary>(payload)) {
-                send_msg.addPayload(std::get<Dictionary>(payload).assemble());
-            } else if(std::holds_alternative<List>(payload)) {
-                send_msg.addPayload(std::get<List>(payload).assemble());
-            } else if(std::holds_alternative<std::string>(payload)) {
-                msgpack::sbuffer sbuf {};
-                msgpack::pack(sbuf, std::get<std::string>(payload));
-                send_msg.addPayload(std::move(sbuf));
-            }
-        }
+        auto send_msg = (payloads.contains(name) ? build_message(verb, payloads.at(name))
+                                                 : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
 
         // Send command and receive reply:
         replies.emplace(name, send_receive(sat, send_msg));

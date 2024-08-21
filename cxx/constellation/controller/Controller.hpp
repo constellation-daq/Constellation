@@ -248,6 +248,16 @@ namespace constellation::controller {
         message::CSCP1Message send_receive(Connection& conn, message::CSCP1Message& cmd, bool keep_payload = false) const;
 
         /**
+         * @brief Helper to build command message from verb and command payload
+         *
+         * @param verb Command
+         * @param payload Optional payload for this command message
+         *
+         * @return CSCP REQUEST message to be send
+         */
+        message::CSCP1Message build_message(std::string verb, const CommandPayload& payload) const;
+
+        /**
          * @brief Callback helper for CHIPR service discovery
          *
          * @param service Discovered service
