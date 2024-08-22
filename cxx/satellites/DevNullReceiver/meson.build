@@ -26,8 +26,7 @@ satellite_main = configure_file(
   configuration: satellite_cfg_data,
 )
 
-# Explicitly store sputnik lib variable for core/exec test:
-sputnik_lib = shared_library(
+shared_library(
   satellite_type,
   sources: [satellite_generator, satellite_sources],
   dependencies: [core_dep, satellite_dep],
