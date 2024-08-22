@@ -14,6 +14,7 @@
 #include <string_view>
 
 #include "constellation/build.hpp"
+#include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -178,6 +179,18 @@ namespace constellation::satellite {
     public:
         explicit RecvTimeoutError(const std::string& what, std::chrono::seconds timeout) {
             error_message_ = "Failed receiving " + what + " after " + utils::to_string<std::chrono::seconds>(timeout);
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error when a received CDTP message does not have the correct type
+     */
+    class InvalidCDTPMessageType : public satellite::SatelliteError {
+    public:
+        explicit InvalidCDTPMessageType(message::CDTP1Message::Type type, std::string_view reason) {
+            error_message_ = "Error handling CDTP message with type " + utils::to_string(type) + ": ";
+            error_message_ += reason;
         }
     };
 

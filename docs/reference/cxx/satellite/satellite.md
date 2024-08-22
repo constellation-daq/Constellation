@@ -18,6 +18,29 @@ dynamically casting it to a {cpp:class}`TransmitterSatellite <constellation::sat
 Sending data is not thread safe. If multiple threads need to access the sender, it needs to be protected with a mutex.
 ```
 
+#### `TransmitterSatellite` configuration parameters
+
+| Parameter | Type | Description | Default Value |
+|-----------|------|-------------|---------------|
+| `_data_bor_timeout` | Unsigned integer | Timeout for BOR to be received in seconds | `10` |
+| `_data_eor_timeout` | Unsigned integer | Timeout for EOR to be received in seconds | `10` |
+
+### Receiving Data
+
+The {cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>` class can be used to send data during
+a run over the network. It requires a given list of data transmitters, which is given by the `_data_transmitters` config
+parameter. Similar to the {cpp:class}`TransmitterSatellite <constellation::satellite::TransmitterSatellite>` mentioned
+above, executing transmitter transitions in addition to user transitions is achieve in the
+{cpp:class}`BaseSatellite <constellation::satellite::BaseSatellite>` by dynamically casting it to a
+{cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>`.
+
+#### `ReceiverSatellite` configuration parameters
+
+| Parameter | Type | Description | Default Value |
+|-----------|------|-------------|---------------|
+| `_data_eor_timeout` | Unsigned integer | Timeout for EOR to be received in seconds | `10` |
+| `_data_transmitters` | List of strings | Canonical names of transmitters to connect to | - |
+
 ## `constellation::satellite` Namespace
 
 ```{doxygennamespace} constellation::satellite

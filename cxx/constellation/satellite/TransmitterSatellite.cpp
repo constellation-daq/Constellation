@@ -58,7 +58,7 @@ bool TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& me
     // Send data but do not wait for receiver
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     const auto sent = message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
-    if(!sent) {
+    if(!sent) [[unlikely]] {
         LOG(cdtp_logger_, DEBUG) << "Could not send message " << message.getHeader().getSequenceNumber();
     }
 
@@ -73,7 +73,7 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
     if(partial_config.has("_data_bor_timeout")) {
-        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_chirp_timeout"));
+        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_bor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
     }
     if(partial_config.has("_data_eor_timeout")) {
@@ -86,7 +86,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     // Reset run metadata and sequence counter
     seq_ = 0;
     run_metadata_ = {};
-    run_metadata_["run_id"] = Value::set(run_identifier);
+    setRunMetadataTag("run_id", run_identifier);
 
     // Create CDTP1 message for BOR
     CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR}, 1};
@@ -100,6 +100,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     if(!sent) {
         throw SendTimeoutError("BOR message", data_bor_timeout_);
     }
+    LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
 
     // Reset timeout for data sending
     set_send_timeout();
@@ -118,4 +119,5 @@ void TransmitterSatellite::stopping_transmitter() {
     if(!sent) {
         throw SendTimeoutError("EOR message", data_eor_timeout_);
     }
+    LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 }

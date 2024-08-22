@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Build satellite only if feature is enabled:
-if not get_option('satellite_random_transmitter').enabled()
+if not get_option('satellite_dev_null_receiver').enabled()
   subdir_done()
 endif
 
-satellite_type = 'RandomTransmitter'
+satellite_type = 'DevNullReceiver'
 
 satellite_sources = files(
-  'RandomTransmitterSatellite.cpp',
+  'DevNullReceiverSatellite.cpp',
 )
 
 # Automatic generation of library interface and satellite executable:
@@ -26,7 +26,8 @@ satellite_main = configure_file(
   configuration: satellite_cfg_data,
 )
 
-shared_library(satellite_type,
+shared_library(
+  satellite_type,
   sources: [satellite_generator, satellite_sources],
   dependencies: [core_dep, satellite_dep],
   gnu_symbol_visibility: 'hidden',
@@ -34,7 +35,8 @@ shared_library(satellite_type,
   install_rpath: constellation_rpath,
 )
 
-executable('satellite' + satellite_type,
+executable(
+  'satellite' + satellite_type,
   sources: [satellite_main],
   dependencies: [exec_dep],
   install: true,

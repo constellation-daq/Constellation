@@ -10,11 +10,6 @@ This how-to describes the procedure of implementing a new Constellation satellit
 for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
 
-## Transmitting or Receiving Data
-
-The first decision that needs to be taken if the satellite will produce and transmit data, if it will receive and process
-data from other satellites or not take part in data transmission at all.
-
 ## Implementing the FSM Transitions
 
 In Constellation, actions such as device configuration and initialization are realized through so-called transitional states
@@ -124,7 +119,7 @@ status message by the satellite.
 
 ## Transmitting Data
 
-The {cpp:class}`TransmitterSatellite <constellation::satellite::TransmitterSatellite>` base class provides functions to send
+The {cpp:class}`TransmitterSatellite <constellation::satellite::TransmitterSatellite>` base class provides functions to transmit
 data. To use it the inheritance can simply be changed from {cpp:class}`Satellite <constellation::satellite::Satellite>`.
 
 To send data in the `RUN` state, a new data message can be created with {cpp:func}`TransmitterSatellite::newDataMessage() <constellation::satellite::TransmitterSatellite::newDataMessage()>`.
@@ -137,11 +132,30 @@ which returns if the message was sent (or added to the send queue) successfully.
 a return value of `false` indicates that the message could not be sent due to a slow receiver. In this case, one can either
 discard the message, try to send it again or throw an exception to abort the run.
 
+For performance considerations, please see [Increase Data Rate in C++](data_transmission_speed.md).
+
 ### Adding Metadata to a Run
 
 Arbitrary metadata can be attached to the run, which will be send in the EOR message. This might include things like a
-firmware version of a detector. To set this run metadata, a {cpp:class}`Dictionary <constellation::config::Dictionary>` has
-to be created and set via {cpp:func}`TransmitterSatellite::setRunMetadata() <constellation::satellite::TransmitterSatellite::setRunMetadata()>`.
+firmware version of a detector. Metadata can be added via
+{cpp:func}`TransmitterSatellite::setRunMetadataTag() <constellation::satellite::TransmitterSatellite::setRunMetadataTag()>`.
+
+## Receiving Data
+
+The {cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>` base class provides functions to receive
+data. To use it the inheritance can simply be changed from {cpp:class}`Satellite <constellation::satellite::Satellite>`.
+
+To receive data, the {cpp:func}`receive_bor() <constellation::satellite::ReceiverSatellite::receive_bor()>`,
+{cpp:func}`receive_data() <constellation::satellite::ReceiverSatellite::receive_data()>` and
+{cpp:func}`receive_eor() <constellation::satellite::ReceiverSatellite::receive_eor()>` methods have to be implemented.
+A {cpp:func}`running() <constellation::satellite::Satellite::running()>` method must not be implemented. Files on disk
+should be opened in the {cpp:func}`starting() <constellation::satellite::Satellite::starting()>` method and closed in the
+{cpp:func}`stopping() <constellation::satellite::Satellite::stopping()>` method.
+
+While receiving data, the receiver should also store the tags in the of the messages header. They can be retrieved via
+`data_message.getHeader().getTags()`. Data always arrives sequentially, so file locking is not required.
+
+For performance considerations, please see [Increase Data Rate in C++](data_transmission_speed.md).
 
 ## Building the Satellite
 

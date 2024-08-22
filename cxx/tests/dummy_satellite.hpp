@@ -22,21 +22,30 @@
 #include "constellation/satellite/Satellite.hpp"
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
-template <class SatelliteT = constellation::satellite::Satellite> class DummySatellite : public SatelliteT {
+template <class SatelliteT = constellation::satellite::Satellite> class DummySatelliteNR : public SatelliteT {
 public:
-    DummySatellite() : SatelliteT("Dummy", "sat1") {
+    DummySatelliteNR(std::string_view name = "sat1") : SatelliteT("Dummy", name) {
         SatelliteT::support_reconfigure();
-        SatelliteT::register_command("my_cmd", "A User Command", {}, &DummySatellite::usr_cmd, this);
-        SatelliteT::register_command("my_cmd_arg", "Another User Command", {}, &DummySatellite::usr_cmd_arg, this);
+        SatelliteT::register_command("my_cmd", "A User Command", {}, &DummySatelliteNR::usr_cmd, this);
+        SatelliteT::register_command("my_cmd_arg", "Another User Command", {}, &DummySatelliteNR::usr_cmd_arg, this);
         SatelliteT::register_command(
-            "my_cmd_invalid_return", "Invalid User Command", {}, &DummySatellite::usr_cmd_invalid_return, this);
+            "my_cmd_invalid_return", "Invalid User Command", {}, &DummySatelliteNR::usr_cmd_invalid_return, this);
         SatelliteT::register_command(
-            "my_cmd_void", "Command without arguments & return", {}, &DummySatellite::usr_cmd_void, this);
+            "my_cmd_void", "Command without arguments & return", {}, &DummySatelliteNR::usr_cmd_void, this);
         SatelliteT::register_command("my_cmd_state",
                                      "Command for RUN state only",
                                      {constellation::protocol::CSCP::State::RUN},
-                                     &DummySatellite::usr_cmd_void,
+                                     &DummySatelliteNR::usr_cmd_void,
                                      this);
+    }
+
+    void reactFSM(constellation::satellite::FSM::Transition transition,
+                  constellation::satellite::FSM::TransitionPayload payload = {},
+                  bool progress = true) {
+        SatelliteT::getFSM().react(transition, std::move(payload));
+        if(progress) {
+            progressFsm();
+        }
     }
 
     void progressFsm() {
@@ -78,10 +87,6 @@ public:
         SatelliteT::stopping();
         transitional_state();
     }
-    void running(const std::stop_token& stop_token) override {
-        SatelliteT::running(stop_token);
-        transitional_state();
-    }
     void interrupting(constellation::protocol::CSCP::State previous_state) override {
         // Note: the default implementation calls `stopping()` and `landing()`, both of which call `transitional_state()`
         progress_fsm_ = true;
@@ -91,7 +96,7 @@ public:
     }
     void failure(constellation::protocol::CSCP::State previous_state) override { SatelliteT::failure(previous_state); }
 
-private:
+protected:
     void transitional_state() {
         while(!progress_fsm_) {
             if(throw_transitional_) {
@@ -101,6 +106,7 @@ private:
         }
     }
 
+private:
     // NOLINTBEGIN(readability-convert-member-functions-to-static,readability-make-member-function-const)
     int usr_cmd() { return 2; }
     int usr_cmd_arg(int a) { return 2 * a; }
@@ -112,4 +118,16 @@ private:
 private:
     std::atomic_bool progress_fsm_ {false};
     std::atomic_bool throw_transitional_ {false};
+};
+
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
+template <class SatelliteT = constellation::satellite::Satellite>
+class DummySatellite : public DummySatelliteNR<SatelliteT> {
+public:
+    DummySatellite(std::string_view name = "sat1") : DummySatelliteNR<SatelliteT>(name) {}
+
+    void running(const std::stop_token& stop_token) override {
+        SatelliteT::running(stop_token);
+        DummySatelliteNR<SatelliteT>::transitional_state();
+    }
 };

@@ -25,6 +25,7 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/networking.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -93,11 +94,11 @@ namespace constellation::satellite {
         [[nodiscard]] bool sendDataMessage(DataMessage& message);
 
         /**
-         * @brief Set the run metadata send at the end of the run
-         *
-         * @param run_metadata Run metadata
+         * @brief Set tag for the run metadata send at the end of the run
          */
-        void setRunMetadata(config::Dictionary run_metadata) { run_metadata_ = std::move(run_metadata); }
+        template <typename T> void setRunMetadataTag(std::string_view key, const T& value) {
+            run_metadata_[utils::transform(key, ::tolower)] = config::Value::set(value);
+        }
 
         /**
          * @brief Return the ephemeral port number to which the CDTP socket is bound to

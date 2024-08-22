@@ -4,12 +4,14 @@
 satellite_src = files(
   'BaseSatellite.cpp',
   'CommandRegistry.cpp',
-  'TransmitterSatellite.cpp',
   'FSM.cpp',
+  'ReceiverSatellite.cpp',
   'Satellite.cpp',
+  'TransmitterSatellite.cpp',
 )
 
-satellite_lib = library('ConstellationSatellite',
+satellite_lib = library(
+  'ConstellationSatellite',
   sources: satellite_src,
   include_directories: constellation_inc,
   dependencies: [core_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep],
@@ -29,9 +31,10 @@ install_headers(
   'BaseSatellite.hpp',
   'CommandRegistry.hpp',
   'CommandRegistry.ipp',
-  'TransmitterSatellite.hpp',
   'exceptions.hpp',
   'FSM.hpp',
+  'ReceiverSatellite.hpp',
   'Satellite.hpp',
+  'TransmitterSatellite.hpp',
   subdir: 'constellation/satellite',
 )
