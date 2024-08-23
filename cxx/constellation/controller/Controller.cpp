@@ -9,19 +9,27 @@
 
 #include "Controller.hpp"
 
+#include <algorithm>
+#include <chrono>
+#include <iterator>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
+#include <variant>
 
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CHP1Message.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
@@ -31,8 +39,8 @@ using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::literals::chrono_literals;
 
-Controller::Controller(std::string_view controller_name)
-    : logger_("CTRL"), controller_name_(controller_name),
+Controller::Controller(std::string controller_name)
+    : logger_("CTRL"), controller_name_(std::move(controller_name)),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {
     LOG(logger_, DEBUG) << "Registering controller callback";
@@ -123,7 +131,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
     }
 }
 
-void Controller::process_heartbeat(const message::CHP1Message& msg) {
+void Controller::process_heartbeat(message::CHP1Message&& msg) {
 
     const std::lock_guard connection_lock {connection_mutex_};
     const auto now = std::chrono::system_clock::now();
@@ -178,7 +186,7 @@ std::set<std::string> Controller::getConnections() const {
     return connections;
 }
 
-std::string_view Controller::getRunIdentifier() {
+std::string Controller::getRunIdentifier() {
     const std::lock_guard connection_lock {connection_mutex_};
     for(auto& [name, sat] : connections_) {
         // Obtain run identifier:
@@ -186,7 +194,7 @@ std::string_view Controller::getRunIdentifier() {
         const auto recv_msg = send_receive(sat, send_msg);
         const auto runid = recv_msg.getVerb().second;
         if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS && !runid.empty()) {
-            return runid;
+            return to_string(runid);
         }
     }
     return {};
@@ -195,7 +203,7 @@ std::string_view Controller::getRunIdentifier() {
 std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime() {
     const std::lock_guard connection_lock {connection_mutex_};
 
-    std::optional<std::chrono::system_clock::time_point> time;
+    std::optional<std::chrono::system_clock::time_point> time {};
     for(auto& [name, sat] : connections_) {
         // Obtain run starting time from get_state command metadata:
         auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
@@ -228,6 +236,7 @@ bool Controller::isInState(CSCP::State state) const {
 bool Controller::isInGlobalState() const {
     const std::lock_guard connection_lock {connection_mutex_};
 
+    // If no adjacent connection with different state found, then in global state
     return std::ranges::adjacent_find(connections_.cbegin(), connections_.cend(), [](auto const& x, auto const& y) {
                return x.second.state != y.second.state;
            }) == connections_.cend();
@@ -305,7 +314,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::strin
 std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
 
     const std::lock_guard connection_lock {connection_mutex_};
-    std::map<std::string, CSCP1Message> replies;
+    std::map<std::string, CSCP1Message> replies {};
     for(auto& [name, sat] : connections_) {
         replies.emplace(name, send_receive(sat, cmd, true));
 
@@ -326,7 +335,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
                                                              const std::map<std::string, CommandPayload>& payloads) {
 
     const std::lock_guard connection_lock {connection_mutex_};
-    std::map<std::string, CSCP1Message> replies;
+    std::map<std::string, CSCP1Message> replies {};
     for(auto& [name, sat] : connections_) {
         // Prepare message:
         auto send_msg = (payloads.contains(name) ? build_message(verb, payloads.at(name))

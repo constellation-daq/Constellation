@@ -79,7 +79,7 @@ namespace constellation::controller {
          *
          * @param controller_name Name of the controller
          */
-        Controller(std::string_view controller_name);
+        Controller(std::string controller_name);
 
         /**
          * @brief Destruct the controller base class object
@@ -200,7 +200,7 @@ namespace constellation::controller {
          *
          * @return Run identifier
          */
-        std::string_view getRunIdentifier();
+        std::string getRunIdentifier();
 
         /**
          * @brief Return the starting time of the current or last run of the constellation
@@ -284,7 +284,7 @@ namespace constellation::controller {
          *
          * @param msg Received CHP message from remote service
          * */
-        void process_heartbeat(const message::CHP1Message& msg);
+        void process_heartbeat(message::CHP1Message&& msg);
 
         /**
          * @brief Loop to keep track of heartbeats and remove dead connections from the list.
@@ -314,7 +314,7 @@ namespace constellation::controller {
         /** Name of this controller */
         std::string controller_name_;
         /** ZMQ context */
-        zmq::context_t context_ {};
+        zmq::context_t context_;
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
 
