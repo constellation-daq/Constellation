@@ -39,7 +39,7 @@ void cli_loop(std::span<char*> args) {
 
     // Get the default logger
     auto& logger = Logger::getDefault();
-    SinkManager::getInstance().setConsoleLevels(OFF);
+    SinkManager::getInstance().setConsoleLevels(INFO);
     LOG(logger, STATUS) << "Usage: dummy_controller CONSTELLATION_GROUP";
 
     // Get group via cmdline
@@ -60,9 +60,17 @@ void cli_loop(std::span<char*> args) {
     Controller controller(name);
 
     while(true) {
-        std::string command;
+        // Flush logger before printing to cout
+        logger.flush();
+
+        std::string command {};
         std::cout << "\nCommand: ";
         std::getline(std::cin, command);
+
+        // Avoid sending infinite loop of empty commands on Ctrl+D
+        if(command.empty()) {
+            continue;
+        }
 
         // Send command to all satellites we currently know
         auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
