@@ -31,17 +31,17 @@ namespace constellation::controller {
     class CNSTLN_API ConfigParser {
     public:
         /**
-         * @brief Constructor which reads and parses a configuration file
+         * @brief Constructor which reads and parses a TOML configuration
          *
          * It is necessary to also provide the set of satellites to parse this configuration for, since the TOML parse tree
          * is specifically searched for those satellites and types because the TOML format is case-sensitive and we need
          * insensitive matches.
          *
-         * @param filepath Path of the configuration file to be parsed
+         * @param toml String view of the TOML configuration file contents
          * @param satellites Set of canonical names of the satellites
          * @throws invalid_arguments in case of parsing issues.
          */
-        ConfigParser(const std::filesystem::path& filepath, std::set<std::string> satellites);
+        ConfigParser(std::string_view toml, std::set<std::string> satellites);
 
         /// @cond doxygen_suppress
         ConfigParser() = delete;

@@ -10,6 +10,8 @@
 #include "ConfigParser.hpp"
 
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 
 #include <toml++/toml.hpp>
 
@@ -20,12 +22,11 @@
 using namespace constellation::controller;
 using namespace constellation::config;
 
-ConfigParser::ConfigParser(const std::filesystem::path& file, std::set<std::string> satellites) : logger_("CFGPARSER") {
+ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellites) : logger_("CFGPARSER") {
 
-    LOG(logger_, DEBUG) << "Parsing configuration file " << file;
     toml::table tbl {};
     try {
-        tbl = toml::parse_file(file.string());
+        tbl = toml::parse(toml);
     } catch(const toml::parse_error& err) {
         std::stringstream s;
         s << err;
