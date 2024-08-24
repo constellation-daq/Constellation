@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <filesystem>
+#include <fstream>
 #include <map>
 #include <set>
 #include <string>
@@ -42,6 +42,19 @@ namespace constellation::controller {
          * @throws invalid_arguments in case of parsing issues.
          */
         ConfigParser(std::string_view toml, std::set<std::string> satellites);
+
+        /**
+         * @brief Constructor which reads and parses a TOML configuration file
+         *
+         * It is necessary to also provide the set of satellites to parse this configuration for, since the TOML parse tree
+         * is specifically searched for those satellites and types because the TOML format is case-sensitive and we need
+         * insensitive matches.
+         *
+         * @param file Input file stream of the TOML configuration file
+         * @param satellites Set of canonical names of the satellites
+         * @throws invalid_arguments in case of parsing issues.
+         */
+        ConfigParser(std::ifstream file, std::set<std::string> satellites);
 
         /// @cond doxygen_suppress
         ConfigParser() = delete;

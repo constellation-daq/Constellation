@@ -22,6 +22,13 @@
 using namespace constellation::controller;
 using namespace constellation::config;
 
+ConfigParser::ConfigParser(std::ifstream file, std::set<std::string> satellites) : logger_("CFGPARSER") {
+    LOG(logger_, DEBUG) << "Parsing configuration file";
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    ConfigParser(buffer.str(), std::move(satellites));
+}
+
 ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellites) : logger_("CFGPARSER") {
 
     toml::table tbl {};
