@@ -24,11 +24,11 @@ using namespace constellation::controller;
 using namespace constellation::config;
 using namespace constellation::log;
 
-Logger ConfigParser::logger_("CFGPARSER");
+Logger ConfigParser::config_parser_logger_("CFGPARSER");
 
 std::string ConfigParser::read_file(std::ifstream file) {
-    LOG(logger_, DEBUG) << "Parsing configuration file";
-    std::stringstream buffer;
+    LOG(config_parser_logger_, DEBUG) << "Parsing configuration file";
+    std::ostringstream buffer;
     buffer << file.rdbuf();
     return buffer.str();
 }
@@ -72,7 +72,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
 
     auto parse_value = [&](const toml::key& key, auto&& val) -> std::optional<Value> {
         if constexpr(toml::is_table<decltype(val)>) {
-            LOG(logger_, DEBUG) << "Skipping table for key " << key;
+            LOG(config_parser_logger_, DEBUG) << "Skipping table for key " << key;
             return {};
         } else if constexpr(toml::is_array<decltype(val)>) {
             if(val.is_homogeneous()) {
@@ -104,12 +104,12 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                     }
                     return return_value;
                 } else {
-                    LOG(logger_, WARNING) << "Unknown type of array for key " << key;
+                    LOG(config_parser_logger_, WARNING) << "Unknown type of array for key " << key;
                     // throw
                     return {};
                 }
             } else {
-                LOG(logger_, WARNING) << "Array with key " << key << " is not homogeneous";
+                LOG(config_parser_logger_, WARNING) << "Array with key " << key << " is not homogeneous";
                 // throw
                 return {};
             }
@@ -123,14 +123,14 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
             } else if constexpr(toml::is_string<decltype(val)>) {
                 return val.as_string()->get();
             } else {
-                LOG(logger_, WARNING) << "Unknown value type for key " << key;
+                LOG(config_parser_logger_, WARNING) << "Unknown value type for key " << key;
                 // throw
                 return {};
             }
         }
     };
 
-    std::map<std::string, config::Dictionary> configs;
+    std::map<std::string, config::Dictionary> configs {};
     for(const auto& sat : satellites) {
         // Start with empty dictionary:
         configs.emplace(sat, Dictionary {});
@@ -150,14 +150,14 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                 if constexpr(toml::is_table<decltype(val)>) {
                     if(utils::transform(key, ::tolower) == utils::transform(type, ::tolower)) {
 
-                        LOG(logger_, DEBUG) << "Found satellite type sub-node " << key;
+                        LOG(config_parser_logger_, DEBUG) << "Found satellite type sub-node " << key;
                         val.as_table()->for_each([&](const toml::key& key, auto&& val) {
                             // Check if this is a table for this satellite name
                             if constexpr(toml::is_table<decltype(val)>) {
                                 if(utils::transform(key, ::tolower) == utils::transform(name, ::tolower)) {
-                                    LOG(logger_, DEBUG) << "Found satellite name sub-node " << key;
+                                    LOG(config_parser_logger_, DEBUG) << "Found satellite name sub-node " << key;
                                     val.as_table()->for_each([&](const toml::key& key, auto&& val) {
-                                        LOG(logger_, DEBUG) << "Reading name key " << key;
+                                        LOG(config_parser_logger_, DEBUG) << "Reading name key " << key;
 
                                         auto value = parse_value(key, val);
                                         if(value.has_value()) {
@@ -167,7 +167,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                                     });
                                 }
                             } else {
-                                LOG(logger_, DEBUG) << "Reading type key " << key;
+                                LOG(config_parser_logger_, DEBUG) << "Reading type key " << key;
 
                                 auto value = parse_value(key, val);
                                 if(value.has_value()) {
@@ -177,7 +177,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                         });
                     }
                 } else {
-                    LOG(logger_, DEBUG) << "Reading satellites key " << key;
+                    LOG(config_parser_logger_, DEBUG) << "Reading satellites key " << key;
                     auto value = parse_value(key, val);
                     if(value.has_value()) {
                         dict_all.emplace(std::string(key.str()), value.value());
@@ -188,16 +188,16 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
             // Combine dictionaries, do not overwrite existing keys:
             for(const auto& [key, value] : dict_type) {
                 const auto& [it, inserted] = configs[sat].insert({key, value});
-                LOG_IF(logger_, DEBUG, inserted) << "Added key " << key << " from type section";
+                LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from type section";
             }
 
             for(const auto& [key, value] : dict_all) {
                 const auto& [it, inserted] = configs[sat].insert({key, value});
-                LOG_IF(logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
+                LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
             }
 
         } else {
-            LOG(logger_, WARNING) << "Could not find base node for satellites";
+            LOG(config_parser_logger_, WARNING) << "Could not find base node for satellites";
         }
     }
 

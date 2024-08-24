@@ -103,7 +103,7 @@ namespace constellation::controller {
         static std::string read_file(std::ifstream file);
 
         /* Logger */
-        static log::Logger logger_;
+        static log::Logger config_parser_logger_;
     };
 
 } // namespace constellation::controller
