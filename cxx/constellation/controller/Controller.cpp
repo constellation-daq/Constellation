@@ -71,7 +71,8 @@ Controller::~Controller() {
     connections_.clear();
 }
 
-void Controller::reached_state(CSCP::State /*state*/) {};
+void Controller::reached_global_state(CSCP::State /*state*/) {};
+void Controller::reached_lowest_state(CSCP::State /*state*/) {};
 void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/, std::size_t /*total*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -133,7 +134,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
 void Controller::process_heartbeat(message::CHP1Message&& msg) {
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    std::unique_lock<std::mutex> lock {connection_mutex_};
     const auto now = std::chrono::system_clock::now();
 
     // Find satellite from connection list based in the heartbeat sender name
@@ -165,11 +166,13 @@ void Controller::process_heartbeat(message::CHP1Message&& msg) {
             // Notify derived classes of change
             propagate_update(UpdateType::UPDATED, std::distance(connections_.begin(), sat), connections_.size());
 
-            // Check if this new state is a global one:
-            if(std::ranges::all_of(connections_.cbegin(), connections_.cend(), [&msg](const auto& conn) {
-                   return conn.second.state == msg.getState();
-               })) {
-                reached_state(msg.getState());
+            lock.unlock();
+            if(isInGlobalState()) {
+                // Notify if this new state is a global one:
+                reached_global_state(msg.getState());
+            } else {
+                // Notify of currently lowest state
+                reached_lowest_state(getLowestState());
             }
         }
     } else {
@@ -249,13 +252,10 @@ CSCP::State Controller::getLowestState() const {
         return CSCP::State::NEW;
     }
 
-    CSCP::State state {CSCP::State::ERROR};
-    for(const auto& conn : connections_) {
-        if(conn.second.state < state) {
-            state = conn.second.state;
-        }
-    }
-    return state;
+    return std::ranges::min_element(connections_.cbegin(),
+                                    connections_.cend(),
+                                    [](auto const& x, auto const& y) { return x.second.state < y.second.state; })
+        ->second.state;
 }
 
 CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool keep_payload) const {
