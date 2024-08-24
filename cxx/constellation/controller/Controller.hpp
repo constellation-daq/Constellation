@@ -215,12 +215,25 @@ namespace constellation::controller {
         /**
          * @brief Method called whenever a new global state has been reached
          * @details A global state is a situation when all connected satellites share a common state. Whenever such a state
-         * is reached by a state update of a satellite,t his method is called. This can e.g. be used to emit signals for
+         * is reached by a state update of a satellite, this method is called. This can e.g. be used to emit signals for
          * user interfaces or to trigger further actions.
          *
          * @param state The new global state of the constellation
          */
-        virtual void reached_state(protocol::CSCP::State state);
+        virtual void reached_global_state(protocol::CSCP::State state);
+
+        /**
+         * @brief Method called whenever a new lowest state has been reached
+         * @details The lowest state is often used to convey the state of a Constellation when its constituents are in
+         * different states, i.e. the COnstellation is not in a global state. Whenever a new lowest state is reached by a
+         * state update of a satellite, this method is called. This can e.g. be used to emit signals for user interfaces or
+         * to trigger further actions.
+         *
+         * @note If a new global state is entered, this method is not called.
+         *
+         * @param state The new lowest state of the constellation
+         */
+        virtual void reached_lowest_state(protocol::CSCP::State state);
 
         /**
          * @brief Method to propagate updates of connection data
