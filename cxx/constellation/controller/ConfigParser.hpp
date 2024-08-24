@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <fstream>
+#include <filesystem>
 #include <map>
 #include <optional>
 #include <set>
@@ -60,11 +60,12 @@ namespace constellation::controller {
          * case-sensitive and we need insensitive matches.
          *
          * @param satellite Satellite to obtain configuration dictionary for
-         * @param file Input file stream of the TOML configuration file
+         * @param file Input file path of the TOML configuration file
          * @return Optional with configuration dictionary if satellite was found in configuration
          * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
          */
-        static std::optional<config::Dictionary> getDictionary(const std::string& satellite, std::ifstream file);
+        static std::optional<config::Dictionary> getDictionaryFromFile(const std::string& satellite,
+                                                                       const std::filesystem::path& file);
 
         /**
          * @brief Parse configuration and prepare configuration dictionary for a set of satellites
@@ -89,18 +90,18 @@ namespace constellation::controller {
          * insensitive matches.
          *
          * @param satellites Satellite to obtain configuration dictionary for
-         * @param file Input file stream of the TOML configuration file
+         * @param file Input file path of the TOML configuration file
          * @return Map of all requested satellites that were found in the configuration
          * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
          */
-        static std::map<std::string, config::Dictionary> getDictionaries(std::set<std::string> satellites,
-                                                                         std::ifstream file);
+        static std::map<std::string, config::Dictionary> getDictionariesFromFile(std::set<std::string> satellites,
+                                                                                 const std::filesystem::path& file);
 
     private:
         static std::map<std::string, config::Dictionary> parse_config(std::set<std::string> satellites,
                                                                       std::string_view toml);
 
-        static std::string read_file(std::ifstream file);
+        static std::string read_file(const std::filesystem::path& file);
 
         /* Logger */
         static log::Logger config_parser_logger_;
