@@ -11,6 +11,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <sstream>
 
 #include <toml++/toml.hpp>
@@ -21,15 +22,30 @@
 
 using namespace constellation::controller;
 using namespace constellation::config;
+using namespace constellation::log;
 
-ConfigParser::ConfigParser(std::ifstream file, std::set<std::string> satellites) : logger_("CFGPARSER") {
-    LOG(logger_, DEBUG) << "Parsing configuration file";
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    ConfigParser(buffer.str(), std::move(satellites));
+Logger ConfigParser::logger_("CFGPARSER");
+
+// ConfigParser::ConfigParser(std::ifstream file, std::set<std::string> satellites) : logger_("CFGPARSER") {
+//     LOG(logger_, DEBUG) << "Parsing configuration file";
+//     std::stringstream buffer;
+//     buffer << file.rdbuf();
+//     ConfigParser(buffer.str(), std::move(satellites));
+// }
+
+std::map<std::string, Dictionary> ConfigParser::getDictionaries(std::set<std::string> satellites, std::string_view toml) {
+    return parse_config(std::move(satellites), toml);
 }
 
-ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellites) : logger_("CFGPARSER") {
+std::optional<Dictionary> ConfigParser::getDictionary(const std::string& satellite, std::string_view toml) {
+    const auto configs = parse_config({satellite}, toml);
+    if(configs.contains(satellite)) {
+        return configs.at(utils::transform(satellite, ::tolower));
+    }
+    return std::nullopt;
+}
+
+std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::string> satellites, std::string_view toml) {
 
     toml::table tbl {};
     try {
@@ -100,9 +116,10 @@ ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellit
         }
     };
 
+    std::map<std::string, config::Dictionary> configs;
     for(const auto& sat : satellites) {
         // Start with empty dictionary:
-        configs_.emplace(sat, Dictionary {});
+        configs.emplace(sat, Dictionary {});
 
         const auto separator = sat.find_first_of('.');
         const auto type = sat.substr(0, separator);
@@ -131,7 +148,7 @@ ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellit
                                         auto value = parse_value(key, val);
                                         if(value.has_value()) {
                                             // Insert or assign - these keys always take priority
-                                            configs_[sat].emplace(std::string(key.str()), value.value());
+                                            configs[sat].emplace(std::string(key.str()), value.value());
                                         }
                                     });
                                 }
@@ -156,12 +173,12 @@ ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellit
 
             // Combine dictionaries, do not overwrite existing keys:
             for(const auto& [key, value] : dict_type) {
-                const auto& [it, inserted] = configs_[sat].insert({key, value});
+                const auto& [it, inserted] = configs[sat].insert({key, value});
                 LOG_IF(logger_, DEBUG, inserted) << "Added key " << key << " from type section";
             }
 
             for(const auto& [key, value] : dict_all) {
-                const auto& [it, inserted] = configs_[sat].insert({key, value});
+                const auto& [it, inserted] = configs[sat].insert({key, value});
                 LOG_IF(logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
             }
 
@@ -169,12 +186,6 @@ ConfigParser::ConfigParser(std::string_view toml, std::set<std::string> satellit
             LOG(logger_, WARNING) << "Could not find base node for satellites";
         }
     }
-}
 
-Dictionary ConfigParser::getConfig(const std::string& satellite) const {
-    if(hasConfig(satellite)) {
-        return configs_.at(utils::transform(satellite, ::tolower));
-    }
-
-    throw std::invalid_argument("sat not found");
+    return configs;
 }
