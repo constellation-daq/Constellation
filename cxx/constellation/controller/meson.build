@@ -27,5 +27,6 @@ controller_dep = declare_dependency(
 install_headers(
   'ConfigParser.hpp',
   'Controller.hpp',
+  'exceptions.hpp',
   subdir: 'constellation/controller',
 )

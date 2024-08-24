@@ -20,17 +20,26 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/utils/string.hpp"
 
+#include "exceptions.hpp"
+
 using namespace constellation::controller;
 using namespace constellation::config;
 using namespace constellation::log;
 
 Logger ConfigParser::config_parser_logger_("CFGPARSER");
 
-std::string ConfigParser::read_file(const std::filesystem::path& file) {
-    LOG(config_parser_logger_, DEBUG) << "Parsing configuration file " << std::quoted(file.string());
-    std::ifstream i(file);
+std::string ConfigParser::read_file(const std::filesystem::path& filepath) {
+    // Convert main file to absolute path
+    auto file_path_abs = std::filesystem::canonical(filepath);
+    LOG(config_parser_logger_, DEBUG) << "Parsing configuration file " << std::quoted(file_path_abs.string());
+
+    std::ifstream file(file_path_abs);
+    if(!file || !std::filesystem::is_regular_file(file_path_abs)) {
+        throw ConfigFileNotFoundError(file_path_abs);
+    }
+
     std::ostringstream buffer;
-    buffer << i.rdbuf();
+    buffer << file.rdbuf();
     return buffer.str();
 }
 
@@ -47,14 +56,14 @@ std::optional<Dictionary> ConfigParser::getDictionary(const std::string& satelli
 }
 
 std::map<std::string, Dictionary> ConfigParser::getDictionariesFromFile(std::set<std::string> satellites,
-                                                                        const std::filesystem::path& file) {
-    const auto buffer = read_file(std::move(file));
+                                                                        const std::filesystem::path& filepath) {
+    const auto buffer = read_file(std::move(filepath));
     return parse_config(std::move(satellites), buffer);
 }
 
 std::optional<Dictionary> ConfigParser::getDictionaryFromFile(const std::string& satellite,
-                                                              const std::filesystem::path& file) {
-    const auto buffer = read_file(std::move(file));
+                                                              const std::filesystem::path& filepath) {
+    const auto buffer = read_file(std::move(filepath));
     const auto configs = parse_config({satellite}, buffer);
     if(configs.contains(satellite)) {
         return configs.at(utils::transform(satellite, ::tolower));
