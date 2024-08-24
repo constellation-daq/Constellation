@@ -26,12 +26,12 @@ using namespace constellation::log;
 
 Logger ConfigParser::logger_("CFGPARSER");
 
-// ConfigParser::ConfigParser(std::ifstream file, std::set<std::string> satellites) : logger_("CFGPARSER") {
-//     LOG(logger_, DEBUG) << "Parsing configuration file";
-//     std::stringstream buffer;
-//     buffer << file.rdbuf();
-//     ConfigParser(buffer.str(), std::move(satellites));
-// }
+std::string ConfigParser::read_file(std::ifstream file) {
+    LOG(logger_, DEBUG) << "Parsing configuration file";
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 std::map<std::string, Dictionary> ConfigParser::getDictionaries(std::set<std::string> satellites, std::string_view toml) {
     return parse_config(std::move(satellites), toml);
@@ -39,6 +39,20 @@ std::map<std::string, Dictionary> ConfigParser::getDictionaries(std::set<std::st
 
 std::optional<Dictionary> ConfigParser::getDictionary(const std::string& satellite, std::string_view toml) {
     const auto configs = parse_config({satellite}, toml);
+    if(configs.contains(satellite)) {
+        return configs.at(utils::transform(satellite, ::tolower));
+    }
+    return std::nullopt;
+}
+
+std::map<std::string, Dictionary> ConfigParser::getDictionaries(std::set<std::string> satellites, std::ifstream file) {
+    const auto buffer = read_file(std::move(file));
+    return parse_config(std::move(satellites), buffer);
+}
+
+std::optional<Dictionary> ConfigParser::getDictionary(const std::string& satellite, std::ifstream file) {
+    const auto buffer = read_file(std::move(file));
+    const auto configs = parse_config({satellite}, buffer);
     if(configs.contains(satellite)) {
         return configs.at(utils::transform(satellite, ::tolower));
     }
