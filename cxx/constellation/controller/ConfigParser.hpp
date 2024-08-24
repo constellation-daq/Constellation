@@ -49,7 +49,9 @@ namespace constellation::controller {
          * @param satellite Satellite to obtain configuration dictionary for
          * @param toml String view of the TOML configuration file contents
          * @return Optional with configuration dictionary if satellite was found in configuration
-         * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
         static std::optional<config::Dictionary> getDictionary(const std::string& satellite, std::string_view toml);
 
@@ -62,7 +64,9 @@ namespace constellation::controller {
          * @param satellite Satellite to obtain configuration dictionary for
          * @param file Input file path of the TOML configuration file
          * @return Optional with configuration dictionary if satellite was found in configuration
-         * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
         static std::optional<config::Dictionary> getDictionaryFromFile(const std::string& satellite,
                                                                        const std::filesystem::path& file);
@@ -77,6 +81,9 @@ namespace constellation::controller {
          * @param satellites Satellite to obtain configuration dictionary for
          * @param toml String view of the TOML configuration file contents
          * @return Map of all requested satellites that were found in the configuration
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
          * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
          */
         static std::map<std::string, config::Dictionary> getDictionaries(std::set<std::string> satellites,
@@ -92,7 +99,9 @@ namespace constellation::controller {
          * @param satellites Satellite to obtain configuration dictionary for
          * @param file Input file path of the TOML configuration file
          * @return Map of all requested satellites that were found in the configuration
-         * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
         static std::map<std::string, config::Dictionary> getDictionariesFromFile(std::set<std::string> satellites,
                                                                                  const std::filesystem::path& file);

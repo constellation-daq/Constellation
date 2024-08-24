@@ -79,7 +79,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
     } catch(const toml::parse_error& err) {
         std::stringstream s;
         s << err;
-        throw std::invalid_argument(s.str());
+        throw ConfigFileParseError(s.str());
     }
 
     auto parse_value = [&](const toml::key& key, auto&& val) -> std::optional<Value> {
@@ -88,6 +88,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
             return {};
         } else if constexpr(toml::is_array<decltype(val)>) {
             if(val.is_homogeneous()) {
+                LOG(config_parser_logger_, DEBUG) << "Found homogeneous array for key " << key;
                 const auto& arr = val.as_array();
                 if(arr->empty()) {
                     return std::monostate {};
@@ -116,14 +117,10 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                     }
                     return return_value;
                 } else {
-                    LOG(config_parser_logger_, WARNING) << "Unknown type of array for key " << key;
-                    // throw
-                    return {};
+                    throw ConfigFileTypeError(key.str(), "Unknown type");
                 }
             } else {
-                LOG(config_parser_logger_, WARNING) << "Array with key " << key << " is not homogeneous";
-                // throw
-                return {};
+                throw ConfigFileTypeError(key.str(), "Array is not homogeneous");
             }
         } else {
             if constexpr(toml::is_integer<decltype(val)>) {
@@ -135,9 +132,7 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
             } else if constexpr(toml::is_string<decltype(val)>) {
                 return val.as_string()->get();
             } else {
-                LOG(config_parser_logger_, WARNING) << "Unknown value type for key " << key;
-                // throw
-                return {};
+                throw ConfigFileTypeError(key.str(), "Unknown type");
             }
         }
     };

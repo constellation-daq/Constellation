@@ -38,4 +38,38 @@ namespace constellation::controller {
         }
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Error with parsing the file content to TOML
+     */
+    class CNSTLN_API ConfigFileParseError : public ControllerError {
+    public:
+        /**
+         * @brief Construct an error for a configuration file that cannot correctly be parsed as TOML
+         * @param error Error message returned by the TOML parser
+         */
+        explicit ConfigFileParseError(std::string_view error) {
+            error_message_ = "Could not parse content of configuration file: ";
+            error_message_ += error;
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error with the type of a key in the configuration file
+     */
+    class CNSTLN_API ConfigFileTypeError : public ControllerError {
+    public:
+        /**
+         * @brief Construct an error for a configuration key that has an invalid type
+         * @param key The offending configuration key
+         * @param error Error message
+         */
+        explicit ConfigFileTypeError(std::string_view key, std::string_view error) {
+            error_message_ = "Invalid value type for key";
+            error_message_ += key;
+            error_message_ += ": ";
+            error_message_ += error;
+        }
+    };
 } // namespace constellation::controller
