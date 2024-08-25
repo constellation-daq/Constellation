@@ -10,6 +10,7 @@
 #pragma once
 
 #include <any>
+#include <atomic>
 #include <cstdint>
 #include <mutex>
 #include <string>
@@ -194,6 +195,12 @@ namespace constellation::controller {
         std::set<std::string> getConnections() const;
 
         /**
+         * @brief Get total number of currently active connected satellites
+         * @return Number of currently connected satellites
+         */
+        std::size_t getConnectionCount() const { return connection_count_.load(); }
+
+        /**
          * @brief Return the current or last run identifier of the constellation
          * @details This function will search through all connected satellites and returns the first valid run identifier
          * found. The value will be empty if the satellites have just started or no satellite is connected.
@@ -330,6 +337,8 @@ namespace constellation::controller {
         zmq::context_t context_;
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
+
+        std::atomic<std::size_t> connection_count_;
 
         std::condition_variable_any cv_;
         std::jthread watchdog_thread_;

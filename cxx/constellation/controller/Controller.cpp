@@ -130,6 +130,9 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
         }
     }
+
+    // Update total number of connections:
+    connection_count_ = connections_.size();
 }
 
 void Controller::process_heartbeat(message::CHP1Message&& msg) {
