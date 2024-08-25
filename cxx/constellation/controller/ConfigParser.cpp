@@ -50,7 +50,7 @@ std::map<std::string, Dictionary> ConfigParser::getDictionaries(std::set<std::st
 std::optional<Dictionary> ConfigParser::getDictionary(const std::string& satellite, std::string_view toml) {
     const auto configs = parse_config({satellite}, toml);
     if(configs.contains(satellite)) {
-        return configs.at(utils::transform(satellite, ::tolower));
+        return configs.at(satellite);
     }
     return std::nullopt;
 }
@@ -66,7 +66,7 @@ std::optional<Dictionary> ConfigParser::getDictionaryFromFile(const std::string&
     const auto buffer = read_file(std::move(filepath));
     const auto configs = parse_config({satellite}, buffer);
     if(configs.contains(satellite)) {
-        return configs.at(utils::transform(satellite, ::tolower));
+        return configs.at(satellite);
     }
     return std::nullopt;
 }
