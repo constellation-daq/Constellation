@@ -9,6 +9,7 @@
 
 #include "FSM.hpp"
 
+#include <chrono>
 #include <exception>
 #include <functional>
 #include <mutex>
@@ -62,6 +63,12 @@ FSM::TransitionFunction FSM::find_transition_function(Transition transition) con
     }
 }
 
+void FSM::set_state(FSM::State new_state) {
+    state_.store(new_state);
+    last_changed_.store(std::chrono::system_clock::now());
+    LOG(logger_, STATUS) << "New state: " << to_string(new_state);
+}
+
 bool FSM::isAllowed(Transition transition) const {
     try {
         find_transition_function(transition);
@@ -78,8 +85,8 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     // Find transition
     auto transition_function = find_transition_function(transition);
     // Execute transition function
-    state_.store((this->*transition_function)(std::move(payload)));
-    LOG(logger_, STATUS) << "New state: " << to_string(state_.load());
+    const auto new_state = (this->*transition_function)(std::move(payload));
+    set_state(new_state);
 
     // Pass state to callbacks
     call_state_callbacks();
@@ -152,8 +159,8 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     }
 
     // Execute transition function
-    state_.store((this->*transition_function)(std::move(fsm_payload)));
-    LOG(logger_, STATUS) << "New state: " << to_string(state_.load());
+    const auto new_state = (this->*transition_function)(std::move(fsm_payload));
+    set_state(new_state);
 
     // Pass state to callbacks
     call_state_callbacks();
@@ -180,14 +187,19 @@ void FSM::requestInterrupt(std::string_view reason) {
     }
 }
 
-void FSM::registerStateCallback(std::function<void(State)> callback) {
+void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
-    state_callbacks_.emplace_back(std::move(callback));
+    state_callbacks_.emplace(identifier, std::move(callback));
+}
+
+void FSM::unregisterStateCallback(const std::string& identifier) {
+    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    state_callbacks_.erase(identifier);
 }
 
 void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
-    for(const auto& callback : state_callbacks_) {
+    for(const auto& [id, callback] : state_callbacks_) {
         // Run in separate thread in case the callback takes long:
         std::thread(callback, state_.load()).detach();
     }

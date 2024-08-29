@@ -8,6 +8,8 @@ satellite_libdir = get_option('libdir') / 'ConstellationSatellites'
 satellites_to_build = []
 
 # Subdirs with satellites
+subdir('DevNullReceiver')
+subdir('RandomTransmitter')
 subdir('Sputnik')
 
 # Print build summary for satellites

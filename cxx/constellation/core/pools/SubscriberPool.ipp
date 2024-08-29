@@ -11,42 +11,36 @@
 
 #include "SubscriberPool.hpp"
 
-#include <any>
+#include <algorithm>
 #include <functional>
+#include <initializer_list>
 #include <mutex>
-#include <set>
-#include <stop_token>
-#include <thread>
+#include <string>
+#include <string_view>
 #include <utility>
 
 #include <zmq.hpp>
-#include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/log/log.hpp"
-#include "constellation/core/message/CHIRPMessage.hpp"
-#include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 
 namespace constellation::pools {
 
-    template <typename MESSAGE>
-    SubscriberPool<MESSAGE>::SubscriberPool(chirp::ServiceIdentifier service,
-                                            std::string_view log_topic,
-                                            std::function<void(const MESSAGE&)> callback,
-                                            std::initializer_list<std::string> default_topics)
-        : BasePool<MESSAGE>(service, log_topic, std::move(callback), zmq::socket_type::sub),
-          default_topics_(default_topics) {}
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    SubscriberPool<MESSAGE, SERVICE>::SubscriberPool(std::string_view log_topic,
+                                                     std::function<void(MESSAGE&&)> callback,
+                                                     std::initializer_list<std::string> default_topics)
+        : BasePoolT(log_topic, std::move(callback)), default_topics_(default_topics) {}
 
-    template <typename MESSAGE>
-    void SubscriberPool<MESSAGE>::scribe(std::string_view host, std::string_view topic, bool subscribe) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    void SubscriberPool<MESSAGE, SERVICE>::scribe(std::string_view host, std::string_view topic, bool subscribe) {
         // Get host ID from name:
         const auto host_id = message::MD5Hash(host);
 
-        const std::lock_guard sockets_lock {BasePool<MESSAGE>::sockets_mutex_};
+        const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
 
         const auto socket_it = std::ranges::find_if(
-            BasePool<MESSAGE>::sockets_, host_id, [&](const auto& s) { return s.first.host_id == host_id; });
-        if(socket_it != BasePool<MESSAGE>::sockets_.end()) {
+            BasePoolT::get_sockets(), host_id, [&](const auto& s) { return s.first.host_id == host_id; });
+        if(socket_it != BasePoolT::get_sockets().end()) {
             if(subscribe) {
                 socket_it->second.subscribe(topic);
             } else {
@@ -55,18 +49,21 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE> void SubscriberPool<MESSAGE>::socket_connected(zmq::socket_t& socket) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    void SubscriberPool<MESSAGE, SERVICE>::socket_connected(zmq::socket_t& socket) {
         // Directly subscribe to default topic list
         for(const auto& topic : default_topics_) {
             socket.set(zmq::sockopt::subscribe, topic);
         }
     }
 
-    template <typename MESSAGE> void SubscriberPool<MESSAGE>::subscribe(std::string_view host, std::string_view topic) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    void SubscriberPool<MESSAGE, SERVICE>::subscribe(std::string_view host, std::string_view topic) {
         scribe(host, topic, true);
     }
 
-    template <typename MESSAGE> void SubscriberPool<MESSAGE>::unsubscribe(std::string_view host, std::string_view topic) {
+    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    void SubscriberPool<MESSAGE, SERVICE>::unsubscribe(std::string_view host, std::string_view topic) {
         scribe(host, topic, false);
     }
 
