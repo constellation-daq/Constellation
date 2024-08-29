@@ -390,19 +390,19 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @cscp_requestable
     def get_state(
         self, _request: CSCPMessage | None = None
-    ) -> Tuple[str, dict[str, Any], None]:
+    ) -> Tuple[str, int, dict[str, Any]]:
         """Return the current state of the Satellite.
 
         No payload argument.
 
         Payload of the response contains 'last_changed'
         """
-        payload = {
+        payload = self.fsm.current_state_value.value
+        meta = {
             "last_changed": Timestamp.from_datetime(self.fsm.last_changed),
             "last_changed_iso": self.fsm.last_changed.isoformat(),
-            "value": self.fsm.current_state_value.value,
         }
-        return self.fsm.current_state_value.name, payload, None
+        return self.fsm.current_state_value.name, payload, meta
 
     @cscp_requestable
     def get_status(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:

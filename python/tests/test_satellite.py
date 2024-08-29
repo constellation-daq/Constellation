@@ -313,9 +313,9 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         req = sender.get_message()
         assert state.lower() in req.msg.lower()
         assert req.msg_verb == CSCPMessageVerb.SUCCESS
-        assert req.payload["last_changed"].to_datetime() == last_changed
-        assert req.payload["last_changed_iso"] == last_changed.isoformat()
-        assert req.payload["value"] == getattr(SatelliteState, state).value
+        assert req.header_meta["last_changed"].to_datetime() == last_changed
+        assert req.header_meta["last_changed_iso"] == last_changed.isoformat()
+        assert req.payload == getattr(SatelliteState, state).value
 
 
 @pytest.mark.forked
