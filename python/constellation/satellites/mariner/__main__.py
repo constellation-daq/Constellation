@@ -6,6 +6,6 @@ SPDX-License-Identifier: CC-BY-4.0
 This is the entry point for the example satellite.
 """
 
-from .mariner9 import main
+from .mariner import main
 
 main()

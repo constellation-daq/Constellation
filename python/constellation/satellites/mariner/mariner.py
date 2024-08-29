@@ -3,7 +3,7 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-Provides the class for the Mariner9 example satellite
+Provides the class for the Mariner example satellite
 """
 
 from constellation.core.satellite import Satellite, SatelliteArgumentParser
@@ -21,7 +21,7 @@ class CanopusStarTracker:
         self.sample_period = sample_period
 
 
-class Mariner9(Satellite):
+class Mariner(Satellite):
 
     def do_initializing(self, config: Configuration) -> str:
         try:
@@ -58,7 +58,7 @@ def main(args=None):
 
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
     # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(name="satellite_demo")
+    parser.set_defaults(name="Nine")
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
@@ -69,5 +69,5 @@ def main(args=None):
 
     logger.info("Starting up satellite!")
     # start server with remaining args
-    s = Mariner9(**args)
+    s = Mariner(**args)
     s.run_satellite()

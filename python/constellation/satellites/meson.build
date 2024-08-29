@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: CC0-1.0
 
 subdir('caenhv')
-subdir('mariner9')
+subdir('mariner')

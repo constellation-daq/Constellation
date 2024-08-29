@@ -1,7 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
-title: "Mariner9"
+title: "Mariner"
 subtitle: "Demonstrator satellite serving as prototype for new satellites"
 ---
 
