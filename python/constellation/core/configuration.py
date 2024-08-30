@@ -51,7 +51,10 @@ class Configuration:
         Mark key as requested in configuration.
         """
         self._requested_keys.add(key)
-        return self._config[key]
+        try:
+            return self._config[key]
+        except KeyError as e:
+            raise ConfigError(e) from e
 
     def get_keys(self) -> list[str]:
         """Return list of keys in config."""

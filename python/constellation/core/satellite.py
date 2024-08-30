@@ -171,11 +171,11 @@ class Satellite(
         # call device-specific user-routine
         try:
             init_msg: str = self.do_initializing(self.config)
-        except (KeyError, ConfigError) as e:
-            msg = f"Caught exception ('{repr(e)}') during initialization: "
-            msg += "missing a required configuration value?"
+        except ConfigError as e:
+            msg = "Caught exception during initialization: "
+            msg += f"missing a required configuration value {e}?"
             self.log.error(msg)
-            raise ConfigError(msg) from e
+            raise RuntimeError(msg) from e
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
                 self.log.warning("Satellite ignored configuration value: '%s'", key)
