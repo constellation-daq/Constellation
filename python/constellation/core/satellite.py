@@ -22,7 +22,7 @@ from .cscp import CSCPMessage
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster
 from .commandmanager import CommandReceiver, cscp_requestable
-from .configuration import Configuration, make_lowercase
+from .configuration import ConfigError, Configuration, make_lowercase
 from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
 from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
@@ -169,8 +169,13 @@ class Satellite(
         config = make_lowercase(config)
         self.config = Configuration(config)
         # call device-specific user-routine
-        init_msg: str = self.do_initializing(self.config)
-
+        try:
+            init_msg: str = self.do_initializing(self.config)
+        except (KeyError, ConfigError) as e:
+            msg = f"Caught exception ('{repr(e)}') during initialization: "
+            msg += "missing a required configuration value?"
+            self.log.error(msg)
+            raise ConfigError(msg) from e
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
                 self.log.warning("Satellite ignored configuration value: '%s'", key)
@@ -201,7 +206,7 @@ class Satellite(
 
     @debug_log
     def do_launching(self, payload: Any) -> str:
-        """Prepare Satellite for data acquistions."""
+        """Prepare Satellite for data acquisitions."""
         return "Launched."
 
     @handle_error
