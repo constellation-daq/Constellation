@@ -22,7 +22,7 @@ class Configuration:
         """Initialize configuration variables"""
         self._config: dict[str, typing.Any] = config if config else {}
         if not isinstance(config, dict):
-            raise ConfigError
+            raise TypeError("Provided argument not a dictionary")
         self._requested_keys: set[str] = set()
 
     def has_unused_values(self) -> bool:
