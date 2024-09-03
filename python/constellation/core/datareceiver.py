@@ -362,8 +362,15 @@ class H5DataReceiverWriter(DataReceiver):
 
         title = f"data_{self.run_identifier}_{item.sequence_number}"
 
-        # interpret bytes as array of uint8 if nothing else was specified in the meta
-        payload = np.frombuffer(item.payload, dtype=item.meta.get("dtype", np.uint8))
+        if isinstance(item.payload, bytes):
+            # interpret bytes as array of uint8 if nothing else was specified in the meta
+            payload = np.frombuffer(
+                item.payload, dtype=item.meta.get("dtype", np.uint8)
+            )
+        elif isinstance(item.payload, list):
+            payload = np.array(item.payload)
+        else:
+            raise TypeError(f"Cannot write payload of type '{type(item.payload)}'")
 
         dset = grp.create_dataset(
             title,
