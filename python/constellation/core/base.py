@@ -124,8 +124,10 @@ class BaseSatelliteFrame:
     """
 
     def __init__(self, name: str, interface: str, **_kwds: Any):
-        # add class name to create the canonical name
-        self.name = f"{type(self).__name__}.{name}"
+        # type name == python class name
+        self.type = type(self).__name__
+        # add type name to create the canonical name
+        self.name = f"{self.type}.{name}"
         logging.setLoggerClass(ConstellationLogger)
         self.log = cast(ConstellationLogger, logging.getLogger(name))
         self.context = zmq.Context()
