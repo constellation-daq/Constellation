@@ -185,7 +185,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 )
                 continue
             # check the response; empty string means 'missing data/incomplete'
-            if not res:
+            if res is None:
                 self.log.error("Command returned nothing: %s", req)
                 self._cmd_tm.send_reply(
                     "Command returned nothing", CSCPMessageVerb.INCOMPLETE
