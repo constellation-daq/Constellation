@@ -55,6 +55,8 @@ class Satellite(
             interface=interface,
         )
 
+        self.run_identifier: str = ""
+
         # give monitoring a chance to start up and catch early messages
         time.sleep(0.1)
 
@@ -201,7 +203,7 @@ class Satellite(
 
     @debug_log
     def do_launching(self, payload: Any) -> str:
-        """Prepare Satellite for data acquistions."""
+        """Prepare Satellite for data acquisitions."""
         return "Launched."
 
     @handle_error
@@ -445,7 +447,7 @@ class Satellite(
 
     @cscp_requestable
     def get_run_id(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
-        """Get current run identifier.
+        """Get current/last known run identifier.
 
         No payload argument.
 
