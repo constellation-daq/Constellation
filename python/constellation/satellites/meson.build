@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
 subdir('caenhv')
+subdir('hdf5datawriter')
 subdir('mariner')
