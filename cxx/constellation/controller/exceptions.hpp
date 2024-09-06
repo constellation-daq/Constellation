@@ -35,7 +35,7 @@ namespace constellation::controller {
          */
         explicit ConfigFileNotFoundError(const std::filesystem::path& file_name) {
             error_message_ = "Could not read configuration file ";
-            error_message_ += file_name;
+            error_message_ += file_name.string();
         }
     };
 
