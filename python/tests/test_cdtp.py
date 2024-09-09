@@ -20,9 +20,9 @@ from constellation.core.broadcastmanager import DiscoveredService
 from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.cscp import CommandTransmitter
-from constellation.core.datareceiver import H5DataReceiverWriter
 from constellation.core.datasender import DataSender
 from constellation.core import __version__
+from constellation.satellites.hdf5datawriter.hdf5datawriter import H5DataWriter
 
 DATA_PORT = 50101
 MON_PORT = 22222
@@ -104,7 +104,7 @@ def mock_sender_satellite(mock_chirp_transmitter):
 def receiver_satellite():
     """A receiver Satellite."""
 
-    class MockReceiverSatellite(H5DataReceiverWriter):
+    class MockReceiverSatellite(H5DataWriter):
         def do_initializing(self, config: dict[str]) -> str:
             res = super().do_initializing(config)
             # configure monitoring with higher frequency
