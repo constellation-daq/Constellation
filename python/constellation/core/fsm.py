@@ -9,9 +9,9 @@ from threading import Event
 from concurrent.futures import ThreadPoolExecutor, Future
 from enum import Enum
 from datetime import datetime, timezone
-from statemachine import StateMachine  # type: ignore[import-untyped]
-from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
-from statemachine.states import States  # type: ignore[import-untyped]
+from statemachine import StateMachine
+from statemachine.exceptions import TransitionNotAllowed
+from statemachine.states import States
 from msgpack import Timestamp  # type: ignore[import-untyped]
 
 from .cscp import CSCPMessage
@@ -136,7 +136,7 @@ class SatelliteFSM(StateMachine):
 
     def write_diagram(self, filename: str) -> None:
         """Create a png with the FSM schematic."""
-        from statemachine.contrib.diagram import DotGraphMachine  # type: ignore[import-untyped]
+        from statemachine.contrib.diagram import DotGraphMachine
 
         graph = DotGraphMachine(self)
         dot = graph()
