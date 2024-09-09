@@ -81,6 +81,17 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
             LOG(logger_, WARNING) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
 
+        // Take immediate action on remote state changes:
+        // Check for ERROR and SAFE states:
+        if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
+            remote_it->second.lives = 0;
+            if(interrupt_callback_) {
+                LOG(logger_, DEBUG) << "Detected state " << to_string(msg.getState()) << " at " << remote_it->first
+                                    << ", interrupting";
+                interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
+            }
+        }
+
         remote_it->second.interval = msg.getInterval();
         remote_it->second.last_heartbeat = now;
         remote_it->second.last_state = msg.getState();
@@ -108,16 +119,6 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
         wakeup = std::chrono::system_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
-            // Check for ERROR and SAFE states:
-            if(remote.lives > 0 && (remote.last_state == CSCP::State::ERROR || remote.last_state == CSCP::State::SAFE)) {
-                remote.lives = 0;
-                if(interrupt_callback_) {
-                    LOG(logger_, DEBUG) << "Detected state " << to_string(remote.last_state) << " at " << key
-                                        << ", interrupting";
-                    interrupt_callback_(key + " reports state " + to_string(remote.last_state));
-                }
-            }
-
             // Check if we are beyond the interval and that we only subtract lives once every interval
             const auto now = std::chrono::system_clock::now();
             if(remote.lives > 0 && now - remote.last_heartbeat > remote.interval &&
