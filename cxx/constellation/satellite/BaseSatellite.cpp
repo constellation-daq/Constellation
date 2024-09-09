@@ -530,6 +530,22 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
         LOG(logger_, INFO) << "Configuring role " << role;
         heartbeat_manager_.setRole(role);
     }
+
+    // Clear previously stored conditions
+    fsm_.clearRemoteCondition();
+
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = "_require_" + to_string(state) + "_after";
+        if(config.has(key)) {
+            LOG(logger_, INFO) << "Registering condition for transitional state " + to_string(state);
+            fsm_.registerRemoteCondition(config.get<std::string>(key), state);
+        }
+    }
 }
 
 std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& config) {
