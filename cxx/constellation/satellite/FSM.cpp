@@ -79,11 +79,12 @@ bool FSM::isAllowed(Transition transition) const {
 }
 
 void FSM::react(Transition transition, TransitionPayload payload) {
-    LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     // Acquire lock to prevent other threads from setting state
     const std::lock_guard transition_lock {transition_mutex_};
     // Find transition
     auto transition_function = find_transition_function(transition);
+
+    LOG(logger_, INFO) << "Reacting to transition " << to_string(transition);
     // Execute transition function
     const auto new_state = (this->*transition_function)(std::move(payload));
     set_state(new_state);
