@@ -11,7 +11,7 @@ import time
 import zmq
 from typing import Tuple, Any, Callable, TypeVar, ParamSpec
 from functools import wraps
-from statemachine.exceptions import TransitionNotAllowed  # type: ignore[import-untyped]
+from statemachine.exceptions import TransitionNotAllowed
 
 from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
