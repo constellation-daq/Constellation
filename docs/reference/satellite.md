@@ -150,4 +150,11 @@ under the following conditions:
 
 ## Data Sending and Receiving
 
+BOR and EOR messages of [CDTP](./protocols.md#data-transmission) allow for the transport of both user-supplied information in the form of header tags and framework-generated
+information in the payload:
+
+* The BOR message contains user-provided metadata tags in its header and the framework-provided configuration object of the satellite as payload
+* The EOR message contains user-provided metadata tags in its header and a framework-generated dictionary with internal run
+  metadata such as total transmitted bytes, run identifier, or timestamp of the run end.
+
 If a data sending satellite provide the relevant information, it should add `timestamp_begin` and `timestamp_end` tags to DATA messages in [CDTP](./protocols.md#data-transmission), containing integer values with the timestamps in picoseconds counted since the start of the measurement marking the begin and end of this data block, respectively.
