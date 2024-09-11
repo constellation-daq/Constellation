@@ -43,7 +43,7 @@ namespace constellation::message {
                    Type type,
                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
                    config::Dictionary tags = {})
-                : BaseHeader(protocol::CDTP1, std::move(sender), time, tags), seq_(seq), type_(type) {}
+                : BaseHeader(protocol::CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
 
             constexpr std::uint64_t getSequenceNumber() const { return seq_; }
 
