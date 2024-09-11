@@ -24,6 +24,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
@@ -171,6 +172,15 @@ namespace constellation::satellite {
          * @throw SendTimeoutError If EOR send timeout is reached
          */
         void stopping_transmitter();
+
+        /**
+         * @brief Interrupt function of transmitter
+         *
+         * If the previous state is RUN, this sends an EOR message marking the end of the run indicating an interruption.
+         *
+         * @param previous_state State in which the satellite was being interrupted
+         */
+        void interrupting_transmitter(protocol::CSCP::State previous_state);
 
         /**
          * @brief Set send timeout

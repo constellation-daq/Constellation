@@ -22,6 +22,7 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
@@ -29,6 +30,7 @@
 
 using namespace constellation::config;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
@@ -134,4 +136,11 @@ void TransmitterSatellite::stopping_transmitter() {
         throw SendTimeoutError("EOR message", data_eor_timeout_);
     }
     LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
+}
+
+void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
+    // If previous state was running, stop the run by sending an EOR
+    if(previous_state == CSCP::State::RUN) {
+        stopping_transmitter();
+    }
 }
