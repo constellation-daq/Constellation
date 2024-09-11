@@ -41,8 +41,9 @@ namespace constellation::message {
             Header(std::string sender,
                    std::uint64_t seq,
                    Type type,
-                   std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-                : BaseHeader(protocol::CDTP1, std::move(sender), time), seq_(seq), type_(type) {}
+                   std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
+                   config::Dictionary tags = {})
+                : BaseHeader(protocol::CDTP1, std::move(sender), time, tags), seq_(seq), type_(type) {}
 
             constexpr std::uint64_t getSequenceNumber() const { return seq_; }
 
