@@ -21,6 +21,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 
@@ -29,6 +30,7 @@
 using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
@@ -166,4 +168,11 @@ void TransmitterSatellite::stopping_transmitter() {
 
     // Clear EOR tags:
     eor_tags_ = {};
+}
+
+void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
+    // If previous state was running, stop the run by sending an EOR
+    if(previous_state == CSCP::State::RUN) {
+        stopping_transmitter();
+    }
 }
