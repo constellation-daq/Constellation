@@ -38,14 +38,13 @@ dependencies = [
 [project.scripts]
 Controller = "constellation.core.controller:main"
 Monitor = "constellation.core.monitoring:main"
-DemoSatellite = "constellation.core.satellite:main"
 DemoDataSender = "constellation.core.datasender:main"
 DemoHeartbeatChecker = "constellation.core.heartbeatchecker:main"
 DemoHeartbeatSender = "constellation.core.heartbeater:main"
 # tools
 ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
-SatelliteMariner9 = "constellation.satellites.mariner9.mariner9:main"
+SatelliteMariner = "constellation.satellites.mariner.mariner:main"
 SatelliteCaenHv = "constellation.satellites.caenhv.caenhv:main"
 SatelliteHDF5DataWriter = "constellation.satellites.hdf5datawriter.hdf5datawriter:main"
 
