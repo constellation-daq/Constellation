@@ -163,6 +163,11 @@ namespace constellation::satellite {
         void cscp_loop(const std::stop_token& stop_token);
 
         /**
+         * @brief Parse internal parameters for the satellite from the configuration
+         */
+        void parse_internal_config(config::Configuration& config);
+
+        /**
          * @brief Store configuration in satellite
          */
         void store_config(config::Configuration&& config);

@@ -387,7 +387,11 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
                         << config_.getDictionary(INTERNAL).to_string();
 }
 
+void BaseSatellite::parse_internal_config(config::Configuration& config) {}
+
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
+    parse_internal_config(config);
+
     initializing(config);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
