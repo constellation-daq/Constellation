@@ -80,6 +80,15 @@ namespace constellation::heartbeat {
          */
         CNSTLN_API std::optional<protocol::CSCP::State> getRemoteState(std::string_view remote);
 
+        /**
+         * @brief Update the maximum heartbeat interval to a new value
+         *
+         * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval
+         *
+         * @param interval New maximum heartbeat interval
+         */
+        CNSTLN_API void updateInterval(std::chrono::milliseconds interval) { sender_.updateInterval(interval); }
+
     private:
         /**
          * @brief Helper to process heartbeats. This is registered as callback in the heartbeat receiver
