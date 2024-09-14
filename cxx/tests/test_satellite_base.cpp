@@ -84,7 +84,7 @@ TEST_CASE("Standard commands", "[satellite]") {
     sender.sendCommand("get_commands");
     auto recv_msg_get_commands = sender.recv();
     REQUIRE(recv_msg_get_commands.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), Equals("Commands attached in payload"));
+    REQUIRE_THAT(to_string(recv_msg_get_commands.getVerb().second), EndsWith("commands known, list attached in payload"));
     REQUIRE(recv_msg_get_commands.hasPayload());
     const auto get_commands_dict = Dictionary::disassemble(recv_msg_get_commands.getPayload());
     REQUIRE(get_commands_dict.contains("get_commands"));
