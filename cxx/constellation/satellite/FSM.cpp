@@ -349,8 +349,8 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Check if condition is fulfilled:
                     if(!condition.isSatisfied(remote_state.value())) {
-                        LOG(logger_, STATUS) << "Awaiting state from " << condition.remote
-                                             << ", currently: " << to_string(remote_state.value());
+                        LOG(logger_, DEBUG) << "Awaiting state from " << condition.remote
+                                            << ", currently: " << to_string(remote_state.value());
                         satisfied = false;
                         break;
                     }
