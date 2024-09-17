@@ -166,7 +166,6 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_commands: {
-        return_verb = {CSCP1Message::Type::SUCCESS, "Commands attached in payload"};
         auto command_dict = Dictionary();
         // FSM commands
         command_dict["initialize"] = "Initialize satellite (payload: config as flat MessagePack dict with strings as keys)";
@@ -196,6 +195,8 @@ BaseSatellite::handle_standard_command(std::string_view command) {
             command_dict.emplace(cmd.first, cmd.second);
         }
 
+        return_verb = {CSCP1Message::Type::SUCCESS,
+                       to_string(command_dict.size()) + " commands known, list attached in payload"};
         // Pack dict
         return_payload = command_dict.assemble();
         break;
