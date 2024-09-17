@@ -429,7 +429,6 @@ lint:clang-tidy-diff:
     - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc) | tee clang-tidy-diff.log
     - | # Until LLVM 18 we need to check the output for errors
       grep -qzv ": error: " clang-tidy-diff.log
-  timeout: 2h
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes
@@ -475,7 +474,6 @@ lint:coverity-scan:
       --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
       --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
-  timeout: 2h
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
