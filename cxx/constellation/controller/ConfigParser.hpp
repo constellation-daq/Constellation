@@ -107,6 +107,8 @@ namespace constellation::controller {
                                                                                  const std::filesystem::path& file);
 
     private:
+        static constexpr std::string internal_keyword_ {"internal"};
+
         static std::map<std::string, config::Dictionary> parse_config(std::set<std::string> satellites,
                                                                       std::string_view toml);
 

@@ -170,8 +170,26 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                                         if(value.has_value()) {
                                             // Insert or assign - these keys always take priority
                                             configs[sat].emplace(std::string(key.str()), value.value());
+                                        } else if constexpr(toml::is_table<decltype(val)>) {
+                                            if(utils::transform(key, ::tolower) == internal_keyword_) {
+                                                val.as_table()->for_each([&](const toml::key& key, auto&& val) {
+                                                    LOG(config_parser_logger_, DEBUG) << "Reading internal name key " << key;
+
+                                                    auto value = parse_value(key, val);
+                                                    if(value.has_value()) {
+                                                        configs[sat].emplace("_" + std::string(key.str()), value.value());
+                                                    }
+                                                });
+                                            }
                                         }
                                     });
+                                } else if(utils::transform(key, ::tolower) == internal_keyword_) {
+                                    LOG(config_parser_logger_, DEBUG) << "Reading internal type key " << key;
+
+                                    auto value = parse_value(key, val);
+                                    if(value.has_value()) {
+                                        dict_type.emplace("_" + std::string(key.str()), value.value());
+                                    }
                                 }
                             } else {
                                 LOG(config_parser_logger_, DEBUG) << "Reading type key " << key;
@@ -182,6 +200,13 @@ std::map<std::string, Dictionary> ConfigParser::parse_config(std::set<std::strin
                                 }
                             }
                         });
+                    } else if(utils::transform(key, ::tolower) == internal_keyword_) {
+                        LOG(config_parser_logger_, DEBUG) << "Reading internal satellite key " << key;
+
+                        auto value = parse_value(key, val);
+                        if(value.has_value()) {
+                            dict_all.emplace("_" + std::string(key.str()), value.value());
+                        }
                     }
                 } else {
                     LOG(config_parser_logger_, DEBUG) << "Reading satellites key " << key;
