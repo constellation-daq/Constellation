@@ -69,29 +69,25 @@ namespace constellation::controller {
         /// @endcond
 
         /**
-         * @brief Parse configuration and prepare configuration dictionary for a given satellite
+         * @brief Prepare and return configuration dictionary for a given satellite
          *
-         * The cached dictionarie sTOML parse tree is specifically searched for the given satellite and its type because the
-         * TOML format is case-sensitive and we need insensitive matches.
+         * The cached dictionaries from parsed from the input TOML are searched for the given satellite, and keys from the
+         * type section matching this satellite as well as global keys to all satellites are added. Name and type are matched
+         * case-insensitively.
          *
-         * @return Optional with configuration dictionary if satellite was found in configuration
+         * @return Optional with configuration dictionary if the satellite was found in the cached configuration
          */
         std::optional<config::Dictionary> getSatelliteConfiguration(std::string_view canonical_name) const;
 
         /**
-         * @brief Parse configuration and prepare configuration dictionary for a set of satellites
+         * @brief Prepare and return configuration dictionaries for a set of satellites
          *
-         * It is necessary to also provide the set of satellites to parse this configuration for, since the TOML parse tree
-         * is specifically searched for those satellites and types because the TOML format is case-sensitive and we need
-         * insensitive matches.
+         * The cached dictionaries from parsed from the input TOML are searched for each of the satellite canonical names,
+         * and keys from the respective type sections as well as global keys to all satellites are added. Name and type are
+         * matched case-insensitively. The returned map will only contain satellites that have been found in the cached
+         * configuration dictionaries.
          *
-         * @param satellites Satellite to obtain configuration dictionary for
-         * @param toml String view of the TOML configuration file contents
-         * @return Map of all requested satellites that were found in the configuration
-         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
-         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
-         * @throws ConfigFileTypeError if the configuration file contained invalid value types
-         * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
+         * @return Map with configuration dictionary for each of the requested satellites found in the cached configuration
          */
         std::map<std::string, config::Dictionary> getSatelliteConfigurations(std::set<std::string> canonical_names) const;
 
