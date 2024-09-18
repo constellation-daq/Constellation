@@ -69,6 +69,7 @@ Controller::~Controller() {
         conn.second.req.close();
     }
     connections_.clear();
+    connection_count_.store(connections_.size());
 }
 
 void Controller::reached_global_state(CSCP::State /*state*/) {};
@@ -98,6 +99,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             it->second.req.close();
             LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
             connections_.erase(it);
+            connection_count_.store(connections_.size());
 
             // Trigger method for propagation of connection list updates in derived controller classes
             propagate_update(UpdateType::REMOVED, position, connections_.size());
@@ -119,6 +121,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
+        connection_count_.store(connections_.size());
 
         if(!success) {
             LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
@@ -130,9 +133,6 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
         }
     }
-
-    // Update total number of connections:
-    connection_count_ = connections_.size();
 }
 
 void Controller::process_heartbeat(message::CHP1Message&& msg) {
@@ -389,6 +389,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     // Close connection, remove from list:
                     remote.req.close();
                     connections_.erase(conn);
+                    connection_count_.store(connections_.size());
 
                     // Trigger method for propagation of connection list updates in derived controller classes
                     propagate_update(UpdateType::REMOVED, position, connections_.size());

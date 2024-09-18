@@ -338,7 +338,7 @@ namespace constellation::controller {
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
 
-        std::atomic<std::size_t> connection_count_;
+        std::atomic_size_t connection_count_;
 
         std::condition_variable_any cv_;
         std::jthread watchdog_thread_;
