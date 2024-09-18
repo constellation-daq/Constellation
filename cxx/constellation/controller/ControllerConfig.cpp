@@ -16,11 +16,10 @@
 
 #include <toml++/toml.hpp>
 
+#include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/utils/string.hpp"
-
-#include "exceptions.hpp"
 
 using namespace constellation::controller;
 using namespace constellation::config;
@@ -40,7 +39,7 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     std::ostringstream buffer;
     buffer << file.rdbuf();
 
-    parse_toml(buffer.str());
+    parse_toml(buffer.view());
 }
 
 ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
@@ -169,21 +168,9 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
     }
 }
 
-std::map<std::string, Dictionary>
-ControllerConfiguration::getSatelliteConfigurations(std::set<std::string> canonical_names) const {
-    std::map<std::string, Dictionary> configs;
+Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
 
-    for(const auto& name : canonical_names) {
-        const auto dictionary = getSatelliteConfiguration(name);
-        if(dictionary.has_value()) {
-            configs.insert({name, dictionary.value()});
-        }
-    }
-
-    return configs;
-}
-
-std::optional<Dictionary> ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
+    Dictionary config;
 
     const auto separator = canonical_name.find_first_of('.');
     const auto type = canonical_name.substr(0, separator);
@@ -193,25 +180,23 @@ std::optional<Dictionary> ControllerConfiguration::getSatelliteConfiguration(std
         return transform(r.first, ::tolower) == transform(canonical_name, ::tolower);
     });
     if(cfg_it != satellite_configs_.end()) {
-        auto config = cfg_it->second;
-
-        // Add type keys
-        const auto type_it = std::ranges::find_if(
-            type_configs_, [type](const auto& r) { return transform(r.first, ::tolower) == transform(type, ::tolower); });
-        if(type_it != type_configs_.end()) {
-            for(const auto& [key, value] : type_it->second) {
-                const auto& [it, inserted] = config.insert({key, value});
-                LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from type section";
-            }
-        }
-
-        for(const auto& [key, value] : global_config_) {
-            const auto& [it, inserted] = config.insert({key, value});
-            LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
-        }
-
-        return config;
+        config = cfg_it->second;
     }
 
-    return std::nullopt;
+    // Add type keys
+    const auto type_it = std::ranges::find_if(
+        type_configs_, [type](const auto& r) { return transform(r.first, ::tolower) == transform(type, ::tolower); });
+    if(type_it != type_configs_.end()) {
+        for(const auto& [key, value] : type_it->second) {
+            const auto& [it, inserted] = config.insert({key, value});
+            LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from type section";
+        }
+    }
+
+    for(const auto& [key, value] : global_config_) {
+        const auto& [it, inserted] = config.insert({key, value});
+        LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
+    }
+
+    return config;
 }

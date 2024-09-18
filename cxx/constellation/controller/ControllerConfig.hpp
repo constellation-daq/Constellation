@@ -75,21 +75,9 @@ namespace constellation::controller {
          * type section matching this satellite as well as global keys to all satellites are added. Name and type are matched
          * case-insensitively.
          *
-         * @return Optional with configuration dictionary if the satellite was found in the cached configuration
+         * @return Configuration dictionary, possibly empty if the satellite was not found in the cached configuration
          */
-        std::optional<config::Dictionary> getSatelliteConfiguration(std::string_view canonical_name) const;
-
-        /**
-         * @brief Prepare and return configuration dictionaries for a set of satellites
-         *
-         * The cached dictionaries from parsed from the input TOML are searched for each of the satellite canonical names,
-         * and keys from the respective type sections as well as global keys to all satellites are added. Name and type are
-         * matched case-insensitively. The returned map will only contain satellites that have been found in the cached
-         * configuration dictionaries.
-         *
-         * @return Map with configuration dictionary for each of the requested satellites found in the cached configuration
-         */
-        std::map<std::string, config::Dictionary> getSatelliteConfigurations(std::set<std::string> canonical_names) const;
+        config::Dictionary getSatelliteConfiguration(std::string_view canonical_name) const;
 
     private:
         /**
@@ -119,7 +107,7 @@ namespace constellation::controller {
         utils::string_hash_map<config::Dictionary> satellite_configs_;
 
         /* Logger */
-        log::Logger config_parser_logger_ {"CFGPARSER"};
+        log::Logger config_parser_logger_ {"CTRLCFG"};
     };
 
 } // namespace constellation::controller
