@@ -1,8 +1,6 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-tomlplusplus_dep = dependency('tomlplusplus')
-
 controller_src = files(
   'ConfigParser.cpp',
   'Controller.cpp',
