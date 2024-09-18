@@ -10,7 +10,6 @@
 #pragma once
 
 #include <filesystem>
-#include <string>
 #include <string_view>
 
 #include "constellation/build.hpp"
@@ -34,8 +33,7 @@ namespace constellation::controller {
          * @param file_name Name of the configuration file
          */
         explicit ConfigFileNotFoundError(const std::filesystem::path& file_name) {
-            error_message_ = "Could not read configuration file ";
-            error_message_ += file_name.string();
+            error_message_ = "Could not read configuration file " + file_name.string();
         }
     };
 
@@ -67,7 +65,7 @@ namespace constellation::controller {
          * @param error Error message
          */
         explicit ConfigFileTypeError(std::string_view key, std::string_view error) {
-            error_message_ = "Invalid value type for key";
+            error_message_ = "Invalid value type for key ";
             error_message_ += key;
             error_message_ += ": ";
             error_message_ += error;
