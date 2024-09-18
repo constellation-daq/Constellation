@@ -130,8 +130,9 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 
                             const auto value = parse_value(name_key, name_val);
                             if(value.has_value()) {
-                                // Insert or assign - these keys always take priority
-                                dict_name.emplace(std::string(name_key.str()), value.value());
+                                // Insert or assign - these keys always take priority, use the full canonical name
+                                const auto canonical_name = std::string(type_key.str()) + "." + std::string(name_key.str());
+                                dict_name.emplace(canonical_name, value.value());
                             }
                         });
 
@@ -182,7 +183,6 @@ std::optional<Dictionary> ControllerConfiguration::getSatelliteConfiguration(std
 
     const auto separator = canonical_name.find_first_of('.');
     const auto type = canonical_name.substr(0, separator);
-    const auto name = canonical_name.substr(separator + 1);
 
     // We need to look for canonical name - and case-insensitive
     const auto cfg_it = std::ranges::find_if(satellite_configs_, [canonical_name](const auto& r) {
@@ -192,7 +192,8 @@ std::optional<Dictionary> ControllerConfiguration::getSatelliteConfiguration(std
         auto config = cfg_it->second;
 
         // Add type keys
-        const auto type_it = type_configs_.find(type);
+        const auto type_it = std::ranges::find_if(
+            type_configs_, [type](const auto& r) { return transform(r.first, ::tolower) == transform(type, ::tolower); });
         if(type_it != type_configs_.end()) {
             for(const auto& [key, value] : type_it->second) {
                 const auto& [it, inserted] = config.insert({key, value});
