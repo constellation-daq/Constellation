@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 controller_src = files(
-  'ConfigParser.cpp',
   'Controller.cpp',
+  'ControllerConfig.cpp',
 )
 
 controller_lib = library('ConstellationController',
@@ -23,8 +23,8 @@ controller_dep = declare_dependency(
 )
 
 install_headers(
-  'ConfigParser.hpp',
   'Controller.hpp',
+  'ControllerConfig.hpp',
   'exceptions.hpp',
   subdir: 'constellation/controller',
 )
