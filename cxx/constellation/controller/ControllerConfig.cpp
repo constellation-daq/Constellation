@@ -40,10 +40,14 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     std::ostringstream buffer;
     buffer << file.rdbuf();
 
-    ControllerConfiguration(buffer.str());
+    parse_toml(buffer.str());
 }
 
 ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
+    parse_toml(toml);
+}
+
+void ControllerConfiguration::parse_toml(std::string_view toml) {
 
     toml::table tbl {};
     try {

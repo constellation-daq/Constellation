@@ -39,8 +39,16 @@ namespace constellation::controller {
          */
         ControllerConfiguration() = default;
 
-        // Parse from string
-        // explicit ControllerConfiguration(std::string_view);
+        /**
+         * @brief Construct a controller configuration and parse dictionaries from a string
+         *
+         * @param toml TOML data as string
+         *
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
+         */
+        explicit ControllerConfiguration(std::string_view toml);
 
         /**
          * @brief Construct a controller configuration and parse dictionaries from a configuration file
@@ -86,6 +94,18 @@ namespace constellation::controller {
          * @throws std::invalid_argument if no dictionary is available for this satellite or config parsing issues
          */
         std::map<std::string, config::Dictionary> getSatelliteConfigurations(std::set<std::string> canonical_names) const;
+
+    private:
+        /**
+         * @brief Parse a string view with TOML data into dictionaries
+         *
+         * @param toml TOML data as string
+         *
+         * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
+         * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
+         * @throws ConfigFileTypeError if the configuration file contained invalid value types
+         */
+        void parse_toml(std::string_view toml);
 
     private:
         /* Key-value pairs of the global satellite section */
