@@ -90,8 +90,18 @@ namespace constellation::satellite {
          * @param message Reference to data message
          * @return True if the message was successfully sent/queued, false otherwise
          */
-
         [[nodiscard]] bool sendDataMessage(DataMessage& message);
+
+        /**
+         * @brief Try to send data message created with `newDataMessage()
+         *
+         * @note This method will block until the message has been sent *or* the timeout for sending data messages has been
+         *       reached. In the latter case, a SendTimeoutError exception is thrown.
+         *
+         * @param message Reference to data message
+         * @throw SendTimeoutError If data send timeout is reached
+         */
+        void trySendDataMessage(DataMessage& message);
 
         /**
          * @brief Set tag for the run metadata send at the end of the run
@@ -173,6 +183,7 @@ namespace constellation::satellite {
         log::Logger cdtp_logger_;
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
+        std::chrono::seconds data_msg_timeout_ {};
         std::uint64_t seq_ {};
         config::Dictionary run_metadata_;
     };
