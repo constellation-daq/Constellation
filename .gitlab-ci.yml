@@ -180,7 +180,7 @@ build:alma9-cern:
     - *ccache
   variables:
     BUILD_TYPE: "release"
-    BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin"
+    BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin -Dqt_version=qt5"
 
 build:debian-clang:
   extends:
@@ -231,6 +231,7 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_TYPE: "debugoptimized"
+    BUILD_OPTIONS: "-Dqt_version=qt5"
     NINJA_OPTIONS: "-l4"
   retry: 2
 
