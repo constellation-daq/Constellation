@@ -14,6 +14,8 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
@@ -28,6 +30,7 @@
 
 #include "dummy_satellite.hpp"
 
+using namespace Catch::Matchers;
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
@@ -87,6 +90,13 @@ public:
         msg.addTag("test", 1);
         return sendDataMessage(msg);
     }
+
+    template <typename T> void trySendData(T data) {
+        auto msg = newDataMessage();
+        msg.addFrame(std::move(data));
+        msg.addTag("test", 1);
+        trySendDataMessage(msg);
+    }
 };
 
 void chirp_mock_service(std::string_view name, Port port) {
@@ -116,6 +126,42 @@ TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
     // Require that transmitter went to error state
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
+}
+
+TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
+    // Create CHIRP manager for data service discovery
+    auto chirp_manager = chirp::Manager("0.0.0.0", "0.0.0.0", "edda", "test");
+    chirp_manager.setAsDefaultInstance();
+    chirp_manager.start();
+
+    auto transmitter = Transmitter();
+    chirp_mock_service("Dummy.t1", transmitter.getDataPort());
+
+    {
+        auto receiver = Receiver();
+        auto config_receiver = Configuration();
+        config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+
+        auto config_transmitter = Configuration();
+        config_transmitter.set("_data_msg_timeout", 1);
+
+        receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
+        transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+        receiver.reactFSM(FSM::Transition::launch);
+        transmitter.reactFSM(FSM::Transition::launch);
+        receiver.reactFSM(FSM::Transition::start, "test");
+        transmitter.reactFSM(FSM::Transition::start, "test");
+
+        // Wait a bit for BOR to be handled by receiver
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_data_bor_timeout") == 10);
+    }
+    // Abort the receiver to avoid receiving data
+
+    // Attempt to send a data frame and catch its failure
+    REQUIRE_THROWS_MATCHES(transmitter.trySendData(std::vector<int>({1, 2, 3, 4})),
+                           SendTimeoutError,
+                           Message("Failed sending data message after 1s"));
 }
 
 TEST_CASE("Successful run", "[satellite]") {

@@ -69,7 +69,7 @@ void TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage&
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     const auto sent = message.assemble().send(cdtp_push_socket_);
     if(!sent) {
-        throw SendTimeoutError("Data message", data_msg_timeout_);
+        throw SendTimeoutError("data message", data_msg_timeout_);
     }
 }
 
