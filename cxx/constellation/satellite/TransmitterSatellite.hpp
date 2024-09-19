@@ -134,7 +134,7 @@ namespace constellation::satellite {
          * Reads the following config parameters:
          * * `_bor_timeout`
          * * `_eor_timeout
-         * * _data_timeout`
+         * * `_data_timeout`
          *
          * @param config Configuration of the satellite
          */
@@ -146,7 +146,7 @@ namespace constellation::satellite {
          * Supports reconfiguring of the following config parameters:
          * * `_bor_timeout`
          * * `_eor_timeout`
-         * * _data_timeout
+         * * `_data_timeout`
          *
          * @param partial_config Changes to the configuration of the satellite
          */
