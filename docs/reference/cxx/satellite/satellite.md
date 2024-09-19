@@ -22,8 +22,9 @@ Sending data is not thread safe. If multiple threads need to access the sender, 
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `_data_bor_timeout` | Unsigned integer | Timeout for BOR to be received in seconds | `10` |
-| `_data_eor_timeout` | Unsigned integer | Timeout for EOR to be received in seconds | `10` |
+| `_bor_timeout` | Unsigned integer | Timeout for the BOR message to be successfully sent, in seconds | `10` |
+| `_eor_timeout` | Unsigned integer | Timeout for the EOR message to be successfully sent, in seconds | `10` |
+| `_data_timeout` | Unsigned integer | Timeout for a data message to be successfully sent, in seconds | `10` |
 
 ### Receiving Data
 
@@ -38,7 +39,7 @@ above, executing transmitter transitions in addition to user transitions is achi
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `_data_eor_timeout` | Unsigned integer | Timeout for EOR to be received in seconds | `10` |
+| `_eor_timeout` | Unsigned integer | Timeout for the EOR message to be received in seconds | `10` |
 | `_data_transmitters` | List of strings | Canonical names of transmitters to connect to | - |
 
 ## `constellation::satellite` Namespace
