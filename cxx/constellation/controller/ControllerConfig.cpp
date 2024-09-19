@@ -176,33 +176,45 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
+    LOG(config_parser_logger_, TRACE) << "Fetching configuration for " << canonical_name;
 
-    Dictionary config;
+    // Find type from canonical name
+    const auto separator_pos = canonical_name.find_first_of('.');
+    const auto type = canonical_name.substr(0, separator_pos);
 
-    const auto separator = canonical_name.find_first_of('.');
-    const auto type = canonical_name.substr(0, separator);
+    // Copy global section
+    auto config = global_config_;
 
-    // We need to look for canonical name - and case-insensitive
-    const auto cfg_it = std::ranges::find_if(satellite_configs_, [canonical_name](const auto& r) {
-        return transform(r.first, ::tolower) == transform(canonical_name, ::tolower);
-    });
-    if(cfg_it != satellite_configs_.end()) {
-        config = cfg_it->second;
-    }
-
-    // Add type keys
-    const auto type_it = std::ranges::find_if(
-        type_configs_, [type](const auto& r) { return transform(r.first, ::tolower) == transform(type, ::tolower); });
+    // Add parameters from type section (dict always stores types in lower case)
+    const auto type_it = type_configs_.find(transform(type, ::tolower));
     if(type_it != type_configs_.end()) {
+        LOG(config_parser_logger_, TRACE) << "Found type section for " << type;
         for(const auto& [key, value] : type_it->second) {
-            const auto& [it, inserted] = config.insert({key, value});
-            LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from type section";
+            const auto param_it = config.find(key);
+            if(param_it != config.end()) {
+                // Overwrite existing parameter
+                param_it->second = value;
+                LOG(config_parser_logger_, DEBUG) << "Overwritten " << key << " from type section for " << type;
+            } else {
+                config.emplace(key, value);
+            }
         }
     }
 
-    for(const auto& [key, value] : global_config_) {
-        const auto& [it, inserted] = config.insert({key, value});
-        LOG_IF(config_parser_logger_, DEBUG, inserted) << "Added key " << key << " from global satellites section";
+    // Add parameters from satellite section (dict always stores names in lower case)
+    const auto satellite_it = satellite_configs_.find(transform(canonical_name, ::tolower));
+    if(satellite_it != satellite_configs_.end()) {
+        LOG(config_parser_logger_, TRACE) << "Found named section for " << type;
+        for(const auto& [key, value] : satellite_it->second) {
+            const auto param_it = config.find(key);
+            if(param_it != config.end()) {
+                // Overwrite existing parameter
+                param_it->second = value;
+                LOG(config_parser_logger_, DEBUG) << "Overwritten " << key << " from named section for " << canonical_name;
+            } else {
+                config.emplace(key, value);
+            }
+        }
     }
 
     return config;
