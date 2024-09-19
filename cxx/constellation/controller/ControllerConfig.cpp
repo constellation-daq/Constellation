@@ -131,46 +131,41 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
         node.as_table()->for_each([&](const toml::key& global_key, auto&& global_val) {
             // Check if this is a table and represents a satellite type:
             if constexpr(toml::is_table<decltype(global_val)>) {
-                Dictionary dict_type;
-
                 LOG(config_parser_logger_, DEBUG) << "Found satellite type sub-node " << global_key;
+                auto type_lc = transform(global_key.str(), ::tolower);
+                Dictionary dict_type {};
+
                 global_val.as_table()->for_each([&](const toml::key& type_key, auto&& type_val) {
                     // Check if this is a table and represents an individual satellite
                     if constexpr(toml::is_table<decltype(type_val)>) {
-                        Dictionary dict_name;
                         LOG(config_parser_logger_, DEBUG) << "Found satellite name sub-node " << type_key;
+                        auto canonical_name_lc = type_lc + "." + transform(type_key.str(), ::tolower);
+                        Dictionary dict_name {};
 
                         type_val.as_table()->for_each([&](const toml::key& name_key, auto&& name_val) {
-                            LOG(config_parser_logger_, DEBUG) << "Reading name key " << name_key;
-
                             const auto value = parse_value(name_key, name_val);
                             if(value.has_value()) {
-                                // Insert or assign - these keys always take priority, use the full canonical name
-                                const auto canonical_name = std::string(type_key.str()) + "." + std::string(name_key.str());
-                                dict_name.emplace(canonical_name, value.value());
+                                dict_name.emplace(transform(name_key, ::tolower), value.value());
                             }
                         });
 
-                        // Add dictionary for satellite
-                        satellite_configs_.emplace(type_key, dict_name);
+                        // Add satellite dictionary
+                        satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
 
                     } else {
-                        LOG(config_parser_logger_, DEBUG) << "Reading type key " << type_key;
-
                         const auto value = parse_value(type_key, type_val);
                         if(value.has_value()) {
-                            dict_type.emplace(std::string(type_key.str()), value.value());
+                            dict_type.emplace(transform(type_key.str(), ::tolower), value.value());
                         }
                     }
                 });
 
-                // Add type dictionary:
-                type_configs_.emplace(global_key, dict_type);
+                // Add type dictionary
+                type_configs_.emplace(std::move(type_lc), std::move(dict_type));
             } else {
-                LOG(config_parser_logger_, DEBUG) << "Reading satellites key " << global_key;
                 const auto value = parse_value(global_key, global_val);
                 if(value.has_value()) {
-                    global_config_.emplace(std::string(global_key.str()), value.value());
+                    global_config_.emplace(transform(global_key.str(), ::tolower), value.value());
                 }
             }
         });
