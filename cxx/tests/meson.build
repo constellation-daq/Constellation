@@ -113,6 +113,17 @@ test_satellite_data = executable('test_satellite_data',
   sources: 'test_satellite_data.cpp',
   dependencies: [core_dep, satellite_dep, catch2_dep],
 )
-test('Satellite Data test', test_satellite_data,
+test('Satellite data test', test_satellite_data,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
+# Controller
+
+test_controller_config = executable('test_controller_config',
+  sources: 'test_controller_config.cpp',
+  dependencies: [core_dep, controller_dep, catch2_dep],
+)
+test('Controller config test', test_controller_config,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  env: ['CXX_TESTS_DIR='+meson.current_source_dir()],
 )
