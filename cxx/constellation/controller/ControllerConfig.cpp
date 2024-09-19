@@ -27,16 +27,17 @@ using namespace constellation::log;
 using namespace constellation::utils;
 
 ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& path) {
-    // Convert main file to absolute path
+    // Check if file exists
+    if(!std::filesystem::is_regular_file(path)) {
+        throw ConfigFileNotFoundError(path);
+    }
+
+    // Convert to absolute path
     const auto file_path_abs = std::filesystem::canonical(path);
     LOG(config_parser_logger_, DEBUG) << "Parsing configuration file " << std::quoted(file_path_abs.string());
 
-    std::ifstream file(file_path_abs);
-    if(!file || !std::filesystem::is_regular_file(file_path_abs)) {
-        throw ConfigFileNotFoundError(file_path_abs);
-    }
-
-    std::ostringstream buffer;
+    const std::ifstream file {file_path_abs};
+    std::ostringstream buffer {};
     buffer << file.rdbuf();
 
     parse_toml(buffer.view());
