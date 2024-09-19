@@ -61,7 +61,7 @@ msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
 
 # TOML++
-tomlplusplus_dep = dependency('tomlplusplus')
+tomlplusplus_dep = dependency('tomlplusplus', default_options: ['default_library=static'])
 
 # System libraries
 threads_dep = dependency('threads')
