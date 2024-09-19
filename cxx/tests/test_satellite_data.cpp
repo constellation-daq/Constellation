@@ -111,7 +111,7 @@ void chirp_mock_service(std::string_view name, Port port) {
 TEST_CASE("Receiver / No transmitters configured", "[satellite]") {
     auto receiver = Receiver();
     auto config = Configuration();
-    config.set("_data_eor_timeout", 1);
+    config.set("_eor_timeout", 1);
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
     // Require receiver in error state because _data_transmitters missing
     REQUIRE(receiver.getState() == FSM::State::ERROR);
@@ -120,7 +120,7 @@ TEST_CASE("Receiver / No transmitters configured", "[satellite]") {
 TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     auto transmitter = Transmitter();
     auto config = Configuration();
-    config.set("_data_bor_timeout", 1);
+    config.set("_bor_timeout", 1);
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config));
     transmitter.reactFSM(FSM::Transition::launch);
     transmitter.reactFSM(FSM::Transition::start, "test");
@@ -143,7 +143,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
         config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
 
         auto config_transmitter = Configuration();
-        config_transmitter.set("_data_msg_timeout", 1);
+        config_transmitter.set("_data_timeout", 1);
 
         receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
         transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -154,7 +154,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
 
         // Wait a bit for BOR to be handled by receiver
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_data_bor_timeout") == 10);
+        REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 10);
     }
     // Abort the receiver to avoid receiving data
 
@@ -183,11 +183,11 @@ TEST_CASE("Successful run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::launch);
 
     auto config2_receiver = Configuration();
-    config2_receiver.set("_data_eor_timeout", 1);
+    config2_receiver.set("_eor_timeout", 1);
     config2_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1", "Dummy.t2"});
     auto config2_transmitter = Configuration();
-    config2_transmitter.set("_data_bor_timeout", 1);
-    config2_transmitter.set("_data_eor_timeout", 1);
+    config2_transmitter.set("_bor_timeout", 1);
+    config2_transmitter.set("_eor_timeout", 1);
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
 
@@ -196,7 +196,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_data_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
     // Send a data frame
     const auto sent = transmitter.sendData(std::vector<int>({1, 2, 3, 4}));

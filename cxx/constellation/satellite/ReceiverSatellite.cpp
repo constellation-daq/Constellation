@@ -61,7 +61,7 @@ bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) 
 }
 
 void ReceiverSatellite::initializing_receiver(Configuration& config) {
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_eor_timeout", 10));
+    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
 
     data_transmitters_ = config.getArray<std::string>("_data_transmitters");
@@ -70,8 +70,8 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
-    if(partial_config.has("_data_eor_timeout")) {
-        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_eor_timeout"));
+    if(partial_config.has("_eor_timeout")) {
+        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
     }
 

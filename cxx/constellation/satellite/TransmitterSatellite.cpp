@@ -74,24 +74,24 @@ void TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage&
 }
 
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
-    data_bor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_bor_timeout", 10));
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_eor_timeout", 10));
-    data_msg_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_msg_timeout", 10));
+    data_bor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_bor_timeout", 10));
+    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
+    data_msg_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
 }
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
-    if(partial_config.has("_data_bor_timeout")) {
-        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_bor_timeout"));
+    if(partial_config.has("_bor_timeout")) {
+        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_bor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
     }
-    if(partial_config.has("_data_eor_timeout")) {
-        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_eor_timeout"));
+    if(partial_config.has("_eor_timeout")) {
+        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
     }
-    if(partial_config.has("_data_msg_timeout")) {
-        data_msg_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_msg_timeout"));
+    if(partial_config.has("_data_timeout")) {
+        data_msg_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for DATA message: " << data_msg_timeout_;
     }
 }
