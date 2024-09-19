@@ -48,69 +48,80 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 }
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {
-
     toml::table tbl {};
     try {
         tbl = toml::parse(toml);
     } catch(const toml::parse_error& err) {
-        std::stringstream s;
-        s << err;
-        throw ConfigFileParseError(s.str());
+        std::ostringstream oss {};
+        oss << err;
+        throw ConfigFileParseError(oss.view());
     }
 
     auto parse_value = [&](const toml::key& key, auto&& val) -> std::optional<Value> {
+        LOG(config_parser_logger_, TRACE) << "Reading key " << key;
         if constexpr(toml::is_table<decltype(val)>) {
-            LOG(config_parser_logger_, DEBUG) << "Skipping table for key " << key;
+            LOG(config_parser_logger_, TRACE) << "Skipping table for key " << key;
             return {};
-        } else if constexpr(toml::is_array<decltype(val)>) {
-            if(val.is_homogeneous()) {
-                LOG(config_parser_logger_, DEBUG) << "Found homogeneous array for key " << key;
-                const auto& arr = val.as_array();
-                if(arr->empty()) {
-                    return std::monostate {};
-                } else if(arr->front().is_integer()) {
-                    std::vector<std::int64_t> return_value {};
-                    for(auto&& elem : *arr) {
-                        return_value.push_back(elem.as_integer()->get());
-                    }
-                    return return_value;
-                } else if(arr->front().is_floating_point()) {
-                    std::vector<double> return_value {};
-                    for(auto&& elem : *arr) {
-                        return_value.push_back(elem.as_floating_point()->get());
-                    }
-                    return return_value;
-                } else if(arr->front().is_boolean()) {
-                    std::vector<bool> return_value {};
-                    for(auto&& elem : *arr) {
-                        return_value.push_back(elem.as_boolean()->get());
-                    }
-                    return return_value;
-                } else if(arr->front().is_string()) {
-                    std::vector<std::string> return_value {};
-                    for(auto&& elem : *arr) {
-                        return_value.push_back(elem.as_string()->get());
-                    }
-                    return return_value;
-                } else {
-                    throw ConfigFileTypeError(key.str(), "Unknown type");
-                }
-            } else {
+        }
+        if constexpr(toml::is_array<decltype(val)>) {
+            const auto& arr = val.as_array();
+            // Throw if non-empty inhomogeneous array (empty arrays are never homogeneous)
+            if(!val.is_homogeneous() && !arr->empty()) {
                 throw ConfigFileTypeError(key.str(), "Array is not homogeneous");
             }
-        } else {
-            if constexpr(toml::is_integer<decltype(val)>) {
-                return val.as_integer()->get();
-            } else if constexpr(toml::is_floating_point<decltype(val)>) {
-                return val.as_floating_point()->get();
-            } else if constexpr(toml::is_boolean<decltype(val)>) {
-                return val.as_boolean()->get();
-            } else if constexpr(toml::is_string<decltype(val)>) {
-                return val.as_string()->get();
-            } else {
-                throw ConfigFileTypeError(key.str(), "Unknown type");
+            LOG(config_parser_logger_, TRACE) << "Found homogeneous array for key " << key;
+            if(arr->empty()) {
+                return std::monostate();
             }
+            if(arr->front().is_integer()) {
+                std::vector<std::int64_t> return_value {};
+                return_value.reserve(arr->size());
+                for(auto&& elem : *arr) {
+                    return_value.push_back(elem.as_integer()->get());
+                }
+                return return_value;
+            }
+            if(arr->front().is_floating_point()) {
+                std::vector<double> return_value {};
+                return_value.reserve(arr->size());
+                for(auto&& elem : *arr) {
+                    return_value.push_back(elem.as_floating_point()->get());
+                }
+                return return_value;
+            }
+            if(arr->front().is_boolean()) {
+                std::vector<bool> return_value {};
+                return_value.reserve(arr->size());
+                for(auto&& elem : *arr) {
+                    return_value.push_back(elem.as_boolean()->get());
+                }
+                return return_value;
+            }
+            if(arr->front().is_string()) {
+                std::vector<std::string> return_value {};
+                return_value.reserve(arr->size());
+                for(auto&& elem : *arr) {
+                    return_value.push_back(elem.as_string()->get());
+                }
+                return return_value;
+            }
+            // If not returned yet then unknown type
+            throw ConfigFileTypeError(key.str(), "Unknown type");
         }
+        if constexpr(toml::is_integer<decltype(val)>) {
+            return val.as_integer()->get();
+        }
+        if constexpr(toml::is_floating_point<decltype(val)>) {
+            return val.as_floating_point()->get();
+        }
+        if constexpr(toml::is_boolean<decltype(val)>) {
+            return val.as_boolean()->get();
+        }
+        if constexpr(toml::is_string<decltype(val)>) {
+            return val.as_string()->get();
+        }
+        // If not returned yet then unknown type
+        throw ConfigFileTypeError(key.str(), "Unknown type");
     };
 
     // Find satellites base node
