@@ -3,7 +3,7 @@
 
 controller_src = files(
   'Controller.cpp',
-  'ControllerConfig.cpp',
+  'ControllerConfiguration.cpp',
 )
 
 controller_lib = library('ConstellationController',
@@ -24,7 +24,7 @@ controller_dep = declare_dependency(
 
 install_headers(
   'Controller.hpp',
-  'ControllerConfig.hpp',
+  'ControllerConfiguration.hpp',
   'exceptions.hpp',
   subdir: 'constellation/controller',
 )

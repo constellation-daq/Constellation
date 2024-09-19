@@ -10,15 +10,11 @@
 #pragma once
 
 #include <filesystem>
-#include <map>
-#include <optional>
-#include <set>
-#include <string>
+#include <string_view>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::controller {
@@ -30,9 +26,9 @@ namespace constellation::controller {
      * Constellation. The dictionaries for the individual satellites need to be assembled from keys specific to the
      * respective satellite, keys valid for the relevant satellite type and keys intended for all satellites.
      */
-    class CNSTLN_API ControllerConfiguration {
+    class ControllerConfiguration {
     public:
-        virtual ~ControllerConfiguration() = default;
+        CNSTLN_API virtual ~ControllerConfiguration() = default;
 
         /**
          * @brief Default constructor with empty configuration dictionaries
@@ -48,7 +44,7 @@ namespace constellation::controller {
          * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
          * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
-        explicit ControllerConfiguration(std::string_view toml);
+        CNSTLN_API ControllerConfiguration(std::string_view toml);
 
         /**
          * @brief Construct a controller configuration and parse dictionaries from a configuration file
@@ -59,7 +55,7 @@ namespace constellation::controller {
          * @throws ConfigFileParseError if the configuration file could not be parsed into valid TOML
          * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
-        explicit ControllerConfiguration(const std::filesystem::path& path);
+        CNSTLN_API explicit ControllerConfiguration(const std::filesystem::path& path);
 
         /// @cond doxygen_suppress
         ControllerConfiguration(const ControllerConfiguration& other) = delete;
@@ -77,7 +73,7 @@ namespace constellation::controller {
          *
          * @return Configuration dictionary, possibly empty if the satellite was not found in the cached configuration
          */
-        config::Dictionary getSatelliteConfiguration(std::string_view canonical_name) const;
+        CNSTLN_API config::Dictionary getSatelliteConfiguration(std::string_view canonical_name) const;
 
     private:
         /**

@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "ControllerConfig.hpp"
+#include "ControllerConfiguration.hpp"
 
 #include <filesystem>
 #include <fstream>
