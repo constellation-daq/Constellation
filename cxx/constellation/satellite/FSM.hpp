@@ -18,7 +18,6 @@
 #include <thread>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -129,7 +128,10 @@ namespace constellation::satellite {
          * @brief Registering a callback to be executed when a new state was entered
          *
          * This function adds a new state update callback. Registered callbacks are used to distribute the state of the FSM
-         * whenever it was changed
+         * whenever it was changed.
+         *
+         * @warning State callbacks block the execution of further transitions, callbacks that take a long time should
+         *          offload the work to a new thread.
          *
          * @param identifier Identifier string for this callback
          * @param callback Callback taking the new state as argument

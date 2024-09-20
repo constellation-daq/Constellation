@@ -135,6 +135,9 @@ void ReceiverSatellite::stopping_receiver() {
 
         // If timeout reached, throw
         if(timer.timeoutReached()) {
+            // Stop BasePool thread and disconnect all connected sockets
+            stopPool();
+
             // Filter for data transmitters that did not send an EOR
             // Note: we do not have a biderectional range so the content needs to be copied to a vector
             const auto data_transmitter_no_eor = std::ranges::to<std::vector>(std::ranges::views::keys(

@@ -44,7 +44,6 @@ protected:
         const std::lock_guard map_lock {map_mutex_};
         bor_map_.erase(sender);
         bor_map_.emplace(sender, std::move(config));
-        LOG(WARNING) << "sender BOR: " << sender;
     }
     void receive_data(CDTP1Message&& data_message) override {
         const auto sender = to_string(data_message.getHeader().getSender());
@@ -137,26 +136,27 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     auto transmitter = Transmitter();
     chirp_mock_service("Dummy.t1", transmitter.getDataPort());
 
-    {
-        auto receiver = Receiver();
-        auto config_receiver = Configuration();
-        config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    auto receiver = Receiver();
+    auto config_receiver = Configuration();
+    config_receiver.set("_eor_timeout", 1);
+    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
 
-        auto config_transmitter = Configuration();
-        config_transmitter.set("_data_timeout", 1);
+    auto config_transmitter = Configuration();
+    config_transmitter.set("_data_timeout", 1);
 
-        receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
-        transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
-        receiver.reactFSM(FSM::Transition::launch);
-        transmitter.reactFSM(FSM::Transition::launch);
-        receiver.reactFSM(FSM::Transition::start, "test");
-        transmitter.reactFSM(FSM::Transition::start, "test");
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
+    transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+    receiver.reactFSM(FSM::Transition::launch);
+    transmitter.reactFSM(FSM::Transition::launch);
+    receiver.reactFSM(FSM::Transition::start, "test");
+    transmitter.reactFSM(FSM::Transition::start, "test");
 
-        // Wait a bit for BOR to be handled by receiver
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 10);
-    }
-    // Abort the receiver to avoid receiving data
+    // Wait a bit for BOR to be handled by receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 10);
+
+    // Stop the receiver to avoid receiving data
+    receiver.reactFSM(FSM::Transition::stop);
 
     // Attempt to send a data frame and catch its failure
     REQUIRE_THROWS_MATCHES(transmitter.trySendData(std::vector<int>({1, 2, 3, 4})),
