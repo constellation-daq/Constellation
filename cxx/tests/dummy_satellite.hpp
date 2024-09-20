@@ -98,12 +98,14 @@ public:
 
 protected:
     void transitional_state() {
+        LOG(TRACE) << "Entering transitional state";
         while(!progress_fsm_) {
             if(throw_transitional_) {
                 throw_transitional_ = false;
                 throw constellation::utils::Exception("Throwing in transitional state as requested");
             }
         }
+        LOG(TRACE) << "Leaving transitional state";
     }
 
 private:

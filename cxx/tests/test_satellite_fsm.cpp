@@ -429,6 +429,11 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     REQUIRE_THROWS_WITH(fsm.react(interrupted), Equals("Transition interrupted not allowed from ERROR state"));
     REQUIRE_THROWS_WITH(fsm.react(failure), Equals("Transition failure not allowed from ERROR state"));
     INFO("ERROR succeeded");
+
+    // Reset
+    fsm.react(Transition::initialize, Configuration());
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
