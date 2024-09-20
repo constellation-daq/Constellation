@@ -42,8 +42,10 @@ namespace constellation::pools {
             BasePoolT::get_sockets(), host_id, [&](const auto& s) { return s.first.host_id == host_id; });
         if(socket_it != BasePoolT::get_sockets().end()) {
             if(subscribe) {
+                LOG(BasePoolT::pool_logger_, TRACE) << "Subscribing to " << std::quoted(topic);
                 socket_it->second.subscribe(topic);
             } else {
+                LOG(BasePoolT::pool_logger_, TRACE) << "Unsubscribing from " << std::quoted(topic);
                 socket_it->second.unsubscribe(topic);
             }
         }
@@ -53,6 +55,7 @@ namespace constellation::pools {
     void SubscriberPool<MESSAGE, SERVICE>::socket_connected(zmq::socket_t& socket) {
         // Directly subscribe to default topic list
         for(const auto& topic : default_topics_) {
+            LOG(BasePoolT::pool_logger_, TRACE) << "Subscribing to " << std::quoted(topic);
             socket.set(zmq::sockopt::subscribe, topic);
         }
     }

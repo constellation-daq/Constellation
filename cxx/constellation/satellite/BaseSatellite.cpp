@@ -387,7 +387,19 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
                         << config_.getDictionary(INTERNAL).to_string();
 }
 
+void BaseSatellite::apply_internal_config(const config::Configuration& config) {
+
+    if(config.has("_heartbeat_interval")) {
+        const auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::seconds(config.get<std::uint64_t>("_heartbeat_interval")));
+        LOG(logger_, INFO) << "Updating heartbeat interval to " + to_string(interval);
+        heartbeat_manager_.updateInterval(interval);
+    }
+}
+
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
+    apply_internal_config(config);
+
     initializing(config);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
@@ -413,6 +425,8 @@ void BaseSatellite::landing_wrapper() {
 }
 
 void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_config) {
+    apply_internal_config(partial_config);
+
     reconfiguring(partial_config);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
