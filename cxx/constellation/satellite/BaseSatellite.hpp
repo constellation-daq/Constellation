@@ -165,7 +165,7 @@ namespace constellation::satellite {
         /**
          * @brief Parse and apply internal parameters for the satellite from the configuration
          */
-        void apply_internal_config(config::Configuration& config);
+        void apply_internal_config(const config::Configuration& config);
 
         /**
          * @brief Store configuration in satellite
