@@ -12,11 +12,14 @@
 #include <chrono>
 #include <exception>
 #include <functional>
+#include <future>
+#include <iomanip>
 #include <mutex>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #include <msgpack.hpp>
 
@@ -200,9 +203,19 @@ void FSM::unregisterStateCallback(const std::string& identifier) {
 
 void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    std::vector<std::future<void>> futures {};
+    futures.reserve(state_callbacks_.size());
     for(const auto& [id, callback] : state_callbacks_) {
-        // Run in separate thread in case the callback takes long:
-        std::thread(callback, state_.load()).detach();
+        futures.emplace_back(std::async(std::launch::async, [&]() {
+            try {
+                callback(state_.load());
+            } catch(...) {
+                LOG(logger_, WARNING) << "State callback " << std::quoted(id) << " threw an exception";
+            }
+        }));
+    }
+    for(const auto& future : futures) {
+        future.wait();
     }
 }
 
