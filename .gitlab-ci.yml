@@ -155,7 +155,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
-    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_satellites.sh) $(scripts/meson_enable_all_controllers.sh) $(scripts/meson_enable_all_listeners.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
