@@ -274,7 +274,14 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
     cmd.assemble(keep_payload).send(conn.req);
     zmq::multipart_t recv_zmq_msg {};
     recv_zmq_msg.recv(conn.req);
-    return CSCP1Message::disassemble(recv_zmq_msg);
+
+    // Disassemble message and update connection information:
+    auto reply = CSCP1Message::disassemble(recv_zmq_msg);
+    const auto verb = reply.getVerb();
+    conn.last_cmd_type = verb.first;
+    conn.last_cmd_verb = verb.second;
+
+    return reply;
 }
 
 CSCP1Message Controller::build_message(std::string verb, const CommandPayload& payload) const {
@@ -301,14 +308,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
     }
 
     // Exchange messages
-    auto response = send_receive(sat->second, cmd);
-
-    // Update last command info
-    auto verb = response.getVerb();
-    sat->second.last_cmd_type = verb.first;
-    sat->second.last_cmd_verb = verb.second;
-
-    return response;
+    return send_receive(sat->second, cmd);
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
@@ -323,10 +323,6 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
     for(auto& [name, sat] : connections_) {
         replies.emplace(name, send_receive(sat, cmd, true));
 
-        // Update last command info
-        auto verb = replies.at(name).getVerb();
-        sat.last_cmd_type = verb.first;
-        sat.last_cmd_verb = verb.second;
     }
     return replies;
 }
@@ -349,10 +345,6 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
         // Send command and receive reply:
         replies.emplace(name, send_receive(sat, send_msg));
 
-        // Update last command info
-        auto verb = replies.at(name).getVerb();
-        sat.last_cmd_type = verb.first;
-        sat.last_cmd_verb = verb.second;
     }
     return replies;
 }
