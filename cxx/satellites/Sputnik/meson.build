@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Build satellite if feature is not disabled:
-if get_option('satellite_sputnik').disabled()
+if not get_option('satellite_sputnik')
   subdir_done()
 endif
 

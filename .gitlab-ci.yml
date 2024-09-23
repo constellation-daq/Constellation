@@ -155,7 +155,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
-    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_satellites.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
@@ -180,7 +180,7 @@ build:alma9-cern:
     - *ccache
   variables:
     BUILD_TYPE: "release"
-    BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin"
+    BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin -Dqt_version=qt5"
 
 build:debian-clang:
   extends:
@@ -231,6 +231,7 @@ build:ubuntu-22.04:
     - .ubuntu-22.04
   variables:
     BUILD_TYPE: "debugoptimized"
+    BUILD_OPTIONS: "-Dqt_version=qt5"
     NINJA_OPTIONS: "-l4"
   retry: 2
 
