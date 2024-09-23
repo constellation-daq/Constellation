@@ -84,7 +84,7 @@ void Controller::callback(chirp::DiscoveredService service, bool depart, std::an
 
 void Controller::callback_impl(const constellation::chirp::DiscoveredService& service, bool depart) {
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
@@ -103,6 +103,17 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
             // Trigger method for propagation of connection list updates in derived controller classes
             propagate_update(UpdateType::REMOVED, position, connections_.size());
+
+            // Propagate state change of the constellation
+            lock.unlock();
+            const auto state = getLowestState();
+            if(isInGlobalState()) {
+                // Notify if this new state is a global one:
+                reached_global_state(state);
+            } else {
+                // Notify of currently lowest state
+                reached_lowest_state(state);
+            }
         }
     } else {
         // New satellite connection
@@ -131,6 +142,17 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
             // Trigger method for propagation of connection list updates in derived controller classes
             propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
+
+            // Propagate state change of the constellation
+            lock.unlock();
+            const auto state = getLowestState();
+            if(isInGlobalState()) {
+                // Notify if this new state is a global one:
+                reached_global_state(state);
+            } else {
+                // Notify of currently lowest state
+                reached_lowest_state(state);
+            }
         }
     }
 }
