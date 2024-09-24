@@ -395,6 +395,11 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
 
                     // Trigger method for propagation of connection list updates in derived controller classes
                     propagate_update(UpdateType::REMOVED, position, connections_.size());
+
+                    lock.unlock();
+                    // Propagate state change of the constellation
+                    reached_state(getLowestState(), isInGlobalState());
+                    lock.lock();
                 }
             }
 
