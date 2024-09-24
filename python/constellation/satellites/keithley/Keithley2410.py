@@ -44,6 +44,20 @@ class Keithley2410(KeithleyInterface):
         on_off = "ON" if enable else "OFF"
         self._write(f":OUTP {on_off}")
 
+    def get_terminals(self) -> list[str]:
+        return ["front", "rear"]
+
+    def set_terminal(self, terminal: str):
+        if terminal.lower() not in ["front", "rear"]:
+            raise ValueError("Only front and rear terminal supported")
+        self._write(f":ROUT:TERM {terminal[:4].upper()}")
+
+    def get_terminal(self) -> str:
+        terminal = self._write_read(":ROUT:TERM?").lower()
+        if terminal == "fron":  # codespell:ignore fron
+            terminal += "t"
+        return terminal
+
     def set_voltage(self, voltage: float):
         self._write(f":SOUR:VOLT:LEV {voltage}")
 

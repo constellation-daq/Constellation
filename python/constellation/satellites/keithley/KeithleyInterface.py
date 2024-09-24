@@ -77,6 +77,27 @@ class KeithleyInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def get_terminals(self) -> list[str]:
+        """
+        List of terminals which can be controlled
+        """
+        pass
+
+    @abstractmethod
+    def set_terminal(self, terminal: str):
+        """
+        Terminal for which to control output
+        """
+        pass
+
+    @abstractmethod
+    def get_terminal(self) -> str:
+        """
+        Get terminal for which output is controlled
+        """
+        pass
+
+    @abstractmethod
     def set_voltage(self, voltage: float):
         """
         Set output voltage

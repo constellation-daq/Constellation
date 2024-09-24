@@ -38,11 +38,21 @@ class Keithley(Satellite):
         self.ovp = config["ovp"]
         self.compliance = config["compliance"]
 
+        # If one terminal, select as default, otherwise get from config
+        terminals = self.device.get_terminals()
+        if len(terminals) == 1:
+            self.terminal = terminals[0]
+        else:
+            self.terminal = config["terminal"]
+            if self.terminal not in terminals:
+                raise ValueError(f"{self.terminal} not a valid terminal (choose from {terminals})")
+
         self.log.info(f"Initializing Keithley {device_name}")
         self.device.initialize()
         self.log.info(f"Device: {self.device.identify()}")
 
     def do_launching(self, payload: Any) -> str:
+        self.device.set_terminal(self.terminal)
         self._set_ovp()
         self._set_compliance()
 
@@ -71,6 +81,8 @@ class Keithley(Satellite):
         #    raise ConfigError("Reconfiguring device is not possible")
         # if "port" in config_keys:
         #    raise ConfigError("Reconfiguring port is not possible")
+        # if "terminal" in config_keys:
+        #    raise ConfigError("Reconfiguring terminal is not possible")
 
         if "ovp" in config_keys:
             self.ovp = config["ovp"]

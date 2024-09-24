@@ -38,12 +38,15 @@ The following communication settings are required:
 - `TERMINATOR`: `<CR+LF>`
 - `FLOW-CTRL`: `NONE`
 
+Possible terminals are `front` and `rear`.
+
 ## Parameters
 
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
 | `device` | Device | String | - |
 | `port` | Serial port to connect to | String | - |
+| `terminal` | Terminal output to control | String | - |
 | `voltage` | Target output voltage | Floating Point Number | - |
 | `voltage_step` | Voltage step in which to ramp to target voltage | Floating Point Number | - |
 | `settle_time` | Time to wait before continuing with the next voltage step | Floating Point Number | - |
