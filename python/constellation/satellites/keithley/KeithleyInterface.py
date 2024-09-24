@@ -7,6 +7,7 @@ Abstract serial interface for Keithleys.
 
 from abc import ABCMeta, abstractmethod
 import time
+from threading import Lock
 
 import serial
 
@@ -33,6 +34,7 @@ class KeithleyInterface(metaclass=ABCMeta):
             timeout=timeout,
         )
         self._terminator = terminator
+        self._lock = Lock()
 
     # Serial helper functions
 
@@ -40,20 +42,16 @@ class KeithleyInterface(metaclass=ABCMeta):
         """
         Write command to serial port
         """
-        self._serial.write((command + self._terminator).encode())
-
-    def _read(self) -> str:
-        """
-        Read from serial port until terminator or timeout
-        """
-        return self._serial.read_until(self._terminator.encode()).decode().strip(self._terminator)
+        with self._lock:
+            self._serial.write((command + self._terminator).encode())
 
     def _write_read(self, command: str) -> str:
         """
         Write command to serial and then read until terminator or timeout
         """
-        self._write(command)
-        return self._read()
+        with self._lock:
+            self._serial.write((command + self._terminator).encode())
+            return self._serial.read_until(self._terminator.encode()).decode().strip(self._terminator)
 
     # Device functions
 
