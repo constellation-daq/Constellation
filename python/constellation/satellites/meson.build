@@ -3,4 +3,5 @@
 
 subdir('caenhv')
 subdir('hdf5datawriter')
+subdir('keithley')
 subdir('mariner')
