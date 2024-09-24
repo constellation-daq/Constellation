@@ -132,9 +132,11 @@ for path in (docsdir / "satellites").glob("*.md"):
     path.unlink()
 
 # Add satellite READMEs to documentation
-satellite_files_cxx = list((repodir / "cxx" / "satellites").glob("**/README.md"))
-satellite_files_py = list(
-    (repodir / "python" / "constellation" / "satellites").glob("**/README.md")
+satellite_files_cxx = sorted(
+    list((repodir / "cxx" / "satellites").glob("**/README.md"))
+)
+satellite_files_py = sorted(
+    list((repodir / "python" / "constellation" / "satellites").glob("**/README.md"))
 )
 
 satellites_types_cxx = []
