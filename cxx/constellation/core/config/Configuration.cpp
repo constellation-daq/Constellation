@@ -18,6 +18,7 @@
 
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
@@ -106,8 +107,7 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     config_[new_key_lc] = config_.at(old_key_lc);
 
     if(warn) {
-        // FIXME logging
-        // LOG(WARNING) << "Parameter \"" << old_key << "\" is deprecated and superseded by \"" << new_key << "\"";
+        LOG(WARNING) << "Parameter " << std::quoted(old_key) << " is deprecated and superseded by " << std::quoted(new_key);
     }
 }
 
