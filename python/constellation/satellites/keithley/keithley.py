@@ -73,32 +73,31 @@ class Keithley(Satellite):
 
         return f"Keithley at {self.device.get_voltage()}V (output disabled)"
 
-    def do_reconfigure(self, config: Configuration) -> str:
-        config_keys = config.get_keys()
+    def do_reconfigure(self, partial_config: Configuration) -> str:
+        config_keys = partial_config.get_keys()
 
-        # FIXME: https://gitlab.desy.de/constellation/constellation/-/issues/153
-        # if "device" in config_keys:
-        #    raise ConfigError("Reconfiguring device is not possible")
-        # if "port" in config_keys:
-        #    raise ConfigError("Reconfiguring port is not possible")
-        # if "terminal" in config_keys:
-        #    raise ConfigError("Reconfiguring terminal is not possible")
+        if "device" in config_keys:
+            raise ValueError("Reconfiguring device is not possible")
+        if "port" in config_keys:
+            raise ValueError("Reconfiguring port is not possible")
+        if "terminal" in config_keys:
+            raise ValueError("Reconfiguring terminal is not possible")
 
         if "ovp" in config_keys:
-            self.ovp = config["ovp"]
+            self.ovp = partial_config["ovp"]
             self._set_ovp()
         if "compliance" in config_keys:
-            self.compliance = config["compliance"]
+            self.compliance = partial_config["compliance"]
             self._set_compliance()
 
         if "voltage_step" in config_keys:
-            self.voltage_step = config["voltage_step"]
+            self.voltage_step = partial_config["voltage_step"]
         if "settle_time" in config_keys:
-            self.voltage_step = config["settle_time"]
+            self.voltage_step = partial_config["settle_time"]
 
         # If voltage changed, ramp to new voltage
         if "voltage" in config_keys:
-            self.voltage = config["voltage"]
+            self.voltage = partial_config["voltage"]
             self.log.info(f"Ramping output voltage from {self.device.get_voltage()}V to {self.voltage}V")
             self.device.ramp_voltage(self.voltage, self.voltage_step, self.settle_time)
             self.log.info(f"Ramped output voltage to {self.voltage}V")
