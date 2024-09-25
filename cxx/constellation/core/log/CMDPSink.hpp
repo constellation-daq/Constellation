@@ -74,7 +74,6 @@ namespace constellation::log {
     private:
         std::unique_ptr<Logger> logger_;
 
-        zmq::context_t context_;
         zmq::socket_t pub_socket_;
         utils::Port port_;
         std::string sender_name_;
