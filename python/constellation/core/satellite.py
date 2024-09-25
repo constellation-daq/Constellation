@@ -213,7 +213,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_reconfigure(self, config: dict[str, Any]) -> str:
+    def _wrap_reconfigure(self, partial_config_dict: dict[str, Any]) -> str:
         """Wrapper for the 'reconfigure' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -221,17 +221,18 @@ class Satellite(
 
         """
 
-        # Merge with existing configuration. This will also update the internal
-        # set of used keys, so the user can choose to either update everything
-        # or only the 'unused'/updated keys.
-        self.config.update(config)
+        partial_config = Configuration(partial_config_dict)
+
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the exististance of the method to
         # determine the reaction to a `reconfigure` CSCP command.
-        init_msg: str = self.do_reconfigure(self.config)  # type: ignore[attr-defined]
+        init_msg: str = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
 
-        if self.config.has_unused_values():
-            for key in self.config.get_unused_keys():
+        # update config
+        self.config.update(partial_config_dict, partial_config.get_unused_keys())
+
+        if partial_config.has_unused_values():
+            for key in partial_config.get_unused_keys():
                 self.log.warning("Satellite ignored configuration value: '%s'", key)
             init_msg += " IGNORED parameters: "
             init_msg += ",".join(self.config.get_unused_keys())
