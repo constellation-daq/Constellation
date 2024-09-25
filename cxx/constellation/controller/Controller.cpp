@@ -274,7 +274,14 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
     cmd.assemble(keep_payload).send(conn.req);
     zmq::multipart_t recv_zmq_msg {};
     recv_zmq_msg.recv(conn.req);
-    return CSCP1Message::disassemble(recv_zmq_msg);
+
+    // Disassemble message and update connection information:
+    auto reply = CSCP1Message::disassemble(recv_zmq_msg);
+    const auto verb = reply.getVerb();
+    conn.last_cmd_type = verb.first;
+    conn.last_cmd_verb = verb.second;
+
+    return reply;
 }
 
 CSCP1Message Controller::build_message(std::string verb, const CommandPayload& payload) const {
@@ -301,14 +308,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
     }
 
     // Exchange messages
-    auto response = send_receive(sat->second, cmd);
-
-    // Update last command info
-    auto verb = response.getVerb();
-    sat->second.last_cmd_type = verb.first;
-    sat->second.last_cmd_verb = verb.second;
-
-    return response;
+    return send_receive(sat->second, cmd);
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
@@ -318,15 +318,23 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::strin
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    std::vector<std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
-    for(auto& [name, sat] : connections_) {
-        replies.emplace(name, send_receive(sat, cmd, true));
 
-        // Update last command info
-        auto verb = replies.at(name).getVerb();
-        sat.last_cmd_type = verb.first;
-        sat.last_cmd_verb = verb.second;
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    futures.reserve(connections_.size());
+    for(auto& [name, sat] : connections_) {
+        // Start command sending and store future:
+        futures.emplace_back(std::async(std::launch::async, [&]() { return send_receive(sat, cmd, true); }));
+    }
+
+    for(auto& future : futures) {
+        auto reply = future.get();
+        const auto name = reply.getHeader().getSender();
+
+        // Store received reply:
+        replies.emplace(name, std::move(reply));
     }
     return replies;
 }
@@ -339,20 +347,29 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(std::string verb, c
 std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb,
                                                              const std::map<std::string, CommandPayload>& payloads) {
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    std::vector<std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
+
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    futures.reserve(connections_.size());
     for(auto& [name, sat] : connections_) {
-        // Prepare message:
-        auto send_msg = (payloads.contains(name) ? build_message(verb, payloads.at(name))
-                                                 : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
+        // Start command sending and store future:
+        futures.emplace_back(std::async(std::launch::async, [&]() {
+            // Prepare message:
+            auto send_msg =
+                (payloads.contains(name) ? build_message(verb, payloads.at(name))
+                                         : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
+            return send_receive(sat, send_msg);
+        }));
+    }
 
-        // Send command and receive reply:
-        replies.emplace(name, send_receive(sat, send_msg));
+    for(auto& future : futures) {
+        auto reply = future.get();
+        const auto name = reply.getHeader().getSender();
 
-        // Update last command info
-        auto verb = replies.at(name).getVerb();
-        sat.last_cmd_type = verb.first;
-        sat.last_cmd_verb = verb.second;
+        // Store received reply:
+        replies.emplace(name, std::move(reply));
     }
     return replies;
 }
