@@ -72,8 +72,7 @@ Controller::~Controller() {
     connection_count_.store(connections_.size());
 }
 
-void Controller::reached_global_state(CSCP::State /*state*/) {};
-void Controller::reached_lowest_state(CSCP::State /*state*/) {};
+void Controller::reached_state(CSCP::State /*state*/, bool /*global*/) {};
 void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/, std::size_t /*total*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -84,7 +83,7 @@ void Controller::callback(chirp::DiscoveredService service, bool depart, std::an
 
 void Controller::callback_impl(const constellation::chirp::DiscoveredService& service, bool depart) {
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
@@ -103,6 +102,10 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
             // Trigger method for propagation of connection list updates in derived controller classes
             propagate_update(UpdateType::REMOVED, position, connections_.size());
+
+            lock.unlock();
+            // Propagate state change of the constellation
+            reached_state(getLowestState(), isInGlobalState());
         }
     } else {
         // New satellite connection
@@ -131,6 +134,10 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
             // Trigger method for propagation of connection list updates in derived controller classes
             propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
+
+            lock.unlock();
+            // Propagate state change of the constellation
+            reached_state(getLowestState(), isInGlobalState());
         }
     }
 }
@@ -170,13 +177,8 @@ void Controller::process_heartbeat(message::CHP1Message&& msg) {
             propagate_update(UpdateType::UPDATED, std::distance(connections_.begin(), sat), connections_.size());
 
             lock.unlock();
-            if(isInGlobalState()) {
-                // Notify if this new state is a global one:
-                reached_global_state(msg.getState());
-            } else {
-                // Notify of currently lowest state
-                reached_lowest_state(getLowestState());
-            }
+            // Notify about this new state
+            reached_state(getLowestState(), isInGlobalState());
         }
     } else {
         LOG(logger_, TRACE) << "Ignoring heartbeat from " << msg.getSender() << ", satellite is not connected";
@@ -393,6 +395,11 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
 
                     // Trigger method for propagation of connection list updates in derived controller classes
                     propagate_update(UpdateType::REMOVED, position, connections_.size());
+
+                    lock.unlock();
+                    // Propagate state change of the constellation
+                    reached_state(getLowestState(), isInGlobalState());
+                    lock.lock();
                 }
             }
 
