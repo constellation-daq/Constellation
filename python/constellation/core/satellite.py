@@ -8,7 +8,7 @@ This module provides the class for a Constellation Satellite.
 
 import time
 from queue import Empty
-from typing import Tuple, Any
+from typing import Any
 import threading
 import traceback
 from concurrent.futures import Future
@@ -87,13 +87,13 @@ class Satellite(
 
     @debug_log
     @cscp_requestable
-    def register(self, request: CSCPMessage) -> Tuple[str, str, None]:
+    def register(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
         """Register a heartbeat via CSCP request."""
         name, ip, port = request.payload.split()
         callback = self.hb_checker.register
         # add to the task queue
         self.task_queue.put((callback, [name, f"tcp://{ip}:{port}", self.context]))
-        return "registering", name, None
+        return "registering", name, {}
 
     def run_satellite(self) -> None:
         """Main Satellite event loop with task handler-routine.
@@ -325,9 +325,7 @@ class Satellite(
         # the stop_running Event will be set from outside the thread when it is
         # time to close down.
         # assert for mypy static type analysis
-        assert isinstance(
-            self._state_thread_evt, threading.Event
-        ), "Transition thread Event not set up correctly"
+        assert isinstance(self._state_thread_evt, threading.Event), "Transition thread Event not set up correctly"
         while not self._state_thread_evt.is_set():
             time.sleep(0.2)
         return "Finished acquisition."
@@ -350,9 +348,7 @@ class Satellite(
                     try:
                         self._state_thread_fut.result(timeout=1)
                     except TimeoutError:
-                        self.log.error(
-                            "Timeout while joining state thread, continuing."
-                        )
+                        self.log.error("Timeout while joining state thread, continuing.")
             res: str = self.fail_gracefully()
             # close heartbeat checker
             self.hb_checker.close()
@@ -437,9 +433,7 @@ class Satellite(
     # -------------------------- #
 
     @cscp_requestable
-    def get_version(
-        self, _request: CSCPMessage | None = None
-    ) -> Tuple[str, None, None]:
+    def get_version(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get Constellation version.
 
         No payload argument.
@@ -448,16 +442,16 @@ class Satellite(
         return value).
 
         """
-        return __version__, None, None
+        return __version__, None, {}
 
     @cscp_requestable
-    def get_run_id(self, _request: CSCPMessage | None = None) -> Tuple[str, None, None]:
+    def get_run_id(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get current/last known run identifier.
 
         No payload argument.
 
         """
-        return self.run_identifier, None, None
+        return self.run_identifier, None, {}
 
 
 # -------------------------------------------------------------------------
@@ -489,8 +483,7 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "--heartbeat-port",
             "--chp",
             type=int,
-            help="The port for sending heartbeats via the "
-            "Constellation Heartbeat Protocol (default: %(default)s).",
+            help="The port for sending heartbeats via the " "Constellation Heartbeat Protocol (default: %(default)s).",
         )
 
 
