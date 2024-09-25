@@ -323,8 +323,7 @@ namespace constellation::controller {
     private:
         /** Name of this controller */
         std::string controller_name_;
-        /** ZMQ context */
-        zmq::context_t context_;
+
         /** Heartbeat receiver module */
         constellation::heartbeat::HeartbeatRecv heartbeat_receiver_;
 

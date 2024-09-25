@@ -109,7 +109,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         }
     } else {
         // New satellite connection
-        Connection conn = {{context_, zmq::socket_type::req}, service.host_id, uri};
+        Connection conn = {{*utils::global_zmq_context(), zmq::socket_type::req}, service.host_id, uri};
         conn.req.connect(uri);
 
         // Obtain canonical name:
