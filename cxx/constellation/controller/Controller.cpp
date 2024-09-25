@@ -54,7 +54,9 @@ using namespace std::chrono_literals;
 Controller::Controller(std::string controller_name)
     : logger_("CTRL"), controller_name_(std::move(controller_name)),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {
+      watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {}
+
+void Controller::start() {
     LOG(logger_, DEBUG) << "Registering controller callback";
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
@@ -66,7 +68,7 @@ Controller::Controller(std::string controller_name)
     heartbeat_receiver_.startPool();
 }
 
-Controller::~Controller() {
+void Controller::stop() {
     heartbeat_receiver_.stopPool();
 
     // Unregister callback
