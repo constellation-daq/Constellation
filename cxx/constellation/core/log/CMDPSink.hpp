@@ -34,8 +34,9 @@ namespace constellation::log {
     public:
         /**
          * @brief Construct a new CMDPSink
+         * @param context ZMQ context to be used
          */
-        CMDPSink();
+        CMDPSink(std::shared_ptr<zmq::context_t> context);
 
         /**
          * @brief Deconstruct the CMDPSink
@@ -73,6 +74,9 @@ namespace constellation::log {
 
     private:
         std::unique_ptr<Logger> logger_;
+
+        // Needs to store shared pointer since CMDPSink is owned by static SinkManager
+        std::shared_ptr<zmq::context_t> context_;
 
         zmq::socket_t pub_socket_;
         utils::Port port_;
