@@ -46,7 +46,7 @@ class CanopusStarTracker:
 
     def canopus_in_view(self):
         """Determine whether Canopus is in view."""
-        return self.get_brightness() > 90
+        return self.get_current_brightness() > 90
 
     def get_attitude(self):
         """Determine and return the current roll attitude."""
@@ -70,9 +70,7 @@ class Mariner(Satellite):
         automatically return an error or warning, respectively.
 
         """
-        self.device = CanopusStarTracker(
-            config["voltage"], config["current"], config["sample_period"]
-        )
+        self.device = CanopusStarTracker(config["voltage"], config["current"], config["sample_period"])
         return "Initialized"
 
     def do_run(self, payload: Any) -> str:
@@ -89,7 +87,7 @@ class Mariner(Satellite):
         return "Finished acquisition."
 
     @cscp_requestable
-    def get_attitude(self, request: CSCPMessage) -> (str, int, None):
+    def get_attitude(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Determine and return the space craft's attitude.
 
         This is an example for a command that can be triggered from a Controller
@@ -105,8 +103,8 @@ class Mariner(Satellite):
             SatelliteState.initializing,
             SatelliteState.reconfiguring,
         ]:
-            return "Canopus Star Tracker not ready", None, None
-        return "Canopus Star Tracker locked and ready", self.device.get_attitude(), None
+            return "Canopus Star Tracker not ready", None, {}
+        return "Canopus Star Tracker locked and ready", self.device.get_attitude(), {}
 
 
 # -------------------------------------------------------------------------
