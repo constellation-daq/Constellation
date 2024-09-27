@@ -183,6 +183,11 @@ namespace constellation::satellite {
          */
         void stop_run_thread();
 
+        /**
+         * @brief Join the failure_thread
+         */
+        void join_failure_thread();
+
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
         CNSTLN_API auto initialized(TransitionPayload payload) -> State;
         CNSTLN_API auto launch(TransitionPayload payload) -> State;

@@ -15,7 +15,6 @@
 #include <future>
 #include <iomanip>
 #include <mutex>
-#include <stop_token>
 #include <string>
 #include <thread>
 #include <utility>
@@ -221,9 +220,16 @@ void FSM::call_state_callbacks() {
 
 void FSM::stop_run_thread() {
     LOG(logger_, DEBUG) << "Stopping running function of satellite...";
-    this->run_thread_.request_stop();
-    if(this->run_thread_.joinable()) {
-        this->run_thread_.join();
+    run_thread_.request_stop();
+    if(run_thread_.joinable()) {
+        run_thread_.join();
+    }
+}
+
+void FSM::join_failure_thread() {
+    if(failure_thread_.joinable()) {
+        LOG(logger_, DEBUG) << "Joining failure function of satellite...";
+        failure_thread_.join();
     }
 }
 
@@ -248,19 +254,22 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
 }
 
 // Joins a thread and assigns it to a new thread with given args
-template <typename... Args> void launch_assign_thread(std::thread& thread, Args&&... args) {
+template <typename T, typename... Args> void launch_assign_thread(T& thread, Args&&... args) {
     // Join if possible to avoid std::terminate
     if(thread.joinable()) {
         thread.join();
     }
     // Launch thread
-    thread = std::thread(std::forward<Args>(args)...);
+    thread = T(std::forward<Args>(args)...);
 }
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 FSM::State FSM::initialize(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration&& config) {
+        // First join failure thread
+        join_failure_thread();
+
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto transition =
             call_satellite_function(&BaseSatellite::initializing_wrapper, Transition::initialized, std::move(config));
@@ -331,13 +340,13 @@ FSM::State FSM::start(TransitionPayload payload) {
 FSM::State FSM::started(TransitionPayload /* payload */) {
     // Start running thread async
     auto call_wrapper = [this](const std::stop_token& stop_token) { satellite_->running_wrapper(stop_token); };
-    run_thread_ = std::jthread(call_wrapper);
+    launch_assign_thread(run_thread_, call_wrapper);
     return State::RUN;
 }
 
 FSM::State FSM::stop(TransitionPayload /* payload */) {
     auto call_wrapper = [this]() {
-        // First stop of RUN thread
+        // First stop RUN thread
         stop_run_thread();
 
         LOG(logger_, INFO) << "Calling stopping function of satellite...";
