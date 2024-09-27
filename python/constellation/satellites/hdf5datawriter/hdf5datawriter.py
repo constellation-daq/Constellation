@@ -87,11 +87,12 @@ class H5DataWriter(DataReceiver):
 
         if isinstance(item.payload, bytes):
             # interpret bytes as array of uint8 if nothing else was specified in the meta
-            payload = np.frombuffer(
-                item.payload, dtype=item.meta.get("dtype", np.uint8)
-            )
+            payload = np.frombuffer(item.payload, dtype=item.meta.get("dtype", np.uint8))
         elif isinstance(item.payload, list):
             payload = np.array(item.payload)
+        elif item.payload is None:
+            # empty payload -> empty array of bytes
+            payload = np.array([], dtype=np.uint8)
         else:
             raise TypeError(f"Cannot write payload of type '{type(item.payload)}'")
 
@@ -105,11 +106,7 @@ class H5DataWriter(DataReceiver):
         dset.attrs.update(item.meta)
 
         # time to flush data to file?
-        if (
-            self.flush_interval > 0
-            and (datetime.datetime.now() - self.last_flush).total_seconds()
-            > self.flush_interval
-        ):
+        if self.flush_interval > 0 and (datetime.datetime.now() - self.last_flush).total_seconds() > self.flush_interval:
             outfile.flush()
             self.last_flush = datetime.datetime.now()
 
