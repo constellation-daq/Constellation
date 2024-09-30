@@ -162,63 +162,41 @@ For performance considerations, please see [Increase Data Rate in C++](data_tran
 Constellation uses the [Meson build system](https://mesonbuild.com/) and setting up a `meson.build` file is required for the
 code to by compiled. The file should contain the following sections and variable definitions:
 
-* First, potential dependencies of this satellite should be resolved
+* First, the type this satellite identifies as should be defined by setting:
 
   ```meson
-  my_dep = dependency('TheLibrary')
+  satellite_type = 'Example'
   ```
 
-  More details on Meson dependencies can be found [elsewhere](https://mesonbuild.com/Dependencies.html).
+  This will be the type by which new satellites are invoked and which will become part of the canonical name of each
+  instance, e.g. `Example.MySat`.
 
-* Then, the type this satellite identifies as should be defined by setting `satellite_type = 'Example'`. This will be the type
-  by which new satellites are invoked and which will become part of the canonical name of each instance, e.g. `Example.MySat`.
-
-* The source files which need to be compiled for this satellite should be listed in the `satellite_sources` variable:
+* Then the source files which need to be compiled for this satellite should be listed in the `satellite_sources` variable:
 
   ```meson
   satellite_sources = files(
-    'PrototypeSatellite.cpp',
+    'ExampleSatellite.cpp',
   )
   ```
 
-* Constellation automatically generates the shared library for the satellite as well as an executable. This is done by the
-  remainder of the build file, which can be copied verbatim apart from the potential dependency to be added.
+* Lastly, potential dependencies of this satellite should be resolved:
 
-  Setup of satellite configuration, inclusion of the C++ generator file, generation of final sources:
+    ```meson
+    my_dep = dependency('TheLibrary')
+    ```
 
-  ```meson
-  satellite_cfg_data = configuration_data()
-  satellite_cfg_data.set('SATELLITE_TYPE', satellite_type)
-  satellite_generator = configure_file(
-    input: satellite_generator_template,
-    output: 'generator.cpp',
-    configuration: satellite_cfg_data,
-  )
-  satellite_main = configure_file(
-    input: satellite_main_template,
-    output: 'main.cpp',
-    configuration: satellite_cfg_data,
-  )
-  ```
+    More details on Meson dependencies can be found [elsewhere](https://mesonbuild.com/Dependencies.html).
+    Then, all dependencies should be gathered in a list:
 
-  Compilation targets, a shared library for the satellite and the corresponding executable. Here, the dependency stored in
-  `my_dep` has to be added to the list of library dependencies:
+    ```meson
+    satellite_dependencies = [my_dep]
+    ```
+
+* Constellation automatically generates the shared library for the satellite as well as an executable. This requires that the
+  type, the sources and the dependencies are added to the `satellites_to_build` variable like this:
 
   ```meson
-  shared_library(satellite_type,
-    sources: [satellite_generator, satellite_sources],
-    dependencies: [core_dep, satellite_dep, my_dep],
-    gnu_symbol_visibility: 'hidden',
-    install_dir: satellite_libdir,
-    install_rpath: constellation_rpath,
-  )
-
-  executable('satellite' + satellite_type,
-    sources: [satellite_main],
-    dependencies: [exec_dep],
-    install: true,
-    install_rpath: constellation_rpath,
-  )
+  satellites_to_build += [[satellite_type, satellite_sources, satellite_dependencies]]
   ```
 
 * To include the newly created `meson.build` file in the build process, it has to be added to the `cxx/satellite/meson.build`
@@ -227,31 +205,16 @@ code to by compiled. The file should contain the following sections and variable
 * An option can be added to make it selectable if the satellite is build in the top-level `meson_options.txt` file:
 
   ```meson
-  option('satellite_example', type: 'feature', value: 'auto', description: 'Build Example satellite')
+  option('satellite_example', type: 'boolean', value: false, description: 'Build Example satellite')
   ```
 
   In the `meson.build` file for the satellite this option has to be checked.
   These lines at the begging of the `meson.build` file result in a satellite being built by default:
 
   ```meson
-  if get_option('satellite_example').disabled()
+  if not get_option('satellite_example')
     subdir_done()
   endif
   ```
 
-  However most satellite should not be built by default:
-
-  ```meson
-  if not get_option('satellite_example').enabled()
-    subdir_done()
-  endif
-  ```
-
-  The satellite can now be enabled with `meson configure build -Dsatellite_example=enabled`.
-
-* Meson prints a build summary when during setup and reconfiguring, which can print the satellites being built.
-  For this the satellite needs to be added to the corresponding list via:
-
-  ```meson
-  satellites_to_build += satellite_type
-  ```
+  The satellite can now be enabled with `meson configure build -Dsatellite_example=true`.

@@ -8,10 +8,10 @@ subtitle: "A satellite that receives data and drops it"
 ## Building
 
 The DevNullReceiver satellite has no additional dependencies.
-It is not build by default, building can be enabled via:
+The satellite is not build by default, building can be enabled via:
 
 ```sh
-meson configure build -Dsatellite_dev_null_receiver=enabled
+meson configure build -Dsatellite_dev_null_receiver=true
 ```
 
 ## Parameters

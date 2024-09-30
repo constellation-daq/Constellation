@@ -8,10 +8,10 @@ subtitle: "A satellite that transmits random data"
 ## Building
 
 The RandomTransmitter satellite has no additional dependencies.
-It is not build by default, building can be enabled via:
+The satellite is not build by default, building can be enabled via:
 
 ```sh
-meson configure build -Dsatellite_random_transmitter=enabled
+meson configure build -Dsatellite_random_transmitter=true
 ```
 
 ## Parameters
