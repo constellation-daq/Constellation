@@ -10,7 +10,7 @@ import threading
 from unittest.mock import MagicMock, patch
 
 from constellation.core.cscp import CSCPMessageVerb
-from constellation.satellites.mariner.mariner import Mariner
+from constellation.satellites.Mariner.Mariner import Mariner
 
 from conftest import mocket, wait_for_state
 
