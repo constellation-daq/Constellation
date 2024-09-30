@@ -7,10 +7,10 @@ option('impl_py', type: 'feature', value: 'auto', description: 'Build Python imp
 option('cxx_tools', type: 'boolean', value: true, description: 'Build C++ tools')
 option('cxx_tests', type: 'feature', value: 'auto', description: 'Build C++ tests')
 
-# GUI framework version:
+# GUI framework version
 option('qt_version', type: 'combo', choices: ['qt5', 'qt6'], value: 'qt6')
 
-# Satellite features - check code/manual if build by default
-option('satellite_dev_null_receiver', type: 'boolean', value: true, description: 'Build DevNullReceiver satellite')
-option('satellite_random_transmitter', type: 'boolean', value: true, description: 'Build RandomTransmitter satellite')
+# Satellites
+option('satellite_dev_null_receiver', type: 'boolean', value: false, description: 'Build DevNullReceiver satellite')
+option('satellite_random_transmitter', type: 'boolean', value: false, description: 'Build RandomTransmitter satellite')
 option('satellite_sputnik', type: 'boolean', value: true, description: 'Build Sputnik satellite')
