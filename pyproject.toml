@@ -46,7 +46,7 @@ ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
 SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
 SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
-SatelliteCaenHv = "constellation.satellites.caenhv.caenhv:main"
+SatelliteCaenHv = "constellation.satellites.CaenHv.CaenHv:main"
 SatelliteHDF5DataWriter = "constellation.satellites.hdf5datawriter.hdf5datawriter:main"
 
 [project.urls]

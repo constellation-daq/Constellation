@@ -18,7 +18,7 @@ from constellation.core.commandmanager import cscp_requestable, CSCPMessage
 from constellation.core.base import setup_cli_logging
 
 
-class CaenHvSatellite(Satellite):
+class CaenHVSatellite(Satellite):
     """Satellite controlling a CAEN HV crate via `pycaenhv` library.
 
     Supported models include SY5527.
@@ -56,9 +56,7 @@ class CaenHvSatellite(Satellite):
             user,
             pw,
         )
-        self.caen.connect(
-            system=system, link=link, argument=link_arg, user=user, password=pw
-        )
+        self.caen.connect(system=system, link=link, argument=link_arg, user=user, password=pw)
         if not self.caen.is_connected():
             raise RuntimeError("No connection to Caen HV crate established")
 
@@ -89,9 +87,7 @@ class CaenHvSatellite(Satellite):
                             # nothing in the cfg, leave as it is
                             continue
                         except ValueError as e:
-                            raise RuntimeError(
-                                f"Error in configuration for key {key}: {repr(e)}"
-                            ) from e
+                            raise RuntimeError(f"Error in configuration for key {key}: {repr(e)}") from e
                         ch.parameters[par].value = val
                         self.log.debug(
                             "Configuring %s on board %s, ch %s with value '%s'",
@@ -206,9 +202,7 @@ class CaenHvSatellite(Satellite):
 
         """
         if not self._ready():
-            raise RuntimeError(
-                f"Command not allowed in state '{self.fsm.current_state_value.name}'"
-            )
+            raise RuntimeError(f"Command not allowed in state '{self.fsm.current_state_value.name}'")
         res = {}
         with self.caen as crate:
             for brdno, brd in crate.boards.items():
@@ -284,9 +278,7 @@ class CaenHvSatellite(Satellite):
                         npowered += 1
                     else:
                         if ch.is_powered():
-                            self.log.info(
-                                "Powering DOWN board %s channel %s", brdno, chno
-                            )
+                            self.log.info("Powering DOWN board %s channel %s", brdno, chno)
                             ch.switch_off()
         return npowered
 
@@ -320,5 +312,5 @@ def main(args=None):
     setup_cli_logging(args["name"], args.pop("log_level"))
 
     # start server with remaining args
-    s = CaenHvSatellite(**args)
+    s = CaenHVSatellite(**args)
     s.run_satellite()
