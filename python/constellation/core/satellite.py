@@ -93,16 +93,10 @@ class Satellite(
     def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
         """Callback method registering satellite's heartbeat."""
         if service.alive:
-            self.log.debug(
-                f"Registering new host for heartbeats at {service.address}:{service.port}"
-            )
-            self.register_heartbeat_host(
-                service.host_uuid, "tcp://" + service.address + ":" + str(service.port)
-            )
+            self.log.debug(f"Registering new host for heartbeats at {service.address}:{service.port}")
+            self.register_heartbeat_host(service.host_uuid, "tcp://" + service.address + ":" + str(service.port))
         else:
-            self.log.debug(
-                f"Unregistering host for heartbeats at {service.address}:{service.port}"
-            )
+            self.log.debug(f"Unregistering host for heartbeats at {service.address}:{service.port}")
             self.unregister_heartbeat_host(service.host_uuid)
 
     def run_satellite(self) -> None:
@@ -373,7 +367,7 @@ class Satellite(
     @debug_log
     def _heartbeat_interrupt(self, name: str, State: SatelliteState) -> None:
         self.log.debug("Interrupting")
-        self.fsm.interrupt({})
+        self._transition("interrupt", None, thread=False)
 
     @handle_error
     @debug_log
@@ -394,17 +388,17 @@ class Satellite(
             res_run = self._state_thread_fut.result(timeout=None)
             self._state_thread_evt = None
         self.log.debug("RUN thread finished, continue with INTERRUPTING.")
-        res: str = self.do_interrupting(payload)
+        res: str = self.do_interrupting()
         return f"{res_run}; {res}"
 
     @debug_log
-    def do_interrupting(self, payload: Any) -> str:
+    def do_interrupting(self) -> str:
         """Interrupt data acquisition and move to Safe state.
 
         Defaults to calling the stop and land handlers.
         """
-        self.do_stopping(payload)
-        self.do_landing(payload)
+        self.do_stopping()
+        self.do_landing()
         return "Interrupted."
 
     def _thread_exception(self, args: Any) -> None:
