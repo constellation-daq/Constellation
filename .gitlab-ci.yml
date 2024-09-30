@@ -541,6 +541,12 @@ format:codespell:
   script:
     - codespell
 
+format:spellcheck:
+  extends: .format
+  image: registry.gitlab.com/pipeline-components/markdown-spellcheck:latest
+  script:
+    - mdspell --en-us --ignore-acronyms --report '**/*.md'
+
 # docs stage
 
 .docs:
