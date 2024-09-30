@@ -70,9 +70,7 @@ class Mariner(Satellite):
         automatically return an error or warning, respectively.
 
         """
-        self.device = CanopusStarTracker(
-            config["voltage"], config["current"], config["sample_period"]
-        )
+        self.device = CanopusStarTracker(config["voltage"], config["current"], config["sample_period"])
         return "Initialized"
 
     def do_run(self, payload: Any) -> str:
@@ -120,8 +118,7 @@ def main(args=None):
 
     """
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
-    # this sets the defaults for our "demo" Satellite
-    parser.set_defaults(name="Nine")
+
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 

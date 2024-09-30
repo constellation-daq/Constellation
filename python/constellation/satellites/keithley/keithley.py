@@ -149,7 +149,6 @@ class Keithley(Satellite):
 
 def main(args=None):
     parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
-    parser.set_defaults(name="keithley")
     args = vars(parser.parse_args(args))
 
     # set up logging
