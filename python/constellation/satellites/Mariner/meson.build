@@ -3,8 +3,8 @@
 
 example_sat_files = files(
   '__main__.py',
-  'mariner.py',
+  'Mariner.py',
 )
 
 py.install_sources(example_sat_files,
-  subdir: 'constellation/satellites/mariner')
+  subdir: 'constellation/satellites/Mariner')

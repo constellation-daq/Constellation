@@ -46,8 +46,8 @@ ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
 SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
 SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
-SatelliteCaenHv = "constellation.satellites.CaenHv.CaenHv:main"
-SatelliteHDF5DataWriter = "constellation.satellites.HDF5DataWriter.HDF5DataWriter:main"
+SatelliteCaenHV = "constellation.satellites.CaenHV.CaenHV:main"
+SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.H5DataWriter:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"

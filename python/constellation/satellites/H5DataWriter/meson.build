@@ -3,8 +3,8 @@
 
 hdf5datawriter_sat_files = files(
   '__main__.py',
-  'hdf5datawriter.py',
+  'H5DataWriter.py',
 )
 
 py.install_sources(hdf5datawriter_sat_files,
-  subdir: 'constellation/satellites/hdf5datawriter')
+  subdir: 'constellation/satellites/H5DataWriter')
