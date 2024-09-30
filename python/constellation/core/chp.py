@@ -20,13 +20,13 @@ def CHPDecodeMessage(buf: bytes) -> Tuple[str, msgpack.Timestamp, int, int]:
     unpacker = msgpack.Unpacker()
     unpacker.feed(buf)
     protocol = unpacker.unpack()
-    host = unpacker.unpack()
+    name = unpacker.unpack()
     timestamp = unpacker.unpack()
     state = unpacker.unpack()
     interval = unpacker.unpack()
     if not protocol == Protocol.CHP.value:
         raise RuntimeError(f"Received message with malformed CHP header: {protocol}!")
-    return host, timestamp, state, interval
+    return name, timestamp, state, interval
 
 
 class CHPTransmitter:
