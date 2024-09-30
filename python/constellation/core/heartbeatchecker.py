@@ -17,8 +17,8 @@ from .base import BaseSatelliteFrame, setup_cli_logging
 
 
 class HeartbeatState:
-    def __init__(self, name: UUID, evt: threading.Event, lives: int, interval: int):
-        self.host = name
+    def __init__(self, host: UUID, evt: threading.Event, lives: int, interval: int):
+        self.host = host
         self.name = ""
         self.lives = lives
         self.interval = interval
@@ -61,22 +61,16 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self._socket_lock = threading.Lock()
         self.auto_recover = False  # clear fail Event if Satellite reappears?
 
-    def register_heartbeat_callback(
-        self, callback: Optional[Callable[[str, SatelliteState], None]] = None
-    ) -> None:
+    def register_heartbeat_callback(self, callback: Optional[Callable[[str, SatelliteState], None]] = None) -> None:
         self._callback = callback
 
     def _add_com_thread(self) -> None:
         """Add the heartbeat listener thread to the communication thread pool."""
         super()._add_com_thread()
-        self._com_thread_pool["heartbeatrecv"] = threading.Thread(
-            target=self._run_thread, daemon=True
-        )
+        self._com_thread_pool["heartbeatrecv"] = threading.Thread(target=self._run_thread, daemon=True)
         self.log.debug("Heartbeat receiver thread prepared and added to the pool.")
 
-    def register_heartbeat_host(
-        self, name: UUID, address: str, context: Optional[zmq.Context] = None  # type: ignore[type-arg]
-    ) -> threading.Event:
+    def register_heartbeat_host(self, host: UUID, address: str, context: Optional[zmq.Context] = None) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
 
         Returns threading.Event that will be set when a failure occurs.
@@ -96,7 +90,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         evt = threading.Event()
-        self._states[socket] = HeartbeatState(name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
+        self._states[socket] = HeartbeatState(host, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
 
         with self._socket_lock:
             self._poller.register(socket, zmq.POLLIN)
@@ -104,12 +98,14 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self.log.info(f"Registered heartbeating check for {address}")
         return evt
 
-    def unregister_heartbeat_host(self, name: UUID) -> None:
+    def unregister_heartbeat_host(self, host: UUID) -> None:
         """Unregister a heartbeat check for a specific Satellite."""
         s: zmq.Socket | None = None  # type: ignore[type-arg]
+        name: str | None = None
         for socket, hb in self._states.items():
-            if hb.name == name:
+            if hb.host == host:
                 s = socket
+                name = hb.name
                 break
         if not s:
             return
@@ -119,11 +115,11 @@ class HeartbeatChecker(BaseSatelliteFrame):
             s.close()
         self.log.info("Removed heartbeat check for %s", name)
 
-    def heartbeat_host_is_registered(self, name: UUID) -> bool:
+    def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
         registered = False
         for hb in self._states.values():
-            if hb.host == name:
+            if hb.host == host:
                 registered = True
                 break
         return registered
@@ -162,13 +158,11 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 sockets_ready = dict(self._poller.poll(timeout=50))
                 for socket in sockets_ready.keys():
                     binmsg = socket.recv()
-                    host, timestamp, state, interval = CHPDecodeMessage(binmsg)
-                    self.log.debug(
-                        f"Received heartbeat from {host}, state {state}, next in {interval}"
-                    )
+                    name, timestamp, state, interval = CHPDecodeMessage(binmsg)
+                    self.log.debug(f"Received heartbeat from {name}, state {state}, next in {interval}")
                     hb = self._states[socket]
                     # update values
-                    hb.name = host
+                    hb.name = name
                     hb.refresh(timestamp.to_datetime())
                     hb.state = SatelliteState(state)
                     hb.interval = interval
