@@ -44,7 +44,7 @@ DemoHeartbeatSender = "constellation.core.heartbeater:main"
 # tools
 ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
-SatelliteKeithley = "constellation.satellites.keithley.keithley:main"
+SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
 SatelliteMariner = "constellation.satellites.mariner.mariner:main"
 SatelliteCaenHv = "constellation.satellites.caenhv.caenhv:main"
 SatelliteHDF5DataWriter = "constellation.satellites.hdf5datawriter.hdf5datawriter:main"
