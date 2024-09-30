@@ -38,6 +38,7 @@ class ConstellationArgumentParser(ArgumentParser):
         self.constellation = self.add_argument_group("Constellation")
         self.constellation.add_argument(
             "--name",
+            "-n",
             type=str,
             help="The name of the Satellite. This has to be unique within "
             "the Constellation group. Together with the Satellite class, "
@@ -45,6 +46,7 @@ class ConstellationArgumentParser(ArgumentParser):
         )
         self.constellation.add_argument(
             "--group",
+            "-g",
             type=str,
             default="constellation",
             help="The Constellation group to connect to. This separates "
@@ -181,9 +183,7 @@ class BaseSatelliteFrame:
                             "Could not join background communication thread for %s within timeout",
                             component,
                         )
-                        raise RuntimeError(
-                            f"Could not join running thread for {component} within timeout of {timeout}s!"
-                        )
+                        raise RuntimeError(f"Could not join running thread for {component} within timeout of {timeout}s!")
         self._com_thread_evt = None
         self._com_thread_pool = {}
 
