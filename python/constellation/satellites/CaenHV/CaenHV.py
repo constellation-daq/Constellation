@@ -305,8 +305,7 @@ def main(args=None):
         description=main.__doc__,
         epilog="This is a 3rd-party component of Constellation.",
     )
-    # this sets the defaults for our Satellite
-    parser.set_defaults(name="CaenHVCrate")
+
     args = vars(parser.parse_args(args))
 
     # set up logging
