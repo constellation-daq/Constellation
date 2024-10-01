@@ -3,9 +3,9 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-This is the entry point for the example satellite.
+This is the entry point for the caenhv satellite.
 """
 
-from .mariner import main
+from .CaenHV import main
 
 main()

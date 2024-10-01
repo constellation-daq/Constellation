@@ -44,10 +44,10 @@ DemoHeartbeatSender = "constellation.core.heartbeater:main"
 # tools
 ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
-SatelliteKeithley = "constellation.satellites.keithley.keithley:main"
-SatelliteMariner = "constellation.satellites.mariner.mariner:main"
-SatelliteCaenHv = "constellation.satellites.caenhv.caenhv:main"
-SatelliteHDF5DataWriter = "constellation.satellites.hdf5datawriter.hdf5datawriter:main"
+SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
+SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
+SatelliteCaenHV = "constellation.satellites.CaenHV.CaenHV:main"
+SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.H5DataWriter:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"

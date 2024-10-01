@@ -3,9 +3,9 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-This is the entry point for the caenhv satellite.
+This is the entry point for the keithley satellite.
 """
 
-from .hdf5datawriter import main
+from .Keithley import main
 
 main()

@@ -18,7 +18,7 @@ from constellation.core.commandmanager import cscp_requestable, CSCPMessage
 from constellation.core.base import setup_cli_logging
 
 
-class CaenHvSatellite(Satellite):
+class CaenHVSatellite(Satellite):
     """Satellite controlling a CAEN HV crate via `pycaenhv` library.
 
     Supported models include SY5527.
@@ -313,5 +313,5 @@ def main(args=None):
     setup_cli_logging(args["name"], args.pop("log_level"))
 
     # start server with remaining args
-    s = CaenHvSatellite(**args)
+    s = CaenHVSatellite(**args)
     s.run_satellite()
