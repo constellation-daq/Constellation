@@ -23,7 +23,7 @@ path = [
   "cxx/controllers/MissionControl/MissionControl.ui",
   "cxx/listeners/Observatory/Observatory.qrc",
   "cxx/listeners/Observatory/Observatory.ui",
-  "cxx/listeners/Observatory/LogDialog.ui"
+  "cxx/listeners/Observatory/LogDialog.ui",
   "python/constellation/core/version_code_name",
 ]
 SPDX-FileCopyrightText = "DESY and the Constellation authors"
