@@ -74,7 +74,7 @@ void RandomTransmitterSatellite::running(const std::stop_token& stop_token) {
             // Generate random bytes
             std::vector<std::uint8_t> data {};
             data.resize(frame_size_);
-            std::generate(data.begin(), data.end(), std::ref(byte_rng_));
+            std::ranges::generate(data, std::ref(byte_rng_));
             // Add data to message
             msg.addFrame(std::move(data));
         }

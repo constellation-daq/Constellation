@@ -9,6 +9,8 @@
 
 #include <any>
 #include <charconv>
+#include <cstddef>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -21,10 +23,12 @@
 #include <asio.hpp>
 #include <magic_enum.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/utils/networking.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::log;
@@ -32,7 +36,7 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::string_literals;
 
-enum class Command {
+enum class Command : std::uint8_t {
     list_registered_services,
     list_discovered_services,
     register_service,

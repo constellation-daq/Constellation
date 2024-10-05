@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <csignal>
+#include <functional>
 #include <iomanip>
 #include <iostream>
 #include <span>
@@ -20,6 +21,7 @@
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
+#include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation;

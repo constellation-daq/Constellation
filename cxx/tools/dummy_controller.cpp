@@ -17,6 +17,7 @@
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
