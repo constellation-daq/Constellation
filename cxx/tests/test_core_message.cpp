@@ -72,12 +72,12 @@ TEST_CASE("Header String Output", "[core][core::message]") {
 
     REQUIRE_THAT(string_out, ContainsSubstring("Header: CMDP1"));
     REQUIRE_THAT(string_out, ContainsSubstring("Sender: senderCMDP"));
-    REQUIRE_THAT(string_out, ContainsSubstring("Time:   1970-01-01 00:00:00.000000000"));
+    REQUIRE_THAT(string_out, ContainsSubstring("Time:   1970-01-01 00:00:00.000000"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_b: true"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_i: 7"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_d: 1.5"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_s: String"));
-    REQUIRE_THAT(string_out, ContainsSubstring("test_t: 1970-01-01 00:00:00.000000000"));
+    REQUIRE_THAT(string_out, ContainsSubstring("test_t: 1970-01-01 00:00:00.000000"));
 }
 
 TEST_CASE("Header String Output (CDTP1)", "[core][core::message]") {

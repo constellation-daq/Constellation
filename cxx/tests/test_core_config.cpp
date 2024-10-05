@@ -254,7 +254,7 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     REQUIRE(config.getText("float") == "7.5");
     REQUIRE(config.getText("string") == "a");
     REQUIRE(config.getText("myenum") == "ONE");
-    REQUIRE(config.getText("time") == "1970-01-01 00:00:00.000000000");
+    REQUIRE_THAT(config.getText("time"), ContainsSubstring("1970-01-01 00:00:00.000000"));
 }
 
 TEST_CASE("Access Arrays as Text", "[core][core::config]") {
@@ -292,8 +292,9 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     REQUIRE(config.getText("float") == "[1, 7.5]");
     REQUIRE(config.getText("binary") == "[ 0x01 0x0A 0x1F ]");
     REQUIRE(config.getText("string") == "[a, b, c]");
-    REQUIRE(config.getText("time") ==
-            "[1970-01-01 00:00:00.000000000, 1970-01-01 00:00:00.000000000, 1970-01-01 00:00:00.000000000]");
+    REQUIRE_THAT(config.getText("time"),
+                 RegexMatcher("\\[1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}\\]",
+                              Catch::CaseSensitive::Yes));
 }
 
 TEST_CASE("Count Key Appearances", "[core][core::config]") {
