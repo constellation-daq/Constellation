@@ -15,7 +15,6 @@
 #include <memory>
 #include <ranges>
 #include <span>
-#include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -24,7 +23,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 
 namespace constellation::message {
 

@@ -9,18 +9,19 @@
 
 #pragma once
 
+#include <cstdint>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
 
-#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::protocol {
 
     /** Protocol Enum (excluding CHIRP) */
-    enum class Protocol {
+    enum class Protocol : std::uint8_t {
         /** Constellation Satellite Control Protocol v1 */
         CSCP1,
         /** Constellation Monitoring Distribution Protocol v1 */

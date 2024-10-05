@@ -15,8 +15,11 @@
 #include <future>
 #include <iomanip>
 #include <mutex>
+#include <stop_token>
 #include <string>
+#include <string_view>
 #include <thread>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -38,7 +41,7 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::literals::string_literals;
+using namespace std::string_literals;
 
 FSM::~FSM() {
     run_thread_.request_stop();
@@ -254,7 +257,7 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
 }
 
 // Joins a thread and assigns it to a new thread with given args
-template <typename T, typename... Args> void launch_assign_thread(T& thread, Args&&... args) {
+template <typename T, typename... Args> void static launch_assign_thread(T& thread, Args&&... args) {
     // Join if possible to avoid std::terminate
     if(thread.joinable()) {
         thread.join();
@@ -339,7 +342,7 @@ FSM::State FSM::start(TransitionPayload payload) {
 
 FSM::State FSM::started(TransitionPayload /* payload */) {
     // Start running thread async
-    auto call_wrapper = [this](const std::stop_token& stop_token) { satellite_->running_wrapper(stop_token); };
+    auto call_wrapper = std::bind_front(&BaseSatellite::running_wrapper, satellite_);
     launch_assign_thread(run_thread_, call_wrapper);
     return State::RUN;
 }

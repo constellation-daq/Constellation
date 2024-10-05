@@ -26,8 +26,8 @@ using namespace constellation::heartbeat;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
-using namespace std::literals::string_literals;
+using namespace std::chrono_literals;
+using namespace std::string_literals;
 
 // Use global std::function to work around C linkage
 std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)

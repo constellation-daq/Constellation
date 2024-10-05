@@ -10,26 +10,38 @@
 #include "Controller.hpp"
 
 #include <algorithm>
+#include <any>
 #include <chrono>
+#include <cstddef>
+#include <functional>
+#include <future>
+#include <iomanip>
 #include <iterator>
+#include <map>
 #include <mutex>
 #include <optional>
+#include <set>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
@@ -37,7 +49,7 @@ using namespace constellation::controller;
 using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 Controller::Controller(std::string controller_name)
     : logger_("CTRL"), controller_name_(std::move(controller_name)),
@@ -88,9 +100,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
     if(depart) {
-        const auto it = std::find_if(connections_.begin(), connections_.end(), [&](const auto& sat) {
-            return sat.second.host_id == service.host_id;
-        });
+        const auto it =
+            std::ranges::find(connections_, service.host_id, [&](const auto& sat) { return sat.second.host_id; });
         if(it != connections_.end()) {
             // Note the position of the removed item:
             const auto position = std::distance(connections_.begin(), it);
@@ -142,7 +153,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
     }
 }
 
-void Controller::process_heartbeat(message::CHP1Message&& msg) {
+void Controller::process_heartbeat(const message::CHP1Message& msg) {
 
     std::unique_lock<std::mutex> lock {connection_mutex_};
     const auto now = std::chrono::system_clock::now();

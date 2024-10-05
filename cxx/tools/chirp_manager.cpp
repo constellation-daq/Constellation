@@ -31,7 +31,7 @@ using namespace constellation::chirp;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::string_literals;
+using namespace std::string_literals;
 
 enum class Command {
     list_registered_services,

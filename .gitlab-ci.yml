@@ -191,7 +191,7 @@ build:debian-clang:
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false"
 
 build:debian-clang-libcxx:
   extends:
@@ -430,9 +430,7 @@ lint:clang-tidy-diff:
       artifacts: true
   script:
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc) | tee clang-tidy-diff.log
-    - | # Until LLVM 18 we need to check the output for errors
-      grep -qzv ": error: " clang-tidy-diff.log
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes

@@ -30,7 +30,7 @@ using namespace constellation::config;
 using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

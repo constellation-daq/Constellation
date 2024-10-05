@@ -44,10 +44,10 @@ using namespace constellation;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 // Find path relative to cxx/, otherwise path without any parent
-std::string get_rel_file_path(std::string file_path_char) {
+static std::string get_rel_file_path(std::string file_path_char) {
     auto file_path = to_platform_string(std::move(file_path_char));
     const auto src_dir =
         std::filesystem::path::preferred_separator + to_platform_string("cxx") + std::filesystem::path::preferred_separator;
@@ -138,8 +138,8 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         auto cmdp_global_level = Level::OFF;
         std::map<std::string_view, Level> cmdp_sub_topic_levels;
         for(const auto& [logger, levels] : log_subscriptions_) {
-            auto it = std::find_if(std::begin(levels), std::end(levels), [](const auto& i) { return i.second > 0; });
-            if(it != std::end(levels)) {
+            auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
+            if(it != levels.end()) {
                 if(!logger.empty()) {
                     cmdp_sub_topic_levels[logger] = it->first;
                 } else {

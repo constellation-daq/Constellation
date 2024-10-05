@@ -27,7 +27,7 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/pools/BasePool.hpp"
-#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -38,7 +38,7 @@ using namespace constellation::message;
 using namespace constellation::pools;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name),

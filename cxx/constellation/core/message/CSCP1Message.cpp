@@ -21,7 +21,7 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 
 using namespace constellation::message;
 using namespace constellation::utils;

@@ -13,6 +13,7 @@
 #include <mutex>
 #include <set>
 #include <stop_token>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <vector>

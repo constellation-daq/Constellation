@@ -114,7 +114,7 @@ int constellation::exec::satellite_main(int argc,
     try {
         SinkManager::getInstance();
     } catch(const ZMQInitError& error) {
-        std::cerr << "Failed to initialize logging: " << error.what() << std::endl;
+        std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
         return 1;
     }
 

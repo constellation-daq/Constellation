@@ -9,9 +9,10 @@
 
 #pragma once
 
-#include "BasePool.hpp"
+#include "BasePool.hpp" // NOLINT(misc-header-include-cycle)
 
 #include <any>
+#include <exception>
 #include <functional>
 #include <mutex>
 #include <stop_token>
@@ -22,6 +23,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -221,7 +223,7 @@ namespace constellation::pools {
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::loop(const std::stop_token& stop_token) {
         try {
             while(!stop_token.stop_requested()) {
-                using namespace std::literals::chrono_literals;
+                using namespace std::chrono_literals;
 
                 // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
                 std::this_thread::sleep_for(1ns);

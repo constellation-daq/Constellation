@@ -24,7 +24,7 @@
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::utils;
-using namespace std::literals::string_view_literals;
+using namespace std::string_view_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

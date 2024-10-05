@@ -10,7 +10,7 @@
 #pragma once
 
 #include <algorithm>
-#include <cctype>
+#include <cctype> // IWYU pragma: export
 #include <charconv>
 #include <chrono>
 #include <concepts>
@@ -20,7 +20,6 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <utility>
 #include <version>
 
 #ifdef __cpp_lib_format
@@ -177,7 +176,7 @@ namespace constellation::utils {
         auto res = std::to_chars(hex.data(), last, static_cast<std::uint8_t>(c), 16);
         if(res.ptr != last) {
             // c < 16, i.e. written to first char of hex -> reverse string
-            std::reverse(hex.begin(), hex.end());
+            std::ranges::reverse(hex);
         }
         return "0x" + transform(hex, ::toupper);
     }

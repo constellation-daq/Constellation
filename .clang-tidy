@@ -11,7 +11,7 @@ Checks: [
   'cert-*',
   'concurrency-*',
   'cppcoreguidelines-*','-cppcoreguidelines-pro-bounds-pointer-arithmetic',
-  'google-*','-google-build-using-namespace','-google-explicit-constructor','-google-readability-casting',
+  'google-*','-google-build-using-namespace','-google-explicit-constructor',
   'hicpp-*',
   'llvm-*','-llvm-header-guard','-llvm-include-order',
   'misc-*',
@@ -30,6 +30,7 @@ WarningsAsErrors: '*'
 HeaderFileExtensions: ['', 'h', 'hpp', 'ipp']
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
+  misc-include-cleaner.IgnoreHeaders: 'asio.*;msgpack.*;spdlog.*;toml\+\+.*;bits/.*'
   modernize-use-override.IgnoreDestructors: 'true'
   cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
   readability-identifier-naming.NamespaceCase: lower_case

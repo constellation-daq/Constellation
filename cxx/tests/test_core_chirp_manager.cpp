@@ -24,7 +24,7 @@
 
 using namespace constellation::chirp;
 using namespace constellation::message;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

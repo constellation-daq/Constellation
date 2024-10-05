@@ -12,6 +12,7 @@
 #include <ctime>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -23,6 +24,7 @@
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
+#include <zmq.hpp>
 
 #ifdef _WIN32
 #include <wincon.h>
@@ -32,6 +34,7 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/ProxySink.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::log;
@@ -60,7 +63,7 @@ std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::ConstellationLevelFo
 void SinkManager::ConstellationTopicFormatter::format(const spdlog::details::log_msg& msg,
                                                       const std::tm& /*tm*/,
                                                       spdlog::memory_buf_t& dest) {
-    if(msg.logger_name.size() > 0) {
+    if(msg.logger_name.size() > 0) { // NOLINT(readability-container-size-empty) might be fmt string
         auto topic = "[" + to_string(msg.logger_name) + "]";
         dest.append(topic.data(), topic.data() + topic.size());
     }

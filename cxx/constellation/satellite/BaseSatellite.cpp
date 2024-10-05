@@ -11,6 +11,7 @@
 
 #include <cctype>
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <optional>
@@ -20,6 +21,7 @@
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <typeinfo>
 #include <utility>
 #include <variant>
 
@@ -54,7 +56,7 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     : logger_("SATELLITE"), cscp_rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
@@ -130,7 +132,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     auto message = CSCP1Message::disassemble(recv_msg);
 
     LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << to_string(message.getVerb().first) << " with verb \""
-                             << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload"sv : ""sv)
+                             << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "")
                              << " from " << message.getHeader().getSender();
 
     return message;

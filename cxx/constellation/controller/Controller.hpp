@@ -11,19 +11,30 @@
 
 #include <any>
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <cstddef>
 #include <cstdint>
+#include <functional>
+#include <map>
 #include <mutex>
+#include <optional>
+#include <set>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <variant>
 
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -63,7 +74,7 @@ namespace constellation::controller {
             /** State and last response */
             protocol::CSCP::State state {protocol::CSCP::State::NEW};
             message::CSCP1Message::Type last_cmd_type {};
-            std::string last_cmd_verb {};
+            std::string last_cmd_verb {}; // NOLINT(readability-redundant-member-init)
 
             /** Heartbeat status */
             std::chrono::milliseconds interval {1000};
@@ -294,7 +305,7 @@ namespace constellation::controller {
          *
          * @param msg Received CHP message from remote service
          * */
-        void process_heartbeat(message::CHP1Message&& msg);
+        void process_heartbeat(const message::CHP1Message& msg);
 
         /**
          * @brief Loop to keep track of heartbeats and remove dead connections from the list.

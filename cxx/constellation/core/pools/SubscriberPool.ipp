@@ -9,11 +9,12 @@
 
 #pragma once
 
-#include "SubscriberPool.hpp"
+#include "SubscriberPool.hpp" // NOLINT(misc-header-include-cycle)
 
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
+#include <iomanip>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -22,6 +23,8 @@
 #include <zmq.hpp>
 
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 
 namespace constellation::pools {
 

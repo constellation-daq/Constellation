@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <functional>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -22,6 +21,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
