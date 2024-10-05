@@ -176,7 +176,7 @@ namespace constellation::satellite {
          * @param bor_message Received CDTP BOR message
          * @throw InvalidCDTPMessageType If already a BOR received
          */
-        void handle_bor_message(message::CDTP1Message&& bor_message);
+        void handle_bor_message(message::CDTP1Message bor_message);
 
         /**
          * @brief Handle DATA message before passing it to `receive_data()`
@@ -184,7 +184,7 @@ namespace constellation::satellite {
          * @param data_message Received CDTP DATA message
          * @throw InvalidCDTPMessageType If no BOR received yet
          */
-        void handle_data_message(message::CDTP1Message&& data_message);
+        void handle_data_message(message::CDTP1Message data_message);
 
         /**
          * @brief Handle EOR message before passing it to `receive_eor()`
@@ -192,7 +192,7 @@ namespace constellation::satellite {
          * @param eor_message Received CDTP EOR message
          * @throw InvalidCDTPMessageType If no BOR received yet
          */
-        void handle_eor_message(message::CDTP1Message&& eor_message);
+        void handle_eor_message(message::CDTP1Message eor_message);
 
     private:
         log::Logger cdtp_logger_;

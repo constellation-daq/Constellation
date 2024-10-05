@@ -20,7 +20,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <version>
+#include <version> // IWYU pragma: keep
 
 #ifdef __cpp_lib_format
 #include <format>

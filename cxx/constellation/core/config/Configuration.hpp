@@ -38,7 +38,7 @@ namespace constellation::config {
          */
         class ConfigValue : public Value {
         public:
-            using Value::Value;
+            using Value::Value; // NOLINT(misc-include-cleaner)
             using Value::operator=;
 
             /**

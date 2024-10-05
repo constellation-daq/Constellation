@@ -46,24 +46,26 @@ using namespace constellation::message;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-// Find path relative to cxx/, otherwise path without any parent
-static std::string get_rel_file_path(std::string file_path_char) {
-    auto file_path = to_platform_string(std::move(file_path_char));
-    const auto src_dir =
-        std::filesystem::path::preferred_separator + to_platform_string("cxx") + std::filesystem::path::preferred_separator;
-    const auto src_dir_pos = file_path.find(src_dir);
-    if(src_dir_pos != std::filesystem::path::string_type::npos) {
-        // found /cxx/, start path after pattern
-        file_path = file_path.substr(src_dir_pos + src_dir.length());
-    } else {
-        // try to find last / for filename
-        const auto file_pos = file_path.find_last_of(std::filesystem::path::preferred_separator);
-        if(file_pos != std::filesystem::path::string_type::npos) {
-            file_path = file_path.substr(file_pos + 1);
+namespace {
+    // Find path relative to cxx/, otherwise path without any parent
+    std::string get_rel_file_path(std::string file_path_char) {
+        auto file_path = to_platform_string(std::move(file_path_char));
+        const auto src_dir = std::filesystem::path::preferred_separator + to_platform_string("cxx") +
+                             std::filesystem::path::preferred_separator;
+        const auto src_dir_pos = file_path.find(src_dir);
+        if(src_dir_pos != std::filesystem::path::string_type::npos) {
+            // found /cxx/, start path after pattern
+            file_path = file_path.substr(src_dir_pos + src_dir.length());
+        } else {
+            // try to find last / for filename
+            const auto file_pos = file_path.find_last_of(std::filesystem::path::preferred_separator);
+            if(file_pos != std::filesystem::path::string_type::npos) {
+                file_path = file_path.substr(file_pos + 1);
+            }
         }
+        return to_std_string(std::move(file_path));
     }
-    return to_std_string(std::move(file_path));
-}
+} // namespace
 
 CMDPSink::CMDPSink(std::shared_ptr<zmq::context_t> context)
     : context_(std::move(context)), pub_socket_(*context_, zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)) {
@@ -187,7 +189,10 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
     }
 
     // Create and send CMDP message
-    CMDP1LogMessage(from_spdlog_level(msg.level), to_string(msg.logger_name), std::move(msghead), to_string(msg.payload))
+    CMDP1LogMessage(from_spdlog_level(msg.level),
+                    to_string(msg.logger_name), // NOLINT(misc-include-cleaner) might be fmt string
+                    std::move(msghead),
+                    to_string(msg.payload))
         .assemble()
         .send(pub_socket_);
 }

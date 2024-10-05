@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <ostream>
 #include <span>
 #include <string>
 
@@ -32,7 +33,7 @@ using namespace std::string_literals;
 
 void cli_loop(std::span<char*> args) {
     // Get group, name and interval via cmdline
-    std::cout << "Usage: chp_sender CONSTELLATION_GROUP NAME INTERVAL_MS" << std::endl;
+    std::cout << "Usage: chp_sender CONSTELLATION_GROUP NAME INTERVAL_MS\n" << std::flush;
 
     auto group = "constellation"s;
     auto name = "chp_sender"s;
@@ -40,7 +41,7 @@ void cli_loop(std::span<char*> args) {
     if(args.size() >= 2) {
         group = args[1];
     }
-    std::cout << "Using constellation group " << std::quoted(group) << std::endl;
+    std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
     if(args.size() >= 3) {
         name = args[2];
     }
@@ -59,7 +60,7 @@ void cli_loop(std::span<char*> args) {
     HeartbeatSend sender {std::move(name), [&]() { return state; }, interval};
 
     while(true) {
-        std::cout << "-----------------------------------------" << std::endl;
+        std::cout << "-----------------------------------------\n" << std::flush;
         // Type
         std::string state_s {};
         std::cout << "State:    [" << to_string(state) << "] ";

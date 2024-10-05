@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -20,6 +21,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/config/Value.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
@@ -45,7 +47,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("string_view", "b"sv);
     config.set("char_array", "c");
 
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };

@@ -222,7 +222,7 @@ void ReceiverSatellite::handle_cdtp_message(CDTP1Message&& message) {
     }
 }
 
-void ReceiverSatellite::handle_bor_message(CDTP1Message&& bor_message) {
+void ReceiverSatellite::handle_bor_message(CDTP1Message bor_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(bor_message.getHeader().getSender());
     // Check that transmitter is not connected yet
@@ -235,7 +235,7 @@ void ReceiverSatellite::handle_bor_message(CDTP1Message&& bor_message) {
     receive_bor(bor_message.getHeader(), {Dictionary::disassemble(bor_message.getPayload().at(0)), true});
 }
 
-void ReceiverSatellite::handle_data_message(CDTP1Message&& data_message) {
+void ReceiverSatellite::handle_data_message(CDTP1Message data_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     const auto data_transmitter_it = data_transmitter_states_.find(data_message.getHeader().getSender());
     // Check that BOR was received
@@ -250,7 +250,7 @@ void ReceiverSatellite::handle_data_message(CDTP1Message&& data_message) {
     receive_data(std::move(data_message));
 }
 
-void ReceiverSatellite::handle_eor_message(CDTP1Message&& eor_message) {
+void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(eor_message.getHeader().getSender());
     // Check that BOR was received

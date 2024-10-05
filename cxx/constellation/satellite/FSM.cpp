@@ -15,7 +15,6 @@
 #include <future>
 #include <iomanip>
 #include <mutex>
-#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -256,15 +255,17 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     return Transition::failure;
 }
 
-// Joins a thread and assigns it to a new thread with given args
-template <typename T, typename... Args> void static launch_assign_thread(T& thread, Args&&... args) {
-    // Join if possible to avoid std::terminate
-    if(thread.joinable()) {
-        thread.join();
+namespace {
+    // Joins a thread and assigns it to a new thread with given args
+    template <typename T, typename... Args> void launch_assign_thread(T& thread, Args&&... args) {
+        // Join if possible to avoid std::terminate
+        if(thread.joinable()) {
+            thread.join();
+        }
+        // Launch thread
+        thread = T(std::forward<Args>(args)...);
     }
-    // Launch thread
-    thread = T(std::forward<Args>(args)...);
-}
+} // namespace
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 

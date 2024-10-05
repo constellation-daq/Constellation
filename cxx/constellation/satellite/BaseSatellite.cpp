@@ -9,7 +9,6 @@
 
 #include "BaseSatellite.hpp"
 
-#include <cctype>
 #include <chrono>
 #include <cstdint>
 #include <exception>

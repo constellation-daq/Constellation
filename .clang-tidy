@@ -15,7 +15,7 @@ Checks: [
   'hicpp-*',
   'llvm-*','-llvm-header-guard','-llvm-include-order',
   'misc-*',
-  'modernize-*','-modernize-use-nodiscard','-modernize-use-trailing-return-type',
+  'modernize-*','-modernize-use-designated-initializers','-modernize-use-nodiscard','-modernize-use-trailing-return-type',
   'performance-*',
   'portability-*',
   'readability-*','-readability-identifier-length','-readability-function-cognitive-complexity','-readability-magic-numbers','-readability-redundant-access-specifiers',

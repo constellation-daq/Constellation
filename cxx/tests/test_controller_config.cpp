@@ -26,7 +26,7 @@ std::filesystem::path test_files_dir() {
     return std::filesystem::path(cxx_tests_dir) / "test_files";
 }
 
-// TODO remove (cert-err58-cpp,misc-use-anonymous-namespace)
+// NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
 TEST_CASE("Non-existing TOML file", "[controller]") {
     const auto test_file = std::filesystem::path("non-existing.toml");
@@ -92,4 +92,4 @@ TEST_CASE("No global section", "[controller]") {
     REQUIRE(global_config.empty());
 }
 
-// blabla (cert-err58-cpp,misc-use-anonymous-namespace)
+// NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

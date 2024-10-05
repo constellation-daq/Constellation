@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
