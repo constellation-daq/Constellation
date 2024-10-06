@@ -84,7 +84,7 @@ using enum constellation::log::Level; // Forward log level enum
  * @param count Count how often to log message at most
  */
 #define LOG_N_3ARGS(logger, level, count)                                                                                   \
-    static std::atomic_int LOG_VAR {count};                                                                                 \
+    static thread_local std::atomic_int LOG_VAR {count};                                                                    \
     if(LOG_VAR > 0 && (logger).shouldLog(level))                                                                            \
     (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] " : "")
 
