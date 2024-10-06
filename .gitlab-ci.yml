@@ -63,38 +63,21 @@ variables:
 
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: lld
-    CC: ccache clang
-    CC_LD: lld
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: lld
-    CC: ccache clang
-    CC_LD: lld
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
-  variables:
-    CXX: ccache g++
 
 .fedora-clang:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: mold
 
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
 
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
-  variables:
-    CXX: ccache g++-12
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
