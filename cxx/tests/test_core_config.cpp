@@ -17,7 +17,6 @@
 #include <variant>
 #include <vector>
 
-#include <catch2/catch_case_sensitive.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
@@ -302,8 +301,7 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
     REQUIRE(config.getText("binary") == "[ 0x01 0x0A 0x1F ]");
     REQUIRE(config.getText("string") == "[a, b, c]");
     REQUIRE_THAT(config.getText("time"),
-                 RegexMatcher("\\[1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}\\]",
-                              Catch::CaseSensitive::Yes));
+                 RegexMatcher("\\[1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}\\]", {}));
 }
 
 TEST_CASE("Count Key Appearances", "[core][core::config]") {
