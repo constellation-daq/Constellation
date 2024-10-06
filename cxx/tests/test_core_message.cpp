@@ -5,16 +5,18 @@
  */
 
 #include <chrono>
-#include <ctime>
+#include <cstdint>
 #include <limits>
 #include <numbers>
 #include <string>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
+#include <zmq.hpp>
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
@@ -58,7 +60,7 @@ TEST_CASE("Basic Header Functions (CDTP1)", "[core][core::message]") {
 
 TEST_CASE("Header String Output", "[core][core::message]") {
     // Get fixed timepoint (unix epoch)
-    auto tp = std::chrono::system_clock::from_time_t(std::time_t(0));
+    const std::chrono::system_clock::time_point tp {};
 
     CMDP1Message::Header cmdp1_header {"senderCMDP", tp};
 

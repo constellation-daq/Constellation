@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <chrono>
+#include <chrono> // IWYU pragma: keep
 #include <iomanip>
 #include <iostream>
 #include <span>

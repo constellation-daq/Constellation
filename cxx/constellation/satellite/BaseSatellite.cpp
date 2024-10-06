@@ -42,7 +42,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/networking.hpp"
-#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"

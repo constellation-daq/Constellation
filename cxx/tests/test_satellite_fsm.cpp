@@ -5,7 +5,7 @@
  */
 
 #include <atomic>
-#include <chrono>
+#include <chrono> // IWYU pragma: keep
 #include <string>
 #include <thread>
 #include <utility>

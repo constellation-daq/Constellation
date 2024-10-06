@@ -28,7 +28,6 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
-#include "constellation/core/utils/networking.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::log;
@@ -209,12 +208,12 @@ namespace {
                 if(cmd == register_callback) {
                     auto ret = manager.registerDiscoverCallback(&discover_callback, service, nullptr);
                     if(ret) {
-                        std::cout << " Registered Callback for " << magic_enum::enum_name(service) << std::endl;
+                        std::cout << " Registered Callback for " << magic_enum::enum_name(service) << "\n" << std::flush;
                     }
                 } else {
                     auto ret = manager.unregisterDiscoverCallback(&discover_callback, service);
                     if(ret) {
-                        std::cout << " Unregistered Callback for " << magic_enum::enum_name(service) << std::endl;
+                        std::cout << " Unregistered Callback for " << magic_enum::enum_name(service) << "\n" << std::flush;
                     }
                 }
                 continue;
@@ -226,7 +225,7 @@ namespace {
                     service = magic_enum::enum_cast<ServiceIdentifier>(cmd_split[1]).value_or(CONTROL);
                 }
                 manager.sendRequest(service);
-                std::cout << " Sent Request for " << magic_enum::enum_name(service) << std::endl;
+                std::cout << " Sent Request for " << magic_enum::enum_name(service) << "\n" << std::flush;
                 continue;
             }
             // Reset

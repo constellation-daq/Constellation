@@ -23,7 +23,7 @@
 #include <zmq.hpp>
 
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/std_future.hpp"
 
 namespace constellation::message {
 

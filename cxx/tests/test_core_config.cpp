@@ -4,16 +4,22 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include <catch2/catch_case_sensitive.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
@@ -29,6 +35,7 @@ using namespace constellation::utils;
 using namespace std::string_view_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
+// NOLINTBEGIN(google-readability-casting,readability-redundant-casting)
 
 TEST_CASE("Set & Get Values", "[core][core::config]") {
     Configuration config {};
@@ -44,7 +51,7 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("float", float(3.14));
 
     config.set("string", std::string("a"));
-    config.set("string_view", "b"sv);
+    config.set("string_view", std::string_view("b"));
     config.set("char_array", "c");
 
     enum MyEnum : std::uint8_t {
@@ -98,7 +105,7 @@ TEST_CASE("Keys Are Case-Insensitive", "[core][core::config]") {
 TEST_CASE("Enum Values Are Case-Insensitive", "[core][core::config]") {
     Configuration config {};
 
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
@@ -130,7 +137,7 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
 
     config.setArray<std::string>("string", {"a", "b", "c"});
 
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
@@ -237,7 +244,7 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     config.set("float", float(7.5));
     config.set("string", std::string("a"));
 
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
@@ -276,7 +283,7 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
 
     config.setArray<std::string>("string", {"a", "b", "c"});
 
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
@@ -453,7 +460,7 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
                            Message("Could not convert value of type 'bool' to type 'double' for key 'key'"));
 
     // Check for invalid enum value conversion:
-    enum MyEnum {
+    enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
@@ -620,4 +627,5 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
 }
 
+// NOLINTEND(google-readability-casting,readability-redundant-casting)
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
