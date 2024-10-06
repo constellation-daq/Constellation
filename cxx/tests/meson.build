@@ -115,6 +115,7 @@ test_satellite_data = executable('test_satellite_data',
 )
 test('Satellite data test', test_satellite_data,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
 )
 
 # Controller
