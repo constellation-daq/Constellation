@@ -213,8 +213,10 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_config: {
-        return_verb = {CSCP1Message::Type::SUCCESS, "Configuration attached in payload"};
-        return_payload = config_.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
+        const auto config_dict = config_.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED);
+        return_verb = {CSCP1Message::Type::SUCCESS,
+                       to_string(config_dict.size()) + " configuration keys, dictionary attached in payload"};
+        return_payload = config_dict.assemble();
         break;
     }
     case get_run_id: {
