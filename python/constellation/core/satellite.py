@@ -56,6 +56,7 @@ class Satellite(
         )
 
         self.run_identifier: str = ""
+        self.config = Configuration({})
 
         # give monitoring a chance to start up and catch early messages
         time.sleep(0.1)
@@ -453,6 +454,16 @@ class Satellite(
 
         """
         return self.run_identifier, None, {}
+
+    @cscp_requestable
+    def get_config(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+        """Get current satellite configuration.
+
+        No payload argument.
+
+        """
+        cfg_dict = self.config.get_dict()
+        return f"{len(cfg_dict)} configuration keys, dictionary attached in payload", cfg_dict, {}
 
 
 # -------------------------------------------------------------------------
