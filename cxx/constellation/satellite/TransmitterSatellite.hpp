@@ -105,10 +105,17 @@ namespace constellation::satellite {
         void trySendDataMessage(DataMessage& message);
 
         /**
-         * @brief Set tag for the run metadata send at the end of the run
+         * @brief Set tag for the BOR message metadata send at the begin of the run
          */
-        template <typename T> void setRunMetadataTag(std::string_view key, const T& value) {
-            run_metadata_[utils::transform(key, ::tolower)] = config::Value::set(value);
+        template <typename T> void setBORTag(std::string_view key, const T& value) {
+            bor_tags_[utils::transform(key, ::tolower)] = config::Value::set(value);
+        }
+
+        /**
+         * @brief Set tag for the EOR message metadata send at the end of the run
+         */
+        template <typename T> void setEORTag(std::string_view key, const T& value) {
+            eor_tags_[utils::transform(key, ::tolower)] = config::Value::set(value);
         }
 
         /**
@@ -180,6 +187,13 @@ namespace constellation::satellite {
          */
         void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
 
+        /**
+         * @brief Set tag for the run metadata send as payload of the EOR message
+         */
+        template <typename T> void set_run_metadata_tag(std::string_view key, const T& value) {
+            run_metadata_[utils::transform(key, ::tolower)] = config::Value::set(value);
+        }
+
     private:
         zmq::socket_t cdtp_push_socket_;
         utils::Port cdtp_port_;
@@ -188,6 +202,8 @@ namespace constellation::satellite {
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
         std::uint64_t seq_ {};
+        config::Dictionary bor_tags_;
+        config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;
     };
 

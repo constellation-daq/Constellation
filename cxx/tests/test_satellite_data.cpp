@@ -47,6 +47,8 @@ protected:
         const std::lock_guard map_lock {map_mutex_};
         bor_map_.erase(sender);
         bor_map_.emplace(sender, std::move(config));
+        bor_tag_map_.erase(sender);
+        bor_tag_map_.emplace(sender, header.getTags());
     }
     void receive_data(CDTP1Message&& data_message) override {
         const auto sender = to_string(data_message.getHeader().getSender());
@@ -59,12 +61,18 @@ protected:
         const std::lock_guard map_lock {map_mutex_};
         eor_map_.erase(sender);
         eor_map_.emplace(sender, std::move(run_metadata));
+        eor_tag_map_.erase(sender);
+        eor_tag_map_.emplace(sender, header.getTags());
     }
 
 public:
     const Configuration& getBOR(const std::string& sender) {
         const std::lock_guard map_lock {map_mutex_};
         return bor_map_.at(sender);
+    }
+    const Dictionary& getBORTags(const std::string& sender) {
+        const std::lock_guard map_lock {map_mutex_};
+        return bor_tag_map_.at(sender);
     }
     const CDTP1Message& getLastData(const std::string& sender) {
         const std::lock_guard map_lock {map_mutex_};
@@ -74,12 +82,18 @@ public:
         const std::lock_guard map_lock {map_mutex_};
         return eor_map_.at(sender);
     }
+    const Dictionary& getEORTags(const std::string& sender) {
+        const std::lock_guard map_lock {map_mutex_};
+        return eor_tag_map_.at(sender);
+    }
 
 private:
     std::mutex map_mutex_;
     std::map<std::string, Configuration> bor_map_;
+    std::map<std::string, Dictionary> bor_tag_map_;
     std::map<std::string, CDTP1Message> last_data_map_;
     std::map<std::string, Dictionary> eor_map_;
+    std::map<std::string, Dictionary> eor_tag_map_;
 };
 
 class Transmitter : public DummySatellite<TransmitterSatellite> {
@@ -196,12 +210,18 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
 
+    // Set a tag for BOR
+    transmitter.setBORTag("firmware_version", 3);
+
     receiver.reactFSM(FSM::Transition::start, "test");
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    const auto& bor_tags = receiver.getBORTags("Dummy.t1");
+    REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
     // Send a data frame
     const auto sent = transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
@@ -212,8 +232,8 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
 
-    // Set a run metadata tag for EOR
-    transmitter.setRunMetadataTag("buggy_events", 10);
+    // Set a tag for EOR
+    transmitter.setEORTag("buggy_events", 10);
 
     // Stop and send EOR
     receiver.reactFSM(FSM::Transition::stop, {}, false);
@@ -222,7 +242,9 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.progressFsm();
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
-    REQUIRE(eor.at("buggy_events").get<int>() == 10);
+
+    const auto& eor_tags = receiver.getEORTags("Dummy.t1");
+    REQUIRE(eor_tags.at("buggy_events").get<int>() == 10);
 
     // Ensure all satellite are happy
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
