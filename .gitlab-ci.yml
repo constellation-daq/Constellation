@@ -63,38 +63,21 @@ variables:
 
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: lld
-    CC: ccache clang
-    CC_LD: lld
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: lld
-    CC: ccache clang
-    CC_LD: lld
 
 .debian-gcc:
   image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
-  variables:
-    CXX: ccache g++
 
 .fedora-clang:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
-  variables:
-    CXX: ccache clang++
-    CXX_LD: mold
 
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
 
 .ubuntu-22.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-22.04:latest
-  variables:
-    CXX: ccache g++-12
 
 .ubuntu-24.04:
   image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04:latest
@@ -191,7 +174,7 @@ build:debian-clang:
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false"
 
 build:debian-clang-libcxx:
   extends:
@@ -430,9 +413,7 @@ lint:clang-tidy-diff:
       artifacts: true
   script:
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc) | tee clang-tidy-diff.log
-    - | # Until LLVM 18 we need to check the output for errors
-      grep -qzv ": error: " clang-tidy-diff.log
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes

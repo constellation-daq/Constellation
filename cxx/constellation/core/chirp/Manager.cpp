@@ -10,24 +10,33 @@
 #include "Manager.hpp"
 
 #include <algorithm>
+#include <any>
 #include <chrono>
+#include <compare>
 #include <cstdint>
 #include <functional>
 #include <iterator>
+#include <mutex>
+#include <set>
 #include <stop_token>
+#include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
+#include <vector>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::message;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 bool RegisteredService::operator<(const RegisteredService& other) const {
     // Sort first by service id
@@ -190,7 +199,7 @@ void Manager::forgetDiscoveredServices() {
 std::vector<DiscoveredService> Manager::getDiscoveredServices() {
     std::vector<DiscoveredService> ret {};
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
-    std::copy(discovered_services_.begin(), discovered_services_.end(), std::back_inserter(ret));
+    std::ranges::copy(discovered_services_, std::back_inserter(ret));
     return ret;
 }
 

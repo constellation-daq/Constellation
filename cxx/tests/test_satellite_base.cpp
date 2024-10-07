@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <span>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
@@ -37,8 +38,8 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::literals::chrono_literals;
-using namespace std::literals::string_literals;
+using namespace std::chrono_literals;
+using namespace std::string_literals;
 
 class CSCPSender {
 public:

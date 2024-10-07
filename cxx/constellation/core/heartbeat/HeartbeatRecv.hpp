@@ -8,19 +8,10 @@
  */
 #pragma once
 
-#include <any>
-#include <atomic>
 #include <functional>
-#include <map>
-#include <mutex>
-#include <stop_token>
-#include <thread>
+#include <utility>
 
-#include <zmq.hpp>
-#include <zmq_addon.hpp>
-
-#include "constellation/build.hpp"
-#include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 

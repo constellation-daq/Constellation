@@ -23,14 +23,14 @@
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::utils;
 using namespace constellation::protocol;
-using namespace std::literals::chrono_literals;
+using namespace std::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string sender,
                                    std::function<CSCP::State()> state_callback,
@@ -65,7 +65,7 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
     return {};
 }
 
-void HeartbeatManager::process_heartbeat(CHP1Message&& msg) {
+void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
                         << msg.getInterval();
 

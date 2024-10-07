@@ -14,8 +14,8 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
@@ -24,7 +24,10 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/satellite/exceptions.hpp"
+#include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
@@ -98,12 +101,14 @@ public:
     }
 };
 
-void chirp_mock_service(std::string_view name, Port port) {
-    // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
-    chirp::BroadcastSend chirp_sender {"0.0.0.0", chirp::CHIRP_PORT};
-    const auto chirp_msg = CHIRPMessage(chirp::MessageType::OFFER, "edda", name, chirp::DATA, port);
-    chirp_sender.sendBroadcast(chirp_msg.assemble());
-}
+namespace {
+    void chirp_mock_service(std::string_view name, Port port) {
+        // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
+        chirp::BroadcastSend chirp_sender {"0.0.0.0", chirp::CHIRP_PORT};
+        const auto chirp_msg = CHIRPMessage(chirp::MessageType::OFFER, "edda", name, chirp::DATA, port);
+        chirp_sender.sendBroadcast(chirp_msg.assemble());
+    }
+} // namespace
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 

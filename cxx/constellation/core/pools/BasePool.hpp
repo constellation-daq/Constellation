@@ -11,15 +11,19 @@
 
 #include <any>
 #include <atomic>
+#include <cstddef>
+#include <exception>
 #include <functional>
 #include <map>
 #include <mutex>
 #include <stop_token>
+#include <string_view>
 #include <thread>
 
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Logger.hpp"
 

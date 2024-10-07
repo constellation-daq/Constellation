@@ -88,7 +88,7 @@ test_exec_dsoloader = executable('test_exec_dsoloader',
 )
 test('Exec DSO Loader test', test_exec_dsoloader,
   args: ['--durations', 'yes', '--verbosity', 'high'],
-  depends: [satellite_sputnik_lib],
+  depends: [get_variable('satellite_sputnik_lib')],
 )
 
 # Satellite
@@ -115,6 +115,7 @@ test_satellite_data = executable('test_satellite_data',
 )
 test('Satellite data test', test_satellite_data,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
 )
 
 # Controller

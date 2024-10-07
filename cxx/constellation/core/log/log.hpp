@@ -9,14 +9,12 @@
 
 #pragma once
 
-#include <atomic>
-#include <string_view>
+#include <atomic> // IWYU pragma: keep
 
-#include "constellation/core/log/Level.hpp"
-#include "constellation/core/log/Logger.hpp"
+#include "constellation/core/log/Level.hpp"  // IWYU pragma: export
+#include "constellation/core/log/Logger.hpp" // IWYU pragma: keep
 
-using enum constellation::log::Level;                // Forward log level enum
-using namespace std::literals::string_view_literals; // NOLINT(google-global-names-in-headers)
+using enum constellation::log::Level; // Forward log level enum
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
@@ -88,7 +86,7 @@ using namespace std::literals::string_view_literals; // NOLINT(google-global-nam
 #define LOG_N_3ARGS(logger, level, count)                                                                                   \
     static std::atomic_int LOG_VAR {count};                                                                                 \
     if(LOG_VAR > 0 && (logger).shouldLog(level))                                                                            \
-    (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] "sv : ""sv)
+    (logger).log(level) << (--LOG_VAR <= 0 ? "[further messages suppressed] " : "")
 
 /** Logs a message at most N times to the default logger
  *
