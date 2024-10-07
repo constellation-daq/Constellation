@@ -210,12 +210,18 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
 
+    // Set a tag for BOR
+    transmitter.setBORTag("firmware_version", 3);
+
     receiver.reactFSM(FSM::Transition::start, "test");
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    const auto& bor_tags = receiver.getBORTags("Dummy.t1");
+    REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
     // Send a data frame
     const auto sent = transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
@@ -226,7 +232,7 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
 
-    // Set a  tag for EOR
+    // Set a tag for EOR
     transmitter.setEORTag("buggy_events", 10);
 
     // Stop and send EOR
