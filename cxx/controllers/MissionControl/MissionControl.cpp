@@ -468,7 +468,7 @@ int main(int argc, char** argv) {
     // Ensure that ZeroMQ doesn't fail creating the CMDP sink
     try {
         SinkManager::getInstance();
-    } catch(const ZMQInitError& error) {
+    } catch(const zmq::error_t& error) {
         std::cerr << "Failed to initialize logging: " << error.what() << std::endl;
         return 1;
     }
