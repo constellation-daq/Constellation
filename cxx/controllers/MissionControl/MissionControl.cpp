@@ -386,11 +386,32 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     // Draw separator
     contextMenu.addSeparator();
 
+    // Add standard commands
+    for(const auto command : magic_enum::enum_names<CSCP::StandardCommand>()) {
+        if(command == "shutdown") {
+            // Already added above
+            continue;
+        }
+        const auto command_str = to_string(command);
+        auto* action = new QAction(QString::fromStdString(command_str), this);
+        connect(action, &QAction::triggered, this, [this, index, &command_str]() {
+            auto response = runcontrol_.sendQCommand(index, command_str);
+            if(response.has_value()) {
+                QMessageBox::information(nullptr, "Satellite Response", QString::fromStdString(response.value()));
+            }
+        });
+        contextMenu.addAction(action);
+    }
+
+    // Draw separator
+    contextMenu.addSeparator();
+
     // Request possible commands from remote:
     auto dict = runcontrol_.getQCommands(index);
     for(const auto& [key, value] : dict) {
-        // Filter out transition commands to not list them twice
-        if(magic_enum::enum_cast<CSCP::TransitionCommand>(key, magic_enum::case_insensitive).has_value()) {
+        // Filter out transition and standard commands to not list them twice
+        if(magic_enum::enum_cast<CSCP::TransitionCommand>(key, magic_enum::case_insensitive).has_value() ||
+           magic_enum::enum_cast<CSCP::StandardCommand>(key, magic_enum::case_insensitive).has_value()) {
             continue;
         }
 
