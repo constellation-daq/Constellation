@@ -10,6 +10,7 @@
 #include "QController.hpp"
 
 #include <cstddef>
+#include <iterator>
 #include <mutex>
 #include <optional>
 #include <QAbstractListModel>

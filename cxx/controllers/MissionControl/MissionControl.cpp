@@ -10,11 +10,15 @@
 #include "MissionControl.hpp"
 
 #include <chrono>
+#include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <QApplication>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QException>
 #include <QFileDialog>
@@ -38,6 +42,7 @@
 
 #include <argparse/argparse.hpp>
 #include <magic_enum.hpp>
+#include <zmq.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
@@ -180,6 +185,7 @@ void MissionControl::startup(std::size_t num) {
             try {
                 sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
             } catch(std::invalid_argument&) {
+                LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
             }
 
             // This is an old run identifier, increment the sequence:
