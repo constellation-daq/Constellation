@@ -12,12 +12,14 @@
 #include <array>
 #include <cstddef>
 #include <optional>
+#include <string>
+
 #include <QAbstractListModel>
 #include <QObject>
 #include <QSortFilterProxyModel>
 #include <Qt>
+#include <qtmetamacros.h>
 #include <QVariant>
-#include <string>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -63,10 +65,10 @@ public:
     /**
      * @brief Retrieve the data of a givel cell (column, row) of the model i.e. a specific connection detail
      *
-     * \param index QModelIndex to obtain the data for
-     * \param role Role code
+     * @param index QModelIndex to obtain the data for
+     * @param role Role code
      *
-     * \return QVariant holding the connection detail data for the requested cell
+     * @return QVariant holding the connection detail data for the requested cell
      */
     QVariant data(const QModelIndex& index, int role) const override;
 
@@ -75,7 +77,7 @@ public:
      *
      * @param column Column of the model to retrieve the header title for
      * @param orientation Orientation of the UI
-     * @param role ROle code
+     * @param role Role code
      * @return Header title of the requested column
      */
     QVariant headerData(int column, Qt::Orientation orientation, int role) const override;
@@ -144,7 +146,7 @@ protected:
      * @param state Global or lowest state the Constellation entered into
      * @param global Flag whether the state is a new global or lowest state
      */
-    void reached_state(constellation::protocol::CSCP::State state, bool global) override;
+    void reached_state(constellation::protocol::CSCP::State state, bool global) final;
 
     /**
      * @brief Helper method emitting the connectionsChanged signal
@@ -153,7 +155,7 @@ protected:
      * @param position Position of the changed connections in the connection list
      * @param total Total number of current connections
      */
-    void propagate_update(Controller::UpdateType type, std::size_t position, std::size_t total) override;
+    void propagate_update(Controller::UpdateType type, std::size_t position, std::size_t total) final;
 
 private:
     // Column headers of the connection details

@@ -13,14 +13,16 @@
 #include <iterator>
 #include <mutex>
 #include <optional>
-#include <QAbstractListModel>
-#include <QSortFilterProxyModel>
-#include <Qt>
 #include <string>
 #include <utility>
 
-#include <qmetatype.h>
 #include <zmq.hpp>
+
+#include <QAbstractListModel>
+#include <QMetaType>
+#include <QSortFilterProxyModel>
+#include <Qt>
+#include <qtmetamacros.h>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -65,24 +67,30 @@ QVariant QController::data(const QModelIndex& index, int role) const {
 
     switch(index.column()) {
     case 0: {
+        // Satellite type
         const auto type_endpos = name.find_first_of('.', 0);
         return QString::fromStdString(name.substr(0, type_endpos));
     }
     case 1: {
+        // Satellite name
         const auto name_startpos = name.find_first_of('.', 0);
         return QString::fromStdString(name.substr(name_startpos + 1));
     }
     case 2: {
+        // State
         return getStyledState(conn.state, true);
     }
     case 3: {
+        // Connection (URI)
         const std::string last_endpoint = conn.req.get(zmq::sockopt::last_endpoint);
         return QString::fromStdString(last_endpoint);
     }
     case 4: {
+        // Last command response type
         return QString::fromStdString(constellation::utils::to_string(conn.last_cmd_type));
     }
     case 5: {
+        // Last command response message
         return QString::fromStdString(conn.last_cmd_verb);
     }
     default: {
@@ -170,7 +178,7 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
-    const std::lock_guard lock(connection_mutex_);
+    const std::lock_guard lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();
@@ -180,7 +188,7 @@ Dictionary QController::getQCommands(const QModelIndex& index) {
 }
 
 std::string QController::getQName(const QModelIndex& index) const {
-    const std::lock_guard lock(connection_mutex_);
+    const std::lock_guard lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();
@@ -192,7 +200,7 @@ std::string QController::getQName(const QModelIndex& index) const {
 std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
                                                      const std::string& verb,
                                                      const CommandPayload& payload) {
-    std::unique_lock<std::mutex> lock(connection_mutex_);
+    std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();

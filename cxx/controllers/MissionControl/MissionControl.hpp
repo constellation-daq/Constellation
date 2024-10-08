@@ -11,6 +11,9 @@
 
 #include <cstddef>
 #include <map>
+#include <string>
+#include <string_view>
+
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QMainWindow>
@@ -25,8 +28,7 @@
 #include <QStyleOptionViewItem>
 #include <Qt>
 #include <QTimer>
-#include <string>
-#include <string_view>
+#include <qtmetamacros.h>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/log/Logger.hpp"

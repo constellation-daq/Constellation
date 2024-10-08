@@ -16,6 +16,16 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <stdexcept>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
+
+#include <argparse/argparse.hpp>
+#include <magic_enum.hpp>
+#include <zmq.hpp>
+
 #include <QApplication>
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -27,6 +37,8 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMetaType>
+#include <qnamespace.h>
+#include <QOverload>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QSpinBox>
@@ -35,14 +47,6 @@
 #include <QtGlobal>
 #include <QTimer>
 #include <QTimeZone>
-#include <stdexcept>
-#include <string>
-#include <string_view>
-#include <utility>
-
-#include <argparse/argparse.hpp>
-#include <magic_enum.hpp>
-#include <zmq.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
