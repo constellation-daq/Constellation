@@ -187,7 +187,7 @@ void MissionControl::startup(std::size_t num) {
             std::size_t sequence = 0;
             try {
                 sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
-            } catch(std::invalid_argument&) {
+            } catch(const std::invalid_argument&) {
                 LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
             }
 
@@ -432,8 +432,8 @@ std::map<std::string, Controller::CommandPayload> MissionControl::parse_config_f
     try {
         const auto configs = ControllerConfiguration(std::filesystem::path(file.toStdString()));
         // Convert to CommandPayloads:
-        std::map<std::string, Controller::CommandPayload> payloads;
-        std::vector<std::string> sats_without_config;
+        std::map<std::string, Controller::CommandPayload> payloads {};
+        std::vector<std::string> sats_without_config {};
         for(const auto& satellite : runcontrol_.getConnections()) {
             if(!configs.hasSatelliteConfiguration(satellite)) {
                 sats_without_config.push_back(satellite);
@@ -449,8 +449,8 @@ std::map<std::string, Controller::CommandPayload> MissionControl::parse_config_f
                                      QString::fromStdString(range_to_string(sats_without_config, "\n")));
         }
         return payloads;
-    } catch(ControllerError& err) {
-        QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + err.what()));
+    } catch(const ControllerError& error) {
+        QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + error.what()));
         return {};
     }
 }
@@ -467,8 +467,8 @@ Controller::CommandPayload MissionControl::parse_config_file(const QString& file
                                      " has no explicit configuration section in the selected configuration file");
         }
         return configs.getSatelliteConfiguration(name);
-    } catch(ControllerError& err) {
-        QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + err.what()));
+    } catch(ControllerError& error) {
+        QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + error.what()));
     }
     return {};
 }
@@ -525,7 +525,7 @@ int main(int argc, char** argv) {
             QCoreApplication::setOrganizationName("Constellation");
             QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
             QCoreApplication::setApplicationName("MissionControl");
-        } catch(QException& e) {
+        } catch(const QException&) {
             std::cerr << "Failed to set up UI application\n" << std::flush;
             return 1;
         }
@@ -614,7 +614,7 @@ int main(int argc, char** argv) {
             MissionControl gui(controller_name, group_name);
             gui.show();
             return QCoreApplication::exec();
-        } catch(QException& e) {
+        } catch(const QException&) {
             std::cerr << "Failed to start UI application\n" << std::flush;
         }
     } catch(...) {
