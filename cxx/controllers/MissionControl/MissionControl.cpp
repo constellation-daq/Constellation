@@ -501,14 +501,14 @@ namespace {
 
 int main(int argc, char** argv) {
     try {
-        QCoreApplication* qapp = new QApplication(argc, argv);
+        auto qapp = std::make_shared<QApplication>(argc, argv);
 
         try {
             QCoreApplication::setOrganizationName("Constellation");
             QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
             QCoreApplication::setApplicationName("MissionControl");
         } catch(QException& e) {
-            std::cerr << "Failed to set up UI application\n";
+            std::cerr << "Failed to set up UI application\n" << std::flush;
             return 1;
         }
 
@@ -516,7 +516,7 @@ int main(int argc, char** argv) {
         try {
             SinkManager::getInstance();
         } catch(const zmq::error_t& error) {
-            std::cerr << "Failed to initialize logging: " << error.what() << "\n";
+            std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
             return 1;
         }
 
@@ -599,10 +599,10 @@ int main(int argc, char** argv) {
             gui.show();
             return QCoreApplication::exec();
         } catch(QException& e) {
-            std::cerr << "Failed to start UI application\n";
-            return 1;
+            std::cerr << "Failed to start UI application\n" << std::flush;
         }
     } catch(...) {
-        std::cerr << "Failed to start UI\n";
+        std::cerr << "Failed to start UI\n" << std::flush;
     }
+    return 1;
 }

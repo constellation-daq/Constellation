@@ -183,7 +183,7 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
 }
 
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
-    return satellite_configs_.find(transform(canonical_name, ::tolower)) != satellite_configs_.end();
+    return satellite_configs_.contains(transform(canonical_name, ::tolower));
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
