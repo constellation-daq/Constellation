@@ -54,7 +54,9 @@ using namespace std::chrono_literals;
 Controller::Controller(std::string controller_name)
     : logger_("CTRL"), controller_name_(std::move(controller_name)),
       heartbeat_receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {
+      watchdog_thread_(std::bind_front(&Controller::controller_loop, this)) {}
+
+void Controller::start() {
     LOG(logger_, DEBUG) << "Registering controller callback";
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
@@ -66,7 +68,7 @@ Controller::Controller(std::string controller_name)
     heartbeat_receiver_.startPool();
 }
 
-Controller::~Controller() {
+void Controller::stop() {
     heartbeat_receiver_.stopPool();
 
     // Unregister callback
@@ -132,6 +134,11 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         auto send_msg_state = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
         const auto recv_msg_state = send_receive(conn, send_msg_state);
         conn.state = magic_enum::enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
+
+        // Get list of commands
+        auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
+        const auto recv_msg_cmd = send_receive(conn, send_msg_cmd);
+        conn.commands = Dictionary::disassemble(recv_msg_cmd.getPayload());
 
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));

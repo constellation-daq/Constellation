@@ -141,7 +141,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
-    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS} $(eval ${BUILD_SCRIPTS})
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
@@ -183,6 +183,7 @@ build:debian-clang-libcxx:
   variables:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "--wrap-mode=forcefallback -Dspdlog:external_fmt=disabled -Db_sanitize=thread -Db_lundef=false"
+    BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
     CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:debian-gcc:
@@ -207,7 +208,9 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
+    # Do not build the Qt UI
     BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
+    BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
     NINJA_OPTIONS: "-l4"
   retry: 2
 
@@ -219,6 +222,7 @@ build:ubuntu-22.04:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "-Dqt_version=qt5"
     NINJA_OPTIONS: "-l4"
+    CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
   retry: 2
 
 build:ubuntu-24.04:

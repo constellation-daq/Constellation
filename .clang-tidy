@@ -30,7 +30,7 @@ WarningsAsErrors: '*'
 HeaderFileExtensions: ['', 'h', 'hpp', 'ipp']
 CheckOptions:
   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: 'true'
-  misc-include-cleaner.IgnoreHeaders: 'asio.*;msgpack.*;spdlog.*;toml\+\+.*;bits/.*'
+  misc-include-cleaner.IgnoreHeaders: 'bits/.*;asio.*;msgpack.*;spdlog.*;toml\+\+.*;q[^\/]+\.h'
   modernize-use-override.IgnoreDestructors: 'true'
   cppcoreguidelines-avoid-do-while.IgnoreMacros: 'true'
   readability-identifier-naming.NamespaceCase: lower_case
@@ -41,5 +41,6 @@ CheckOptions:
   readability-identifier-naming.PublicMethodIgnoredRegexp: '^msgpack_.+$|^to_.+$'
   readability-identifier-naming.ProtectedMethodCase: lower_case
   readability-identifier-naming.PrivateMethodCase: lower_case
+  readability-identifier-naming.PrivateMethodIgnoredRegexp: '^on_.+$'
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.PrivateMemberSuffix: '_'
