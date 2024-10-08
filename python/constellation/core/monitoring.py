@@ -31,9 +31,7 @@ P = ParamSpec("P")
 B = TypeVar("B", bound=BaseSatelliteFrame)
 
 
-def schedule_metric(
-    handling: MetricsType, interval: float
-) -> Callable[[Callable[P, Metric]], Callable[P, Metric]]:
+def schedule_metric(handling: MetricsType, interval: float) -> Callable[[Callable[P, Metric]], Callable[P, Metric]]:
     """Schedule a function for callback at interval [s] and send Metric.
 
     The function should take no arguments and return a value [any] and a unit
@@ -165,9 +163,7 @@ class MonitoringSender(BaseSatelliteFrame):
     def _add_com_thread(self) -> None:
         """Add the metric sender thread to the communication thread pool."""
         super()._add_com_thread()
-        self._com_thread_pool["metric_sender"] = threading.Thread(
-            target=self._send_metrics, daemon=True
-        )
+        self._com_thread_pool["metric_sender"] = threading.Thread(target=self._send_metrics, daemon=True)
         self.log.debug("Metric sender thread prepared and added to the pool.")
 
     def _send_metrics(self) -> None:
@@ -186,9 +182,7 @@ class MonitoringSender(BaseSatelliteFrame):
                     try:
                         self.send_metric(param["function"]())
                     except Exception as e:
-                        self.log.error(
-                            "Could not retrieve metric %s: %s", metric, repr(e)
-                        )
+                        self.log.error("Could not retrieve metric %s: %s", metric, repr(e))
                     last_update[metric] = datetime.now()
 
             time.sleep(0.1)
@@ -285,9 +279,7 @@ class MonitoringListener(CHIRPBroadcaster):
                 maxBytes=10**7,
                 backupCount=10,
             )
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
             handler.setFormatter(formatter)
             handler.setLevel(logging.DEBUG)
             self.log.addHandler(handler)
@@ -301,9 +293,7 @@ class MonitoringListener(CHIRPBroadcaster):
 
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
-        self._task_handler_thread = threading.Thread(
-            target=self._run_task_handler, daemon=True
-        )
+        self._task_handler_thread = threading.Thread(target=self._run_task_handler, daemon=True)
         self._task_handler_thread.start()
         self._metrics_receiver_shutdown = threading.Event()
         # Set up the metric poller which will monitor all ZMQ metric
@@ -435,8 +425,6 @@ def main(args: Any = None) -> None:
         type=str,
         help="The path to write log and metric data to.",
     )
-    # set the default arguments
-    parser.set_defaults(name="basic_monitor")
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
