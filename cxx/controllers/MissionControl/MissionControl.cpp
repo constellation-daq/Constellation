@@ -221,11 +221,6 @@ void MissionControl::on_btnInit_clicked() {
     // Read config file from UI
     auto configs = parse_config_file(txtConfigFileName->text());
 
-    // Nothing read - nothing to do
-    if(configs.empty()) {
-        return;
-    }
-
     for(auto& response : runcontrol_.sendCommands("initialize", configs)) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
     }
