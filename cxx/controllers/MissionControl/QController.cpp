@@ -9,12 +9,21 @@
 
 #include "QController.hpp"
 
+#include <cstddef>
+#include <mutex>
+#include <optional>
+#include <QAbstractListModel>
+#include <QSortFilterProxyModel>
+#include <Qt>
 #include <string>
-#include <vector>
+#include <utility>
 
 #include <qmetatype.h>
+#include <zmq.hpp>
 
+#include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 

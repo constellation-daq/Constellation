@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <QDateTime>
+#include <QString>
 #include <QTimeZone>
 
 #if __cpp_lib_format >= 201907L

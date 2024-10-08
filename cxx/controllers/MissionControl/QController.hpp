@@ -9,11 +9,19 @@
 
 #pragma once
 
+#include <array>
+#include <cstddef>
 #include <optional>
 #include <QAbstractListModel>
+#include <QObject>
 #include <QSortFilterProxyModel>
+#include <Qt>
+#include <QVariant>
+#include <string>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 /**
  * @class QController

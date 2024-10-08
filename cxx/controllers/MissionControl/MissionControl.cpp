@@ -10,8 +10,9 @@
 #include "MissionControl.hpp"
 
 #include <chrono>
-#include <fstream>
+#include <filesystem>
 #include <iostream>
+#include <map>
 #include <QApplication>
 #include <QCloseEvent>
 #include <QDateTime>
@@ -19,22 +20,34 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QMenu>
 #include <QMessageBox>
+#include <QMetaType>
 #include <QPainter>
+#include <QRegularExpression>
 #include <QSpinBox>
+#include <QStyleOptionViewItem>
 #include <QTextDocument>
+#include <QtGlobal>
+#include <QTimer>
 #include <QTimeZone>
+#include <stdexcept>
 #include <string>
+#include <string_view>
+#include <utility>
 
 #include <argparse/argparse.hpp>
+#include <magic_enum.hpp>
 
+#include "constellation/build.hpp"
+#include "constellation/controller/Controller.hpp"
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
-#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 #include "qt_utils.hpp"
 
@@ -417,47 +430,49 @@ Controller::CommandPayload MissionControl::parse_config_file(const QString& file
     return {};
 }
 
-// NOLINTNEXTLINE(*-avoid-c-arrays)
-void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser) {
-    // Controller name (-n)
-    parser.add_argument("-n", "--name").help("controller name").default_value("MissionControl");
+namespace {
+    // NOLINTNEXTLINE(*-avoid-c-arrays)
+    void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser) {
+        // Controller name (-n)
+        parser.add_argument("-n", "--name").help("controller name").default_value("MissionControl");
 
-    // Constellation group (-g)
-    parser.add_argument("-g", "--group").help("group name");
+        // Constellation group (-g)
+        parser.add_argument("-g", "--group").help("group name");
 
-    // Console log level (-l)
-    parser.add_argument("-l", "--level").help("log level").default_value("INFO");
+        // Console log level (-l)
+        parser.add_argument("-l", "--level").help("log level").default_value("INFO");
 
-    // Broadcast address (--brd)
-    std::string default_brd_addr {};
-    try {
-        default_brd_addr = asio::ip::address_v4::broadcast().to_string();
-    } catch(const asio::system_error& error) {
-        default_brd_addr = "255.255.255.255";
+        // Broadcast address (--brd)
+        std::string default_brd_addr {};
+        try {
+            default_brd_addr = asio::ip::address_v4::broadcast().to_string();
+        } catch(const asio::system_error& error) {
+            default_brd_addr = "255.255.255.255";
+        }
+        parser.add_argument("--brd").help("broadcast address").default_value(default_brd_addr);
+
+        // Any address (--any)
+        std::string default_any_addr {};
+        try {
+            default_any_addr = asio::ip::address_v4::any().to_string();
+        } catch(const asio::system_error& error) {
+            default_any_addr = "0.0.0.0";
+        }
+        parser.add_argument("--any").help("any address").default_value(default_any_addr);
+
+        // Note: this might throw
+        parser.parse_args(argc, argv);
     }
-    parser.add_argument("--brd").help("broadcast address").default_value(default_brd_addr);
 
-    // Any address (--any)
-    std::string default_any_addr {};
-    try {
-        default_any_addr = asio::ip::address_v4::any().to_string();
-    } catch(const asio::system_error& error) {
-        default_any_addr = "0.0.0.0";
+    // parser.get() might throw a logic error, but this never happens in practice
+    std::string get_arg(argparse::ArgumentParser& parser, std::string_view arg) noexcept {
+        try {
+            return parser.get(arg);
+        } catch(const std::exception&) {
+            std::unreachable();
+        }
     }
-    parser.add_argument("--any").help("any address").default_value(default_any_addr);
-
-    // Note: this might throw
-    parser.parse_args(argc, argv);
-}
-
-// parser.get() might throw a logic error, but this never happens in practice
-std::string get_arg(argparse::ArgumentParser& parser, std::string_view arg) noexcept {
-    try {
-        return parser.get(arg);
-    } catch(const std::exception&) {
-        std::unreachable();
-    }
-}
+} // namespace
 
 int main(int argc, char** argv) {
     QCoreApplication* qapp = new QApplication(argc, argv);
@@ -467,7 +482,7 @@ int main(int argc, char** argv) {
         QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
         QCoreApplication::setApplicationName("MissionControl");
     } catch(QException& e) {
-        std::cerr << "Failed to set up UI application" << std::endl;
+        std::cerr << "Failed to set up UI application\n";
         return 1;
     }
 
@@ -475,7 +490,7 @@ int main(int argc, char** argv) {
     try {
         SinkManager::getInstance();
     } catch(const zmq::error_t& error) {
-        std::cerr << "Failed to initialize logging: " << error.what() << std::endl;
+        std::cerr << "Failed to initialize logging: " << error.what() << "\n";
         return 1;
     }
 
@@ -558,7 +573,7 @@ int main(int argc, char** argv) {
         gui.show();
         return QCoreApplication::exec();
     } catch(QException& e) {
-        std::cerr << "Failed to start UI application" << std::endl;
+        std::cerr << "Failed to start UI application\n";
         return 1;
     }
 }

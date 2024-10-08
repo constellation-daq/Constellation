@@ -9,13 +9,28 @@
 
 #pragma once
 
+#include <cstddef>
+#include <map>
+#include <QCloseEvent>
 #include <QDateTime>
 #include <QMainWindow>
+#include <QModelIndex>
+#include <QPainter>
+#include <QPoint>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QSize>
 #include <QString>
 #include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
+#include <Qt>
 #include <QTimer>
+#include <string>
+#include <string_view>
+
+#include "constellation/controller/Controller.hpp"
+#include "constellation/core/log/Logger.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 #include "QController.hpp"
 #include "ui_MissionControl.h"
