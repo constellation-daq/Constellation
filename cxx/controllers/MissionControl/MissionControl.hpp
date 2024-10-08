@@ -146,6 +146,24 @@ private slots:
     void custom_context_menu(const QPoint& point);
 
 private:
+    template <constellation::protocol::CSCP::State... states>
+    static constexpr bool is_one_of_states(constellation::protocol::CSCP::State state) {
+        return ((state == states) || ...);
+    }
+
+    template <constellation::protocol::CSCP::State... states>
+    static constexpr bool is_not_one_of_states(constellation::protocol::CSCP::State state) {
+        return ((state != states) && ...);
+    }
+
+    /**
+     * @brief Helper to update button states
+     *
+     * @param state State the buttons should be in
+     */
+    void update_button_states(constellation::protocol::CSCP::State state);
+
+private:
     /**
      * @brief Helper to parse the configuration file for all satellites
      *
@@ -179,13 +197,6 @@ private:
     /* Run identifier */
     QString current_run_;
     QDateTime run_start_time_;
-
-    /**
-     * @brief Helper to update button states
-     *
-     * @param state State the buttons should be in
-     */
-    void update_button_states(constellation::protocol::CSCP::State state);
 
     /** UI timer for refreshing certain elements such as the run duration */
     QTimer display_timer_;

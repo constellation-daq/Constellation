@@ -296,20 +296,19 @@ void MissionControl::update_button_states(CSCP::State state) {
     const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$))");
     auto m = rx_conf.match(txtConfigFileName->text());
 
-    btnInit->setEnabled((state == CSCP::State::NEW || state == CSCP::State::INIT || state == CSCP::State::ERROR ||
-                         state == CSCP::State::SAFE) &&
-                        m.hasMatch());
-
-    btnLand->setEnabled(state == CSCP::State::ORBIT);
-    btnConfig->setEnabled(state == CSCP::State::INIT);
-    btnLoadConf->setEnabled(state != CSCP::State::RUN && state != CSCP::State::ORBIT);
-    btnStart->setEnabled(state == CSCP::State::ORBIT);
-    btnStop->setEnabled(state == CSCP::State::RUN);
-    btnShutdown->setEnabled(state == CSCP::State::SAFE || state == CSCP::State::INIT || state == CSCP::State::NEW);
+    using enum CSCP::State;
+    btnInit->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
+    btnLand->setEnabled(state == ORBIT);
+    btnConfig->setEnabled(state == INIT);
+    btnLoadConf->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state));
+    txtConfigFileName->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state));
+    btnStart->setEnabled(state == ORBIT);
+    btnStop->setEnabled(state == RUN);
+    btnShutdown->setEnabled(CSCP::is_shutdown_allowed(state));
 
     // Deactivate run identifier fields during run:
-    runIdentifier->setEnabled(state != CSCP::State::RUN && state != CSCP::State::starting && state != CSCP::State::stopping);
-    runSequence->setEnabled(state != CSCP::State::RUN && state != CSCP::State::starting && state != CSCP::State::stopping);
+    runIdentifier->setEnabled(is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
+    runSequence->setEnabled(is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
 }
 
 void MissionControl::update_run_infos() {
