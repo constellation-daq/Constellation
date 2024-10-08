@@ -120,7 +120,8 @@ TEST_CASE("Standard commands", "[satellite]") {
     sender.sendCommand("get_config");
     auto recv_msg_get_config = sender.recv();
     REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Configuration attached in payload"));
+    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second),
+                 Equals("0 configuration keys, dictionary attached in payload"));
     REQUIRE(recv_msg_get_config.hasPayload());
     const auto config = Configuration(Dictionary::disassemble(recv_msg_get_config.getPayload()));
     REQUIRE(config.size() == 0);
