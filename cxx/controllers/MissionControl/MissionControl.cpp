@@ -481,105 +481,109 @@ namespace {
 } // namespace
 
 int main(int argc, char** argv) {
-    QCoreApplication* qapp = new QApplication(argc, argv);
-
     try {
-        QCoreApplication::setOrganizationName("Constellation");
-        QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
-        QCoreApplication::setApplicationName("MissionControl");
-    } catch(QException& e) {
-        std::cerr << "Failed to set up UI application\n";
-        return 1;
-    }
+        QCoreApplication* qapp = new QApplication(argc, argv);
 
-    // Ensure that ZeroMQ doesn't fail creating the CMDP sink
-    try {
-        SinkManager::getInstance();
-    } catch(const zmq::error_t& error) {
-        std::cerr << "Failed to initialize logging: " << error.what() << "\n";
-        return 1;
-    }
-
-    // Get the default logger
-    auto& logger = Logger::getDefault();
-
-    // CLI parsing
-    argparse::ArgumentParser parser {"MissionControl", CNSTLN_VERSION};
-    try {
-        parse_args(argc, argv, parser);
-    } catch(const std::exception& error) {
-        LOG(logger, CRITICAL) << "Argument parsing failed: " << error.what();
-        LOG(logger, CRITICAL) << "Run \""
-                              << "MissionControl"
-                              << " --help\" for help";
-        return 1;
-    }
-
-    // Set log level
-    const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
-    if(!default_level.has_value()) {
-        LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
-                              << ", possible values are: " << utils::list_enum_names<Level>();
-        return 1;
-    }
-    SinkManager::getInstance().setConsoleLevels(default_level.value());
-
-    // Check broadcast and any address
-    asio::ip::address_v4 brd_addr {};
-    try {
-        brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
-    } catch(const asio::system_error& error) {
-        LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
-        return 1;
-    }
-    asio::ip::address_v4 any_addr {};
-    try {
-        any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
-    } catch(const asio::system_error& error) {
-        LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
-        return 1;
-    }
-
-    // Check satellite name
-    const auto controller_name = get_arg(parser, "name");
-
-    // Log the version after all the basic checks are done
-    LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
-
-    // Get Constellation group:
-    std::string group_name;
-    if(parser.is_used("group")) {
-        group_name = get_arg(parser, "group");
-    } else {
-        const QString text =
-            QInputDialog::getText(nullptr, "Constellation", "Constellation group to connect to:", QLineEdit::Normal);
-        if(!text.isEmpty()) {
-            group_name = text.toStdString();
-        } else {
-            LOG(logger, CRITICAL) << "Invalid or empty constellation group name";
+        try {
+            QCoreApplication::setOrganizationName("Constellation");
+            QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
+            QCoreApplication::setApplicationName("MissionControl");
+        } catch(QException& e) {
+            std::cerr << "Failed to set up UI application\n";
             return 1;
         }
-    }
 
-    // Create CHIRP manager and set as default
-    std::unique_ptr<chirp::Manager> chirp_manager {};
-    try {
-        chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, group_name, controller_name);
-        chirp_manager->setAsDefaultInstance();
-        chirp_manager->start();
-    } catch(const std::exception& error) {
-        LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
-    }
+        // Ensure that ZeroMQ doesn't fail creating the CMDP sink
+        try {
+            SinkManager::getInstance();
+        } catch(const zmq::error_t& error) {
+            std::cerr << "Failed to initialize logging: " << error.what() << "\n";
+            return 1;
+        }
 
-    // Register CMDP in CHIRP and set sender name for CMDP
-    SinkManager::getInstance().enableCMDPSending(controller_name);
+        // Get the default logger
+        auto& logger = Logger::getDefault();
 
-    try {
-        MissionControl gui(controller_name, group_name);
-        gui.show();
-        return QCoreApplication::exec();
-    } catch(QException& e) {
-        std::cerr << "Failed to start UI application\n";
-        return 1;
+        // CLI parsing
+        argparse::ArgumentParser parser {"MissionControl", CNSTLN_VERSION};
+        try {
+            parse_args(argc, argv, parser);
+        } catch(const std::exception& error) {
+            LOG(logger, CRITICAL) << "Argument parsing failed: " << error.what();
+            LOG(logger, CRITICAL) << "Run \""
+                                  << "MissionControl"
+                                  << " --help\" for help";
+            return 1;
+        }
+
+        // Set log level
+        const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
+        if(!default_level.has_value()) {
+            LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
+                                  << ", possible values are: " << utils::list_enum_names<Level>();
+            return 1;
+        }
+        SinkManager::getInstance().setConsoleLevels(default_level.value());
+
+        // Check broadcast and any address
+        asio::ip::address_v4 brd_addr {};
+        try {
+            brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
+        } catch(const asio::system_error& error) {
+            LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
+            return 1;
+        }
+        asio::ip::address_v4 any_addr {};
+        try {
+            any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
+        } catch(const asio::system_error& error) {
+            LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
+            return 1;
+        }
+
+        // Check satellite name
+        const auto controller_name = get_arg(parser, "name");
+
+        // Log the version after all the basic checks are done
+        LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
+
+        // Get Constellation group:
+        std::string group_name;
+        if(parser.is_used("group")) {
+            group_name = get_arg(parser, "group");
+        } else {
+            const QString text =
+                QInputDialog::getText(nullptr, "Constellation", "Constellation group to connect to:", QLineEdit::Normal);
+            if(!text.isEmpty()) {
+                group_name = text.toStdString();
+            } else {
+                LOG(logger, CRITICAL) << "Invalid or empty constellation group name";
+                return 1;
+            }
+        }
+
+        // Create CHIRP manager and set as default
+        std::unique_ptr<chirp::Manager> chirp_manager {};
+        try {
+            chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, group_name, controller_name);
+            chirp_manager->setAsDefaultInstance();
+            chirp_manager->start();
+        } catch(const std::exception& error) {
+            LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
+        }
+
+        // Register CMDP in CHIRP and set sender name for CMDP
+        SinkManager::getInstance().enableCMDPSending(controller_name);
+
+        try {
+            MissionControl gui(controller_name, group_name);
+            gui.show();
+            return QCoreApplication::exec();
+        } catch(QException& e) {
+            std::cerr << "Failed to start UI application\n";
+            return 1;
+        }
+    } catch(...) {
+        std::cerr << "Failed to start UI\n";
     }
 }
