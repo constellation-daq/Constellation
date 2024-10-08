@@ -147,6 +147,14 @@ private slots:
 
 private:
     /**
+     * @brief Helper to update button states
+     *
+     * @param state State the buttons should be in
+     */
+    void update_button_states(constellation::protocol::CSCP::State state);
+
+private:
+    /**
      * @brief Helper to parse the configuration file for all satellites
      *
      * @param file File path to parse
@@ -179,13 +187,6 @@ private:
     /* Run identifier */
     QString current_run_;
     QDateTime run_start_time_;
-
-    /**
-     * @brief Helper to update button states
-     *
-     * @param state State the buttons should be in
-     */
-    void update_button_states(constellation::protocol::CSCP::State state);
 
     /** UI timer for refreshing certain elements such as the run duration */
     QTimer display_timer_;

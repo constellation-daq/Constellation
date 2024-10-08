@@ -98,6 +98,26 @@ namespace constellation::protocol::CSCP {
     }
 
     /**
+     * @brief Check if given state is in one of template states list
+     *
+     * @param state State to check
+     * @return True if `state` equals one of the states given in the template parameters
+     */
+    template <State... states> constexpr bool is_one_of_states(State state) {
+        return ((state == states) || ...);
+    }
+
+    /**
+     * @brief Check if given state is not in one of template states list
+     *
+     * @param state State to check
+     * @return True if `state` equals none of the states given in the template parameters
+     */
+    template <State... states> static constexpr bool is_not_one_of_states(State state) {
+        return ((state != states) && ...);
+    }
+
+    /**
      * @brief Checks if a satellite name is valid
      *
      * A satellite name may contain alphanumeric characters and underscores and may not be empty.
