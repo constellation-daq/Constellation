@@ -170,22 +170,17 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
-    std::unique_lock<std::mutex> lock(connection_mutex_);
+    const std::lock_guard lock(connection_mutex_);
 
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
 
-    // Unlock so the controller can grab it
-    lock.unlock();
-    auto msg = Controller::sendCommand(it->first, "get_commands");
-
-    // FIXME check success
-    return Dictionary::disassemble(msg.getPayload());
+    return it->second.commands;
 }
 
 std::string QController::getQName(const QModelIndex& index) const {
-    const std::unique_lock<std::mutex> lock(connection_mutex_);
+    const std::lock_guard lock(connection_mutex_);
 
     // Select connection by index:
     auto it = connections_.begin();

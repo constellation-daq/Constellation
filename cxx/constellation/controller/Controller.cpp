@@ -135,6 +135,11 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         const auto recv_msg_state = send_receive(conn, send_msg_state);
         conn.state = magic_enum::enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
 
+        // Get list of commands
+        auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
+        const auto recv_msg_cmd = send_receive(conn, send_msg_cmd);
+        conn.commands = Dictionary::disassemble(recv_msg_cmd.getPayload());
+
         // Add to map of open connections
         const auto [it, success] = connections_.emplace(name, std::move(conn));
         connection_count_.store(connections_.size());
