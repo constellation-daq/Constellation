@@ -146,16 +146,6 @@ private slots:
     void custom_context_menu(const QPoint& point);
 
 private:
-    template <constellation::protocol::CSCP::State... states>
-    static constexpr bool is_one_of_states(constellation::protocol::CSCP::State state) {
-        return ((state == states) || ...);
-    }
-
-    template <constellation::protocol::CSCP::State... states>
-    static constexpr bool is_not_one_of_states(constellation::protocol::CSCP::State state) {
-        return ((state != states) && ...);
-    }
-
     /**
      * @brief Helper to update button states
      *

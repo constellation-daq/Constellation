@@ -297,18 +297,18 @@ void MissionControl::update_button_states(CSCP::State state) {
     auto m = rx_conf.match(txtConfigFileName->text());
 
     using enum CSCP::State;
-    btnInit->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
+    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
-    btnLoadConf->setEnabled(is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
-    txtConfigFileName->setEnabled(is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
+    btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
+    txtConfigFileName->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
     btnStart->setEnabled(state == ORBIT);
     btnStop->setEnabled(state == RUN);
     btnShutdown->setEnabled(CSCP::is_shutdown_allowed(state));
 
     // Deactivate run identifier fields during run:
-    runIdentifier->setEnabled(is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
-    runSequence->setEnabled(is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
+    runIdentifier->setEnabled(CSCP::is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
+    runSequence->setEnabled(CSCP::is_not_one_of_states<RUN, starting, stopping, interrupting>(state));
 }
 
 void MissionControl::update_run_infos() {
