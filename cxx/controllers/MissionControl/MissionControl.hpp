@@ -28,7 +28,6 @@
 #include <QStyleOptionViewItem>
 #include <Qt>
 #include <QTimer>
-#include <qtmetamacros.h>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/log/Logger.hpp"

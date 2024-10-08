@@ -37,8 +37,6 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMetaType>
-#include <qnamespace.h>
-#include <QOverload>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QSpinBox>

@@ -13,7 +13,7 @@ BinPackArguments: false
 ColumnLimit: 125
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex:         '^<Q[^/\.]+>$|^<q[^/\.]+\.h>$'
+  - Regex:         '^<Q[^/\.]+>$'
     Priority:      3
     CaseSensitive: true
   - Regex:         '^<[^/\.]+>$'

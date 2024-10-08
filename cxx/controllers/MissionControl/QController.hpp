@@ -18,7 +18,6 @@
 #include <QObject>
 #include <QSortFilterProxyModel>
 #include <Qt>
-#include <qtmetamacros.h>
 #include <QVariant>
 
 #include "constellation/controller/Controller.hpp"

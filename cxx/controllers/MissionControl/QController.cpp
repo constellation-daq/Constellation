@@ -22,7 +22,6 @@
 #include <QMetaType>
 #include <QSortFilterProxyModel>
 #include <Qt>
-#include <qtmetamacros.h>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
