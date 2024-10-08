@@ -300,8 +300,8 @@ void MissionControl::update_button_states(CSCP::State state) {
     btnInit->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
-    btnLoadConf->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state));
-    txtConfigFileName->setEnabled(is_one_of_states<NEW, INIT, SAFE, ERROR>(state));
+    btnLoadConf->setEnabled(is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
+    txtConfigFileName->setEnabled(is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
     btnStart->setEnabled(state == ORBIT);
     btnStop->setEnabled(state == RUN);
     btnShutdown->setEnabled(CSCP::is_shutdown_allowed(state));
