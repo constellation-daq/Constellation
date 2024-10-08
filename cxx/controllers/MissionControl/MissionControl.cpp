@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -222,7 +223,7 @@ void MissionControl::on_btnInit_clicked() {
     auto configs = parse_config_file(txtConfigFileName->text());
 
     for(auto& response : runcontrol_.sendCommands("initialize", configs)) {
-        LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
@@ -239,27 +240,26 @@ void MissionControl::on_btnShutdown_clicked() {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
         for(auto& response : runcontrol_.sendCommands("shutdown")) {
-            LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": "
-                                << utils::to_string(response.second.getVerb().first);
+            LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << to_string(response.second.getVerb().first);
         }
     }
 }
 
 void MissionControl::on_btnConfig_clicked() {
     for(auto& response : runcontrol_.sendCommands("launch")) {
-        LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
     for(auto& response : runcontrol_.sendCommands("land")) {
-        LOG(logger_, DEBUG) << "Land: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Land: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
     for(auto& response : runcontrol_.sendCommands("start", current_run_.toStdString())) {
-        LOG(logger_, DEBUG) << "Start: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Start: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 
     // Set start time for this run
@@ -268,7 +268,7 @@ void MissionControl::on_btnStart_clicked() {
 
 void MissionControl::on_btnStop_clicked() {
     for(auto& response : runcontrol_.sendCommands("stop")) {
-        LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << utils::to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 
     // Increment run sequence:
@@ -526,17 +526,15 @@ int main(int argc, char** argv) {
             parse_args(argc, argv, parser);
         } catch(const std::exception& error) {
             LOG(logger, CRITICAL) << "Argument parsing failed: " << error.what();
-            LOG(logger, CRITICAL) << "Run \""
-                                  << "MissionControl"
-                                  << " --help\" for help";
+            LOG(logger, CRITICAL) << "Run " << std::quoted("MissionControl --help") << " for help";
             return 1;
         }
 
         // Set log level
         const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
         if(!default_level.has_value()) {
-            LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
-                                  << ", possible values are: " << utils::list_enum_names<Level>();
+            LOG(logger, CRITICAL) << "Log level " << std::quoted(get_arg(parser, "level"))
+                                  << " is not valid, possible values are: " << list_enum_names<Level>();
             return 1;
         }
         SinkManager::getInstance().setConsoleLevels(default_level.value());
@@ -546,14 +544,14 @@ int main(int argc, char** argv) {
         try {
             brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
         } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
+            LOG(logger, CRITICAL) << "Invalid broadcast address " << std::quoted(get_arg(parser, "brd"));
             return 1;
         }
         asio::ip::address_v4 any_addr {};
         try {
             any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
         } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
+            LOG(logger, CRITICAL) << "Invalid any address " << std::quoted(get_arg(parser, "any"));
             return 1;
         }
 
