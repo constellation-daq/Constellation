@@ -222,6 +222,7 @@ build:ubuntu-22.04:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "-Dqt_version=qt5"
     NINJA_OPTIONS: "-l4"
+    CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
   retry: 2
 
 build:ubuntu-24.04:
