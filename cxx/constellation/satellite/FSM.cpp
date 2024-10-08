@@ -15,6 +15,8 @@
 #include <future>
 #include <iomanip>
 #include <mutex>
+#include <optional>
+#include <stdexcept>
 #include <stop_token>
 #include <string>
 #include <string_view>
