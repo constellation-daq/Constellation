@@ -62,11 +62,8 @@ def get_scheduled_metrics(cls: object) -> dict[str, dict[str, Any]]:
         call = getattr(cls, func)
         if callable(call) and not func.startswith("__"):
             # regular method
-            if hasattr(call, "metric_scheduled"):
-                val = getattr(call, "metric_scheduled")
-                if isinstance(val, float):
-                    # safeguard for tests only: a mock context would end up here
-                    res[call.__name__] = {"function": call, "interval": val}
+            if hasattr(call, "metric_scheduled") and hasattr(call, "__name__"):
+                res[call.__name__] = {"function": call, "interval": getattr(call, "metric_scheduled")}
     return res
 
 
