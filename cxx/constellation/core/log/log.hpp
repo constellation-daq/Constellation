@@ -116,7 +116,7 @@ using enum constellation::log::Level; // Forward log level enum
  */
 #define LOG_NTH_3ARGS(logger, level, count)                                                                                 \
     static thread_local std::atomic_size_t LOG_VAR {0};                                                                     \
-    if(LOG_VAR++ % count == 0 && (logger).shouldLog(level))                                                                 \
+    if(LOG_VAR++ % (count) == 0 && (logger).shouldLog(level))                                                               \
     (logger).log(level)
 
 /** Logs a message every N calls to the default logger
