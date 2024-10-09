@@ -5,6 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides a base class for Constellation Satellite modules.
 """
 
+import re
 import zmq
 import threading
 import logging
@@ -129,6 +130,9 @@ class BaseSatelliteFrame:
     def __init__(self, name: str, interface: str, **_kwds: Any):
         # type name == python class name
         self.type = type(self).__name__
+        # Check if provided name is valid:
+        if not re.match(r"^\w+$", name):
+            raise ValueError("Satellite name contains invalid characters")
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"
         logging.setLoggerClass(ConstellationLogger)
