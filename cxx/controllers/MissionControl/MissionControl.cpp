@@ -393,7 +393,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
         }
         const auto command_str = to_string(command);
         auto* action = new QAction(QString::fromStdString(command_str), this);
-        connect(action, &QAction::triggered, this, [this, index, &command_str]() {
+        connect(action, &QAction::triggered, this, [this, index, command_str]() {
             auto response = runcontrol_.sendQCommand(index, command_str);
             if(response.has_value()) {
                 QMessageBox::information(nullptr, "Satellite Response", QString::fromStdString(response.value()));
