@@ -147,7 +147,7 @@ TEST_CASE("User commands", "[satellite]") {
     sender.sendCommand("my_cmd");
     auto recv_msg_usr_cmd = sender.recv();
     REQUIRE(recv_msg_usr_cmd.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_usr_cmd.getVerb().second), Equals(""));
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd.getVerb().second), Equals("Command returned: 2"));
     REQUIRE(recv_msg_usr_cmd.hasPayload());
     const auto& usrmsgpayload = recv_msg_usr_cmd.getPayload();
     const auto usrpayload = msgpack::unpack(to_char_ptr(usrmsgpayload.span().data()), usrmsgpayload.span().size());
@@ -157,7 +157,7 @@ TEST_CASE("User commands", "[satellite]") {
     sender.sendCommand("mY_cMd");
     auto recv_msg_usr_cmd_case = sender.recv();
     REQUIRE(recv_msg_usr_cmd_case.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_usr_cmd_case.getVerb().second), Equals(""));
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_case.getVerb().second), Equals("Command returned: 2"));
     REQUIRE(recv_msg_usr_cmd_case.hasPayload());
     const auto& usrmsgpayload_case = recv_msg_usr_cmd_case.getPayload();
     const auto usrpayload_case =
@@ -175,7 +175,7 @@ TEST_CASE("User commands", "[satellite]") {
 
     auto recv_msg_usr_cmd_arg = sender.recv();
     REQUIRE(recv_msg_usr_cmd_arg.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_usr_cmd_arg.getVerb().second), Equals(""));
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_arg.getVerb().second), Equals("Command returned: 8"));
     REQUIRE(recv_msg_usr_cmd_arg.hasPayload());
     const auto& usrargmsgpayload = recv_msg_usr_cmd_arg.getPayload();
     const auto usrargpayload = msgpack::unpack(to_char_ptr(usrargmsgpayload.span().data()), usrargmsgpayload.span().size());
@@ -185,7 +185,7 @@ TEST_CASE("User commands", "[satellite]") {
     sender.sendCommand("my_cmd_void");
     auto recv_msg_usr_cmd_void = sender.recv();
     REQUIRE(recv_msg_usr_cmd_void.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_usr_cmd_void.getVerb().second), Equals(""));
+    REQUIRE_THAT(to_string(recv_msg_usr_cmd_void.getVerb().second), Equals("Command returned: NIL"));
     REQUIRE(!recv_msg_usr_cmd_void.hasPayload());
 }
 
