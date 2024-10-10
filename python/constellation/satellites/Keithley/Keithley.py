@@ -10,11 +10,14 @@ from typing import Any
 from constellation.core.base import setup_cli_logging, EPILOG
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
+from constellation.core.cmdp import MetricsType
 from constellation.core.cscp import CSCPMessage
 from constellation.core.fsm import SatelliteState
+from constellation.core.monitoring import schedule_metric
 from constellation.core.satellite import Satellite, SatelliteArgumentParser
 
-from .Keithley2410 import KeithleyInterface, Keithley2410
+from .KeithleyInterface import KeithleyInterface
+from .Keithley2410 import Keithley2410
 
 _SUPPORTED_DEVICES = {
     "2410": Keithley2410,
@@ -131,7 +134,9 @@ class Keithley(Satellite):
     @cscp_requestable
     def in_compliance(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Check if current is in compliance"""
-        return f"{self.device.in_compliance()}", None, {}
+        in_compliance = self.device.in_compliance()
+        is_str = "is" if in_compliance else "is not"
+        return f"Device {is_str} in compliance", in_compliance, {}
 
     def _in_compliance_is_allowed(self, request: CSCPMessage) -> bool:
         return self.fsm.current_state_value in [SatelliteState.ORBIT, SatelliteState.RUN]
@@ -140,10 +145,28 @@ class Keithley(Satellite):
     def read_output(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Read voltage and current output"""
         voltage, current, timestamp = self.device.read_output()
-        return f"Output: {voltage}V, {current}A", None, {}
+        return f"Output: {voltage}V, {current}A", {"voltage": voltage, "current": current, "timestamp": timestamp}, {}
 
     def _read_output_is_allowed(self, request: CSCPMessage) -> bool:
         return self.fsm.current_state_value in [SatelliteState.ORBIT, SatelliteState.RUN]
+
+    @schedule_metric("V", MetricsType.LAST_VALUE, 10)
+    def Voltage(self) -> Any:
+        if self.fsm.current_state_value in [SatelliteState.ORBIT, SatelliteState.RUN]:
+            return self.device.read_output()[0]
+        return None
+
+    @schedule_metric("A", MetricsType.LAST_VALUE, 10)
+    def Current(self) -> Any:
+        if self.fsm.current_state_value in [SatelliteState.ORBIT, SatelliteState.RUN]:
+            return self.device.read_output()[1]
+        return None
+
+    @schedule_metric("", MetricsType.LAST_VALUE, 10)
+    def In_compliance(self) -> Any:
+        if self.fsm.current_state_value in [SatelliteState.ORBIT, SatelliteState.RUN]:
+            return self.device.in_compliance()
+        return None
 
 
 def main(args=None):
