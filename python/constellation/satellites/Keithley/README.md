@@ -64,11 +64,11 @@ Possible terminals are `front` and `rear`.
 
 ## Metrics
 
-| Metric | Description | Type | Interval |
-|--------|-------------|------|----------|
-| `VOLTAGE` | Voltage output | LAST_VALUE | 10s |
-| `CURRENT` | Current output | LAST_VALUE | 10s |
-| `IN_COMLIANCE` | If in compliance | LAST_VALUE | 10s |
+| Metric | Description | Value Type | Metric Type | Interval |
+|--------|-------------|------------|-------------|----------|
+| `VOLTAGE` | Voltage output | Float | `LAST_VALUE` | 10s |
+| `CURRENT` | Current output | Float | `LAST_VALUE` | 10s |
+| `IN_COMLIANCE` | If in compliance | Bool | `LAST_VALUE` | 10s |
 
 ## Custom Commands
 
