@@ -210,7 +210,7 @@ class ZeroMQSocketLogListener(QueueListener):
         super().__init__(cast(Queue, transmitter), *handlers, **kwargs)  # type: ignore[type-arg]
         self._stop_recv = threading.Event()
 
-    def dequeue(self, _block: bool) -> logging.LogRecord:
+    def dequeue(self, block: bool) -> logging.LogRecord:
         # FIXME it is quite likely that this blocking call causes errors when
         # shutting down as the ZMQ context is removed before this call ends.
         record = None
@@ -236,44 +236,28 @@ class ZeroMQSocketLogListener(QueueListener):
 class MonitoringListener(CHIRPBroadcaster):
     """Simple monitor class to receive logs and metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, output_path: str = ""):
+    def __init__(
+        self,
+        name: str,
+        group: str,
+        interface: str,
+        metric_callback: Callable[[Metric], None],
+    ):
         """Initialize values.
 
         Arguments:
         - name ::  name of this Monitor
         - group ::  group of controller
         - interface :: the interface to connect to
-        - output_path :: the directory to write logs and metric data to
+        - log_callback :: callback for log messages
+        - metric_callback :: callback for metrics
         """
         super().__init__(name=name, group=group, interface=interface)
 
+        self._metric_callback = metric_callback
+
         self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
         self._metric_sockets: dict[str, zmq.Socket] = {}  # type: ignore[type-arg]
-
-        # create output directories and configure file writer logger
-        if output_path:
-            self.output_path: pathlib.Path | None = pathlib.Path(output_path)
-            try:
-                os.makedirs(self.output_path)
-                self.log.info("Created path %s", output_path)
-            except FileExistsError:
-                pass
-            try:
-                os.mkdir(self.output_path / "logs")
-                os.mkdir(self.output_path / "stats")
-            except FileExistsError:
-                pass
-            handler = logging.handlers.RotatingFileHandler(
-                self.output_path / f"logs/{group}.log",
-                maxBytes=10**7,
-                backupCount=10,
-            )
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            handler.setFormatter(formatter)
-            handler.setLevel(logging.DEBUG)
-            self.log.addHandler(handler)
-        else:
-            self.output_path = None
 
         super()._add_com_thread()
         super()._start_com_threads()
@@ -359,15 +343,7 @@ class MonitoringListener(CHIRPBroadcaster):
                     for socket in sockets_ready.keys():
                         binmsg = socket.recv_multipart()
                         m = transmitter.decode_metric(binmsg[0].decode("utf-8"), binmsg)
-                        if self.output_path:
-                            # append to file
-                            fname = f"stats/{m.sender}_{m.name.lower()}.csv"
-                            path = self.output_path / fname
-                            ts = m.time.to_unix()
-                            with open(path, "a") as csv:
-                                csv.write(f"{ts}, {m.value}, '{m.unit}'\n")
-                        else:
-                            print(m)
+                        self._metric_callback(m)
             except KeyboardInterrupt:
                 break
 
@@ -418,9 +394,43 @@ def main(args: Any = None) -> None:
     args = vars(parser.parse_args(args))
 
     # set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
+    logger = setup_cli_logging(args["name"], args.pop("log_level"))
 
-    mon = MonitoringListener(**args)
+    # create output directories and configure file writer logger
+    output_path: pathlib.Path | str | None = args.pop("output_path")
+    if output_path is not None:
+        output_path = pathlib.Path(output_path)
+        try:
+            os.makedirs(output_path)
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(output_path / "logs")
+            os.mkdir(output_path / "stats")
+        except FileExistsError:
+            pass
+        handler = logging.handlers.RotatingFileHandler(
+            output_path / "logs" / (args["group"] + ".log"),
+            maxBytes=10**7,
+            backupCount=10,
+        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.DEBUG)
+        logger.addHandler(handler)
+
+    def metric_callback(metric: Metric) -> None:
+        if output_path:
+            # append to file
+            fname = f"stats/{metric.sender}_{metric.name.lower()}.csv"
+            path = output_path / fname
+            ts = metric.time.to_unix()
+            with open(path, "a") as csv:
+                csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
+        else:
+            print(metric)
+
+    mon = MonitoringListener(**args, metric_callback=metric_callback)
     mon.receive_metrics()
 
 
