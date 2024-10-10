@@ -22,6 +22,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 /**
@@ -122,6 +123,15 @@ public:
      * @return String for the state display
      */
     static QString getStyledState(constellation::protocol::CSCP::State state, bool global);
+
+    /**
+     * @brief Helper to obtain the CSCP message type string with color and formatting
+     *
+     * @param type CSCP message type
+     *
+     * @return String for the CSCP response display
+     */
+    static QString getStyledResponse(constellation::message::CSCP1Message::Type type);
 
 signals:
     /**
