@@ -88,7 +88,7 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     }
     case 4: {
         // Last command response type
-        return QString::fromStdString(constellation::utils::to_string(conn.last_cmd_type));
+        return getStyledResponse(conn.last_cmd_type);
     }
     case 5: {
         // Last command response message
