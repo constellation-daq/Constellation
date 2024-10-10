@@ -9,7 +9,7 @@ A base module for a Constellation Satellite that sends data.
 import time
 import threading
 import logging
-from typing import Optional, Any
+from typing import Optional, Any, cast
 from queue import Queue, Empty
 
 import random
@@ -18,7 +18,7 @@ import zmq
 
 from .cdtp import DataTransmitter, CDTPMessageIdentifier
 from .satellite import Satellite, SatelliteArgumentParser
-from .base import EPILOG, setup_cli_logging
+from .base import EPILOG, ConstellationLogger, setup_cli_logging
 from .broadcastmanager import CHIRPServiceIdentifier
 
 
@@ -52,6 +52,9 @@ class PushThread(threading.Thread):
         self.queue = queue
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PUSH)
+
+        # Set up own logger with SEND topic
+        self.log = cast(ConstellationLogger, logging.getLogger("SEND"))
 
         if not port:
             port = self._socket.bind_to_random_port(f"tcp://{interface}")

@@ -6,15 +6,16 @@ BroadcastManger module provides classes for managing CHIRP broadcasts within
 Constellation Satellites.
 """
 
+import logging
 import threading
 from functools import wraps
-from typing import Callable, TypeVar, ParamSpec, Any, Optional
+from typing import Callable, TypeVar, ParamSpec, Any, Optional, cast
 
 import time
 import random
 from uuid import UUID
 
-from .base import BaseSatelliteFrame
+from .base import BaseSatelliteFrame, ConstellationLogger
 
 from .chirp import (
     CHIRPServiceIdentifier,
@@ -67,19 +68,13 @@ class DiscoveredService:
     def __eq__(self, other: object) -> bool:
         """Comparison operator for network-related properties."""
         if isinstance(other, DiscoveredService):
-            return bool(
-                self.host_uuid == other.host_uuid
-                and self.serviceid == other.serviceid
-                and self.port == other.port
-            )
+            return bool(self.host_uuid == other.host_uuid and self.serviceid == other.serviceid and self.port == other.port)
         return NotImplemented
 
     def __str__(self) -> str:
         """Pretty-print a string for this service."""
         s = "Host {} offering service {} on {}:{} is alive: {}"
-        return s.format(
-            self.host_uuid, self.serviceid, self.address, self.port, self.alive
-        )
+        return s.format(self.host_uuid, self.serviceid, self.address, self.port, self.alive)
 
 
 def get_chirp_callbacks(
@@ -135,25 +130,24 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._stop_broadcasting = threading.Event()
         self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
+        # Set up own logger with CHIRP topic
+        self.log = cast(ConstellationLogger, logging.getLogger("CHIRP"))
+
         # Offered and discovered services
         self._registered_services: dict[int, CHIRPServiceIdentifier] = {}
         self.discovered_services: list[DiscoveredService] = []
         self._chirp_thread = None
-        self._chirp_callbacks: dict[
-            CHIRPServiceIdentifier, Callable[[B, DiscoveredService], None]
-        ] = get_chirp_callbacks(self)
+        self._chirp_callbacks: dict[CHIRPServiceIdentifier, Callable[[B, DiscoveredService], None]] = get_chirp_callbacks(
+            self
+        )
 
     def _add_com_thread(self) -> None:
         """Add the CHIRP broadcaster thread to the communication thread pool."""
         super()._add_com_thread()
-        self._com_thread_pool["chirp_broadcaster"] = threading.Thread(
-            target=self._run, daemon=True
-        )
+        self._com_thread_pool["chirp_broadcaster"] = threading.Thread(target=self._run, daemon=True)
         self.log.debug("CHIRP broadcaster thread prepared and added to the pool.")
 
-    def get_discovered(
-        self, serviceid: CHIRPServiceIdentifier
-    ) -> list[DiscoveredService]:
+    def get_discovered(self, serviceid: CHIRPServiceIdentifier) -> list[DiscoveredService]:
         """Return a list of already discovered services for a given identifier."""
         res = []
         for s in self.discovered_services:
@@ -189,14 +183,10 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
 
         """
         if serviceid not in self._chirp_callbacks:
-            self.log.warning(
-                "Serviceid %s does not have a registered callback", serviceid
-            )
+            self.log.warning("Serviceid %s does not have a registered callback", serviceid)
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_offers(
-        self, serviceid: Optional[CHIRPServiceIdentifier] = None, dest_addr: str = ""
-    ) -> None:
+    def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None, dest_addr: str = "") -> None:
         """Broadcast all registered services matching serviceid.
 
         Specify None for all registered services.
@@ -206,9 +196,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self.log.debug(
-                    "Broadcasting service OFFER on '%s':%s for %s", dest_addr, port, sid
-                )
+                self.log.debug("Broadcasting service OFFER on '%s':%s for %s", dest_addr, port, sid)
                 self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port, dest_addr)
 
     def broadcast_requests(self) -> None:
@@ -225,9 +213,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
 
     def _discover_service(self, msg: CHIRPMessage) -> None:
         """Add a service to internal list and possibly queue a callback."""
-        service = DiscoveredService(
-            msg.host_uuid, msg.serviceid, msg.from_address, msg.port
-        )
+        service = DiscoveredService(msg.host_uuid, msg.serviceid, msg.from_address, msg.port)
         if service in self.discovered_services:
             self.log.debug(
                 "Service already discovered: %s on host %s:%s",
@@ -256,9 +242,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
     def _depart_service(self, msg: CHIRPMessage) -> None:
         """Depart with a service."""
         try:
-            service = DiscoveredService(
-                msg.host_uuid, msg.serviceid, msg.from_address, msg.port
-            )
+            service = DiscoveredService(msg.host_uuid, msg.serviceid, msg.from_address, msg.port)
             self.discovered_services.remove(service)
             self.log.debug(
                 "Received depart for service %s on host %s: Removed.",
@@ -282,9 +266,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
     def _run(self) -> None:
         """Start listening in on broadcast"""
         # assert for mypy static type analysis
-        assert isinstance(
-            self._com_thread_evt, threading.Event
-        ), "BroadcastManager thread Event no set up"
+        assert isinstance(self._com_thread_evt, threading.Event), "BroadcastManager thread Event no set up"
 
         while not self._com_thread_evt.is_set():
             msg = self._beacon.listen()
