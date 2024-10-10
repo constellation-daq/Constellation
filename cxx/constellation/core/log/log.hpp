@@ -108,6 +108,24 @@ using enum constellation::log::Level; // Forward log level enum
  */
 #define LOG_ONCE_1ARG(level) LOG_ONCE_2ARGS(constellation::log::Logger::getDefault(), level)
 
+/** Logs a message every N calls
+ *
+ * @param logger Logger on which to log
+ * @param level Log level on which to log
+ * @param count Interval at which the message should be logged
+ */
+#define LOG_NTH_3ARGS(logger, level, count)                                                                                 \
+    static thread_local std::atomic_size_t LOG_VAR {0};                                                                     \
+    if(LOG_VAR++ % (count) == 0 && (logger).shouldLog(level))                                                               \
+    (logger).log(level)
+
+/** Logs a message every N calls to the default logger
+ *
+ * @param level Log level on which to log
+ * @param count Interval at which the message should be logged
+ */
+#define LOG_NTH_2ARGS(level, count) LOG_NTH_3ARGS(constellation::log::Logger::getDefault(), level, count)
+
 /**
  * Helper macros which allow to chose the correct target macro (_1ARG, _2ARGS or _3ARGS) depending on the number of arguments
  * and the macro prefix (F##) provided.
@@ -182,5 +200,18 @@ using enum constellation::log::Level; // Forward log level enum
  * which to log.
  */
 #define LOG_ONCE(...) LOG_MACRO(LOG_ONCE, __VA_ARGS__)
+
+/**
+ * Logs a message every Nth time the logging macro is called either to the default logger or a defined logger.
+ *
+ * This macro takes either two or three arguments:
+ *
+ * * `LOG_NTH(level, count)` will log to the default logger of the framework
+ * * `LOG_NTH(logger, level, count)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use, `level` indicates the verbosity level on which
+ * to log and `count` is the interval of calls to the macro at which the message will be logged.
+ */
+#define LOG_NTH(...) LOG_MACRO(LOG_NTH, __VA_ARGS__)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
