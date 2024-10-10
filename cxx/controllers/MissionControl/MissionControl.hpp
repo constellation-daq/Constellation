@@ -21,6 +21,7 @@
 #include <QPainter>
 #include <QPoint>
 #include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QSettings>
 #include <QSize>
 #include <QString>
@@ -187,6 +188,7 @@ private:
     /* Run identifier */
     QString current_run_;
     QDateTime run_start_time_;
+    QRegularExpressionValidator run_id_validator_;
 
     /** UI timer for refreshing certain elements such as the run duration */
     QTimer display_timer_;

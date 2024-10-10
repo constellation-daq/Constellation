@@ -96,7 +96,8 @@ QSize ConnectionItemDelegate::sizeHint(const QStyleOptionViewItem& option, const
 }
 
 MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
-    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP") {
+    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP"),
+      run_id_validator_(QRegularExpression("^[\\w-]+$"), this) {
 
     qRegisterMetaType<QModelIndex>("QModelIndex");
     qRegisterMetaType<constellation::protocol::CSCP::State>("constellation::protocol::CSCP::State");
@@ -159,6 +160,9 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         update_button_states(state);
         labelState->setText(QController::getStyledState(state, global));
     });
+
+    // Attach validators:
+    runIdentifier->setValidator(&run_id_validator_);
 
     // Start the controller
     runcontrol_.start();
