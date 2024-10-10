@@ -160,21 +160,15 @@ QString QController::getStyledResponse(CSCP1Message::Type type) {
 
     const auto type_string = QString::fromStdString(constellation::utils::to_string(type));
     switch(type) {
-    case CSCP1Message::Type::REQUEST: {
+    case CSCP1Message::Type::REQUEST:
+    case CSCP1Message::Type::NOTIMPLEMENTED: {
         return "<font color='gray'>New</b>" + type_string + "</font>";
     }
     case CSCP1Message::Type::SUCCESS: {
         return "<font color='green'>" + type_string + "</font>";
     }
-    case CSCP1Message::Type::NOTIMPLEMENTED: {
-        return "<font color='gray'>" + type_string + "</font>";
-    }
-    case CSCP1Message::Type::INCOMPLETE: {
-        return "<font color='orange'>" + type_string + "</font>";
-    }
-    case CSCP1Message::Type::INVALID: {
-        return "<font color='orange'>" + type_string + "</font>";
-    }
+    case CSCP1Message::Type::INCOMPLETE:
+    case CSCP1Message::Type::INVALID:
     case CSCP1Message::Type::UNKNOWN: {
         return "<font color='orange'>" + type_string + "</font>";
     }
