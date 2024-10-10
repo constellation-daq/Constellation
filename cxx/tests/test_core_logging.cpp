@@ -81,16 +81,19 @@ TEST_CASE("Logging macros", "[logging]") {
     int count_once {0};
     int count_n {0};
     int count_if {0};
+    int count_nth {0};
 
     for(int i = 0; i < 5; ++i) {
         LOG_ONCE(logger, STATUS) << "log once, i=" << i << ", count " << ++count_once;
         LOG_N(logger, STATUS, 3) << "log n, i=" << i << ", count " << ++count_n;
         LOG_IF(logger, STATUS, i % 2 == 1) << "log if, i=" << i << ", count " << ++count_if;
+        LOG_NTH(logger, STATUS, 2) << "log_nth, i=" << i << ", count " << ++count_nth;
     }
 
     REQUIRE(count_once == 1);
     REQUIRE(count_n == 3);
     REQUIRE(count_if == 2);
+    REQUIRE(count_nth == 3);
 }
 
 TEST_CASE("Logging macros with default logger", "[logging]") {
