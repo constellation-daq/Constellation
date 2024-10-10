@@ -15,7 +15,9 @@
 #include <string_view>
 
 #include <QCloseEvent>
+#include <QCompleter>
 #include <QDateTime>
+#include <QFileSystemModel>
 #include <QMainWindow>
 #include <QModelIndex>
 #include <QPainter>
@@ -41,6 +43,12 @@ class ConnectionItemDelegate : public QStyledItemDelegate {
 protected:
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+};
+
+class FileSystemModel : public QFileSystemModel {
+public:
+    FileSystemModel(QObject* parent = nullptr);
+    QVariant data(const QModelIndex& index, int role) const override;
 };
 
 /**
@@ -185,10 +193,12 @@ private:
     /** Logger for operator log messages */
     constellation::log::Logger user_logger_;
 
-    /* Run identifier */
+    /* Run identifier, completers & validators*/
     QString current_run_;
     QDateTime run_start_time_;
     QRegularExpressionValidator run_id_validator_;
+    QCompleter config_file_completer_;
+    FileSystemModel config_file_fs_;
 
     /** UI timer for refreshing certain elements such as the run duration */
     QTimer display_timer_;
