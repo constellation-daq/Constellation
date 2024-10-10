@@ -206,6 +206,10 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         // Append user commands
         const auto user_commands = user_commands_.describeCommands();
         for(const auto& cmd : user_commands) {
+            // Command starting with underscore are not listed:
+            if(cmd.first.starts_with("_")) {
+                continue;
+            }
             command_dict.emplace(cmd.first, cmd.second);
         }
 
