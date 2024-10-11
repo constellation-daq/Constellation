@@ -116,6 +116,9 @@ variables:
 .python-3.12:
   image: python:3.12
 
+.python-3.13:
+  image: python:3.13
+
 # Combined Python / C++ templates
 
 # In MRs run only if either C++ or Python files are changed
@@ -244,6 +247,12 @@ build:python-3.12:
     - .python-venv
     - .python-3.12
 
+build:python-3.13:
+  extends:
+    - .build-py
+    - .python-venv
+    - .python-3.13
+
 # test stage
 
 .test-cpp:
@@ -342,6 +351,15 @@ test:python-3.12:
     - .python-3.12
   needs:
     - job: build:python-3.12
+      artifacts: false
+
+test:python-3.13:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.13
+  needs:
+    - job: build:python-3.13
       artifacts: false
 
 # lint stage
