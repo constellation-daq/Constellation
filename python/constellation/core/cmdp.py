@@ -70,9 +70,7 @@ class CMDPTransmitter:
         elif isinstance(data, Metric):
             self.send_metric(data)
         else:
-            raise RuntimeError(
-                f"CMDPTransmitter cannot send object of type '{type(data)}'"
-            )
+            raise RuntimeError(f"CMDPTransmitter cannot send object of type '{type(data)}'")
 
     def send_log(self, record: logging.LogRecord) -> None:
         """Send a LogRecord via an ZMQ socket.
@@ -113,7 +111,7 @@ class CMDPTransmitter:
 
     def send_metric(self, metric: Metric) -> None:
         """Send a metric via a ZMQ socket."""
-        topic = "STATS/" + metric.name
+        topic = "STAT/" + metric.name.upper()
         payload = msgpack.packb(metric.as_list())
         meta = None
         self._dispatch(topic, payload, meta)
@@ -128,18 +126,14 @@ class CMDPTransmitter:
             topic = msg[0].decode("utf-8")
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
-                raise RuntimeError(
-                    "CommandTransmitter encountered zmq exception"
-                ) from e
+                raise RuntimeError("CommandTransmitter encountered zmq exception") from e
             return None
-        if topic.startswith("STATS/"):
+        if topic.startswith("STAT/"):
             return self.decode_metric(topic, msg)
         elif topic.startswith("LOG/"):
             return self.decode_log(topic, msg)
         else:
-            raise RuntimeError(
-                f"CMDPTransmitter cannot decode messages of topic '{topic}'"
-            )
+            raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
 
     def closed(self) -> bool:
         """Return whether socket is closed or not."""
