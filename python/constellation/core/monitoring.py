@@ -88,7 +88,7 @@ class MonitoringSender(BaseSatelliteFrame):
             socket.bind(f"tcp://{interface}:{mon_port}")
             self.mon_port = mon_port
 
-        self._mon_tm = CMDPTransmitter(name, socket)
+        self._mon_tm = CMDPTransmitter(self.name, socket)
 
         # Set up ZMQ logging
         # ROOT logger needs to have a level set (initializes with level=NOSET)
