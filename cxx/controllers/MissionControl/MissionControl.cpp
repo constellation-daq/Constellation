@@ -319,7 +319,11 @@ void MissionControl::update_run_infos() {
         runDuration->setText("<b>" + duration + "</b>");
         runID->setText("<b>" + current_run_ + "</b>");
     } else {
-        runDuration->setText("<font color=gray>" + runDuration->text() + "</font>");
+        // Drop rich text formatting from the duration before reusing it:
+        QTextDocument doc;
+        doc.setHtml(runDuration->text());
+        const auto duration = doc.toPlainText();
+        runDuration->setText("<font color=gray>" + duration + "</font>");
         runID->setText("<font color=gray><b>" + current_run_ + "</b> (next)</font>");
     }
 }
