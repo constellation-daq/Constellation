@@ -400,6 +400,27 @@ void BaseSatellite::apply_internal_config(const config::Configuration& config) {
         LOG(logger_, INFO) << "Updating heartbeat interval to " + to_string(interval);
         heartbeat_manager_.updateInterval(interval);
     }
+
+    // Clear previously stored stopping remotes
+    fsm_.clearStoppingRemotes();
+
+    if(config.has("_accept_stopping_from")) {
+        auto register_stopping = [this, &config](auto& remote) {
+            if(transform(remote, ::tolower) != transform(getCanonicalName(), ::tolower)) {
+                fsm_.registerStoppingRemote(remote);
+            }
+        };
+
+        try {
+            const auto remotes = config.getArray<std::string>("_accept_stopping_from");
+            LOG(logger_, INFO) << "Accepting stopping transitions from remotes " << range_to_string(remotes);
+            std::ranges::for_each(remotes, register_stopping);
+        } catch(InvalidTypeError&) {
+            const auto remote = config.get<std::string>("_accept_stopping_from");
+            LOG(logger_, INFO) << "Accepting stopping transitions from remote " << remote;
+            register_stopping(remote);
+        }
+    }
 }
 
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
