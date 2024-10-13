@@ -92,6 +92,11 @@ namespace constellation::controller {
          */
         Controller(std::string controller_name);
 
+        /**
+         * @brief Destruct controller
+         *
+         * @warning `stop()` has to be called before the pool can be safely destructed
+         */
         virtual ~Controller() = default;
 
         /*
