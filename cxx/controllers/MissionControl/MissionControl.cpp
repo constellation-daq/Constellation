@@ -316,14 +316,11 @@ void MissionControl::update_run_infos() {
     // Update run timer:
     if(runcontrol_.getLowestState() == CSCP::State::RUN) {
         auto duration = duration_string(std::chrono::seconds(run_start_time_.secsTo(QDateTime::currentDateTime())));
-        runDuration->setText("<b>" + duration + "</b>");
+        runDuration->setStyleSheet("QLabel { font-weight: bold; color: black; }");
+        runDuration->setText(duration);
         runID->setText("<b>" + current_run_ + "</b>");
     } else {
-        // Drop rich text formatting from the duration before reusing it:
-        QTextDocument doc;
-        doc.setHtml(runDuration->text());
-        const auto duration = doc.toPlainText();
-        runDuration->setText("<font color=gray>" + duration + "</font>");
+        runDuration->setStyleSheet("QLabel { font-weight: normal; color: gray; }");
         runID->setText("<font color=gray><b>" + current_run_ + "</b> (next)</font>");
     }
 }
