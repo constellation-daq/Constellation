@@ -52,9 +52,9 @@ namespace constellation::pools {
         /**
          * @brief Destruct BasePool
          *
-         * This closes all connections and unregisters the CHIRP service discovery callback
+         * @warning `stop_pool()` has to be called before the pool can be safely destructed
          */
-        virtual ~BasePool();
+        virtual ~BasePool() = default;
 
         /// @cond doxygen_suppress
         BasePool(const BasePool& other) = delete;

@@ -156,6 +156,9 @@ TEST_CASE("Message callback", "[core][core::pools]") {
     REQUIRE(log_msg != nullptr);
     REQUIRE(log_msg->getLogLevel() == Level::STATUS);
     REQUIRE(log_msg->getLogMessage() == "test");
+
+    msg_lock.unlock();
+    pool.stopPool();
 }
 
 TEST_CASE("Disconnect", "[core][core::pools]") {
@@ -190,6 +193,8 @@ TEST_CASE("Disconnect", "[core][core::pools]") {
 
     // Check that we did not subscription message since disconnected
     REQUIRE_FALSE(sender.canRecv());
+
+    pool.stopPool();
 }
 
 TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
@@ -215,6 +220,8 @@ TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
     pool.unsubscribe("LOG/STATUS");
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/STATUS"));
     REQUIRE(check_sub_message(sender2.recv().pop(), false, "LOG/STATUS"));
+
+    pool.stopPool();
 }
 
 TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pools]") {
@@ -244,4 +251,6 @@ TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pool
     pool.unsubscribe(sender1.getName(), "LOG/STATUS");
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/STATUS"));
     REQUIRE_FALSE(sender2.canRecv());
+
+    pool.stopPool();
 }

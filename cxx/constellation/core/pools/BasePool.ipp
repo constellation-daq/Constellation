@@ -75,11 +75,6 @@ namespace constellation::pools {
     }
 
     template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
-    BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::~BasePool() {
-        stopPool();
-    }
-
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     bool BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::should_connect(const chirp::DiscoveredService& /*service*/) {
         return true;
     }
