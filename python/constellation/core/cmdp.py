@@ -8,6 +8,7 @@ Module implementing the Constellation Monitoring Distribution Protocol.
 
 import msgpack  # type: ignore[import-untyped]
 import zmq
+import io
 import logging
 from enum import Enum
 from threading import Lock
@@ -41,9 +42,14 @@ class Metric:
         self.time: msgpack.Timestamp = msgpack.Timestamp(0)
         self.meta: dict[str, Any] | None = None
 
-    def as_list(self) -> list[Any]:
-        """Convert metric to list."""
-        return [self.value, self.handling.value, self.unit]
+    def pack(self) -> memoryview:
+        """Pack metric for CMDP payload."""
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(self.value))
+        stream.write(packer.pack(self.handling.value))
+        stream.write(packer.pack(self.unit))
+        return stream.getbuffer()
 
     def __str__(self) -> str:
         """Convert to string."""
@@ -112,7 +118,7 @@ class CMDPTransmitter:
     def send_metric(self, metric: Metric) -> None:
         """Send a metric via a ZMQ socket."""
         topic = "STAT/" + metric.name.upper()
-        payload = msgpack.packb(metric.as_list())
+        payload = metric.pack()
         meta = None
         self._dispatch(topic, payload, meta)
 
@@ -180,7 +186,13 @@ class CMDPTransmitter:
         # assert to help mypy determine len of tuple returned
         assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
         sender, time, record = header
-        value, handling, unit = msgpack.unpackb(msg[2])
+        # Unpack metric payload
+        unpacker = msgpack.Unpacker()
+        unpacker.feed(msg[2])
+        value = unpacker.unpack()
+        handling = unpacker.unpack()
+        unit = unpacker.unpack()
+        # Create metric and fill in sender
         m = Metric(name, unit, MetricsType(handling), value)
         m.sender = sender
         m.time = time
