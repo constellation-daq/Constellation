@@ -307,7 +307,7 @@ class MonitoringListener(CHIRPBroadcaster):
         # create socket for metrics
         socket = self.context.socket(zmq.SUB)
         socket.connect(address)
-        socket.setsockopt_string(zmq.SUBSCRIBE, "STATS/")
+        socket.setsockopt_string(zmq.SUBSCRIBE, "STAT/")
         self._metric_sockets[uuid] = socket
         self.poller.register(socket, zmq.POLLIN)
 
