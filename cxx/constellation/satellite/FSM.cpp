@@ -176,8 +176,8 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
 
-void FSM::requestInterrupt(std::string_view reason) {
-    LOG(logger_, DEBUG) << "Attempting to interrupt...";
+void FSM::requestInterrupt(std::string_view remote, std::string_view reason) {
+    LOG(logger_, DEBUG) << "Attempting to interrupt: " << remote << " " << reason;
 
     //  Wait until we are in a steady state
     while(!is_steady(state_.load())) {
@@ -186,7 +186,7 @@ void FSM::requestInterrupt(std::string_view reason) {
     // In a steady state, try to react to interrupt
     const auto interrupting = reactIfAllowed(Transition::interrupt);
 
-    LOG_IF(logger_, WARNING, interrupting) << "Interrupting satellite operation: " << reason;
+    LOG_IF(logger_, WARNING, interrupting) << "Interrupting satellite operation: " << remote << " " << reason;
 
     // We could be in interrupting, so wait for steady state
     while(!is_steady(state_.load())) {
@@ -194,8 +194,8 @@ void FSM::requestInterrupt(std::string_view reason) {
     }
 }
 
-void FSM::requestStop(std::string_view reason) {
-    LOG(logger_, DEBUG) << "Attempting to stop run...";
+void FSM::requestStop(std::string_view remote, std::string_view reason) {
+    LOG(logger_, DEBUG) << "Attempting to stop run: " << remote << " " << reason;
 
     //  Wait until we are in a steady state
     while(!is_steady(state_.load())) {
@@ -204,7 +204,7 @@ void FSM::requestStop(std::string_view reason) {
     // In a steady state, try to react to stopping
     const auto stopping = reactIfAllowed(Transition::stop);
 
-    LOG_IF(logger_, INFO, stopping) << "Stopping current run: " << reason;
+    LOG_IF(logger_, INFO, stopping) << "Stopping current run: " << remote << " " << reason;
 
     // We could be in stopping, so wait for steady state
     while(!is_steady(state_.load())) {
