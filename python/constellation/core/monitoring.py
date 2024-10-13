@@ -381,6 +381,38 @@ class MonitoringListener(CHIRPBroadcaster):
         super().reentry()
 
 
+class FileMonitoringListener(MonitoringListener):
+    def __init__(self, name: str, group: str, interface: str, output_path: str):
+        self.output_path = pathlib.Path(output_path)
+        try:
+            os.makedirs(self.output_path)
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.output_path / "logs")
+            os.mkdir(self.output_path / "stats")
+        except FileExistsError:
+            pass
+        handler = logging.handlers.RotatingFileHandler(
+            self.output_path / "logs" / (group + ".log"),
+            maxBytes=10**7,
+            backupCount=10,
+        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.DEBUG)
+
+        super().__init__(name, group, interface, self.write_stats)
+        self.log.addHandler(handler)
+
+    def write_stats(self, metric: Metric) -> None:
+        fname = f"stats/{metric.sender}_{metric.name.lower()}.csv"
+        path = self.output_path / fname
+        ts = metric.time.to_unix()
+        with open(path, "a") as csv:
+            csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
+
+
 def main(args: Any = None) -> None:
     """Start a simple log listener service."""
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
@@ -394,43 +426,17 @@ def main(args: Any = None) -> None:
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args["name"], args.pop("log_level"))
+
+    mon: MonitoringListener
 
     # create output directories and configure file writer logger
-    output_path: pathlib.Path | str | None = args.pop("output_path")
+    output_path: str | None = args.pop("output_path")
     if output_path is not None:
-        output_path = pathlib.Path(output_path)
-        try:
-            os.makedirs(output_path)
-        except FileExistsError:
-            pass
-        try:
-            os.mkdir(output_path / "logs")
-            os.mkdir(output_path / "stats")
-        except FileExistsError:
-            pass
-        handler = logging.handlers.RotatingFileHandler(
-            output_path / "logs" / (args["group"] + ".log"),
-            maxBytes=10**7,
-            backupCount=10,
-        )
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        handler.setFormatter(formatter)
-        handler.setLevel(logging.DEBUG)
-        logger.addHandler(handler)
+        mon = FileMonitoringListener(**args, output_path=output_path)
+    else:
+        mon = MonitoringListener(**args, metric_callback=lambda m: print(m))
 
-    def metric_callback(metric: Metric) -> None:
-        if output_path:
-            # append to file
-            fname = f"stats/{metric.sender}_{metric.name.lower()}.csv"
-            path = output_path / fname
-            ts = metric.time.to_unix()
-            with open(path, "a") as csv:
-                csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
-        else:
-            print(metric)
-
-    mon = MonitoringListener(**args, metric_callback=metric_callback)
     mon.receive_metrics()
 
 
