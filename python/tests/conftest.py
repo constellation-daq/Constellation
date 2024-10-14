@@ -369,7 +369,7 @@ def monitoringlistener():
             interface="*",
             output_path=tmpdirname,
         )
-        t = threading.Thread(target=m.receive_metrics)
+        t = threading.Thread(target=m.run_listener)
         t.start()
         # give the thread a chance to start
         time.sleep(0.1)

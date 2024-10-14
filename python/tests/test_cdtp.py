@@ -352,4 +352,5 @@ def test_receiver_stats(
         timeout -= 0.05
     assert os.path.exists(statfile), "Expected output metrics csv not found"
     # close thread and connections to allow temp dir to be removed
-    ml._monitor_shutdown()
+    ml._log_listening_shutdown()
+    ml._metrics_listening_shutdown()
