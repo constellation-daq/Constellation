@@ -107,6 +107,10 @@ class Keithley(Satellite):
 
         return f"Keithley at {self.device.get_voltage()}V"
 
+    def reentry(self) -> None:
+        self.device.release()
+        super().reentry()
+
     def _set_ovp(self):
         self.log.info(f"Setting OVP to {self.ovp}V")
         self.device.set_ovp(self.ovp)
