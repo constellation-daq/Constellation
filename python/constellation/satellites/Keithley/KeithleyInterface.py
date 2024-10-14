@@ -169,6 +169,13 @@ class KeithleyInterface(metaclass=ABCMeta):
         """
         pass
 
+    @abstractmethod
+    def release(self):
+        """
+        Release device from remote mode
+        """
+        pass
+
     def ramp_voltage(self, voltage_target: float, voltage_step: float, settle_time: float):
         """ """
         if voltage_step <= 0:

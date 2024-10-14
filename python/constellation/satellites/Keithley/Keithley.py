@@ -52,7 +52,10 @@ class Keithley(Satellite):
 
         self.log.info(f"Initializing Keithley {device_name}")
         self.device.initialize()
-        self.log.info(f"Device: {self.device.identify()}")
+        identify = self.device.identify()
+        if not identify:
+            raise ConnectionError("No connection to Keithley")
+        self.log.info("Device: %s", identify)
 
     def do_launching(self, payload: Any) -> str:
         self.device.set_terminal(self.terminal)
@@ -106,6 +109,10 @@ class Keithley(Satellite):
             self.log.info(f"Ramped output voltage to {self.voltage}V")
 
         return f"Keithley at {self.device.get_voltage()}V"
+
+    def reentry(self) -> None:
+        self.device.release()
+        super().reentry()
 
     def _set_ovp(self):
         self.log.info(f"Setting OVP to {self.ovp}V")

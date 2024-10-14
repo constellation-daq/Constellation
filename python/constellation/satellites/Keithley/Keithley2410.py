@@ -111,3 +111,6 @@ class Keithley2410(KeithleyInterface):
         self._write(":TRAC:POIN 1")  # codespell:ignore poin
         # Set trigger to take one reading
         self._write(":TRIG:COUN 1")
+
+    def release(self):
+        self._write(":SYST:LOC")
