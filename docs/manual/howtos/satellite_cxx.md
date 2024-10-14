@@ -134,28 +134,43 @@ discard the message, try to send it again or throw an exception to abort the run
 
 For performance considerations, please see [Increase Data Rate in C++](data_transmission_speed.md).
 
-### Adding Metadata to a Run
+### Metadata
 
-Arbitrary metadata can be attached to the run, which will be send in the EOR message. This might include things like a
-firmware version of a detector. Metadata can be added via
-{cpp:func}`TransmitterSatellite::setRunMetadataTag() <constellation::satellite::TransmitterSatellite::setRunMetadataTag()>`.
+Constellation provides the option to attach metadata to each message sent by the satellite. There are three possibilities:
 
-## Receiving Data
+* Metadata available at the beginning of the run such as additional hardware information or firmware revisions can be attached
+  to the begin-of-run (BOR) message. This has to be performed in the `starting()` function:
 
-The {cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>` base class provides functions to receive
-data. To use it the inheritance can simply be changed from {cpp:class}`Satellite <constellation::satellite::Satellite>`.
+  ```cpp
+  void ExampleSatellite::starting(std::string_view /*run_identifier*/) {
+      setBORTag("firmware_version", version);
+  }
+  ```
 
-To receive data, the {cpp:func}`receive_bor() <constellation::satellite::ReceiverSatellite::receive_bor()>`,
-{cpp:func}`receive_data() <constellation::satellite::ReceiverSatellite::receive_data()>` and
-{cpp:func}`receive_eor() <constellation::satellite::ReceiverSatellite::receive_eor()>` methods have to be implemented.
-A {cpp:func}`running() <constellation::satellite::Satellite::running()>` method must not be implemented. Files on disk
-should be opened in the {cpp:func}`starting() <constellation::satellite::Satellite::starting()>` method and closed in the
-{cpp:func}`stopping() <constellation::satellite::Satellite::stopping()>` method.
+  In addition to these user-provided tags, the payload of the BOR message contains the full satellite configuration.
 
-While receiving data, the receiver should also store the tags in the of the messages header. They can be retrieved via
-`data_message.getHeader().getTags()`. Data always arrives sequentially, so file locking is not required.
+* Similarly, for metadata only available at the end of the run such as aggregate statistics, end-of-run (EOR) tags can be set
+  in the `stopping()` function:
 
-For performance considerations, please see [Increase Data Rate in C++](data_transmission_speed.md).
+  ```cpp
+  void ExampleSatellite::stopping() {
+      setEORTag("total_pixels", pixel_count);
+  }
+  ```
+
+  In addition to these user-provided tags, the payload of the EOR message contains aggregate data on the run provided by the
+  framework such as the total number of messages sent.
+
+* Finally, metadata can be attached to each individual data message sent during the run:
+
+  ```cpp
+  // Create a new message
+  auto msg = newDataMessage();
+
+  // Add timestamps in picoseconds
+  msg.addTag("timestamp_begin", ts_start_pico);
+  msg.addTag("timestamp_end", ts_end_pico);
+  ```
 
 ## Building the Satellite
 
