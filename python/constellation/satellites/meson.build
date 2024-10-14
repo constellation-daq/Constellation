@@ -3,5 +3,6 @@
 
 subdir('CaenHV')
 subdir('H5DataWriter')
+subdir('InfluxDB')
 subdir('Keithley')
 subdir('Mariner')

@@ -47,6 +47,7 @@ ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
 SatelliteCaenHV = "constellation.satellites.CaenHV.CaenHV:main"
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.H5DataWriter:main"
+SatelliteInfluxDB = "constellation.satellites.InfluxDB.InfluxDB:main"
 SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
 SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
 
@@ -84,6 +85,7 @@ cli = ["ipython"]
 # Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py"]
+influxdb = ["influxdb-client"]
 keithley = ["pyserial"]
 
 [tool.meson-python.args]
