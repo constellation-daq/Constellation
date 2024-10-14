@@ -52,7 +52,10 @@ class Keithley(Satellite):
 
         self.log.info(f"Initializing Keithley {device_name}")
         self.device.initialize()
-        self.log.info(f"Device: {self.device.identify()}")
+        identify = self.device.identify()
+        if not identify:
+            raise ConnectionError("No connection to Keithley")
+        self.log.info("Device: %s", identify)
 
     def do_launching(self, payload: Any) -> str:
         self.device.set_terminal(self.terminal)
