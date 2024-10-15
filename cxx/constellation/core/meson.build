@@ -40,6 +40,26 @@ core_lib = library(
   install: true,
 )
 
+core_dep = declare_dependency(
+  link_with: core_lib,
+  compile_args: constellation_args,
+  include_directories: constellation_inc,
+  dependencies: [
+    asio_dep,
+    cppzmq_dep,
+    magic_enum_dep,
+    msgpack_cxx_dep,
+    spdlog_dep,
+    threads_dep,
+  ],
+)
+
+pkg.generate(core_lib,
+  description: 'Constellation core library',
+  extra_cflags: constellation_args,
+  libraries: [asio_dep, asio_raw_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
+)
+
 install_headers(
   'chirp/BroadcastRecv.hpp',
   'chirp/BroadcastSend.hpp',
@@ -122,18 +142,4 @@ install_headers(
   'utils/timers.hpp',
   'utils/type.hpp',
   subdir: 'constellation/core/utils',
-)
-
-core_dep = declare_dependency(
-  link_with: core_lib,
-  compile_args: constellation_args,
-  include_directories: constellation_inc,
-  dependencies: [
-    asio_dep,
-    cppzmq_dep,
-    magic_enum_dep,
-    msgpack_cxx_dep,
-    spdlog_dep,
-    threads_dep,
-  ],
 )
