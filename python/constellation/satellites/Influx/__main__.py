@@ -5,6 +5,6 @@ SPDX-License-Identifier: CC-BY-4.0
 This is the entry point for the keithley satellite.
 """
 
-from .InfluxDB import main
+from .Influx import main
 
 main()

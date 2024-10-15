@@ -15,7 +15,7 @@ from constellation.core.monitoring import StatListener
 from constellation.core.satellite import Satellite, SatelliteArgumentParser
 
 
-class InfluxDB(Satellite, StatListener):
+class Influx(Satellite, StatListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._influxdb_connected = False
@@ -68,5 +68,5 @@ def main(args=None):
     setup_cli_logging(args["name"], args.pop("log_level"))
 
     # start server with remaining args
-    s = InfluxDB(**args)
+    s = Influx(**args)
     s.run_satellite()

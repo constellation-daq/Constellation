@@ -7,12 +7,17 @@ subtitle: "Satellite writing metrics to InfluxDB"
 
 ## Description
 
-This satellite listens to all metrics send by other satellites and writes to a InfluxDB time series database.
+This satellite listens to metrics send by other satellites and writes to a InfluxDB time series database.
 Only metrics of type float, integer and boolean can be written to InfluxDB.
+
+```{warning}
+Currently, the satellites subscribes to all metrics. This can lead to performance penalties if there are debugging metrics
+which are evaluated in a hot loop. Excluding and including metrics is a feature that will be added in the future.
+```
 
 ## Requirements
 
-The Keithley satellite requires the `[influxdb]` component, which can be installed e.g. via:
+The Influx satellite requires the `[influxdb]` component, which can be installed e.g. via:
 
 ```sh
 pip install --no-build-isolation -e .[influxdb]

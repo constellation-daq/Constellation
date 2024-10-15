@@ -3,8 +3,8 @@
 
 py_sat_files = files(
   '__main__.py',
-  'InfluxDB.py',
+  'Influx.py',
 )
 
 py.install_sources(py_sat_files,
-  subdir: 'constellation/satellites/InfluxDB')
+  subdir: 'constellation/satellites/Influx')
