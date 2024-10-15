@@ -53,7 +53,7 @@ TransmitterSatellite::DataMessage TransmitterSatellite::newDataMessage(std::size
     return {getCanonicalName(), ++seq_, frames};
 }
 
-bool TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& message) {
+bool TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage& message) {
     // Send data but do not wait for receiver
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     const auto sent = message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
@@ -64,7 +64,7 @@ bool TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& me
     return sent;
 }
 
-void TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage& message) {
+void TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& message) {
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     const auto sent = message.assemble().send(cdtp_push_socket_);
     if(!sent) {
