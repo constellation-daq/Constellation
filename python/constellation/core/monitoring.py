@@ -210,7 +210,7 @@ class ZeroMQSocketLogListener(QueueListener):
         super().__init__(cast(Queue, transmitter), *handlers, **kwargs)  # type: ignore[type-arg]
         self._stop_recv = threading.Event()
 
-    def dequeue(self, _block: bool) -> logging.LogRecord:
+    def dequeue(self, block: bool) -> logging.LogRecord:
         # FIXME it is quite likely that this blocking call causes errors when
         # shutting down as the ZMQ context is removed before this call ends.
         record = None
@@ -233,62 +233,29 @@ class ZeroMQSocketLogListener(QueueListener):
         self._stop_recv.set()
 
 
-class MonitoringListener(CHIRPBroadcaster):
-    """Simple monitor class to receive logs and metrics from a Constellation."""
+class StatListener(CHIRPBroadcaster):
+    """Simple listener class to receive metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, output_path: str = ""):
+    def __init__(self, name: str, group: str, interface: str, **kwds: Any):
         """Initialize values.
 
         Arguments:
         - name ::  name of this Monitor
         - group ::  group of controller
         - interface :: the interface to connect to
-        - output_path :: the directory to write logs and metric data to
         """
-        super().__init__(name=name, group=group, interface=interface)
+        super().__init__(name=name, group=group, interface=interface, **kwds)
 
-        self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
+        # Set up the metric poller which will monitor all ZMQ metric subscription sockets
         self._metric_sockets: dict[str, zmq.Socket] = {}  # type: ignore[type-arg]
-
-        # create output directories and configure file writer logger
-        if output_path:
-            self.output_path: pathlib.Path | None = pathlib.Path(output_path)
-            try:
-                os.makedirs(self.output_path)
-                self.log.info("Created path %s", output_path)
-            except FileExistsError:
-                pass
-            try:
-                os.mkdir(self.output_path / "logs")
-                os.mkdir(self.output_path / "stats")
-            except FileExistsError:
-                pass
-            handler = logging.handlers.RotatingFileHandler(
-                self.output_path / f"logs/{group}.log",
-                maxBytes=10**7,
-                backupCount=10,
-            )
-            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-            handler.setFormatter(formatter)
-            handler.setLevel(logging.DEBUG)
-            self.log.addHandler(handler)
-        else:
-            self.output_path = None
-
-        super()._add_com_thread()
-        super()._start_com_threads()
+        self._metric_poller = zmq.Poller()
+        self._metric_poller_lock = threading.Lock()
 
         self.request(CHIRPServiceIdentifier.MONITORING)
 
-        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
-        self._task_handler_event = threading.Event()
-        self._task_handler_thread = threading.Thread(target=self._run_task_handler, daemon=True)
-        self._task_handler_thread.start()
-        self._metrics_receiver_shutdown = threading.Event()
-        # Set up the metric poller which will monitor all ZMQ metric
-        # subscription sockets
-        self.poller = zmq.Poller()
-        self._poller_lock = threading.Lock()
+    def metric_callback(self, metric: Metric) -> None:
+        """Metric callback."""
+        self.log.debug(f"Received metric {metric.name} from {metric.sender}: {metric.value} {metric.unit}")
 
     @chirp_callback(CHIRPServiceIdentifier.MONITORING)
     def _add_satellite_callback(self, service: DiscoveredService) -> None:
@@ -301,12 +268,92 @@ class MonitoringListener(CHIRPBroadcaster):
     def _add_satellite(self, service: DiscoveredService) -> None:
         address = "tcp://" + service.address + ":" + str(service.port)
         uuid = str(service.host_uuid)
-        self.log.debug(
-            "Connecting to %s, address %s...",
-            uuid,
-            address,
-        )
-        # create socket for logs
+        self.log.debug("Connecting to %s, address %s...", uuid, address)
+
+        # create socket for metrics
+        socket = self.context.socket(zmq.SUB)
+        socket.connect(address)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "STAT/")
+        self._metric_sockets[uuid] = socket
+        self._metric_poller.register(socket, zmq.POLLIN)
+
+    def _remove_satellite(self, service: DiscoveredService) -> None:
+        uuid = str(service.host_uuid)
+        self.log.debug("Departure of %s.", service.host_uuid)
+        try:
+            with self._metric_poller_lock:
+                socket = self._metric_sockets.pop(uuid)
+                self._metric_poller.unregister(socket)
+                socket.close()
+        except KeyError:
+            pass
+
+    def _add_com_thread(self) -> None:
+        """Add the metric receiver thread to the communication thread pool."""
+        super()._add_com_thread()
+        self._com_thread_pool["metric_receiver"] = threading.Thread(target=self._receive_metrics, daemon=True)
+        self.log.debug("Metric receiver thread prepared and added to the pool.")
+
+    def _receive_metrics(self) -> None:
+        """Main loop to receive metrics."""
+        # assert for mypy static type analysis
+        assert isinstance(self._com_thread_evt, threading.Event), "Thread Event not set up correctly"
+        # set up transmitter for decoding metrics
+        transmitter = CMDPTransmitter("", None)
+
+        while not self._com_thread_evt.is_set():
+            with self._metric_poller_lock:
+                sockets_ready = dict(self._metric_poller.poll(timeout=250))
+                if sockets_ready:
+                    for socket in sockets_ready.keys():
+                        binmsg = socket.recv_multipart()
+                        metric = transmitter.decode_metric(binmsg[0].decode("utf-8"), binmsg)
+                        self.metric_callback(metric)
+                    continue
+            # If no sockets are connected, the poller returns immediately -> sleep to prevent hot loop
+            time.sleep(250e-3)
+
+    def _metrics_listening_shutdown(self) -> None:
+        with self._metric_poller_lock:
+            for _uuid, socket in self._metric_sockets.items():
+                self._metric_poller.unregister(socket)
+                socket.close()
+        self._metric_sockets = {}
+
+    def reentry(self) -> None:
+        self._metrics_listening_shutdown()
+        super().reentry()
+
+    def run_listener(self) -> None:
+        self._add_com_thread()
+        self._start_com_threads()
+        while self._com_thread_evt and not self._com_thread_evt.is_set():
+            try:
+                time.sleep(250e-3)
+            except KeyboardInterrupt:
+                self.log.warning("Listener caught KeyboardInterrupt, shutting down.")
+                break
+
+
+class MonitoringListener(StatListener):
+    """Simple monitor class to receive logs and metrics from a Constellation."""
+
+    def __init__(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+
+        self._log_listeners: dict[str, ZeroMQSocketLogListener] = {}
+
+        # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
+        self._task_handler_event = threading.Event()
+        self._task_handler_thread = threading.Thread(target=self._run_task_handler, daemon=True)
+        self._task_handler_thread.start()
+
+    def _add_satellite(self, service: DiscoveredService) -> None:
+        # add for metrics
+        super()._add_satellite(service)
+        # create socket for logging
+        address = "tcp://" + service.address + ":" + str(service.port)
+        uuid = str(service.host_uuid)
         socket = self.context.socket(zmq.SUB)
         # add timeout to avoid deadlocks
         socket.setsockopt(zmq.RCVTIMEO, 250)
@@ -320,56 +367,16 @@ class MonitoringListener(CHIRPBroadcaster):
         self._log_listeners[uuid] = listener
         listener.start()
 
-        # create socket for metrics
-        socket = self.context.socket(zmq.SUB)
-        socket.connect(address)
-        socket.setsockopt_string(zmq.SUBSCRIBE, "STATS/")
-        self._metric_sockets[uuid] = socket
-        self.poller.register(socket, zmq.POLLIN)
-
     def _remove_satellite(self, service: DiscoveredService) -> None:
-        # departure
+        # remove for metrics
+        super()._remove_satellite(service)
+        # remove from logging
         uuid = str(service.host_uuid)
-        self.log.debug(
-            "Departure of %s.",
-            service.host_uuid,
-        )
         try:
             listener = self._log_listeners.pop(uuid)
             listener.stop()
         except KeyError:
             pass
-        try:
-            with self._poller_lock:
-                socket = self._metric_sockets.pop(uuid)
-                self.poller.unregister(socket)
-                socket.close()
-        except KeyError:
-            pass
-
-    def receive_metrics(self) -> None:
-        """Main loop to receive metrics."""
-        # set up transmitter for decoding metrics
-        transmitter = CMDPTransmitter("", None)
-
-        while not self._metrics_receiver_shutdown.is_set():
-            try:
-                with self._poller_lock:
-                    sockets_ready = dict(self.poller.poll(timeout=250))
-                    for socket in sockets_ready.keys():
-                        binmsg = socket.recv_multipart()
-                        m = transmitter.decode_metric(binmsg[0].decode("utf-8"), binmsg)
-                        if self.output_path:
-                            # append to file
-                            fname = f"stats/{m.sender}_{m.name.lower()}.csv"
-                            path = self.output_path / fname
-                            ts = m.time.to_unix()
-                            with open(path, "a") as csv:
-                                csv.write(f"{ts}, {m.value}, '{m.unit}'\n")
-                        else:
-                            print(m)
-            except KeyboardInterrupt:
-                break
 
     def _run_task_handler(self) -> None:
         """Event loop for task handler-routine"""
@@ -387,22 +394,48 @@ class MonitoringListener(CHIRPBroadcaster):
                 # nothing to process
                 pass
 
-    def _monitor_shutdown(self) -> None:
-        """Close open connections of Monitor."""
-        self._metrics_receiver_shutdown.set()
+    def _log_listening_shutdown(self) -> None:
         for _uuid, listener in self._log_listeners.items():
             listener.stop()
         self._log_listeners = {}
-        with self._poller_lock:
-            for _uuid, socket in self._metric_sockets.items():
-                self.poller.unregister(socket)
-                socket.close()
-        self._metric_sockets = {}
 
     def reentry(self) -> None:
-        """Shutdown Monitor."""
-        self._monitor_shutdown()
+        self._log_listening_shutdown()
         super().reentry()
+
+
+class FileMonitoringListener(MonitoringListener):
+    def __init__(self, name: str, group: str, interface: str, output_path: str):
+        self.output_path = pathlib.Path(output_path)
+        try:
+            os.makedirs(self.output_path)
+        except FileExistsError:
+            pass
+        try:
+            os.mkdir(self.output_path / "logs")
+            os.mkdir(self.output_path / "stats")
+        except FileExistsError:
+            pass
+
+        super().__init__(name, group, interface)
+
+        handler = logging.handlers.RotatingFileHandler(
+            self.output_path / "logs" / (group + ".log"),
+            maxBytes=10**7,
+            backupCount=10,
+        )
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.DEBUG)
+        self.log.addHandler(handler)
+
+    def metric_callback(self, metric: Metric) -> None:
+        super().metric_callback(metric)
+        fname = f"stats/{metric.sender}_{metric.name.lower()}.csv"
+        path = self.output_path / fname
+        ts = metric.time.to_unix()
+        with open(path, "a") as csv:
+            csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
 
 
 def main(args: Any = None) -> None:
@@ -420,8 +453,16 @@ def main(args: Any = None) -> None:
     # set up logging
     setup_cli_logging(args["name"], args.pop("log_level"))
 
-    mon = MonitoringListener(**args)
-    mon.receive_metrics()
+    mon: MonitoringListener
+
+    # create output directories and configure file writer logger
+    output_path: str | None = args.pop("output_path")
+    if output_path is not None:
+        mon = FileMonitoringListener(**args, output_path=output_path)
+    else:
+        mon = MonitoringListener(**args)
+
+    mon.run_listener()
 
 
 if __name__ == "__main__":

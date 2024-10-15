@@ -45,10 +45,11 @@ DemoHeartbeatSender = "constellation.core.heartbeater:main"
 # tools
 ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
-SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
-SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
 SatelliteCaenHV = "constellation.satellites.CaenHV.CaenHV:main"
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.H5DataWriter:main"
+SatelliteInflux = "constellation.satellites.Influx.Influx:main"
+SatelliteKeithley = "constellation.satellites.Keithley.Keithley:main"
+SatelliteMariner = "constellation.satellites.Mariner.Mariner:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
@@ -81,8 +82,10 @@ docs = [
 ]
 # Feature components
 cli = ["ipython"]
-hdf5 = ["h5py"]
+# Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
+hdf5 = ["h5py"]
+influxdb = ["influxdb-client"]
 keithley = ["pyserial"]
 
 [tool.meson-python.args]

@@ -192,7 +192,7 @@ def test_monitoring_sender_loop(mock_listener, mock_monitoringsender):
     m._add_com_thread()
     m._start_com_threads()
     time.sleep(0.3)
-    assert b"STATS/GET_ANSWER" in mock_packet_queue_sender[send_port]
+    assert b"STAT/GET_ANSWER" in mock_packet_queue_sender[send_port]
 
 
 @pytest.mark.forked
