@@ -17,6 +17,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -222,7 +223,11 @@ void MissionControl::on_btnInit_clicked() {
     // Read config file from UI
     auto configs = parse_config_file(txtConfigFileName->text());
 
-    for(auto& response : runcontrol_.sendCommands("initialize", configs)) {
+    if(!configs.has_value()) {
+        return;
+    }
+
+    for(auto& response : runcontrol_.sendCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
@@ -357,7 +362,10 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     auto* initialiseAction = new QAction("Initialize", this);
     connect(initialiseAction, &QAction::triggered, this, [this, index]() {
         auto config = parse_config_file(txtConfigFileName->text(), index);
-        runcontrol_.sendQCommand(index, "initialize", config);
+        if(!config.has_value()) {
+            return;
+        }
+        runcontrol_.sendQCommand(index, "initialize", config.value());
     });
     contextMenu.addAction(initialiseAction);
 
@@ -428,7 +436,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     contextMenu.exec(viewConn->viewport()->mapToGlobal(point));
 }
 
-std::map<std::string, Controller::CommandPayload> MissionControl::parse_config_file(const QString& file) {
+std::optional<std::map<std::string, Controller::CommandPayload>> MissionControl::parse_config_file(const QString& file) {
     try {
         const auto configs = ControllerConfiguration(std::filesystem::path(file.toStdString()));
         // Convert to CommandPayloads:
@@ -441,12 +449,15 @@ std::map<std::string, Controller::CommandPayload> MissionControl::parse_config_f
             payloads.emplace(satellite, configs.getSatelliteConfiguration(satellite));
         }
 
-        if(!sats_without_config.empty()) {
-            QMessageBox::warning(nullptr,
+        if(!sats_without_config.empty() &&
+           QMessageBox::question(this,
                                  "Warning",
                                  "The following satellites do not have explicit configuration sections in the selected "
                                  "configuration file:\n" +
-                                     QString::fromStdString(range_to_string(sats_without_config, "\n")));
+                                     QString::fromStdString(range_to_string(sats_without_config, "\n")) +
+                                     "\n\nContinue anyway?",
+                                 QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Cancel) {
+            return {};
         }
         return payloads;
     } catch(const ControllerError& error) {
@@ -455,16 +466,19 @@ std::map<std::string, Controller::CommandPayload> MissionControl::parse_config_f
     }
 }
 
-Controller::CommandPayload MissionControl::parse_config_file(const QString& file, const QModelIndex& index) {
+std::optional<Controller::CommandPayload> MissionControl::parse_config_file(const QString& file, const QModelIndex& index) {
     const auto name = runcontrol_.getQName(index);
     try {
         const auto configs = ControllerConfiguration(std::filesystem::path(file.toStdString()));
 
-        if(!configs.hasSatelliteConfiguration(name)) {
-            QMessageBox::warning(nullptr,
-                                 "Warning",
-                                 QString::fromStdString(name) +
-                                     " has no explicit configuration section in the selected configuration file");
+        if(!configs.hasSatelliteConfiguration(name) &&
+           QMessageBox::question(
+               this,
+               "Warning",
+               QString::fromStdString(name) +
+                   " has no explicit configuration section in the selected configuration file\n\nContinue anyway?",
+               QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Cancel) {
+            return {};
         }
         return configs.getSatelliteConfiguration(name);
     } catch(ControllerError& error) {

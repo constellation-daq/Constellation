@@ -212,5 +212,5 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     assert os.path.exists(os.path.join(tmpdir, "stats")), "Stats output directory not created"
     assert os.path.exists(os.path.join(tmpdir, "logs", "mockstellation.log")), "No log file created"
     assert os.path.exists(
-        os.path.join(tmpdir, "stats", "mock_sender_get_answer.csv")
+        os.path.join(tmpdir, "stats", "MyStatProducer.mock_sender.get_answer.csv")
     ), "Expected output metrics csv not found"

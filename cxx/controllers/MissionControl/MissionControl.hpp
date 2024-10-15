@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -160,7 +161,8 @@ private:
      * @param file File path to parse
      * @return Map of configuration dictionaries for all known satellites
      */
-    std::map<std::string, constellation::controller::Controller::CommandPayload> parse_config_file(const QString& file);
+    std::optional<std::map<std::string, constellation::controller::Controller::CommandPayload>>
+    parse_config_file(const QString& file);
 
     /**
      * @brief Helper to parse the configuration file for a single satellite
@@ -169,7 +171,8 @@ private:
      * @param index QModelIndex of the satellite in question
      * @return Configuration as command payload for the satellite in questions
      */
-    constellation::controller::Controller::CommandPayload parse_config_file(const QString& file, const QModelIndex& index);
+    std::optional<constellation::controller::Controller::CommandPayload> parse_config_file(const QString& file,
+                                                                                           const QModelIndex& index);
 
     /** The controller instance of the UI */
     QController runcontrol_;

@@ -345,7 +345,7 @@ def test_receiver_stats(
     assert len(receiver._metrics_callbacks) > 1
     assert len(ml._metric_sockets) == 1
     assert os.path.exists(os.path.join(tmpdir, "stats")), "Stats output directory not created"
-    statfile = os.path.join(tmpdir, "stats", "mock_receiver_nbytes.csv")
+    statfile = os.path.join(tmpdir, "stats", "MockReceiverSatellite.mock_receiver.nbytes.csv")
     timeout = 5
     while timeout > 0 and not os.path.exists(statfile):
         time.sleep(0.05)

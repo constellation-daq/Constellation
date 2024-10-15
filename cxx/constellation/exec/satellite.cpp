@@ -9,6 +9,7 @@
 
 #include "satellite.hpp"
 
+#include <algorithm>
 #include <csignal>
 #include <cstdlib>
 #include <exception>
@@ -65,8 +66,10 @@ namespace {
         // Satellite name (-n)
         // Note: canonical satellite name = type_name.satellite_name
         try {
-            // Ty to use host name as default
-            parser.add_argument("-n", "--name").help("satellite name").default_value(asio::ip::host_name());
+            // Try to use host name as default, replace hyphens with underscores:
+            auto default_name = asio::ip::host_name();
+            std::ranges::replace(default_name, '-', '_');
+            parser.add_argument("-n", "--name").help("satellite name").default_value(default_name);
         } catch(const asio::system_error& error) {
             parser.add_argument("-n", "--name").help("satellite name").required();
         }
