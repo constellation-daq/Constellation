@@ -54,7 +54,9 @@ namespace constellation::satellite {
              * @param key Key of the tag
              * @param value Value of the tag
              */
-            void addTag(const std::string& key, config::Value value) { getHeader().setTag(key, std::move(value)); }
+            template <typename T> void addTag(const std::string& key, const T& value) {
+                getHeader().setTag(key, config::Value::set(value));
+            }
 
             /**
              * @brief Obtain current number of frames in this message
