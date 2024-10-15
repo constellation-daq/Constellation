@@ -121,23 +121,23 @@ msg.addFrame(std::move(frame1));
 It should be noted that `std::move` semantics is strongly encouraged here in order to avoid copying memory as described below.
 Finally, the message is send to the connected receiver via one of the following two methods:
 
-* The data can be sent with a timeout pre-configured. If the transmitter fails to send the data within this configured time
+* The data can be sent with a pre-configured timeout. If the transmitter fails to send the data within this configured time
   window, an exception is thrown and the satellite transitions into the `ERROR` state. This is the most commonly used method
   of transmitting data and ensuring that there is no data loss.
 
   ```cpp
-  trySendDataMessage(msg);
+  sendDataMessage(msg);
   ```
 
 * The second option is to handle potential issues in transmitting the data in satellite code. In this case, the message
   should be sent via
 
   ```cpp
-  auto sent = sendDataMessage(msg);
+  auto sent = trySendDataMessage(msg);
   ```
 
   The boolean return value indicates if the sending was successful or failed. Either another attempt of sending the message
-  can be undertaken, or the message can be discarded. It should be noted that the {cpp:func}`sendDataMessage() <constellation::satellite::TransmitterSatellite::sendDataMessage()>` method is annotated
+  can be undertaken, or the message can be discarded. It should be noted that the {cpp:func}`trySendDataMessage() <constellation::satellite::TransmitterSatellite::trySendDataMessage()>` method is annotated
   with the `[[nodiscard]]` keyword, indicating that the return value cannot be discarded and *has* to be used.
 
 Data messages contain a header with the canonical name of the sending satellite, the current system time when creating the
