@@ -78,7 +78,7 @@ void RandomTransmitterSatellite::running(const std::stop_token& stop_token) {
             // Add data to message
             msg.addFrame(std::move(data));
         }
-        const auto success = sendDataMessage(msg);
+        const auto success = trySendDataMessage(msg);
         if(!success) {
             ++hwm_reached_;
             LOG_N(WARNING, 5) << "Could not send message, skipping...";

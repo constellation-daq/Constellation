@@ -83,7 +83,7 @@ namespace constellation::satellite {
         DataMessage newDataMessage(std::size_t frames = 1);
 
         /**
-         * @brief Send data message created with `newDataMessage()`
+         * @brief Attempt to send data message created with `newDataMessage()`
          *
          * @note The return value of this function *has* to be checked. If it is `false`, one should take action such as
          *       discarding the message, trying to send it again or throwing an exception.
@@ -91,10 +91,10 @@ namespace constellation::satellite {
          * @param message Reference to data message
          * @return True if the message was successfully sent/queued, false otherwise
          */
-        [[nodiscard]] bool sendDataMessage(DataMessage& message);
+        [[nodiscard]] bool trySendDataMessage(DataMessage& message);
 
         /**
-         * @brief Try to send data message created with `newDataMessage()
+         * @brief Send data message created with `newDataMessage()
          *
          * @note This method will block until the message has been sent *or* the timeout for sending data messages has been
          *       reached. In the latter case, a SendTimeoutError exception is thrown.
@@ -102,7 +102,7 @@ namespace constellation::satellite {
          * @param message Reference to data message
          * @throw SendTimeoutError If data send timeout is reached
          */
-        void trySendDataMessage(DataMessage& message);
+        void sendDataMessage(DataMessage& message);
 
         /**
          * @brief Set tag for the BOR message metadata send at the begin of the run

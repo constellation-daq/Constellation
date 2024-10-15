@@ -55,7 +55,7 @@ msg.addFrame(std::move(data));
 // Possibly add a tag
 msg.addTag("my_tag", my_value)
 // Send the message
-trySendDataMessage(msg);
+sendDataMessage(msg);
 ```
 
 It should be noted that tag values in EUDAQ are limited to `std::string` while Constellation tags can hold any configuration
