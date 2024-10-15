@@ -100,18 +100,18 @@ class Transmitter : public DummySatellite<TransmitterSatellite> {
 public:
     Transmitter(std::string_view name = "t1") : DummySatellite<TransmitterSatellite>(name) {}
 
-    template <typename T> bool sendData(T data) {
+    template <typename T> bool trySendData(T data) {
         auto msg = newDataMessage();
         msg.addFrame(std::move(data));
         msg.addTag("test", 1);
-        return sendDataMessage(msg);
+        return trySendDataMessage(msg);
     }
 
-    template <typename T> void trySendData(T data) {
+    template <typename T> void sendData(T data) {
         auto msg = newDataMessage();
         msg.addFrame(std::move(data));
         msg.addTag("test", 1);
-        trySendDataMessage(msg);
+        sendDataMessage(msg);
     }
 };
 
@@ -178,7 +178,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     receiver.reactFSM(FSM::Transition::stop);
 
     // Attempt to send a data frame and catch its failure
-    REQUIRE_THROWS_MATCHES(transmitter.trySendData(std::vector<int>({1, 2, 3, 4})),
+    REQUIRE_THROWS_MATCHES(transmitter.sendData(std::vector<int>({1, 2, 3, 4})),
                            SendTimeoutError,
                            Message("Failed sending data message after 1s"));
 }
@@ -224,7 +224,7 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
     // Send a data frame
-    const auto sent = transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
+    const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
     REQUIRE(sent);
     // Wait a bit for data to be handled by receiver
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
