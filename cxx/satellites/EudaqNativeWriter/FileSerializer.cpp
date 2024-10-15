@@ -77,13 +77,14 @@ void EudaqNativeWriterSatellite::FileSerializer::write_block(std::uint32_t key, 
 }
 
 void EudaqNativeWriterSatellite::FileSerializer::serialize_header(const constellation::message::CDTP1Message::Header& header,
-                                                                  const constellation::config::Dictionary& tags) {
+                                                                  const constellation::config::Dictionary& tags,
+                                                                  std::uint32_t flags) {
     LOG(DEBUG) << "Writing event header";
 
     // Type, version and flags
     write_int(cstr2hash("RawEvent"));
     write_int<std::uint32_t>(0);
-    write_int<std::uint32_t>(0);
+    write_int<std::uint32_t>(flags);
 
     // Number of devices/streams/planes - seems rarely used
     write_int<std::uint32_t>(0);
@@ -117,7 +118,17 @@ void EudaqNativeWriterSatellite::FileSerializer::serialize_header(const constell
 void EudaqNativeWriterSatellite::FileSerializer::serializeDelimiterMsg(const CDTP1Message::Header& header,
                                                                        const Dictionary& config) {
     LOG(DEBUG) << "Writing delimiter event";
-    serialize_header(header, config);
+
+    // Set correct flags for BORE and EORE:
+    std::uint32_t flags = 0;
+    if(header.getType() == CDTP1Message::Type::BOR) {
+        flags |= std::to_underlying(EUDAQFlags::BORE);
+    } else if(header.getType() == CDTP1Message::Type::EOR) {
+        flags |= std::to_underlying(EUDAQFlags::EORE);
+    }
+
+    // Serialize header with event flags
+    serialize_header(header, config, flags);
 
     // BOR does not contain data - write empty blocks and empty subevent count:
     write_blocks({});
