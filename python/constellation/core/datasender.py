@@ -29,7 +29,7 @@ class PushThread(threading.Thread):
         self,
         name: str,
         stopevt: threading.Event,
-        socket: zmq.Socket,
+        socket: zmq.Socket,  # type: ignore[type-arg]
         queue: Queue,  # type: ignore[type-arg]
         *args: Any,
         **kwargs: Any,
