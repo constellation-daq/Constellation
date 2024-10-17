@@ -536,7 +536,7 @@
              <number>150</number>
             </attribute>
             <attribute name="headerHighlightSections">
-             <bool>true</bool>
+             <bool>false</bool>
             </attribute>
             <attribute name="headerStretchLastSection">
              <bool>false</bool>
