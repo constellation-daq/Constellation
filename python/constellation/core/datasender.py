@@ -102,9 +102,11 @@ class DataSender(Satellite):
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
         self.broadcast_offers()
 
-    def __del__(self) -> None:
+    def reentry(self) -> None:
         # close the socket
         self.socket.close()
+        self.log.debug("Closed data socket")
+        super().reentry()
 
     @property
     def EOR(self) -> Any:
