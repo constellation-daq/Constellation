@@ -8,8 +8,7 @@ A base module for a Constellation Satellite that sends data.
 
 import time
 import threading
-import logging
-from typing import Optional, Any, cast
+from typing import Optional, Any
 from queue import Queue, Empty
 
 import random
@@ -18,7 +17,7 @@ import zmq
 
 from .cdtp import DataTransmitter, CDTPMessageIdentifier
 from .satellite import Satellite, SatelliteArgumentParser
-from .base import EPILOG, ConstellationLogger, setup_cli_logging
+from .base import EPILOG, setup_cli_logging, log
 from .broadcastmanager import CHIRPServiceIdentifier
 
 
@@ -48,14 +47,11 @@ class PushThread(threading.Thread):
         super().__init__(*args, **kwargs)
         self.name = name
         # FIXME
-        self._logger = logging.getLogger(__name__)
+        self._logger = log("DATA")
         self.stopevt = stopevt
         self.queue = queue
         ctx = context or zmq.Context()
         self._socket = ctx.socket(zmq.PUSH)
-
-        # Set up own logger with SEND topic
-        self.log = cast(ConstellationLogger, logging.getLogger("SEND"))
 
         if not port:
             port = self._socket.bind_to_random_port(f"tcp://{interface}")
@@ -104,8 +100,6 @@ class DataSender(Satellite):
         # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, data_port)
         self.broadcast_offers()
-        # Set up own logger with CSCP topic
-        self.log = cast(ConstellationLogger, logging.getLogger("DATA"))
 
     @property
     def EOR(self) -> Any:
@@ -145,7 +139,7 @@ class DataSender(Satellite):
         )
         # self._push_thread.name = f"{self.name}_Pusher-thread"
         self._push_thread.start()
-        self.log.info(f"Satellite {self.name} publishing data on port {self.data_port}")
+        log("DATA").info(f"Satellite {self.name} publishing data on port {self.data_port}")
         res: str = super()._wrap_launch(payload)
         return res
 
@@ -159,7 +153,7 @@ class DataSender(Satellite):
         try:
             self._push_thread.join(timeout=10)
         except TimeoutError:
-            self.log.warning("Unable to close push thread. Process timed out.")
+            log("DATA").warning("Unable to close push thread. Process timed out.")
         res: str = super()._wrap_land(payload)
         return res
 
@@ -174,7 +168,7 @@ class DataSender(Satellite):
         # configuration dictionary as a payload
         if not self.BOR:
             self.BOR = self.config._config
-        self.log.debug("Sending BOR")
+        log("DATA").debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         res: str = super()._wrap_start(run_identifier)
         return res
@@ -187,7 +181,7 @@ class DataSender(Satellite):
 
         """
         res: str = super()._wrap_stop(payload)
-        self.log.debug("Sending EOR")
+        log("DATA").debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return res
 
@@ -229,12 +223,12 @@ class RandomDataSender(DataSender):
 
         while not self._state_thread_evt.is_set():
             self.data_queue.put((data_load.tobytes(), {"dtype": f"{data_load.dtype}"}))
-            self.log.debug(f"Queueing data packet {num}")
+            log("DATA").debug(f"Queueing data packet {num}")
             num += 1
             time.sleep(0.5)
 
         t1 = time.time_ns()
-        self.log.info(f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0) / 1000000000}s")
+        log("DATA").info(f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0) / 1000000000}s")
         return "Finished acquisition"
 
 
