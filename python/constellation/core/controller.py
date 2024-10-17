@@ -5,11 +5,10 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import logging
 import threading
 import time
 from queue import Empty
-from typing import Dict, Callable, Any, Tuple, Optional, cast
+from typing import Dict, Callable, Any, Tuple, Optional
 from enum import Enum
 
 import zmq
@@ -20,7 +19,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .fsm import SatelliteState
 from .satellite import Satellite
-from .base import EPILOG, ConstellationArgumentParser, ConstellationLogger, setup_cli_logging
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging, log
 from .commandmanager import get_cscp_commands
 from .configuration import load_config, flatten_config
 from .heartbeatchecker import HeartbeatChecker
@@ -272,9 +271,6 @@ class BaseController(CHIRPBroadcaster):
         """
         super().__init__(group=group, **kwargs)
 
-        # Set up own logger with CTRL topic
-        self.log = cast(ConstellationLogger, logging.getLogger("CTRL"))
-
         self._transmitters: Dict[str, CommandTransmitter] = {}
         # lookup table for uuids to (cls, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
@@ -408,9 +404,9 @@ class BaseController(CHIRPBroadcaster):
                 self._hb_checker.start(canonical_name)
 
     def _add_satellite(self, service: DiscoveredService) -> None:
-        self.log.debug("Adding Satellite %s", service)
+        log("CTRL").debug("Adding Satellite %s", service)
         if str(service.host_uuid) in self._uuid_lookup.keys():
-            self.log.error(
+            log("CTRL").error(
                 "Satellite with name '%s.%s' already connected! Please ensure "
                 "unique Satellite names or you will not be able to communicate with all!",
                 *self._uuid_lookup[str(service.host_uuid)],
@@ -420,7 +416,7 @@ class BaseController(CHIRPBroadcaster):
             socket = self.context.socket(zmq.REQ)
         except zmq.ZMQError as e:
             if "Too many open files" in e.strerror:
-                self.log.error(
+                log("CTRL").error(
                     "System reports too many open files: cannot open further connections.\n"
                     "Please consider increasing the limit of your OS."
                     "On Linux systems, use 'ulimit' to set a higher value."
@@ -428,7 +424,7 @@ class BaseController(CHIRPBroadcaster):
             raise e
         socket.connect("tcp://" + service.address + ":" + str(service.port))
         ct = CommandTransmitter(self.name, socket)
-        self.log.debug(
+        log("CTRL").debug(
             "Connecting to %s, address %s on port %s...",
             service.host_uuid,
             service.address,
@@ -441,7 +437,7 @@ class BaseController(CHIRPBroadcaster):
             cls, name = msg.from_host.split(".", maxsplit=1)
             sat = self._constellation._add_satellite(name, cls, msg.payload)
             if sat._uuid != str(service.host_uuid):
-                self.log.warning(
+                log("CTRL").warning(
                     "UUIDs do not match: expected %s but received %s",
                     sat._uuid,
                     str(service.host_uuid),
@@ -462,7 +458,7 @@ class BaseController(CHIRPBroadcaster):
                     self._hb_checker.start(canonical_name)
                     break
         except RuntimeError as e:
-            self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
+            log("CTRL").error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
     def _remove_satellite(self, service: DiscoveredService) -> None:
         name, cls = None, None
@@ -473,7 +469,7 @@ class BaseController(CHIRPBroadcaster):
             self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
-        self.log.debug(
+        log("CTRL").debug(
             "Departure of %s, known as %s.%s",
             service.host_uuid,
             name,
@@ -489,7 +485,7 @@ class BaseController(CHIRPBroadcaster):
 
     def _hb_failure(self, name: str, state: SatelliteState) -> None:
         """Callback for Satellites failing to send heartbeats."""
-        self.log.critical("%s has entered %s", name, state.name)
+        log("CTRL").critical("%s has entered %s", name, state.name)
 
     def command(self, payload: Any = None, sat: str = "", satcls: str = "", cmd: str = "") -> Any:
         """Wrapper for _command_satellite function. Handle sending commands to all hosts"""
@@ -497,10 +493,10 @@ class BaseController(CHIRPBroadcaster):
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
             targets = [sat for sat in self._constellation.satellites.values()]
-            self.log.debug("Sending %s to all %s connected Satellites.", cmd, len(targets))
+            log("CTRL").debug("Sending %s to all %s connected Satellites.", cmd, len(targets))
         elif not sat:
             targets = [sat for sat in self._constellation.satellites.values() if sat._class_name == satcls]
-            self.log.debug(
+            log("CTRL").debug(
                 "Sending %s to all %s connected Satellites of class %s.",
                 cmd,
                 len(targets),
@@ -510,11 +506,11 @@ class BaseController(CHIRPBroadcaster):
             assert satcls  # for typing
             assert sat  # for typing
             targets = [self._constellation.get_satellite(satcls, sat)]
-            self.log.debug("Sending %s to Satellite %s.", cmd, targets[0])
+            log("CTRL").debug("Sending %s to Satellite %s.", cmd, targets[0])
 
         res: dict[str, SatelliteResponse] = {}
         for target in targets:
-            self.log.debug("Host %s send command %s...", target, cmd)
+            log("CTRL").debug("Host %s send command %s...", target, cmd)
             # The payload to set of (known) command can be pre-processed
             # allowing using more complex objects as arguments and a more
             # convenient CLI user experience without impacting the protocol
@@ -529,7 +525,7 @@ class BaseController(CHIRPBroadcaster):
                     meta=None,
                 )
             except KeyError:
-                self.log.error(
+                log("CTRL").error(
                     "Command %s failed for %s (%s.%s): No transmitter available",
                     cmd,
                     target,
@@ -539,7 +535,7 @@ class BaseController(CHIRPBroadcaster):
                 sat_response.success = False
                 sat_response.errmsg = "No transmitter available"
             except RuntimeError as e:
-                self.log.error(
+                log("CTRL").error(
                     "Command %s failed for %s (%s.%s): %s",
                     cmd,
                     target,
@@ -550,15 +546,15 @@ class BaseController(CHIRPBroadcaster):
                 sat_response.success = False
                 sat_response.errmsg = repr(e)
             if ret_msg:
-                self.log.debug(
+                log("CTRL").debug(
                     "%s responded: %s",
                     ret_msg.from_host,
                     ret_msg.msg,
                 )
                 if ret_msg.header_meta:
-                    self.log.debug("    header: %s", ret_msg.header_meta)
+                    log("CTRL").debug("    header: %s", ret_msg.header_meta)
                 if ret_msg.payload:
-                    self.log.debug("    payload: %s", ret_msg.payload)
+                    log("CTRL").debug("    payload: %s", ret_msg.payload)
                 sat_response.msg = ret_msg.msg
                 sat_response.payload = ret_msg.payload
                 sat_response.meta = ret_msg.header_meta
@@ -579,7 +575,7 @@ class BaseController(CHIRPBroadcaster):
                 # have a nested dict
                 cls, name = self._uuid_lookup[uuid]
                 cfg = flatten_config(payload, cls, name)
-                self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
+                log("CTRL").debug("Flattening and sending configuration for %s.%s", cls, name)
                 return cfg
         return payload
 
@@ -594,14 +590,14 @@ class BaseController(CHIRPBroadcaster):
                 try:
                     callback(*args)
                 except Exception as e:
-                    self.log.exception(e)
+                    log("CTRL").exception(e)
             except Empty:
                 # nothing to process
                 pass
 
     def reentry(self) -> None:
         """Stop the controller."""
-        self.log.debug("Stopping controller.")
+        log("CTRL").debug("Stopping controller.")
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
         try:
@@ -615,7 +611,7 @@ class BaseController(CHIRPBroadcaster):
             self._hb_checker.stop()
             self._hb_checker.close()
         except Exception as e:
-            self.log.warning("Encountered problem shutting heartbeat checker down: %s", repr(e))
+            log("CTRL").warning("Encountered problem shutting heartbeat checker down: %s", repr(e))
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join()
         super().reentry()

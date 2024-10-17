@@ -25,7 +25,7 @@ from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration, make_lowercase
 from .monitoring import MonitoringSender
 from .error import debug_log, handle_error
-from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging, log
 
 
 class Satellite(
@@ -84,7 +84,7 @@ class Satellite(
         # will fail with pytest.
         threading.excepthook = self._thread_exception
         # greet
-        self.base_log.info(f"Satellite {self.name}, version {__version__} ready to launch!")
+        log("SATELLITE").info(f"Satellite {self.name}, version {__version__} ready to launch!")
 
     @debug_log
     @cscp_requestable
@@ -115,7 +115,7 @@ class Satellite(
                     callback(*args)
                 except Exception as e:
                     # TODO consider whether to go into error state if anything goes wrong here
-                    self.base_log.exception(
+                    log("SATELLITE").exception(
                         "Caught exception handling task '%s' with args '%s': %s",
                         callback,
                         args,
@@ -125,7 +125,7 @@ class Satellite(
                 # nothing to process
                 pass
             except KeyboardInterrupt:
-                self.base_log.warning("Satellite caught KeyboardInterrupt, shutting down.")
+                log("SATELLITE").warning("Satellite caught KeyboardInterrupt, shutting down.")
                 # time to shut down
                 break
             time.sleep(0.01)
@@ -133,7 +133,7 @@ class Satellite(
     def reentry(self) -> None:
         """Orderly shutdown and destroy the Satellelite."""
         # can only exit from certain state, go into ERROR if not the case
-        self.base_log.info("Satellite on reentry course for self-destruction.")
+        log("SATELLITE").info("Satellite on reentry course for self-destruction.")
         if self.fsm.current_state_value not in [
             SatelliteState.NEW,
             SatelliteState.INIT,
@@ -177,11 +177,11 @@ class Satellite(
         except ConfigError as e:
             msg = "Caught exception during initialization: "
             msg += f"missing a required configuration value {e}?"
-            self.base_log.error(msg)
+            log("SATELLITE").error(msg)
             raise RuntimeError(msg) from e
         if self.config.has_unused_values():
             for key in self.config.get_unused_keys():
-                self.base_log.warning("Satellite ignored configuration value: '%s'", key)
+                log("SATELLITE").warning("Satellite ignored configuration value: '%s'", key)
             init_msg += " IGNORED parameters: "
             init_msg += ",".join(self.config.get_unused_keys())
         return init_msg
@@ -205,10 +205,10 @@ class Satellite(
 
         """
         self.hb_checker.start_all()
-        return str(self.do_launching())
+        return str(self.do_launching(payload))
 
     @debug_log
-    def do_launching(self) -> str:
+    def do_launching(self, payload: Any) -> str:
         """Prepare Satellite for data acquisitions."""
         return "Launched."
 
@@ -234,7 +234,7 @@ class Satellite(
 
         if partial_config.has_unused_values():
             for key in partial_config.get_unused_keys():
-                self.base_log.warning("Satellite ignored configuration value: '%s'", key)
+                log("SATELLITE").warning("Satellite ignored configuration value: '%s'", key)
             init_msg += " IGNORED parameters: "
             init_msg += ",".join(self.config.get_unused_keys())
         return init_msg
@@ -273,7 +273,7 @@ class Satellite(
         # assert for mypy static type analysis
         assert isinstance(self._state_thread_fut, Future)
         res_run: str = self._state_thread_fut.result(timeout=None)
-        self.base_log.debug("RUN thread finished, continue with STOPPING.")
+        log("SATELLITE").debug("RUN thread finished, continue with STOPPING.")
         res: str = self.do_stopping()
         return f"{res_run}; {res}"
 
@@ -292,7 +292,7 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
-        self.base_log.info(f"Starting run '{run_identifier}'")
+        log("SATELLITE").info(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
@@ -350,7 +350,7 @@ class Satellite(
                     try:
                         self._state_thread_fut.result(timeout=1)
                     except TimeoutError:
-                        self.base_log.error("Timeout while joining state thread, continuing.")
+                        log("SATELLITE").error("Timeout while joining state thread, continuing.")
             res: str = self.fail_gracefully()
             # close heartbeat checker
             self.hb_checker.close()
@@ -358,7 +358,7 @@ class Satellite(
         # NOTE: we cannot have a non-handled exception disallow the state
         # transition to failure state!
         except Exception as e:
-            self.base_log.exception(e)
+            log("SATELLITE").exception(e)
             return "Exception caught during failure handling, see logs for details."
 
     @debug_log
@@ -384,7 +384,7 @@ class Satellite(
             assert isinstance(self._state_thread_fut, Future)
             res_run = self._state_thread_fut.result(timeout=None)
             self._state_thread_evt = None
-        self.base_log.debug("RUN thread finished, continue with INTERRUPTING.")
+        log("SATELLITE").debug("RUN thread finished, continue with INTERRUPTING.")
         self.hb_checker.stop()
         res: str = self.do_interrupting()
         return f"{res_run}; {res}"
@@ -408,7 +408,7 @@ class Satellite(
 
         """
         tb = "".join(traceback.format_tb(args.exc_traceback))
-        self.base_log.fatal(
+        log("SATELLITE").fatal(
             f"caught {args.exc_type} with value \
             {args.exc_value} in thread {args.thread} and traceback {tb}."
         )
