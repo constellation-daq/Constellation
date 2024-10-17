@@ -158,8 +158,8 @@ protected:
 
 private:
     // Column headers of the connection details
-    static constexpr std::array<const char*, 6> headers_ {
-        "Type", "Name", "State", "Connection", "Last response", "Last message"};
+    static constexpr std::array<const char*, 8> headers_ {
+        "Type", "Name", "State", "Connection", "Last response", "Last message", "Heartbeat", "Lives"};
 };
 
 class QControllerSortProxy : public QSortFilterProxyModel {

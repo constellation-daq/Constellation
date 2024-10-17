@@ -92,6 +92,14 @@ QVariant QController::data(const QModelIndex& index, int role) const {
         // Last command response message
         return QString::fromStdString(conn.last_cmd_verb);
     }
+    case 6: {
+        // Heartbeat period
+        return QString::fromStdString(to_string(conn.interval));
+    }
+    case 7: {
+        // Remaining lives:
+        return QString::number(conn.lives);
+    }
     default: {
         return QString("");
     }
