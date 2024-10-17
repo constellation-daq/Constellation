@@ -38,6 +38,7 @@ core_lib = library(
   gnu_symbol_visibility: 'hidden',
   cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
+  install_rpath: constellation_rpath,
 )
 
 core_dep = declare_dependency(
