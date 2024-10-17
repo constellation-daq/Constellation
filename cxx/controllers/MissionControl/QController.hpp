@@ -11,6 +11,7 @@
 
 #include <array>
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -22,6 +23,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 /**

@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <iterator>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -229,13 +230,12 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
         }
     }
 
-    emit dataChanged(createIndex(static_cast<int>(index.row()), 0),
-                     createIndex(static_cast<int>(index.row()), headers_.size() - 1));
+    emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), headers_.size() - 1));
     return {};
 }
 
 std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
-    auto replies = sendCommands(verb, payload);
+    auto replies = sendCommands(std::move(verb), payload);
 
     emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
     return replies;
