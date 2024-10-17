@@ -228,6 +228,8 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
         }
     }
 
+    emit dataChanged(createIndex(static_cast<int>(index.row()), 0),
+                     createIndex(static_cast<int>(index.row()), headers_.size() - 1));
     return {};
 }
 
