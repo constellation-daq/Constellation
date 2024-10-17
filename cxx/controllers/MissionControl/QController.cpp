@@ -26,11 +26,13 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
@@ -231,6 +233,23 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
     emit dataChanged(createIndex(static_cast<int>(index.row()), 0),
                      createIndex(static_cast<int>(index.row()), headers_.size() - 1));
     return {};
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
+    auto replies = sendCommands(verb, payload);
+
+    const std::lock_guard lock {connection_mutex_};
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(connections_.size() - 1), headers_.size() - 1));
+    return replies;
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(const std::string& verb,
+                                                               const std::map<std::string, CommandPayload>& payloads) {
+    auto replies = sendCommands(verb, payloads);
+
+    const std::lock_guard lock {connection_mutex_};
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(connections_.size() - 1), headers_.size() - 1));
+    return replies;
 }
 
 QControllerSortProxy::QControllerSortProxy(QObject* parent) : QSortFilterProxyModel(parent) {}
