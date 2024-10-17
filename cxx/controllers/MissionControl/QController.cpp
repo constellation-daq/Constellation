@@ -173,7 +173,8 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
         emit connectionsChanged(total);
     }
 
-    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(position), headers_.size() - 1));
+    emit dataChanged(createIndex(static_cast<int>(position), 0),
+                     createIndex(static_cast<int>(position), headers_.size() - 1));
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
