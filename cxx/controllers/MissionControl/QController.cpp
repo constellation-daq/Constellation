@@ -53,12 +53,11 @@ QVariant QController::data(const QModelIndex& index, int role) const {
         return {};
     }
 
-    const std::lock_guard connection_lock {connection_mutex_};
-
-    if(index.row() >= static_cast<int>(connections_.size()) || index.column() >= static_cast<int>(headers_.size())) {
+    if(index.row() >= static_cast<int>(getConnectionCount()) || index.column() >= static_cast<int>(headers_.size())) {
         return {};
     }
 
+    const std::lock_guard connection_lock {connection_mutex_};
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
@@ -238,8 +237,7 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
 std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
     auto replies = sendCommands(verb, payload);
 
-    const std::lock_guard lock {connection_mutex_};
-    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(connections_.size() - 1), headers_.size() - 1));
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
     return replies;
 }
 
@@ -247,8 +245,7 @@ std::map<std::string, CSCP1Message> QController::sendQCommands(const std::string
                                                                const std::map<std::string, CommandPayload>& payloads) {
     auto replies = sendCommands(verb, payloads);
 
-    const std::lock_guard lock {connection_mutex_};
-    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(connections_.size() - 1), headers_.size() - 1));
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
     return replies;
 }
 
