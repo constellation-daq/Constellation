@@ -227,7 +227,7 @@ void MissionControl::on_btnInit_clicked() {
         return;
     }
 
-    for(auto& response : runcontrol_.sendCommands("initialize", configs.value())) {
+    for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
@@ -244,26 +244,26 @@ void MissionControl::on_btnShutdown_clicked() {
        QMessageBox::Cancel) {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
-        for(auto& response : runcontrol_.sendCommands("shutdown")) {
+        for(auto& response : runcontrol_.sendQCommands("shutdown")) {
             LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << to_string(response.second.getVerb().first);
         }
     }
 }
 
 void MissionControl::on_btnConfig_clicked() {
-    for(auto& response : runcontrol_.sendCommands("launch")) {
+    for(auto& response : runcontrol_.sendQCommands("launch")) {
         LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
-    for(auto& response : runcontrol_.sendCommands("land")) {
+    for(auto& response : runcontrol_.sendQCommands("land")) {
         LOG(logger_, DEBUG) << "Land: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
-    for(auto& response : runcontrol_.sendCommands("start", current_run_.toStdString())) {
+    for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 
@@ -272,7 +272,7 @@ void MissionControl::on_btnStart_clicked() {
 }
 
 void MissionControl::on_btnStop_clicked() {
-    for(auto& response : runcontrol_.sendCommands("stop")) {
+    for(auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 
