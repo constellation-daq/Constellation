@@ -78,7 +78,7 @@ namespace constellation::controller {
             config::Dictionary commands {};
 
             /** Heartbeat status */
-            std::chrono::milliseconds interval {1000};
+            std::chrono::milliseconds interval {10000};
             std::chrono::system_clock::time_point last_heartbeat {std::chrono::system_clock::now()};
             std::chrono::system_clock::time_point last_checked {std::chrono::system_clock::now()};
             std::uint8_t lives {protocol::CHP::Lives};

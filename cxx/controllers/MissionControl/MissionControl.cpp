@@ -116,6 +116,23 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(viewConn, &QTreeView::customContextMenuRequested, this, &MissionControl::custom_context_menu);
 
+    // Set default column width of main connection view
+    viewConn->header()->setSectionResizeMode(0, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(0, 100);
+    viewConn->header()->setSectionResizeMode(1, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(1, 100);
+    viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(2, 120);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(3, 180);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(4, 140);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(6, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(6, 80);
+    viewConn->header()->setSectionResizeMode(7, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(7, 40);
+
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {
         txtConfigFileName->setText(cfg_file);
