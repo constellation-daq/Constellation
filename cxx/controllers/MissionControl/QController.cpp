@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <iterator>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -53,12 +54,11 @@ QVariant QController::data(const QModelIndex& index, int role) const {
         return {};
     }
 
-    const std::lock_guard connection_lock {connection_mutex_};
-
-    if(index.row() >= static_cast<int>(connections_.size()) || index.column() >= static_cast<int>(headers_.size())) {
+    if(index.row() >= static_cast<int>(getConnectionCount()) || index.column() >= static_cast<int>(headers_.size())) {
         return {};
     }
 
+    const std::lock_guard connection_lock {connection_mutex_};
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
@@ -206,7 +206,8 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
         emit connectionsChanged(total);
     }
 
-    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(position), headers_.size() - 1));
+    emit dataChanged(createIndex(static_cast<int>(position), 0),
+                     createIndex(static_cast<int>(position), headers_.size() - 1));
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
@@ -260,7 +261,23 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
         }
     }
 
+    emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), headers_.size() - 1));
     return {};
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
+    auto replies = sendCommands(std::move(verb), payload);
+
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
+    return replies;
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(const std::string& verb,
+                                                               const std::map<std::string, CommandPayload>& payloads) {
+    auto replies = sendCommands(verb, payloads);
+
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
+    return replies;
 }
 
 QControllerSortProxy::QControllerSortProxy(QObject* parent) : QSortFilterProxyModel(parent) {}
