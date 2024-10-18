@@ -96,8 +96,18 @@ QSize ConnectionItemDelegate::sizeHint(const QStyleOptionViewItem& option, const
     return {static_cast<int>(doc.idealWidth()), static_cast<int>(doc.size().height())};
 }
 
+FileSystemModel::FileSystemModel(QObject* parent) : QFileSystemModel(parent) {}
+
+QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
+    if(role == Qt::DisplayRole && index.column() == 0) {
+        return QDir::toNativeSeparators(filePath(index));
+    }
+    return QFileSystemModel::data(index, role);
+}
+
 MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
-    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP") {
+    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP"),
+      run_id_validator_(QRegularExpression("^[\\w-]+$"), this), config_file_fs_(&config_file_completer_) {
 
     qRegisterMetaType<QModelIndex>("QModelIndex");
     qRegisterMetaType<constellation::protocol::CSCP::State>("constellation::protocol::CSCP::State");
@@ -177,6 +187,14 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         update_button_states(state);
         labelState->setText(QController::getStyledState(state, global));
     });
+
+    // Attach validators & completers:
+    runIdentifier->setValidator(&run_id_validator_);
+    config_file_fs_.setRootPath({});
+    config_file_completer_.setMaxVisibleItems(10);
+    config_file_completer_.setModel(&config_file_fs_);
+    config_file_completer_.setCompletionMode(QCompleter::InlineCompletion);
+    txtConfigFileName->setCompleter(&config_file_completer_);
 
     // Start the controller
     runcontrol_.start();
