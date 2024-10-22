@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -352,11 +353,29 @@ void MissionControl::on_btnLoadConf_clicked() {
 
 void MissionControl::on_btnGenConf_clicked() {
 
+    ControllerConfiguration new_cfg;
+
+    // Round-call to collect configurations from the satellites:
+    for(const auto& config : runcontrol_.sendQCommands("get_config")) {
+        const auto cfg = config::Dictionary::disassemble(config.second.getPayload());
+        new_cfg.addSatelliteConfiguration(config.first, cfg);
+    }
+
     const QString filename = QFileDialog::getSaveFileName(
         this, tr("Save File"), QFileInfo(txtConfigFileName->text()).path(), tr("Configurations (*.conf *.toml *.ini)"));
-    if(!filename.isNull()) {
-        txtConfigFileName->setText(filename);
+
+    if(filename.isNull()) {
+        return;
     }
+
+    // Store to file:
+    const auto content = new_cfg.getTOML();
+    std::ofstream file {filename.toStdString()};
+    file << content.rdbuf();
+    file.close();
+
+    // Set selected config to this one:
+    txtConfigFileName->setText(filename);
 }
 
 void MissionControl::update_button_states(CSCP::State state) {
