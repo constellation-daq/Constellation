@@ -369,6 +369,8 @@ void MissionControl::update_button_states(CSCP::State state) {
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
     btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
+    btnGenConf->setEnabled(CSCP::is_not_one_of_states<NEW, initializing, ERROR>(state) &&
+                           runcontrol_.getConnectionCount() > 0);
     txtConfigFileName->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
     btnStart->setEnabled(state == ORBIT);
     btnStop->setEnabled(state == RUN);
