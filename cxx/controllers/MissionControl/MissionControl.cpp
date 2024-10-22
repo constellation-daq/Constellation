@@ -347,6 +347,15 @@ void MissionControl::on_btnLoadConf_clicked() {
     }
 }
 
+void MissionControl::on_btnGenConf_clicked() {
+
+    const QString filename = QFileDialog::getSaveFileName(
+        this, tr("Save File"), QFileInfo(txtConfigFileName->text()).path(), tr("Configurations (*.conf *.toml *.ini)"));
+    if(!filename.isNull()) {
+        txtConfigFileName->setText(filename);
+    }
+}
+
 void MissionControl::update_button_states(CSCP::State state) {
 
     const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$))");
