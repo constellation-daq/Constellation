@@ -85,6 +85,10 @@ namespace constellation::controller {
          */
         CNSTLN_API config::Dictionary getSatelliteConfiguration(std::string_view canonical_name) const;
 
+        CNSTLN_API void addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config);
+
+        CNSTLN_API std::stringstream getTOML() const;
+
     private:
         /**
          * @brief Parse a string view with TOML data into dictionaries
