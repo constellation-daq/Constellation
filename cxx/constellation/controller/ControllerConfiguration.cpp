@@ -54,6 +54,23 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
     parse_toml(toml);
 }
 
+std::stringstream ControllerConfiguration::getTOML() const {
+    toml::table tbl;
+
+    for(const auto& [name, config] : satellite_configs_) {
+        toml::table sat_table;
+        for(const auto& [key, value] : config) {
+            sat_table.emplace(key, value);
+        }
+        tbl.emplace(name, sat_table);
+    }
+
+    std::stringstream oss;
+    oss << tbl;
+
+    return oss;
+}
+
 void ControllerConfiguration::parse_toml(std::string_view toml) {
     toml::table tbl {};
     try {
@@ -184,6 +201,12 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
 
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
     return satellite_configs_.contains(transform(canonical_name, ::tolower));
+}
+
+void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config) {
+
+    // FIXME check if already there
+    satellite_configs_[std::string(canonical_name)] = config;
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
