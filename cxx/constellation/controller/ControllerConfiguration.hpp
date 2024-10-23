@@ -10,6 +10,7 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
 #include <string_view>
 
 #include "constellation/build.hpp"

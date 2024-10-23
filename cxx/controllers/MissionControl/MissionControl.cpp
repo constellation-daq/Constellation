@@ -55,6 +55,7 @@
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -64,6 +65,7 @@
 
 using namespace constellation;
 using namespace constellation::chirp;
+using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
 using namespace constellation::protocol;
@@ -354,7 +356,7 @@ void MissionControl::on_btnGenConf_clicked() {
 
     // Round-call to collect configurations from the satellites:
     for(const auto& config : runcontrol_.sendQCommands("get_config")) {
-        const auto cfg = config::Dictionary::disassemble(config.second.getPayload());
+        const auto cfg = Dictionary::disassemble(config.second.getPayload());
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
