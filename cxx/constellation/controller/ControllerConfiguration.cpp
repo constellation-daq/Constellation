@@ -54,7 +54,7 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
     parse_toml(toml);
 }
 
-std::stringstream ControllerConfiguration::getTOML() const {
+std::string ControllerConfiguration::getAsTOML() const {
 
     auto get_toml_array = [&](auto&& val) -> toml::array {
         toml::array arr;
@@ -114,7 +114,7 @@ std::stringstream ControllerConfiguration::getTOML() const {
     std::stringstream oss;
     oss << tbl;
 
-    return oss;
+    return oss.str();
 }
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {
