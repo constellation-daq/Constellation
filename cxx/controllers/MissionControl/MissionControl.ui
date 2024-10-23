@@ -389,7 +389,7 @@
              </size>
             </property>
             <property name="text">
-             <string>Generate</string>
+             <string>Deduce</string>
             </property>
            </widget>
           </item>
