@@ -322,6 +322,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
     // Check if transition conditions are satisfied:
     if(remote_callback_ && !remote_conditions_.empty()) {
+        LOG(INFO) << "Checking remote conditions...";
 
         const TimeoutTimer timer {remote_condition_timeout_};
         while(true) {
@@ -361,7 +362,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
             // If all conditions are satisfied, continue:
             if(satisfied) {
-                LOG(logger_, DEBUG) << "Satisfied with all remote conditions, continuing";
+                LOG(logger_, INFO) << "Satisfied with all remote conditions, continuing";
                 break;
             }
 
