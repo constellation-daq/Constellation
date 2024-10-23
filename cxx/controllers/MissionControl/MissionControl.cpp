@@ -213,9 +213,6 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     config_file_completer_.setCompletionMode(QCompleter::InlineCompletion);
     txtConfigFileName->setCompleter(&config_file_completer_);
 
-    // Update button to initial state:
-    update_button_states(state);
-
     // Start the controller
     runcontrol_.start();
 }
