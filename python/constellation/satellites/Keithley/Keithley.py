@@ -57,7 +57,7 @@ class Keithley(Satellite):
             raise ConnectionError("No connection to Keithley")
         self.log.info("Device: %s", identify)
 
-    def do_launching(self, payload: Any) -> str:
+    def do_launching(self) -> str:
         self.device.set_terminal(self.terminal)
         self._set_ovp()
         self._set_compliance()
@@ -72,7 +72,7 @@ class Keithley(Satellite):
 
         return f"Keithley at {self.device.get_voltage()}V"
 
-    def do_landing(self, payload: Any) -> str:
+    def do_landing(self) -> str:
         # Ramp to zero, then disable output
         self._ramp(0)
         self.device.enable_output(False)
