@@ -55,14 +55,60 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 }
 
 std::stringstream ControllerConfiguration::getTOML() const {
+
+    auto get_toml_array = [&](auto&& val) -> toml::array {
+        toml::array arr;
+
+        using T = std::decay_t<decltype(val)>::value_type;
+        for(const auto& v : val) {
+            arr.push_back(static_cast<T>(v));
+        }
+        return arr;
+    };
+
+    auto get_toml_table = [&](const config::Dictionary& dict) -> toml::table {
+        toml::table tbl;
+        for(const auto& [key, value] : dict) {
+
+            LOG(config_parser_logger_, TRACE) << "Parsing key " << key;
+
+            if(std::holds_alternative<bool>(value)) {
+                tbl.emplace(key, toml::value<bool>(value.get<bool>()));
+            } else if(std::holds_alternative<std::int64_t>(value)) {
+                tbl.emplace(key, toml::value<std::int64_t>(value.get<std::int64_t>()));
+            } else if(std::holds_alternative<double>(value)) {
+                tbl.emplace(key, toml::value<double>(value.get<double>()));
+            } else if(std::holds_alternative<std::string>(value)) {
+                tbl.emplace(key, toml::value<std::string>(value.get<std::string>()));
+            } else if(std::holds_alternative<std::vector<bool>>(value)) {
+                tbl.emplace(key, get_toml_array(value.get<std::vector<bool>>()));
+            } else if(std::holds_alternative<std::vector<std::string>>(value)) {
+                tbl.emplace(key, get_toml_array(value.get<std::vector<std::string>>()));
+            } else if(std::holds_alternative<std::vector<double>>(value)) {
+                tbl.emplace(key, get_toml_array(value.get<std::vector<double>>()));
+            } else if(std::holds_alternative<std::vector<std::int64_t>>(value)) {
+                tbl.emplace(key, get_toml_array(value.get<std::vector<std::int64_t>>()));
+            }
+
+            // FIXME timestamp? char vector?
+        }
+        return tbl;
+    };
+
+    // The global TOML table
     toml::table tbl;
 
+    // Add global config:
+    tbl.emplace("satellites", get_toml_table(global_config_));
+
+    // Add type config:
+    for(const auto& [type, config] : type_configs_) {
+        tbl.emplace("satellites." + type, get_toml_table(config));
+    }
+
+    // Add individual satellites sections:
     for(const auto& [name, config] : satellite_configs_) {
-        toml::table sat_table;
-        for(const auto& [key, value] : config) {
-            sat_table.emplace(key, value);
-        }
-        tbl.emplace(name, sat_table);
+        tbl.emplace("satellites." + name, get_toml_table(config));
     }
 
     std::stringstream oss;
