@@ -215,7 +215,7 @@ void EudaqNativeWriterSatellite::FileSerializer::serializeDataMsg(const CDTP1Mes
         // Interpret each payload frame as a EUDAQ sub-event:
 
         // Write zero blocks:
-        write_int<std::uint32_t>(0);
+        write_blocks({});
 
         // Write subevents:
         const auto& payload = data_message.getPayload();
@@ -228,6 +228,9 @@ void EudaqNativeWriterSatellite::FileSerializer::serializeDataMsg(const CDTP1Mes
             // Write number of blocks and the block itself
             write_int<std::uint32_t>(1);
             write_block(0, frame);
+
+            // Zero sub-sub-events:
+            write_int<std::uint32_t>(0);
         }
     }
 }
