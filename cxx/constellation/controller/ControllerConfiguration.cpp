@@ -17,7 +17,9 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <toml++/toml.hpp>
@@ -252,7 +254,7 @@ bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonic
 void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config) {
 
     // FIXME check if already there
-    satellite_configs_[std::string(canonical_name)] = config;
+    satellite_configs_[std::string(canonical_name)] = std::move(config);
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
