@@ -87,7 +87,7 @@ namespace constellation::controller {
 
         CNSTLN_API void addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config);
 
-        CNSTLN_API std::stringstream getTOML() const;
+        CNSTLN_API std::string getAsTOML() const;
 
     private:
         /**

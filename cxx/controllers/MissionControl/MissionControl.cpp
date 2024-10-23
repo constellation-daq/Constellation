@@ -369,9 +369,8 @@ void MissionControl::on_btnGenConf_clicked() {
     }
 
     // Store to file:
-    const auto content = new_cfg.getTOML();
     std::ofstream file {filename.toStdString()};
-    file << content.rdbuf();
+    file << new_cfg.getAsTOML();
     file.close();
 
     // Set selected config to this one:
