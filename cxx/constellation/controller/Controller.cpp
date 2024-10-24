@@ -420,6 +420,12 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
 
+                    // Discard CHIRP service:
+                    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+                    if(chirp_manager != nullptr) {
+                        chirp_manager->forgetDiscoveredService(chirp::HEARTBEAT, conn->second.host_id);
+                    }
+
                     // Note position of removed item:
                     const auto position = std::distance(connections_.begin(), conn);
 
