@@ -226,7 +226,15 @@ namespace constellation::chirp {
          */
         CNSTLN_API void unregisterDiscoverCallbacks();
 
-        /** Forgets all previously discovered services */
+        /**
+         * @brief Forget the previously discovered services of the given type and host ID, if present
+         *
+         * @param identifier Identifier of the discovered service to be forgotten
+         * @param host_id Host ID of the discovered service to be forgotten
+         */
+        CNSTLN_API void forgetDiscoveredService(ServiceIdentifier identifier, message::MD5Hash host_id);
+
+        /** Forget all previously discovered services */
         CNSTLN_API void forgetDiscoveredServices();
 
         /**
