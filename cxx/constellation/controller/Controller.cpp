@@ -416,12 +416,12 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                 remote.last_checked = now;
                 LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
 
+                // Note position of item:
+                const auto position = std::distance(connections_.begin(), conn);
+
                 if(remote.lives == 0) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
-
-                    // Note position of removed item:
-                    const auto position = std::distance(connections_.begin(), conn);
 
                     // Close connection, remove from list:
                     remote.req.close();
@@ -435,6 +435,9 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     // Propagate state change of the constellation
                     reached_state(getLowestState(), isInGlobalState());
                     lock.lock();
+                } else {
+                    // Trigger method for propagation of connection list updates in derived controller classes
+                    propagate_update(UpdateType::UPDATED, position, connection_count_.load());
                 }
             }
 
