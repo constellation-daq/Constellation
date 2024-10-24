@@ -105,13 +105,20 @@ std::string ControllerConfiguration::getAsTOML() const {
 
     // Add type config:
     for(const auto& [type, config] : type_configs_) {
-        tbl.emplace("satellites." + type, get_toml_table(config));
+        tbl["satellites"].as_table()->emplace(type, get_toml_table(config));
     }
 
     // Add individual satellites sections:
-    for(const auto& [name, config] : satellite_configs_) {
-        tbl.emplace("satellites." + name, get_toml_table(config));
+    for(const auto& [canonical_name, config] : satellite_configs_) {
+        const auto pos = canonical_name.find_first_of('.', 0);
+        const auto type = canonical_name.substr(0, pos);
+        const auto name = canonical_name.substr(pos + 1);
+        tbl["satellites"].as_table()->emplace(type, toml::table {});
+        tbl["satellites"][type].as_table()->emplace(name, get_toml_table(config));
     }
+
+    // Clean up table a bit:
+    tbl.prune();
 
     std::stringstream oss;
     oss << tbl;
