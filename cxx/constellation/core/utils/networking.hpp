@@ -12,8 +12,14 @@
 #include <charconv>
 #include <cstdint>
 #include <memory>
+#include <set>
+#include <string>
 #include <string_view>
 
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netdb.h>
+#include <sys/socket.h>
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
@@ -64,6 +70,52 @@ namespace constellation::utils {
         // Switch off blocky behavior of context - corresponds to setting linger = 0 for all sockets
         context->set(zmq::ctxopt::blocky, 0);
         return context;
+    }
+
+    CNSTLN_API inline std::set<std::string> get_broadcast_addresses() {
+        std::set<std::string> addresses;
+
+        // Obtain linked list of all local network interfaces
+        struct ifaddrs* addrs = nullptr;
+        struct ifaddrs* ifa = nullptr;
+        if(getifaddrs(&addrs) != 0) {
+            return {};
+        }
+
+        // Iterate through list of interfaces
+        for(ifa = addrs; ifa != nullptr; ifa = ifa->ifa_next) {
+
+            // Ignore loopback interfaces or interfaces which are down
+            if(ifa->ifa_addr == nullptr || ((ifa->ifa_flags & IFF_LOOPBACK) != 0u) ||
+               ((ifa->ifa_flags & IFF_RUNNING) == 0u)) {
+                continue;
+            }
+
+            // Only return IPv4 addresses
+            if(ifa->ifa_addr->sa_family != AF_INET) {
+                continue;
+            }
+
+            // Obtain broadcast address
+            if(((ifa->ifa_flags & IFF_BROADCAST) != 0u) && (ifa->ifa_ifu.ifu_broadaddr != nullptr)) {
+                char buffer[NI_MAXHOST] = {
+                    0,
+                };
+                if(getnameinfo(ifa->ifa_ifu.ifu_broadaddr,
+                               sizeof(struct sockaddr_in),
+                               buffer,
+                               NI_MAXHOST,
+                               nullptr,
+                               0,
+                               NI_NUMERICHOST) == 0) {
+                    // Add to result list
+                    addresses.emplace(buffer);
+                }
+            }
+        }
+
+        freeifaddrs(addrs);
+        return addresses;
     }
 
 } // namespace constellation::utils
