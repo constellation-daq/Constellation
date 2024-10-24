@@ -234,6 +234,13 @@ namespace constellation::chirp {
          */
         CNSTLN_API void forgetDiscoveredService(ServiceIdentifier identifier, message::MD5Hash host_id);
 
+        /**
+         * @brief Forget all previously discovered services of a given host
+         *
+         * @param host_id Host ID of the discovered services to be forgotten
+         */
+        CNSTLN_API void forgetDiscoveredService(message::MD5Hash host_id);
+
         /** Forget all previously discovered services */
         CNSTLN_API void forgetDiscoveredServices();
 
