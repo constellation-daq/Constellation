@@ -192,6 +192,16 @@ void Manager::unregisterDiscoverCallbacks() {
     discover_callbacks_.clear();
 }
 
+void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5Hash host_id) {
+    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const auto service_it = std::ranges::find_if(discovered_services_, [&](const auto& service) {
+        return service.host_id == host_id && service.identifier == identifier;
+    });
+    if(service_it != discovered_services_.end()) {
+        discovered_services_.erase(service_it);
+    }
+}
+
 void Manager::forgetDiscoveredServices() {
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
     discovered_services_.clear();
