@@ -36,6 +36,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QLinearGradient>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMetaType>
@@ -72,6 +73,17 @@ void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem
     initStyleOption(&options, index);
 
     painter->save();
+
+    // Get sibling for column 7 (where the lives are stored) for current row:
+    const auto lives = index.sibling(index.row(), 7).data().toInt();
+    if(lives < 3 && index.column() >= 6) {
+        const auto alpha = (3 - lives) * 85;
+        QLinearGradient gradient(
+            options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
+        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 6 ? 0 : alpha)));
+        gradient.setColorAt(1, QColor(255, 0, 0, alpha));
+        painter->fillRect(options.rect, QBrush(gradient));
+    }
 
     QTextDocument doc;
     doc.setHtml(options.text);

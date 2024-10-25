@@ -100,7 +100,7 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     }
     case 7: {
         // Remaining lives:
-        return QString::number(conn.lives);
+        return conn.lives;
     }
     default: {
         return QString("");
