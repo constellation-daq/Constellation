@@ -202,13 +202,10 @@ void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5
     }
 }
 
-void Manager::forgetDiscoveredService(message::MD5Hash host_id) {
+void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
-    const auto service_it =
-        std::ranges::find(discovered_services_, host_id, [&](const auto& service) { return service.host_id; });
-    if(service_it != discovered_services_.end()) {
-        discovered_services_.erase(service_it);
-    }
+    const auto count = std::erase_if(discovered_services_, [&](const auto& service) { return service.host_id == host_id; });
+    LOG(logger_, DEBUG) << "Dropped " << count << " discovered services for host id " << host_id.to_string();
 }
 
 void Manager::forgetDiscoveredServices() {

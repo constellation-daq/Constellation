@@ -426,7 +426,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
                     // Discard all CHIRP services for this host:
                     auto* chirp_manager = chirp::Manager::getDefaultInstance();
                     if(chirp_manager != nullptr) {
-                        chirp_manager->forgetDiscoveredService(conn->second.host_id);
+                        chirp_manager->forgetDiscoveredServices(conn->second.host_id);
                     }
 
                     // Close connection, remove from list:
