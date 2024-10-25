@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
+#include <vector>
 
 #include <asio.hpp>
 
@@ -54,8 +55,8 @@ namespace constellation::chirp {
 
     private:
         asio::io_context io_context_;
-        asio::ip::udp::endpoint endpoint_;
-        asio::ip::udp::socket socket_;
+        std::vector<asio::ip::udp::endpoint> endpoints_;
+        std::vector<asio::ip::udp::socket> sockets_;
     };
 
 } // namespace constellation::chirp
