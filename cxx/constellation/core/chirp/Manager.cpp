@@ -198,13 +198,23 @@ void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5
         return service.host_id == host_id && service.identifier == identifier;
     });
     if(service_it != discovered_services_.end()) {
+        LOG(logger_, DEBUG) << "Dropping discovered service " << to_string(identifier) << " for host id "
+                            << host_id.to_string();
+        call_discover_callbacks(*service_it, ServiceStatus::DEAD);
         discovered_services_.erase(service_it);
     }
 }
 
 void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
     const std::lock_guard discovered_services_lock {discovered_services_mutex_};
-    const auto count = std::erase_if(discovered_services_, [&](const auto& service) { return service.host_id == host_id; });
+
+    const auto count = std::erase_if(discovered_services_, [&](const auto& service) {
+        if(service.host_id == host_id) {
+            call_discover_callbacks(service, ServiceStatus::DEAD);
+            return true;
+        }
+        return false;
+    });
     LOG(logger_, DEBUG) << "Dropped " << count << " discovered services for host id " << host_id.to_string();
 }
 
