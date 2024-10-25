@@ -52,7 +52,7 @@ class DataReceiver(Satellite):
         self._configure_monitoring(2.0)
         return "Configured DataReceiver"
 
-    def do_launching(self, payload: Any) -> str:
+    def do_launching(self) -> str:
         """Set up pull sockets to listen to incoming data."""
         # Set up the data poller which will monitor all ZMQ sockets
         self.poller = zmq.Poller()
@@ -62,14 +62,14 @@ class DataReceiver(Satellite):
             self._add_socket(uuid, address, port)
         return "Established connections to data senders."
 
-    def do_landing(self, payload: Any) -> str:
+    def do_landing(self) -> str:
         """Close all open sockets."""
         for uuid in self._pull_interfaces.keys():
             self._remove_socket(uuid)
         self.poller = None
         return "Closed connections to data senders."
 
-    def do_starting(self, payload: Any) -> str:
+    def do_starting(self, run_identifier: str) -> str:
         self.active_satellites = []
         return "Started data receiving"
 
