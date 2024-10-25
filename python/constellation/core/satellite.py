@@ -399,17 +399,6 @@ class Satellite(
         self.do_landing()
         return "Interrupted."
 
-    @handle_error
-    @debug_log
-    def _wrap_recover(self) -> str:
-        """Wrapper for the 'recovering' transitional state of the FSM.
-
-        This method does not perform any action as the SAFE->INIT transition has
-        no side-effects.
-
-        """
-        return "Recovered."
-
     def _thread_exception(self, args: Any) -> None:
         """Handle exceptions in threads.
 

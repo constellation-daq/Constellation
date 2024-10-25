@@ -90,7 +90,6 @@ class SatelliteFSM(StateMachine):
     interrupt = states.ORBIT.to(states.interrupting) | states.RUN.to(states.interrupting)
     interrupted = states.interrupting.to(states.SAFE)
 
-    recover = states.SAFE.to(states.INIT)
     # - error
     failure = states.RUN.to(states.ERROR) | states.ORBIT.to(states.ERROR)
     failure |= states.INIT.to(states.ERROR) | states.SAFE.to(states.ERROR)
@@ -261,19 +260,6 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
         """
         return self._transition("interrupt", request, thread=False)
-
-    @debug_log
-    @cscp_requestable
-    def recover(self, request: CSCPMessage) -> Tuple[str, str, None]:
-        """Initiate recover state transition via a CSCP request.
-
-        No payload argument.
-
-        If the transition is not allowed, TransitionNotAllowed will be thrown by
-        the FSM.
-
-        """
-        return self._transition("recover", request, thread=False)
 
     @debug_log
     @cscp_requestable
