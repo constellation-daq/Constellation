@@ -245,6 +245,22 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
     // Test that we got DEPART callback
     REQUIRE(cb_test_data.status == ServiceStatus::DEPARTED);
 
+    // Forget service of a host:
+    manager1.registerService(CONTROL, 50100);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
+    manager2.forgetDiscoveredService(CONTROL, cb_test_data.service.host_id);
+    // Wait for execution of callback
+    while(!cb_test_data.executed) {
+        std::this_thread::sleep_for(1ms);
+    }
+    cb_test_data.executed = false;
+    // Test that we got DEPART callback
+    REQUIRE(cb_test_data.status == ServiceStatus::DEAD);
+
     // Unregister callback
     manager2.unregisterDiscoverCallback(callback, CONTROL);
     // Register CONTROL service
