@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 
+#include <asio.hpp>
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
@@ -73,8 +74,8 @@ namespace constellation::utils {
         return context;
     }
 
-    CNSTLN_API inline std::set<std::string> get_broadcast_addresses() {
-        std::set<std::string> addresses;
+    CNSTLN_API inline std::set<asio::ip::address_v4> get_broadcast_addresses() {
+        std::set<asio::ip::address_v4> addresses;
 
         // Obtain linked list of all local network interfaces
         struct ifaddrs* addrs = nullptr;
@@ -107,8 +108,13 @@ namespace constellation::utils {
                            nullptr,
                            0,
                            NI_NUMERICHOST) == 0) {
-                // Add to result list
-                addresses.emplace(buffer);
+
+                try {
+                    // Add to result list
+                    addresses.emplace(asio::ip::make_address_v4(buffer));
+                } catch(const asio::system_error& error) {
+                    continue;
+                }
             }
         }
 
