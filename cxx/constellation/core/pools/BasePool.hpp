@@ -138,10 +138,10 @@ namespace constellation::pools {
          * @param depart Boolean to indicate discovery or departure
          * @param user_data Pointer to the BasePool instance
          */
-        static void callback(chirp::DiscoveredService service, bool depart, std::any user_data);
+        static void callback(chirp::DiscoveredService service, chirp::ServiceStatus status, std::any user_data);
 
         /** Callback implementation */
-        void callback_impl(const chirp::DiscoveredService& service, bool depart);
+        void callback_impl(const chirp::DiscoveredService& service, chirp::ServiceStatus status);
 
         /** Main loop polling the registered sockets */
         void loop(const std::stop_token& stop_token);

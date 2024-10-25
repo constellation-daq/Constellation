@@ -90,18 +90,18 @@ void Controller::reached_state(CSCP::State /*state*/, bool /*global*/) {};
 void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/, std::size_t /*total*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
-void Controller::callback(chirp::DiscoveredService service, bool depart, std::any user_data) {
+void Controller::callback(chirp::DiscoveredService service, chirp::ServiceStatus status, std::any user_data) {
     auto* instance = std::any_cast<Controller*>(user_data);
-    instance->callback_impl(service, depart);
+    instance->callback_impl(service, status);
 }
 
-void Controller::callback_impl(const constellation::chirp::DiscoveredService& service, bool depart) {
+void Controller::callback_impl(const constellation::chirp::DiscoveredService& service, chirp::ServiceStatus status) {
 
     std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Add or drop, depending on message:
     const auto uri = service.to_uri();
-    if(depart) {
+    if(status == chirp::ServiceStatus::DEPARTED) {
         const auto it =
             std::ranges::find(connections_, service.host_id, [&](const auto& sat) { return sat.second.host_id; });
         if(it != connections_.end()) {
@@ -120,7 +120,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             // Propagate state change of the constellation
             reached_state(getLowestState(), isInGlobalState());
         }
-    } else {
+    } else if(status == chirp::ServiceStatus::DISCOVERED) {
         // New satellite connection
         Connection conn = {{*utils::global_zmq_context(), zmq::socket_type::req}, service.host_id, uri};
         conn.req.connect(uri);
@@ -157,6 +157,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             // Propagate state change of the constellation
             reached_state(getLowestState(), isInGlobalState());
         }
+    } else {
+        // FIXME we need to treat DEAD
     }
 }
 
