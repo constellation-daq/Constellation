@@ -242,14 +242,14 @@ void Manager::send_message(MessageType type, RegisteredService service) {
     sender_.sendBroadcast(asm_msg);
 }
 
-void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, bool depart) {
+void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
     const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
     std::vector<std::future<void>> futures {};
     futures.reserve(discover_callbacks_.size());
     for(const auto& callback : discover_callbacks_) {
         if(callback.service_id == discovered_service.identifier) {
             futures.emplace_back(
-                std::async(std::launch::async, callback.callback, discovered_service, depart, callback.user_data));
+                std::async(std::launch::async, callback.callback, discovered_service, status, callback.user_data));
         }
     }
     for(const auto& future : futures) {
@@ -313,7 +313,7 @@ void Manager::main_loop(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << to_string(chirp_msg.getServiceIdentifier()) << " service at "
                                         << raw_msg.address.to_string() << ":" << chirp_msg.getPort() << " discovered";
 
-                    call_discover_callbacks(discovered_service, false);
+                    call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
                 }
                 break;
             }
@@ -328,7 +328,7 @@ void Manager::main_loop(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << to_string(chirp_msg.getServiceIdentifier()) << " service at "
                                         << raw_msg.address.to_string() << ":" << chirp_msg.getPort() << " departed";
 
-                    call_discover_callbacks(discovered_service, true);
+                    call_discover_callbacks(discovered_service, ServiceStatus::DEPARTED);
                 }
                 break;
             }
