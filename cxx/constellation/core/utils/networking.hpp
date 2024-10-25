@@ -13,12 +13,11 @@
 #include <cstdint>
 #include <memory>
 #include <set>
-#include <string>
 #include <string_view>
 
 #include <asio.hpp>
 #include <ifaddrs.h>
-#include <net/if.h>
+#include <net/if.h> // NOLINT(misc-include-cleaner)
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -98,19 +97,20 @@ namespace constellation::utils {
                 continue;
             }
 
+            // NOLINTNEXTLINE(modernize-avoid-c-arrays)
             char buffer[NI_MAXHOST] {
                 0,
-            }; // NOLINT(modernize-avoid-c-arrays)
+            };
             if(getnameinfo(ifa->ifa_ifu.ifu_broadaddr, // NOLINT(cppcoreguidelines-pro-type-union-access)
                            sizeof(struct sockaddr_in),
-                           buffer,
+                           buffer, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
                            NI_MAXHOST,
                            nullptr,
                            0,
                            NI_NUMERICHOST) == 0) {
 
                 try {
-                    // Add to result list
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
                     addresses.emplace(asio::ip::make_address_v4(buffer));
                 } catch(const asio::system_error& error) {
                     continue;

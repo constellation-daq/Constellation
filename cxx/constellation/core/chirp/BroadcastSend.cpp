@@ -13,13 +13,14 @@
 #include <cstddef>
 #include <span>
 #include <string_view>
+#include <utility>
 
 #include "constellation/core/utils/networking.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::utils;
 
-BroadcastSend::BroadcastSend(const asio::ip::address_v4&, asio::ip::port_type port) {
+BroadcastSend::BroadcastSend(const asio::ip::address_v4& /*unused*/, asio::ip::port_type port) {
 
     // FIXME use brd address provided as argument if available!
 
