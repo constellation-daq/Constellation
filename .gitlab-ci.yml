@@ -553,12 +553,12 @@ docs:html:
     - .fedora-sphinx
   variables:
     SPHINXOPTS: -W --keep-going
-  script:
-    - pip install --no-build-isolation -e .[docs]
-    - make -C docs html
   needs:
     - job: docs:doxygen
       artifacts: true
+  script:
+    - pip install --no-build-isolation -e .[docs]
+    - make -C docs html
 
 # deploy stage
 
@@ -566,7 +566,7 @@ deploy:docs:
   stage: deploy
   needs:
     - job: docs:html
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   trigger:
     project: constellation/constellation.pages.desy.de
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
