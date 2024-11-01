@@ -240,6 +240,10 @@ build:python-3.11:
     - .build-py
     - .python-venv
     - .python-3.11
+  artifacts:
+    paths:
+      - dist
+    expire_in: 24 hour
 
 build:python-3.12:
   extends:
@@ -562,8 +566,26 @@ docs:html:
 
 # deploy stage
 
-deploy:docs:
+.deploy:
   stage: deploy
+
+deploy:pypi:
+  extends:
+    - .deploy
+    - .python-venv
+    - .python-3.11
+  needs:
+    - job: build:python-3.11
+      artifacts: true
+  script:
+    - pip install twine
+    - twine upload -r testpypi dist/* # FIXME
+  rules:
+    - if: $CI # $CI_COMMIT_TAG =~ /^v.*/ # FIXME
+
+deploy:docs:
+  extends:
+    - .deploy
   needs:
     - job: docs:html
   trigger:
