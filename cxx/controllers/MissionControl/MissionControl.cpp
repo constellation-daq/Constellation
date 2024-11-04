@@ -551,13 +551,7 @@ namespace {
         parser.add_argument("-l", "--level").help("log level").default_value("INFO");
 
         // Broadcast address (--brd)
-        std::string default_brd_addr {};
-        try {
-            default_brd_addr = asio::ip::address_v4::broadcast().to_string();
-        } catch(const asio::system_error& error) {
-            default_brd_addr = "255.255.255.255";
-        }
-        parser.add_argument("--brd").help("broadcast address").default_value(default_brd_addr);
+        parser.add_argument("--brd").help("broadcast address");
 
         // Any address (--any)
         std::string default_any_addr {};
@@ -626,13 +620,19 @@ int main(int argc, char** argv) {
         SinkManager::getInstance().setConsoleLevels(default_level.value());
 
         // Check broadcast and any address
-        asio::ip::address_v4 brd_addr {};
+        std::optional<asio::ip::address_v4> brd_addr {};
         try {
-            brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
+            const auto brd_string = parser.present("brd");
+            if(brd_string.has_value()) {
+                brd_addr = asio::ip::make_address_v4(brd_string.value());
+            }
         } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid broadcast address " << std::quoted(get_arg(parser, "brd"));
+            LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
             return 1;
+        } catch(const std::exception&) {
+            std::unreachable();
         }
+
         asio::ip::address_v4 any_addr {};
         try {
             any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
