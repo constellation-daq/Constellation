@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <optional>
 #include <span>
 #include <string_view>
 #include <utility>
@@ -20,11 +21,12 @@
 using namespace constellation::chirp;
 using namespace constellation::utils;
 
-BroadcastSend::BroadcastSend(const asio::ip::address_v4& /*unused*/, asio::ip::port_type port) {
+BroadcastSend::BroadcastSend(const std::optional<asio::ip::address_v4>& brd_address, asio::ip::port_type port) {
 
-    // FIXME use brd address provided as argument if available!
+    // Use brd address provided as argument if available
+    auto adrs = (brd_address.has_value() ? std::set<asio::ip::address_v4> {brd_address.value()} : get_broadcast_addresses());
 
-    for(const auto& brdaddr : get_broadcast_addresses()) {
+    for(const auto& brdaddr : adrs) {
         const auto& endpoint = endpoints_.emplace_back(brdaddr, port);
         auto socket = asio::ip::udp::socket(io_context_, endpoint.protocol());
 
