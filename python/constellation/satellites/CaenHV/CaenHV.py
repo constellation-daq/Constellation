@@ -109,12 +109,12 @@ class CaenHVSatellite(Satellite):
     #    self.do_initializing(configuration)
     #    return self.do_launching(None)
 
-    def do_launching(self, payload: Any) -> str:
+    def do_launching(self) -> str:
         """Power up the HV."""
         nch = self._power_up()
         return f"Launched and powered {nch} channels."
 
-    def do_interrupting(self, payload: Any) -> str:
+    def do_interrupting(self) -> str:
         """Power down but do not disconnect (e.g. keep monitoring)."""
         self._power_down()
         return "Interrupted and stopped HV."

@@ -19,10 +19,10 @@ transitional states are implemented by overriding methods provided by the `Satel
 For a new satellite, the following transitional state actions **should be implemented**:
 
 * `def do_initializing(self, config: Configuration)`
-* `def do_launching(self, payload: any)`
-* `def do_landing(self, payload: any)`
-* `def do_starting(self, payload: any)`
-* `def do_stopping(self, payload: any)`
+* `def do_launching(self)`
+* `def do_landing(self)`
+* `def do_starting(self, run_identifier: str)`
+* `def do_stopping(self)`
 
 The following transitional state actions are optional:
 

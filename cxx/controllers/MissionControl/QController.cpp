@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <iterator>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -26,11 +27,13 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
@@ -51,12 +54,11 @@ QVariant QController::data(const QModelIndex& index, int role) const {
         return {};
     }
 
-    const std::lock_guard connection_lock {connection_mutex_};
-
-    if(index.row() >= static_cast<int>(connections_.size()) || index.column() >= static_cast<int>(headers_.size())) {
+    if(index.row() >= static_cast<int>(getConnectionCount()) || index.column() >= static_cast<int>(headers_.size())) {
         return {};
     }
 
+    const std::lock_guard connection_lock {connection_mutex_};
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
@@ -86,11 +88,19 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     }
     case 4: {
         // Last command response type
-        return QString::fromStdString(constellation::utils::to_string(conn.last_cmd_type));
+        return getStyledResponse(conn.last_cmd_type);
     }
     case 5: {
         // Last command response message
         return QString::fromStdString(conn.last_cmd_verb);
+    }
+    case 6: {
+        // Heartbeat period
+        return QString::fromStdString(to_string(conn.interval));
+    }
+    case 7: {
+        // Remaining lives:
+        return conn.lives;
     }
     default: {
         return QString("");
@@ -154,6 +164,29 @@ QString QController::getStyledState(CSCP::State state, bool global) {
     }
 }
 
+QString QController::getStyledResponse(CSCP1Message::Type type) {
+
+    const auto type_string = QString::fromStdString(constellation::utils::to_string(type));
+    switch(type) {
+    case CSCP1Message::Type::REQUEST:
+    case CSCP1Message::Type::NOTIMPLEMENTED: {
+        return "<font color='gray'>New</b>" + type_string + "</font>";
+    }
+    case CSCP1Message::Type::SUCCESS: {
+        return "<font color='green'>" + type_string + "</font>";
+    }
+    case CSCP1Message::Type::INCOMPLETE:
+    case CSCP1Message::Type::INVALID:
+    case CSCP1Message::Type::UNKNOWN: {
+        return "<font color='orange'>" + type_string + "</font>";
+    }
+    case CSCP1Message::Type::ERROR: {
+        return "<font color='darkred'>" + type_string + "</font>";
+    }
+    default: std::unreachable();
+    }
+}
+
 void QController::reached_state(CSCP::State state, bool global) {
     LOG(logger_, DEBUG) << "Reached new " << (global ? "global" : "lowest") << " state " << to_string(state);
     emit reachedState(state, global);
@@ -173,7 +206,8 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
         emit connectionsChanged(total);
     }
 
-    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(position), headers_.size() - 1));
+    emit dataChanged(createIndex(static_cast<int>(position), 0),
+                     createIndex(static_cast<int>(position), headers_.size() - 1));
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
@@ -227,7 +261,23 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
         }
     }
 
+    emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), headers_.size() - 1));
     return {};
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
+    auto replies = sendCommands(std::move(verb), payload);
+
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
+    return replies;
+}
+
+std::map<std::string, CSCP1Message> QController::sendQCommands(const std::string& verb,
+                                                               const std::map<std::string, CommandPayload>& payloads) {
+    auto replies = sendCommands(verb, payloads);
+
+    emit dataChanged(createIndex(0, 0), createIndex(static_cast<int>(getConnectionCount() - 1), headers_.size() - 1));
+    return replies;
 }
 
 QControllerSortProxy::QControllerSortProxy(QObject* parent) : QSortFilterProxyModel(parent) {}

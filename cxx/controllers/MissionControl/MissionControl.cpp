@@ -36,6 +36,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QLinearGradient>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMetaType>
@@ -73,6 +74,17 @@ void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem
 
     painter->save();
 
+    // Get sibling for column 7 (where the lives are stored) for current row:
+    const auto lives = index.sibling(index.row(), 7).data().toInt();
+    if(lives < 3 && index.column() >= 6) {
+        const auto alpha = (3 - lives) * 85;
+        QLinearGradient gradient(
+            options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
+        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 6 ? 0 : alpha)));
+        gradient.setColorAt(1, QColor(255, 0, 0, alpha));
+        painter->fillRect(options.rect, QBrush(gradient));
+    }
+
     QTextDocument doc;
     doc.setHtml(options.text);
 
@@ -96,11 +108,25 @@ QSize ConnectionItemDelegate::sizeHint(const QStyleOptionViewItem& option, const
     return {static_cast<int>(doc.idealWidth()), static_cast<int>(doc.size().height())};
 }
 
-MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
-    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP") {
+FileSystemModel::FileSystemModel(QObject* parent) : QFileSystemModel(parent) {}
 
+QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
+    if(role == Qt::DisplayRole && index.column() == 0) {
+        return QDir::toNativeSeparators(filePath(index));
+    }
+    return QFileSystemModel::data(index, role);
+}
+
+MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
+    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP"),
+      run_id_validator_(QRegularExpression("^[\\w-]+$"), this), config_file_fs_(&config_file_completer_) {
+
+    // Register types used in signals & slots:
     qRegisterMetaType<QModelIndex>("QModelIndex");
     qRegisterMetaType<constellation::protocol::CSCP::State>("constellation::protocol::CSCP::State");
+    qRegisterMetaType<std::size_t>("std::size_t");
+
+    // Set up the user interface
     setupUi(this);
 
     // Set initial values for header bar
@@ -115,6 +141,23 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->setItemDelegate(&item_delegate_);
     viewConn->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(viewConn, &QTreeView::customContextMenuRequested, this, &MissionControl::custom_context_menu);
+
+    // Set default column width of main connection view
+    viewConn->header()->setSectionResizeMode(0, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(0, 100);
+    viewConn->header()->setSectionResizeMode(1, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(1, 100);
+    viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(2, 120);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(3, 180);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(4, 140);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(6, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(6, 80);
+    viewConn->header()->setSectionResizeMode(7, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(7, 40);
 
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {
@@ -160,6 +203,14 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         update_button_states(state);
         labelState->setText(QController::getStyledState(state, global));
     });
+
+    // Attach validators & completers:
+    runIdentifier->setValidator(&run_id_validator_);
+    config_file_fs_.setRootPath({});
+    config_file_completer_.setMaxVisibleItems(10);
+    config_file_completer_.setModel(&config_file_fs_);
+    config_file_completer_.setCompletionMode(QCompleter::InlineCompletion);
+    txtConfigFileName->setCompleter(&config_file_completer_);
 
     // Start the controller
     runcontrol_.start();
@@ -227,7 +278,7 @@ void MissionControl::on_btnInit_clicked() {
         return;
     }
 
-    for(auto& response : runcontrol_.sendCommands("initialize", configs.value())) {
+    for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
@@ -244,26 +295,26 @@ void MissionControl::on_btnShutdown_clicked() {
        QMessageBox::Cancel) {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
-        for(auto& response : runcontrol_.sendCommands("shutdown")) {
+        for(auto& response : runcontrol_.sendQCommands("shutdown")) {
             LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << to_string(response.second.getVerb().first);
         }
     }
 }
 
 void MissionControl::on_btnConfig_clicked() {
-    for(auto& response : runcontrol_.sendCommands("launch")) {
+    for(auto& response : runcontrol_.sendQCommands("launch")) {
         LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
-    for(auto& response : runcontrol_.sendCommands("land")) {
+    for(auto& response : runcontrol_.sendQCommands("land")) {
         LOG(logger_, DEBUG) << "Land: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
-    for(auto& response : runcontrol_.sendCommands("start", current_run_.toStdString())) {
+    for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 
@@ -272,7 +323,7 @@ void MissionControl::on_btnStart_clicked() {
 }
 
 void MissionControl::on_btnStop_clicked() {
-    for(auto& response : runcontrol_.sendCommands("stop")) {
+    for(auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << to_string(response.second.getVerb().first);
     }
 

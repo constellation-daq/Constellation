@@ -132,10 +132,10 @@ RUN -[#blue,bold]u-> stopping : stop
 RUN -[dashed]u--> interrupting
 stopping -[dotted]u-> ORBIT
 
-SAFE -[#blue,bold]l-> INIT : recover
+SAFE -[#blue,bold]l-> initializing : initialize
 SAFE -u-> [*]
 interrupting -[dotted]u-> SAFE
-ERROR -[#blue,bold]--> initializing : reset
+ERROR -[#blue,bold]--> initializing : initialize
 ERROR -u-> [*]
 @enduml
 ```

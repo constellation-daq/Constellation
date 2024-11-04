@@ -11,6 +11,7 @@
 
 #include <array>
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <string>
 
@@ -22,6 +23,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 /**
@@ -96,6 +98,35 @@ public:
                                             const CommandPayload& payload = {});
 
     /**
+     * @brief Send a command to all connected satellites
+     * @details This method allows to send command message to all connected satellites. The message is formed from the
+     * provided verb and optional payload. The payload is the same for all satellites. The response from all satellites
+     * is returned as a map. After the responses have been collected, a dataChanged signal is emitted.
+     *
+     * @param verb Command
+     * @param payload Optional payload for this command message
+     *
+     * @return Map of satellite canonical names and their CSCP response messages
+     */
+    std::map<std::string, constellation::message::CSCP1Message> sendQCommands(std::string verb,
+                                                                              const CommandPayload& payload = {});
+
+    /**
+     * @brief Send a command to all connected satellites
+     * @details This method allows to send command message to all connected satellites. The message is formed
+     * individually for each satellite from the provided verb and the payload entry in the map for the given satellite.
+     * Missing entries in the payload table will receive an empty payload. The response from all satellites is
+     * returned as a map. After the responses have been collected, a dataChanged signal is emitted.
+     *
+     * @param verb Command
+     * @param payloads Map of payloads for each target satellite.
+     *
+     * @return Map of satellite canonical names and their CSCP response messages
+     */
+    std::map<std::string, constellation::message::CSCP1Message>
+    sendQCommands(const std::string& verb, const std::map<std::string, CommandPayload>& payloads);
+
+    /**
      * @brief Helper to obtain the list of available commands for a single satellite
      * @details This method allows requesting the commands by addressing the satellite in question via its QModelIndex
      * instead of its name. This can be used e.g. for context menu actions.
@@ -122,6 +153,15 @@ public:
      * @return String for the state display
      */
     static QString getStyledState(constellation::protocol::CSCP::State state, bool global);
+
+    /**
+     * @brief Helper to obtain the CSCP message type string with color and formatting
+     *
+     * @param type CSCP message type
+     *
+     * @return String for the CSCP response display
+     */
+    static QString getStyledResponse(constellation::message::CSCP1Message::Type type);
 
 signals:
     /**
@@ -158,8 +198,8 @@ protected:
 
 private:
     // Column headers of the connection details
-    static constexpr std::array<const char*, 6> headers_ {
-        "Type", "Name", "State", "Connection", "Last response", "Last message"};
+    static constexpr std::array<const char*, 8> headers_ {
+        "Type", "Name", "State", "Connection", "Last response", "Last message", "Heartbeat", "Lives"};
 };
 
 class QControllerSortProxy : public QSortFilterProxyModel {
