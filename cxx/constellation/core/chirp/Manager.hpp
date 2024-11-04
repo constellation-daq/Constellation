@@ -10,6 +10,7 @@
 #pragma once
 
 #include <any>
+#include <cstdint>
 #include <mutex>
 #include <set>
 #include <stop_token>

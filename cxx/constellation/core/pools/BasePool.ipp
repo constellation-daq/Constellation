@@ -225,8 +225,8 @@ namespace constellation::pools {
                 socket_it->second.disconnect(service.to_uri());
                 socket_it->second.close();
             } catch(const zmq::error_t& error) {
-                LOG(pool_logger_, DEBUG)
-                    << "Socket could not be disconnected properly for " << socket_it->first.to_uri() << ": " << error.what();
+                LOG(pool_logger_, DEBUG) << "Socket could not be disconnected properly for " << socket_it->first.to_uri()
+                                         << ": " << error.what();
             }
 
             sockets_.erase(socket_it);
@@ -240,7 +240,8 @@ namespace constellation::pools {
     }
 
     template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
-    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback_impl(const chirp::DiscoveredService& service, chirp::ServiceStatus status) {
+    void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback_impl(const chirp::DiscoveredService& service,
+                                                                chirp::ServiceStatus status) {
         LOG(pool_logger_, TRACE) << "Callback for " << service.to_uri() << ", status " << utils::to_string(status);
 
         if(status == chirp::ServiceStatus::DEPARTED) {

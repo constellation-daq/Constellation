@@ -142,7 +142,7 @@ namespace constellation::pools {
          * with the central polling mechanism
          *
          * @param service Discovered service
-         * @param depart Boolean to indicate discovery or departure
+         * @param status Enum to indicate if the service is discovered, departed or dead
          * @param user_data Pointer to the BasePool instance
          */
         static void callback(chirp::DiscoveredService service, chirp::ServiceStatus status, std::any user_data);
