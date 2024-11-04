@@ -231,7 +231,7 @@ namespace constellation::pools {
 
             sockets_.erase(socket_it);
             socket_count_.store(sockets_.size());
-            LOG(pool_logger_, DEBUG) << "Removed from " << service.to_uri();
+            LOG(pool_logger_, DEBUG) << "Removed " << service.to_uri();
 
             // Call removed callback
             sockets_lock.unlock();

@@ -258,7 +258,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
         std::this_thread::sleep_for(1ms);
     }
     cb_test_data.executed = false;
-    // Test that we got DEPART callback
+    // Test that we got DEAD callback
     REQUIRE(cb_test_data.status == ServiceStatus::DEAD);
 
     // Unregister callback
