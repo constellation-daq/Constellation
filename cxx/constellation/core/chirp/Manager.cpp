@@ -18,6 +18,7 @@
 #include <future>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -97,14 +98,15 @@ void Manager::setAsDefaultInstance() {
     Manager::default_manager_instance_ = this;
 }
 
-Manager::Manager(const asio::ip::address_v4& brd_address,
+Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
                  const asio::ip::address_v4& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
     : receiver_(any_address, CHIRP_PORT), sender_(brd_address, CHIRP_PORT), group_id_(MD5Hash(group_name)),
       host_id_(MD5Hash(host_name)), logger_("CHIRP") {
 
-    LOG(logger_, TRACE) << "Using broadcast address " << brd_address.to_string();
+    LOG_IF(logger_, TRACE, brd_address.has_value())
+        << "Using provided broadcast address " << brd_address.value().to_string();
     LOG(logger_, TRACE) << "Using any address " << any_address.to_string();
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
