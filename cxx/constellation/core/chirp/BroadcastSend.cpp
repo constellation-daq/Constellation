@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <optional>
+#include <set>
 #include <span>
 #include <string_view>
 #include <utility>

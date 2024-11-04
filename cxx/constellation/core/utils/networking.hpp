@@ -16,11 +16,13 @@
 #include <string_view>
 
 #include <asio.hpp>
+#ifndef _WIN32
 #include <ifaddrs.h>
 #include <net/if.h> // NOLINT(misc-include-cleaner)
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#endif
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
@@ -76,6 +78,16 @@ namespace constellation::utils {
     CNSTLN_API inline std::set<asio::ip::address_v4> get_broadcast_addresses() {
         std::set<asio::ip::address_v4> addresses;
 
+#ifdef _WIN32
+        // On MinGW use the default broadcast address of the system
+        asio::ip::address_v4 default_brd_addr;
+        try {
+            default_brd_addr = asio::ip::address_v4::broadcast();
+        } catch(const asio::system_error& error) {
+            default_brd_addr = asio::ip::make_address_v4("255.255.255.255");
+        }
+        addresses.emplace(default_brd_addr);
+#else
         // Obtain linked list of all local network interfaces
         struct ifaddrs* addrs = nullptr;
         struct ifaddrs* ifa = nullptr;
@@ -119,6 +131,7 @@ namespace constellation::utils {
         }
 
         freeifaddrs(addrs);
+#endif
         return addresses;
     }
 
