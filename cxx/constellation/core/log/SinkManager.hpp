@@ -15,6 +15,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <spdlog/async_logger.h>
@@ -89,8 +90,8 @@ namespace constellation::log {
          * @param key Metric key
          * @param metric Metric object
          */
-        void sendCMDPMetric(const std::string& key, const std::shared_ptr<metrics::Metric>& metric) {
-            return cmdp_sink_->sinkStats(key, metric);
+        void sendCMDPMetric(std::string key, const std::shared_ptr<metrics::Metric>& metric) {
+            cmdp_sink_->sinkStats(std::move(key), metric);
         }
 
         /**
