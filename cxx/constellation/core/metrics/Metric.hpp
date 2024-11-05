@@ -13,11 +13,11 @@
 #include <cstdint>
 #include <functional>
 #include <initializer_list>
+#include <memory>
 #include <set>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <variant>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Value.hpp"
@@ -27,7 +27,7 @@
 namespace constellation::metrics {
 
     /** Metrics types */
-    enum class Type : std::uint8_t {
+    enum class MetricType : std::uint8_t {
         /** Always keep the latest value, replace earlier ones */
         LAST_VALUE = 1,
         /** Sum every new value to previously received ones */
@@ -37,45 +37,32 @@ namespace constellation::metrics {
         /** Calculate the rate from the value over a given time interval */
         RATE = 4,
     };
-    using enum Type;
+    using enum MetricType;
 
     /**
-     * @class Metric
-     * @brief This class represents a metric for data quality monitoring or statistics purposes.
+     * @brief This class represents a metric for data quality monitoring or statistics purposes
      *
-     *  @details It comprises a value, a unit and a type. The type defines how the value should be treated, i.e. if always
-     *  the last transmitted value should be displayed, if an average of the values should be calculated or if they should
-     *  be accumulated.
+     * @details It comprises a name, a unit and a type. The type defines how the value should be treated, i.e. if always the
+     *          last transmitted value should be displayed, if an average of the values should be calculated or if they
+     *          should be accumulated.
      */
-    class CNSTLN_API Metric {
+    class Metric {
     public:
         /**
-         * @brief Metrics constructor
+         * @brief Metric constructor
          *
-         * @param unit Unit of this metric as human readable string
+         * @param name Name of the metric
+         * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
-         * @param initial_value Initial value
          */
-        Metric(std::string unit, Type type, config::Value&& initial_value)
-            : unit_(std::move(unit)), type_(type), value_(std::move(initial_value)) {}
-
-        Metric() : type_(LAST_VALUE), value_(std::monostate {}) {};
-        virtual ~Metric() noexcept = default;
-
-        // Default copy/move constructor/assignment
-        Metric(const Metric&) = default;
-        Metric& operator=(const Metric&) = default;
-        Metric(Metric&&) noexcept = default;
-        Metric& operator=(Metric&&) = default;
-
-        /** Setting or updating the value */
-        void set(config::Value&& value) { value_ = std::move(value); }
+        Metric(std::string name, std::string unit, MetricType type)
+            : name_(std::move(name)), unit_(std::move(unit)), type_(type) {}
 
         /**
-         * @brief Obtain current metric value
-         * @return Current value
+         * @brief Obtain the name of the metrics
+         * @return Name of the metric
          */
-        template <typename T> T value() const { return value_.get<T>(); }
+        std::string_view name() const { return name_; }
 
         /**
          * @brief Obtain unit as human-readable string
@@ -87,151 +74,103 @@ namespace constellation::metrics {
          * @brief Obtain type of the metric
          * @return Metric type
          */
-        Type type() const { return type_; }
-
-        /** Assemble metric via msgpack for message payload */
-        message::PayloadBuffer assemble() const;
-
-        /** Disassemble metric from message payload */
-        static Metric disassemble(const message::PayloadBuffer& message);
+        MetricType type() const { return type_; }
 
     private:
+        std::string name_;
         std::string unit_;
-        Type type_;
-        config::Value value_ {};
+        MetricType type_;
     };
 
     /**
-     * @class MetricTimer
-     * @brief Helper class for the controlled emission of the metric
-     * @details This class provides check on whether the value has changed or the condition for an distribution is met. The
-     * condition method is purely virtual and needs to be implemented by derived timers with a specific behavior. This class
-     * also allows to limit the distribution of the metric to certain states of the FSM.
+     * @brief This class represents a timed metric for data quality monitoring or statistics purposes
+     *
+     * @details A timed metric is a metric that is polled in regular intervals. It requires an interval, a value callback,
+     *          and a list of states where the callback is allowed to be called.
      */
-    class CNSTLN_API MetricTimer : public Metric {
+    class TimedMetric : public Metric {
     public:
         /**
-         * @brief MetricTimer constructor
+         * @brief Timed metric constructor
          *
-         * @param unit Unit of the metric
+         * @param name Name of the metric
+         * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
-         * @param states List of states in which this metric should be distributed
-         * @param initial_value Initial metric value
+         * @param interval Interval in which to send the metric
+         * @param value_callback Callback to determine the current value of the metric
+         * @param allowed_states Set of states in which the value callback is allowed to be called
          */
-        MetricTimer(std::string unit,
-                    Type type,
-                    std::initializer_list<protocol::CSCP::State> states,
-                    config::Value&& initial_value = {})
-            : Metric(std::move(unit), std::move(type), std::move(initial_value)), states_(states) {}
+        TimedMetric(std::string name,
+                    std::string unit,
+                    MetricType type,
+                    std::chrono::nanoseconds interval,
+                    std::function<config::Value()> value_callback,
+                    std::initializer_list<protocol::CSCP::State> allowed_states = {})
+            : Metric(std::move(name), std::move(unit), type), interval_(interval),
+              value_callback_(std::move(value_callback)), allowed_states_(allowed_states) {}
 
         /**
-         * @brief Checks if this metric should be distributed now
-         * @details This method checks if the value has changed since the last distribution, if the current state matches the
-         * states in which the metric should be distributed, and if the condition for distribution is fulfilled.
-         *
-         * @param state Current state of the FSM
-         * @return True if the metric should be sent now, false otherwise
+         * @brief Obtain interval of the metric
+         * @return Interval in nanoseconds
          */
-        bool check(protocol::CSCP::State state);
+        std::chrono::nanoseconds interval() const { return interval_; }
 
         /**
-         * @brief Helper to check when the next time of distribution is expected
-         * @details This method can overwritten by derived timer classes to give an estimate when their next distribution
-         * condition is met. This helps the sending thread to sleep until the next metric is sent
-         * @return Time point in the future when the next metric distribution is expected
+         * @brief Evaluate the value callback to get the current value of the metric
+         * @warning `isAllowed()` should be called to check if this can be safely executed
+         * @return Current value
          */
-        virtual std::chrono::high_resolution_clock::time_point nextTrigger() const {
-            return std::chrono::high_resolution_clock::time_point::max();
+        config::Value currentValue() { return value_callback_(); }
+
+        /**
+         * @brief Check if the value callback of the metric is allowed to be executed in the current state
+         * @return True if the current value can be fetched, false otherwise
+         */
+        bool isAllowed(protocol::CSCP::State state) const {
+            return allowed_states_.empty() || allowed_states_.contains(state);
         }
 
+    private:
+        std::chrono::nanoseconds interval_;
+        std::function<config::Value()> value_callback_;
+        std::set<protocol::CSCP::State> allowed_states_;
+    };
+
+    /**
+     * @brief Class containing a pointer to a metric and a corresponding metric value
+     */
+    class MetricValue {
+    public:
         /**
-         * @brief Update method for the metric value
-         * @details This sets the new value of the metric and marks it as changed if the new value is different from the old
+         * @brief Metric value constructor
          *
-         * @param value Metric value
+         * @param metric Shared pointer to a metric
+         * @param value Value corresponding to the metric
          */
-        virtual void update(config::Value&& value);
+        MetricValue(std::shared_ptr<Metric> metric, config::Value&& value)
+            : metric_(std::move(metric)), value_(std::move(value)) {}
 
-    protected:
         /**
-         * @brief Purely virtual method to be overwritten by derived classes for defining distribution conditions
-         * @details Derived classes can use this interface to define conditions such as a specific time interval or a number
-         * of updates of the metric before it is sent.
-         * @return True if the condition is met, false otherwise
+         * @brief Obtain the underlying metric
+         * @return Shared pointer tot the metric
          */
-        virtual bool condition() = 0;
+        std::shared_ptr<Metric> getMetric() const { return metric_; }
+
+        /**
+         * @brief Obtain the metric value
+         * @return Value of the metric
+         */
+        const config::Value& getValue() const { return value_; }
+
+        /** Assemble metric via msgpack for message payload */
+        CNSTLN_API message::PayloadBuffer assemble() const;
+
+        /** Disassemble metric from message payload */
+        CNSTLN_API static MetricValue disassemble(std::string name, const message::PayloadBuffer& message);
 
     private:
-        bool changed_ {true};
-        std::set<protocol::CSCP::State> states_;
+        std::shared_ptr<Metric> metric_;
+        config::Value value_;
     };
 
-    /**
-     * @class TimedMetric
-     * @brief Metric timer to send metric values in regular intervals
-     * @details This timer is configured with a time interval, and metrics will be sent every time this interval has passed.
-     */
-    class CNSTLN_API TimedMetric : public MetricTimer {
-    public:
-        TimedMetric(std::string unit,
-                    Type type,
-                    std::chrono::high_resolution_clock::duration interval,
-                    std::initializer_list<protocol::CSCP::State> states,
-                    config::Value&& initial_value = {})
-            : MetricTimer(std::move(unit), type, states, std::move(initial_value)), interval_(interval),
-              last_trigger_(std::chrono::high_resolution_clock::now()),
-              last_check_(std::chrono::high_resolution_clock::now()) {}
-
-        bool condition() override;
-        std::chrono::high_resolution_clock::time_point nextTrigger() const override;
-
-    private:
-        std::chrono::high_resolution_clock::duration interval_;
-        std::chrono::high_resolution_clock::time_point last_trigger_;
-        std::chrono::high_resolution_clock::time_point last_check_;
-    };
-
-    /**
-     * @class TimedAutoMetric
-     * @brief Metric timer to send metric values in regular intervals which evaluates the metric value independently
-     * @details This timer is configured with a time interval, and metrics will be sent every time this interval has passed.
-     */
-    class CNSTLN_API TimedAutoMetric : public TimedMetric {
-    public:
-        TimedAutoMetric(std::string unit,
-                        Type type,
-                        std::chrono::high_resolution_clock::duration interval,
-                        std::initializer_list<protocol::CSCP::State> states,
-                        std::function<config::Value()> func)
-            : TimedMetric(std::move(unit), type, interval, states), func_(std::move(func)) {}
-
-        bool condition() override;
-
-    private:
-        std::function<config::Value()> func_;
-    };
-
-    /**
-     * @class TriggeredMetric
-     * @brief Metric timer so send metric values after N updates or update attempts
-     * @details This timer is configured with a trigger number, and the metric is distributed every time the update method of
-     * this timer has been called N times. This can be useful to e.g. send a metric for data quality monitoring not at
-     * regular time intervals but after every 100 data recordings.
-     */
-    class CNSTLN_API TriggeredMetric : public MetricTimer {
-    public:
-        TriggeredMetric(std::string unit,
-                        Type type,
-                        std::size_t triggers,
-                        std::initializer_list<protocol::CSCP::State> states,
-                        config::Value&& initial_value);
-
-        void update(config::Value&& value) override;
-
-        bool condition() override;
-
-    private:
-        std::size_t triggers_;
-        std::size_t current_triggers_ {0};
-    };
 } // namespace constellation::metrics
