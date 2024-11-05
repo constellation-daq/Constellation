@@ -148,10 +148,10 @@ pip install --no-build-isolation --editable .
 ```
 
 To install optional components of the framework, you can install those by replacing `.` with `.[component]`.
-A recommended installation includes the `cli` and `hdf5` components:
+A recommended installation includes the `cli` and `influx` components:
 
 ```sh
-pip install --no-build-isolation --editable .[cli,hdf5]
+pip install --no-build-isolation --editable .[cli,influx]
 ```
 
 :::::
