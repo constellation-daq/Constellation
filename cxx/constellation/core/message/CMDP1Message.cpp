@@ -140,9 +140,10 @@ CMDP1LogMessage CMDP1LogMessage::disassemble(zmq::multipart_t& frames) {
     return {CMDP1Message::disassemble(frames)};
 }
 
-CMDP1StatMessage::CMDP1StatMessage(std::string topic, CMDP1Message::Header header, std::shared_ptr<metrics::Metric> metric)
-    : CMDP1Message("STAT/" + transform(topic, ::toupper), std::move(header), metric->assemble()),
-      stat_topic_(std::move(topic)), metric_(std::move(metric)) {}
+CMDP1StatMessage::CMDP1StatMessage(Header header, metrics::MetricValue metric_value)
+    : CMDP1Message(
+          "STAT/" + transform(metric_value.getMetric()->name(), ::toupper), std::move(header), metric_value.assemble()),
+      metric_value_(std::move(metric_value)) {}
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
     if(!isStatMessage()) {
@@ -150,10 +151,10 @@ CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::m
     }
 
     // Assign topic after prefix "STAT/"
-    stat_topic_ = getTopic().substr(5);
+    const auto topic = std::string(getTopic().substr(5));
 
     try {
-        metric_ = std::make_shared<Metric>(Metric::disassemble(get_payload()));
+        metric_value_ = MetricValue::disassemble(topic, get_payload());
     } catch(const std::invalid_argument& e) {
         throw MessageDecodingError(e.what());
     }

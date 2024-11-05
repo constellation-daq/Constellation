@@ -45,6 +45,7 @@
 using namespace constellation;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
@@ -204,14 +205,13 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
         .send(pub_socket_);
 }
 
-void CMDPSink::sinkStats(std::string key, const std::shared_ptr<metrics::Metric>& metric) {
-
-    // Lock the mutex - automatically done for regular logging:
-    const std::lock_guard<std::mutex> lock(mutex_);
-
+void CMDPSink::sinkMetric(MetricValue metric_value) {
     // Create message header
     auto msghead = CMDP1Message::Header(sender_name_, std::chrono::system_clock::now());
 
+    // Lock the mutex - automatically done for regular logging:
+    const std::lock_guard<std::mutex> lock {mutex_};
+
     // Create and send CMDP message
-    CMDP1StatMessage(std::move(key), std::move(msghead), metric).assemble().send(pub_socket_);
+    CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
 }

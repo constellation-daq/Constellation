@@ -150,6 +150,8 @@ namespace constellation::metrics {
         MetricValue(std::shared_ptr<Metric> metric, config::Value&& value)
             : metric_(std::move(metric)), value_(std::move(value)) {}
 
+        MetricValue() = default;
+
         /**
          * @brief Obtain the underlying metric
          * @return Shared pointer tot the metric

@@ -70,10 +70,9 @@ namespace constellation::log {
         /**
          * Sink metric
          *
-         * @param key Name of the metric
-         * @param metric Metric to sink
+         * @param metric_value Metric value to sink
          */
-        void sinkStats(std::string key, const std::shared_ptr<metrics::Metric>& metric);
+        void sinkMetric(metrics::MetricValue metric_value);
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) final;

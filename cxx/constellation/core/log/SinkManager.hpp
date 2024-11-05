@@ -87,12 +87,9 @@ namespace constellation::log {
         /**
          * Send metric via the CMDP sink
          *
-         * @param key Metric key
-         * @param metric Metric object
+         * @param metric_value Metric value to sink
          */
-        void sendCMDPMetric(std::string key, const std::shared_ptr<metrics::Metric>& metric) {
-            cmdp_sink_->sinkStats(std::move(key), metric);
-        }
+        void sendCMDPMetric(metrics::MetricValue metric_value) { cmdp_sink_->sinkMetric(std::move(metric_value)); }
 
         /**
          * @brief Get an asynchronous spdlog logger with a given topic

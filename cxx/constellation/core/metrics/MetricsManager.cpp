@@ -9,94 +9,159 @@
 
 #include "MetricsManager.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
+#include <functional>
 #include <iomanip>
-#include <map>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <stop_token>
+#include <string>
 #include <thread>
+#include <utility>
 
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
-#include "constellation/core/message/CMDP1Message.hpp"
-#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 
+using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace constellation::protocol;
+using namespace std::chrono_literals;
 
 MetricsManager::MetricsManager(std::function<CSCP::State()> state_callback)
     : logger_("STAT"), state_callback_(std::move(state_callback)), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
 MetricsManager::~MetricsManager() noexcept {
     thread_.request_stop();
-    cv_.notify_all();
+    cv_.notify_one();
 
     if(thread_.joinable()) {
         thread_.join();
     }
 }
 
-void MetricsManager::setMetric(std::string_view topic, config::Value&& value) {
-    const std::lock_guard lock {mt_};
-    auto it = metrics_.find(topic);
-    if(it != metrics_.end()) {
-        it->second->update(std::move(value));
+void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
+    const auto name = std::string(metric->name());
 
-        // Notify if this is a triggered metric:
-        if(std::dynamic_pointer_cast<TriggeredMetric>(it->second)) {
-            cv_.notify_all();
-        }
+    std::unique_lock metrics_lock {metrics_mutex_};
+    const auto [it, inserted] = metrics_.emplace(name, std::move(metric));
+    metrics_lock.unlock();
+
+    if(!inserted) {
+        throw std::invalid_argument("Metric already registered");
     }
+
+    LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(name);
 }
 
-void MetricsManager::unregisterMetric(std::string_view topic) {
-    const std::lock_guard lock {mt_};
-    auto it = metrics_.find(topic);
+void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
+    const auto name = std::string(metric->name());
+
+    // Add to metrics map
+    std::unique_lock metrics_lock {metrics_mutex_};
+    const auto [it, inserted] = metrics_.emplace(name, metric);
+    metrics_lock.unlock();
+
+    if(!inserted) {
+        throw std::invalid_argument("Metric already registered");
+    }
+
+    // Now also add to timed metrics map
+    std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
+    timed_metrics_.emplace(name, TimedMetricEntry(std::move(metric), std::chrono::steady_clock::time_point()));
+    timed_metrics_lock.unlock();
+
+    // Note: no need to check if in timed_metrics map since it would have been in metrics map as well
+
+    LOG(logger_, DEBUG) << "Successfully registered timed metric " << std::quoted(name);
+}
+
+void MetricsManager::unregisterMetric(std::string_view name) {
+    std::unique_lock metrics_lock {metrics_mutex_};
+    auto it = metrics_.find(name);
     if(it != metrics_.end()) {
         metrics_.erase(it);
     }
+    metrics_lock.unlock();
+
+    std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
+    auto it_timed = timed_metrics_.find(name);
+    if(it_timed != timed_metrics_.end()) {
+        timed_metrics_.erase(it_timed);
+    }
+    timed_metrics_lock.unlock();
 }
 
-void MetricsManager::registerMetric(std::string_view topic, std::shared_ptr<MetricTimer> metric_timer) {
-    const std::lock_guard lock {mt_};
-    const auto [it, inserted] = metrics_.insert_or_assign(std::string(topic), metric_timer);
+void MetricsManager::unregisterMetrics() {
+    std::unique_lock metrics_lock {metrics_mutex_};
+    metrics_.clear();
+    metrics_lock.unlock();
 
-    if(!inserted) {
-        LOG(logger_, INFO) << "Replaced already registered metric " << std::quoted(topic);
-    }
+    std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
+    timed_metrics_.clear();
+    timed_metrics_lock.unlock();
+}
 
-    LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(topic);
-    cv_.notify_all();
+void MetricsManager::triggerMetric(std::string name, Value value) {
+    // Only emplace name and value, do the lookup in the run thread
+    std::unique_lock triggered_queue_lock {triggered_queue_mutex_};
+    triggered_queue_.emplace(std::move(name), std::move(value));
+    triggered_queue_lock.unlock();
+    cv_.notify_one();
 }
 
 void MetricsManager::run(const std::stop_token& stop_token) {
-
     LOG(logger_, TRACE) << "Started metric dispatch thread";
 
-    std::unique_lock<std::mutex> lock {mt_};
+    // Notify condition variable when stop is requested
+    const std::stop_callback stop_callback {stop_token, [&]() { cv_.notify_one(); }};
+
+    auto wakeup = std::chrono::steady_clock::now() + 1s;
+
     while(!stop_token.stop_requested()) {
+        std::unique_lock triggered_queue_lock {triggered_queue_mutex_};
+        // Wait until condition variable is notified or timeout is reached
+        cv_.wait_until(triggered_queue_lock, wakeup);
 
-        auto next = std::chrono::high_resolution_clock::time_point::max();
-        for(auto& [key, metric] : metrics_) {
-            if(metric->check(state_callback_())) {
-                LOG(logger_, TRACE) << "Timer of metric \"" << key << "\" expired, sending...";
-
-                // Send this metric into the CMDP sink:
-                SinkManager::getInstance().sendCMDPMetric(key, metric);
-
-                // If we tell the receiving side to accumulate, we need to reset locally:
-                if(metric->type() == Type::ACCUMULATE) {
-                    metric->set({});
-                }
+        // Send any triggered metrics in the queue
+        while(!triggered_queue_.empty()) {
+            auto [name, value] = std::move(triggered_queue_.front());
+            triggered_queue_.pop();
+            LOG(logger_, TRACE) << "Looking for metric " << std::quoted(name);
+            const std::lock_guard metrics_lock {metrics_mutex_};
+            auto metric_it = metrics_.find(name);
+            if(metric_it != metrics_.end()) {
+                SinkManager::getInstance().sendCMDPMetric({metric_it->second, std::move(value)});
+            } else {
+                LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
             }
-
-            // Update time point until we can wait:
-            next = std::min(next, metric->nextTrigger());
         }
+        triggered_queue_lock.unlock();
 
-        // Wait until notified or timed out:
-        cv_.wait_until(lock, next);
-        LOG(logger_, TRACE) << "Metrics condition timed out or got notified";
+        // Set next wakeup to 1s from now
+        const auto now = std::chrono::steady_clock::now();
+        wakeup = now + 1s;
+
+        // Check timed metrics
+        const std::lock_guard timed_metrics_lock {timed_metrics_mutex_};
+        for(auto& [name, timed_metric] : timed_metrics_) {
+            // If last time sent larger than interval and allowed -> send metric
+            if(now - timed_metric.last_sent > timed_metric.metric->interval() &&
+               timed_metric.metric->isAllowed(state_callback_())) {
+                SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, timed_metric.metric->currentValue()});
+                timed_metric.last_sent = now;
+            }
+            // Update time point until we have to wait (if not in the past)
+            const auto next_trigger = timed_metric.last_sent + timed_metric.metric->interval();
+            if(next_trigger - now > std::chrono::steady_clock::duration::zero()) {
+                wakeup = std::min(wakeup, next_trigger);
+            }
+        }
     }
 }

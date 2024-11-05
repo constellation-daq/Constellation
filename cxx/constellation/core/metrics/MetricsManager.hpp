@@ -9,29 +9,36 @@
 
 #pragma once
 
-#include <atomic>
 #include <chrono>
 #include <condition_variable>
-#include <map>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <stop_token>
+#include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::metrics {
 
     /** Manager for Metrics handling & transmission */
-    class CNSTLN_API MetricsManager {
+    class MetricsManager {
     public:
         /**
          * @brief MetricManager taking care of emitting metrics messages
          *
          * @param state_callback Callback to fetch the current state from the finite state machine
          */
-        MetricsManager(std::function<protocol::CSCP::State()> state_callback);
+        CNSTLN_API MetricsManager(std::function<protocol::CSCP::State()> state_callback);
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -41,38 +48,43 @@ namespace constellation::metrics {
         MetricsManager& operator=(MetricsManager&& other) = delete;
         /// @endcond
 
-        virtual ~MetricsManager() noexcept;
+        CNSTLN_API virtual ~MetricsManager() noexcept;
 
         /**
-         * Update the value cached for the given metric
+         * Register a (manually triggered) metric
          *
-         * \param topic Unique topic of the metric
-         * \param value New value of the metric
+         * @param metric Shared pointer to the metric
          */
-        void setMetric(std::string_view topic, config::Value&& value);
+        CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric);
+
+        /**
+         * Register a timed metric
+         *
+         * @param metric Shared pointer to the timed metric
+         */
+        CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric);
 
         /**
          * Unregister a previously registered metric from the manager
          *
-         * @param topic Unique metric topic
+         * @param name Name of the metric
          */
-        void unregisterMetric(std::string_view topic);
+        CNSTLN_API void unregisterMetric(std::string_view name);
 
         /**
          * Unregisters all metrics registered in the manager
          *
          * Equivalent to calling `unregisterMetric` for every registered metric.
          */
-        void unregisterMetrics();
+        CNSTLN_API void unregisterMetrics();
 
         /**
-         * Register a metric which will be emitted after having been triggered a given number of times. If the metric exists
-         * already, it will be replaced by the new definition.
+         * Manually trigger a metric
          *
-         * @param topic Unique topic of the metric
-         * @param metric_timer Shared pointer to metric timer object
+         * @param name Name of the metric
+         * @param value Value of the metric
          */
-        void registerMetric(std::string_view topic, std::shared_ptr<MetricTimer> metric_timer);
+        CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
     private:
         /**
@@ -86,21 +98,28 @@ namespace constellation::metrics {
          */
         void run(const std::stop_token& stop_token);
 
-        log::Logger logger_;
+        struct TimedMetricEntry {
+            std::shared_ptr<TimedMetric> metric;
+            std::chrono::steady_clock::time_point last_sent;
+        };
 
-        /** Function returning the current state */
+    private:
+        log::Logger logger_;
         std::function<protocol::CSCP::State()> state_callback_;
 
-        /** Map of registered metrics */
-        std::map<std::string, std::shared_ptr<MetricTimer>, std::less<>> metrics_;
+        // Contains all metrics, including timed ones
+        utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
+        std::mutex metrics_mutex_;
 
-        /** Main loop thread of the metrics manager */
-        std::jthread thread_;
+        // Only timed metrics for background thread
+        utils::string_hash_map<TimedMetricEntry> timed_metrics_;
+        std::mutex timed_metrics_mutex_;
 
-        /** Mutex for thread-safe access to `metrics_` */
-        std::mutex mt_;
-
-        /** Conditions variable for waiting until the next metric emission */
+        // Queue for manually triggered metrics
+        std::queue<std::pair<std::string, config::Value>> triggered_queue_;
+        std::mutex triggered_queue_mutex_;
         std::condition_variable cv_;
+
+        std::jthread thread_;
     };
 } // namespace constellation::metrics
