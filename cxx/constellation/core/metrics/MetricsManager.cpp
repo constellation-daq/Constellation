@@ -16,7 +16,6 @@
 #include <iomanip>
 #include <memory>
 #include <mutex>
-#include <stdexcept>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -50,11 +49,15 @@ void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
     const auto name = std::string(metric->name());
 
     std::unique_lock metrics_lock {metrics_mutex_};
-    const auto [it, inserted] = metrics_.emplace(name, std::move(metric));
+    const auto [it, inserted] = metrics_.insert_or_assign(name, std::move(metric));
     metrics_lock.unlock();
 
     if(!inserted) {
-        throw std::invalid_argument("Metric already registered");
+        // Erase from timed metrics map in case previously registered as timed metric
+        std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
+        timed_metrics_.erase(name);
+        timed_metrics_lock.unlock();
+        LOG(logger_, DEBUG) << "Replaced already registered metric " << std::quoted(name);
     }
 
     LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(name);
@@ -65,19 +68,17 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
 
     // Add to metrics map
     std::unique_lock metrics_lock {metrics_mutex_};
-    const auto [it, inserted] = metrics_.emplace(name, metric);
+    const auto [it, inserted] = metrics_.insert_or_assign(name, metric);
     metrics_lock.unlock();
 
     if(!inserted) {
-        throw std::invalid_argument("Metric already registered");
+        LOG(logger_, DEBUG) << "Replaced already registered metric " << std::quoted(name);
     }
 
     // Now also add to timed metrics map
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
-    timed_metrics_.emplace(name, TimedMetricEntry(std::move(metric), std::chrono::steady_clock::time_point()));
+    timed_metrics_.insert_or_assign(name, TimedMetricEntry(std::move(metric), std::chrono::steady_clock::time_point()));
     timed_metrics_lock.unlock();
-
-    // Note: no need to check if in timed_metrics map since it would have been in metrics map as well
 
     LOG(logger_, DEBUG) << "Successfully registered timed metric " << std::quoted(name);
 }
