@@ -58,6 +58,17 @@ namespace constellation::metrics {
         CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric);
 
         /**
+         * Register a (manually triggered) metric
+         *
+         * @param name Unique topic of the metric
+         * @param unit Unit of the provided value
+         * @param type Type of the metric
+         */
+        void registerMetric(std::string name, std::string unit, metrics::MetricType type) {
+            registerMetric(std::make_shared<metrics::Metric>(std::move(name), std::move(unit), type));
+        };
+
+        /**
          * Register a timed metric
          *
          * @param metric Shared pointer to the timed metric

@@ -18,7 +18,7 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
-using namespace constellation;
+using namespace constellation::config;
 using namespace constellation::metrics;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
@@ -27,15 +27,14 @@ SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name)
     LOG(STATUS) << "Sputnik prototype satellite " << getCanonicalName() << " created";
 }
 
-void SputnikSatellite::initializing(config::Configuration& config) {
-
+void SputnikSatellite::initializing(Configuration& config) {
     // Obtain the beeping interval from the configuration:
     auto interval = config.get<std::uint64_t>("interval", 3000U);
 
     register_timed_metric("BEEP",
                           "beeps",
-                          Type::LAST_VALUE,
+                          MetricType::LAST_VALUE,
                           std::chrono::milliseconds(interval),
-                          {CSCP::State::ORBIT, CSCP::State::RUN},
-                          []() { return 42; });
+                          []() { return 42; },
+                          {CSCP::State::ORBIT, CSCP::State::RUN});
 }
