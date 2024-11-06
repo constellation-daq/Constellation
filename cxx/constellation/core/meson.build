@@ -118,6 +118,7 @@ install_headers(
   'metrics/Metric.hpp',
   'metrics/MetricsManager.hpp',
   'metrics/MetricsManager.ipp',
+  'metrics/stat.hpp',
   subdir: 'constellation/core/metrics',
 )
 

@@ -102,6 +102,11 @@ namespace constellation::metrics {
         CNSTLN_API void unregisterMetrics();
 
         /**
+         * Check if a metric should be send given the subscription status
+         */
+        static constexpr bool shouldStat(std::string_view /*name*/) { return true; }
+
+        /**
          * Manually trigger a metric
          *
          * @param name Name of the metric
