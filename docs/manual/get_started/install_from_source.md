@@ -104,15 +104,13 @@ The Python version of Constellation requires
 - Python 3.11 or newer
 - The Python [`venv`](https://docs.python.org/3/library/venv.html) module
 
-It is also recommended to install the HDF5 development libraries to store data with the H5DataReceiverWriter satellite.
-
 The prerequisites can be installed as follows:
 
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
 
 ```sh
-sudo apt install python3-venv libhdf5-dev
+sudo apt install python3 python3-venv
 ```
 
 :::
