@@ -10,6 +10,7 @@
 #pragma once
 
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -25,6 +26,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
+#include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 
 class EudaqNativeWriterSatellite final : public constellation::satellite::ReceiverSatellite {
@@ -61,6 +63,11 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         FileSerializer(FileSerializer&& other) = delete;
         FileSerializer& operator=(FileSerializer&& other) = delete;
         /// @endcond
+
+        /**
+         * @brief Flush newly written content to disk
+         */
+        void flush();
 
         /**
          * @brief Helper to report the total number of bytes written to the file
@@ -186,4 +193,5 @@ private:
     std::unique_ptr<FileSerializer> serializer_;
     bool allow_overwriting_ {false};
     std::filesystem::path base_path_;
+    constellation::utils::TimeoutTimer flush_timer_ {std::chrono::seconds(3)};
 };

@@ -47,6 +47,12 @@ EudaqNativeWriterSatellite::FileSerializer::~FileSerializer() {
     }
 }
 
+void EudaqNativeWriterSatellite::FileSerializer::flush() {
+    if(file_.is_open()) {
+        file_.flush();
+    }
+}
+
 void EudaqNativeWriterSatellite::FileSerializer::write(const std::uint8_t* data, std::size_t len) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     file_.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(len));
