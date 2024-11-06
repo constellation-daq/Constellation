@@ -37,9 +37,9 @@ other_param = "antenna"
 
 The following metrics are distributed by this satellite and can be subscribed to. Timed metrics provide an interval in units of time, triggered metrics in number of calls.
 
-| Metric | Description | Interval | Type | States |
-|--------|-------------|----------|------|--------|
-| `STAT/BEEP` | Sputnik beep signal, only emitted while in RUN state | configurable, default 3s | `LAST_VALUE` | `ORBIT`, `RUN` |
+| Metric | Description | Value Type | Metric Type | Interval |
+|--------|-------------|------------|-------------|----------|
+| `BEEP` | Sputnik beep signal | Integer | `LAST_VALUE` | configurable, default 3s |
 
 ## Custom Commands
 
