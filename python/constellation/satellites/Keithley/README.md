@@ -81,9 +81,9 @@ Possible terminals are `front` and `rear`.
 
 | Metric | Description | Value Type | Metric Type | Interval |
 |--------|-------------|------------|-------------|----------|
-| `VOLTAGE` | Voltage output | Float | `LAST_VALUE` | 10s |
-| `CURRENT` | Current output | Float | `LAST_VALUE` | 10s |
-| `IN_COMLIANCE` | If in compliance | Bool | `LAST_VALUE` | 10s |
+| `VOLTAGE` | Voltage output | Float | `LAST_VALUE` | 5s |
+| `CURRENT` | Current output | Float | `LAST_VALUE` | 5s |
+| `IN_COMLIANCE` | If in compliance | Bool | `LAST_VALUE` | 5s |
 
 ## Custom Commands
 
