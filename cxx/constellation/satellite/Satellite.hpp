@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <concepts>
 #include <functional>
 #include <initializer_list>
 #include <memory>
@@ -171,14 +172,16 @@ namespace constellation::satellite {
          * @param value_callback Callback to determine the current value of the metric
          * @param allowed_states Set of states in which the value callback is allowed to be called
          */
+        template <typename C>
+            requires std::invocable<C>
         void register_timed_metric(std::string name,
                                    std::string unit,
                                    metrics::MetricType type,
                                    std::chrono::steady_clock::duration interval,
-                                   std::function<config::Value()> value_callback,
-                                   std::initializer_list<protocol::CSCP::State> allowed_states) {
-            metrics_manager_.registerTimedMetric(std::make_shared<metrics::TimedMetric>(
-                std::move(name), std::move(unit), type, interval, std::move(value_callback), allowed_states));
+                                   C value_callback,
+                                   std::initializer_list<protocol::CSCP::State> allowed_states = {}) {
+            metrics_manager_.registerTimedMetric(
+                std::move(name), std::move(unit), type, interval, std::move(value_callback), allowed_states);
         }
 
         /**

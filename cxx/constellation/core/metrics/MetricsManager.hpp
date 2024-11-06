@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <concepts>
 #include <condition_variable>
 #include <functional>
 #include <memory>
@@ -64,9 +65,7 @@ namespace constellation::metrics {
          * @param unit Unit of the provided value
          * @param type Type of the metric
          */
-        void registerMetric(std::string name, std::string unit, metrics::MetricType type) {
-            registerMetric(std::make_shared<metrics::Metric>(std::move(name), std::move(unit), type));
-        };
+        void registerMetric(std::string name, std::string unit, metrics::MetricType type);
 
         /**
          * Register a timed metric
@@ -74,6 +73,25 @@ namespace constellation::metrics {
          * @param metric Shared pointer to the timed metric
          */
         CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric);
+
+        /**
+         * Register a timed metric
+         *
+         * @param name Name of the metric
+         * @param unit Unit of the metric as human readable string
+         * @param type Type of the metric
+         * @param interval Interval in which to send the metric
+         * @param value_callback Callback to determine the current value of the metric
+         * @param allowed_states Set of states in which the value callback is allowed to be called
+         */
+        template <typename C>
+            requires std::invocable<C>
+        void registerTimedMetric(std::string name,
+                                 std::string unit,
+                                 metrics::MetricType type,
+                                 std::chrono::steady_clock::duration interval,
+                                 C value_callback,
+                                 std::initializer_list<protocol::CSCP::State> allowed_states = {});
 
         /**
          * Unregister a previously registered metric from the manager
@@ -134,3 +152,6 @@ namespace constellation::metrics {
         std::jthread thread_;
     };
 } // namespace constellation::metrics
+
+// Include template members
+#include "MetricsManager.ipp" // IWYU pragma: keep
