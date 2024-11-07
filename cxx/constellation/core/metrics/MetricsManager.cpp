@@ -137,10 +137,12 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         while(!triggered_queue_.empty()) {
             auto [name, value] = std::move(triggered_queue_.front());
             triggered_queue_.pop();
-            LOG(logger_, TRACE) << "Looking for metric " << std::quoted(name);
+            LOG(logger_, TRACE) << "Looking for queued metric " << std::quoted(name);
             const std::lock_guard metrics_lock {metrics_mutex_};
             auto metric_it = metrics_.find(name);
             if(metric_it != metrics_.end()) {
+                LOG(logger_, TRACE) << "Sending metric " << std::quoted(name) << ": " << value.str() << " ["
+                                    << metric_it->second->unit() << "]";
                 SinkManager::getInstance().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
                 LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
@@ -157,7 +159,11 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         for(auto& [name, timed_metric] : timed_metrics_) {
             // If last time sent larger than interval and allowed -> send metric
             if(now - timed_metric.last_sent > timed_metric.metric->interval()) {
-                SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, timed_metric.metric->currentValue()});
+                auto value = timed_metric.metric->currentValue();
+                LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric.metric->name()) << ": " << value.str()
+                                    << " [" << timed_metric.metric->unit() << "]";
+                ;
+                SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, std::move(value)});
                 timed_metric.last_sent = now;
             }
             // Update time point until we have to wait (if not in the past)
