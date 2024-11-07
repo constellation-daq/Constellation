@@ -15,6 +15,7 @@
 #include <concepts>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <typeinfo>
@@ -38,9 +39,20 @@ namespace constellation::metrics {
                                              metrics::MetricType type,
                                              std::chrono::steady_clock::duration interval,
                                              C value_callback) {
-        std::function<config::Value()> value_callback_cast =
-            [name, value_callback = std::move(value_callback)]() -> config::Value {
+        std::function<std::optional<config::Value>()> value_callback_cast =
+            [name, value_callback = std::move(value_callback)]() -> std::optional<config::Value> {
+            using R = std::invoke_result_t<C>;
             try {
+                // If optional, wrap the value to std::optional<config::Value>
+                if constexpr(utils::is_specialization_of_v<R, std::optional>) {
+                    auto value = value_callback();
+                    if(value.has_value()) {
+                        return config::Value::set(value.value());
+                    }
+                    // Forward empty optional
+                    return std::nullopt;
+                }
+                // If not optional, set directly
                 return config::Value::set(value_callback());
             } catch(const std::bad_cast&) {
                 throw InvalidMetricValueException(name, utils::demangle<std::invoke_result_t<C>>());

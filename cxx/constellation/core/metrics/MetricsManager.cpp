@@ -160,11 +160,14 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             // If last time sent larger than interval and allowed -> send metric
             if(now - timed_metric.last_sent > timed_metric.metric->interval()) {
                 auto value = timed_metric.metric->currentValue();
-                LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric.metric->name()) << ": " << value.str()
-                                    << " [" << timed_metric.metric->unit() << "]";
-                ;
-                SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, std::move(value)});
-                timed_metric.last_sent = now;
+                if(value.has_value()) {
+                    LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric.metric->name()) << ": "
+                                        << value.value().str() << " [" << timed_metric.metric->unit() << "]";
+                    SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, std::move(value.value())});
+                    timed_metric.last_sent = now;
+                } else {
+                    LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric.metric->name()) << ": no value";
+                }
             }
             // Update time point until we have to wait (if not in the past)
             const auto next_trigger = timed_metric.last_sent + timed_metric.metric->interval();

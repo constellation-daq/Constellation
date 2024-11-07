@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -100,7 +101,7 @@ namespace constellation::metrics {
                     std::string unit,
                     MetricType type,
                     std::chrono::nanoseconds interval,
-                    std::function<config::Value()> value_callback)
+                    std::function<std::optional<config::Value>()> value_callback)
             : Metric(std::move(name), std::move(unit), type), interval_(interval),
               value_callback_(std::move(value_callback)) {}
 
@@ -112,14 +113,13 @@ namespace constellation::metrics {
 
         /**
          * @brief Evaluate the value callback to get the current value of the metric
-         * @warning `isAllowed()` should be called to check if this can be safely executed
-         * @return Current value
+         * @return Optional with current value or no value
          */
-        config::Value currentValue() { return value_callback_(); }
+        std::optional<config::Value> currentValue() { return value_callback_(); }
 
     private:
         std::chrono::nanoseconds interval_;
-        std::function<config::Value()> value_callback_;
+        std::function<std::optional<config::Value>()> value_callback_;
     };
 
     /**
