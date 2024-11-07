@@ -38,7 +38,7 @@ namespace constellation::heartbeat {
      * received heartbeats. It keeps track of received heartbeats from remote heartbeat senders, counts their lives and
      * takes action either upon missing heartbeats or a remote ERROR state of the FSM.
      */
-    class HeartbeatManager {
+    class HeartbeatManager : public HeartbeatRecv {
     public:
         /**
          * @brief Construct a heartbeat manager
@@ -108,8 +108,6 @@ namespace constellation::heartbeat {
          */
         void run(const std::stop_token& stop_token);
 
-        /** Receiver service */
-        HeartbeatRecv receiver_;
         /** Sender service */
         HeartbeatSend sender_;
 

@@ -19,6 +19,7 @@
 #include <string_view>
 #include <utility>
 
+#include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
@@ -35,14 +36,14 @@ using namespace std::chrono_literals;
 HeartbeatManager::HeartbeatManager(std::string sender,
                                    std::function<CSCP::State()> state_callback,
                                    std::function<void(std::string_view)> interrupt_callback)
-    : receiver_([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
+    : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       sender_(std::move(sender), std::move(state_callback), 5000ms), interrupt_callback_(std::move(interrupt_callback)),
       logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
-    receiver_.startPool();
+    startPool();
 }
 
 HeartbeatManager::~HeartbeatManager() {
-    receiver_.stopPool();
+    stopPool();
 
     watchdog_thread_.request_stop();
     if(watchdog_thread_.joinable()) {
