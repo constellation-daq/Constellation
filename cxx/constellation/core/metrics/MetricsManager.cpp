@@ -30,11 +30,9 @@ using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
-using namespace constellation::protocol;
 using namespace std::chrono_literals;
 
-MetricsManager::MetricsManager(std::function<CSCP::State()> state_callback)
-    : logger_("STAT"), state_callback_(std::move(state_callback)), thread_(std::bind_front(&MetricsManager::run, this)) {};
+MetricsManager::MetricsManager() : logger_("STAT"), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
 MetricsManager::~MetricsManager() noexcept {
     thread_.request_stop();
@@ -153,8 +151,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         const std::lock_guard timed_metrics_lock {timed_metrics_mutex_};
         for(auto& [name, timed_metric] : timed_metrics_) {
             // If last time sent larger than interval and allowed -> send metric
-            if(now - timed_metric.last_sent > timed_metric.metric->interval() &&
-               timed_metric.metric->isAllowed(state_callback_())) {
+            if(now - timed_metric.last_sent > timed_metric.metric->interval()) {
                 SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, timed_metric.metric->currentValue()});
                 timed_metric.last_sent = now;
             }

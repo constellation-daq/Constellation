@@ -12,7 +12,6 @@
 #include <chrono>
 #include <concepts>
 #include <condition_variable>
-#include <functional>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -26,7 +25,6 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::metrics {
@@ -39,7 +37,7 @@ namespace constellation::metrics {
          *
          * @param state_callback Callback to fetch the current state from the finite state machine
          */
-        CNSTLN_API MetricsManager(std::function<protocol::CSCP::State()> state_callback);
+        CNSTLN_API MetricsManager();
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -82,7 +80,6 @@ namespace constellation::metrics {
          * @param type Type of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
-         * @param allowed_states Set of states in which the value callback is allowed to be called
          */
         template <typename C>
             requires std::invocable<C>
@@ -90,8 +87,7 @@ namespace constellation::metrics {
                                  std::string unit,
                                  metrics::MetricType type,
                                  std::chrono::steady_clock::duration interval,
-                                 C value_callback,
-                                 std::initializer_list<protocol::CSCP::State> allowed_states = {});
+                                 C value_callback);
 
         /**
          * Unregister a previously registered metric from the manager
@@ -134,7 +130,6 @@ namespace constellation::metrics {
 
     private:
         log::Logger logger_;
-        std::function<protocol::CSCP::State()> state_callback_;
 
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;

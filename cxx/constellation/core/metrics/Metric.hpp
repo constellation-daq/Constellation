@@ -12,9 +12,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
-#include <initializer_list>
 #include <memory>
-#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -22,7 +20,6 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
-#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::metrics {
 
@@ -98,16 +95,14 @@ namespace constellation::metrics {
          * @param type Type of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
-         * @param allowed_states Set of states in which the value callback is allowed to be called
          */
         TimedMetric(std::string name,
                     std::string unit,
                     MetricType type,
                     std::chrono::nanoseconds interval,
-                    std::function<config::Value()> value_callback,
-                    std::initializer_list<protocol::CSCP::State> allowed_states = {})
+                    std::function<config::Value()> value_callback)
             : Metric(std::move(name), std::move(unit), type), interval_(interval),
-              value_callback_(std::move(value_callback)), allowed_states_(allowed_states) {}
+              value_callback_(std::move(value_callback)) {}
 
         /**
          * @brief Obtain interval of the metric
@@ -122,18 +117,9 @@ namespace constellation::metrics {
          */
         config::Value currentValue() { return value_callback_(); }
 
-        /**
-         * @brief Check if the value callback of the metric is allowed to be executed in the current state
-         * @return True if the current value can be fetched, false otherwise
-         */
-        bool isAllowed(protocol::CSCP::State state) const {
-            return allowed_states_.empty() || allowed_states_.contains(state);
-        }
-
     private:
         std::chrono::nanoseconds interval_;
         std::function<config::Value()> value_callback_;
-        std::set<protocol::CSCP::State> allowed_states_;
     };
 
     /**

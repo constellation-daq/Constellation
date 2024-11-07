@@ -170,7 +170,6 @@ namespace constellation::satellite {
          * @param type Type of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
-         * @param allowed_states Set of states in which the value callback is allowed to be called
          */
         template <typename C>
             requires std::invocable<C>
@@ -178,10 +177,9 @@ namespace constellation::satellite {
                                    std::string unit,
                                    metrics::MetricType type,
                                    std::chrono::steady_clock::duration interval,
-                                   C value_callback,
-                                   std::initializer_list<protocol::CSCP::State> allowed_states = {}) {
+                                   C value_callback) {
             metrics_manager_.registerTimedMetric(
-                std::move(name), std::move(unit), type, interval, std::move(value_callback), allowed_states);
+                std::move(name), std::move(unit), type, interval, std::move(value_callback));
         }
 
         /**

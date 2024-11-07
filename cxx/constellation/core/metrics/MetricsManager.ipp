@@ -14,7 +14,6 @@
 #include <chrono>
 #include <concepts>
 #include <functional>
-#include <initializer_list>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -24,7 +23,6 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/metrics/exceptions.hpp"
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/type.hpp"
 
 namespace constellation::metrics {
@@ -39,8 +37,7 @@ namespace constellation::metrics {
                                              std::string unit,
                                              metrics::MetricType type,
                                              std::chrono::steady_clock::duration interval,
-                                             C value_callback,
-                                             std::initializer_list<protocol::CSCP::State> allowed_states) {
+                                             C value_callback) {
         std::function<config::Value()> value_callback_cast =
             [name, value_callback = std::move(value_callback)]() -> config::Value {
             try {
@@ -49,8 +46,8 @@ namespace constellation::metrics {
                 throw InvalidMetricValueException(name, utils::demangle<std::invoke_result_t<C>>());
             }
         };
-        registerTimedMetric(std::make_shared<TimedMetric>(
-            std::move(name), std::move(unit), type, interval, std::move(value_callback_cast), allowed_states));
+        registerTimedMetric(
+            std::make_shared<TimedMetric>(std::move(name), std::move(unit), type, interval, std::move(value_callback_cast)));
     }
 
 } // namespace constellation::metrics

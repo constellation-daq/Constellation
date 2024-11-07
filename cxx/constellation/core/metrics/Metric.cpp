@@ -26,7 +26,6 @@
 
 using namespace constellation::metrics;
 using namespace constellation::message;
-using namespace constellation::protocol;
 using namespace constellation::utils;
 
 PayloadBuffer MetricValue::assemble() const {
