@@ -75,6 +75,8 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     REQUIRE(fsm.getState() == State::landing);
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::INIT);
+
+    satellite.exit();
 }
 
 TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
@@ -110,6 +112,8 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     std::this_thread::sleep_for(150ms); // Give some time call stopping and landing
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::SAFE);
+
+    satellite.exit();
 }
 
 TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
@@ -154,6 +158,8 @@ TEST_CASE("React via CSCP", "[satellite][satellite::fsm][cscp]") {
     ret = fsm.reactCommand(TransitionCommand::reconfigure, payload_frame);
     REQUIRE(ret.first == CSCP1Message::Type::NOTIMPLEMENTED);
     REQUIRE_THAT(ret.second, Equals("Transition reconfigure is not implemented by this satellite"));
+
+    satellite.exit();
 }
 
 // NOLINTNEXTLINE(readability-function-size)
@@ -438,6 +444,8 @@ TEST_CASE("Allowed FSM transitions", "[satellite][satellite::fsm]") {
     fsm.react(Transition::initialize, Configuration());
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::INIT);
+
+    satellite.exit();
 }
 
 TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
@@ -464,6 +472,8 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     REQUIRE(cb_count.load() == 4);
 
     fsm.unregisterStateCallback("test");
+
+    satellite.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

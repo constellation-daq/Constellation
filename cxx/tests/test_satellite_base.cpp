@@ -69,7 +69,7 @@ private:
 
 TEST_CASE("Standard commands", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -126,6 +126,8 @@ TEST_CASE("Standard commands", "[satellite]") {
     const auto config = Configuration(Dictionary::disassemble(recv_msg_get_config.getPayload()));
     REQUIRE(config.size() == 0);
     // TODO(stephan.lachnit): test with a non-empty configuration
+
+    satellite.exit();
 }
 
 TEST_CASE("Satellite name", "[satellite]") {
@@ -138,7 +140,7 @@ TEST_CASE("Satellite name", "[satellite]") {
 
 TEST_CASE("User commands", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -187,11 +189,13 @@ TEST_CASE("User commands", "[satellite]") {
     REQUIRE(recv_msg_usr_cmd_void.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_void.getVerb().second), Equals("Command returned: NIL"));
     REQUIRE(!recv_msg_usr_cmd_void.hasPayload());
+
+    satellite.exit();
 }
 
 TEST_CASE("Case insensitive", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -207,6 +211,8 @@ TEST_CASE("Case insensitive", "[satellite]") {
     sender.sendCommand("mY_cMd");
     auto recv_msg_usr_cmdn = sender.recv();
     REQUIRE(recv_msg_usr_cmdn.getVerb().first == CSCP1Message::Type::SUCCESS);
+
+    satellite.exit();
 }
 
 TEST_CASE("Transitions", "[satellite]") {
@@ -232,6 +238,8 @@ TEST_CASE("Transitions", "[satellite]") {
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("INIT"));
+
+    satellite.exit();
 }
 
 TEST_CASE("Shutdown", "[satellite]") {
@@ -277,11 +285,13 @@ TEST_CASE("Shutdown", "[satellite]") {
     auto recv_msg_shutdown2 = sender.recv();
     REQUIRE(recv_msg_shutdown2.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_shutdown2.getVerb().second), Equals("Shutting down satellite"));
+
+    satellite.join();
 }
 
 TEST_CASE("Catch unknown command", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -292,11 +302,13 @@ TEST_CASE("Catch unknown command", "[satellite]") {
     auto recv_msg_wrong_type = sender.recv();
     REQUIRE(recv_msg_wrong_type.getVerb().first == CSCP1Message::Type::UNKNOWN);
     REQUIRE_THAT(to_string(recv_msg_wrong_type.getVerb().second), Equals("Command \"get_names\" is not known"));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch unexpected message type", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -307,11 +319,13 @@ TEST_CASE("Catch unexpected message type", "[satellite]") {
     auto recv_msg_wrong_type = sender.recv();
     REQUIRE(recv_msg_wrong_type.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_wrong_type.getVerb().second), Equals("Can only handle CSCP messages with REQUEST type"));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch invalid protocol", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -331,11 +345,13 @@ TEST_CASE("Catch invalid protocol", "[satellite]") {
     auto recv_msg_invalid_proto = sender.recv();
     REQUIRE(recv_msg_invalid_proto.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_invalid_proto.getVerb().second), Equals("Invalid protocol identifier \"INVALID\""));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch unexpected protocol", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -356,11 +372,13 @@ TEST_CASE("Catch unexpected protocol", "[satellite]") {
     REQUIRE(recv_msg_wrong_proto.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_wrong_proto.getVerb().second),
                  Equals("Received protocol \"CMDP1\" does not match expected identifier \"CSCP1\""));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch incorrect payload", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -381,6 +399,8 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
     auto recv_msg_get_status = sender.recv();
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("NEW"));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
@@ -448,7 +468,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -495,11 +515,13 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_state.getVerb().second),
                  Equals("Command my_cmd_state cannot be called in state NEW"));
     REQUIRE(!recv_msg_usr_cmd_state.hasPayload());
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch incorrect user command return value", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -512,11 +534,13 @@ TEST_CASE("Catch incorrect user command return value", "[satellite]") {
     REQUIRE(recv_msg_invalid_return.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_invalid_return.getVerb().second),
                  Equals("Error casting function return type \"std::array<int, 1>\" to dictionary value"));
+
+    satellite.exit();
 }
 
 TEST_CASE("Catch wrong number of frames", "[satellite]") {
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
 
     // Create sender
     CSCPSender sender {satellite.getCommandPort()};
@@ -533,6 +557,8 @@ TEST_CASE("Catch wrong number of frames", "[satellite]") {
     REQUIRE(recv_msg_wrong_frames.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_wrong_frames.getVerb().second),
                  Equals("Error decoding message: Incorrect number of message frames"));
+
+    satellite.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -97,9 +97,19 @@ public:
     }
     void failure(constellation::protocol::CSCP::State previous_state) override { SatelliteT::failure(previous_state); }
 
+    void exit() {
+        skip_transitional_ = true;
+        SatelliteT::terminate();
+        SatelliteT::join();
+    }
+
 protected:
     void transitional_state() {
         LOG(TRACE) << "Entering transitional state";
+        if(skip_transitional_) {
+            LOG(TRACE) << "Skipping transitional state";
+            return;
+        }
         while(!progress_fsm_) {
             if(throw_transitional_) {
                 throw_transitional_ = false;
@@ -120,6 +130,7 @@ private:
 
 private:
     std::atomic_bool progress_fsm_ {false};
+    std::atomic_bool skip_transitional_ {false};
     std::atomic_bool throw_transitional_ {false};
 };
 
