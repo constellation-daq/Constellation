@@ -33,11 +33,9 @@ namespace constellation::metrics {
     class MetricsManager {
     public:
         /**
-         * @brief MetricManager taking care of emitting metrics messages
-         *
-         * @param state_callback Callback to fetch the current state from the finite state machine
+         * @brief Return instance of metrics manager
          */
-        CNSTLN_API MetricsManager();
+        CNSTLN_API static MetricsManager& getInstance();
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -112,6 +110,8 @@ namespace constellation::metrics {
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
     private:
+        MetricsManager();
+
         /**
          * Main loop listening and responding to incoming CHIRP broadcasts
          *

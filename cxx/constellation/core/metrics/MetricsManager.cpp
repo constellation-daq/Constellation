@@ -32,6 +32,11 @@ using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace std::chrono_literals;
 
+MetricsManager& MetricsManager::getInstance() {
+    static MetricsManager instance {};
+    return instance;
+}
+
 MetricsManager::MetricsManager() : logger_("STAT"), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
 MetricsManager::~MetricsManager() noexcept {

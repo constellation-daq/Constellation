@@ -22,6 +22,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/CommandRegistry.hpp"
@@ -158,8 +159,8 @@ namespace constellation::satellite {
          * @param unit Unit of the provided value
          * @param type Type of the metric
          */
-        void register_metric(std::string name, std::string unit, metrics::MetricType type) {
-            metrics_manager_.registerMetric(std::move(name), std::move(unit), type);
+        static void register_metric(std::string name, std::string unit, metrics::MetricType type) {
+            metrics::MetricsManager::getInstance().registerMetric(std::move(name), std::move(unit), type);
         }
 
         /**
@@ -173,12 +174,12 @@ namespace constellation::satellite {
          */
         template <typename C>
             requires std::invocable<C>
-        void register_timed_metric(std::string name,
-                                   std::string unit,
-                                   metrics::MetricType type,
-                                   std::chrono::steady_clock::duration interval,
-                                   C value_callback) {
-            metrics_manager_.registerTimedMetric(
+        static void register_timed_metric(std::string name,
+                                          std::string unit,
+                                          metrics::MetricType type,
+                                          std::chrono::steady_clock::duration interval,
+                                          C value_callback) {
+            metrics::MetricsManager::getInstance().registerTimedMetric(
                 std::move(name), std::move(unit), type, interval, std::move(value_callback));
         }
 
