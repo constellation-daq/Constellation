@@ -5,7 +5,6 @@ default = true
 line-length = false
 blanks-around-headings = false
 link-fragments = false
-first-line-h1 = false
 
 [no-multiple-blanks]
 maximum = 2
