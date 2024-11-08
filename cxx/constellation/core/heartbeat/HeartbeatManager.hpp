@@ -89,6 +89,16 @@ namespace constellation::heartbeat {
          */
         CNSTLN_API void updateInterval(std::chrono::milliseconds interval) { sender_.updateInterval(interval); }
 
+        /**
+         * @brief Configure whether regular departures are allows.
+         * @details If set to true, departing satellites which send a proper DEPART CHIRP message are not considered
+         *          erroneous but are removed from the list of monitored heartbeats. If set to false, any missing heartbeat,
+         *          even after a regular departure, is considered erroneous and the interruption callback is activated
+         *
+         * @param allow Boolean flag whether regular departures are allowed or not
+         */
+        CNSTLN_API void allowDeparture(bool allow) { allow_departure_ = allow; }
+
     private:
         /**
          * @brief Helper to process heartbeats. This is registered as callback in the heartbeat receiver
