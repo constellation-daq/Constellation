@@ -99,8 +99,8 @@ def append_content(lang: str, parent_class: str) -> str:
     append = ""
     for class_name in classes_to_append:
         content_file = "_" + lang + "_" + class_name + ".md"
-        # if content_file and pathlib.Path("satellites" / content_file).exists():
-        append += "\n```{include} " + str(content_file) + "\n\n```"
+        if content_file and (pathlib.Path("satellites") / content_file).exists():
+            append += "\n```{include} " + str(content_file) + "\n\n```"
     return append
 
 
