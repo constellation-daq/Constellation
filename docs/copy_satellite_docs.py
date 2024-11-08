@@ -9,6 +9,10 @@ import pathlib
 import re
 import yaml
 
+import sphinx.util.logging
+
+logger = sphinx.util.logging.getLogger(__name__)
+
 
 def find_header_file(lang: str, directory: pathlib.Path) -> pathlib.Path | None:
     """
@@ -71,18 +75,17 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
         # Parse base class and append configuration parameters
         header_path = find_header_file(lang, in_path.parent)
         if header_path:
-            print(f"Satellite definition file: {header_path}")
+            logger.verbose(f"Satellite definition file: {header_path}")
             # Extract the parent class from the header file
             parent_class = extract_parent_class(lang, header_path)
             if parent_class:
-                print(f"Appending parameters for parent class: {parent_class}")
+                logger.verbose(f"Appending parameters for parent class: {parent_class}")
                 file_output += "\n```{include} _parameter_header.md\n```\n"
-
                 file_output += append_content(lang, parent_class)
             else:
-                print("Parent class not found in the header file.")
+                logger.warning(f"Parent class {parent_class} not found in {header_path}.")
         else:
-            print("No satellite definition")
+            logger.warning(f"No satellite definition found in {in_path.parent}")
 
         (out_path / in_path.parent.name).with_suffix(".md").write_text(file_output)
         return in_path.parent.name
