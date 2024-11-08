@@ -37,9 +37,9 @@ def find_header_file(lang: str, directory: pathlib.Path) -> pathlib.Path | None:
     return None
 
 
-def extract_parent_class(lang: str, header_path: pathlib.Path) -> str | None:
+def extract_parent_classes(lang: str, header_path: pathlib.Path) -> list[str] | None:
     """
-    Extract the parent class from the C++ header file.
+    Extract the parent classes from the C++ header file or Python definition.
     """
     with open(header_path, "r") as file:
         content = file.read()
@@ -48,12 +48,13 @@ def extract_parent_class(lang: str, header_path: pathlib.Path) -> str | None:
             # Regular expression to find the parent class in C++ inheritance declaration
             match = re.search(r"class\s+\w+\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
             if match:
-                return match.group(2)
+                return [match.group(2)]
         elif lang == "py":
-            # Regex to match Python class inheritance
-            match = re.search(r"class\s+\w+\s*\(([\w_]+)\):", content)
+            # Regex to match Python class inheritance (might be multiple)
+            match = re.search(r"class\s+\w+\s*\((.+)\):", content)
             if match:
-                return match.group(1)
+                # split multiple classes, remove whitespaces
+                return match.group(1).replace(" ", "").split(",")
     return None
 
 
@@ -77,13 +78,13 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
         if header_path:
             logger.verbose(f"Satellite definition file: {header_path}")
             # Extract the parent class from the header file
-            parent_class = extract_parent_class(lang, header_path)
-            if parent_class:
-                logger.verbose(f"Appending parameters for parent class: {parent_class}")
+            parent_classes = extract_parent_classes(lang, header_path)
+            if parent_classes:
+                logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
                 file_output += "\n```{include} _parameter_header.md\n```\n"
-                file_output += append_content(lang, parent_class)
+                file_output += append_content(lang, parent_classes)
             else:
-                logger.warning(f"Parent class {parent_class} not found in {header_path}.")
+                logger.warning(f"No parent classes found in {header_path}.")
         else:
             logger.warning(f"No satellite definition found in {in_path.parent}")
 
@@ -91,18 +92,17 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
         return in_path.parent.name
 
 
-def append_content(lang: str, parent_class: str) -> str:
+def append_content(lang: str, parent_classes: list[str]) -> str:
     """
     Append content to the README.md file based on the parent class.
     """
     # List of classes whose content should be appended in order
-    classes_to_append = [parent_class]
-    if parent_class in ["ReceiverSatellite", "TransmitterSatellite"]:
-        classes_to_append.append("Satellite")
+    if any(class_name in ["ReceiverSatellite", "TransmitterSatellite"] for class_name in parent_classes):
+        parent_classes.append("Satellite")
 
     # Append content for each relevant class
     append = ""
-    for class_name in classes_to_append:
+    for class_name in parent_classes:
         content_file = "_" + lang + "_" + class_name + ".md"
         if content_file and (pathlib.Path("satellites") / content_file).exists():
             append += "\n```{include} " + str(content_file) + "\n```\n"
