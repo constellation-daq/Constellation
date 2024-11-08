@@ -21,6 +21,7 @@
 
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -66,6 +67,23 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
     return {};
 }
 
+void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
+    if(!allow_departure_) {
+        return;
+    }
+
+    LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
+    const std::lock_guard lock {mutex_};
+
+    // Update or add the remote:
+    auto remote_it =
+        std::ranges::find_if(remotes_, [&service](const auto& remote) { return MD5Hash(remote.first) == service.host_id; });
+    if(remote_it != remotes_.end()) {
+        LOG(INFO) << remote_it->first << " departed orderly, removing heartbeat check";
+        remotes_.erase(remote_it);
+    }
+}
+
 void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
                         << msg.getInterval();
@@ -102,6 +120,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
             remote_it->second.lives = protocol::CHP::Lives;
         }
     } else {
+        // Add newly discovered remote:
         remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));
     }
 }
