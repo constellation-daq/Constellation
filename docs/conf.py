@@ -110,7 +110,7 @@ myst_fence_as_directive = ["plantuml"]
 myst_enable_extensions = ["colon_fence"]
 myst_update_mathjax = False
 
-# Suppress header warnings from MyST - we check them with markdownlitn but cannot disable them in MyST on a per-file level
+# Suppress header warnings from MyST - we check them with markdownlint but cannot disable them in MyST on a per-file level
 suppress_warnings = ["myst.header"]
 
 # breathe settings

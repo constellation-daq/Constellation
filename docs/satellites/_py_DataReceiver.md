@@ -1,2 +1,2 @@
 <!-- markdownlint-disable MD041 -->
-### Parameters inherited from `ReceiverSatellite`
+### Parameters inherited from `DataReceiver`
