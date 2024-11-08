@@ -1,0 +1,1 @@
+### Parameters inherited from `TransmitterSatellite`
