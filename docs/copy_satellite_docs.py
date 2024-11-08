@@ -10,9 +10,9 @@ import re
 import yaml
 
 
-def find_header_file(lang: str, directory: pathlib.Path):
+def find_header_file(lang: str, directory: pathlib.Path) -> pathlib.Path | None:
     """
-    Find the header file in the specified directory following the 'NameSatellite.hpp' naming scheme.
+    Find the header file of a satellite in the specified directory following the 'NameSatellite.hpp' naming scheme.
     """
     if lang == "cxx":
         for file in directory.glob("*Satellite.hpp"):
@@ -33,7 +33,7 @@ def find_header_file(lang: str, directory: pathlib.Path):
     return None
 
 
-def extract_parent_class(lang: str, header_path: pathlib.Path):
+def extract_parent_class(lang: str, header_path: pathlib.Path) -> str | None:
     """
     Extract the parent class from the C++ header file.
     """
