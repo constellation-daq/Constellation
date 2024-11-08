@@ -479,8 +479,11 @@ lint:coverity-scan:
       --form project=$COVERITY_SCAN_PROJECT_NAME --form token=$COVERITY_SCAN_TOKEN
     - tar -xzf /tmp/cov-analysis-linux64.tgz
     - rm -r /tmp/cov-analysis-linux64.tgz
+    - PATH=$PATH:$(echo cov-analysis-linux64-*/bin)
+    - CC=$(command -v gcc); CXX=$(command -v g++) # Set directly to avoid ccache
+    - cov-configure --comptype gcc --compiler $CXX
     - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug
-    - cov-analysis-linux64-*/bin/cov-build --dir cov-int ninja -C build
+    - cov-build --dir cov-int ninja -C build
     - tar -czf cov-int.tgz cov-int
     - curl -s https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
       --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
