@@ -129,29 +129,22 @@ with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
 
 # Remove existing satellite READMEs
 for path in (docsdir / "satellites").glob("*.md"):
-    path.unlink()
+    if not path.name.startswith("_"):
+        path.unlink()
 
 # Add satellite READMEs to documentation
-satellite_files_cxx = sorted(
-    list((repodir / "cxx" / "satellites").glob("**/README.md"))
-)
-satellite_files_py = sorted(
-    list((repodir / "python" / "constellation" / "satellites").glob("**/README.md"))
-)
+satellite_files_cxx = sorted(list((repodir / "cxx" / "satellites").glob("**/README.md")))
+satellite_files_py = sorted(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
 
 satellites_types_cxx = []
 satellites_types_py = []
 
 for path in satellite_files_cxx:
-    satellite_type = copy_satellite_docs.convert_satellite_readme(
-        path, docsdir / "satellites"
-    )
+    satellite_type = copy_satellite_docs.convert_satellite_readme("cxx", path, docsdir / "satellites")
     satellites_types_cxx.append(f"{satellite_type} <{satellite_type}>")
 
 for path in satellite_files_py:
-    satellite_type = copy_satellite_docs.convert_satellite_readme(
-        path, docsdir / "satellites"
-    )
+    satellite_type = copy_satellite_docs.convert_satellite_readme("py", path, docsdir / "satellites")
     satellites_types_py.append(f"{satellite_type} <{satellite_type}>")
 
 with (
