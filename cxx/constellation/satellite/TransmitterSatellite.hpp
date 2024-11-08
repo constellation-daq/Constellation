@@ -172,9 +172,7 @@ namespace constellation::satellite {
         void starting_transmitter(std::string_view run_identifier, const config::Configuration& config);
 
         /**
-         * @brief Stop transmitter components of satellite
-         *
-         * This function sends the EOR message.
+         * @brief Stop transmitter components of satellite and send the EOR
          *
          * @throw SendTimeoutError If EOR send timeout is reached
          */
@@ -184,6 +182,8 @@ namespace constellation::satellite {
          * @brief Interrupt function of transmitter
          *
          * If the previous state is RUN, this sends an EOR message marking the end of the run indicating an interruption.
+         *
+         * @throw SendTimeoutError If EOR send timeout is reached
          *
          * @param previous_state State in which the satellite was being interrupted
          */
@@ -195,6 +195,13 @@ namespace constellation::satellite {
          * @param timeout Timeout, -1 is infinite (block until sent)
          */
         void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
+
+        /**
+         * @brief Send the EOR message
+         *
+         * @throw SendTimeoutError If EOR send timeout is reached
+         */
+        void send_eor();
 
         /**
          * @brief Set tag for the run metadata send as payload of the EOR message

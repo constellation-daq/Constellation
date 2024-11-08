@@ -21,6 +21,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
@@ -147,7 +148,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     bor_tags_ = {};
 }
 
-void TransmitterSatellite::stopping_transmitter() {
+void TransmitterSatellite::send_eor() {
     // Create CDTP1 message for EOR
     CDTP1Message msg {{getCanonicalName(), ++seq_, CDTP1Message::Type::EOR, std::chrono::system_clock::now(), eor_tags_}, 1};
     msg.addPayload(run_metadata_.assemble());
@@ -170,9 +171,17 @@ void TransmitterSatellite::stopping_transmitter() {
     eor_tags_ = {};
 }
 
+void TransmitterSatellite::stopping_transmitter() {
+    set_run_metadata_tag("condition_code", CDTP::DataCondition::GOOD);
+    set_run_metadata_tag("condition", to_string(CDTP::DataCondition::GOOD));
+    send_eor();
+}
+
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
-        stopping_transmitter();
+        set_run_metadata_tag("condition_code", CDTP::DataCondition::INTERRUPTED);
+        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::INTERRUPTED));
+        send_eor();
     }
 }
