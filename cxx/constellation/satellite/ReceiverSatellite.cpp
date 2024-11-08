@@ -28,6 +28,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/pools/BasePool.hpp"
+#include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
@@ -38,6 +39,7 @@ using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::pools;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -182,7 +184,8 @@ void ReceiverSatellite::interrupting_receiver() {
         for(const auto& data_transmitter : data_transmitter_no_eor) {
             LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
             auto run_metadata = Dictionary();
-            run_metadata["substitute_eor"] = true;
+            run_metadata["condition_code"] = config::Value::set(CDTP::DataCondition::ABORTED);
+            run_metadata["condition"] = config::Value::set(to_string(CDTP::DataCondition::ABORTED));
             receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
         }
     }
