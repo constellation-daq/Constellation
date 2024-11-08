@@ -76,6 +76,8 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
             parent_class = extract_parent_class(lang, header_path)
             if parent_class:
                 print(f"Appending parameters for parent class: {parent_class}")
+                file_output += "\n```{include} _parameter_header.md\n```\n"
+
                 file_output += append_content(lang, parent_class)
             else:
                 print("Parent class not found in the header file.")
@@ -100,7 +102,7 @@ def append_content(lang: str, parent_class: str) -> str:
     for class_name in classes_to_append:
         content_file = "_" + lang + "_" + class_name + ".md"
         if content_file and (pathlib.Path("satellites") / content_file).exists():
-            append += "\n```{include} " + str(content_file) + "\n\n```"
+            append += "\n```{include} " + str(content_file) + "\n```\n"
     return append
 
 
