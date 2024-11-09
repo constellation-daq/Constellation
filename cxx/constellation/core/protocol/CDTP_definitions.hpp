@@ -23,6 +23,9 @@ namespace constellation::protocol::CDTP {
         /** The run has concluded normally, but the data has been marked as tainted by the sender */
         TAINTED,
 
+        /** The run has concluded normally, but the receiver has noticed missing messages in the sequence */
+        INCOMPLETE,
+
         /** The run has been interrupted by this sender because of an failure condition elsewhere in the constellation */
         INTERRUPTED,
 
