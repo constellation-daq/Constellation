@@ -161,6 +161,7 @@ void ReceiverSatellite::stopping_receiver() {
             for(const auto& data_transmitter : data_transmitter_no_eor) {
                 LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
                 auto run_metadata = Dictionary();
+                run_metadata["run_id"] = config::Value::set(getRunIdentifier());
                 run_metadata["condition_code"] = config::Value::set(CDTP::DataCondition::ABORTED);
                 run_metadata["condition"] = config::Value::set(to_string(CDTP::DataCondition::ABORTED));
                 receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
