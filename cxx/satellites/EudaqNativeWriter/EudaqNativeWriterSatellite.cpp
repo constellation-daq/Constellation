@@ -67,6 +67,7 @@ void EudaqNativeWriterSatellite::stopping() {
 }
 
 void EudaqNativeWriterSatellite::interrupting(CSCP::State /*previous_state*/) {
+    serializer_->flush();
     serializer_.reset();
 }
 

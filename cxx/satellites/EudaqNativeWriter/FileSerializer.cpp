@@ -42,7 +42,6 @@ EudaqNativeWriterSatellite::FileSerializer::FileSerializer(const std::filesystem
 
 EudaqNativeWriterSatellite::FileSerializer::~FileSerializer() {
     if(file_.is_open()) {
-        file_.flush();
         file_.close();
     }
 }
