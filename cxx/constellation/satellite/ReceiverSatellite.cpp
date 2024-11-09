@@ -148,12 +148,25 @@ void ReceiverSatellite::stopping_receiver() {
             stopPool();
 
             // Filter for data transmitters that did not send an EOR
-            // Note: we do not have a bidirectional range so the content needs to be copied to a vector
-            const auto data_transmitter_no_eor = std::ranges::to<std::vector>(std::ranges::views::keys(
+            auto data_transmitter_no_eor = std::ranges::views::keys(
                 std::ranges::views::filter(data_transmitter_states_, [](const auto& data_transmitter_p) {
                     return data_transmitter_p.second.state == TransmitterState::BOR_RECEIVED;
-                })));
-            throw RecvTimeoutError("EOR messages missing from " + range_to_string(data_transmitter_no_eor),
+                }));
+
+            // Note: we do not have a bidirectional range so the content needs to be copied to a vector
+            LOG(cdtp_logger_, WARNING) << "Not all EOR messages received, emitting substitute EOR messages for "
+                                       << range_to_string(std::ranges::to<std::vector>(data_transmitter_no_eor));
+
+            for(const auto& data_transmitter : data_transmitter_no_eor) {
+                LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
+                auto run_metadata = Dictionary();
+                run_metadata["condition_code"] = config::Value::set(CDTP::DataCondition::ABORTED);
+                run_metadata["condition"] = config::Value::set(to_string(CDTP::DataCondition::ABORTED));
+                receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
+            }
+
+            throw RecvTimeoutError("EOR messages missing from " +
+                                       range_to_string(std::ranges::to<std::vector>(data_transmitter_no_eor)),
                                    data_eor_timeout_);
         }
 
@@ -171,27 +184,8 @@ void ReceiverSatellite::interrupting_receiver() {
     // Stop as usual but do not throw if not all EOR messages received
     try {
         stopping_receiver();
-    } catch(const RecvTimeoutError&) {
-        // Stop BasePool thread and disconnect all connected sockets
-        stopPool();
-
-        // Filter for data transmitters that did not send an EOR
-        auto data_transmitter_no_eor = std::ranges::views::keys(
-            std::ranges::views::filter(data_transmitter_states_, [](const auto& data_transmitter_p) {
-                return data_transmitter_p.second.state == TransmitterState::BOR_RECEIVED;
-            }));
-
-        // Note: we do not have a bidirectional range so the content needs to be copied to a vector
-        LOG(cdtp_logger_, WARNING) << "Not all EOR messages received, emitting substitute EOR messages for "
-                                   << range_to_string(std::ranges::to<std::vector>(data_transmitter_no_eor));
-
-        for(const auto& data_transmitter : data_transmitter_no_eor) {
-            LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
-            auto run_metadata = Dictionary();
-            run_metadata["condition_code"] = config::Value::set(CDTP::DataCondition::ABORTED);
-            run_metadata["condition"] = config::Value::set(to_string(CDTP::DataCondition::ABORTED));
-            receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
-        }
+    } catch(const RecvTimeoutError& e) {
+        LOG(cdtp_logger_, WARNING) << e.what();
     }
 }
 
