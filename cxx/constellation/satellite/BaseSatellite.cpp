@@ -399,7 +399,9 @@ void BaseSatellite::apply_internal_config(const config::Configuration& config) {
         heartbeat_manager_.updateInterval(interval);
     }
 
-    heartbeat_manager_.allowDeparture(config.get<bool>("_allow_departure"));
+    if(config.has("_allow_departure")) {
+        heartbeat_manager_.allowDeparture(config.get<bool>("_allow_departure"));
+    }
 }
 
 void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
