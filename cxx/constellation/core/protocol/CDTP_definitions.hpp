@@ -11,8 +11,6 @@
 
 #include <cstdint>
 
-#include <magic_enum.hpp>
-
 namespace constellation::protocol::CDTP {
 
     /** Possible data conditions of a run */
