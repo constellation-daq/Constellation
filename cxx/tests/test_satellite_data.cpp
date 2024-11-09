@@ -21,6 +21,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
@@ -35,6 +36,7 @@ using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
@@ -234,6 +236,8 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.progressFsm();
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
+    REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
+    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::GOOD);
 
     const auto& eor_tags = receiver.getEORTags("Dummy.t1");
     REQUIRE(eor_tags.at("buggy_events").get<int>() == 10);
@@ -244,6 +248,51 @@ TEST_CASE("Successful run", "[satellite]") {
 
     transmitter.exit();
     receiver.exit();
+}
+
+TEST_CASE("Transmitter interrupted run", "[satellite]") {
+    // Create CHIRP manager for data service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    auto receiver = Receiver();
+    auto transmitter = Transmitter();
+    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+
+    auto config_receiver = Configuration();
+    config_receiver.set("_eor_timeout", 1);
+    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+
+    auto config_transmitter = Configuration();
+    config_transmitter.set("_bor_timeout", 1);
+    config_transmitter.set("_eor_timeout", 1);
+
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
+    transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+    receiver.reactFSM(FSM::Transition::launch);
+    transmitter.reactFSM(FSM::Transition::launch);
+    receiver.reactFSM(FSM::Transition::start, "test");
+    transmitter.reactFSM(FSM::Transition::start, "test");
+
+    // Wait a bit for BOR to be handled by receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    // Interrupt the run:
+    transmitter.reactFSM(FSM::Transition::interrupt);
+    receiver.reactFSM(FSM::Transition::interrupt, {}, false);
+
+    // Wait until EOR is handled
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.progressFsm();
+
+    const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("run_id").get<std::string>() == "test");
+    REQUIRE(eor.at("condition").get<std::string>() == "INTERRUPTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::INTERRUPTED);
+
+    // Ensure all satellite are in safe mode
+    REQUIRE(receiver.getState() == FSM::State::SAFE);
+    REQUIRE(transmitter.getState() == FSM::State::SAFE);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
