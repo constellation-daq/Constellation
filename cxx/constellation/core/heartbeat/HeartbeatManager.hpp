@@ -21,10 +21,10 @@
 #include <thread>
 
 #include "constellation/build.hpp"
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"

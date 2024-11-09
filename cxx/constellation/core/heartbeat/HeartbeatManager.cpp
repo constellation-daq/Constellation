@@ -19,6 +19,7 @@
 #include <string_view>
 #include <utility>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
