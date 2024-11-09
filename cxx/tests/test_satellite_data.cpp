@@ -295,4 +295,49 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
 }
 
+TEST_CASE("Transmitter failure run", "[satellite]") {
+    // Create CHIRP manager for data service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    auto receiver = Receiver();
+    auto transmitter = Transmitter();
+    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+
+    auto config_receiver = Configuration();
+    config_receiver.set("_eor_timeout", 1);
+    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+
+    auto config_transmitter = Configuration();
+    config_transmitter.set("_bor_timeout", 1);
+    config_transmitter.set("_eor_timeout", 1);
+
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
+    transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+    receiver.reactFSM(FSM::Transition::launch);
+    transmitter.reactFSM(FSM::Transition::launch);
+    receiver.reactFSM(FSM::Transition::start, "test");
+    transmitter.reactFSM(FSM::Transition::start, "test");
+
+    // Wait a bit for BOR to be handled by receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    // Abort the transmitter:
+    transmitter.reactFSM(FSM::Transition::failure, {}, false);
+    receiver.reactFSM(FSM::Transition::interrupt, {}, false);
+
+    // Wait until EOR is handled
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    receiver.progressFsm();
+
+    const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("run_id").get<std::string>() == "test");
+    REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::ABORTED);
+
+    // Ensure all satellite are in safe mode
+    REQUIRE(receiver.getState() == FSM::State::SAFE);
+    REQUIRE(transmitter.getState() == FSM::State::ERROR);
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
