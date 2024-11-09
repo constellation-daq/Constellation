@@ -94,7 +94,7 @@ namespace constellation::satellite {
         [[nodiscard]] bool trySendDataMessage(DataMessage& message);
 
         /**
-         * @brief Send data message created with `newDataMessage()
+         * @brief Send data message created with `newDataMessage()`
          *
          * @note This method will block until the message has been sent *or* the timeout for sending data messages has been
          *       reached. In the latter case, a SendTimeoutError exception is thrown.
@@ -103,6 +103,13 @@ namespace constellation::satellite {
          * @throw SendTimeoutError If data send timeout is reached
          */
         void sendDataMessage(DataMessage& message);
+
+        /**
+         * @brief Mark this run data as tainted
+         * @details This will set the condition tag in the run metadata to `TAINTED` instead of `GOOD` to mark that there
+         *          might be an issue with the data recorded during this run.
+         */
+        void markRunTainted() { mark_run_tainted_ = true; };
 
         /**
          * @brief Set tag for the BOR message metadata send at the begin of the run
@@ -221,6 +228,7 @@ namespace constellation::satellite {
         config::Dictionary bor_tags_;
         config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;
+        bool mark_run_tainted_ {false};
     };
 
 } // namespace constellation::satellite

@@ -122,6 +122,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     // Reset run metadata and sequence counter
     seq_ = 0;
     run_metadata_ = {};
+    mark_run_tainted_ = false;
     set_run_metadata_tag("run_id", run_identifier);
 
     // Create CDTP1 message for BOR
@@ -173,8 +174,13 @@ void TransmitterSatellite::send_eor() {
 }
 
 void TransmitterSatellite::stopping_transmitter() {
-    set_run_metadata_tag("condition_code", CDTP::DataCondition::GOOD);
-    set_run_metadata_tag("condition", to_string(CDTP::DataCondition::GOOD));
+    if(mark_run_tainted_) {
+        set_run_metadata_tag("condition_code", CDTP::DataCondition::TAINTED);
+        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::TAINTED));
+    } else {
+        set_run_metadata_tag("condition_code", CDTP::DataCondition::GOOD);
+        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::GOOD));
+    }
     send_eor();
 }
 
