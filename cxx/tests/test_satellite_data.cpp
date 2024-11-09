@@ -250,6 +250,60 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.exit();
 }
 
+TEST_CASE("Tainted run", "[satellite]") {
+    // Create CHIRP manager for data service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    auto receiver = Receiver();
+    auto transmitter = Transmitter();
+    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+
+    auto config_receiver = Configuration();
+    config_receiver.set("_eor_timeout", 1);
+    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+
+    auto config_transmitter = Configuration();
+    config_transmitter.set("_bor_timeout", 1);
+    config_transmitter.set("_eor_timeout", 1);
+
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
+    transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
+    receiver.reactFSM(FSM::Transition::launch);
+    transmitter.reactFSM(FSM::Transition::launch);
+    receiver.reactFSM(FSM::Transition::start, "test");
+    transmitter.reactFSM(FSM::Transition::start, "test");
+
+    // Wait a bit for BOR to be handled by receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    // Send a data frame
+    const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
+    REQUIRE(sent);
+    // Wait a bit for data to be handled by receiver
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    const auto& data_msg = receiver.getLastData("Dummy.t1");
+    REQUIRE(data_msg.countPayloadFrames() == 1);
+    REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
+
+    // Mark run as tainted:
+    transmitter.markRunTainted();
+
+    // Stop and send EOR
+    receiver.reactFSM(FSM::Transition::stop, {}, false);
+    transmitter.reactFSM(FSM::Transition::stop);
+    // Wait until EOR is handled
+    receiver.progressFsm();
+    const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("run_id").get<std::string>() == "test");
+    REQUIRE(eor.at("condition").get<std::string>() == "TAINTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::TAINTED);
+
+    // Ensure all satellite are happy
+    REQUIRE(receiver.getState() == FSM::State::ORBIT);
+    REQUIRE(transmitter.getState() == FSM::State::ORBIT);
+}
+
 TEST_CASE("Transmitter interrupted run", "[satellite]") {
     // Create CHIRP manager for data service discovery
     auto chirp_manager = create_chirp_manager();
