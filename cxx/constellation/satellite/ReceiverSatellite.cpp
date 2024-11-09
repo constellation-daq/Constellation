@@ -121,8 +121,12 @@ void ReceiverSatellite::stopping_receiver() {
             << range_to_string(std::ranges::to<std::vector>(std::views::keys(data_transmitters_not_connected)));
 
         // Warn about missed messages (so far)
-        LOG_IF(cdtp_logger_, WARNING, seqs_missed_ > 0)
-            << "Missed " << seqs_missed_ << " messages, data might be incomplete";
+        auto data_transmitters_missed_msg = std::ranges::views::filter(
+            data_transmitter_states_, [](const auto& data_transmitter_p) { return data_transmitter_p.second.missed > 0; });
+        LOG_IF(cdtp_logger_, WARNING, !data_transmitters_missed_msg.empty())
+            << "Missed messages from "
+            << range_to_string(std::ranges::to<std::vector>(std::views::keys(data_transmitters_missed_msg)))
+            << ", data might be incomplete";
     }
 
     // Loop until all data transmitters that sent a BOR also sent an EOR
@@ -144,7 +148,7 @@ void ReceiverSatellite::stopping_receiver() {
             stopPool();
 
             // Filter for data transmitters that did not send an EOR
-            // Note: we do not have a biderectional range so the content needs to be copied to a vector
+            // Note: we do not have a bidirectional range so the content needs to be copied to a vector
             const auto data_transmitter_no_eor = std::ranges::to<std::vector>(std::ranges::views::keys(
                 std::ranges::views::filter(data_transmitter_states_, [](const auto& data_transmitter_p) {
                     return data_transmitter_p.second.state == TransmitterState::BOR_RECEIVED;
@@ -177,7 +181,7 @@ void ReceiverSatellite::interrupting_receiver() {
                 return data_transmitter_p.second.state == TransmitterState::BOR_RECEIVED;
             }));
 
-        // Note: we do not have a biderectional range so the content needs to be copied to a vector
+        // Note: we do not have a bidirectional range so the content needs to be copied to a vector
         LOG(cdtp_logger_, WARNING) << "Not all EOR messages received, emitting substitute EOR messages for "
                                    << range_to_string(std::ranges::to<std::vector>(data_transmitter_no_eor));
 
@@ -200,9 +204,8 @@ void ReceiverSatellite::reset_data_transmitter_states() {
     const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
     data_transmitter_states_.clear();
     for(const auto& data_transmitter : data_transmitters_) {
-        data_transmitter_states_.emplace(data_transmitter, TransmitterStateSeq(TransmitterState::NOT_CONNECTED, 0));
+        data_transmitter_states_.emplace(data_transmitter, TransmitterStateSeq(TransmitterState::NOT_CONNECTED, 0, 0));
     }
-    seqs_missed_ = 0;
 }
 
 void ReceiverSatellite::handle_cdtp_message(CDTP1Message&& message) {
@@ -249,7 +252,7 @@ void ReceiverSatellite::handle_data_message(CDTP1Message data_message) {
         throw InvalidCDTPMessageType(CDTP1Message::Type::DATA, "did not receive BOR");
     }
     // Store sequence number and missed messages
-    seqs_missed_ += data_message.getHeader().getSequenceNumber() - 1 - data_transmitter_it->second.seq;
+    data_transmitter_it->second.missed += data_message.getHeader().getSequenceNumber() - 1 - data_transmitter_it->second.seq;
     data_transmitter_it->second.seq = data_message.getHeader().getSequenceNumber();
     data_transmitter_states_lock.unlock();
 

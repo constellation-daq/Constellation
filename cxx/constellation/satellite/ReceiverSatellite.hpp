@@ -45,8 +45,14 @@ namespace constellation::satellite {
             EOR_RECEIVED,
         };
         struct TransmitterStateSeq {
+            /** State of the CDTP connection */
             TransmitterState state;
+
+            /** Sequence number of the last received message */
             std::uint64_t seq;
+
+            /** Number of missed messages */
+            std::uint64_t missed;
         };
 
     protected:
@@ -200,7 +206,6 @@ namespace constellation::satellite {
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
-        std::uint64_t seqs_missed_ {};
     };
 
 } // namespace constellation::satellite
