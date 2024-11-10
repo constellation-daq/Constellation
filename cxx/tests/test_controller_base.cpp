@@ -19,6 +19,8 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 #include "chirp_mock.hpp"
@@ -29,8 +31,10 @@ using namespace Catch::Matchers;
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
+using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
@@ -54,6 +58,38 @@ TEST_CASE("Satellite connecting", "[controller]") {
     REQUIRE(controller.getConnectionCount() == 1);
     REQUIRE(controller.getConnections().contains("Dummy.sat1"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
+TEST_CASE("Attempt connection from satellites with same canonical name", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // No connections at present:
+    REQUIRE(controller.getConnectionCount() == 0);
+
+    // Create and start satellite
+    const DummySatellite satellite1 {"a"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite1.getCommandPort());
+
+    // Check that satellite connected
+    REQUIRE(controller.getConnectionCount() == 1);
+    REQUIRE(controller.getConnections().contains("Dummy.a"));
+    REQUIRE(controller.isInState(CSCP::State::NEW));
+
+    // Create and start second satellite with same canonical name
+    const DummySatellite satellite2 {"a"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite2.getCommandPort());
+
+    // Check that second satellite was not connected
+    REQUIRE(controller.getConnectionCount() == 1);
 
     // Stop the controller:
     controller.stop();
