@@ -104,6 +104,11 @@ namespace constellation::satellite {
         constexpr utils::Port getCommandPort() const { return cscp_port_; }
 
         /**
+         * @brief Return the ephemeral port number to which the CHP socket is bound to
+         */
+        constexpr utils::Port getHeartbeatPort() const { return heartbeat_manager_.getPort(); }
+
+        /**
          * @brief Return the FSM of the satellite
          *
          * @warning Use carefully, the FSM gives direct access to low level functionality of the framework.

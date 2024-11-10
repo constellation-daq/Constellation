@@ -99,6 +99,13 @@ namespace constellation::heartbeat {
          */
         CNSTLN_API void allowDeparture(bool allow) { allow_departure_ = allow; }
 
+        /**
+         * @brief Get ephemeral port to which the CHP socket is bound
+         *
+         * @return Port number
+         */
+        constexpr utils::Port getPort() const { return sender_.getPort(); }
+
     private:
         /**
          * @brief Helper to process heartbeats. This is registered as callback in the heartbeat receiver
