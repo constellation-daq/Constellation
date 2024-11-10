@@ -141,6 +141,14 @@ test('Satellite data test', test_satellite_data,
 
 # Controller
 
+test_controller_base = executable('test_controller_base',
+  sources: 'test_controller_base.cpp',
+  dependencies: [core_dep, controller_dep, satellite_dep, catch2_dep],
+)
+test('Controller base functionality test', test_controller_base,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
 test_controller_config = executable('test_controller_config',
   sources: 'test_controller_config.cpp',
   dependencies: [core_dep, controller_dep, catch2_dep],
