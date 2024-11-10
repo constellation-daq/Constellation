@@ -122,6 +122,9 @@ TEST_CASE("Satellite departing", "[controller]") {
     // Wait for CHIRP message to be processed:
     std::this_thread::sleep_for(100ms);
     REQUIRE(controller.getConnectionCount() == 0);
+
+    // Stop the controller:
+    controller.stop();
 }
 
 TEST_CASE("State Updates are propagated", "[controller]") {
