@@ -222,7 +222,90 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     satelliteB.reactFSM(FSM::Transition::initialize, Configuration());
     std::this_thread::sleep_for(100ms);
 
-    // Check that state is mentioned as mixed:
+    // Check that state is mentioned as global:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.getLowestState() == CSCP::State::INIT);
+    REQUIRE(controller.isInGlobalState());
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
+TEST_CASE("Controller commands are sent and answered", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satelliteA {"a"};
+    DummySatellite satelliteB {"b"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
+    chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+
+    // Send command to single satellite with payload
+    const auto msg = controller.sendCommand("Dummy.a", "initialize", Dictionary());
+    REQUIRE(msg.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satelliteA.progressFsm();
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE_FALSE(controller.isInGlobalState());
+
+    // Send command to single satellite with prepared CSCP1Message:
+    auto msg_send = CSCP1Message({"ctrl"}, {CSCP1Message::Type::REQUEST, "launch"});
+    const auto msg_rply = controller.sendCommand("Dummy.a", msg_send);
+    REQUIRE(msg_rply.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satelliteA.progressFsm();
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE_FALSE(controller.isInGlobalState());
+
+    // Send command to all satellites with prepared CSCP1Message
+    const auto msgs_rply = controller.sendCommands(msg_send);
+    REQUIRE(msgs_rply.contains("Dummy.a"));
+    REQUIRE(msgs_rply.contains("Dummy.b"));
+    REQUIRE(msgs_rply.at("Dummy.a").getVerb().first == CSCP1Message::Type::INVALID);
+    REQUIRE(msgs_rply.at("Dummy.b").getVerb().first == CSCP1Message::Type::INVALID);
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE_FALSE(controller.isInGlobalState());
+
+    // Land satelliteA again
+    const auto msg_lnd = controller.sendCommand("Dummy.a", "land");
+    REQUIRE(msg_lnd.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satelliteA.progressFsm();
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE_FALSE(controller.isInGlobalState());
+
+    // Send command to all satellites with same payload
+    const auto msgs = controller.sendCommands("initialize", Dictionary());
+    REQUIRE(msgs.contains("Dummy.a"));
+    REQUIRE(msgs.contains("Dummy.b"));
+    REQUIRE(msgs.at("Dummy.a").getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE(msgs.at("Dummy.b").getVerb().first == CSCP1Message::Type::SUCCESS);
+    satelliteA.progressFsm();
+    satelliteB.progressFsm();
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is global:
     REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
