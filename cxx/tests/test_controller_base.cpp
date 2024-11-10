@@ -315,4 +315,75 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     REQUIRE(controller.getConnectionCount() == 0);
 }
 
+TEST_CASE("Erroneous attempts to send commands", "[controller]") {
+
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satelliteA {"a"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
+
+    // Send command to unknown target satellite:
+    const auto msg_rply_unknown = controller.sendCommand("Dummy.b", "launch");
+    REQUIRE(msg_rply_unknown.getVerb().first == CSCP1Message::Type::ERROR);
+    REQUIRE_THAT(to_string(msg_rply_unknown.getVerb().second), Equals("Target satellite is unknown to controller"));
+
+    // Send command with illegal verb to single satellite:
+    auto msg_err = CSCP1Message({"ctrl"}, {CSCP1Message::Type::UNKNOWN, "launch"});
+    const auto msg_rply_err = controller.sendCommand("Dummy.a", msg_err);
+    REQUIRE(msg_rply_err.getVerb().first == CSCP1Message::Type::ERROR);
+    REQUIRE_THAT(to_string(msg_rply_err.getVerb().second), Equals("Can only send command messages of type REQUEST"));
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
+TEST_CASE("Controller can read run identifier and time", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satellite {"a"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
+
+    // Check that state updates were propagated:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+
+    // Read the run identifier and start time from the running constellation:
+    REQUIRE(controller.getRunIdentifier().empty());
+    const auto no_start_time = controller.getRunStartTime();
+    REQUIRE_FALSE(no_start_time.has_value());
+
+    // Initialize, launch and start satellite
+    satellite.reactFSM(FSM::Transition::initialize, Configuration());
+    satellite.reactFSM(FSM::Transition::launch);
+    satellite.reactFSM(FSM::Transition::start, "this_run_0001");
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state updates were received:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::RUN, true});
+
+    // Read the run identifier and start time from the running constellation:
+    REQUIRE_THAT(controller.getRunIdentifier(), Equals("this_run_0001"));
+    const auto start_time = controller.getRunStartTime();
+    REQUIRE(start_time.has_value());
+    REQUIRE(start_time.value() < std::chrono::system_clock::now());
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
