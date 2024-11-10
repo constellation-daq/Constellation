@@ -18,6 +18,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 #include "chirp_mock.hpp"
@@ -26,6 +27,7 @@
 
 using namespace Catch::Matchers;
 using namespace constellation;
+using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
@@ -117,6 +119,77 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // REQUIRE(type == Controller::UpdateType::ADDED);
     REQUIRE(position2 == 1);
     REQUIRE(size2 == 2);
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
+TEST_CASE("Satellite state updates are received", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satellite {"a"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
+
+    // Check that state updates were propagated:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+
+    // Initialize satellite
+    satellite.reactFSM(FSM::Transition::initialize, Configuration());
+
+    // Check that state updates were received:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+
+    // Stop the controller:
+    controller.stop();
+    REQUIRE(controller.getConnectionCount() == 0);
+}
+
+TEST_CASE("Mixed and global states are reported", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    auto chirp_manager = create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // Create and start satellite
+    DummySatellite satelliteA {"a"};
+    DummySatellite satelliteB {"b"};
+    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
+    chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+
+    // Check that state updates were propagated:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE(controller.isInGlobalState());
+
+    // Initialize satelliteA
+    satelliteA.reactFSM(FSM::Transition::initialize, Configuration());
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mentioned as mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.getLowestState() == CSCP::State::NEW);
+    REQUIRE_FALSE(controller.isInGlobalState());
+
+    // Initialize satelliteB
+    satelliteB.reactFSM(FSM::Transition::initialize, Configuration());
+    std::this_thread::sleep_for(100ms);
+
+    // Check that state is mentioned as mixed:
+    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.getLowestState() == CSCP::State::INIT);
+    REQUIRE(controller.isInGlobalState());
 
     // Stop the controller:
     controller.stop();
