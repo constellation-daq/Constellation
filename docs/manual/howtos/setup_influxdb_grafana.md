@@ -112,14 +112,14 @@ The Flux query can be copied by switching to the "Script Editor":
 Monitoring data can also be transformed in the Query for example to change the units.
 To multiply a value by `0.01`, this can be added in front of the `yield` part of the query:
 
-```flux
+```text
   |> map(fn: (r) => ({ r with _value: r._value * 0.01 }))
 ```
 
 In this particular case with the `Mariner` satellite, this wouldn't work since `_value` is an integer, which needs to be
 transformed to a float first with `float(v: r._value)`. The final query would then be:
 
-```flux
+```text
 from(bucket: "constellation")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
   |> filter(fn: (r) => r["_measurement"] == "Mariner.sldesktop")
