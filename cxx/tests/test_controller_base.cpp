@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstddef>
 #include <string>
+#include <tuple>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -36,6 +37,13 @@ using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
+
+// Workaround for LLVM issue https://github.com/llvm/llvm-project/issues/113087
+namespace std {
+    template <> struct tuple_size<Catch::Decomposer> {
+        static constexpr size_t value = 1;
+    };
+} // namespace std
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
