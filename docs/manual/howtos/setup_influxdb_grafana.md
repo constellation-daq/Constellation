@@ -95,8 +95,51 @@ On the configuration page, the following settings need to be adjusted:
 
 ## Adding a Dashboard
 
-To add a dashboard, monitoring data needs to be available.
+To add a dashboard, monitoring data needs to be available. The [`Influx` satellite](../../satellites/Influx) can be used to
+add monitoring data to InfluxDB. It requires the InfluxDB organization name and the API key shown during the setup phase.
+
+### Generating Monitoring Data
+
 For testing, the `Mariner` satellite can be used in combination with the `Influx` satellite.
+
+The `Mariner` satellite can be started with:
+
+```sh
+SatelliteMariner -g edda -n Nine
+```
+
+The `Influx` satellite can be started with:
+
+```sh
+SatelliteInflux -g edda -n DB
+```
+
+The satellites need to be configured. A sample configuration might look like this:
+
+```toml
+[satellites.Mariner.Nine]
+voltage = 1.0
+current = 1.0
+sample_period = 5.0
+
+[satellites.Influx.DB]
+org = "Insert organization name here"
+token = "Insert read-write API token here"
+```
+
+Assuming the configuration is stored in `config.toml`, the CLI controller can be started with:
+
+```sh
+Controller -g edda -c config.toml
+```
+
+The satellites can be initialized with the configuration using:
+
+```python
+constellation.initialize(cfg)
+```
+
+Now, the `Mariner` should send a `BRIGHTNESS` metric to the `Influx` satellite, which forwards it to the database.
 
 ### Creating a Query
 
@@ -123,7 +166,7 @@ transformed to a float first with `float(v: r._value)`. The final query would th
 ```text
 from(bucket: "constellation")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "Mariner.sldesktop")
+  |> filter(fn: (r) => r["_measurement"] == "Mariner.Nine")
   |> filter(fn: (r) => r["_field"] == "BRIGHTNESS")
   |> aggregateWindow(every: v.windowPeriod, fn: last, createEmpty: false)
   |> map(fn: (r) => ({ r with _value: float(v: r._value) * 0.01 }))
