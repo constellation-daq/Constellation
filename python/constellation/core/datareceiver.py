@@ -46,9 +46,9 @@ class DataReceiver(Satellite):
     def do_initializing(self, config: dict[str, Any]) -> str:
         """Initialize and configure the satellite."""
         # what pattern to use for the file names?
-        self.file_name_pattern = self.config.setdefault("file_name_pattern", "run_{run_identifier}_{date}.h5")
+        self.file_name_pattern = self.config.setdefault("_file_name_pattern", "run_{run_identifier}_{date}.h5")
         # what directory to store files in?
-        self.output_path = self.config.setdefault("output_path", "data")
+        self.output_path = self.config.setdefault("_output_path", "data")
         self._configure_monitoring(2.0)
         return "Configured DataReceiver"
 
