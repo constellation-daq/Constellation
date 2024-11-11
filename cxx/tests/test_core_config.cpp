@@ -514,6 +514,12 @@ TEST_CASE("Move Configuration", "[core][core::config]") {
     REQUIRE(config_move.get<bool>("bool") == true);
 }
 
+TEST_CASE("Assemble & disassemble Value tp PayloadBuffer", "[core][core::config]") {
+    const auto val = Value::set(3.14);
+    const auto val_assembled = val.assemble();
+    REQUIRE(val == Value::disassemble(val_assembled));
+}
+
 TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
     // Create dictionary
     List list {};
@@ -623,6 +629,29 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     const auto config_unpacked = Configuration(Dictionary::disassemble(config_zmq));
     REQUIRE(config_unpacked.size() == 1);
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
+}
+
+TEST_CASE("Mutually Exclusive Keys", "[core][core::config]") {
+    Configuration config;
+
+    config.set<bool>("key1", true);
+    config.set<bool>("key2", true);
+
+    const auto except = InvalidCombinationError(config, {"key1", "key2"}, "mutually exclusive");
+    REQUIRE_THROWS_AS(throw except, InvalidCombinationError);
+    REQUIRE_THROWS_MATCHES(throw except,
+                           InvalidCombinationError,
+                           Message("Combination of keys 'key1', 'key2',  is not valid: mutually exclusive"));
+}
+
+TEST_CASE("Invalid value exceptions", "[core][core::config]") {
+    Configuration config;
+
+    config.set<bool>("key1", true);
+
+    const auto except = InvalidValueError(config, "key1", "invalid");
+    REQUIRE_THROWS_AS(throw except, InvalidValueError);
+    REQUIRE_THROWS_MATCHES(throw except, InvalidValueError, Message("Value true of key 'key1' is not valid: invalid"));
 }
 
 // NOLINTEND(google-readability-casting,readability-redundant-casting)
