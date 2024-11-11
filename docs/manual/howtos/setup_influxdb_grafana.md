@@ -58,8 +58,9 @@ When first visiting the website, a page for setup appears:
 
 ![InfluxDB setup page](influxdb_setup.png)
 
-Choose a username, a password, an organization name and "constellation" as initial bucket name.
-Press "Continue", copy the API key and continue with "Configure Later".
+Here, "constellation" as should be chosen as the initial bucket name.
+After clicking "Continue", a page with an API key appears. The API key should be copied for use in the `Influx` satellite,
+then the configuration can be finalized by clicking "Configure Later".
 
 It is recommended to setup a maximum duration for which monitoring data is stored.
 This can be done by going to "Load Data" → "Buckets", and then opening the settings for the "constellation" bucket.
@@ -86,7 +87,7 @@ On the configuration page, the following settings need to be adjusted:
 - `Query language`: `Flux`
 - `URL`: `http://influxdb:8086`
 - `Organization`: InfluxDB organization name
-- `Token`: InfluxDB API token for Grafana
+- `Token`: Custom API token created for Grafana
 - `Default Bucket`: `constellation`
 - `Min time interval`: `1s`
 
@@ -134,8 +135,8 @@ For more details on creating queries, see [InfluxDB's Flux documentation](https:
 ### Adding a Visualization
 
 First, a new dashboard needs to be created in Grafana by clicking on "Dashboards" and then "Create dashboard".
-Note that dashboards need to be saved manually, so it is recommend to directly save the new dashboard by clicking
-"Save dashboard" in the top right corner, where a title for dashboard can be given.
+It should be noted that dashboards need to be saved manually, so it is recommend to directly save the new dashboard by
+clicking "Save dashboard" in the top right corner, where a title for dashboard can be given.
 
 In the top right corner new visualizations can be added. After selecting InfluxDB, the visualization panel editor opens
 where the Flux query can be pasted:
