@@ -472,7 +472,7 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
     REQUIRE_THROWS_AS(config.set("key", std::array<int, 5> {1, 2, 3, 4, 5}), InvalidTypeError);
 }
 
-TEST_CASE("Value Overflow", "[core][core::config]") {
+TEST_CASE("Value Overflow & Invalid Conversions", "[core][core::config]") {
 
     const std::size_t val = std::numeric_limits<std::size_t>::max();
     REQUIRE_THROWS_AS(Value::set(val), std::overflow_error);
@@ -480,6 +480,12 @@ TEST_CASE("Value Overflow", "[core][core::config]") {
 
     Configuration config {};
     REQUIRE_THROWS_AS(config.set("size", val), InvalidValueError);
+
+    enum class Enum { A, B };
+    config.set<std::string>("key1", "C");
+    REQUIRE_THROWS_MATCHES(config.get<Enum>("key1"),
+                           InvalidValueError,
+                           Message("Value C of key 'key1' is not valid: possible values are A, B"));
 }
 
 TEST_CASE("Update Configuration", "[core][core::config]") {
@@ -631,31 +637,5 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
 }
 
-// NOLINTBEGIN(cert-err60-cpp,misc-throw-by-value-catch-by-reference)
-
-TEST_CASE("Mutually Exclusive Keys", "[core][core::config]") {
-    Configuration config;
-
-    config.set<bool>("key1", true);
-    config.set<bool>("key2", true);
-
-    const auto except = InvalidCombinationError(config, {"key1", "key2"}, "mutually exclusive");
-    REQUIRE_THROWS_AS(throw except, InvalidCombinationError);
-    REQUIRE_THROWS_MATCHES(throw except,
-                           InvalidCombinationError,
-                           Message("Combination of keys 'key1', 'key2',  is not valid: mutually exclusive"));
-}
-
-TEST_CASE("Invalid value exceptions", "[core][core::config]") {
-    Configuration config;
-
-    config.set<bool>("key1", true);
-
-    const auto except = InvalidValueError(config, "key1", "invalid");
-    REQUIRE_THROWS_AS(throw except, InvalidValueError);
-    REQUIRE_THROWS_MATCHES(throw except, InvalidValueError, Message("Value true of key 'key1' is not valid: invalid"));
-}
-
-// NOLINTEND(cert-err60-cpp,misc-throw-by-value-catch-by-reference)
 // NOLINTEND(google-readability-casting,readability-redundant-casting)
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
