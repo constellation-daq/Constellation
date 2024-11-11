@@ -81,6 +81,16 @@ test('Core pools test', test_core_pools,
   is_parallel: false,
 )
 
+# Core / Protocol
+
+test_core_protocol = executable('test_core_protocol',
+  sources: 'test_core_protocol.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core protocol test', test_core_protocol,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
 # Core / Utils
 
 test_core_utils = executable('test_core_utils',
