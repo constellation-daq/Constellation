@@ -481,7 +481,7 @@ TEST_CASE("Value Overflow & Invalid Conversions", "[core][core::config]") {
     Configuration config {};
     REQUIRE_THROWS_AS(config.set("size", val), InvalidValueError);
 
-    enum class Enum { A, B };
+    enum class Enum : std::uint8_t { A, B };
     config.set<std::string>("key1", "C");
     REQUIRE_THROWS_MATCHES(config.get<Enum>("key1"),
                            InvalidValueError,
