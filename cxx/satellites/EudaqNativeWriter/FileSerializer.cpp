@@ -19,6 +19,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
 #include "EudaqNativeWriterSatellite.hpp"
@@ -26,6 +27,7 @@
 using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::satellite;
+using namespace constellation::utils;
 
 EudaqNativeWriterSatellite::FileSerializer::FileSerializer(const std::filesystem::path& path,
                                                            std::uint32_t run_sequence,
@@ -52,13 +54,12 @@ void EudaqNativeWriterSatellite::FileSerializer::flush() {
     }
 }
 
-void EudaqNativeWriterSatellite::FileSerializer::write(std::span<const std::uint8_t> data) {
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+void EudaqNativeWriterSatellite::FileSerializer::write(std::span<const std::byte> data) {
     file_.write(to_char_ptr(data.data()), static_cast<std::streamsize>(data.size_bytes()));
     if(!file_.good()) {
         throw SatelliteError("Error writing to file");
     }
-    bytes_written_ += len;
+    bytes_written_ += data.size_bytes();
 }
 
 void EudaqNativeWriterSatellite::FileSerializer::write_str(const std::string& t) {

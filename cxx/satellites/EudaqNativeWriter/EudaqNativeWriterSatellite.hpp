@@ -118,7 +118,7 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         void parse_bor_tags(const constellation::message::CDTP1Message::Header& header);
 
         /** Write data to file */
-        void write(const std::uint8_t* data, std::size_t len);
+        void write(std::span<const std::byte> data);
 
         /** Write EUDAQ event data blocks to file */
         void write_blocks(const std::vector<constellation::message::PayloadBuffer>& payload);
@@ -130,12 +130,12 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         template <typename T> void write_int(T v) {
             static_assert(sizeof(v) > 1, "Only supports integers of size > 1 byte");
             T t = v;
-            std::array<std::uint8_t, sizeof v> buf;
+            std::array<std::byte, sizeof v> buf;
             for(std::size_t i = 0; i < sizeof v; ++i) {
-                buf[i] = static_cast<std::uint8_t>(t & 0xff);
+                buf[i] = static_cast<std::byte>(t & 0xff);
                 t >>= 8;
             }
-            write(buf.data(), buf.size());
+            write({buf.data(), buf.size()});
         }
 
         /** Write a string to file */
