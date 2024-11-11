@@ -52,9 +52,9 @@ void EudaqNativeWriterSatellite::FileSerializer::flush() {
     }
 }
 
-void EudaqNativeWriterSatellite::FileSerializer::write(const std::uint8_t* data, std::size_t len) {
+void EudaqNativeWriterSatellite::FileSerializer::write(std::span<const std::uint8_t> data) {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    file_.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(len));
+    file_.write(to_char_ptr(data.data()), static_cast<std::streamsize>(data.size_bytes()));
     if(!file_.good()) {
         throw SatelliteError("Error writing to file");
     }
@@ -64,7 +64,7 @@ void EudaqNativeWriterSatellite::FileSerializer::write(const std::uint8_t* data,
 void EudaqNativeWriterSatellite::FileSerializer::write_str(const std::string& t) {
     write_int(static_cast<std::uint32_t>(t.length()));
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    write(reinterpret_cast<const std::uint8_t*>(t.data()), t.length());
+    write({to_byte_ptr(t.data()), t.length()});
 }
 
 void EudaqNativeWriterSatellite::FileSerializer::write_tags(const Dictionary& dict) {
@@ -91,8 +91,7 @@ void EudaqNativeWriterSatellite::FileSerializer::write_block(std::uint32_t key, 
     write_int(key);
     const auto frame = payload.span();
     write_int(static_cast<std::uint32_t>(frame.size_bytes()));
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    write(reinterpret_cast<const std::uint8_t*>(frame.data()), frame.size_bytes());
+    write(frame);
 }
 
 void EudaqNativeWriterSatellite::FileSerializer::serialize_header(const constellation::message::CDTP1Message::Header& header,

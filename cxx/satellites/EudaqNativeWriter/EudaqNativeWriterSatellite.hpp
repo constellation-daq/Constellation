@@ -127,7 +127,7 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         void write_block(std::uint32_t key, const constellation::message::PayloadBuffer& payload);
 
         /** Write integers of different sizes to file */
-        template <typename T> void write_int(const T& v) {
+        template <typename T> void write_int(T v) {
             static_assert(sizeof(v) > 1, "Only supports integers of size > 1 byte");
             T t = v;
             std::array<std::uint8_t, sizeof v> buf;

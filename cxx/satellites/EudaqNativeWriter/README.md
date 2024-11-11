@@ -65,11 +65,8 @@ meson configure build -Dsatellite_eudaq_native_writer=false
 
 ## Parameters
 
-The following parameters are read and interpreted by this satellite in addition to the framework parameters of the
-[`ReceiverSatellite`](../reference/cxx/satellite/satellite.md#receiversatellite-configuration-parameters) class.
-
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
 | `allow_overwriting` | Bool | Switch whether overwriting files is allowed or not. If set to `false` and a file exists already, this satellite will go into `ERROR` state. | `false` |
-| `output_directory` | String | Base path to which to write output files to. | - |
+| `output_directory` | String | Base path to which to write output files to | - |
 | `flush_interval` | Integer | Interval in seconds in which data should be flushed to disk | 3 |

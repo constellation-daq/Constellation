@@ -37,8 +37,8 @@ EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, st
 
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     allow_overwriting_ = config.get<bool>("allow_overwriting", false);
-    base_path_ = config.getPath("output_directory", {});
-    flush_timer_ = TimeoutTimer(static_cast<std::chrono::seconds>(config.get<std::size_t>("flush_interval", 3)));
+    base_path_ = config.getPath("output_directory", true);
+    flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
 }
 
 void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
