@@ -1,7 +1,7 @@
 # Setting up InfluxDB and Grafana
 
 Online monitoring with [statistics](../concepts/statistics.md) is essential for most data taking operations.
-This monitoring data can be nicely displayed in a browser with [Grafna](https://grafana.com/oss/grafana/) in combination
+This monitoring data can be nicely displayed in a browser with [Grafana](https://grafana.com/oss/grafana/) in combination
 with a time series database like [InfluxDB](https://www.influxdata.com/).
 
 ## Setting up Docker Compose
@@ -80,7 +80,7 @@ The default username and password are both `admin`.
 First, InfluxDB needs to be added as a data source. This can be done by clicking on "Connections" → "Data sources" and then
 "Add data source". On the page InfluxDB can be selected:
 
-![Graphan add data source](grafana_add_influxdb.png)
+![Grafana add data source](grafana_add_influxdb.png)
 
 On the configuration page, the following settings need to be adjusted:
 
