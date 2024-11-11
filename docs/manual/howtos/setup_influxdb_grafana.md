@@ -42,13 +42,13 @@ volumes:
 Then the containers can be started with:
 
 ```sh
-docker-compose up -d
+docker compose up -d
 ```
 
 The containers can be stopped with:
 
 ```sh
-docker-compose down
+docker compose down
 ```
 
 ## Setting up InfluxDB
