@@ -631,6 +631,8 @@ TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
     REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
 }
 
+// NOLINTBEGIN(cert-err60-cpp,misc-throw-by-value-catch-by-reference)
+
 TEST_CASE("Mutually Exclusive Keys", "[core][core::config]") {
     Configuration config;
 
@@ -654,5 +656,6 @@ TEST_CASE("Invalid value exceptions", "[core][core::config]") {
     REQUIRE_THROWS_MATCHES(throw except, InvalidValueError, Message("Value true of key 'key1' is not valid: invalid"));
 }
 
+// NOLINTEND(cert-err60-cpp,misc-throw-by-value-catch-by-reference)
 // NOLINTEND(google-readability-casting,readability-redundant-casting)
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
