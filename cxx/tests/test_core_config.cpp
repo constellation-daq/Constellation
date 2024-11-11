@@ -514,7 +514,7 @@ TEST_CASE("Move Configuration", "[core][core::config]") {
     REQUIRE(config_move.get<bool>("bool") == true);
 }
 
-TEST_CASE("Assemble & disassemble Value tp PayloadBuffer", "[core][core::config]") {
+TEST_CASE("Assemble & disassemble Value to PayloadBuffer", "[core][core::config]") {
     const auto val = Value::set(3.14);
     const auto val_assembled = val.assemble();
     REQUIRE(val == Value::disassemble(val_assembled));
