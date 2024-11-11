@@ -8,15 +8,16 @@
 
 #include <atomic>
 #include <cstddef>
-#include <string_view>
+#include <string>
 #include <tuple>
+#include <utility>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 class DummyController : public constellation::controller::Controller {
 public:
-    DummyController(std::string controller_name) : Controller(controller_name) {}
+    DummyController(std::string controller_name) : Controller(std::move(controller_name)) {}
 
     void reached_state(constellation::protocol::CSCP::State state, bool global) final {
         reached_state_global_ = global;
@@ -31,11 +32,11 @@ public:
         propagate_total_ = total;
     }
 
-    std::tuple<constellation::protocol::CSCP::State, bool> last_reached_state() const {
+    std::tuple<constellation::protocol::CSCP::State, bool> lastReachedState() const {
         return {reached_state_.load(), reached_state_global_.load()};
     };
 
-    std::tuple<constellation::controller::Controller::UpdateType, std::size_t, std::size_t> last_propagate_update() const {
+    std::tuple<constellation::controller::Controller::UpdateType, std::size_t, std::size_t> lastPropagateUpdate() const {
         return {propagate_update_.load(), propagate_position_.load(), propagate_total_.load()};
     };
 
@@ -45,5 +46,5 @@ private:
 
     std::atomic_size_t propagate_total_ {0};
     std::atomic_size_t propagate_position_ {0};
-    std::atomic<constellation::controller::Controller::UpdateType> propagate_update_ {};
+    std::atomic<constellation::controller::Controller::UpdateType> propagate_update_;
 };

@@ -6,23 +6,24 @@
 
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
+#include <map>
 #include <string>
+#include <thread>
 #include <tuple>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
-#include <zmq.hpp>
-#include <zmq_addon.hpp>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
-#include "constellation/satellite/Satellite.hpp"
+#include "constellation/satellite/FSM.hpp"
 
 #include "chirp_mock.hpp"
 #include "dummy_controller.hpp"
@@ -39,6 +40,7 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 // Workaround for LLVM issue https://github.com/llvm/llvm-project/issues/113087
+#include <catch2/internal/catch_decomposer.hpp>
 namespace std {
     template <> struct tuple_size<Catch::Decomposer> {
         static constexpr size_t value = 1;
@@ -148,8 +150,8 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
 
     // Check that state updates were propagated:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
-    const auto [type, position, size] = controller.last_propagate_update();
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    const auto [type, position, size] = controller.lastPropagateUpdate();
     // FIXME protected
     // REQUIRE(type == Controller::UpdateType::ADDED);
     REQUIRE(position == 0);
@@ -160,8 +162,8 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     chirp_mock_service("Dummy.z", chirp::CONTROL, satellite2.getCommandPort());
 
     // Check that state updates were propagated:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
-    const auto [type2, position2, size2] = controller.last_propagate_update();
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    const auto [type2, position2, size2] = controller.lastPropagateUpdate();
     // FIXME protected
     // REQUIRE(type == Controller::UpdateType::ADDED);
     REQUIRE(position2 == 1);
@@ -186,13 +188,13 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
 
     // Check that state updates were propagated:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
 
     // Initialize satellite
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
 
     // Check that state updates were received:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
 
     // Stop the controller:
     controller.stop();
@@ -216,7 +218,7 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
 
     // Check that state updates were propagated:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE(controller.isInGlobalState());
 
@@ -225,7 +227,7 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mentioned as mixed:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
@@ -234,7 +236,7 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mentioned as global:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
 
@@ -266,7 +268,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
@@ -278,7 +280,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
@@ -291,7 +293,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
@@ -302,7 +304,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
@@ -317,7 +319,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is global:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
 
@@ -358,7 +360,7 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state is global:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
 
@@ -390,7 +392,7 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     controller.start();
 
     // Create and start satellite
-    DummySatellite satelliteA {"a"};
+    const DummySatellite satelliteA {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
 
@@ -424,7 +426,7 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
 
     // Check that state updates were propagated:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
 
     // Read the run identifier and start time from the running constellation:
     REQUIRE(controller.getRunIdentifier().empty());
@@ -438,13 +440,15 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state updates were received:
-    REQUIRE(controller.last_reached_state() == std::tuple<CSCP::State, bool> {CSCP::State::RUN, true});
+    REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::RUN, true});
 
     // Read the run identifier and start time from the running constellation:
     REQUIRE_THAT(controller.getRunIdentifier(), Equals("this_run_0001"));
     const auto start_time = controller.getRunStartTime();
     REQUIRE(start_time.has_value());
-    REQUIRE(start_time.value() < std::chrono::system_clock::now());
+    if(start_time.has_value()) {
+        REQUIRE(start_time.value() < std::chrono::system_clock::now());
+    }
 
     // Stop the controller:
     controller.stop();
