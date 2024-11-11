@@ -90,13 +90,6 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
 }
 
-BaseSatellite::~BaseSatellite() {
-    fsm_.unregisterStateCallback("extrasystoles");
-
-    cscp_thread_.request_stop();
-    join();
-}
-
 std::string BaseSatellite::getCanonicalName() const {
     return to_string(satellite_type_) + "." + to_string(satellite_name_);
 }
@@ -105,6 +98,7 @@ void BaseSatellite::join() {
     if(cscp_thread_.joinable()) {
         cscp_thread_.join();
     }
+    fsm_.unregisterStateCallback("extrasystoles");
 }
 
 void BaseSatellite::terminate() {

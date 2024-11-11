@@ -38,7 +38,12 @@ namespace constellation::satellite {
         BaseSatellite(std::string_view type, std::string_view name);
 
     public:
-        virtual ~BaseSatellite();
+        /**
+         * @brief Destruct base satellite
+         *
+         * @warning `BaseSatellite::join()` has to be called before destruction
+         */
+        virtual ~BaseSatellite() = default;
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress

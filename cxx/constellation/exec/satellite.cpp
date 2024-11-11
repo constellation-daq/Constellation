@@ -230,5 +230,8 @@ int constellation::exec::satellite_main(int argc,
     // Wait for signal to join
     satellite->join();
 
+    // Unregister callbacks
+    chirp_manager->unregisterDiscoverCallbacks();
+
     return 0;
 }

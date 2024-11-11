@@ -121,6 +121,8 @@ TEST_CASE("Receiver / No transmitters configured", "[satellite]") {
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
     // Require receiver in error state because _data_transmitters missing
     REQUIRE(receiver.getState() == FSM::State::ERROR);
+
+    receiver.exit();
 }
 
 TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
@@ -132,6 +134,8 @@ TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
     // Require that transmitter went to error state
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
+
+    transmitter.exit();
 }
 
 TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
@@ -167,6 +171,9 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     REQUIRE_THROWS_MATCHES(transmitter.sendData(std::vector<int>({1, 2, 3, 4})),
                            SendTimeoutError,
                            Message("Failed sending data message after 1s"));
+
+    transmitter.exit();
+    receiver.exit();
 }
 
 TEST_CASE("Successful run", "[satellite]") {
@@ -233,6 +240,9 @@ TEST_CASE("Successful run", "[satellite]") {
     // Ensure all satellite are happy
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
     REQUIRE(transmitter.getState() == FSM::State::ORBIT);
+
+    transmitter.exit();
+    receiver.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
