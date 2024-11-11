@@ -57,6 +57,7 @@ howtos/satellite_cxx
 howtos/satellite_py
 howtos/custom_commands
 howtos/port_eudaq
+howtos/setup_influxdb_grafana
 howtos/receiver_cxx
 howtos/data_transmission_speed
 ```
