@@ -11,7 +11,6 @@
 
 #include <chrono>
 #include <cstddef>
-#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -91,14 +90,6 @@ namespace constellation::message {
         CNSTLN_API static CMDP1Message disassemble(zmq::multipart_t& frames);
 
     protected:
-        /**
-         * Construct a new CMDP1 message with payload
-         *
-         * @param topic Topic of the message
-         * @param header Header of the message
-         */
-        CMDP1Message(std::string topic, Header header);
-
         /**
          * Construct a new CMDP1 message with payload
          *
