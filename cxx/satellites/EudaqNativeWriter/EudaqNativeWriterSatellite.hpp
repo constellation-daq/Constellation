@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -127,11 +128,10 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         void write_block(std::uint32_t key, const constellation::message::PayloadBuffer& payload);
 
         /** Write integers of different sizes to file */
-        template <typename T> void write_int(T v) {
-            static_assert(sizeof(v) > 1, "Only supports integers of size > 1 byte");
-            T t = v;
-            std::array<std::byte, sizeof v> buf;
-            for(std::size_t i = 0; i < sizeof v; ++i) {
+        template <typename T> void write_int(T t) {
+            static_assert(sizeof(t) > 1, "Only supports integers of size > 1 byte");
+            std::array<std::byte, sizeof t> buf;
+            for(std::size_t i = 0; i < sizeof t; ++i) {
                 buf[i] = static_cast<std::byte>(t & 0xff);
                 t >>= 8;
             }

@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <ios>
+#include <span>
 #include <utility>
 #include <vector>
 
