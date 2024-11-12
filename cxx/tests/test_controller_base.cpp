@@ -161,13 +161,14 @@ TEST_CASE("State Updates are propagated", "[controller]") {
         std::this_thread::sleep_for(50ms);
     }
 
+    // Wait for connection update to have propagated
+    controller.waitPropagateUpdate();
+    REQUIRE(controller.lastPropagateUpdate() ==
+            std::tuple<DummyController::UpdateType, size_t, std::size_t> {DummyController::UpdateType::ADDED, 0, 1});
+
     // Check that state updates were propagated:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
-    const auto [type, position, size] = controller.lastPropagateUpdate();
-    // FIXME protected
-    // REQUIRE(type == Controller::UpdateType::ADDED);
-    REQUIRE(position == 0);
-    REQUIRE(size == 1);
 
     // Create and start second satellite
     const DummySatellite satellite2 {"z"};
@@ -178,13 +179,14 @@ TEST_CASE("State Updates are propagated", "[controller]") {
         std::this_thread::sleep_for(50ms);
     }
 
+    // Wait for connection update to have propagated
+    controller.waitPropagateUpdate();
+    REQUIRE(controller.lastPropagateUpdate() ==
+            std::tuple<DummyController::UpdateType, size_t, std::size_t> {DummyController::UpdateType::ADDED, 1, 2});
+
     // Check that state updates were propagated:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
-    const auto [type2, position2, size2] = controller.lastPropagateUpdate();
-    // FIXME protected
-    // REQUIRE(type == Controller::UpdateType::ADDED);
-    REQUIRE(position2 == 1);
-    REQUIRE(size2 == 2);
 
     // Stop the controller:
     controller.stop();
@@ -210,12 +212,14 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     }
 
     // Check that state updates were propagated:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
 
     // Initialize satellite
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
 
     // Check that state updates were received:
+    controller.waitReachedState(CSCP::State::INIT);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
 
     // Stop the controller:
@@ -244,24 +248,25 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     }
 
     // Check that state updates were propagated:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE(controller.isInGlobalState());
 
     // Initialize satelliteA
     satelliteA.reactFSM(FSM::Transition::initialize, Configuration());
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is mentioned as mixed:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 
     // Initialize satelliteB
     satelliteB.reactFSM(FSM::Transition::initialize, Configuration());
-    std::this_thread::sleep_for(100ms);
 
-    // Check that state is mentioned as global:
+    // Check that state is INIT and mentioned as global:
+    controller.waitReachedState(CSCP::State::INIT);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
@@ -296,9 +301,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     const auto msg = controller.sendCommand("Dummy.a", "initialize", Dictionary());
     REQUIRE(msg.getVerb().first == CSCP1Message::Type::SUCCESS);
     satelliteA.progressFsm();
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
@@ -308,9 +313,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     const auto msg_rply = controller.sendCommand("Dummy.a", msg_send);
     REQUIRE(msg_rply.getVerb().first == CSCP1Message::Type::SUCCESS);
     satelliteA.progressFsm();
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
@@ -321,9 +326,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     REQUIRE(msgs_rply.contains("Dummy.b"));
     REQUIRE(msgs_rply.at("Dummy.a").getVerb().first == CSCP1Message::Type::INVALID);
     REQUIRE(msgs_rply.at("Dummy.b").getVerb().first == CSCP1Message::Type::INVALID);
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
@@ -332,9 +337,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     const auto msg_lnd = controller.sendCommand("Dummy.a", "land");
     REQUIRE(msg_lnd.getVerb().first == CSCP1Message::Type::SUCCESS);
     satelliteA.progressFsm();
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is mixed:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, false});
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
@@ -347,9 +352,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     REQUIRE(msgs.at("Dummy.b").getVerb().first == CSCP1Message::Type::SUCCESS);
     satelliteA.progressFsm();
     satelliteB.progressFsm();
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is global:
+    controller.waitReachedState(CSCP::State::INIT);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
@@ -393,9 +398,9 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     REQUIRE(msgs.at("Dummy.b").getVerb().first == CSCP1Message::Type::SUCCESS);
     satelliteA.progressFsm();
     satelliteB.progressFsm();
-    std::this_thread::sleep_for(100ms);
 
     // Check that state is global:
+    controller.waitReachedState(CSCP::State::INIT);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::INIT, true});
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
@@ -472,6 +477,7 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     }
 
     // Check that state updates were propagated:
+    controller.waitReachedState(CSCP::State::NEW);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
 
     // Read the run identifier and start time from the running constellation:
@@ -486,6 +492,7 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     std::this_thread::sleep_for(100ms);
 
     // Check that state updates were received:
+    controller.waitReachedState(CSCP::State::RUN);
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::RUN, true});
 
     // Read the run identifier and start time from the running constellation:

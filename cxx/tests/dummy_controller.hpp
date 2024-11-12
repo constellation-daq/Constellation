@@ -45,11 +45,11 @@ public:
         return {propagate_update_.load(), propagate_position_.load(), propagate_total_.load()};
     };
 
-    void waitReachedState() {
+    void waitReachedState(constellation::protocol::CSCP::State state) {
         using namespace std::chrono_literals;
 
         // Wait for callback to trigger
-        while(!reached_.load()) {
+        while(!reached_.load() && reached_state_.load() != state) {
             std::this_thread::sleep_for(50ms);
         }
         reached_.store(false);
