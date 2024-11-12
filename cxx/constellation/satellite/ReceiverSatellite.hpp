@@ -85,7 +85,7 @@ namespace constellation::satellite {
          * @brief Receive and handle End-of-Run (EOR) message
          *
          * @param header Header of the EOR message containing e.g. the sender name
-         * @param run_metadata Dictionary with run metata of the sending satellite to be stored
+         * @param run_metadata Dictionary with run meta data of the sending satellite to be stored
          */
         virtual void receive_eor(const message::CDTP1Message::Header& header, config::Dictionary run_metadata) = 0;
 

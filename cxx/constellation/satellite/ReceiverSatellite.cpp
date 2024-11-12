@@ -262,14 +262,16 @@ void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
     if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP1Message::Type::EOR, "did not receive BOR");
     }
+    auto metadata = Dictionary::disassemble(eor_message.getPayload().at(0));
+
     // Mark run as incomplete if there are missed messages:
     if(data_transmitter_it->second.missed > 0) {
-        // FIXME currently we have no way of altering the message payload:
-        // eor_message("condition_code", CDTP::RunCondition::INCOMPLETE);
-        // eor_message("condition", to_string(CDTP::RunCondition::INCOMPLETE));
+        metadata["condition_code"] = Value::set(CDTP::RunCondition::INCOMPLETE);
+        metadata["condition"] = to_string(CDTP::RunCondition::INCOMPLETE);
     }
+
     data_transmitter_it->second.state = TransmitterState::EOR_RECEIVED;
     data_transmitter_states_lock.unlock();
 
-    receive_eor(eor_message.getHeader(), Dictionary::disassemble(eor_message.getPayload().at(0)));
+    receive_eor(eor_message.getHeader(), std::move(metadata));
 }
