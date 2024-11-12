@@ -11,6 +11,7 @@
 
 #include <any>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -310,7 +311,7 @@ namespace constellation::chirp {
 
     private:
         BroadcastRecv receiver_;
-        BroadcastSend sender_;
+        std::unique_ptr<BroadcastSend> sender_;
 
         message::MD5Hash group_id_;
         message::MD5Hash host_id_;

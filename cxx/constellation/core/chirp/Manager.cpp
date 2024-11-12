@@ -17,6 +17,7 @@
 #include <functional>
 #include <future>
 #include <iterator>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -27,6 +28,9 @@
 #include <utility>
 #include <vector>
 
+#include <asio/ip/address_v4.hpp>
+
+#include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
@@ -102,11 +106,19 @@ Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
                  const asio::ip::address_v4& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
-    : receiver_(any_address, CHIRP_PORT), sender_(brd_address, CHIRP_PORT), group_id_(MD5Hash(group_name)),
-      host_id_(MD5Hash(host_name)), logger_("CHIRP") {
+    : receiver_(any_address, CHIRP_PORT), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
 
-    LOG_IF(logger_, TRACE, brd_address.has_value())
-        << "Using provided broadcast address " << brd_address.value().to_string();
+    std::set<asio::ip::address_v4> brd_addresses {};
+    if(brd_address.has_value()) {
+        brd_addresses = {brd_address.value()};
+        LOG(logger_, TRACE) << "Using provided broadcast address " << brd_address.value().to_string();
+    } else {
+        brd_addresses = get_broadcast_addresses();
+        LOG(logger_, TRACE) << "Using broadcast addresses "
+                            << range_to_string(brd_addresses, [](const auto& adr) { return adr.to_string(); });
+    }
+    sender_ = std::make_unique<BroadcastSend>(brd_addresses, CHIRP_PORT);
+
     LOG(logger_, TRACE) << "Using any address " << any_address.to_string();
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
@@ -251,7 +263,7 @@ void Manager::send_message(MessageType type, RegisteredService service) {
     LOG(logger_, DEBUG) << "Sending " << to_string(type) << " for " << to_string(service.identifier) << " service on port "
                         << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    sender_.sendBroadcast(asm_msg);
+    sender_->sendBroadcast(asm_msg);
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
