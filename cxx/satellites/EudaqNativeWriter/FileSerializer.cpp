@@ -65,7 +65,6 @@ void EudaqNativeWriterSatellite::FileSerializer::write(std::span<const std::byte
 
 void EudaqNativeWriterSatellite::FileSerializer::write_str(const std::string& t) {
     write_int(static_cast<std::uint32_t>(t.length()));
-    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
     write({to_byte_ptr(t.data()), t.length()});
 }
 
@@ -208,7 +207,7 @@ void EudaqNativeWriterSatellite::FileSerializer::serializeDataMsg(const CDTP1Mes
     const auto& header = data_message.getHeader();
     serialize_header(header, header.getTags());
 
-    auto canonical_name = std::string(header.getSender());
+    const auto canonical_name = std::string(header.getSender());
     if(frames_as_blocks_.at(canonical_name)) {
         // Interpret multiple frames as individual blocks of EUDAQ data:
 
