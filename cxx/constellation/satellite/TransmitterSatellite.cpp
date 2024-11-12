@@ -124,6 +124,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     run_metadata_ = {};
     mark_run_tainted_ = false;
     set_run_metadata_tag("run_id", run_identifier);
+    set_run_metadata_tag("time_start", std::chrono::system_clock::now());
 
     // Create CDTP1 message for BOR
     CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR, std::chrono::system_clock::now(), bor_tags_}, 1};
@@ -151,6 +152,8 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
 }
 
 void TransmitterSatellite::send_eor() {
+    set_run_metadata_tag("time_end", std::chrono::system_clock::now());
+
     // Create CDTP1 message for EOR
     CDTP1Message msg {{getCanonicalName(), ++seq_, CDTP1Message::Type::EOR, std::chrono::system_clock::now(), eor_tags_}, 1};
     msg.addPayload(run_metadata_.assemble());
