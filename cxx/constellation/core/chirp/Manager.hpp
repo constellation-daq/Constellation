@@ -11,7 +11,9 @@
 
 #include <any>
 #include <cstdint>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -125,7 +127,7 @@ namespace constellation::chirp {
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
-        CNSTLN_API Manager(const asio::ip::address_v4& brd_address,
+        CNSTLN_API Manager(const std::optional<asio::ip::address_v4>& brd_address,
                            const asio::ip::address_v4& any_address,
                            std::string_view group_name,
                            std::string_view host_name);
@@ -309,7 +311,7 @@ namespace constellation::chirp {
 
     private:
         BroadcastRecv receiver_;
-        BroadcastSend sender_;
+        std::unique_ptr<BroadcastSend> sender_;
 
         message::MD5Hash group_id_;
         message::MD5Hash host_id_;

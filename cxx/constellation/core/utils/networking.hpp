@@ -12,8 +12,17 @@
 #include <charconv>
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <string_view>
 
+#include <asio.hpp>
+#ifndef _WIN32
+#include <ifaddrs.h>
+#include <net/if.h> // NOLINT(misc-include-cleaner)
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
@@ -64,6 +73,63 @@ namespace constellation::utils {
         // Switch off blocky behavior of context - corresponds to setting linger = 0 for all sockets
         context->set(zmq::ctxopt::blocky, 0);
         return context;
+    }
+
+    CNSTLN_API inline std::set<asio::ip::address_v4> get_broadcast_addresses() {
+        std::set<asio::ip::address_v4> addresses;
+
+#ifdef _WIN32
+        // On MinGW use the default broadcast address of the system
+        asio::ip::address_v4 default_brd_addr;
+        try {
+            default_brd_addr = asio::ip::address_v4::broadcast();
+        } catch(const asio::system_error& error) {
+            default_brd_addr = asio::ip::make_address_v4("255.255.255.255");
+        }
+        addresses.emplace(default_brd_addr);
+#else
+        // Obtain linked list of all local network interfaces
+        struct ifaddrs* addrs = nullptr;
+        struct ifaddrs* ifa = nullptr;
+        if(getifaddrs(&addrs) != 0) {
+            return {};
+        }
+
+        // Iterate through list of interfaces
+        for(ifa = addrs; ifa != nullptr; ifa = ifa->ifa_next) {
+
+            // Select only running interfaces and those providing IPV4:
+            if(ifa->ifa_addr == nullptr || ((ifa->ifa_flags & IFF_RUNNING) == 0U) || ifa->ifa_addr->sa_family != AF_INET) {
+                continue;
+            }
+
+            // Ensure that the interface holds a broadcast address
+            if(((ifa->ifa_flags & IFF_BROADCAST) == 0U) ||
+               ifa->ifa_ifu.ifu_broadaddr == nullptr) { // NOLINT(cppcoreguidelines-pro-type-union-access)
+                continue;
+            }
+
+            char buffer[NI_MAXHOST];                   // NOLINT(modernize-avoid-c-arrays)
+            if(getnameinfo(ifa->ifa_ifu.ifu_broadaddr, // NOLINT(cppcoreguidelines-pro-type-union-access)
+                           sizeof(struct sockaddr_in),
+                           buffer, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+                           sizeof(buffer),
+                           nullptr,
+                           0,
+                           NI_NUMERICHOST) == 0) {
+
+                try {
+                    // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
+                    addresses.emplace(asio::ip::make_address_v4(buffer));
+                } catch(const asio::system_error& error) {
+                    continue;
+                }
+            }
+        }
+
+        freeifaddrs(addrs);
+#endif
+        return addresses;
     }
 
 } // namespace constellation::utils
