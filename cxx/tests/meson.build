@@ -147,6 +147,7 @@ test_controller_base = executable('test_controller_base',
 )
 test('Controller base functionality test', test_controller_base,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
 )
 
 test_controller_config = executable('test_controller_config',
