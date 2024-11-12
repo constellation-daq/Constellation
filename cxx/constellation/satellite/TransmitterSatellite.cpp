@@ -178,11 +178,11 @@ void TransmitterSatellite::send_eor() {
 
 void TransmitterSatellite::stopping_transmitter() {
     if(mark_run_tainted_) {
-        set_run_metadata_tag("condition_code", CDTP::DataCondition::TAINTED);
-        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::TAINTED));
+        set_run_metadata_tag("condition_code", CDTP::RunCondition::TAINTED);
+        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::TAINTED));
     } else {
-        set_run_metadata_tag("condition_code", CDTP::DataCondition::GOOD);
-        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::GOOD));
+        set_run_metadata_tag("condition_code", CDTP::RunCondition::GOOD);
+        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::GOOD));
     }
     send_eor();
 }
@@ -190,8 +190,8 @@ void TransmitterSatellite::stopping_transmitter() {
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
-        set_run_metadata_tag("condition_code", CDTP::DataCondition::INTERRUPTED);
-        set_run_metadata_tag("condition", to_string(CDTP::DataCondition::INTERRUPTED));
+        set_run_metadata_tag("condition_code", CDTP::RunCondition::INTERRUPTED);
+        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::INTERRUPTED));
         send_eor();
     }
 }

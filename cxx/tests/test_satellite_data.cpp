@@ -237,7 +237,7 @@ TEST_CASE("Successful run", "[satellite]") {
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
-    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::GOOD);
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::GOOD);
 
     const auto& eor_tags = receiver.getEORTags("Dummy.t1");
     REQUIRE(eor_tags.at("buggy_events").get<int>() == 10);
@@ -297,7 +297,7 @@ TEST_CASE("Tainted run", "[satellite]") {
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "TAINTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::TAINTED);
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::TAINTED);
 
     // Ensure all satellite are happy
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
@@ -342,7 +342,7 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "INTERRUPTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::INTERRUPTED);
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::INTERRUPTED);
 
     // Ensure all satellite are in safe mode
     REQUIRE(receiver.getState() == FSM::State::SAFE);
@@ -387,7 +387,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::DataCondition>() == CDTP::DataCondition::ABORTED);
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
 
     // Ensure all satellite are in safe mode
     REQUIRE(receiver.getState() == FSM::State::SAFE);

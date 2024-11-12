@@ -13,22 +13,22 @@
 
 namespace constellation::protocol::CDTP {
 
-    /** Possible data conditions of a run */
-    enum class DataCondition : std::uint8_t {
+    /** Possible run conditions of a run */
+    enum class RunCondition : std::uint8_t {
         /** The run has concluded normally, no other information has been provided by the sender */
-        GOOD,
+        GOOD = 0x00,
 
         /** The run has concluded normally, but the data has been marked as tainted by the sender */
-        TAINTED,
+        TAINTED = 0x01,
 
         /** The run has concluded normally, but the receiver has noticed missing messages in the sequence */
-        INCOMPLETE,
+        INCOMPLETE = 0x02,
 
         /** The run has been interrupted by this sender because of a failure condition elsewhere in the constellation */
-        INTERRUPTED,
+        INTERRUPTED = 0xFE,
 
         /** The run has been aborted by the sender and the EOR message has been appended by the receiver */
-        ABORTED,
+        ABORTED = 0xFF,
     };
 
 } // namespace constellation::protocol::CDTP

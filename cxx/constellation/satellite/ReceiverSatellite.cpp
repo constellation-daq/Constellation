@@ -162,8 +162,8 @@ void ReceiverSatellite::stopping_receiver() {
                 LOG(cdtp_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter;
                 auto run_metadata = Dictionary();
                 run_metadata["run_id"] = config::Value::set(getRunIdentifier());
-                run_metadata["condition_code"] = config::Value::set(CDTP::DataCondition::ABORTED);
-                run_metadata["condition"] = config::Value::set(to_string(CDTP::DataCondition::ABORTED));
+                run_metadata["condition_code"] = config::Value::set(CDTP::RunCondition::ABORTED);
+                run_metadata["condition"] = config::Value::set(to_string(CDTP::RunCondition::ABORTED));
                 receive_eor({data_transmitter, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
             }
 
@@ -265,8 +265,8 @@ void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
     // Mark run as incomplete if there are missed messages:
     if(data_transmitter_it->second.missed > 0) {
         // FIXME currently we have no way of altering the message payload:
-        // eor_message("condition_code", CDTP::DataCondition::INCOMPLETE);
-        // eor_message("condition", to_string(CDTP::DataCondition::INCOMPLETE));
+        // eor_message("condition_code", CDTP::RunCondition::INCOMPLETE);
+        // eor_message("condition", to_string(CDTP::RunCondition::INCOMPLETE));
     }
     data_transmitter_it->second.state = TransmitterState::EOR_RECEIVED;
     data_transmitter_states_lock.unlock();
