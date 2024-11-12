@@ -54,9 +54,7 @@ namespace constellation::satellite {
              * @param key Key of the tag
              * @param value Value of the tag
              */
-            template <typename T> void addTag(const std::string& key, const T& value) {
-                getHeader().setTag(key, config::Value::set(value));
-            }
+            template <typename T> void addTag(const std::string& key, const T& value) { getHeader().setTag(key, value); }
 
             /**
              * @brief Obtain current number of frames in this message
@@ -110,14 +108,14 @@ namespace constellation::satellite {
          * @brief Set tag for the BOR message metadata send at the begin of the run
          */
         template <typename T> void setBORTag(std::string_view key, const T& value) {
-            bor_tags_[utils::transform(key, ::tolower)] = config::Value::set(value);
+            bor_tags_[utils::transform(key, ::tolower)] = value;
         }
 
         /**
          * @brief Set tag for the EOR message metadata send at the end of the run
          */
         template <typename T> void setEORTag(std::string_view key, const T& value) {
-            eor_tags_[utils::transform(key, ::tolower)] = config::Value::set(value);
+            eor_tags_[utils::transform(key, ::tolower)] = value;
         }
 
         /**
@@ -193,7 +191,7 @@ namespace constellation::satellite {
          * @brief Set tag for the run metadata send as payload of the EOR message
          */
         template <typename T> void set_run_metadata_tag(std::string_view key, const T& value) {
-            run_metadata_[utils::transform(key, ::tolower)] = config::Value::set(value);
+            run_metadata_[utils::transform(key, ::tolower)] = value;
         }
 
     private:

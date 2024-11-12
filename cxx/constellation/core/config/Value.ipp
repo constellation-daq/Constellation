@@ -27,7 +27,7 @@
 
 namespace constellation::config {
 
-    template <typename T> Value& Value::operator= (const T& value) {
+    template <typename T> Value& Value::operator=(const T& value) {
         *this = Value::set<T>(value);
         return *this;
     }
