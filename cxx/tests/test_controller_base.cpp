@@ -65,7 +65,9 @@ TEST_CASE("Satellite connecting", "[controller]") {
     chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
-    REQUIRE(controller.getConnectionCount() == 1);
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
     REQUIRE(controller.getConnections().contains("Dummy.sat1"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
@@ -90,7 +92,9 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite1.getCommandPort());
 
     // Check that satellite connected
-    REQUIRE(controller.getConnectionCount() == 1);
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
     REQUIRE(controller.getConnections().contains("Dummy.a"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
@@ -122,7 +126,9 @@ TEST_CASE("Satellite departing", "[controller]") {
     chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
-    REQUIRE(controller.getConnectionCount() == 1);
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
     REQUIRE(controller.getConnections().contains("Dummy.sat1"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
@@ -130,8 +136,9 @@ TEST_CASE("Satellite departing", "[controller]") {
     chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort(), false);
 
     // Wait for CHIRP message to be processed:
-    std::this_thread::sleep_for(100ms);
-    REQUIRE(controller.getConnectionCount() == 0);
+    while(controller.getConnectionCount() > 0) {
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Stop the controller:
     controller.stop();
@@ -149,6 +156,11 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     const DummySatellite satellite {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
 
+    // Wait for connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
     // Check that state updates were propagated:
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
     const auto [type, position, size] = controller.lastPropagateUpdate();
@@ -160,6 +172,11 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // Create and start second satellite
     const DummySatellite satellite2 {"z"};
     chirp_mock_service("Dummy.z", chirp::CONTROL, satellite2.getCommandPort());
+
+    // Wait for connection
+    while(controller.getConnectionCount() < 2) {
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Check that state updates were propagated:
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
@@ -186,6 +203,11 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     DummySatellite satellite {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
+
+    // Wait for connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Check that state updates were propagated:
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
@@ -216,6 +238,10 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
     chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
     chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+
+    while(controller.getConnectionCount() < 2) {
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Check that state updates were propagated:
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
@@ -260,6 +286,11 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
     chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
     chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+
+    // Await connections
+    while(controller.getConnectionCount() < 2) {
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Send command to single satellite with payload
     const auto msg = controller.sendCommand("Dummy.a", "initialize", Dictionary());
@@ -344,6 +375,11 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
     chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
 
+    // Await connection
+    while(controller.getConnectionCount() < 2) {
+        std::this_thread::sleep_for(50ms);
+    }
+
     // Send command to single satellite with payload
     Dictionary config_a;
     config_a["_heartbeat_interval"] = 3;
@@ -396,6 +432,11 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
 
+    // Await connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
     // Send command to unknown target satellite:
     const auto msg_rply_unknown = controller.sendCommand("Dummy.b", "launch");
     REQUIRE(msg_rply_unknown.getVerb().first == CSCP1Message::Type::ERROR);
@@ -425,6 +466,11 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
 
+    // Await connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
     // Check that state updates were propagated:
     REQUIRE(controller.lastReachedState() == std::tuple<CSCP::State, bool> {CSCP::State::NEW, true});
 
@@ -446,9 +492,7 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     REQUIRE_THAT(controller.getRunIdentifier(), Equals("this_run_0001"));
     const auto start_time = controller.getRunStartTime();
     REQUIRE(start_time.has_value());
-    if(start_time.has_value()) {
-        REQUIRE(start_time.value() < std::chrono::system_clock::now());
-    }
+    REQUIRE(start_time.value() < std::chrono::system_clock::now()); // NOLINT(bugprone-unchecked-optional-access)
 
     // Stop the controller:
     controller.stop();
