@@ -37,19 +37,15 @@ public:
         propagate_ = true;
     }
 
-    std::tuple<constellation::protocol::CSCP::State, bool> lastReachedState() const {
-        return {reached_state_.load(), reached_state_global_.load()};
-    };
-
     std::tuple<UpdateType, std::size_t, std::size_t> lastPropagateUpdate() const {
         return {propagate_update_.load(), propagate_position_.load(), propagate_total_.load()};
     };
 
-    void waitReachedState(constellation::protocol::CSCP::State state) {
+    void waitReachedState(constellation::protocol::CSCP::State state, bool global) {
         using namespace std::chrono_literals;
 
         // Wait for callback to trigger
-        while(!reached_.load() && reached_state_.load() != state) {
+        while(!reached_.load() || reached_state_.load() != state || reached_state_global_.load() != global) {
             std::this_thread::sleep_for(50ms);
         }
         reached_.store(false);
