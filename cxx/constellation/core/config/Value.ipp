@@ -27,6 +27,11 @@
 
 namespace constellation::config {
 
+    template <typename T> Value& Value::operator=(const T& value) {
+        *this = Value::set<T>(value);
+        return *this;
+    }
+
     template <typename T> T Value::get() const {
 
         // When asking for a vector but we get NIL, let's return an empty vector of the right type
