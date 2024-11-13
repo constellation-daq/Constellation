@@ -61,7 +61,7 @@ TEST_CASE("Satellite connecting", "[controller]") {
     REQUIRE(controller.getConnectionCount() == 0);
 
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
     chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
@@ -74,6 +74,8 @@ TEST_CASE("Satellite connecting", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satellite.exit();
 }
 
 TEST_CASE("Attempt connection from satellites with same canonical name", "[controller]") {
@@ -88,7 +90,7 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     REQUIRE(controller.getConnectionCount() == 0);
 
     // Create and start satellite
-    const DummySatellite satellite1 {"a"};
+    DummySatellite satellite1 {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite1.getCommandPort());
 
     // Check that satellite connected
@@ -99,7 +101,7 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
     // Create and start second satellite with same canonical name
-    const DummySatellite satellite2 {"a"};
+    DummySatellite satellite2 {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite2.getCommandPort());
 
     // Check that second satellite was not connected
@@ -108,6 +110,9 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satellite1.exit();
+    satellite2.exit();
 }
 
 TEST_CASE("Satellite departing", "[controller]") {
@@ -122,7 +127,7 @@ TEST_CASE("Satellite departing", "[controller]") {
     REQUIRE(controller.getConnectionCount() == 0);
 
     // Create and start satellite
-    const DummySatellite satellite {};
+    DummySatellite satellite {};
     chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
@@ -142,6 +147,7 @@ TEST_CASE("Satellite departing", "[controller]") {
 
     // Stop the controller:
     controller.stop();
+    satellite.exit();
 }
 
 TEST_CASE("State Updates are propagated", "[controller]") {
@@ -153,7 +159,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     controller.start();
 
     // Create and start satellite
-    const DummySatellite satellite {"a"};
+    DummySatellite satellite {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
 
     // Wait for connection
@@ -170,7 +176,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     controller.waitReachedState(CSCP::State::NEW, true);
 
     // Create and start second satellite
-    const DummySatellite satellite2 {"z"};
+    DummySatellite satellite2 {"z"};
     chirp_mock_service("Dummy.z", chirp::CONTROL, satellite2.getCommandPort());
 
     // Wait for connection
@@ -189,6 +195,9 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satellite.exit();
+    satellite2.exit();
 }
 
 TEST_CASE("Satellite state updates are received", "[controller]") {
@@ -221,6 +230,8 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satellite.exit();
 }
 
 TEST_CASE("Mixed and global states are reported", "[controller]") {
@@ -267,6 +278,9 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satelliteA.exit();
+    satelliteB.exit();
 }
 
 TEST_CASE("Controller commands are sent and answered", "[controller]") {
@@ -350,6 +364,9 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satelliteA.exit();
+    satelliteB.exit();
 }
 
 TEST_CASE("Controller sends command with different payloads", "[controller]") {
@@ -408,6 +425,9 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satelliteA.exit();
+    satelliteB.exit();
 }
 
 TEST_CASE("Erroneous attempts to send commands", "[controller]") {
@@ -420,7 +440,7 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     controller.start();
 
     // Create and start satellite
-    const DummySatellite satelliteA {"a"};
+    DummySatellite satelliteA {"a"};
     chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
     chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
 
@@ -443,6 +463,8 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satelliteA.exit();
 }
 
 TEST_CASE("Controller can read run identifier and time", "[controller]") {
@@ -489,6 +511,8 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     // Stop the controller:
     controller.stop();
     REQUIRE(controller.getConnectionCount() == 0);
+
+    satellite.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
