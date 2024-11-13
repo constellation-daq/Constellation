@@ -39,6 +39,7 @@ using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 class Receiver : public DummySatelliteNR<ReceiverSatellite> {
 protected:
@@ -49,12 +50,14 @@ protected:
         bor_map_.emplace(sender, std::move(config));
         bor_tag_map_.erase(sender);
         bor_tag_map_.emplace(sender, header.getTags());
+        bor_received_ = true;
     }
     void receive_data(CDTP1Message&& data_message) override {
         const auto sender = to_string(data_message.getHeader().getSender());
         const std::lock_guard map_lock {map_mutex_};
         last_data_map_.erase(sender);
         last_data_map_.emplace(sender, std::move(data_message));
+        data_received_ = true;
     }
     void receive_eor(const CDTP1Message::Header& header, Dictionary run_metadata) override {
         const auto sender = to_string(header.getSender());
@@ -63,9 +66,31 @@ protected:
         eor_map_.emplace(sender, std::move(run_metadata));
         eor_tag_map_.erase(sender);
         eor_tag_map_.emplace(sender, header.getTags());
+        eor_received_ = true;
     }
 
 public:
+    void awaitBOR() {
+        while(!bor_received_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        bor_received_.store(false);
+    }
+
+    void awaitData() {
+        while(!data_received_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        data_received_.store(false);
+    }
+
+    void awaitEOR() {
+        while(!eor_received_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        eor_received_.store(false);
+    }
+
     const Configuration& getBOR(const std::string& sender) {
         const std::lock_guard map_lock {map_mutex_};
         return bor_map_.at(sender);
@@ -89,6 +114,9 @@ public:
 
 private:
     std::mutex map_mutex_;
+    std::atomic_bool bor_received_ {false};
+    std::atomic_bool data_received_ {false};
+    std::atomic_bool eor_received_ {false};
     std::map<std::string, Configuration> bor_map_;
     std::map<std::string, Dictionary> bor_tag_map_;
     std::map<std::string, CDTP1Message> last_data_map_;
@@ -132,6 +160,7 @@ TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     auto transmitter = Transmitter();
     auto config = Configuration();
     config.set("_bor_timeout", 1);
+    config.set("_eor_timeout", 1);
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config));
     transmitter.reactFSM(FSM::Transition::launch);
     transmitter.reactFSM(FSM::Transition::start, "test");
@@ -155,6 +184,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
 
     auto config_transmitter = Configuration();
     config_transmitter.set("_data_timeout", 1);
+    config_transmitter.set("_eor_timeout", 1);
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -164,7 +194,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 10);
 
     // Stop the receiver to avoid receiving data
@@ -211,7 +241,7 @@ TEST_CASE("Successful run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
     const auto& bor_tags = receiver.getBORTags("Dummy.t1");
@@ -221,7 +251,7 @@ TEST_CASE("Successful run", "[satellite]") {
     const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
     REQUIRE(sent);
     // Wait a bit for data to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitData();
     const auto& data_msg = receiver.getLastData("Dummy.t1");
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
@@ -232,8 +262,9 @@ TEST_CASE("Successful run", "[satellite]") {
     // Stop and send EOR
     receiver.reactFSM(FSM::Transition::stop, {}, false);
     transmitter.reactFSM(FSM::Transition::stop);
-    // Wait until EOR is handled
     receiver.progressFsm();
+    // Wait until EOR is handled
+    receiver.awaitEOR();
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
@@ -274,14 +305,14 @@ TEST_CASE("Tainted run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
     // Send a data frame
     const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
     REQUIRE(sent);
     // Wait a bit for data to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitData();
     const auto& data_msg = receiver.getLastData("Dummy.t1");
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
@@ -302,6 +333,9 @@ TEST_CASE("Tainted run", "[satellite]") {
     // Ensure all satellite are happy
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
     REQUIRE(transmitter.getState() == FSM::State::ORBIT);
+
+    transmitter.exit();
+    receiver.exit();
 }
 
 TEST_CASE("Transmitter interrupted run", "[satellite]") {
@@ -311,6 +345,7 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     auto receiver = Receiver();
     auto transmitter = Transmitter();
     chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", chirp::HEARTBEAT, transmitter.getHeartbeatPort());
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -328,25 +363,27 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+
+    // Allow receiver to progress through transitional state autonomously:
+    receiver.skipTransitional(true);
 
     // Interrupt the run:
     transmitter.reactFSM(FSM::Transition::interrupt);
-    receiver.reactFSM(FSM::Transition::interrupt, {}, false);
 
     // Wait until EOR is handled
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    receiver.progressFsm();
-
+    receiver.awaitEOR();
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "INTERRUPTED");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::INTERRUPTED);
 
     // Ensure all satellite are in safe mode
-    REQUIRE(receiver.getState() == FSM::State::SAFE);
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
+
+    transmitter.exit();
+    receiver.exit();
 }
 
 TEST_CASE("Transmitter failure run", "[satellite]") {
@@ -356,6 +393,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     auto receiver = Receiver();
     auto transmitter = Transmitter();
     chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", chirp::HEARTBEAT, transmitter.getHeartbeatPort());
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -373,17 +411,17 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::start, "test");
 
     // Wait a bit for BOR to be handled by receiver
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
-    // Abort the transmitter:
+    // Allow receiver to progress through transitional state autonomously:
+    receiver.skipTransitional(true);
+
+    // Abort the transmitter - "failure" does not have a transitional state, so do not progress FSM:
     transmitter.reactFSM(FSM::Transition::failure, {}, false);
-    receiver.reactFSM(FSM::Transition::interrupt, {}, false);
 
     // Wait until EOR is handled
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-    receiver.progressFsm();
-
+    receiver.awaitEOR();
     const auto& eor = receiver.getEOR("Dummy.t1");
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
@@ -392,6 +430,9 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     // Ensure all satellite are in safe mode
     REQUIRE(receiver.getState() == FSM::State::SAFE);
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
+
+    transmitter.exit();
+    receiver.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
