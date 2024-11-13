@@ -29,6 +29,7 @@
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::heartbeat {
