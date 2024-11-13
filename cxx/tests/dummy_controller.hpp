@@ -7,9 +7,9 @@
 #pragma once
 
 #include <atomic>
-#include <chrono>
 #include <cstddef>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 
