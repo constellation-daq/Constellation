@@ -14,10 +14,6 @@
 #include <string_view>
 #include <type_traits>
 
-// Adjust default enum value limit
-#define MAGIC_ENUM_RANGE_MIN 0
-#define MAGIC_ENUM_RANGE_MAX 255
-
 #if __has_include(<magic_enum/magic_enum.hpp>)
 #include <magic_enum/magic_enum.hpp>
 #else
