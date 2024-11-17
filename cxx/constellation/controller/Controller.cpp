@@ -28,7 +28,6 @@
 #include <variant>
 #include <vector>
 
-#include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -41,6 +40,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -133,7 +133,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
         // Obtain current state
         auto send_msg_state = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
         const auto recv_msg_state = send_receive(conn, send_msg_state);
-        conn.state = magic_enum::enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
+        conn.state = enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
 
         // Get list of commands
         auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
@@ -168,8 +168,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     // Find satellite from connection list based in the heartbeat sender name
     const auto sat = connections_.find(msg.getSender());
     if(sat != connections_.end()) {
-        LOG(logger_, TRACE) << msg.getSender() << " reports state " << magic_enum::enum_name(msg.getState())
-                            << ", next message in " << msg.getInterval().count();
+        LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState() << ", next message in "
+                            << msg.getInterval().count();
 
         const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
         if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
@@ -236,12 +236,12 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
         const auto recv_msg = send_receive(sat, send_msg);
 
         try {
-            const auto state = magic_enum::enum_cast<CSCP::State>(recv_msg.getVerb().second).value_or(CSCP::State::NEW);
+            const auto state = enum_cast<CSCP::State>(recv_msg.getVerb().second).value_or(CSCP::State::NEW);
             const auto& header = recv_msg.getHeader();
             if(state == CSCP::State::RUN && header.hasTag("last_changed")) {
                 const auto timestamp = header.getTag<std::chrono::system_clock::time_point>("last_changed");
                 LOG(logger_, DEBUG) << "Run started for " << std::quoted(header.getSender()) << " at "
-                                    << utils::to_string(timestamp);
+                                    << to_string(timestamp);
                 // Use latest available timestamp:
                 time = std::max(timestamp, time.value_or(timestamp));
             }

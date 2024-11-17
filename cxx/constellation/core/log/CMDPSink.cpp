@@ -24,7 +24,6 @@
 #include <thread>
 #include <utility>
 
-#include <magic_enum.hpp>
 #include <spdlog/async_logger.h>
 #include <spdlog/details/log_msg.h>
 #include <zmq.hpp>
@@ -37,6 +36,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/windows.hpp"
@@ -120,8 +120,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         const auto level_str = body.substr(4, level_endpos - 4);
 
         // Empty level means subscription to everything
-        const auto level = (level_str.empty() ? std::optional<Level>(TRACE)
-                                              : magic_enum::enum_cast<Level>(level_str, magic_enum::case_insensitive));
+        const auto level = (level_str.empty() ? std::optional<Level>(TRACE) : enum_cast<Level>(level_str));
 
         // Only accept valid levels
         if(!level.has_value()) {
@@ -155,7 +154,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
             }
         }
 
-        LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(to_string(cmdp_global_level));
+        LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
 
         // Update subscriptions
         SinkManager::getInstance().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));

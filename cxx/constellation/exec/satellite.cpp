@@ -24,7 +24,6 @@
 
 #include <argparse/argparse.hpp>
 #include <asio.hpp>
-#include <magic_enum.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
@@ -32,6 +31,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
@@ -137,7 +137,7 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Set log level
-    const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
+    const auto default_level = enum_cast<Level>(get_arg(parser, "level"));
     if(!default_level.has_value()) {
         LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
                               << ", possible values are: " << utils::list_enum_names<Level>();

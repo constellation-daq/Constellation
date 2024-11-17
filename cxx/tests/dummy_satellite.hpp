@@ -17,8 +17,8 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/exceptions.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -51,14 +51,14 @@ public:
 
     void progressFsm() {
         auto old_state = SatelliteT::getState();
-        LOG(DEBUG) << "Progressing FSM, old state " << constellation::utils::to_string(old_state);
+        LOG(DEBUG) << "Progressing FSM, old state " << old_state;
         progress_fsm_ = true;
         // wait for state change
         while(old_state == SatelliteT::getState()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         progress_fsm_ = false;
-        LOG(DEBUG) << "Progressed FSM, new state " << constellation::utils::to_string(SatelliteT::getState());
+        LOG(DEBUG) << "Progressed FSM, new state " << SatelliteT::getState();
     }
 
     void setSupportReconfigure(bool support_reconfigure) { SatelliteT::support_reconfigure(support_reconfigure); }

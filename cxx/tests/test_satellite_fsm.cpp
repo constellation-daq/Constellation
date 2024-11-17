@@ -21,8 +21,8 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 
 #include "dummy_satellite.hpp"
@@ -456,7 +456,7 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     std::atomic_int cb_count = 0;
     fsm.registerStateCallback("test", [&](State state) {
         const auto local_count = ++cb_count;
-        LOG(DEBUG) << "State callback with state " << to_string(state) << ", count " << local_count;
+        LOG(DEBUG) << "State callback with state " << state << ", count " << local_count;
         if(throw_cb) {
             throw Exception("Throwing in state callback as requested");
         }

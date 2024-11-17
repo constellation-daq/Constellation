@@ -24,7 +24,6 @@
 #include <utility>
 #include <variant>
 
-#include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -40,6 +39,7 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/std_future.hpp"
@@ -124,7 +124,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     // Try to disamble message
     auto message = CSCP1Message::disassemble(recv_msg);
 
-    LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << to_string(message.getVerb().first) << " with verb \""
+    LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
                              << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "")
                              << " from " << message.getHeader().getSender();
 
@@ -145,7 +145,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     message::PayloadBuffer return_payload {};
     config::Dictionary return_tags {};
 
-    auto command_enum = magic_enum::enum_cast<CSCP::StandardCommand>(command, magic_enum::case_insensitive);
+    auto command_enum = enum_cast<CSCP::StandardCommand>(command);
     if(!command_enum.has_value()) {
         return std::nullopt;
     }
@@ -301,8 +301,7 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             const std::string command_string = transform(message.getVerb().second, ::tolower);
 
             // Try to decode as transition
-            auto transition_command =
-                magic_enum::enum_cast<CSCP::TransitionCommand>(command_string, magic_enum::case_insensitive);
+            auto transition_command = enum_cast<CSCP::TransitionCommand>(command_string);
             if(transition_command.has_value()) {
                 send_reply(fsm_.reactCommand(transition_command.value(), message.getPayload()));
                 continue;

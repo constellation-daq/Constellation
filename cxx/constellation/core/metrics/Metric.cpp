@@ -15,12 +15,12 @@
 #include <string>
 #include <utility>
 
-#include <magic_enum.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 
 using namespace constellation::metrics;
@@ -45,7 +45,7 @@ Metric Metric::disassemble(const message::PayloadBuffer& message) {
 
     // Unpack type
     const auto msgpack_type = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
-    const auto type = magic_enum::enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
+    const auto type = enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
 
     // Unpack unit
     const auto msgpack_unit = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
