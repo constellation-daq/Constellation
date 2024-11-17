@@ -26,6 +26,7 @@
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -86,7 +87,7 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
 }
 
 void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
-    LOG(logger_, TRACE) << msg.getSender() << " reports state " << to_string(msg.getState()) << ", next message in "
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState() << ", next message in "
                         << msg.getInterval();
 
     const auto now = std::chrono::system_clock::now();
@@ -106,8 +107,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
         if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
             remote_it->second.lives = 0;
             if(interrupt_callback_) {
-                LOG(logger_, DEBUG) << "Detected state " << to_string(msg.getState()) << " at " << remote_it->first
-                                    << ", interrupting";
+                LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
                 interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
             }
         }

@@ -17,6 +17,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -70,9 +71,9 @@ namespace constellation::satellite {
     public:
         explicit InvalidFSMTransition(protocol::CSCP::Transition transition, protocol::CSCP::State state) {
             error_message_ = "Transition ";
-            error_message_ += utils::to_string(transition);
+            error_message_ += utils::enum_name(transition);
             error_message_ += " not allowed from ";
-            error_message_ += utils::to_string(state);
+            error_message_ += utils::enum_name(state);
             error_message_ += " state";
         }
     };
@@ -112,7 +113,7 @@ namespace constellation::satellite {
             error_message_ = "Command ";
             error_message_ += command;
             error_message_ += " cannot be called in state ";
-            error_message_ += utils::to_string(state);
+            error_message_ += utils::enum_name(state);
         }
     };
 
@@ -190,7 +191,9 @@ namespace constellation::satellite {
     class CNSTLN_API InvalidCDTPMessageType : public satellite::SatelliteError {
     public:
         explicit InvalidCDTPMessageType(message::CDTP1Message::Type type, std::string_view reason) {
-            error_message_ = "Error handling CDTP message with type " + utils::to_string(type) + ": ";
+            error_message_ = "Error handling CDTP message with type ";
+            error_message_ += utils::enum_name(type);
+            error_message_ += ": ";
             error_message_ += reason;
         }
     };

@@ -15,7 +15,6 @@
 #include <string_view>
 #include <utility>
 
-#include <magic_enum.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
@@ -25,6 +24,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -98,7 +98,7 @@ Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     // Search for second slash after "LOG/" to get substring with log level
     const auto level_endpos = topic.find_first_of('/', 4);
     const auto level_str = topic.substr(4, level_endpos - 4);
-    const auto level_opt = magic_enum::enum_cast<Level>(level_str, magic_enum::case_insensitive);
+    const auto level_opt = enum_cast<Level>(level_str);
     if(!level_opt.has_value()) {
         throw MessageDecodingError("\"" + to_string(level_str) + "\" is not a valid log level");
     }

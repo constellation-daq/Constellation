@@ -25,7 +25,6 @@
 #include <vector>
 
 #include <argparse/argparse.hpp>
-#include <magic_enum.hpp>
 #include <zmq.hpp>
 
 #include <QApplication>
@@ -57,6 +56,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
 
 #include "qt_utils.hpp"
@@ -279,7 +279,7 @@ void MissionControl::on_btnInit_clicked() {
     }
 
     for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
-        LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
@@ -296,26 +296,26 @@ void MissionControl::on_btnShutdown_clicked() {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
         for(auto& response : runcontrol_.sendQCommands("shutdown")) {
-            LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << to_string(response.second.getVerb().first);
+            LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << response.second.getVerb().first;
         }
     }
 }
 
 void MissionControl::on_btnConfig_clicked() {
     for(auto& response : runcontrol_.sendQCommands("launch")) {
-        LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
     for(auto& response : runcontrol_.sendQCommands("land")) {
-        LOG(logger_, DEBUG) << "Land: " << response.first << ": " << to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Land: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
     for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
-        LOG(logger_, DEBUG) << "Start: " << response.first << ": " << to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Start: " << response.first << ": " << response.second.getVerb().first;
     }
 
     // Set start time for this run
@@ -324,7 +324,7 @@ void MissionControl::on_btnStart_clicked() {
 
 void MissionControl::on_btnStop_clicked() {
     for(auto& response : runcontrol_.sendQCommands("stop")) {
-        LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << to_string(response.second.getVerb().first);
+        LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << response.second.getVerb().first;
     }
 
     // Increment run sequence:
@@ -446,7 +446,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     contextMenu.addSeparator();
 
     // Add standard commands
-    for(const auto command : magic_enum::enum_names<CSCP::StandardCommand>()) {
+    for(const auto command : enum_names<CSCP::StandardCommand>()) {
         if(command == "shutdown") {
             // Already added above
             continue;

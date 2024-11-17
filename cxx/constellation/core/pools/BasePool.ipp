@@ -28,8 +28,8 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/networking.hpp"
-#include "constellation/core/utils/string.hpp"
 
 namespace constellation::pools {
 
@@ -242,7 +242,7 @@ namespace constellation::pools {
     template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback_impl(const chirp::DiscoveredService& service,
                                                                 chirp::ServiceStatus status) {
-        LOG(pool_logger_, TRACE) << "Callback for " << service.to_uri() << ", status " << utils::to_string(status);
+        LOG(pool_logger_, TRACE) << "Callback for " << service.to_uri() << ", status " << status;
 
         if(status == chirp::ServiceStatus::DEPARTED) {
             disconnect(service);

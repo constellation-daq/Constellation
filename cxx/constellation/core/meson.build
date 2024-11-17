@@ -135,6 +135,7 @@ install_headers(
 
 install_headers(
   'utils/casts.hpp',
+  'utils/enum.hpp',
   'utils/exceptions.hpp',
   'utils/networking.hpp',
   'utils/std_future.hpp',
