@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <map>
@@ -54,6 +55,7 @@
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -63,6 +65,7 @@
 
 using namespace constellation;
 using namespace constellation::chirp;
+using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
 using namespace constellation::protocol;
@@ -347,6 +350,32 @@ void MissionControl::on_btnLoadConf_clicked() {
     }
 }
 
+void MissionControl::on_btnGenConf_clicked() {
+
+    ControllerConfiguration new_cfg;
+
+    // Round-call to collect configurations from the satellites:
+    for(const auto& config : runcontrol_.sendQCommands("get_config")) {
+        const auto cfg = Dictionary::disassemble(config.second.getPayload());
+        new_cfg.addSatelliteConfiguration(config.first, cfg);
+    }
+
+    const QString filename = QFileDialog::getSaveFileName(
+        this, tr("Save File"), QFileInfo(txtConfigFileName->text()).path(), tr("Configurations (*.conf *.toml *.ini)"));
+
+    if(filename.isNull()) {
+        return;
+    }
+
+    // Store to file:
+    std::ofstream file {filename.toStdString()};
+    file << new_cfg.getAsTOML();
+    file.close();
+
+    // Set selected config to this one:
+    txtConfigFileName->setText(filename);
+}
+
 void MissionControl::update_button_states(CSCP::State state) {
 
     const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$))");
@@ -357,6 +386,8 @@ void MissionControl::update_button_states(CSCP::State state) {
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
     btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
+    btnGenConf->setEnabled(CSCP::is_not_one_of_states<NEW, initializing, ERROR>(state) &&
+                           runcontrol_.getConnectionCount() > 0);
     txtConfigFileName->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
     btnStart->setEnabled(state == ORBIT);
     btnStop->setEnabled(state == RUN);
