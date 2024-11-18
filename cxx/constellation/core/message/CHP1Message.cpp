@@ -12,6 +12,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -22,6 +23,7 @@
 
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
@@ -71,12 +73,23 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
         const auto state =
             static_cast<CSCP::State>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
+        // Unpack message flags
+        const auto flags = static_cast<CHP::MessageFlags>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
+
+
         // Unpack time interval
         const auto interval = static_cast<std::chrono::milliseconds>(
             msgpack_unpack_to<std::uint16_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
+        // Attempt to unpack a status message
+        std::optional<std::string> status = {};
+        if(flags & CHP::MessageFlags::HAS_STATUS) {
+            const auto msgpack_status = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+            status = msgpack_status->as<std::string>();
+        }
+
         // Construct message
-        return {sender, state, interval, time};
+        return {sender, state, interval, flags, time, status};
     } catch(const MsgpackUnpackError& e) {
         throw MessageDecodingError(e.what());
     }
@@ -95,8 +108,15 @@ zmq::multipart_t CHP1Message::assemble() {
     msgpack_pack(sbuf, getTime());
     // then state
     msgpack_pack(sbuf, std::to_underlying(state_));
+    // then flags
+    msgpack_pack(
+        sbuf, std::to_underlying(flags_ | (status_.has_value() ? CHP::MessageFlags::HAS_STATUS : CHP::MessageFlags::NONE)));
     // then interval
     msgpack_pack(sbuf, static_cast<uint16_t>(interval_.count()));
+    // then status
+    if(status_.has_value()) {
+        msgpack_pack(sbuf, status_.value());
+    }
 
     frames.add(PayloadBuffer(std::move(sbuf)).to_zmq_msg_release());
 
