@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -17,6 +18,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
 
@@ -34,8 +36,10 @@ namespace constellation::message {
         CHP1Message(std::string sender,
                     protocol::CSCP::State state,
                     std::chrono::milliseconds interval,
-                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : sender_(std::move(sender)), time_(time), state_(state), interval_(interval) {}
+                    protocol::CHP::MessageFlags flags = {},
+                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
+                    std::optional<std::string> status = {})
+            : sender_(std::move(sender)), time_(time), state_(state), flags_(flags), status_(status), interval_(interval) {}
 
         /** Return message protocol */
         constexpr protocol::Protocol getProtocol() const { return protocol_; }
@@ -48,6 +52,15 @@ namespace constellation::message {
 
         /** Return state of the message */
         constexpr protocol::CSCP::State getState() const { return state_; }
+
+        /** Return the message flags */
+        constexpr protocol::CHP::MessageFlags getFlags() const { return flags_; }
+
+        constexpr bool isExtrasystole() const { return flags_ & protocol::CHP::MessageFlags::IS_EXTRASYSTOLE; }
+
+        constexpr bool isAutonomous() const { return flags_ & protocol::CHP::MessageFlags::IS_AUTONOMOUS; }
+
+        constexpr std::optional<std::string> getStatus() const { return status_; }
 
         /** Return maxima time interval until next message is expected */
         constexpr std::chrono::milliseconds getInterval() const { return interval_; }
@@ -69,6 +82,8 @@ namespace constellation::message {
         std::string sender_;
         std::chrono::system_clock::time_point time_;
         protocol::CSCP::State state_;
+        protocol::CHP::MessageFlags flags_;
+        std::optional<std::string> status_;
         std::chrono::milliseconds interval_;
     };
 
