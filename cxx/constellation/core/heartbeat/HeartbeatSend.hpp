@@ -21,6 +21,7 @@
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/networking.hpp"
 
@@ -96,6 +97,8 @@ namespace constellation::heartbeat {
         std::function<protocol::CSCP::State()> state_callback_;
         /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
+        /** Message flags for next message */
+        std::atomic<protocol::CHP::MessageFlags> flags_;
 
         std::condition_variable cv_;
         std::mutex mutex_;

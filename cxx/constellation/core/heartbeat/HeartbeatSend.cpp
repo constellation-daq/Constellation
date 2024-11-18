@@ -62,6 +62,7 @@ HeartbeatSend::~HeartbeatSend() {
 }
 
 void HeartbeatSend::sendExtrasystole() {
+    flags_ = flags_ | CHP::MessageFlags::IS_EXTRASYSTOLE;
     cv_.notify_one();
 }
 
@@ -75,6 +76,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         cv_.wait_for(lock, interval_.load() / 2);
 
         // Publish CHP message with current state
-        CHP1Message(sender_, state_callback_(), interval_.load()).assemble().send(pub_socket_);
+        CHP1Message(sender_, state_callback_(), interval_.load(), flags_).assemble().send(pub_socket_);
+        flags_ = CHP::MessageFlags::NONE;
     }
 }
