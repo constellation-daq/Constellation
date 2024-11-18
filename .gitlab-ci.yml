@@ -138,9 +138,6 @@ variables:
 
 .build-cpp:
   stage: build
-  # Select openstack Kubernetes runner for now since they perform better for C++ compilation
-  tags:
-    - openstack
   cache:
     - *meson-wrap-cache
     - *ccache
@@ -152,6 +149,8 @@ variables:
       - build
     expire_in: 24 hour
   <<: *cpp-rules
+  tags:
+    - openstack # Select openstack Kubernetes runner for now since they perform better for C++ compilation
 
 .build-py:
   stage: build
@@ -212,7 +211,6 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
-    # Do not build the Qt UI
     BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
     BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
     NINJA_OPTIONS: "-l4"
@@ -430,6 +428,9 @@ lint:clang-tidy:
     - ninja -C build clang-tidy
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
+  retry: 2
+  tags:
+    - openstack
 
 lint:clang-tidy-diff:
   extends:
@@ -456,7 +457,7 @@ lint:clang-scan-build:
     CCC_CC: clang
     CCC_CXX: clang++
   script:
-    - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug
+    - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug $(scripts/meson_enable_all_components.sh)
     - ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:
@@ -491,6 +492,9 @@ lint:coverity-scan:
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
+  retry: 2
+  tags:
+    - openstack
 
 # format stage
 
