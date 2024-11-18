@@ -500,8 +500,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     auto dict = runcontrol_.getQCommands(index);
     for(const auto& [key, value] : dict) {
         // Filter out transition and standard commands to not list them twice
-        if(magic_enum::enum_cast<CSCP::TransitionCommand>(key, magic_enum::case_insensitive).has_value() ||
-           magic_enum::enum_cast<CSCP::StandardCommand>(key, magic_enum::case_insensitive).has_value()) {
+        if(enum_cast<CSCP::TransitionCommand>(key).has_value() || enum_cast<CSCP::StandardCommand>(key).has_value()) {
             continue;
         }
 
@@ -642,7 +641,7 @@ int main(int argc, char** argv) {
         }
 
         // Set log level
-        const auto default_level = magic_enum::enum_cast<Level>(get_arg(parser, "level"), magic_enum::case_insensitive);
+        const auto default_level = enum_cast<Level>(get_arg(parser, "level"));
         if(!default_level.has_value()) {
             LOG(logger, CRITICAL) << "Log level " << std::quoted(get_arg(parser, "level"))
                                   << " is not valid, possible values are: " << list_enum_names<Level>();
