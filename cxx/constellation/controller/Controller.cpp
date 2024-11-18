@@ -210,12 +210,19 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         }
 
         // Check if a state has changed and we need to calculate and propagate updates:
-        const bool state_updated = (sat->second.state != msg.getState()) || (sat->second.interval != msg.getInterval());
+        bool state_updated = (sat->second.state != msg.getState()) || (sat->second.interval != msg.getInterval());
 
-        // Update status and timers
+        // Update state and timers
         sat->second.interval = msg.getInterval();
         sat->second.last_heartbeat = now;
         sat->second.state = msg.getState();
+
+        // Update status message if available
+        const auto status = msg.getStatus();
+        if(status.has_value()) {
+            sat->second.last_message = status.value();
+            state_updated = true;
+        }
 
         // Replenish lives unless we're in ERROR or SAFE state:
         if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
@@ -343,7 +350,7 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
             auto reply = CSCP1Message::disassemble(recv_zmq_msg);
             const auto verb = reply.getVerb();
             conn.last_cmd_type = verb.first;
-            conn.last_cmd_verb = verb.second;
+            conn.last_message = verb.second;
             return reply;
         }
 
