@@ -84,6 +84,9 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
     timed_metrics_lock.unlock();
 
     LOG(logger_, DEBUG) << "Successfully registered timed metric " << std::quoted(name);
+
+    // Trigger loop to send timed metric immediately
+    cv_.notify_one();
 }
 
 void MetricsManager::unregisterMetric(std::string_view name) {
