@@ -71,10 +71,13 @@ TEST_CASE("Satellite connecting", "[controller]") {
     REQUIRE(controller.getConnections().contains("Dummy.sat1"));
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
-    // Stop the controller:
+    // Stop controller
     controller.stop();
+
+    // Check that all satellites have been removed
     REQUIRE(controller.getConnectionCount() == 0);
 
+    // Exit satellite
     satellite.exit();
 }
 
@@ -107,10 +110,8 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     // Check that second satellite was not connected
     REQUIRE(controller.getConnectionCount() == 1);
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satellite1.exit();
     satellite2.exit();
 }
@@ -145,7 +146,7 @@ TEST_CASE("Satellite departing", "[controller]") {
         std::this_thread::sleep_for(50ms);
     }
 
-    // Stop the controller:
+    // Stop controller and exit satellite
     controller.stop();
     satellite.exit();
 }
@@ -192,10 +193,8 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // Check that state updates were propagated:
     controller.waitReachedState(CSCP::State::NEW, true);
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satellite.exit();
     satellite2.exit();
 }
@@ -227,10 +226,8 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     // Check that state updates were received:
     controller.waitReachedState(CSCP::State::INIT, true);
 
-    // Stop the controller:
+    // Stop controller and exit satellite
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satellite.exit();
 }
 
@@ -275,10 +272,8 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satelliteA.exit();
     satelliteB.exit();
 }
@@ -361,10 +356,8 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     REQUIRE(controller.getLowestState() == CSCP::State::INIT);
     REQUIRE(controller.isInGlobalState());
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satelliteA.exit();
     satelliteB.exit();
 }
@@ -422,10 +415,8 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     REQUIRE(satA_cfg.at("_heartbeat_interval").get<std::int64_t>() == 3);
     REQUIRE(satB_cfg.at("_heartbeat_interval").get<std::int64_t>() == 5);
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satelliteA.exit();
     satelliteB.exit();
 }
@@ -460,10 +451,8 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     REQUIRE(msg_rply_err.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(msg_rply_err.getVerb().second), Equals("Can only send command messages of type REQUEST"));
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satelliteA.exit();
 }
 
@@ -508,10 +497,8 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     REQUIRE(start_time.has_value());
     REQUIRE(start_time.value() < std::chrono::system_clock::now()); // NOLINT(bugprone-unchecked-optional-access)
 
-    // Stop the controller:
+    // Stop controller and exit satellites
     controller.stop();
-    REQUIRE(controller.getConnectionCount() == 0);
-
     satellite.exit();
 }
 
