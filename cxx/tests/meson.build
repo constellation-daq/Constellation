@@ -56,6 +56,15 @@ test('Core message test', test_core_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
+test_core_metrics = executable('test_core_metrics',
+  sources: 'test_core_metrics.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core metrics test', test_core_metrics,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
+
 test_core_config = executable('test_core_config',
   sources: 'test_core_config.cpp',
   dependencies: [core_dep, catch2_dep],
