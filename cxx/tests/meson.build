@@ -11,7 +11,7 @@ if not catch2_dep.found()
   subdir_done()
 endif
 
-# Core / CHIRP
+# Core
 
 test_core_chirp_broadcast = executable('test_core_chirp_broadcast',
   sources: 'test_core_chirp_broadcast.cpp',
@@ -39,8 +39,6 @@ test('Core CHIRP message test', test_core_chirp_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
-# Core / Logging
-
 test_core_logging = executable('test_core_logging',
   sources: 'test_core_logging.cpp',
   dependencies: [core_dep, catch2_dep],
@@ -50,8 +48,6 @@ test('Core logging test', test_core_logging,
   is_parallel: false,
 )
 
-# Core / Message
-
 test_core_message = executable('test_core_message',
   sources: 'test_core_message.cpp',
   dependencies: [core_dep, catch2_dep],
@@ -60,8 +56,6 @@ test('Core message test', test_core_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
-# Core / Configuration
-
 test_core_config = executable('test_core_config',
   sources: 'test_core_config.cpp',
   dependencies: [core_dep, catch2_dep],
@@ -69,8 +63,6 @@ test_core_config = executable('test_core_config',
 test('Core configuration test', test_core_config,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
-
-# Core / Pools
 
 test_core_pools = executable('test_core_pools',
   sources: 'test_core_pools.cpp',
@@ -81,8 +73,6 @@ test('Core pools test', test_core_pools,
   is_parallel: false,
 )
 
-# Core / Protocol
-
 test_core_protocol = executable('test_core_protocol',
   sources: 'test_core_protocol.cpp',
   dependencies: [core_dep, catch2_dep],
@@ -90,8 +80,6 @@ test_core_protocol = executable('test_core_protocol',
 test('Core protocol test', test_core_protocol,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
-
-# Core / Utils
 
 test_core_utils = executable('test_core_utils',
   sources: 'test_core_utils.cpp',
