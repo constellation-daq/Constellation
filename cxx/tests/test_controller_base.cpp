@@ -170,7 +170,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // Wait for connection update to have propagated
     controller.waitPropagateUpdate();
     REQUIRE(controller.lastPropagateUpdate() ==
-            std::tuple<DummyController::UpdateType, size_t, std::size_t> {DummyController::UpdateType::ADDED, 0, 1});
+            std::make_tuple(DummyController::UpdateType::ADDED, std::size_t(0), std::size_t(1)));
 
     // Check that state updates were propagated:
     controller.waitReachedState(CSCP::State::NEW, true);
@@ -187,7 +187,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     // Wait for connection update to have propagated
     controller.waitPropagateUpdate();
     REQUIRE(controller.lastPropagateUpdate() ==
-            std::tuple<DummyController::UpdateType, size_t, std::size_t> {DummyController::UpdateType::ADDED, 1, 2});
+            std::make_tuple(DummyController::UpdateType::ADDED, std::size_t(1), std::size_t(2)));
 
     // Check that state updates were propagated:
     controller.waitReachedState(CSCP::State::NEW, true);
