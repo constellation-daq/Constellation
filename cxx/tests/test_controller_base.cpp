@@ -482,13 +482,12 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     const auto no_start_time = controller.getRunStartTime();
     REQUIRE_FALSE(no_start_time.has_value());
 
-    // Initialize, launch and start satellite
+    // Initialize, launch and start satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
+    controller.waitReachedState(CSCP::State::INIT, true);
     satellite.reactFSM(FSM::Transition::launch);
+    controller.waitReachedState(CSCP::State::ORBIT, true);
     satellite.reactFSM(FSM::Transition::start, "this_run_0001");
-    std::this_thread::sleep_for(100ms);
-
-    // Check that state updates were received:
     controller.waitReachedState(CSCP::State::RUN, true);
 
     // Read the run identifier and start time from the running constellation:
