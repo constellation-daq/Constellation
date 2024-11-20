@@ -98,7 +98,7 @@ The interactive command line provides the `constellation` object which holds all
 allows their control. Getting a dictionary containing the satellites could e.g. be performed by running:
 
 ```python
-MyLabPlanet ❯ constellation.satellites
+MyLabPlanet > constellation.satellites
 {'Mariner.TheFirstSatellite': SatelliteCommLink(name=TheFirstSatellite, class=Mariner)}
 ```
 
@@ -106,7 +106,7 @@ In order to obtain more information on a specific satellite, it can be directly 
 and a command can be sent. The response is then printed on the terminal:
 
 ```python
-MyLabPlanet ❯ constellation.Mariner.TheFirstSatellite.get_name()
+MyLabPlanet > constellation.Mariner.TheFirstSatellite.get_name()
 SatelliteResponse(msg='mariner.thefirstsatellite')
 ```
 
@@ -117,8 +117,8 @@ Since this is an interactive IPython console, of course also loops are possible 
 connected:
 
 ```python
-MyLabPlanet ❯  for sat in constellation.satellites.values():
-         ...: print(sat.get_name())
+MyLabPlanet > for sat in constellation.satellites.values():
+         ...:     print(sat.get_name())
          ...:
 'mariner.thefirstsatellite'
 'mariner.thesecondsatellite'
