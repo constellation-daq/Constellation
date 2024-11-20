@@ -42,6 +42,7 @@ install_headers(
   'FSM.hpp',
   'ReceiverSatellite.hpp',
   'Satellite.hpp',
+  'Satellite.ipp',
   'TransmitterSatellite.hpp',
   subdir: 'constellation/satellite',
 )

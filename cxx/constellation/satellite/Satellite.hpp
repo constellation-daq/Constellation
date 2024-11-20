@@ -14,6 +14,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <set>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -22,7 +23,6 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/CommandRegistry.hpp"
@@ -159,9 +159,7 @@ namespace constellation::satellite {
          * @param unit Unit of the provided value
          * @param type Type of the metric
          */
-        static void register_metric(std::string name, std::string unit, metrics::MetricType type) {
-            metrics::MetricsManager::getInstance().registerMetric(std::move(name), std::move(unit), type);
-        }
+        static void register_metric(std::string name, std::string unit, metrics::MetricType type);
 
         /**
          * @brief Register a metric which will be emitted in regular intervals, evaluated from the provided function
@@ -178,10 +176,26 @@ namespace constellation::satellite {
                                           std::string unit,
                                           metrics::MetricType type,
                                           std::chrono::steady_clock::duration interval,
-                                          C value_callback) {
-            metrics::MetricsManager::getInstance().registerTimedMetric(
-                std::move(name), std::move(unit), type, interval, std::move(value_callback));
-        }
+                                          C value_callback);
+
+        /**
+         * @brief Register a metric which will be emitted in regular intervals, evaluated from the provided function
+         *
+         * @param name Name of the metric
+         * @param unit Unit of the metric as human readable string
+         * @param type Type of the metric
+         * @param interval Interval in which to send the metric
+         * @param allowed_states Set of states in which the callback is allowed
+         * @param value_callback Callback to determine the current value of the metric
+         */
+        template <typename C>
+            requires std::invocable<C>
+        void register_timed_metric(std::string name,
+                                   std::string unit,
+                                   metrics::MetricType type,
+                                   std::chrono::steady_clock::duration interval,
+                                   std::set<protocol::CSCP::State> allowed_states,
+                                   C value_callback);
 
         /**
          * @brief Register a new user command
@@ -222,3 +236,6 @@ namespace constellation::satellite {
     using Generator = std::shared_ptr<Satellite>(std::string_view, std::string_view);
 
 } // namespace constellation::satellite
+
+// Include template members
+#include "Satellite.ipp" // IWYU pragma: keep

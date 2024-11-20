@@ -43,12 +43,19 @@ Metrics that are evaluated regularly from a lambda can also be registered:
 ```c++
 register_timed_metric("NAME", "unit", MetricsValue::LAST_VALUE, 10s,
                       [this]() -> std::optional<double> {
-    return allowed_to_get_metric() ? get_metric_value() : std::nullopt;
+    return allowed_to_get_metric() ? std::optional(get_metric_value()) : std::nullopt;
 });
 ```
 
 The lambda can return either the value directly, or an optional, where the empty value means that the metric can currently
-not be sent. To check if the satellite is in a given state the `getState()` method can be used.
+not be sent. To check if the satellite is in a given state the `getState()` method can be used, or the following helper:
+
+```c++
+register_timed_metric("NAME", "unit", MetricsValue::LAST_VALUE, 10s,
+                      {CSCP::State::ORBIT, CSCP::State::RUN},
+                      [this]() { return get_metric_value(); }
+);
+```
 
 Note that timed metrics can still be triggered manually if desired.
 
