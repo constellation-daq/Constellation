@@ -37,7 +37,7 @@ The satellite is then directly started via its Python module. Additional paramet
 Starting the example satellite implementation provided with the framework would therefore look like follows:
 
 ```sh
-python -m constellation.satellites.example --name TheFirstSatellite --group MyLabPlanet
+SatelliteMariner --name TheFirstSatellite --group MyLabPlanet
 ```
 
 :::
@@ -91,37 +91,37 @@ The controller can be started via its Python module via `python -m constellation
 To control the satellite created in the first part of this tutorial, the controller needs to be in the same group.
 
 ```sh
-Controller --group myLabPlanet
+Controller --group MyLabPlanet
 ```
 
 The interactive command line provides the `constellation` object which holds all information about connected satellites and
 allows their control. Getting a dictionary containing the satellites could e.g. be performed by running:
 
 ```python
-In [1]: constellation.satellites
-Out[1]: {'Sputnik.TheFirstSatellite': <constellation.core.controller.SatelliteCommLink at 0x700590f015b0>}
+MyLabPlanet ❯ constellation.satellites
+{'Mariner.TheFirstSatellite': SatelliteCommLink(name=TheFirstSatellite, class=Mariner)}
 ```
 
 In order to obtain more information on a specific satellite, it can be directly addressed via its type and name
 and a command can be sent. The response is then printed on the terminal:
 
 ```python
-In [2]: constellation.Sputnik.TheFirstSatellite.get_name()
-Out[2]: {'msg': 'sputnik.thefirstsatellite', 'payload': None}
+MyLabPlanet ❯ constellation.Mariner.TheFirstSatellite.get_name()
+SatelliteResponse(msg='mariner.thefirstsatellite')
 ```
 
 The controller supports tab completion, and suggestions for possible commands are displayed typing e.g.
-`constellation.Sputnik.TheFirstSatellite.` and hitting the tab key.
+`constellation.Mariner.TheFirstSatellite.` and hitting the tab key.
 
 Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
 connected:
 
 ```python
-In [3]: for sat in constellation.satellites.values():
-   ...:     print(sat.get_name())
-   ...:
-{'msg': 'sputnik.thefirstsatellite', 'payload': None}
-{'msg': 'sputnik.thesecondsatellite', 'payload': None}
+MyLabPlanet ❯  for sat in constellation.satellites.values():
+         ...: print(sat.get_name())
+         ...:
+'mariner.thefirstsatellite'
+'mariner.thesecondsatellite'
 ```
 
 :::::
