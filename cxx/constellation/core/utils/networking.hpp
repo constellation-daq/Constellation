@@ -78,7 +78,7 @@ namespace constellation::utils {
     CNSTLN_API inline std::set<asio::ip::address_v4> get_broadcast_addresses() {
         std::set<asio::ip::address_v4> addresses;
 
-#if defined(_WIN32) || defined(__APPLE__)
+#ifdef _WIN32
         // On MinGW use the default broadcast address of the system
         asio::ip::address_v4 default_brd_addr;
         try {
@@ -104,13 +104,23 @@ namespace constellation::utils {
             }
 
             // Ensure that the interface holds a broadcast address
-            if(((ifa->ifa_flags & IFF_BROADCAST) == 0U) ||
-               ifa->ifa_ifu.ifu_broadaddr == nullptr) { // NOLINT(cppcoreguidelines-pro-type-union-access)
+            if((ifa->ifa_flags & IFF_BROADCAST) == 0U) {
                 continue;
             }
 
-            char buffer[NI_MAXHOST];                   // NOLINT(modernize-avoid-c-arrays)
-            if(getnameinfo(ifa->ifa_ifu.ifu_broadaddr, // NOLINT(cppcoreguidelines-pro-type-union-access)
+/**
+ * The Linux kernel provides a union called "ifa_ifu" which contains either the ifu_broadaddr or the ifu_dstaddr, depending
+ * on whether or not the IFF_BROADCAST flag is set.
+ *
+ * The Apple kernel provides a field called "ifa_dstaddr" as well as an alias "ifa_broadaddr" pointing to the same memory.
+ * The memory holds the broadcast address if IFF_BROADCAST is set.
+ */
+#ifndef ifa_broadaddr
+#define ifa_broadaddr ifa_ifu.ifu_broadaddr
+#endif
+
+            char buffer[NI_MAXHOST];           // NOLINT(modernize-avoid-c-arrays)
+            if(getnameinfo(ifa->ifa_broadaddr, // NOLINT(cppcoreguidelines-pro-type-union-access)
                            sizeof(struct sockaddr_in),
                            buffer, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
                            sizeof(buffer),
