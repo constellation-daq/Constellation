@@ -78,7 +78,7 @@ namespace constellation::utils {
     CNSTLN_API inline std::set<asio::ip::address_v4> get_broadcast_addresses() {
         std::set<asio::ip::address_v4> addresses;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
         // On MinGW use the default broadcast address of the system
         asio::ip::address_v4 default_brd_addr;
         try {

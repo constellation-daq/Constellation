@@ -291,6 +291,8 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             if not msg:
                 continue
 
+            self.log.trace("Received CHIRP %s for %s on interface '%s' from '%s'", msg.msgtype.name, msg.serviceid.name, msg.from_address, msg.dest_address)
+
             # Check Message Type
             if msg.msgtype == CHIRPMessageType.REQUEST:
                 # wait a short moment to spread out responses somewhat
