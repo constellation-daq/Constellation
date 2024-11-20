@@ -231,7 +231,7 @@ class SatelliteResponse:
             p.text(f"SatelliteResponse(success=False, errmsg='{self.errmsg}')")
             return
         with p.group(19, "SatelliteResponse(", ")"):
-            p.breakable(sep='')
+            p.breakable(sep="")
             p.text(f"msg='{self.msg}'")
             if isinstance(self.payload, dict):
                 p.text(", ")
