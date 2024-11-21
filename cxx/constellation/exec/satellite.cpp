@@ -32,13 +32,12 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
 #include "constellation/exec/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
-
-#include "zmq.hpp"
 
 using namespace constellation;
 using namespace constellation::exec;
@@ -115,7 +114,7 @@ int constellation::exec::satellite_main(int argc,
     // Ensure that ZeroMQ doesn't fail creating the CMDP sink
     try {
         SinkManager::getInstance();
-    } catch(const zmq::error_t& error) {
+    } catch(const NetworkError& error) {
         std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
         return 1;
     }
