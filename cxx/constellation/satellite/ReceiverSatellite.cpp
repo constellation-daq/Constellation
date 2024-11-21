@@ -101,7 +101,8 @@ void ReceiverSatellite::stopping_receiver() {
     }
     // Now start EOR timer
     LOG(cdtp_logger_, DEBUG) << "Starting timeout for EOR arrivals (" << data_eor_timeout_ << ")";
-    const TimeoutTimer timer {data_eor_timeout_};
+    TimeoutTimer timer {data_eor_timeout_};
+    timer.start();
 
     // Warn about transmitters that never sent a BOR message
     if(cdtp_logger_.shouldLog(WARNING)) {
