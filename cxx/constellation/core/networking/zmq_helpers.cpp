@@ -19,19 +19,24 @@
 using namespace constellation::networking;
 
 Port constellation::networking::bind_ephemeral_port(zmq::socket_t& socket) {
-    // Bind to wildcard address and port to let operating system assign an ephemeral port
-    socket.bind("tcp://*:*");
 
-    // Get address with ephemeral port via last endpoint
-    const auto endpoint = socket.get(zmq::sockopt::last_endpoint);
+    try {
+        // Bind to wildcard address and port to let operating system assign an ephemeral port
+        socket.bind("tcp://*:*");
 
-    // Note: endpoint is always "tcp://0.0.0.0:XXXXX", thus port number starts at character 14
-    const auto port_substr = std::string_view(endpoint).substr(14);
+        // Get address with ephemeral port via last endpoint
+        const auto endpoint = socket.get(zmq::sockopt::last_endpoint);
 
-    Port port {};
-    std::from_chars(port_substr.cbegin(), port_substr.cend(), port);
+        // Note: endpoint is always "tcp://0.0.0.0:XXXXX", thus port number starts at character 14
+        const auto port_substr = std::string_view(endpoint).substr(14);
 
-    return port;
+        Port port {};
+        std::from_chars(port_substr.cbegin(), port_substr.cend(), port);
+
+        return port;
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
 
 std::shared_ptr<zmq::context_t>& constellation::networking::global_zmq_context() {
