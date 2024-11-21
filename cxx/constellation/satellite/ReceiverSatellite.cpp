@@ -20,6 +20,7 @@
 #include <thread>
 #include <utility>
 
+#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -43,7 +44,12 @@ using namespace std::chrono_literals;
 ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name),
       BasePool("CDTP", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
-      cdtp_logger_("CDTP") {}
+      cdtp_logger_("CDTP") {
+    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    if(chirp_manager != nullptr) {
+        chirp_manager->sendRequest(chirp::DATA);
+    }
+}
 
 void ReceiverSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
