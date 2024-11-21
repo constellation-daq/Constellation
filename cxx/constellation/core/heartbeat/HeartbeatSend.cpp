@@ -24,6 +24,7 @@
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -75,7 +76,11 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
         // Wait until condition variable is notified or timeout is reached
         cv_.wait_for(lock, interval_.load() / 2);
 
-        // Publish CHP message with current state
-        CHP1Message(sender_, state_callback_(), interval_.load()).assemble().send(pub_socket_);
+        try {
+            // Publish CHP message with current state
+            CHP1Message(sender_, state_callback_(), interval_.load()).assemble().send(pub_socket_);
+        } catch(const zmq::error_t& e) {
+            throw NetworkError(e.what());
+        }
     }
 }
