@@ -30,6 +30,7 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::pools {
 
@@ -143,8 +144,8 @@ namespace constellation::pools {
 
         } catch(const zmq::error_t& error) {
             // The socket is emplaced in the list only on success of connection and poller registration and goes out of
-            // scope when an exception is thrown. Its  calls close() automatically.
-            LOG(pool_logger_, WARNING) << "Error when registering socket for " << service.to_uri() << ": " << error.what();
+            // scope when an exception is thrown. It calls close() automatically.
+            throw utils::NetworkError("Error when registering socket for " + service.to_uri() + ": " + error.what());
         }
     }
 
@@ -279,11 +280,15 @@ namespace constellation::pools {
 
                 const std::lock_guard lock {sockets_mutex_};
 
-                // The poller returns immediately when a socket received something, but will time out after the set period:
-                poller_events_.store(poller_.wait(50ms));
+                try {
+                    // The poller returns immediately when a socket received something, but will time out after the set period:
+                    poller_events_.store(poller_.wait(50ms));
+                } catch(const zmq::error_t& e) {
+                    throw utils::NetworkError(e.what());
+                }
             }
         } catch(...) {
-            LOG(pool_logger_, DEBUG) << "Caught exception in pool thread";
+            LOG(pool_logger_, CRITICAL) << "Caught exception in pool thread";
 
             // Save exception
             exception_ptr_ = std::current_exception();
