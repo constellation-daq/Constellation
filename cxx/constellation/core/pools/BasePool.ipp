@@ -281,7 +281,8 @@ namespace constellation::pools {
                 const std::lock_guard lock {sockets_mutex_};
 
                 try {
-                    // The poller returns immediately when a socket received something, but will time out after the set period:
+                    // The poller returns immediately when a socket received something, but will time out after the set
+                    // period:
                     poller_events_.store(poller_.wait(50ms));
                 } catch(const zmq::error_t& e) {
                     throw utils::NetworkError(e.what());
