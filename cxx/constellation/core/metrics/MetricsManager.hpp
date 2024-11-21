@@ -26,6 +26,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
+#include "constellation/core/utils/timers.hpp"
 
 namespace constellation::metrics {
 
@@ -128,9 +129,20 @@ namespace constellation::metrics {
          */
         void run(const std::stop_token& stop_token);
 
-        struct TimedMetricEntry {
-            std::shared_ptr<TimedMetric> metric;
-            std::chrono::steady_clock::time_point last_sent;
+        class TimedMetricEntry {
+        public:
+            TimedMetricEntry(std::shared_ptr<TimedMetric> metric)
+                : metric_(std::move(metric)), timer_(metric_->interval()) {}
+
+            TimedMetric* operator->() const noexcept { return metric_.get(); }
+            std::shared_ptr<Metric> getMetric() { return metric_; }
+            bool timeoutReached() const { return timer_.timeoutReached(); }
+            void resetTimer() { timer_.reset(); }
+            std::chrono::steady_clock::time_point nextTrigger() const { return timer_.startTime() + metric_->interval(); }
+
+        private:
+            std::shared_ptr<TimedMetric> metric_;
+            utils::TimeoutTimer timer_;
         };
 
     private:

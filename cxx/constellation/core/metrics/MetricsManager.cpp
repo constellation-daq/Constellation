@@ -80,7 +80,7 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
 
     // Now also add to timed metrics map
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
-    timed_metrics_.insert_or_assign(name, TimedMetricEntry(std::move(metric), std::chrono::steady_clock::time_point()));
+    timed_metrics_.insert_or_assign(name, TimedMetricEntry(std::move(metric)));
     timed_metrics_lock.unlock();
 
     LOG(logger_, DEBUG) << "Successfully registered timed metric " << std::quoted(name);
@@ -161,19 +161,19 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         const std::lock_guard timed_metrics_lock {timed_metrics_mutex_};
         for(auto& [name, timed_metric] : timed_metrics_) {
             // If last time sent larger than interval and allowed -> send metric
-            if(now - timed_metric.last_sent > timed_metric.metric->interval()) {
-                auto value = timed_metric.metric->currentValue();
+            if(timed_metric.timeoutReached()) {
+                auto value = timed_metric->currentValue();
                 if(value.has_value()) {
-                    LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric.metric->name()) << ": "
-                                        << value.value().str() << " [" << timed_metric.metric->unit() << "]";
-                    SinkManager::getInstance().sendCMDPMetric({timed_metric.metric, std::move(value.value())});
-                    timed_metric.last_sent = now;
+                    LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric->name()) << ": "
+                                        << value.value().str() << " [" << timed_metric->unit() << "]";
+                    SinkManager::getInstance().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
+                    timed_metric.resetTimer();
                 } else {
-                    LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric.metric->name()) << ": no value";
+                    LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric->name()) << ": no value";
                 }
             }
             // Update time point until we have to wait (if not in the past)
-            const auto next_trigger = timed_metric.last_sent + timed_metric.metric->interval();
+            const auto next_trigger = timed_metric.nextTrigger();
             if(next_trigger - now > std::chrono::steady_clock::duration::zero()) {
                 wakeup = std::min(wakeup, next_trigger);
             }
