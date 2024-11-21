@@ -94,20 +94,21 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
 
         // Receive subscription message
         zmq::multipart_t recv_msg {};
+        bool received = false;
 
         try {
             // Lock for the mutex provided by the sink base class
             const std::lock_guard socket_lock {mutex_};
-            auto received = recv_msg.recv(pub_socket_);
-
-            // Return if timed out or wrong number of frames received:
-            if(!received || recv_msg.size() != 1) {
-                // Only check every 300ms for new subscription messages:
-                std::this_thread::sleep_for(300ms);
-                continue;
-            }
+            received = recv_msg.recv(pub_socket_);
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
+        }
+
+        // Return if timed out or wrong number of frames received:
+        if(!received || recv_msg.size() != 1) {
+            // Only check every 300ms for new subscription messages:
+            std::this_thread::sleep_for(300ms);
+            continue;
         }
 
         const auto& frame = recv_msg.front();
