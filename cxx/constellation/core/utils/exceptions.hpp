@@ -92,4 +92,25 @@ namespace constellation::utils {
         LogicError() = default;
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Errors related to network communication
+     *
+     * Problems that could never have been detected at compile time
+     */
+    class CNSTLN_API NetworkError : public RuntimeError {
+    public:
+        /**
+         * @brief Creates exception with the given network problem
+         * @param what_arg Text describing the problem
+         */
+        explicit NetworkError(std::string what_arg) : RuntimeError(std::move(what_arg)) {}
+
+    protected:
+        /**
+         * @brief Internal constructor for exceptions setting the error message indirectly
+         */
+        NetworkError() = default;
+    };
+
 } // namespace constellation::utils
