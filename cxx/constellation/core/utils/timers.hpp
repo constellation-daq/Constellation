@@ -31,7 +31,7 @@ namespace constellation::utils {
     class TimeoutTimer {
     public:
         TimeoutTimer(std::chrono::nanoseconds timeout) : timeout_(timeout) {}
-        void start() { start_time_ = std::chrono::steady_clock::now(); }
+        void reset() { start_time_ = std::chrono::steady_clock::now(); }
         bool timeoutReached() const { return start_time_ + timeout_ < std::chrono::steady_clock::now(); }
 
     private:

@@ -59,7 +59,7 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     serializer_ = std::make_unique<FileSerializer>(file_path, sequence, true);
 
     // Start timer for flushing data to file
-    flush_timer_.start();
+    flush_timer_.reset();
 }
 
 void EudaqNativeWriterSatellite::stopping() {
@@ -89,7 +89,7 @@ void EudaqNativeWriterSatellite::receive_data(
     // Flush if necessary and reset timer
     if(flush_timer_.timeoutReached()) {
         serializer_->flush();
-        flush_timer_.start();
+        flush_timer_.reset();
     }
 }
 
