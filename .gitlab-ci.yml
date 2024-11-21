@@ -509,7 +509,7 @@ format:black:
     - .python-3.11
   script:
     - pip install --no-build-isolation -e .[dev]
-    - black python/
+    - black --check python/
 
 format:flake8:
   extends:
