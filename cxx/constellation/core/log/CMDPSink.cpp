@@ -39,6 +39,7 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/windows.hpp"
 

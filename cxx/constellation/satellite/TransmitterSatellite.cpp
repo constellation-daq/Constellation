@@ -22,6 +22,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
 #include "Satellite.hpp"
