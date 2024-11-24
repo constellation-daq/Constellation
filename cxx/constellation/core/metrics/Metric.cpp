@@ -21,6 +21,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 
 using namespace constellation::metrics;
@@ -39,21 +40,23 @@ Metric Metric::disassemble(const message::PayloadBuffer& message) {
     // Offset since we decode four separate msgpack objects
     std::size_t offset = 0;
 
-    // Unpack value
-    const auto msgpack_value = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
-    auto value = msgpack_value->as<config::Value>();
+    try {
+        // Unpack value
+        auto value = msgpack_unpack_to<config::Value>(to_char_ptr(message.span().data()), message.span().size(), offset);
 
-    // Unpack type
-    const auto msgpack_type = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
-    const auto type = enum_cast<metrics::Type>(msgpack_type->as<std::uint8_t>());
+        // Unpack type
+        const auto type = enum_cast<metrics::Type>(
+            msgpack_unpack_to<std::uint8_t>(to_char_ptr(message.span().data()), message.span().size(), offset));
 
-    // Unpack unit
-    const auto msgpack_unit = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size(), offset);
-    const auto unit = msgpack_unit->as<std::string>();
+        // Unpack unit
+        const auto unit = msgpack_unpack_to<std::string>(to_char_ptr(message.span().data()), message.span().size(), offset);
 
-    if(!type.has_value()) {
-        throw std::invalid_argument("Invalid metric type");
+        if(!type.has_value()) {
+            throw std::invalid_argument("Invalid metric type");
+        }
+
+        return {unit, type.value(), std::move(value)};
+    } catch(const MsgPackError& e) {
+        throw std::invalid_argument(e.what());
     }
-
-    return {unit, type.value(), std::move(value)};
 }
