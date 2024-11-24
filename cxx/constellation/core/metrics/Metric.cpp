@@ -30,9 +30,9 @@ using namespace constellation::utils;
 
 PayloadBuffer Metric::assemble() const {
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, this->value_);
-    msgpack::pack(sbuf, std::to_underlying(this->type()));
-    msgpack::pack(sbuf, this->unit());
+    msgpack_pack(sbuf, this->value_);
+    msgpack_pack(sbuf, std::to_underlying(this->type()));
+    msgpack_pack(sbuf, this->unit());
     return {std::move(sbuf)};
 }
 

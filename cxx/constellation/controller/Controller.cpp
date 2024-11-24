@@ -41,6 +41,7 @@
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/networking.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -310,7 +311,7 @@ CSCP1Message Controller::build_message(std::string verb, const CommandPayload& p
         send_msg.addPayload(std::get<List>(payload).assemble());
     } else if(std::holds_alternative<std::string>(payload)) {
         msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::string>(payload));
+        msgpack_pack(sbuf, std::get<std::string>(payload));
         send_msg.addPayload(std::move(sbuf));
     }
     return send_msg;
