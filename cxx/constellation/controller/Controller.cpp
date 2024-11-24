@@ -245,7 +245,7 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
                 // Use latest available timestamp:
                 time = std::max(timestamp, time.value_or(timestamp));
             }
-        } catch(const msgpack::unpack_error&) {
+        } catch(const MessageDecodingError&) {
             continue;
         }
     }
