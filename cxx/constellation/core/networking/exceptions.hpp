@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::networking {
 
@@ -36,6 +37,28 @@ namespace constellation::networking {
          * @brief Internal constructor for exceptions setting the error message indirectly
          */
         NetworkError() = default;
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error when sending a message timed out
+     */
+    class CNSTLN_API SendTimeoutError : public NetworkError {
+    public:
+        explicit SendTimeoutError(const std::string& what, std::chrono::seconds timeout) {
+            error_message_ = "Failed sending " + what + " after " + utils::to_string<std::chrono::seconds>(timeout);
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error when receiving a message timed out
+     */
+    class CNSTLN_API RecvTimeoutError : public NetworkError {
+    public:
+        explicit RecvTimeoutError(const std::string& what, std::chrono::seconds timeout) {
+            error_message_ = "Failed receiving " + what + " after " + utils::to_string<std::chrono::seconds>(timeout);
+        }
     };
 
 } // namespace constellation::networking

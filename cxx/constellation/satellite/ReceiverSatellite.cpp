@@ -26,6 +26,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -35,6 +36,7 @@
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::pools;
 using namespace constellation::satellite;
 using namespace constellation::utils;
