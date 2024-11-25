@@ -236,7 +236,6 @@ namespace constellation::satellite {
         std::string run_identifier_;
 
         CommandRegistry user_commands_;
-
         heartbeat::HeartbeatManager heartbeat_manager_;
     };
 

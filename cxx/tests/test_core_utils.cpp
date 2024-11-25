@@ -41,10 +41,11 @@ TEST_CASE("Stopwatch Timer", "[core]") {
 TEST_CASE("Timeout Timer", "[core]") {
     using namespace std::chrono_literals;
     auto timer = TimeoutTimer(200ms);
-    timer.start();
+    timer.reset();
     REQUIRE_FALSE(timer.timeoutReached());
     std::this_thread::sleep_for(200ms);
     REQUIRE(timer.timeoutReached());
+    REQUIRE(timer.startTime() < std::chrono::steady_clock::now());
 }
 
 TEST_CASE("Test demangle", "[core]") {

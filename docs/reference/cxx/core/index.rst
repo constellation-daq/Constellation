@@ -8,6 +8,7 @@ Core Library
 
    log
    config
+   metrics
    message
    utils
    protocol

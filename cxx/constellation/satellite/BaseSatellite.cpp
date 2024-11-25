@@ -38,6 +38,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -52,6 +53,7 @@ using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
@@ -99,6 +101,7 @@ void BaseSatellite::join() {
         cscp_thread_.join();
     }
     fsm_.unregisterStateCallback("extrasystoles");
+    MetricsManager::getInstance().unregisterMetrics();
 }
 
 void BaseSatellite::terminate() {
