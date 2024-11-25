@@ -15,7 +15,7 @@
 #include <set>
 #include <string_view>
 
-#include <asio.hpp>
+#include <asio/ip/address_v4.hpp>
 #ifndef _WIN32
 #include <ifaddrs.h>
 #include <net/if.h> // NOLINT(misc-include-cleaner)
