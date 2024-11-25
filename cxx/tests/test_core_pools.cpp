@@ -28,49 +28,13 @@
 #include "constellation/core/utils/networking.hpp"
 
 #include "chirp_mock.hpp"
+#include "cmdp_mock.hpp"
 
 using namespace constellation;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::pools;
 using namespace constellation::utils;
-
-class CMDPSender {
-public:
-    CMDPSender(std::string name)
-        : name_(std::move(name)), pub_socket_(*global_zmq_context(), zmq::socket_type::xpub),
-          port_(bind_ephemeral_port(pub_socket_)) {}
-
-    Port getPort() const { return port_; }
-
-    std::string_view getName() const { return name_; }
-
-    void sendLogMessage(Level level, std::string topic, std::string message) {
-        auto msg = CMDP1LogMessage(level, std::move(topic), {"CMDPSender.s1"}, std::move(message));
-        msg.assemble().send(pub_socket_);
-    }
-
-    void sendRaw(zmq::multipart_t& msg) { msg.send(pub_socket_); }
-
-    zmq::multipart_t recv() {
-        zmq::multipart_t recv_msg {};
-        recv_msg.recv(pub_socket_);
-        return recv_msg;
-    }
-
-    bool canRecv() {
-        zmq::message_t msg {};
-        pub_socket_.set(zmq::sockopt::rcvtimeo, 200);
-        auto recv_res = pub_socket_.recv(msg);
-        pub_socket_.set(zmq::sockopt::rcvtimeo, -1);
-        return recv_res.has_value();
-    }
-
-private:
-    std::string name_;
-    zmq::socket_t pub_socket_;
-    Port port_;
-};
 
 class TestPool : public SubscriberPool<CMDP1Message, chirp::MONITORING> {
 public:
