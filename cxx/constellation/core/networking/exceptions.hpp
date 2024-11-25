@@ -9,10 +9,11 @@
 
 #pragma once
 
-#include <exception>
+#include <chrono>
 #include <string>
 #include <utility>
 
+#include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 

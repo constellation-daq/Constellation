@@ -38,11 +38,11 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
