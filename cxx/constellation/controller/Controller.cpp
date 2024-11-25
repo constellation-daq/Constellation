@@ -136,7 +136,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             Connection conn = {{*global_zmq_context(), zmq::socket_type::req}, service.host_id, uri};
 
             // Set response reception timeout in milliseconds:
-            conn.req.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(1500).count()));
+            conn.req.set(zmq::sockopt::rcvtimeo, static_cast<int>(cmd_timeout_.count()));
 
             // Connect the socket:
             conn.req.connect(uri);
@@ -321,14 +321,12 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
             conn.last_cmd_verb = verb.second;
             return reply;
         }
-    } catch(const zmq::error_t& error) {
-        LOG(logger_, CRITICAL) << "ZeroMQ error during message exchange: " << error.what();
-    }
 
-    conn.last_cmd_type = CSCP1Message::Type::ERROR;
-    conn.last_cmd_verb = "Response timed out";
-    LOG(logger_, CRITICAL) << "Response from satellite timed out";
-    return {{controller_name_}, {CSCP1Message::Type::ERROR, "Response timed out"}};
+        // No response - timed out:
+        throw SendTimeoutError("command", std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
+    } catch(const zmq::error_t& error) {
+        throw NetworkError(error.what());
+    }
 }
 
 CSCP1Message Controller::build_message(std::string verb, const CommandPayload& payload) const {
