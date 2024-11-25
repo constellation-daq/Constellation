@@ -225,6 +225,10 @@ void CMDPSink::sinkMetric(MetricValue metric_value) {
     // Lock the mutex - automatically done for regular logging:
     const std::lock_guard<std::mutex> lock {mutex_};
 
-    // Create and send CMDP message
-    CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
+    try {
+        // Create and send CMDP message
+        CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
