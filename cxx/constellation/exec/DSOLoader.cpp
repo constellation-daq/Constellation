@@ -9,6 +9,7 @@
 
 #include "DSOLoader.hpp"
 
+#include <cstdio>
 #include <filesystem>
 #include <iomanip>
 #include <string>
@@ -37,6 +38,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     // - custom executable: hint
     // - in dev environment: builddir/satellites/XYZ/libXYZ.suffix
     // - in installed environment: libdir/ConstellationSatellites/libXYZ.suffix
+    // - in portable installed environment: current directory
     const auto dso_file_name = to_dso_file_name(dso_name);
     LOG(logger, TRACE) << "Searching paths for library with name " << std::quoted(dso_file_name);
 
@@ -87,6 +89,9 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
 
     const auto lib_dir = std::filesystem::path(CNSTLN_LIBDIR) / "ConstellationSatellites";
     add_path(lib_dir);
+
+    const auto cwd = std::filesystem::current_path();
+    add_path(cwd);
 
     // Did not find a matching library:
     if(possible_paths.empty()) {
