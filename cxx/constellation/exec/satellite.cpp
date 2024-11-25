@@ -31,8 +31,8 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
@@ -42,6 +42,7 @@
 using namespace constellation;
 using namespace constellation::exec;
 using namespace constellation::log;
+using namespace constellation::networking;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 

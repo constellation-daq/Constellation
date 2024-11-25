@@ -28,9 +28,9 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::pools {
 
@@ -145,7 +145,7 @@ namespace constellation::pools {
         } catch(const zmq::error_t& error) {
             // The socket is emplaced in the list only on success of connection and poller registration and goes out of
             // scope when an exception is thrown. It calls close() automatically.
-            throw utils::NetworkError("Error when registering socket for " + service.to_uri() + ": " + error.what());
+            throw networking::NetworkError("Error when registering socket for " + service.to_uri() + ": " + error.what());
         }
     }
 
@@ -285,7 +285,7 @@ namespace constellation::pools {
                     // period:
                     poller_events_.store(poller_.wait(50ms));
                 } catch(const zmq::error_t& e) {
-                    throw utils::NetworkError(e.what());
+                    throw networking::NetworkError(e.what());
                 }
             }
         } catch(...) {

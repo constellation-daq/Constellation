@@ -24,7 +24,7 @@
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
-#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 
 namespace constellation::pools {
 
@@ -50,7 +50,7 @@ namespace constellation::pools {
                 }
             }
         } catch(const zmq::error_t& e) {
-            throw utils::NetworkError(e.what());
+            throw networking::NetworkError(e.what());
         }
     }
 
@@ -71,7 +71,7 @@ namespace constellation::pools {
                 }
             }
         } catch(const zmq::error_t& e) {
-            throw utils::NetworkError(e.what());
+            throw networking::NetworkError(e.what());
         }
     }
 

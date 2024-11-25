@@ -56,9 +56,9 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 #include "qt_utils.hpp"
@@ -68,6 +68,7 @@ using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
+using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 

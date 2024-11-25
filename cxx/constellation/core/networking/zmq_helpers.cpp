@@ -14,6 +14,7 @@
 
 #include <zmq.hpp>
 
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
 
 using namespace constellation::networking;

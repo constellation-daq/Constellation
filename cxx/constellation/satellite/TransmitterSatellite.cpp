@@ -21,8 +21,8 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
-#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
 #include "Satellite.hpp"
@@ -31,7 +31,6 @@ using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::satellite;
-using namespace constellation::utils;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
@@ -136,7 +135,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
             throw SendTimeoutError("BOR message", data_bor_timeout_);
         }
     } catch(const zmq::error_t& e) {
-        throw utils::NetworkError(e.what());
+        throw networking::NetworkError(e.what());
     }
     LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
 
@@ -162,7 +161,7 @@ void TransmitterSatellite::stopping_transmitter() {
             throw SendTimeoutError("EOR message", data_eor_timeout_);
         }
     } catch(const zmq::error_t& e) {
-        throw utils::NetworkError(e.what());
+        throw networking::NetworkError(e.what());
     }
     LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 
