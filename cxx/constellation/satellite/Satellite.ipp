@@ -17,6 +17,7 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/metrics/MetricsManager.hpp"
