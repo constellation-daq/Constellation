@@ -14,30 +14,33 @@ import sphinx.util.logging
 logger = sphinx.util.logging.getLogger(__name__)
 
 
-def find_header_file(lang: str, directory: pathlib.Path) -> pathlib.Path | None:
+def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
     """
-    Find the header file of a satellite in the specified directory following the 'NameSatellite.hpp' naming scheme.
+    Find the header file of a satellite in the specified directory and the class name.
+    For C++, this assumes the 'NameSatellite.hpp' naming scheme.
+    For Python, this assumes the `from .XXX import Name` in `__main__` scheme.
     """
     if lang == "cxx":
         for file in directory.glob("*Satellite.hpp"):
-            return file  # Return the first matching file (assuming only one matches)
+            # Return the first matching file (assuming only one matches)
+            return file, file.name.removesuffix(".hpp")
     elif lang == "py":
         main_py_file = directory / "__main__.py"
         if main_py_file.exists():
             with open(main_py_file, "r") as file:
                 content = file.read()
-                # Search for an import statement that imports the desired class
-                match = re.search(r"from\s+\.(\w+)\s+import\s+main", content)
+                # Search for an import statement that imports the desired class  (e.g. `from .Mariner import Mariner`)
+                match = re.search(r"from\s+\.(\w+)\s+import\s+(\w+)", content)
                 if match:
-                    # Extract the module name from the import statement (e.g., 'Mariner' from 'from .Mariner import main')
+                    # Extract the module and satellite name from the import statement
                     py_file = directory / f"{match.group(1)}.py"
-
+                    name = match.group(2)
                     if py_file.exists():
-                        return py_file
+                        return py_file, name
     return None
 
 
-def extract_parent_classes(lang: str, header_path: pathlib.Path) -> list[str] | None:
+def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name: str) -> list[str] | None:
     """
     Extract the parent classes from the C++ header file or Python definition.
     """
@@ -46,12 +49,12 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path) -> list[str] | 
 
         if lang == "cxx":
             # Regular expression to find the parent class in C++ inheritance declaration
-            match = re.search(r"class\s+\w+\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
+            match = re.search(rf"class\s+{satellite_name}\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
             if match:
                 return [match.group(2)]
         elif lang == "py":
             # Regex to match Python class inheritance (might be multiple)
-            match = re.search(r"class\s+\w+\s*\((.+)\):", content)
+            match = re.search(rf"class\s+{satellite_name}\s*\((.+)\):", content)
             if match:
                 # split multiple classes, remove whitespaces
                 return match.group(1).replace(" ", "").split(",")
@@ -74,17 +77,18 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
         file_output = convert_front_matter(file_input)
 
         # Parse base class and append configuration parameters
-        header_path = find_header_file(lang, in_path.parent)
-        if header_path:
-            logger.verbose(f"Satellite definition file: {header_path}")
+        header_result = find_header_file(lang, in_path.parent)
+        if header_result:
+            header_path, satellite_name = header_result
+            logger.verbose(f"Satellite definition file for {satellite_name}: {header_path}")
             # Extract the parent class from the header file
-            parent_classes = extract_parent_classes(lang, header_path)
+            parent_classes = extract_parent_classes(lang, header_path, satellite_name)
             if parent_classes:
                 logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
                 file_output += "\n```{include} _parameter_header.md\n```\n"
                 file_output += append_content(lang, parent_classes)
             else:
-                logger.warning(f"No parent classes found in {header_path}.")
+                logger.warning(f"No parent classes for {satellite_name} found in {header_path}")
         else:
             logger.warning(f"No satellite definition found in {in_path.parent}")
 
