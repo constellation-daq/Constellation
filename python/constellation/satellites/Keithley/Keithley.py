@@ -111,7 +111,8 @@ class Keithley(Satellite):
         return f"Keithley at {self.device.get_voltage()}V"
 
     def reentry(self) -> None:
-        self.device.release()
+        if hasattr(self, "device"):
+            self.device.release()
         super().reentry()
 
     def _set_ovp(self):
