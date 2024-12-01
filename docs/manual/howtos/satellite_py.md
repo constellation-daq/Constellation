@@ -89,13 +89,21 @@ def Current(self) -> Any:
 
 Note that in this case, if `None` is returned, no metric is sent. The name of the metric is taken from the function name.
 
-## Adding entry point installation for the satellite
+## Installation of satellite
 
-To make the satellite immediately accessible via the command line, add a line with the desired name and the Python path to the module under the `[project.scripts]` header in `pyprojects.toml` file in the Constellation root directory. For the example satellite, this is done via the line
+To make the satellite accessible via the command line, it creates a main function in `__main__.py`. Those functions are
+besides the satellite name mostly the same and can be copied e.g. from the Mariner satellite.
+
+Then, all Python files need to be added to a `meson.build` file, where again the file in the Mariner satellite can be taken.
+The folder which includes the Satellite files then needs to be added to the `meson.build` file in
+`python/constellation/satellites`.
+
+To create an executable for the satellite, the main function can be added to `[project.scripts]` in the `pyprojects.toml`
+file in the root directory. For the Mariner satellite, this is done via the line:
 
 ```TOML
-SatelliteMariner = "constellation.satellites.mariner.mariner:main"
+SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
 ```
 
-By running `pip install --no-build-isolation -e .` in the Constellation root directory after adding a line for the satellite
-makes it directly available to the command line, e.g. as `SatelliteMariner`.
+By running `pip install --no-build-isolation -e .` in the root directory after adding a line for the satellite, the satellite
+is available to the command line, e.g. as `SatelliteMariner`.
