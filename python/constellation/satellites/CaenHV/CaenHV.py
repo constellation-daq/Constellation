@@ -1,25 +1,25 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 
-This module provides the class for a Constellation Satellite.
+Provides the class for the CaenHV satellite
 """
+
 from functools import partial
-from typing import Tuple, Any
+from typing import Any
 
 from pycaenhv import CaenHVModule  # type: ignore[import-untyped]
+
+from constellation.core.cmdp import MetricsType
+from constellation.core.commandmanager import cscp_requestable, CSCPMessage
+from constellation.core.configuration import Configuration
+from constellation.core.fsm import SatelliteState
+from constellation.core.satellite import Satellite
+
 from .lib_caen_ndt1470 import CaenNDT1470Manager
 
-from constellation.core.satellite import Satellite, SatelliteArgumentParser
-from constellation.core.cmdp import MetricsType
-from constellation.core.fsm import SatelliteState
-from constellation.core.configuration import Configuration
-from constellation.core.commandmanager import cscp_requestable, CSCPMessage
-from constellation.core.base import setup_cli_logging
 
-
-class CaenHVSatellite(Satellite):
+class CaenHV(Satellite):
     """Satellite controlling a CAEN HV crate via `pycaenhv` library.
 
     Supported models include SY5527.
@@ -192,7 +192,7 @@ class CaenHVSatellite(Satellite):
         return ", ".join(status)
 
     @cscp_requestable
-    def get_parameter(self, request: CSCPMessage) -> Tuple[Any, None, None]:
+    def get_parameter(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Return the value of a parameter.
 
         Payload: dictionary with 'board', 'channel' and 'parameter' keys
@@ -203,13 +203,13 @@ class CaenHVSatellite(Satellite):
         chno = int(request.payload["channel"])
         par = request.payload["parameter"]
         val = self.get_channel_value(board, chno, par)
-        return val, None, None
+        return val, None, {}
 
     def _get_parameter_is_allowed(self, request: CSCPMessage) -> bool:
         return self._ready()
 
     @cscp_requestable
-    def get_hv_status(self, request: CSCPMessage) -> Tuple[str, dict[str, str], None]:
+    def get_hv_status(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Return the collected state of all channels.
 
         Payload: None.
@@ -231,13 +231,13 @@ class CaenHVSatellite(Satellite):
         msg = f"All OK, {npowered} powered"
         if errors:
             msg = "{npowered} powered, additional bits set in: " + ", ".join(errors)
-        return msg, res, None
+        return msg, res, {}
 
     def _get_status_is_allowed(self, request: CSCPMessage) -> bool:
         return self._ready()
 
     @cscp_requestable
-    def get_hw_config(self, request: CSCPMessage) -> Tuple[str, dict[str, str], None]:
+    def get_hw_config(self, request: CSCPMessage) -> tuple[str, Any, dict]:
         """Read and return the current hardware configuration.
 
         Payload: None
@@ -257,14 +257,14 @@ class CaenHVSatellite(Satellite):
                         # construct configuration key
                         key = f"board{brdno}_ch{chno}_{par.lower()}"
                         res[key] = ch.parameters[par].value
-        return f"Read {len(res)} parameters", res, None
+        return f"Read {len(res)} parameters", res, {}
 
     @cscp_requestable
-    def about(self, _request: CSCPMessage) -> Tuple[str, None, None]:
+    def about(self, _request: CSCPMessage) -> tuple[str, Any, dict]:
         """Get info about the Satellite"""
         # TODO extend with info on connected crate (FW release, etc)
         res = f"{__name__} "
-        return res, None, None
+        return res, None, {}
 
     def _power_down(self) -> None:
         self.log.warning("Powering down all channels")
@@ -344,23 +344,3 @@ class CaenHVSatellite(Satellite):
         ]:
             return False
         return True
-
-
-# ---
-
-
-def main(args=None):
-    """The CAEN high-voltage Satellite for controlling a SY5527 HV crate."""
-    parser = SatelliteArgumentParser(
-        description=main.__doc__,
-        epilog="This is a 3rd-party component of Constellation.",
-    )
-
-    args = vars(parser.parse_args(args))
-
-    # set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
-
-    # start server with remaining args
-    s = CaenHVSatellite(**args)
-    s.run_satellite()
