@@ -94,8 +94,8 @@ Note that in this case, if `None` is returned, no metric is sent. The name of th
 To make the satellite accessible via the command line, it creates a main function in `__main__.py`. Those functions are
 besides the satellite name mostly the same and can be copied e.g. from the Mariner satellite.
 
-Then, all Python files need to be added to a `meson.build` file, where again the file in the Mariner satellite can be taken.
-The folder which includes the Satellite files then needs to be added to the `meson.build` file in
+Subsequently, all Python files have to be added to a `meson.build` file, where again the file from the Mariner satellite can be used as a template.
+The folder which includes the satellite files then needs to be included the `meson.build` file in
 `python/constellation/satellites`.
 
 To create an executable for the satellite, the main function can be added to `[project.scripts]` in the `pyprojects.toml`
