@@ -34,6 +34,7 @@ using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
+using namespace constellation::utils;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
