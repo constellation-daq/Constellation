@@ -117,7 +117,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             try {
                 it->second.req.close();
             } catch(const zmq::error_t& e) {
-                LOG(logger_, WARNING) << "Error closing socket: " << e.what();
+                LOG(logger_, WARNING) << "Error closing socket" << it->second.uri << ": " << e.what();
             }
             LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
             connections_.erase(it);
