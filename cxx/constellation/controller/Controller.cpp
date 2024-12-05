@@ -174,7 +174,9 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
                 reached_state(getLowestState(), isInGlobalState());
             }
         } catch(const zmq::error_t& e) {
-            throw NetworkError(e.what());
+            LOG(CRITICAL) << "ZeroMQ error: " << e.what();
+        } catch(const NetworkError& e) {
+            LOG(CRITICAL) << e.what();
         }
     }
 }
@@ -234,12 +236,17 @@ std::set<std::string> Controller::getConnections() const {
 std::string Controller::getRunIdentifier() {
     const std::lock_guard connection_lock {connection_mutex_};
     for(auto& [name, sat] : connections_) {
-        // Obtain run identifier:
-        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_id"});
-        const auto recv_msg = send_receive(sat, send_msg);
-        const auto runid = recv_msg.getVerb().second;
-        if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS && !runid.empty()) {
-            return to_string(runid);
+
+        try {
+            // Obtain run identifier:
+            auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_run_id"});
+            const auto recv_msg = send_receive(sat, send_msg);
+            const auto runid = recv_msg.getVerb().second;
+            if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS && !runid.empty()) {
+                return to_string(runid);
+            }
+        } catch(const NetworkError& e) {
+            LOG(CRITICAL) << e.what();
         }
     }
     return {};
@@ -250,21 +257,26 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
 
     std::optional<std::chrono::system_clock::time_point> time {};
     for(auto& [name, sat] : connections_) {
-        // Obtain run starting time from get_state command metadata:
-        auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
-        const auto recv_msg = send_receive(sat, send_msg);
-
         try {
-            const auto state = enum_cast<CSCP::State>(recv_msg.getVerb().second).value_or(CSCP::State::NEW);
-            const auto& header = recv_msg.getHeader();
-            if(state == CSCP::State::RUN && header.hasTag("last_changed")) {
-                const auto timestamp = header.getTag<std::chrono::system_clock::time_point>("last_changed");
-                LOG(logger_, DEBUG) << "Run started for " << std::quoted(header.getSender()) << " at "
-                                    << to_string(timestamp);
-                // Use latest available timestamp:
-                time = std::max(timestamp, time.value_or(timestamp));
+            // Obtain run starting time from get_state command metadata:
+            auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
+            const auto recv_msg = send_receive(sat, send_msg);
+
+            try {
+                const auto state = enum_cast<CSCP::State>(recv_msg.getVerb().second).value_or(CSCP::State::NEW);
+                const auto& header = recv_msg.getHeader();
+                if(state == CSCP::State::RUN && header.hasTag("last_changed")) {
+                    const auto timestamp = header.getTag<std::chrono::system_clock::time_point>("last_changed");
+                    LOG(logger_, DEBUG) << "Run started for " << std::quoted(header.getSender()) << " at "
+                                        << to_string(timestamp);
+                    // Use latest available timestamp:
+                    time = std::max(timestamp, time.value_or(timestamp));
+                }
+            } catch(const msgpack::unpack_error&) {
+                continue;
             }
-        } catch(const msgpack::unpack_error&) {
+        } catch(const NetworkError& e) {
+            LOG(CRITICAL) << e.what();
             continue;
         }
     }
@@ -345,16 +357,20 @@ CSCP1Message Controller::build_message(std::string verb, const CommandPayload& p
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Message& cmd) {
-    const std::lock_guard connection_lock {connection_mutex_};
+    try {
+        const std::lock_guard connection_lock {connection_mutex_};
 
-    // Find satellite by canonical name:
-    const auto sat = connections_.find(satellite_name);
-    if(sat == connections_.end()) {
-        return {{controller_name_}, {CSCP1Message::Type::ERROR, "Target satellite is unknown to controller"}};
+        // Find satellite by canonical name:
+        const auto sat = connections_.find(satellite_name);
+        if(sat == connections_.end()) {
+            return {{controller_name_}, {CSCP1Message::Type::ERROR, "Target satellite is unknown to controller"}};
+        }
+
+        // Exchange messages
+        return send_receive(sat->second, cmd);
+    } catch(const NetworkError& e) {
+        return {{std::string(satellite_name)}, {CSCP1Message::Type::ERROR, e.what()}};
     }
-
-    // Exchange messages
-    return send_receive(sat->second, cmd);
 }
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::string verb, const CommandPayload& payload) {
@@ -364,23 +380,26 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, std::strin
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) {
 
-    std::vector<std::future<CSCP1Message>> futures {};
+    std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
 
     const std::lock_guard connection_lock {connection_mutex_};
-
-    futures.reserve(connections_.size());
     for(auto& [name, sat] : connections_) {
         // Start command sending and store future:
-        futures.emplace_back(std::async(std::launch::async, [&]() { return send_receive(sat, cmd, true); }));
+        futures.emplace(name, std::async(std::launch::async, [&]() { return send_receive(sat, cmd, true); }));
     }
 
-    for(auto& future : futures) {
-        auto reply = future.get();
-        const auto name = reply.getHeader().getSender();
+    for(auto& [sat, future] : futures) {
+        try {
+            auto reply = future.get();
+            const auto name = reply.getHeader().getSender();
 
-        // Store received reply:
-        replies.emplace(name, std::move(reply));
+            // Store received reply:
+            replies.emplace(name, std::move(reply));
+        } catch(const NetworkError& e) {
+            auto reply = CSCP1Message {{sat}, {CSCP1Message::Type::ERROR, e.what()}};
+            replies.emplace(sat, std::move(reply));
+        }
     }
     return replies;
 }
@@ -393,29 +412,33 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(std::string verb, c
 std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb,
                                                              const std::map<std::string, CommandPayload>& payloads) {
 
-    std::vector<std::future<CSCP1Message>> futures {};
+    std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
 
     const std::lock_guard connection_lock {connection_mutex_};
 
-    futures.reserve(connections_.size());
     for(auto& [name, sat] : connections_) {
         // Start command sending and store future:
-        futures.emplace_back(std::async(std::launch::async, [&]() {
-            // Prepare message:
-            auto send_msg =
-                (payloads.contains(name) ? build_message(verb, payloads.at(name))
-                                         : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
-            return send_receive(sat, send_msg);
-        }));
+        futures.emplace(name, std::async(std::launch::async, [&]() {
+                            // Prepare message:
+                            auto send_msg = (payloads.contains(name)
+                                                 ? build_message(verb, payloads.at(name))
+                                                 : CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, verb}));
+                            return send_receive(sat, send_msg);
+                        }));
     }
 
-    for(auto& future : futures) {
-        auto reply = future.get();
-        const auto name = reply.getHeader().getSender();
+    for(auto& [sat, future] : futures) {
+        try {
+            auto reply = future.get();
+            const auto name = reply.getHeader().getSender();
 
-        // Store received reply:
-        replies.emplace(name, std::move(reply));
+            // Store received reply:
+            replies.emplace(name, std::move(reply));
+        } catch(const NetworkError& e) {
+            auto reply = CSCP1Message {{sat}, {CSCP1Message::Type::ERROR, e.what()}};
+            replies.emplace(sat, std::move(reply));
+        }
     }
     return replies;
 }
