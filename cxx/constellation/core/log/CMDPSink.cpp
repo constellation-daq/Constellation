@@ -37,6 +37,7 @@
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -75,7 +76,11 @@ CMDPSink::CMDPSink(std::shared_ptr<zmq::context_t> context)
     : context_(std::move(context)), pub_socket_(*context_, zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)) {
     // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
     // while reading and cannot log at the same time.
-    pub_socket_.set(zmq::sockopt::rcvtimeo, 0);
+    try {
+        pub_socket_.set(zmq::sockopt::rcvtimeo, 0);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
 
 CMDPSink::~CMDPSink() {
@@ -88,14 +93,17 @@ CMDPSink::~CMDPSink() {
 void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
 
-        // Lock for the mutex provided by the sink base class
-        std::unique_lock socket_lock {mutex_};
-
         // Receive subscription message
         zmq::multipart_t recv_msg {};
-        auto received = recv_msg.recv(pub_socket_);
+        bool received = false;
 
-        socket_lock.unlock();
+        try {
+            // Lock for the mutex provided by the sink base class
+            const std::lock_guard socket_lock {mutex_};
+            received = recv_msg.recv(pub_socket_);
+        } catch(const zmq::error_t& e) {
+            throw NetworkError(e.what());
+        }
 
         // Return if timed out or wrong number of frames received:
         if(!received || recv_msg.size() != 1) {
@@ -197,13 +205,17 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
         }
     }
 
-    // Create and send CMDP message
-    CMDP1LogMessage(from_spdlog_level(msg.level),
-                    to_string(msg.logger_name), // NOLINT(misc-include-cleaner) might be fmt string
-                    std::move(msghead),
-                    to_string(msg.payload))
-        .assemble()
-        .send(pub_socket_);
+    try {
+        // Create and send CMDP message
+        CMDP1LogMessage(from_spdlog_level(msg.level),
+                        to_string(msg.logger_name), // NOLINT(misc-include-cleaner) might be fmt string
+                        std::move(msghead),
+                        to_string(msg.payload))
+            .assemble()
+            .send(pub_socket_);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
 
 void CMDPSink::sinkMetric(MetricValue metric_value) {
@@ -213,6 +225,10 @@ void CMDPSink::sinkMetric(MetricValue metric_value) {
     // Lock the mutex - automatically done for regular logging:
     const std::lock_guard<std::mutex> lock {mutex_};
 
-    // Create and send CMDP message
-    CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
+    try {
+        // Create and send CMDP message
+        CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }

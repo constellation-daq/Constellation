@@ -39,6 +39,7 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/metrics/MetricsManager.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
@@ -73,8 +74,12 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
         throw RuntimeError("Satellite name is invalid");
     }
 
-    // Set receive timeout for CSCP socket
-    cscp_rep_socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
+    try {
+        // Set receive timeout for CSCP socket
+        cscp_rep_socket_.set(zmq::sockopt::rcvtimeo, static_cast<int>(std::chrono::milliseconds(100).count()));
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
@@ -118,29 +123,39 @@ void BaseSatellite::terminate() {
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
     // Receive next message
     zmq::multipart_t recv_msg {};
-    auto received = recv_msg.recv(cscp_rep_socket_);
 
-    // Return if timeout
-    if(!received) {
-        return std::nullopt;
+    try {
+        auto received = recv_msg.recv(cscp_rep_socket_);
+
+        // Return if timeout
+        if(!received) {
+            return std::nullopt;
+        }
+
+        // Try to disamble message
+        auto message = CSCP1Message::disassemble(recv_msg);
+
+        LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
+                                 << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "")
+                                 << " from " << message.getHeader().getSender();
+
+        return message;
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
     }
-
-    // Try to disamble message
-    auto message = CSCP1Message::disassemble(recv_msg);
-
-    LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
-                             << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "")
-                             << " from " << message.getHeader().getSender();
-
-    return message;
 }
 
 void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb,
                                message::PayloadBuffer payload,
                                config::Dictionary tags) {
-    auto msg = CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), std::move(tags)}, std::move(reply_verb));
-    msg.addPayload(std::move(payload));
-    msg.assemble().send(cscp_rep_socket_);
+    try {
+        auto msg =
+            CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), std::move(tags)}, std::move(reply_verb));
+        msg.addPayload(std::move(payload));
+        msg.assemble().send(cscp_rep_socket_);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
 
 std::optional<std::tuple<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer, config::Dictionary>>

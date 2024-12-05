@@ -21,8 +21,8 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
-#include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
@@ -34,6 +34,7 @@ using namespace Catch::Matchers;
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 

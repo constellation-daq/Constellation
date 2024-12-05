@@ -26,7 +26,6 @@
 #include <vector>
 
 #include <argparse/argparse.hpp>
-#include <zmq.hpp>
 
 #include <QApplication>
 #include <QCloseEvent>
@@ -57,6 +56,7 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -68,6 +68,7 @@ using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
+using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
@@ -622,7 +623,7 @@ int main(int argc, char** argv) {
         // Ensure that ZeroMQ doesn't fail creating the CMDP sink
         try {
             SinkManager::getInstance();
-        } catch(const zmq::error_t& error) {
+        } catch(const NetworkError& error) {
             std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
             return 1;
         }

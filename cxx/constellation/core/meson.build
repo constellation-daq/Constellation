@@ -126,6 +126,7 @@ install_headers(
 
 install_headers(
   'networking/asio_helpers.hpp',
+  'networking/exceptions.hpp',
   'networking/Port.hpp',
   'networking/zmq_helpers.hpp',
   subdir: 'constellation/core/networking',

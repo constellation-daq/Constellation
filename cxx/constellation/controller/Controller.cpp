@@ -38,6 +38,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -80,8 +81,12 @@ void Controller::stop() {
 
     // Close all open connections
     const std::lock_guard connection_lock {connection_mutex_};
-    for(auto& conn : connections_) {
-        conn.second.req.close();
+    try {
+        for(auto& conn : connections_) {
+            conn.second.req.close();
+        }
+    } catch(const zmq::error_t& e) {
+        LOG(logger_, WARNING) << "Error closing socket: " << e.what();
     }
     connections_.clear();
     connection_count_.store(connections_.size());
@@ -109,7 +114,11 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             // Note the position of the removed item:
             const auto position = std::distance(connections_.begin(), it);
 
-            it->second.req.close();
+            try {
+                it->second.req.close();
+            } catch(const zmq::error_t& e) {
+                LOG(logger_, WARNING) << "Error closing socket" << it->second.uri << ": " << e.what();
+            }
             LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
             connections_.erase(it);
             connection_count_.store(connections_.size());
@@ -122,41 +131,45 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             reached_state(getLowestState(), isInGlobalState());
         }
     } else if(status == chirp::ServiceStatus::DISCOVERED) {
-        // New satellite connection
-        Connection conn = {{*global_zmq_context(), zmq::socket_type::req}, service.host_id, uri};
-        conn.req.connect(uri);
+        try {
+            // New satellite connection
+            Connection conn = {{*global_zmq_context(), zmq::socket_type::req}, service.host_id, uri};
+            conn.req.connect(uri);
 
-        // Obtain canonical name:
-        auto send_msg_name = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_name"});
-        const auto recv_msg_name = send_receive(conn, send_msg_name);
-        const auto name = recv_msg_name.getVerb().second;
+            // Obtain canonical name:
+            auto send_msg_name = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_name"});
+            const auto recv_msg_name = send_receive(conn, send_msg_name);
+            const auto name = recv_msg_name.getVerb().second;
 
-        // Obtain current state
-        auto send_msg_state = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
-        const auto recv_msg_state = send_receive(conn, send_msg_state);
-        conn.state = enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
+            // Obtain current state
+            auto send_msg_state = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_state"});
+            const auto recv_msg_state = send_receive(conn, send_msg_state);
+            conn.state = enum_cast<CSCP::State>(recv_msg_state.getVerb().second).value_or(CSCP::State::NEW);
 
-        // Get list of commands
-        auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
-        const auto recv_msg_cmd = send_receive(conn, send_msg_cmd);
-        conn.commands = Dictionary::disassemble(recv_msg_cmd.getPayload());
+            // Get list of commands
+            auto send_msg_cmd = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, "get_commands"});
+            const auto recv_msg_cmd = send_receive(conn, send_msg_cmd);
+            conn.commands = Dictionary::disassemble(recv_msg_cmd.getPayload());
 
-        // Add to map of open connections
-        const auto [it, success] = connections_.emplace(name, std::move(conn));
-        connection_count_.store(connections_.size());
+            // Add to map of open connections
+            const auto [it, success] = connections_.emplace(name, std::move(conn));
+            connection_count_.store(connections_.size());
 
-        if(!success) {
-            LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
-                                  << ", a satellite with the same canonical name was already registered";
-        } else {
-            LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
+            if(!success) {
+                LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
+                                      << ", a satellite with the same canonical name was already registered";
+            } else {
+                LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
 
-            // Trigger method for propagation of connection list updates in derived controller classes
-            propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
+                // Trigger method for propagation of connection list updates in derived controller classes
+                propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
 
-            lock.unlock();
-            // Propagate state change of the constellation
-            reached_state(getLowestState(), isInGlobalState());
+                lock.unlock();
+                // Propagate state change of the constellation
+                reached_state(getLowestState(), isInGlobalState());
+            }
+        } catch(const zmq::error_t& e) {
+            throw NetworkError(e.what());
         }
     }
 }
@@ -289,18 +302,22 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
         return {{controller_name_}, {CSCP1Message::Type::ERROR, "Can only send command messages of type REQUEST"}};
     }
 
-    // Possible keep payload, we might send multiple command messages:
-    cmd.assemble(keep_payload).send(conn.req);
-    zmq::multipart_t recv_zmq_msg {};
-    recv_zmq_msg.recv(conn.req);
+    try {
+        // Possible keep payload, we might send multiple command messages:
+        cmd.assemble(keep_payload).send(conn.req);
+        zmq::multipart_t recv_zmq_msg {};
+        recv_zmq_msg.recv(conn.req);
 
-    // Disassemble message and update connection information:
-    auto reply = CSCP1Message::disassemble(recv_zmq_msg);
-    const auto verb = reply.getVerb();
-    conn.last_cmd_type = verb.first;
-    conn.last_cmd_verb = verb.second;
+        // Disassemble message and update connection information:
+        auto reply = CSCP1Message::disassemble(recv_zmq_msg);
+        const auto verb = reply.getVerb();
+        conn.last_cmd_type = verb.first;
+        conn.last_cmd_verb = verb.second;
 
-    return reply;
+        return reply;
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
 }
 
 CSCP1Message Controller::build_message(std::string verb, const CommandPayload& payload) const {
