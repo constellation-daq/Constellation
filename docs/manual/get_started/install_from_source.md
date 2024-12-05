@@ -96,23 +96,15 @@ This is already it!
 
 ## Installing the C++ Version
 
-For some use-cases, like external satellites, Constellation needs to be installed explicitly. This can be done via:
+For some use-cases, like external satellites, Constellation needs to be installed explicitly system-wide after compilation.
+This can be done via:
 
 ```sh
-meson configure build -Dprefix=$(pwd)/usr # set installation directory here
 meson install -C build
 ```
 
-In order to find Constellation via pkg-config in a non-standard location when building external satellites, the prefix path
-needs to be exported:
-
-```sh
-export CNSTLN_PREFIX=$(pwd)/usr
-export PKG_CONFIG_PATH="$CNSTLN_PREFIX/lib64/pkgconfig:$CNSTLN_PREFIX/usr/share/pkgconfig"
-```
-
-Note that the platform specific part (`lib64`) might be different depending on your platform, e.g. it is
-`lib/x86_64-linux-gnu` for Debian/Ubuntu. It can be sound be checking the content of the prefix path.
+For details on installing Constellation for external satellites, see
+[Building External Satellites](../howtos/external_satellite.md).
 
 :::::
 :::::{tab-item} Python
