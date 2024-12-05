@@ -23,7 +23,6 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
-#include "constellation/satellite/exceptions.hpp"
 
 #include "Satellite.hpp"
 
