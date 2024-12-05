@@ -26,7 +26,6 @@
 #include <string_view>
 #include <utility>
 #include <variant>
-#include <vector>
 
 #include <msgpack.hpp>
 #include <zmq.hpp>
@@ -335,7 +334,7 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
         }
 
         // No response - timed out:
-        throw SendTimeoutError("command " + to_string(cmd.getVerb().second),
+        throw SendTimeoutError("command " + to_string(cmd.getVerb().second) + " to " + conn.uri,
                                std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
     } catch(const zmq::error_t& error) {
         throw NetworkError(error.what());
@@ -369,6 +368,7 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
         // Exchange messages
         return send_receive(sat->second, cmd);
     } catch(const NetworkError& e) {
+        LOG(logger_, CRITICAL) << e.what();
         return {{std::string(satellite_name)}, {CSCP1Message::Type::ERROR, e.what()}};
     }
 }
@@ -397,7 +397,10 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
             // Store received reply:
             replies.emplace(name, std::move(reply));
         } catch(const NetworkError& e) {
-            auto reply = CSCP1Message {{sat}, {CSCP1Message::Type::ERROR, e.what()}};
+            LOG(logger_, CRITICAL) << e.what();
+
+            // Create ERROR reply instead
+            CSCP1Message reply {sat, {CSCP1Message::Type::ERROR, e.what()}};
             replies.emplace(sat, std::move(reply));
         }
     }
@@ -436,7 +439,10 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
             // Store received reply:
             replies.emplace(name, std::move(reply));
         } catch(const NetworkError& e) {
-            auto reply = CSCP1Message {{sat}, {CSCP1Message::Type::ERROR, e.what()}};
+            LOG(logger_, CRITICAL) << e.what();
+
+            // Create ERROR reply instead
+            CSCP1Message reply {sat, {CSCP1Message::Type::ERROR, e.what()}};
             replies.emplace(sat, std::move(reply));
         }
     }
