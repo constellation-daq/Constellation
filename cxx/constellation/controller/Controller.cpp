@@ -323,7 +323,8 @@ CSCP1Message Controller::send_receive(Connection& conn, CSCP1Message& cmd, bool 
         }
 
         // No response - timed out:
-        throw SendTimeoutError("command", std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
+        throw SendTimeoutError("command " + to_string(cmd.getVerb().second),
+                               std::chrono::duration_cast<std::chrono::seconds>(cmd_timeout_));
     } catch(const zmq::error_t& error) {
         throw NetworkError(error.what());
     }
