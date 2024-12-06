@@ -11,13 +11,17 @@
 
 #include <concepts>
 #include <ios>
+#include <optional>
+#include <string>
 #include <string_view>
 #include <type_traits>
 
 #if __has_include(<magic_enum/magic_enum.hpp>)
 #include <magic_enum/magic_enum.hpp>
+#include <magic_enum/magic_enum_flags.hpp>
 #else
 #include <magic_enum.hpp>
+#include <magic_enum_flags.hpp>
 #endif
 
 namespace constellation::utils {
@@ -30,17 +34,31 @@ namespace constellation::utils {
 
     template <typename E>
         requires std::is_enum_v<E>
-    constexpr auto enum_cast(std::string_view value, bool case_insesitive = true) noexcept {
-        if(case_insesitive) {
-            return magic_enum::enum_cast<E>(value, magic_enum::case_insensitive);
+    constexpr auto enum_cast(std::string_view value, bool case_insensitive = true) noexcept {
+        std::optional<E> retval {};
+        retval = case_insensitive ? magic_enum::enum_cast<E>(value, magic_enum::case_insensitive)
+                                  : magic_enum::enum_cast<E>(value);
+        // If unscoped enum and no value, try cast as flag
+        if constexpr(magic_enum::is_unscoped_enum_v<E>) {
+            if(!retval.has_value()) {
+                retval = case_insensitive ? magic_enum::enum_flags_cast<E>(value, magic_enum::case_insensitive)
+                                          : magic_enum::enum_flags_cast<E>(value);
+            }
         }
-        return magic_enum::enum_cast<E>(value);
+        return retval;
     }
 
     template <typename E>
         requires std::is_enum_v<E>
-    constexpr auto enum_name(E enum_val) noexcept {
-        return magic_enum::enum_name<E>(enum_val);
+    auto enum_name(E enum_val) noexcept {
+        auto retval = std::string(magic_enum::enum_name<E>(enum_val));
+        // If unscoped enum and no value, try as flag
+        if constexpr(magic_enum::is_unscoped_enum_v<E>) {
+            if(retval.empty()) {
+                retval = magic_enum::enum_flags_name<E>(enum_val);
+            }
+        }
+        return retval;
     }
 
     template <typename E>
@@ -51,6 +69,9 @@ namespace constellation::utils {
 
 } // namespace constellation::utils
 
+// Bitwise operators for enums
+using namespace magic_enum::bitwise_operators; // NOLINT(google-global-names-in-headers)
+
 // Stream operator<< for enums
 template <typename S, typename E>
     requires std::derived_from<std::remove_cvref_t<S>, std::ios_base> && std::is_enum_v<E>
@@ -59,11 +80,7 @@ inline S&& operator<<(S&& os, E value) {
     return std::forward<S>(os);
 }
 
-// Set enum as flag field
-#define ENUM_SET_FLAG(ENUM)                                                                                                 \
-    template <> struct magic_enum::customize::enum_range<ENUM> {                                                            \
-        static constexpr bool is_flags = true;                                                                              \
-    }
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
 // Adjust enum range and specify whether to use as flags
 #define ENUM_SET_RANGE(ENUM, MIN, MAX)                                                                                      \
@@ -72,10 +89,4 @@ inline S&& operator<<(S&& os, E value) {
         static constexpr int max = MAX;                                                                                     \
     }
 
-// Set enum as flag field while defining its range
-#define ENUM_SET_FLAGS_RANGE(ENUM, MIN, MAX)                                                                                \
-    template <> struct magic_enum::customize::enum_range<ENUM> {                                                            \
-        static constexpr int min = MIN;                                                                                     \
-        static constexpr int max = MAX;                                                                                     \
-        static constexpr bool is_flags = true;                                                                              \
-    }
+// NOLINTEND(cppcoreguidelines-macro-usage)
