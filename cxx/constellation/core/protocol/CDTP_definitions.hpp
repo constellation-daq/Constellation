@@ -11,12 +11,10 @@
 
 #include <cstdint>
 
-#include "constellation/core/utils/enum.hpp"
-
 namespace constellation::protocol::CDTP {
 
-    /** Possible run conditions of a run */
-    enum class RunCondition : std::uint8_t {
+    /** Possible conditions of a run */
+    enum RunCondition : std::uint8_t {
         /** The run has concluded normally, no other information has been provided by the sender */
         GOOD = 0x00,
 
@@ -27,13 +25,10 @@ namespace constellation::protocol::CDTP {
         INCOMPLETE = 0x02,
 
         /** The run has been interrupted by this sender because of a failure condition elsewhere in the constellation */
-        INTERRUPTED = 0xFE,
+        INTERRUPTED = 0x04,
 
         /** The run has been aborted by the sender and the EOR message has been appended by the receiver */
-        ABORTED = 0xFF,
+        ABORTED = 0x08,
     };
 
 } // namespace constellation::protocol::CDTP
-
-// Run condition enum exceeds default enum value limits of magic_enum (-128, 127)
-ENUM_SET_RANGE(constellation::protocol::CDTP::RunCondition, 0, 255);
