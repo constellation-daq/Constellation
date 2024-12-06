@@ -51,16 +51,16 @@ The payload of the EOR message contains a dictionary with run metadata generated
 Typical run metadata entries are:
 
 * `run_id`: the run identifier of this run
-* `condition`: the run condition at the end of the run
-* `condition_code`: the run condition code
+* `condition`: the run condition flags at the end of the run
+* `condition_code`: the run condition flags code
 * `time_start`: the starting time of the run, i.e. the time of sending the BOR message
 * `time_end`: the ending time of the run, i.e. the time of sending the EOR message
 
-The run condition allows to assess the condition during the `RUN` state of the Constellation and thereby the quality of the
-data recorded. Runs are marked with one of the following run conditions:
+The run condition flags allows to assess the condition during the `RUN` state of the Constellation and thereby the quality of the
+data recorded. Runs are marked with any of the following run condition flags:
 
-* `GOOD` (code: `0x00`): The run has concluded normally, no other information has been provided by the sender
-* `TAINTED` (code: `0x01`): The run has concluded normally, but the data has been marked as tainted by the sender
-* `INCOMPLETE` (code: `0x02`): The run has concluded normally, but the receiver has noticed missing messages in the sequence
-* `INTERRUPTED` (code: `0xFE`): The run has been interrupted by this sender because of a failure condition elsewhere in the Constellation
-* `ABORTED` (code: `0xFF`): The run has been aborted by the sender and the EOR message has been appended by the receiver
+* `GOOD` (code: `0x00`, no flag set): The run has concluded normally, no other information has been provided by the sender
+* `TAINTED` (code: `0x01`): The data has been marked as tainted by the sender
+* `INCOMPLETE` (code: `0x02`): The receiver has noticed missing messages in the sequence
+* `INTERRUPTED` (code: `0x04`): The run has been interrupted by this sender because of a failure condition elsewhere in the Constellation
+* `ABORTED` (code: `0x08`): The run has been aborted by the sender and the EOR message has been appended by the receiver

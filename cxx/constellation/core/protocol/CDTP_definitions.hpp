@@ -18,10 +18,10 @@ namespace constellation::protocol::CDTP {
         /** The run has concluded normally, no other information has been provided by the sender */
         GOOD = 0x00,
 
-        /** The run has concluded normally, but the data has been marked as tainted by the sender */
+        /** The data has been marked as tainted by the sender */
         TAINTED = 0x01,
 
-        /** The run has concluded normally, but the receiver has noticed missing messages in the sequence */
+        /** The receiver has noticed missing messages in the sequence */
         INCOMPLETE = 0x02,
 
         /** The run has been interrupted by this sender because of a failure condition elsewhere in the constellation */
