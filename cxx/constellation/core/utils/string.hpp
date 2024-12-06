@@ -127,7 +127,7 @@ namespace constellation::utils {
     template <typename E>
         requires std::is_enum_v<E>
     inline std::string to_string(E enum_val) {
-        return to_string(enum_name<E>(enum_val));
+        return enum_name<E>(enum_val);
     }
 
     /** Object that can be converted to a string */

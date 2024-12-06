@@ -11,6 +11,7 @@
 
 #include <concepts>
 #include <ios>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -33,37 +34,31 @@ namespace constellation::utils {
 
     template <typename E>
         requires std::is_enum_v<E>
-    constexpr auto enum_cast(std::string_view value, bool case_insesitive = true) noexcept {
+    constexpr auto enum_cast(std::string_view value, bool case_insensitive = true) noexcept {
         std::optional<E> retval {};
-        retval = case_insesitive ? magic_enum::enum_cast<E>(value, magic_enum::case_insensitive)
-                                 : magic_enum::enum_cast<E>(value);
+        retval = case_insensitive ? magic_enum::enum_cast<E>(value, magic_enum::case_insensitive)
+                                  : magic_enum::enum_cast<E>(value);
         // If unscoped enum and no value, try cast as flag
         if constexpr(magic_enum::is_unscoped_enum_v<E>) {
             if(!retval.has_value()) {
-                retval = case_insesitive ? magic_enum::enum_flags_cast<E>(value, magic_enum::case_insensitive)
-                                         : magic_enum::enum_flags_cast<E>(value);
+                retval = case_insensitive ? magic_enum::enum_flags_cast<E>(value, magic_enum::case_insensitive)
+                                          : magic_enum::enum_flags_cast<E>(value);
             }
         }
         return retval;
     }
 
     template <typename E>
-        requires magic_enum::is_scoped_enum_v<E>
-    constexpr auto enum_name(E enum_val) noexcept {
-        return magic_enum::enum_name<E>(enum_val);
-    }
-
-    template <typename E>
-        requires magic_enum::is_unscoped_enum_v<E>
-    auto enum_name(E enum_val) {
-        // Check for enum value 0
-        if constexpr(magic_enum::enum_contains<E>(0)) {
-            if(magic_enum::enum_integer(enum_val) == 0) {
-                return std::string(magic_enum::enum_name<E>(enum_val));
+        requires std::is_enum_v<E>
+    auto enum_name(E enum_val) noexcept {
+        auto retval = std::string(magic_enum::enum_name<E>(enum_val));
+        // If unscoped enum and no value, try as flag
+        if constexpr(magic_enum::is_unscoped_enum_v<E>) {
+            if(retval.empty()) {
+                retval = magic_enum::enum_flags_name<E>(enum_val);
             }
         }
-        // Interpret as flag (does not support 0)
-        return magic_enum::enum_flags_name<E>(enum_val);
+        return retval;
     }
 
     template <typename E>

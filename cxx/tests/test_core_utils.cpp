@@ -20,7 +20,6 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/core/utils/type.hpp"
 
@@ -80,9 +79,7 @@ TEST_CASE("Test demangle", "[core]") {
 TEST_CASE("Enum names", "[core]") {
     // Scoped enum
     enum class Color : std::uint8_t { RED = 0x1, BLUE = 0x2, GREEN = 0x4 };
-    constexpr auto x = Color::RED;
-    constexpr auto name = enum_name(x);
-    REQUIRE_THAT(to_string(name), Equals("RED"));
+    REQUIRE_THAT(enum_name(Color::RED), Equals("RED"));
     REQUIRE_THAT(enum_names<Color>(), RangeEquals(std::array<std::string_view, 3>({"RED", "BLUE", "GREEN"})));
     // Unscoped enum (works also as flag)
     enum ColorMix : std::uint8_t { WHITE = 0x0, RED = 0x1, BLUE = 0x2, GREEN = 0x4 };
