@@ -26,16 +26,24 @@ been transmitted correctly.
 
 ## Messages
 
-Messages consist of header and payload.
+Messages transmitted over the data communication channel of Constellation consist of a header with auxiliary information, and
+a payload. The content of header as well as payload differs for the different message types and is detailed below.
 
 ### Data Messages
 
-sequence is continuously checked at receiver for missing packets
-sequence
-message tags - by user code, suggestion:
+Regular messages are data messages. Their header contains the sender name, the timestamp of message creation or dispatch, and
+a dictionary of message tags.
+In addition, data message headers contain a sequence number which is automatically incremented for each generated data message.
+This sequence is continuously checked at receiving end and therefore allows to directly detect missing messages.
 
-* timestamp_begin
-* timestamp_end
+Message tags may be added to the header by the sending code. If such information is available at the time of creating the
+message, it is recommended to encode the begin and end of the data block contained in the respective message, as integer
+values counting picoseconds since the start of the measurement run, in the tags `timestamp_begin` and `timestamp_end`.
+
+The payload of data messages can be an arbitrary number of frames containing binary data.
+This data is not interpreted by the Constellation framework but e.g. directly written to file without further processing.
+Whether single frames or multiple frames per message are used is left to the sending code, but especially for small frame
+data blocks, multi-frame messages should be considered to optimize the network throughput.
 
 ### Begin-of-Run & End-of-Run Messages
 
