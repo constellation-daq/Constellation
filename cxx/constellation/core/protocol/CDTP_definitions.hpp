@@ -11,6 +11,8 @@
 
 #include <cstdint>
 
+#include "constellation/core/utils/enum.hpp"
+
 namespace constellation::protocol::CDTP {
 
     /** Possible run conditions of a run */
@@ -34,14 +36,4 @@ namespace constellation::protocol::CDTP {
 } // namespace constellation::protocol::CDTP
 
 // Run condition enum exceeds default enum value limits of magic_enum (-128, 127)
-#if __has_include(<magic_enum/magic_enum.hpp>)
-#include <magic_enum/magic_enum.hpp>
-#else
-#include <magic_enum.hpp>
-#endif
-namespace magic_enum::customize {
-    template <> struct enum_range<constellation::protocol::CDTP::RunCondition> {
-        static constexpr int min = 0;
-        static constexpr int max = 255;
-    };
-} // namespace magic_enum::customize
+ENUM_SET_RANGE(constellation::protocol::CDTP::RunCondition, 0, 255);

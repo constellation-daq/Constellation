@@ -58,3 +58,24 @@ inline S&& operator<<(S&& os, E value) {
     os << constellation::utils::enum_name(value);
     return std::forward<S>(os);
 }
+
+// Set enum as flag field
+#define ENUM_SET_FLAG(ENUM)                                                                                                 \
+    template <> struct magic_enum::customize::enum_range<ENUM> {                                                            \
+        static constexpr bool is_flags = true;                                                                              \
+    }
+
+// Adjust enum range and specify whether to use as flags
+#define ENUM_SET_RANGE(ENUM, MIN, MAX)                                                                                      \
+    template <> struct magic_enum::customize::enum_range<ENUM> {                                                            \
+        static constexpr int min = MIN;                                                                                     \
+        static constexpr int max = MAX;                                                                                     \
+    }
+
+// Set enum as flag field while defining its range
+#define ENUM_SET_FLAGS_RANGE(ENUM, MIN, MAX)                                                                                \
+    template <> struct magic_enum::customize::enum_range<ENUM> {                                                            \
+        static constexpr int min = MIN;                                                                                     \
+        static constexpr int max = MAX;                                                                                     \
+        static constexpr bool is_flags = true;                                                                              \
+    }
