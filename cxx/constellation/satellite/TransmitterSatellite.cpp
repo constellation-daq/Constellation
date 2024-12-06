@@ -25,7 +25,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/enum.hpp"
 
 #include "Satellite.hpp"
 
@@ -180,10 +180,10 @@ void TransmitterSatellite::send_eor() {
 void TransmitterSatellite::stopping_transmitter() {
     if(mark_run_tainted_) {
         set_run_metadata_tag("condition_code", CDTP::RunCondition::TAINTED);
-        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::TAINTED));
+        set_run_metadata_tag("condition", enum_name(CDTP::RunCondition::TAINTED));
     } else {
         set_run_metadata_tag("condition_code", CDTP::RunCondition::GOOD);
-        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::GOOD));
+        set_run_metadata_tag("condition", enum_name(CDTP::RunCondition::GOOD));
     }
     send_eor();
 }
@@ -191,8 +191,12 @@ void TransmitterSatellite::stopping_transmitter() {
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
-        set_run_metadata_tag("condition_code", CDTP::RunCondition::INTERRUPTED);
-        set_run_metadata_tag("condition", to_string(CDTP::RunCondition::INTERRUPTED));
+        auto condition_code = CDTP::RunCondition::INTERRUPTED;
+        if(mark_run_tainted_) {
+            condition_code |= CDTP::RunCondition::TAINTED;
+        }
+        set_run_metadata_tag("condition_code", condition_code);
+        set_run_metadata_tag("condition", enum_name(condition_code));
         send_eor();
     }
 }
