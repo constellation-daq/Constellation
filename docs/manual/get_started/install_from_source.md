@@ -94,6 +94,18 @@ meson compile -C build
 
 This is already it!
 
+## Installing the C++ Version
+
+For some use-cases, like external satellites, Constellation needs to be installed explicitly system-wide after compilation.
+This can be done via:
+
+```sh
+meson install -C build
+```
+
+For details on installing Constellation for external satellites, see
+[Building External Satellites](../howtos/external_satellite.md).
+
 :::::
 :::::{tab-item} Python
 
