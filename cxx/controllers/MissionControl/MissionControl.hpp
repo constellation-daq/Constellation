@@ -36,8 +36,8 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/gui/QController.hpp"
 
-#include "QController.hpp"
 #include "ui_MissionControl.h"
 
 class ConnectionItemDelegate : public QStyledItemDelegate {
