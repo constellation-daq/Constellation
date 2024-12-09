@@ -97,6 +97,8 @@ public:
     }
     void failure(constellation::protocol::CSCP::State previous_state) override { SatelliteT::failure(previous_state); }
 
+    void skipTransitional(bool skip) { skip_transitional_ = skip; }
+
     void exit() {
         skip_transitional_ = true;
         SatelliteT::terminate();
