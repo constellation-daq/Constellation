@@ -60,8 +60,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
-
-#include "qt_utils.hpp"
+#include "constellation/gui/qt_utils.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
