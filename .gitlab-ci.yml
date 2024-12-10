@@ -149,8 +149,6 @@ variables:
       - build
     expire_in: 24 hour
   <<: *cpp-rules
-  tags:
-    - openstack # Select openstack Kubernetes runner for now since they perform better for C++ compilation
 
 .build-py:
   stage: build
@@ -214,7 +212,8 @@ build:fedora-mingw:
     BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
     BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
     NINJA_OPTIONS: "-l4"
-  retry: 2
+  tags:
+    - hi-load
 
 build:ubuntu-22.04:
   extends:
@@ -223,9 +222,10 @@ build:ubuntu-22.04:
   variables:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "-Dqt_version=qt5"
-    NINJA_OPTIONS: "-l4"
     CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
-  retry: 2
+    NINJA_OPTIONS: "-l4"
+  tags:
+    - hi-load
 
 build:ubuntu-24.04:
   extends:
@@ -428,9 +428,8 @@ lint:clang-tidy:
     - ninja -C build clang-tidy
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-  retry: 2
   tags:
-    - openstack
+    - hi-load
 
 lint:clang-tidy-diff:
   extends:
@@ -445,6 +444,8 @@ lint:clang-tidy-diff:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes
+  tags:
+    - hi-load
 
 lint:clang-scan-build:
   extends:
@@ -492,9 +493,8 @@ lint:coverity-scan:
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
-  retry: 2
   tags:
-    - openstack
+    - hi-load
 
 # format stage
 
