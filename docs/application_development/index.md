@@ -1,3 +1,3 @@
-# The Application Developer's Guide
+# Application Developer Guide
 
 Nothing to see here.
