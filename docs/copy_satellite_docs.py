@@ -132,10 +132,21 @@ def convert_front_matter(string: str) -> str:
         yaml_endpos = yaml_match.end(0)
         string_after_yaml = string[yaml_endpos:]
 
+        # Add title:
         converted_front_matter = "# " + yaml_data["title"] + " Satellite\n"
 
-        if "subtitle" in yaml_data.keys():
-            converted_front_matter += "\n" + yaml_data["subtitle"] + "\n"
+        # build header table
+        converted_front_matter += "| Name | " + yaml_data["title"] + " |\n"
+        converted_front_matter += "| ---- | ---- |\n"
+
+        for key, value in yaml_data.items():
+            if key == "title":
+                continue
+
+            converted_front_matter += "| " + key.capitalize() + " | " + value + " |\n"
+
+        converted_front_matter += "\n"
+        converted_front_matter += "## Description\n"
 
         string = converted_front_matter + string_after_yaml
 
