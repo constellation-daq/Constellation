@@ -14,15 +14,15 @@ import sphinx.util.logging
 logger = sphinx.util.logging.getLogger(__name__)
 
 
-def guess_language(directory: pathlib.Path) -> str:
+def guess_language(directory: pathlib.Path) -> (str, str):
     """
     Guess the language of the satellite implementation based on the path they have been found in
     """
 
     if "cxx" in str(directory):
-        return "C++"
+        return ("cxx", "C++")
     else:
-        return "Python"
+        return ("py", "Python")
 
 
 def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
@@ -31,11 +31,11 @@ def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, 
     For C++, this assumes the 'NameSatellite.hpp' naming scheme.
     For Python, this assumes the `from .XXX import Name` in `__main__` scheme.
     """
-    if lang == "C++":
+    if lang == "cxx":
         for file in directory.glob("*Satellite.hpp"):
             # Return the first matching file (assuming only one matches)
             return file, file.name.removesuffix(".hpp")
-    elif lang == "Python":
+    elif lang == "py":
         main_py_file = directory / "__main__.py"
         if main_py_file.exists():
             with open(main_py_file, "r") as file:
@@ -58,12 +58,12 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name:
     with open(header_path, "r") as file:
         content = file.read()
 
-        if lang == "C++":
+        if lang == "cxx":
             # Regular expression to find the parent class in C++ inheritance declaration
             match = re.search(rf"class\s+{satellite_name}\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
             if match:
                 return [match.group(2)]
-        elif lang == "Python":
+        elif lang == "py":
             # Regex to match Python class inheritance (might be multiple)
             match = re.search(rf"class\s+{satellite_name}\s*\((.+)\):", content)
             if match:
@@ -85,7 +85,7 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
     """
 
     # Guess the language
-    lang = guess_language(in_path)
+    lang_code, lang = guess_language(in_path)
 
     # rewrite the file
     with in_path.open(mode="r", encoding="utf-8") as in_file:
@@ -93,16 +93,16 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
         file_output, category = convert_front_matter(lang, file_input)
 
         # Parse base class and append configuration parameters
-        header_result = find_header_file(lang, in_path.parent)
+        header_result = find_header_file(lang_code, in_path.parent)
         if header_result:
             header_path, satellite_name = header_result
             logger.verbose(f"Satellite definition file for {satellite_name}: {header_path}")
             # Extract the parent class from the header file
-            parent_classes = extract_parent_classes(lang, header_path, satellite_name)
+            parent_classes = extract_parent_classes(lang_code, header_path, satellite_name)
             if parent_classes:
                 logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
                 file_output += "\n```{include} _parameter_header.md\n```\n"
-                file_output += append_content(lang, parent_classes)
+                file_output += append_content(lang_code, parent_classes)
             else:
                 logger.warning(f"No parent classes for {satellite_name} found in {header_path}")
         else:
