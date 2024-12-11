@@ -2,10 +2,7 @@
 html_theme.sidebar_secondary.remove: true
 sd_hide_title: true
 ---
-<!---
-SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
---->
+<!-- markdownlint-disable -->
 
 <!-- CSS overrides on the homepage only -->
 <style>

@@ -127,11 +127,6 @@ plantuml_output_format = "svg_img"
 without_news = not docsdir.joinpath("news").exists()
 if without_news:
     logger.info("Building documentation without news section", color="yellow")
-with open("index.md.in", "rt") as index_in, open("index.md", "wt") as index_out:
-    for line in index_in:
-        if without_news and "news/index" in line:
-            continue
-        index_out.write(line)
 
 # Remove existing satellite READMEs
 for path in (docsdir / "satellites").glob("*.md"):
