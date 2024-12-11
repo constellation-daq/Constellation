@@ -49,11 +49,14 @@ h3:not(.hero h3) {
 
 <div class="homepage-button-container">
   <div class="homepage-button-container-row">
-      <a href="./manual/index.html" class="homepage-button primary-button">Get Started</a>
-      <a href="./manual/concepts/constellation.html" class="homepage-button secondary-button">Concepts</a>
+      <a href="./operator_guide/index.html" class="homepage-button primary-button">Get Started</a>
+      <a href="./operator_guide/concepts/constellation.html" class="homepage-button secondary-button">Concepts</a>
   </div>
   <div class="homepage-button-container-row">
-      <a href="./reference/index.html" class="homepage-button-link">See API Reference →</a>
+      <a href="./application_development/index.html" class="homepage-button-link">See Application Developer Guide →</a>
+  </div>
+  <div class="homepage-button-container-row">
+      <a href="./framework_reference/index.html" class="homepage-button-link">See Framework Reference →</a>
   </div>
 </div>
 
@@ -209,7 +212,8 @@ is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/co
 :hidden:
 
 news
-manual/index
 Satellites <satellites/index>
-reference/index
+Operator Docs <operator_guide/index>
+Application Development <application_development/index>
+Framework Reference <framework_reference/index>
 ```

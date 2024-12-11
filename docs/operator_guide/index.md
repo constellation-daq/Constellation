@@ -1,8 +1,8 @@
-# User Guide
+# The Constellation Operator's Guide
 
 Welcome to the Constellation User Guide. This guide is intended to provide a comprehensive overview of the framework for
 operators as well as for people who want to integrate their own hardware or develop new satellites. For the development of
-Constellation itself and for more in-depth technical information, there is a separate [Developer's Guide](../reference/index.md)
+Constellation itself and for more in-depth technical information, there is a separate [Developer's Guide](../framework_reference/index.md)
 which should be consulted.
 
 This guide is structured in four different parts, each of which serve a different purpose:

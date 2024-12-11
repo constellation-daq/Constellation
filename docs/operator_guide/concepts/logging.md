@@ -75,7 +75,7 @@ LOG_IF(WARNING, parameter == 5) << "Parameter 5 is set "
 LOG_NTH(STATUS, 100) << "This message is logged every 100th call to the logging macro.";
 ```
 
-There is also a possibility of setting up individual loggers with different topics as described in the [developer guide](../../reference/cxx/core/log).
+There is also a possibility of setting up individual loggers with different topics as described in the [developer guide](../../framework_reference/cxx/core/log).
 
 :::
 :::{tab-item} Python

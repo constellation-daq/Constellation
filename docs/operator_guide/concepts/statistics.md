@@ -36,7 +36,7 @@ STAT("NAME", get_metric_value());
 ```
 
 There are also macros available to only send metrics every nth iteration or at most every t seconds. The macros are described
-in detail in the [developer guide](../../reference/cxx/core/metrics).
+in detail in the [developer guide](../../framework_reference/cxx/core/metrics).
 
 Metrics that are evaluated regularly from a lambda can also be registered:
 
