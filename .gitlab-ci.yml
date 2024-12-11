@@ -212,6 +212,7 @@ build:fedora-mingw:
     BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
     BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
     NINJA_OPTIONS: "-l4"
+    KUBERNETES_MEMORY_REQUEST: "16GiB"
   tags:
     - hi-load
 
@@ -224,6 +225,7 @@ build:ubuntu-22.04:
     BUILD_OPTIONS: "-Dqt_version=qt5"
     CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
     NINJA_OPTIONS: "-l4"
+    KUBERNETES_MEMORY_REQUEST: "16GiB"
   tags:
     - hi-load
 
