@@ -14,15 +14,16 @@ import sphinx.util.logging
 logger = sphinx.util.logging.getLogger(__name__)
 
 
-def guess_language(directory: pathlib.Path) -> (str, str):
+def guess_language(directory: pathlib.Path) -> tuple[str, str]:
     """
     Guess the language of the satellite implementation based on the path they have been found in
     """
 
-    if "cxx" in str(directory):
-        return ("cxx", "C++")
-    else:
-        return ("py", "Python")
+    if "cxx" in directory.as_posix():
+        return "cxx", "C++"
+    elif "python" in directory.as_posix():
+        return "py", "Python"
+    return "", "Unknown"
 
 
 def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
@@ -72,7 +73,7 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name:
     return None
 
 
-def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> str:
+def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> tuple[str, str]:
     """
     Converts and copies a satellite README. The output is written to `<out_path>/<satellite_type>.md`.
 
@@ -81,7 +82,7 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
         out_path: Path to directory where to write the converted <arkdown file.
 
     Returns:
-        Satellite type (taken from the parent directory).
+        Tuple with satellite type (taken from the parent directory) and category name.
     """
 
     # Guess the language
@@ -109,7 +110,8 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
             logger.warning(f"No satellite definition found in {in_path.parent}")
 
         (out_path / in_path.parent.name).with_suffix(".md").write_text(file_output)
-        return (in_path.parent.name, category)
+
+        return in_path.parent.name, category
 
 
 def append_content(lang: str, parent_classes: list[str]) -> str:
@@ -129,7 +131,7 @@ def append_content(lang: str, parent_classes: list[str]) -> str:
     return append
 
 
-def convert_front_matter(lang: str, string: str) -> (str, str | None):
+def convert_front_matter(lang: str, string: str) -> tuple[str, str]:
     """
     Converts YAML front-matter in a string from Markdown to plain text in Markdown.
 
@@ -137,10 +139,11 @@ def convert_front_matter(lang: str, string: str) -> (str, str | None):
         string: String formatted in Markdown with YAML front-matter.
 
     Returns:
-        String formatted in Markdown without YAML front-matter.
+        Tuple with string formatted in Markdown without YAML front-matter and category name.
     """
     # extract yaml from string
     yaml_match = re.match(r"^---\n(.+?)\n---\n", string, flags=re.DOTALL)
+    category = "Uncategorized"
 
     if yaml_match:
         raw_yaml = yaml_match.group(1)
@@ -174,4 +177,4 @@ def convert_front_matter(lang: str, string: str) -> (str, str | None):
 
         string = converted_front_matter + string_after_yaml
 
-    return (string, category if "category" in locals() else None)
+    return string, category

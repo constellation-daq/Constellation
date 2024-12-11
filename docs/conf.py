@@ -139,24 +139,25 @@ for path in (docsdir / "satellites").glob("*.md"):
         path.unlink()
 
 # Add satellite READMEs to documentation
-satellite_files = list((repodir / "cxx" / "satellites").glob("**/README.md"))
+satellite_files = []
+satellite_files.extend(list((repodir / "cxx" / "satellites").glob("**/README.md")))
 satellite_files.extend(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
 
+# Retrieve satellite type and category
 satellites = {}
-
 for path in satellite_files:
     satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme(path, docsdir / "satellites")
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{satellite_type}>")
 
+# Create tocs for categories
 satellite_tocs = ""
-for category, satellites in satellites.items():
-    satellite_tocs += "```{toctree}\n:caption: "
-    satellite_tocs += category if category else "Uncategorized"
-    satellite_tocs += "\n:maxdepth: 1\n"
-    for sat in satellites:
-        satellite_tocs += sat + "\n"
+for category, satellites_list in sorted(satellites.items()):
+    satellite_tocs += f"\n```{{toctree}}\n:caption: {category}\n:maxdepth: 1\n\n"
+    for satellite in satellites_list:
+        satellite_tocs += satellite + "\n"
     satellite_tocs += "```\n"
 
+# Add tocs to satellites index.md.in
 with (
     open("satellites/index.md.in", "rt") as index_in,
     open("satellites/index.md", "wt") as index_out,
