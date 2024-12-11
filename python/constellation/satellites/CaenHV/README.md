@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "CaenHV"
-subtitle: "Satellite controlling a CAEN high-voltage crate such as the SY5527 and its modules"
+description: "Satellite controlling a CAEN high-voltage crate such as the SY5527 and its modules"
 ---
 
 ## Description
