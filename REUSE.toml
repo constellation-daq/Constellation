@@ -21,7 +21,14 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 path = [
   "cxx/controllers/MissionControl/MissionControl.qrc",
   "cxx/controllers/MissionControl/MissionControl.ui",
-  "python/constellation/core/version_code_name",
 ]
 SPDX-FileCopyrightText = "DESY and the Constellation authors"
 SPDX-License-Identifier = "EUPL-1.2"
+
+[[annotations]]
+path = [
+  "cxx/controllers/MissionControl/de.desy.constellation.missioncontrol.desktop",
+  "python/constellation/core/version_code_name",
+]
+SPDX-FileCopyrightText = "DESY and the Constellation authors"
+SPDX-License-Identifier = "CC0-1.0"

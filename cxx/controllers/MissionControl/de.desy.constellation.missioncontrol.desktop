@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=MissionControl
+Comment=Controller for Constellation
+Categories=Science;Physics;
+Keywords=Constellation;DAQ;testbeam;
+
+Icon=de.desy.constellation
+Exec=MissionControl
+Terminal=false
