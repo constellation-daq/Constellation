@@ -142,6 +142,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
+    - echo "Building on $(nproc) cores and $(grep MemTotal /proc/meminfo)"
     - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS} $(eval ${BUILD_SCRIPTS})
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
