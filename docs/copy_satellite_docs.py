@@ -20,9 +20,9 @@ def guess_language(directory: pathlib.Path) -> str:
     """
 
     if "cxx" in str(directory):
-        return "cxx"
+        return "C++"
     else:
-        return "py"
+        return "Python"
 
 
 def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
@@ -31,11 +31,11 @@ def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, 
     For C++, this assumes the 'NameSatellite.hpp' naming scheme.
     For Python, this assumes the `from .XXX import Name` in `__main__` scheme.
     """
-    if lang == "cxx":
+    if lang == "C++":
         for file in directory.glob("*Satellite.hpp"):
             # Return the first matching file (assuming only one matches)
             return file, file.name.removesuffix(".hpp")
-    elif lang == "py":
+    elif lang == "Python":
         main_py_file = directory / "__main__.py"
         if main_py_file.exists():
             with open(main_py_file, "r") as file:
@@ -58,12 +58,12 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name:
     with open(header_path, "r") as file:
         content = file.read()
 
-        if lang == "cxx":
+        if lang == "C++":
             # Regular expression to find the parent class in C++ inheritance declaration
             match = re.search(rf"class\s+{satellite_name}\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
             if match:
                 return [match.group(2)]
-        elif lang == "py":
+        elif lang == "Python":
             # Regex to match Python class inheritance (might be multiple)
             match = re.search(rf"class\s+{satellite_name}\s*\((.+)\):", content)
             if match:
@@ -90,7 +90,7 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
     # rewrite the file
     with in_path.open(mode="r", encoding="utf-8") as in_file:
         file_input = in_file.read()
-        file_output = convert_front_matter(file_input)
+        file_output = convert_front_matter(lang, file_input)
 
         # Parse base class and append configuration parameters
         header_result = find_header_file(lang, in_path.parent)
@@ -129,7 +129,7 @@ def append_content(lang: str, parent_classes: list[str]) -> str:
     return append
 
 
-def convert_front_matter(string: str) -> str:
+def convert_front_matter(lang: str, string: str) -> str:
     """
     Converts YAML front-matter in a string from Markdown to plain text in Markdown.
 
@@ -147,6 +147,10 @@ def convert_front_matter(string: str) -> str:
         yaml_data = yaml.safe_load(raw_yaml)
         yaml_endpos = yaml_match.end(0)
         string_after_yaml = string[yaml_endpos:]
+
+        # amend language if missing:
+        if lang and "language" not in yaml_data.keys():
+            yaml_data["language"] = lang
 
         # Add title:
         converted_front_matter = "# " + yaml_data["title"] + " Satellite\n"
