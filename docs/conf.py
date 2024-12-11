@@ -142,18 +142,27 @@ for path in (docsdir / "satellites").glob("*.md"):
 satellite_files = list((repodir / "cxx" / "satellites").glob("**/README.md"))
 satellite_files.extend(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
 
-satellites_types = []
+satellites = {}
 
 for path in satellite_files:
-    satellite_type = copy_satellite_docs.convert_satellite_readme(path, docsdir / "satellites")
-    satellites_types.append(f"{satellite_type} <{satellite_type}>")
+    satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme(path, docsdir / "satellites")
+    satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{satellite_type}>")
+
+satellite_tocs = ""
+for category, satellites in satellites.items():
+    satellite_tocs += "```{toctree}\n:caption: "
+    satellite_tocs += category if category else "Uncategorized"
+    satellite_tocs += "\n:maxdepth: 1\n"
+    for sat in satellites:
+        satellite_tocs += sat + "\n"
+    satellite_tocs += "```\n"
 
 with (
     open("satellites/index.md.in", "rt") as index_in,
     open("satellites/index.md", "wt") as index_out,
 ):
     for line in index_in:
-        line = line.replace("SATELLITES", "\n".join(sorted(satellites_types)))
+        line = line.replace("SATELLITES", satellite_tocs)
         index_out.write(line)
 
 # ablog settings

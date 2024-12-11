@@ -7,8 +7,4 @@ New satellites may be included in the main repository and the distribution of Co
 a category of devices.
 
 
-```{toctree}
-:caption: Shipped Satellites
-:maxdepth: 1
 SATELLITES
-```

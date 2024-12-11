@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "RandomTransmitter"
 description: "A satellite that transmits random data"
+category: "Developer Tools"
 ---
 
 ## Building

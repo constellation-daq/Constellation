@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "DevNullReceiver"
 description: "A satellite that receives data and drops it"
+category: "Developer Tools"
 ---
 
 ## Building

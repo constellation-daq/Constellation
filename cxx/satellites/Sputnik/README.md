@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Sputnik"
 description: "Demonstrator satellite serving as prototype for new satellites"
+category: "Example Templates"
 ---
 
 ## Description

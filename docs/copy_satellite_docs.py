@@ -90,7 +90,7 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
     # rewrite the file
     with in_path.open(mode="r", encoding="utf-8") as in_file:
         file_input = in_file.read()
-        file_output = convert_front_matter(lang, file_input)
+        file_output, category = convert_front_matter(lang, file_input)
 
         # Parse base class and append configuration parameters
         header_result = find_header_file(lang, in_path.parent)
@@ -109,7 +109,7 @@ def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> s
             logger.warning(f"No satellite definition found in {in_path.parent}")
 
         (out_path / in_path.parent.name).with_suffix(".md").write_text(file_output)
-        return in_path.parent.name
+        return (in_path.parent.name, category)
 
 
 def append_content(lang: str, parent_classes: list[str]) -> str:
@@ -129,7 +129,7 @@ def append_content(lang: str, parent_classes: list[str]) -> str:
     return append
 
 
-def convert_front_matter(lang: str, string: str) -> str:
+def convert_front_matter(lang: str, string: str) -> (str, str | None):
     """
     Converts YAML front-matter in a string from Markdown to plain text in Markdown.
 
@@ -147,6 +147,10 @@ def convert_front_matter(lang: str, string: str) -> str:
         yaml_data = yaml.safe_load(raw_yaml)
         yaml_endpos = yaml_match.end(0)
         string_after_yaml = string[yaml_endpos:]
+
+        # get satellite category:
+        if "category" in yaml_data.keys():
+            category = yaml_data["category"]
 
         # amend language if missing:
         if lang and "language" not in yaml_data.keys():
@@ -170,4 +174,4 @@ def convert_front_matter(lang: str, string: str) -> str:
 
         string = converted_front_matter + string_after_yaml
 
-    return string
+    return (string, category if "category" in locals() else None)
