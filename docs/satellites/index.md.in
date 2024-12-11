@@ -6,15 +6,4 @@ Detailed descriptions of how to implement new satellites in either C++ or Python
 New satellites may be included in the main repository and the distribution of Constellation if they serve a wider community or
 a category of devices.
 
-
-```{toctree}
-:caption: C++ Satellites
-:maxdepth: 1
-SATELLITES_CXX
-```
-
-```{toctree}
-:caption: Python Satellites
-:maxdepth: 1
-SATELLITES_PYTHON
-```
+SATELLITES
