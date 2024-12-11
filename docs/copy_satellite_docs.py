@@ -14,6 +14,17 @@ import sphinx.util.logging
 logger = sphinx.util.logging.getLogger(__name__)
 
 
+def guess_language(directory: pathlib.Path) -> str:
+    """
+    Guess the language of the satellite implementation based on the path they have been found in
+    """
+
+    if "cxx" in str(directory):
+        return "cxx"
+    else:
+        return "py"
+
+
 def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
     """
     Find the header file of a satellite in the specified directory and the class name.
@@ -61,7 +72,7 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name:
     return None
 
 
-def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib.Path) -> str:
+def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> str:
     """
     Converts and copies a satellite README. The output is written to `<out_path>/<satellite_type>.md`.
 
@@ -72,6 +83,11 @@ def convert_satellite_readme(lang: str, in_path: pathlib.Path, out_path: pathlib
     Returns:
         Satellite type (taken from the parent directory).
     """
+
+    # Guess the language
+    lang = guess_language(in_path)
+
+    # rewrite the file
     with in_path.open(mode="r", encoding="utf-8") as in_file:
         file_input = in_file.read()
         file_output = convert_front_matter(file_input)

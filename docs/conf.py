@@ -139,27 +139,21 @@ for path in (docsdir / "satellites").glob("*.md"):
         path.unlink()
 
 # Add satellite READMEs to documentation
-satellite_files_cxx = sorted(list((repodir / "cxx" / "satellites").glob("**/README.md")))
-satellite_files_py = sorted(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
+satellite_files = list((repodir / "cxx" / "satellites").glob("**/README.md"))
+satellite_files.extend(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
 
-satellites_types_cxx = []
-satellites_types_py = []
+satellites_types = []
 
-for path in satellite_files_cxx:
-    satellite_type = copy_satellite_docs.convert_satellite_readme("cxx", path, docsdir / "satellites")
-    satellites_types_cxx.append(f"{satellite_type} <{satellite_type}>")
-
-for path in satellite_files_py:
-    satellite_type = copy_satellite_docs.convert_satellite_readme("py", path, docsdir / "satellites")
-    satellites_types_py.append(f"{satellite_type} <{satellite_type}>")
+for path in satellite_files:
+    satellite_type = copy_satellite_docs.convert_satellite_readme(path, docsdir / "satellites")
+    satellites_types.append(f"{satellite_type} <{satellite_type}>")
 
 with (
     open("satellites/index.md.in", "rt") as index_in,
     open("satellites/index.md", "wt") as index_out,
 ):
     for line in index_in:
-        line = line.replace("SATELLITES_CXX", "\n".join(satellites_types_cxx))
-        line = line.replace("SATELLITES_PYTHON", "\n".join(satellites_types_py))
+        line = line.replace("SATELLITES", "\n".join(sorted(satellites_types)))
         index_out.write(line)
 
 # ablog settings

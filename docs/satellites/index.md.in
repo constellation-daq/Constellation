@@ -8,13 +8,7 @@ a category of devices.
 
 
 ```{toctree}
-:caption: C++ Satellites
+:caption: Shipped Satellites
 :maxdepth: 1
-SATELLITES_CXX
-```
-
-```{toctree}
-:caption: Python Satellites
-:maxdepth: 1
-SATELLITES_PYTHON
+SATELLITES
 ```
