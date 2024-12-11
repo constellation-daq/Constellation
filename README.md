@@ -9,7 +9,7 @@ SPDX-License-Identifier: CC-BY-4.0
 
 ## The Autonomous Control and Data Acquisition System for Dynamic Experimental Setups
 
-Constellation is a control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands. Constellation aims to provide a flexible SCADA software system that requires minimal effort for the integration of new devices, that is based on widely adopted open-source network communication libraries and that keeps the required maintenance as low as possible.
+Constellation is an autonomous control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands. Constellation aims to provide a flexible framework that requires minimal effort for the integration of new devices, that is based on widely adopted open-source network communication libraries and that keeps the required maintenance as low as possible.
 
 More details about the project can be found on the website at [constellation.pages.desy.de](https://constellation.pages.desy.de/).
 
