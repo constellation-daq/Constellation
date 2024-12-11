@@ -62,6 +62,14 @@ variables:
     - $CCACHE_DIR/
   when: always
 
+.cpp-hi-load: &cpp-hi-load
+  variables:
+    NINJA_OPTIONS: "-j4"
+    KUBERNETES_CPU_REQUEST: "4"
+    KUBERNETES_MEMORY_REQUEST: "10Gi"
+  tags:
+    - hi-load
+
 .alma9-cern:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
 
@@ -206,26 +214,22 @@ build:fedora-clang:
 build:fedora-mingw:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
     BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
     BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
-    NINJA_OPTIONS: "-l4"
-  tags:
-    - hi-load
 
 build:ubuntu-22.04:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .ubuntu-22.04
   variables:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "-Dbuild_gui=qt5"
     CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
-    NINJA_OPTIONS: "-l4"
-  tags:
-    - hi-load
 
 build:ubuntu-24.04:
   extends:
@@ -428,8 +432,6 @@ lint:clang-tidy:
     - ninja -C build clang-tidy
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
-  tags:
-    - hi-load
 
 lint:clang-tidy-diff:
   extends:
@@ -444,8 +446,6 @@ lint:clang-tidy-diff:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes
-  tags:
-    - hi-load
 
 lint:clang-scan-build:
   extends:
@@ -485,7 +485,7 @@ lint:coverity-scan:
     - CC=$(command -v gcc); CXX=$(command -v g++) # Set directly to avoid ccache
     - cov-configure --comptype gcc --compiler $CXX
     - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug
-    - cov-build --dir cov-int ninja -C build
+    - cov-build --dir cov-int ninja -C build ${NINJA_OPTIONS}
     - tar -czf cov-int.tgz cov-int
     - curl -s https://scan.coverity.com/builds?project=$COVERITY_SCAN_PROJECT_NAME
       --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
@@ -493,8 +493,7 @@ lint:coverity-scan:
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
-  tags:
-    - hi-load
+  <<: *cpp-hi-load
 
 # format stage
 
