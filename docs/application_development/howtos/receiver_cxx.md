@@ -1,8 +1,8 @@
 # Receiving Data in C++
 
 This how-to guide describes the concepts of receiving data from other satellites.
-It is recommended to read through the  [implementation how-to](satellite_cxx.md) of satellites in C++ in
-order to get a solid understanding of the state machine and data transmission mechanism.
+It is recommended to read through the [implementation tutorial](../tutorials/satellite_cxx.md) of satellites in C++
+to get a good understanding of implementing a basic satellite.
 
 ## Receiving Data
 

@@ -43,24 +43,16 @@ tutorials/single_satellite
 :caption: Concepts
 
 concepts/constellation
-concepts/logging
 concepts/satellite
 concepts/controller
-concepts/listener
-concepts/data
 concepts/autonomy
-concepts/statistics
+concepts/logging
+concepts/telemetry
+concepts/data
 ```
 
 ```{toctree}
 :caption: How-To Guides
 
-howtos/satellite_cxx
-howtos/satellite_py
-howtos/custom_commands
-howtos/port_eudaq
 howtos/setup_influxdb_grafana
-howtos/external_satellite
-howtos/receiver_cxx
-howtos/data_transmission_speed
 ```

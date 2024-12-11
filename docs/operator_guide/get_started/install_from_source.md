@@ -104,7 +104,7 @@ meson install -C build
 ```
 
 For details on installing Constellation for external satellites, see
-[Building External Satellites](../howtos/external_satellite.md).
+[Building External Satellites](../../application_development/howtos/external_satellite.md).
 
 :::::
 :::::{tab-item} Python

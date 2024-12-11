@@ -1,6 +1,6 @@
 # Setting up InfluxDB and Grafana
 
-Online monitoring with [statistics](../concepts/statistics.md) is essential for most data taking operations.
+Online monitoring with [telemetry](../concepts/telemetry.md) is essential for most data taking operations.
 This monitoring data can be nicely displayed in a browser with [Grafana](https://grafana.com/oss/grafana/) in combination
 with a time series database like [InfluxDB](https://www.influxdata.com/).
 
