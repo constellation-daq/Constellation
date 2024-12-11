@@ -21,7 +21,6 @@ SPDX-License-Identifier = "GPL-3.0-or-later"
 path = [
   "cxx/constellation/gui/Constellation.qrc",
   "cxx/controllers/MissionControl/MissionControl.ui",
-  "python/constellation/core/version_code_name",
 ]
 SPDX-FileCopyrightText = "DESY and the Constellation authors"
 SPDX-License-Identifier = "EUPL-1.2"
@@ -30,3 +29,11 @@ SPDX-License-Identifier = "EUPL-1.2"
 path = "cxx/constellation/gui/icons/**"
 SPDX-FileCopyrightText = "Google Material Symbols"
 SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+  "cxx/controllers/MissionControl/de.desy.constellation.missioncontrol.desktop",
+  "python/constellation/core/version_code_name",
+]
+SPDX-FileCopyrightText = "DESY and the Constellation authors"
+SPDX-License-Identifier = "CC0-1.0"
