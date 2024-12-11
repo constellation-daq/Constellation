@@ -46,7 +46,7 @@ flags or event configurations:
 ```{note}
 It should be noted that this satellite requires the sending satellites to receive data from to be configured via the
 `_data_transmitters` parameter, just as any Constellation receiver satellite deriving from the
-[`ReceiverSatellite`](../reference/cxx/satellite/satellite.md#receiversatellite-configuration-parameters)
+[`ReceiverSatellite`](../framework_reference/cxx/satellite/satellite.md#receiversatellite-configuration-parameters)
 class.
 ```
 

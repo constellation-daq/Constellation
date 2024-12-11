@@ -73,8 +73,9 @@ html_theme_options = {
     ],
     "use_edit_page_button": True,
     "secondary_sidebar_items": {
-        "manual/**": ["page-toc", "edit-this-page"],
-        "reference/**": ["page-toc", "edit-this-page"],
+        "operator_guide/**": ["page-toc", "edit-this-page"],
+        "application_development/**": ["page-toc", "edit-this-page"],
+        "framework_reference/**": ["page-toc", "edit-this-page"],
         "protocols/**": ["page-toc", "edit-this-page"],
         "news/**": ["page-toc"],
         "satellites/**": ["page-toc"],

@@ -1,4 +1,4 @@
-# Developer Guide
+# Framework Developer Guide
 
 ```{note}
 This section of the manual contains technical details not required for understanding and operating Constellations, but
