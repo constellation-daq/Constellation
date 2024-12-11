@@ -5,10 +5,14 @@ In Constellation terminology, a *Producer* is called a *Satellite*. As will beco
 that governs the life cycle of a satellite as well as the mechanism for logging information and transmitting data are very
 similar from an interface perspective.
 
+It is recommend to read through the [concepts of a satellite](../../operator_guide/concepts/satellite.md) and the
+[satellite implementation tutorial](../tutorials/satellite_cxx.md) first to get a good understanding of how a satellite works
+and how they are implemented in C++.
+
 ## Porting the Finite State Machine Transitions
 
-Constellation satellites are built around a [finite state machine](../concepts/satellite.md) which works similar to EUDAQs
-Producers, with the exception that the states have different names and a few more transitions between states are possible.
+Constellation satellites are built around a finite state machine which works similar to the one used in EUDAQs Producers,
+with the exception that the states have different names and a few more transitions between states are possible.
 In order to port the functionality of the EUDAQ Producer, the code from its functions can directly be copied into a
 corresponding Constellation satellite skeleton. The following table helps in finding the corresponding function name:
 
@@ -17,13 +21,13 @@ corresponding Constellation satellite skeleton. The following table helps in fin
 | `DoInitialise` | `initializing`          | Direct equivalent. In EUDAQ, this function only receives the "init" portion of the configuration, in Constellation the entire satellite configuration is provided at this stage.
 | `DoConfigure`  | `launching`             | Direct equivalent. Powers up the attached instrument and configures it to a state where it is ready to enter data taking.
 | -              | `landing`               | Landing is the opposite action as launching and should shut down the attached instrument in a controlled manner to bring it back into the INIT state. EUDAQ does not have a direct equivalent, but `DoReset` works in a similar fashion.
-| -              | `reconfiguring`         | Reconfiguration is a concept specific to Constellation. It is an optional method which allows to alter a subset of configuration values without landing first. More information is available [here](./satellite_cxx.md).
+| -              | `reconfiguring`         | Reconfiguration is a concept specific to Constellation. It is an optional method which allows to alter a subset of configuration values without landing first.
 | `DoStartRun`   | `starting`              | Direct equivalent. Starts a new data taking run.
 | `DoStopRun`    | `stopping`              | Direct equivalent. Stops the run currently in progress.
-| `RunLoop`      | `running`               | Equivalent with the difference that instead of keeping track of the running via a custom variable (like `m_running`) often found in EUDAQ Producers, Constellation provides a stop token. More information is available [here](./satellite_cxx.md).
+| `RunLoop`      | `running`               | Equivalent with the difference that instead of keeping track of the running via a custom variable (like `m_running`) often found in EUDAQ Producers, Constellation provides a stop token.
 | `DoReset`      | -                       | In EUDAQ, this command puts the producer back into the initial state. In contrast, resetting a satellite in Constellation means calling its `initializing` method again.
 | `DoTerminate`  | Destructor              | The EUDAQ equivalent of the `terminate` action in Constellation is the `shutdown` command which can only be triggered when not running or in orbit. The corresponding code should be placed in the destructor of the satellite.
-| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because statistical metrics are transmitted differently, more similar to log messages. More information can be found [here](../concepts/statistics.md).
+| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because metrics are transmitted differently, more similar to log messages. More information can be found [here](../functionality/metrics.md).
 
 ## Transmitting Data
 
@@ -61,12 +65,12 @@ sendDataMessage(msg);
 It should be noted that tag values in EUDAQ are limited to `std::string` while Constellation tags can hold any configuration
 data type.
 
-Further information on data transmission can be found in the how-to section on [Implementing a Satellite in C++](satellite_cxx.md).
+Further information on data transmission can be found in [here](../functionality/data_transmission.md).
 
 ## Adjusting the Logging Mechanism
 
 In EUDAQ, log messages are sent via the logging macros `EUDAQ_DEBUG`, `EUDAQ_INFO`, `EUDAQ_WARN`, and `EUDAQ_ERROR` which
-take a single string as argument. In Constellation, [similar log levels](../concepts/logging.md) exist and logging can
+take a single string as argument. In Constellation, [similar log levels](../functionality/logging.md) exist and logging can
 directly be translated to the corresponding macros. Instead of single strings, output streams are used which are more
 flexible in converting different variable types to strings automatically. For example the EUDAQ log message:
 

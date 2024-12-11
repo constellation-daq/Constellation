@@ -1,4 +1,4 @@
-# Constellation Concepts
+# The Constellation
 
 This section of the manual provides an overview of the concepts and design principles of the Constellation framework.
 
@@ -92,5 +92,5 @@ operations.
 
 A typical example would be a log message interface which subscribes to log streams for any satellite in the Constellation.
 
-Possible use-cases, the functionality and limitations of listeners in Constellation are described in
-[this chapter](./listener.md).
+The two use cases for a listener, logging and telemetry, are described separately in the
+[logging chapter](./logging.md) and [telemetry chapter](./telemetry.md).

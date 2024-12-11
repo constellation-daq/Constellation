@@ -1,6 +1,6 @@
-# Statistics
+# Telemetry
 
-Constellation comes with a builtin system for gathering statistics to provide online monitoring during data taking.
+Constellation comes with a builtin system for gathering telemetry to provide online monitoring during data taking.
 A satellite can send register and send metrics for this purpose, which consist of a name, a unit and a metric type.
 
 ## Metric Types

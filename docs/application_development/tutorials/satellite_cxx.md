@@ -2,20 +2,21 @@
 
 This how-to guide will walk through the implementation of a new satellite, written in C++, step by step. The entire
 procedure should not take too long, but this of course depends on the complexity of the satellite functionality.
-It is recommended to have a peek into the overall [concept of satellites](../concepts/satellite.md) in Constellation in
-order to get an impression of which functionality of the application could fit into which state of the finite state machine.
+It is recommended to have a peek into the overall [concept of satellites](../../operator_guide/concepts/satellite.md)
+in Constellation in order to get an impression of which functionality of the application could fit into which state of the
+finite state machine.
 
 ```{note}
-This how-to describes the procedure of implementing a new Constellation satellite in C++. For Python look [here](./satellite_py.md) and
-for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
+This how-to describes the procedure of implementing a new Constellation satellite in C++. For Python look [here](./satellite_py.md)
+and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
 
 ## Implementing the FSM Transitions
 
 In Constellation, actions such as device configuration and initialization are realized through so-called transitional states
-which are entered by a command and exited as soon as their action is complete. A more detailed description on this can be found
-in the [satellite section](../concepts/satellite.md) of the framework concepts overview. The actions attached to these
-transitional states are implemented by overriding the virtual methods provided by the {cpp:class}`Satellite <constellation::satellite::Satellite>` base class.
+which are entered by a command and exited as soon as their action is complete. The actions attached to these transitional
+states are implemented by overriding the virtual methods provided by the
+{cpp:class}`Satellite <constellation::satellite::Satellite>` base class.
 
 For a new satellite, the following transitional state actions **should be implemented**:
 
@@ -156,7 +157,7 @@ For the most common C++ ranges like `std::vector` or `std::array`, moving the ob
 
 Since the data transmission protocol as well as the event metadata come with additional overhead, the largest data throughput
 depends on the frame size as well as on the number of frames transmitted by a single message. For performance considerations,
-it is advised to read [Increase Data Rate in C++](data_transmission_speed.md).
+it is advised to read [Increase Data Rate in C++](../howtos/data_transmission_speed.md).
 
 ### Metadata
 
