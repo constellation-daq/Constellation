@@ -16,7 +16,9 @@ by the sending side or due to a network interface limitation. Below a benchmark 
 satellites. In a debugoptimized build, at a frame size of 16kiB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
 cannot generate random data faster than the [`DevNullReceiver`](../../satellites/DevNullReceiver) can receive.
 
-![Benchmark Frame Size vs Data Rate](bench_frame_size_vs_data_rate.png)
+```{figure} bench_frame_size_vs_data_rate.png
+Benchmark Frame Size vs Data Rate
+```
 
 ```{note}
 Benchmarks shown here should not be taken at face value since they heavily depend on the specs of the system generating
@@ -32,7 +34,9 @@ If larger frame sizes are not possible, an alternative is appending multiple sma
 as effectively as increasing the frame size, but still gives a significant improvement. In the benchmark below frames with a
 size of 64 Bytes are added to a single message.
 
-![Benchmark Number of Frames vs Data Rate](bench_number_of_frames_vs_data_rate.png)
+```{figure} bench_number_of_frames_vs_data_rate.png
+Benchmark Number of Frames vs Data Rate
+```
 
 Appending multiple frames can be done like this:
 

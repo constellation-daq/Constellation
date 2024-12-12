@@ -57,23 +57,30 @@ docker compose down
 InfluxDB can be accessed via [`http://localhost:8086`](http://localhost:8086).
 When first visiting the website, a page for setup appears:
 
-![InfluxDB setup page](influxdb_setup.png)
+```{figure} influxdb_setup.png
+InfluxDB setup page
+```
 
 Here, "constellation" as should be chosen as the initial bucket name.
 After clicking "Continue", a page with an API key appears. The API key should be copied for use in the `Influx` satellite,
 then the configuration can be finalized by clicking "Configure Later".
 
-```{tip}
+````{tip}
 It is recommended to setup a maximum duration for which monitoring data is stored.
 This can be done by going to "Load Data" → "Buckets", and then opening the settings for the "constellation" bucket.
 
-![InfluxDB bucket settings](influxdb_bucket.png)
+```{figure} influxdb_bucket.png
+InfluxDB bucket settings
 ```
+````
 
 Finally, it is recommended to create a custom API token for Grafana, that only reads from the "constellation" bucket.
 This can be done by going to "Load Data" → "API Token", and clicking "Generate API Token" → "Custom API Token".
 
-![InfluxDB custom API token settings](influxdb_api_key.png)
+```{figure} influxdb_api_key.png
+InfluxDB custom API token settings
+```
+
 
 ## Setting up Grafana
 
@@ -83,7 +90,9 @@ The default username and password are both `admin`.
 First, InfluxDB needs to be added as a data source. This can be done by clicking on "Connections" → "Data sources" and then
 "Add data source". On the page InfluxDB can be selected:
 
-![Grafana add data source](grafana_add_influxdb.png)
+```{figure} grafana_add_influxdb.png
+Grafana add data source
+```
 
 On the configuration page, the following settings need to be adjusted:
 
@@ -94,7 +103,9 @@ On the configuration page, the following settings need to be adjusted:
 - `Default Bucket`: `constellation`
 - `Min time interval`: `1s`
 
-![Grafana InfluxDB settings](grafana_setup_influxdb.png)
+```{figure} grafana_setup_influxdb.png
+Grafana InfluxDB settings
+```
 
 ## Adding a Dashboard
 
@@ -150,11 +161,16 @@ To add a visualization in the dashboard, a Flux query needs to be made to the da
 the InfluxDB Data Explorer. There, the bucket (`constellation`), the measurement (sending satellite) and the filed (metric)
 can be chosen. On the right, the aggregate function should be set to "last" and then the query can be submitted.
 
-![InfluxDB query builder](influxdb_query_builder.png)
+```{figure} influxdb_query_builder.png
+InfluxDB Query Builder
+```
 
 The Flux query can be copied by switching to the "Script Editor":
 
-![InfluxDB query builder](influxdb_query_script.png)
+```{figure} influxdb_query_script.png
+InfluxDB Script Editor
+```
+
 
 Monitoring data can also be transformed in the Query for example to change the units.
 To multiply a value by `0.01`, this can be added in front of the `yield` part of the query:
@@ -189,16 +205,22 @@ clicking "Save dashboard" in the top right corner, where a title for dashboard c
 In the top right corner new visualizations can be added. After selecting InfluxDB, the visualization panel editor opens
 where the Flux query can be pasted:
 
-![Grafana panel editor](grafana_panel_editor.png)
+```{figure} grafana_panel_editor.png
+Grafana panel editor
+```
 
 To get a first view of the monitoring data, the query needs to be refreshed by clicking "Refresh" above the panel.
 Left of the "Refresh" button, the time range can be adjusted. The panel can be further adjusted using the right side bar,
 for example with a proper title, a unit (under "Standard options"), showing the last value (under "Legend" → "Values"),
 adding a warning threshold, and not connecting values far apart ("Graph styles" → "Disconnected values"):
 
-![Grafana panel editor after edits](grafana_panel_editor_final.png)
+```{figure} grafana_panel_editor_final.png
+Grafana panel editor after edits
+```
 
 Finally, the dashboard needs to be saved with the new panel. To automatically refresh the dashboard, the right triangle next
 to the "Refresh" button in dashboard overview can be extended to select a refresh interval:
 
-![Grafana dashboard](grafana_dashboard.png)
+```{figure} grafana_dashboard.png
+Grafana dashboard
+```

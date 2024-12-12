@@ -1,3 +1,5 @@
 # Autonomous Operation
 
-![Schematic drawing of CHP](CHP.svg)
+```{figure} CHP.svg
+Schematic drawing of CHP
+```
