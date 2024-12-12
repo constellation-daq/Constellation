@@ -235,4 +235,6 @@ The `SAFE` state is achieved via a controlled shutdown of components and is a we
 is entered, for example, through a lack of control or communication with the instrument and therefore does not allow any
 statement to be made about the condition of attached hardware.
 
+```{seealso}
 More details about the autonomous operation of a Constellation can be found in [the respective section of the manual](autonomy.md).
+```

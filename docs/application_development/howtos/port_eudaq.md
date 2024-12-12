@@ -5,9 +5,11 @@ In Constellation terminology, a *Producer* is called a *Satellite*. As will beco
 that governs the life cycle of a satellite as well as the mechanism for logging information and transmitting data are very
 similar from an interface perspective.
 
+```{seealso}
 It is recommend to read through the [concepts of a satellite](../../operator_guide/concepts/satellite.md) and the
 [satellite implementation tutorial](../tutorials/satellite_cxx.md) first to get a good understanding of how a satellite works
 and how they are implemented in C++.
+```
 
 ## Porting the Finite State Machine Transitions
 
@@ -65,7 +67,9 @@ sendDataMessage(msg);
 It should be noted that tag values in EUDAQ are limited to `std::string` while Constellation tags can hold any configuration
 data type.
 
+```{seealso}
 Further information on data transmission can be found in [here](../functionality/data_transmission.md).
+```
 
 ## Adjusting the Logging Mechanism
 

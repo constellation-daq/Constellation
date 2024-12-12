@@ -2,9 +2,12 @@
 
 Welcome to the Constellation Operator Guide. This guide is intended to provide a comprehensive overview of the framework for
 people who will set up and operate Constellations, control satellites and monitor the performance of the system.
+
+```{seealso}
 Separate guides are provided for those who intend to [integrate their own hardware or develop new satellites](../application_development/index.md)
 as well as for those who wish to contribute to the [development of Constellation](../framework_reference/index.md) and
 require more in-depth technical information.
+```
 
 This guide is structured in four different parts, each of which serve a different purpose:
 
