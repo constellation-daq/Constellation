@@ -1,3 +1,5 @@
 # The Controller
 
-![Schematic drawing of CSCP](CSCP.svg)
+```{figure} CSCP.svg
+Schematic drawing of CSCP
+```
