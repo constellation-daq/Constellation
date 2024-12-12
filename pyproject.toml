@@ -72,6 +72,7 @@ test = [
 ]
 docs = [
     "sphinx",
+    "sphinx-autobuild",
     "pydata_sphinx_theme",
     "myst-parser",
     "breathe",
