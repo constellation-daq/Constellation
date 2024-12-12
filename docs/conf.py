@@ -8,6 +8,9 @@ import sphinx.util.logging
 
 import copy_satellite_docs
 
+from constellation.core import __version__
+from constellation.core import __version_code_name__
+
 logger = sphinx.util.logging.getLogger(__name__)
 
 # set directories
@@ -18,8 +21,8 @@ repodir = docsdir.parent
 project = "Constellation"
 project_copyright = "2024 DESY and the Constellation authors, CC-BY-4.0"
 author = "DESY and the Constellation authors"
-version = "0"
-release = "v" + version
+version = __version__
+release = "v" + version + " " + __version_code_name__
 
 # extensions
 extensions = [
