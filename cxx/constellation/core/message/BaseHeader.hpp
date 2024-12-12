@@ -61,8 +61,8 @@ namespace constellation::message {
         }
 
         /** Set message tag */
-        void setTag(const std::string& key, config::Value value) {
-            tags_[utils::transform(key, ::tolower)] = std::move(value);
+        template <typename T> void setTag(const std::string& key, const T& value) {
+            tags_[utils::transform(key, ::tolower)] = value;
         }
 
         /** Convert message header to human readable string */
