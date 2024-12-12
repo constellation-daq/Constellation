@@ -12,6 +12,11 @@ Two types of satellites exits, transmitter satellites which generate data and se
 and receiver satellites which receive data from one or more transmitter satellites and process it, e.g. by storing it to
 disk.
 
+```{seealso}
+Details about how to implement data transmission in a satellite can be found in the
+[application development guide](../../application_development/functionality/data_transmission.md).
+```
+
 ## Structure
 
 Data consist of individual messages that are grouped to so-called runs. A run represents a set of data recorded in known

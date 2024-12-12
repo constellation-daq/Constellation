@@ -1,4 +1,4 @@
-# Adding Custom Satellite Commands
+# Custom Satellite Commands
 
 This how-to guide will walk through the process of adding and registering custom commands for a satellite.
 This functionality can be used to expose additional functionality of the devices that is handled by the satellite to
