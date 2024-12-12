@@ -34,6 +34,7 @@ extensions = [
     "sphinx_design",
     "sphinx_favicon",
     "sphinx_copybutton",
+    "sphinx.ext.imgconverter",
 ]
 
 # general settings
@@ -107,6 +108,13 @@ html_sidebars = {
 favicons = [
     "logo.svg",
 ]
+
+# LaTeX settings:
+latex_elements = {
+    "papersize": "a4paper",
+    "pointsize": "11pt",
+    "figure_align": "tbp",
+}
 
 # myst settings
 myst_heading_anchors = 4
