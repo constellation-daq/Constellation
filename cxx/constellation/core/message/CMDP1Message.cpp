@@ -70,7 +70,7 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     // Decode topic
     const auto topic = frames.pop().to_string();
     if(!(topic.starts_with("LOG/") || topic.starts_with("STAT/"))) {
-        throw MessageDecodingError("Invalid message topic, neither log or statistics message");
+        throw MessageDecodingError("Invalid message topic, neither log nor telemetry message");
     }
 
     // Check if valid log level by trying to decode it
@@ -143,7 +143,7 @@ CMDP1StatMessage::CMDP1StatMessage(Header header, metrics::MetricValue metric_va
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
     if(!isStatMessage()) {
-        throw MessageDecodingError("Not a statistics message");
+        throw MessageDecodingError("Not a telemetry message");
     }
 
     // Assign topic after prefix "STAT/"

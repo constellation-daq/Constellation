@@ -38,7 +38,7 @@ namespace constellation::metrics {
     using enum MetricType;
 
     /**
-     * @brief This class represents a metric for data quality monitoring or statistics purposes
+     * @brief This class represents a metric for telemetry or data quality monitoring
      *
      * @details It comprises a name, a unit and a type. The type defines how the value should be treated, i.e. if always the
      *          last transmitted value should be displayed, if an average of the values should be calculated or if they
@@ -81,7 +81,7 @@ namespace constellation::metrics {
     };
 
     /**
-     * @brief This class represents a timed metric for data quality monitoring or statistics purposes
+     * @brief This class represents a timed metric for telemetry or data quality monitoring
      *
      * @details A timed metric is a metric that is polled in regular intervals. It requires an interval, a value callback,
      *          and a list of states where the callback is allowed to be called.

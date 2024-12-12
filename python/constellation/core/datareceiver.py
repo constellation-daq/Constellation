@@ -259,7 +259,7 @@ class DataReceiver(Satellite):
         socket.close()
 
     def _reset_receiver_stats(self) -> None:
-        """Reset internal statistics used for monitoring"""
+        """Reset internal telemetry used for monitoring"""
         self.receiver_stats = {
             "npackets": 0,
             "nbytes": 0,
