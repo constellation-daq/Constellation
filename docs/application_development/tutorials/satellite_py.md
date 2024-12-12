@@ -58,7 +58,7 @@ self.log.info("Landing satellite; ramping down voltage")
 
 The log messages are broadcast to listeners, and can be listened on by using e.g. `python -m constellation.core.monitoring`.
 
-## Sending stats
+## Sending Telemetry
 
 To send metrics (e.g. readings from a sensor), the `schedule_metric` method can be used. The method takes a metric name,
 the unit, a polling interval, a metric type and a callable function as arguments. The name of the metric will always be

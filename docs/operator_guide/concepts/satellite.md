@@ -123,8 +123,8 @@ satellite communication with the rest of the Constellation:
 
 ### Operating the Instrument - The `RUN` State
 
-The `RUN` state is special in that this is where the operation of the satellite takes place, data is collected and passed on
-and statistical metrics are distributed.
+The `RUN` state is special in that this is where the operation of the satellite takes place, data is collected and passed on,
+and telemetry data are distributed.
 Satellite implementations interact with the `RUN` state through the `running` function.
 The method is called once upon entering the `RUN` state, and should exit as soon as a state change is requested either by a
 controller or by a failure mode.

@@ -1,6 +1,6 @@
-# Metrics
+# Telemetry
 
-## Statistics Macros
+## Macros for Sensing Metrics
 
 The following macros should be used for triggering sending metrics manually.
 
