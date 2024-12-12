@@ -1,47 +1,25 @@
 # Starting & Controlling a Satellite
 
-Satellites and controllers can be implemented in either Python and in C++. Due to the shared communication protocols, a
-Python controller can control a C++ satellite and vice versa. The following tutorial describes how to start a single
-satellite and how to discover it and change its state with a controller.
+The following tutorial describes how to start a single [satellite](../concepts/satellite.md), how to discover it and change
+its state with a command line controller. For this purposes example satellites are used, a full list of satellites can be
+found [here](../../satellites/index.md).
+
+```{hint}
+This tutorial assumes that both the C++ and Python implementations of Constellation are installed. If the C++ implementation
+is not installed, all appearances of `SatelliteSputnik` can be replaced with `SatelliteMariner`.
+```
 
 ## Starting a Satellite
 
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
+The `SatelliteSputnik` executable is used to start the example `Sputnik` satellite. It has two relevant command line
+arguments:
 
-The `satellite` executable starts a new Constellation satellite and requires three command line arguments:
-
-- `--type, -t`: Type of satellite. This corresponds to the class name of the satellite implementation.
-- `--name, -n`: Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
+- `--name, -n`: This is the name for satellite, which should be unique within the Constellation group (defaults to hostname).
 - `--group, -g`: This is the name of the Constellation group this satellite should be a part of.
 
-A call with all three parameters provided could e.g. look like follows:
-
 ```sh
-Satellite -t Sputnik -n TheFirstSatellite -g MyLabPlanet
+SatelliteSputnik -n One -g edda
 ```
-
-:::
-:::{tab-item} Python
-:sync: python
-
-Before starting a Python satellite, the virtual environment created during the installation of the framework might need to be
-reactivated using `source venv/bin/activate`.
-
-The satellite is then directly started via its Python module. Additional parameters can be supplied, such as:
-
-- `--name, -n`. Name for the satellite. This name is a user-chosen name and should be unique within the constellation.
-- `--group, -g`. This is the name of the Constellation group this satellite should be a part of.
-
-Starting the example satellite implementation provided with the framework would therefore look like follows:
-
-```sh
-SatelliteMariner --name TheFirstSatellite --group MyLabPlanet
-```
-
-:::
-::::
 
 ## Controlling the Satellite
 
@@ -49,16 +27,6 @@ A controller running in the same Constellation group is needed in order to contr
 of this tutorial. This section shows different options to perform this task.
 
 ### Starting a Controller
-
-::::::{tab-set}
-:::::{tab-item} C++
-:sync: cxx
-
-TODO
-
-:::::
-:::::{tab-item} Python
-:sync: python
 
 The Python implementation of Constellation provides a powerful command line interface controller using IPython.
 This can be installed with the `cli` component:
@@ -82,62 +50,47 @@ pip install ConstellationDAQ[cli]
 :::
 ::::
 
-The controller can be started via its Python module via `python -m constellation.core.controller`, but an entry point is also created on installation which allows starting directly via the command `Controller`. It is possible to pass the controller some (optional) arguments, for example:
+The controller can be started via the command `Controller`. It has one relevant command line argument:
 
-- `--name`. A name for the controller (default: cli_controller)
-- `--group`. The constellation group to which the controller should belong (default: constellation)
-- `--log-level`. The logging verbosity for the controller's log messages (default: info)
+- `--group, -g`: This is the name of the Constellation group this controller should be a part of.
 
 To control the satellite created in the first part of this tutorial, the controller needs to be in the same group.
 
 ```sh
-Controller --group MyLabPlanet
+Controller -g edda
 ```
 
 The interactive command line provides the `constellation` object which holds all information about connected satellites and
 allows their control. Getting a dictionary containing the satellites could e.g. be performed by running:
 
 ```python
-MyLabPlanet > constellation.satellites
-{'Mariner.TheFirstSatellite': SatelliteCommLink(name=TheFirstSatellite, class=Mariner)}
+edda > constellation.satellites
+{'Sputnik.One': SatelliteCommLink(name=One, class=Sputnik)}
 ```
 
 In order to obtain more information on a specific satellite, it can be directly addressed via its type and name
 and a command can be sent. The response is then printed on the terminal:
 
 ```python
-MyLabPlanet > constellation.Mariner.TheFirstSatellite.get_name()
-SatelliteResponse(msg='mariner.thefirstsatellite')
+edda > constellation.Sputnik.One.get_name()
+SatelliteResponse(msg='sputnik.one')
 ```
 
 The controller supports tab completion, and suggestions for possible commands are displayed typing e.g.
-`constellation.Mariner.TheFirstSatellite.` and hitting the tab key.
+`constellation.Sputnik.One.` and hitting the tab key.
 
 Since this is an interactive IPython console, of course also loops are possible and could look like this with two satellites
 connected:
 
 ```python
-MyLabPlanet > for sat in constellation.satellites.values():
-         ...:     print(sat.get_name())
-         ...:
-'mariner.thefirstsatellite'
-'mariner.thesecondsatellite'
+edda > for sat in constellation.satellites.values():
+  ...:     print(sat.get_name())
+  ...:
+'sputnik.one'
+'mariner.nine'
 ```
 
-:::::
-::::::
-
 ### Sending Commands to the Satellite
-
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
-
-TODO
-
-:::
-:::{tab-item} Python
-:sync: python
 
 Commands can either be sent to individual satellites, all satellites of a given type, or the entire constellation.
 All available commands for the `constellation` object are available via tab completion.
@@ -146,38 +99,40 @@ To initialize the satellite, it needs to be sent an initialize command, with a d
 In the following example, this dictionary is empty (`{}`) and directly passed to the command.
 
 ```python
-In [1]: constellation.Sputnik.TheFirstSatellite.initialize({})
-Out[1]:
-{'msg': 'transition initialize is being initiated', 'payload': None}
+edda > constellation.Sputnik.One.initialize({})
+{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated')}
 ```
 
 All satellites can be initialized together by sending the command to the entire constellation:
 
 ```python
-In [1]: constellation.initialize({})
-Out[1]:
-{'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
- 'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
+edda > constellation.initialize({})
+{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+ 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
 
 Whether the satellites have actually changed their state can be checked by retrieving the current state of an individual
 satellite or the entire constellation via:
 
 ```python
-In [2]: constellation.Sputnik.TheFirstSatellite.get_state()
-Out[2]:
-{'msg': 'init', 'payload': None}
-In [3]: constellation.get_state()
-Out[3]:
-{'Sputnik.TheFirstSatellite': {'msg': 'init', 'payload': None},
- 'Sputnik.TheSecondSatellite': {'msg': 'init', 'payload': None}}
+edda > constellation.Sputnik.One.get_state()
+SatelliteResponse(msg='init', payload=32,
+                  meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=796949911)})
+```
+
+```python
+edda > constellation.get_state()
+{'Sputnik.One': SatelliteResponse(
+                   msg='init', payload=32,
+                   meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=796949911)}),
+ 'Mariner.Nine': SatelliteResponse(
+                    msg='init', payload=32,
+                    meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=794958000),
+                        "last_changed_iso": '2024-12-12T13:18:18.794958+00:00'})}
 ```
 
 Similarly, all satellite states can be called. A full list of available commands, along with a description of the finite
-state machine can be found in the [concepts chapter on satellites](../concepts/satellite).
-
-:::
-::::::
+state machine can be found in the [concepts chapter on satellites](../concepts/satellite.md).
 
 ### Loading a Configuration File
 
@@ -199,30 +154,19 @@ interval = 1000
 voltage = 5.1
 ```
 
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
-
-TODO
-
-:::
-:::{tab-item} Python
-:sync: python
-
 When starting the controller, a configuration file can be passed as optional command line argument:
 
 ```sh
-Controller --group myLabPlanet --config myconfiguration.toml
+Controller -g edda --config myconfiguration.toml
 ```
 
 The configuration is then available as `cfg` object on the interactive command line and can be passed to the `initialize`
 function:
 
 ```python
-In [1]: constellation.initialize(cfg)
-Out[1]:
-{'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
- 'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
+edda > constellation.initialize(cfg)
+{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+ 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
 
 Alternatively, the configuration can be read and parsed in an already running interactive command line session using the
@@ -230,33 +174,16 @@ Alternatively, the configuration can be read and parsed in an already running in
 dictionaries to the individual satellites is taken care of by the controller.
 
 ```python
-In [1]: cfg = load_config("myconfiguration.toml")
-In [2]: constellation.initialize(cfg)
-Out[2]:
-{'Sputnik.TheSecondSatellite': {'msg': 'transition initialize is being initiated', 'payload': None},
- 'Sputnik.TheFirstSatellite': {'msg': 'transition initialize is being initiated', 'payload': None}}
+edda > cfg = load_config("myconfiguration.toml")
+edda > constellation.initialize(cfg)
+{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+ 'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
-
-:::
-::::
-
 
 ### Closing the Controller
 
 Controllers in Constellation do not possess state and can be closed and restarted at the discretion of the user without
-affecting the state of the satellites.
+affecting the state of the satellites. When closing and starting the controller again, the satellites will still be in the
+`INIT` state from before.
 
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
-
-TODO.
-
-:::
-:::{tab-item} Python
-:sync: python
-
-The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing Ctrl+D.
-
-:::
-::::
+The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing Ctrl+D twice.
