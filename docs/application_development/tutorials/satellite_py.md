@@ -1,6 +1,6 @@
-# Implementing a new Satellite in Python
+# Implementing a Satellite (Python)
 
-This how-to guide will walk through the implementation of a new satellite, written in Python, step by step.
+This tutorial will walk through the implementation of a new satellite, written in Python, step by step.
 It is recommended to have a peek into the overall [concept of satellites](../../operator_guide/concepts/satellite.md)
 in Constellation in order to get an impression of which functionality of the application could fit into which state of the
 finite state machine.
@@ -46,48 +46,6 @@ def do_run(self, payload: any) -> str:
 ```
 
 Any finalization of the measurement run should be performed in the `do_stopping` action rather than at the end of the `do_run` function, if possible.
-
-## Logging
-
-Logging from a satellite can be done by using `self.log.LOG_LEVEL("Message")`, where possible log levels are `debug`, `info`, `warning`, `error`, `critical`.
-An example info level log message is shown below:
-
-```python
-self.log.info("Landing satellite; ramping down voltage")
-```
-
-The log messages are broadcast to listeners, and can be listened on by using e.g. `python -m constellation.core.monitoring`.
-
-## Sending Telemetry
-
-To send metrics (e.g. readings from a sensor), the `schedule_metric` method can be used. The method takes a metric name,
-the unit, a polling interval, a metric type and a callable function as arguments. The name of the metric will always be
-converted to full caps.
-
-* Metric type: can be `LAST_VALUE`, `ACCUMULATE`, `AVERAGE`, or `RATE`.
-* Polling interval: a float value in seconds, indicating how often the metric is transmitted.
-* Callable function: Should return a single value (of any type), and take no arguments. If you have a callable that requires
-  arguments, consider using `functools.partial` to fill in the necessary information at scheduling time. If the callback
-  returns `None`, no metric will be published.
-
-An example call is shown below:
-
-```python
-self.schedule_metric("Current", "A", MetricsType.LAST_VALUE, 10, self.device.get_current)
-```
-
-In this example, the callable `self.device.get_current` fetches the current from a power supply every 10 seconds, and returns
-the value `return current`. The same can also be achieved with a function decorator:
-
-```python
-@schedule_metric("A", MetricsType.LAST_VALUE, 10)
-def Current(self) -> Any:
-    if self.device.can_read_current():
-        return self.device.get_current()
-    return None
-```
-
-Note that in this case, if `None` is returned, no metric is sent. The name of the metric is taken from the function name.
 
 ## Installation of satellite
 
