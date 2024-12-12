@@ -45,7 +45,7 @@ class CaenHV(Satellite):
         link_arg = configuration["link_argument"]
         user = configuration.setdefault("username", "")
         pw = configuration.setdefault("password", "")
-        metrics_poll_rate = configuration["metrics_poll_rate"]
+        metrics_poll_interval = configuration["metrics_poll_interval"]
 
         if "ndt1" in system.lower():
             self.caen: CaenNDT1470Manager | CaenHVModule = CaenNDT1470Manager()
@@ -62,8 +62,14 @@ class CaenHV(Satellite):
         self.caen.connect(system=system, link=link, argument=link_arg, user=user, password=pw)
         if not self.caen.is_connected():
             raise RuntimeError("No connection to Caen HV crate established")
+        crate = self._set_configuration_on_board(configuration)
+        # configure metrics sending
+        self._configure_monitoring(metrics_poll_interval)
+        return f"Connected to crate and configured {len(crate.boards)} boards"
 
+    def _set_configuration_on_board(self, configuration: Configuration):
         # process configuration
+        config_keys = configuration.get_keys()
         with self.caen as crate:
             for brdno, brd in crate.boards.items():
                 # loop over boards
@@ -78,6 +84,9 @@ class CaenHV(Satellite):
                         key = f"board{brdno}_ch{chno}_{par.lower()}"
                         self.log.trace("Checking configuration for key '%s'", key)
                         try:
+                            # check if key in configuration
+                            if key not in config_keys:
+                                continue
                             # retrieve and set value
                             val = configuration[key]
                             if par in ["Pw"]:
@@ -99,54 +108,11 @@ class CaenHV(Satellite):
                             chno,
                             val,
                         )
-
-        # configure metrics sending
-        self._configure_monitoring(metrics_poll_rate)
-        return f"Connected to crate and configured {len(crate.boards)} boards"
+            return crate
 
     def do_reconfigure(self, partial_config: Configuration) -> str:
         """Reconfigure the HV module"""
-        # process configuration
-        config_keys = partial_config.get_keys()
-
-        with self.caen as crate:
-            for brdno, brd in crate.boards.items():
-                # loop over boards
-                self.log.info("Configuring board %s", brd)
-                for chno, ch in enumerate(brd.channels):
-                    # loop over channels
-                    for par in ch.parameter_names:
-                        # loop over parameters
-                        if not ch.parameters[par].attributes["mode"] == "R/W":
-                            continue
-                        # construct configuration key
-                        key = f"board{brdno}_ch{chno}_{par.lower()}"
-                        self.log.trace("Checking configuration for key '%s'", key)
-                        try:
-                            # check if key in partial_config
-                            if key not in config_keys:
-                                continue
-                            # retrieve and set value
-                            val = partial_config[key]
-                            if par in ["Pw"]:
-                                # do not want to power up just yet
-                                continue
-                            # the board essentially only knows 'float'-type
-                            # arguments except for 'Pw':
-                            val = float(val)
-                        except KeyError:
-                            # nothing in the cfg, leave as it is
-                            continue
-                        except ValueError as e:
-                            raise RuntimeError(f"Error in configuration for key {key}: {repr(e)}") from e
-                        ch.parameters[par].value = val
-                        self.log.debug(
-                            "Configuring %s on board %s, ch %s with value '%s'",
-                            par,
-                            brdno,
-                            chno,
-                            val,
-                        )
+        crate = self._set_configuration_on_board(partial_config)
         self._power_up(partial_config)
         return f"Reconfigured {len(crate.boards)} boards"
 
@@ -275,7 +241,7 @@ class CaenHV(Satellite):
                     ch.switch_off()
         self.log.info("All channels powered down.")
 
-    def _configure_monitoring(self, metrics_poll_rate: int) -> None:
+    def _configure_monitoring(self, metrics_poll_interval: int) -> None:
         """Schedule monitoring for certain parameters."""
         self.reset_scheduled_metrics()
         with self.caen as crate:
@@ -290,7 +256,7 @@ class CaenHV(Satellite):
                             f"b{brdno}_ch{chno}_{par}",
                             "",
                             MetricsType.LAST_VALUE,
-                            metrics_poll_rate,
+                            metrics_poll_interval,
                             partial(
                                 self.get_channel_value,
                                 board=brdno,
@@ -302,7 +268,7 @@ class CaenHV(Satellite):
                             f"b{brdno}_ch{chno}_{par}_status",
                             "",
                             MetricsType.LAST_VALUE,
-                            metrics_poll_rate,
+                            metrics_poll_interval,
                             partial(
                                 self.get_channel_status,
                                 board=brdno,
