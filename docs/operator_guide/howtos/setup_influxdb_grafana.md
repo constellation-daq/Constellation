@@ -6,16 +6,17 @@ with a time series database like [InfluxDB](https://www.influxdata.com/).
 
 ## Setting up Docker Compose
 
-The easiest way to set up InfluxDB and Grafana is with Docker Compose. Installation instructions for Docker and the
-Docker Compose plugin can be found [here](https://docs.docker.com/engine/install/).
+The easiest way to set up InfluxDB and Grafana is with Docker Compose. Installation instructions for Docker and the Docker
+Compose plugin can be found [here](https://docs.docker.com/engine/install/). Alternatively, since Docker is not trivial to
+set up and requires root, `podman-docker` together with `podman-compose` can be used instead if available in the distribution
+repositories.
 
 A file named `docker-compose.yaml` needs to be created with the following content:
 
 ```yaml
-version: "3"
 services:
   influxdb:
-    image: influxdb:2
+    image: docker.io/library/influxdb:2
     container_name: influxdb
     ports:
       - "8086:8086"
@@ -24,7 +25,7 @@ services:
       - influxdb-data:/var/lib/influxdb2
 
   grafana:
-    image: grafana/grafana-oss
+    image: docker.io/grafana/grafana-oss
     container_name: grafana
     ports:
       - "3000:3000"
