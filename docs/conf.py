@@ -115,9 +115,10 @@ latex_elements = {
     "pointsize": "11pt",
     "figure_align": "tbp",
     "fncychap": "",
+    "preamble": "\\addto\\captionsenglish{\\renewcommand{\\contentsname}{Contents}}",
+    "classoptions": "captions=tableheading,a4paper,11pt,numbers=noenddot,titlepage,twoside,openright,DIV=14,BCOR=8mm",
 }
 latex_logo = docsdir.joinpath("logo/logo_small.png").as_posix()
-# latex_toplevel_sectioning = "part"
 latex_show_urls = "footnote"
 latex_theme = "manual"
 latex_docclass = {
