@@ -114,7 +114,20 @@ latex_elements = {
     "papersize": "a4paper",
     "pointsize": "11pt",
     "figure_align": "tbp",
+    "fncychap": "",
 }
+latex_logo = docsdir.joinpath("logo/logo_small.png").as_posix()
+# latex_toplevel_sectioning = "part"
+latex_show_urls = "footnote"
+latex_theme = "manual"
+latex_docclass = {
+    "manual": "scrbook",
+}
+latex_documents = [
+    ("operator_guide/index", "operator_guide.tex", None, author, "manual", False),
+    ("application_development/index", "application_development_guide.tex", None, author, "manual", False),
+    ("framework_reference/index", "framework_development_guide.tex", None, author, "manual", False),
+]
 
 # myst settings
 myst_heading_anchors = 4
