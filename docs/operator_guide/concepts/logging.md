@@ -1,4 +1,4 @@
-# Logging
+# Logging & Verbosity Levels
 
 Constellation comes with a powerful asynchronous logging mechanism which can transmit log messages with different verbosity
 levels over network to other nodes, log them locally to the command line or file, or both simultaneously. *Asynchronous* in

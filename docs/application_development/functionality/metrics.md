@@ -1,4 +1,4 @@
-# Metrics
+# Sending Metrics
 
 ```{seealso}
 For the basic concepts behind telemetry in Constellation and the available metric types check the
