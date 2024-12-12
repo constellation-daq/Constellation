@@ -19,7 +19,7 @@ The `satellite` executable starts a new Constellation satellite and requires thr
 A call with all three parameters provided could e.g. look like follows:
 
 ```sh
-./build/cxx/constellation/exec/satellite -t Sputnik -n TheFirstSatellite -g MyLabPlanet
+Satellite -t Sputnik -n TheFirstSatellite -g MyLabPlanet
 ```
 
 :::

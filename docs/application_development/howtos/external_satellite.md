@@ -88,7 +88,7 @@ target_link_directories(ExampleSatellite PUBLIC ${CNSTLN_SAT_LIBRARY_DIRS})
 target_link_libraries(ExampleSatellite PUBLIC ${CNSTLN_SAT_LIBRARIES})
 target_compile_options(ExampleSatellite PUBLIC ${CNSTLN_SAT_CFLAGS_OTHER})
 
-# Set library output name to satellite type (used in `satellite -t`)
+# Set library output name to satellite type (used in `Satellite -t`)
 set_target_properties(ExampleSatellite PROPERTIES LIBRARY_OUTPUT_NAME "Example")
 
 # Install satellite to Constellation prefix
@@ -101,10 +101,10 @@ install(TARGETS
 ```
 
 ````{note}
-This does not generate an executable for your satellite, instead it needs to be launch with the `satellite` executable
+This does not generate an executable for your satellite, instead it needs to be launch with the `Satellite` executable
 installed with Constellation:
 
 ```sh
-satellite -t Example
+Satellite -t Example
 ```
 ````

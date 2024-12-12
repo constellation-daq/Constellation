@@ -44,7 +44,7 @@ foreach satellite : satellites_to_build
   )
   set_variable('satellite_'+satellite_type.to_lower()+'_lib', satellite_lib)
   # Create satellite executable
-  executable('satellite' + satellite_type,
+  executable('Satellite' + satellite_type,
     sources: [satellite_main],
     dependencies: [exec_dep],
     install: true,

@@ -36,7 +36,7 @@ install_headers(
   subdir: 'constellation/exec',
 )
 
-executable('satellite',
+executable('Satellite',
   sources: 'main.cpp',
   dependencies: [exec_dep],
   install: true,
