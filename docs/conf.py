@@ -115,15 +115,30 @@ latex_elements = {
     "pointsize": "11pt",
     "figure_align": "tbp",
     "fncychap": "",
-    "preamble": "\\addto\\captionsenglish{\\renewcommand{\\contentsname}{Contents}}",
+    "preamble": r"""
+\addto\captionsenglish{\renewcommand{\contentsname}{Contents}}
+\makeatletter
+  \fancypagestyle{normal}{
+    \fancyhf{}
+    \fancyfoot[LE,RO]{{\py@HeaderFamily\thepage}}
+    \fancyhead[LE]{{\py@HeaderFamily \@title, \py@release}}
+    \fancyhead[RO]{{\py@HeaderFamily \nouppercase{\leftmark}}}
+    \renewcommand{\headrulewidth}{0.4pt}
+    \renewcommand{\footrulewidth}{0pt}
+  }
+  \fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[LE,RO]{{\py@HeaderFamily\thepage}}
+    \renewcommand{\headrulewidth}{0pt}
+    \renewcommand{\footrulewidth}{0pt}
+  }
+\makeatother
+""",
     "classoptions": "captions=tableheading,a4paper,11pt,numbers=noenddot,titlepage,twoside,openright,DIV=14,BCOR=8mm",
 }
 latex_logo = docsdir.joinpath("logo/logo_small.png").as_posix()
 latex_show_urls = "footnote"
 latex_theme = "manual"
-latex_docclass = {
-    "manual": "scrbook",
-}
 latex_documents = [
     ("operator_guide/index", "operator_guide.tex", None, author, "manual", False),
     ("application_development/index", "application_development_guide.tex", None, author, "manual", False),
