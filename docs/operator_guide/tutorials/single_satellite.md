@@ -190,16 +190,14 @@ structure and syntax is the following:
 # General settings which apply to all satellites
 confidentiality = "TOPSECRET"
 
-[satellites.Mariner]
-# Settings which apply to all satellites of type "Mariner"
-sample_period = 3.0
+[satellites.Sputnik]
+# Settings which apply to all satellites of type "Sputnik"
+interval = 1000
 
 [satellites.Mariner.Nine]
 # Settings which only apply to the satellite with name "Mariner.Nine"
-voltage = 5
-current = 0.1
+voltage = 5.1
 ```
-
 
 ::::{tab-set}
 :::{tab-item} C++
