@@ -6,7 +6,7 @@ It is recommended to have a peek into the overall [concept of satellites](../../
 in Constellation in order to get an impression of which functionality of the application could fit into which state of the
 finite state machine.
 
-```{note}
+```{seealso}
 This how-to describes the procedure of implementing a new Constellation satellite in C++. For Python look [here](./satellite_py.md)
 and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
@@ -33,7 +33,7 @@ The following transitional state actions are optional:
 
 For the steady state action for the `RUN` state, see below.
 
-```{note}
+```{caution}
 Reading information from the satellite configuration is only possible in the `initializing` function.
 All parameters the satellite requires should be read and validated in this function, the `launching` function should only be used to apply this configuration to hardware.
 ```
@@ -55,9 +55,7 @@ void ExampleSatellite::running(const std::stop_token& stop_token) {
 }
 ```
 
-```{note}
 Any finalization of the measurement run should be performed in the `stopping` action rather than at the end of the `running` function, if possible:
-```
 
 ```cpp
 void ExampleSatellite::stopping() {
@@ -119,7 +117,10 @@ msg.addFrame(std::move(frame0));
 msg.addFrame(std::move(frame1));
 ```
 
-It should be noted that `std::move` semantics is strongly encouraged here in order to avoid copying memory as described below.
+```{note}
+C++ Move semantics `std::move` are strongly encouraged here in order to avoid copying memory as described below.
+```
+
 Finally, the message is send to the connected receiver via one of the following two methods:
 
 * The data can be sent with a pre-configured timeout. If the transmitter fails to send the data within this configured time
@@ -155,9 +156,11 @@ The {cpp:func}`DataMessage::addFrame() <constellation::satellite::TransmitterSat
 Consequently, the data to be transmitted has to be converted into such a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
 
+```{seealso}
 Since the data transmission protocol as well as the event metadata come with additional overhead, the largest data throughput
 depends on the frame size as well as on the number of frames transmitted by a single message. For performance considerations,
 it is advised to read [Increase Data Rate in C++](../howtos/data_transmission_speed.md).
+```
 
 ### Metadata
 
@@ -210,7 +213,8 @@ the framework of the problem. The Constellation core library provides different 
 
 ### Configuration Errors
 
-* `MissingKeyError` should be thrown when a mandatory configuration key is absent.
+* `MissingKeyError` should be thrown when a mandatory configuration key is absent. When accessing the key in a configuration
+  object where it is not present, this exception is thrown automatically.
 * `InvalidValueError` should be used when a value read from the configuration is not valid.
 
 The message provided with the exception should be as descriptive as possible. It will both be logged and will be used as

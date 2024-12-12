@@ -141,9 +141,9 @@ custom command. Individual arguments need to be accessed via their list index.
 :::
 ::::
 
-```{warning}
+```{caution}
 It is discouraged to implement commands that change the configuration of the instrument or device since these changes take
-direct effect and are not reflected in the satellite configuration.
+direct effect and are neither reflected in the satellite configuration nor in the finite state machine.
 ```
 
 ## Allowed FSM states

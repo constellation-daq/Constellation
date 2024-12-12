@@ -62,10 +62,12 @@ Here, "constellation" as should be chosen as the initial bucket name.
 After clicking "Continue", a page with an API key appears. The API key should be copied for use in the `Influx` satellite,
 then the configuration can be finalized by clicking "Configure Later".
 
+```{tip}
 It is recommended to setup a maximum duration for which monitoring data is stored.
 This can be done by going to "Load Data" → "Buckets", and then opening the settings for the "constellation" bucket.
 
 ![InfluxDB bucket settings](influxdb_bucket.png)
+```
 
 Finally, it is recommended to create a custom API token for Grafana, that only reads from the "constellation" bucket.
 This can be done by going to "Load Data" → "API Token", and clicking "Generate API Token" → "Custom API Token".
@@ -173,7 +175,9 @@ from(bucket: "constellation")
   |> yield(name: "last")
 ```
 
+```{seealso}
 For more details on creating queries, see [InfluxDB's Flux documentation](https://docs.influxdata.com/influxdb/v2/query-data/flux/).
+```
 
 ### Adding a Visualization
 

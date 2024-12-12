@@ -5,7 +5,7 @@ It is recommended to have a peek into the overall [concept of satellites](../../
 in Constellation in order to get an impression of which functionality of the application could fit into which state of the
 finite state machine.
 
-```{note}
+```{seealso}
 This how-to describes the procedure of implementing a new satellite for Constellation in Python. For C++ look [here](./satellite_cxx.md)
 and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
 ```
@@ -58,7 +58,7 @@ self.log.info("Landing satellite; ramping down voltage")
 
 The log messages are broadcast to listeners, and can be listened on by using e.g. `python -m constellation.core.monitoring`.
 
-## Sending stats
+## Sending Telemetry
 
 To send metrics (e.g. readings from a sensor), the `schedule_metric` method can be used. The method takes a metric name,
 the unit, a polling interval, a metric type and a callable function as arguments. The name of the metric will always be

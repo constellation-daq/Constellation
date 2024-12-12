@@ -66,7 +66,7 @@ any other component that should follow the Constellation operation synchronously
 
 Satellites are stateful and are implemented around a well-defined finite state machine which governs their behavior and
 possible actions. Satellites are partaking in all Constellation communication protocols: They react to commands from
-controllers, listen to other satellites' heartbeat messages, distribute log messages and statistics and transmit their
+controllers, listen to other satellites' heartbeat messages, distribute log messages and telemetry data and transmit their
 recorded instrument data.
 
 A detailed description of the satellite structure, its features and possibilities to interact with are provided in
