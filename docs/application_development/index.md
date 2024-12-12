@@ -5,11 +5,19 @@ This software framework is still under construction and no stable version has be
 Features, protocols and the behavior of individual components may still change.
 ```
 
+```{raw} latex
+\part{Tutorials}
+```
+
 ```{toctree}
 :caption: Tutorials
 
 tutorials/satellite_cxx
 tutorials/satellite_py
+```
+
+```{raw} latex
+\part{Adding Functionality}
 ```
 
 ```{toctree}
@@ -19,6 +27,10 @@ functionality/logging
 functionality/metrics
 functionality/data_transmission
 functionality/custom_commands
+```
+
+```{raw} latex
+\part{How-To Guides}
 ```
 
 ```{toctree}

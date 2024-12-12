@@ -5,10 +5,18 @@ This section of the manual contains technical details not required for understan
 only for implementing Constellation libraries in different languages, or for consulting the available APIs
 ```
 
+```{raw} latex
+\part{General}
+```
+
 ```{toctree}
 :caption: General
 
 contributing
+```
+
+```{raw} latex
+\part{Technical Documentation}
 ```
 
 ```{toctree}
@@ -17,6 +25,10 @@ contributing
 satellite
 naming
 protocols
+```
+
+```{raw} latex
+\part{C++ Developer API}
 ```
 
 ```{toctree}
@@ -28,8 +40,16 @@ cxx/satellite/index
 cxx/controller/index
 ```
 
+```{raw} latex
+\part{Python Developer API}
+```
+
 ```{toctree}
 :caption: Python Developer API
+```
+
+```{raw} latex
+\part{Appendix}
 ```
 
 ```{toctree}
