@@ -40,6 +40,7 @@ get_started/install_from_pypi
 :caption: Tutorials
 
 tutorials/single_satellite
+tutorials/missioncontrol
 ```
 
 ```{toctree}
