@@ -118,6 +118,7 @@ latex_elements = {
     "figure_align": "tbp",
     "fncychap": "",
     "preamble": latex_helpers.preamble,
+    "maketitle": latex_helpers.maketitle,
     "classoptions": "captions=tableheading,a4paper,11pt,numbers=noenddot,titlepage,twoside,openright,DIV=14,BCOR=8mm",
 }
 latex_logo = docsdir.joinpath("logo/logo_small.png").as_posix()

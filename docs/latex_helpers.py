@@ -21,3 +21,10 @@ preamble = r"""
   }
 \makeatother
 """
+
+maketitle = r"""
+\let\oldrule\rule
+\renewcommand{\rule}[2]{}
+\sphinxmaketitle
+\renewcommand{\rule}[2]{\oldrule{#1}{#2}}
+"""
