@@ -1,5 +1,10 @@
 # Constellation Operator Guide
 
+```{raw} latex
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+```
+
 Welcome to the Constellation Operator Guide. This guide is intended to provide a comprehensive overview of the framework for
 people who will set up and operate Constellations, control satellites and monitor the performance of the system.
 

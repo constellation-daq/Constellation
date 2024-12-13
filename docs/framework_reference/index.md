@@ -1,5 +1,10 @@
 # Framework Developer Guide
 
+```{raw} latex
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+```
+
 ```{note}
 This section of the manual contains technical details not required for understanding and operating Constellations, but
 only for implementing Constellation libraries in different languages, or for consulting the available APIs
