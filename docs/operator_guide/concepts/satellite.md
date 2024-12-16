@@ -25,12 +25,12 @@ a [transitional state](#changing-states---transitions). The status may change wh
 status string provides information on the cause of the failure, if known or available. A typical example for a regular status
 information would be:
 
-* `STATE`: `ORBIT`
+* `STATE`: {bdg-secondary}`ORBIT`
 * `STATUS`: "All outputs ramped to 100V"
 
 or for a failure mode situation:
 
-* `STATE`: `ERROR`
+* `STATE`: {bdg-secondary}`ERROR`
 * `STATUS`: "Failed to communicate with FPGA, links not locked"
 
 Unlike the state, which is for example distributed automatically through the heartbeat protocol, the
@@ -56,13 +56,13 @@ satellite needs to implement:
 | `get_status`   | Returns the current [status message](#state-and-status) of the satellite
 | `get_config`   | Returns the applied configuration
 | `get_run_id`   | Returns the current or last run identifier
-| `initialize`   | Requests FSM transition "initialize". Only valid when in `INIT` or `NEW` states.
-| `launch`       | Requests FSM transition "launch". Only valid when in `INIT` state.
-| `land`         | Requests FSM transition "land". Only valid when in `ORBIT` state.
-| `reconfigure`  | Requests FSM transition "reconfigure". Only valid when in `ORBIT` state.
-| `start`        | Requests FSM transition "start". Only valid when in `ORBIT` state.
-| `stop`         | Requests FSM transition "stop". Only valid when in `RUN` state.
-| `shutdown`     | Shuts down the satellite application. This command can only be called from the `NEW`, `INIT`, `SAFE` and `ERROR` states.
+| `initialize`   | Requests FSM transition "initialize". Only valid when in {bdg-secondary}`INIT` or {bdg-secondary}`NEW` states.
+| `launch`       | Requests FSM transition "launch". Only valid when in {bdg-secondary}`INIT` state.
+| `land`         | Requests FSM transition "land". Only valid when in {bdg-secondary}`ORBIT` state.
+| `reconfigure`  | Requests FSM transition "reconfigure". Only valid when in {bdg-secondary}`ORBIT` state.
+| `start`        | Requests FSM transition "start". Only valid when in {bdg-secondary}`ORBIT` state.
+| `stop`         | Requests FSM transition "stop". Only valid when in {bdg-secondary}`RUN` state.
+| `shutdown`     | Shuts down the satellite application. This command can only be called from the {bdg-secondary}`NEW`, {bdg-secondary}`INIT`, {bdg-secondary}`SAFE` and {bdg-secondary}`ERROR` states.
 
 Satellite implementations are allowed to amend this list with custom commands.
 
@@ -102,31 +102,31 @@ RUN -left[#blue,bold]-> ORBIT : stop
 The individual states of the satellite correspond to well-defined states of the attached instrument hardware as well as the
 satellite communication with the rest of the Constellation:
 
-* The `NEW` state is the initial state of any satellite.
+* The {bdg-secondary}`NEW` state is the initial state of any satellite.
 
   It indicates that the satellite has just been started and that no connection with a controller or other satellites in the Constellation has been made.
 
-* The `INIT` state indicates that the satellite has been initialized.
+* The {bdg-secondary}`INIT` state indicates that the satellite has been initialized.
 
   Initialization comprises the reception of the configuration from a controller.
   A first connection to the instrument hardware may be made at this point, using the configuration provided by the controller.
 
-* The `ORBIT` state signals that the satellite is ready for data taking.
+* The {bdg-secondary}`ORBIT` state signals that the satellite is ready for data taking.
 
   When the satellite enters this state, all instrument hardware has been configured, is powered up and is ready for entering a
   measurement run.
 
-* The `RUN` state represents the data acquisition mode of the satellite.
+* The {bdg-secondary}`RUN` state represents the data acquisition mode of the satellite.
 
   In this state, the instrument is active and queried for data, the satellite handles measurement data, i.e. obtains data from
   the instrument and sends it across the Constellation, or receives data and stores it to file.
 
-### Operating the Instrument - The `RUN` State
+### Operating the Instrument - The {bdg-secondary}`RUN` State
 
-The `RUN` state is special in that this is where the operation of the satellite takes place, data is collected and passed on,
+The {bdg-secondary}`RUN` state is special in that this is where the operation of the satellite takes place, data is collected and passed on,
 and telemetry data are distributed.
-Satellite implementations interact with the `RUN` state through the `running` function.
-The method is called once upon entering the `RUN` state, and should exit as soon as a state change is requested either by a
+Satellite implementations interact with the {bdg-secondary}`RUN` state through the `running` function.
+The method is called once upon entering the {bdg-secondary}`RUN` state, and should exit as soon as a state change is requested either by a
 controller or by a failure mode.
 
 ```plantuml
@@ -146,8 +146,8 @@ State RUN {
 
 Each run is assigned a run identifier via the `start` transition command. Run identifiers can consist of alphanumeric
 characters, underscores or dashes. The `get_run_id` command always returns the currently active run identifier if the
-satellite is in the `RUN` state, or the last active run identifier in other cases. When the satellite has not yet entered
-the `RUN` state, the returned run identifier is empty.
+satellite is in the {bdg-secondary}`RUN` state, or the last active run identifier in other cases. When the satellite has not yet entered
+the {bdg-secondary}`RUN` state, the returned run identifier is empty.
 
 
 ### Changing States - Transitions
@@ -169,24 +169,24 @@ initializing -[dotted]right-> INIT
 @enduml
 ```
 
-In this example, the transition "initialize" is triggered by a command sent by the controller. The satellite enters the
-"initializing" state and works through the instrument initialization code. Upon success, the satellite automatically
-transitions into the "INIT" state and remains there, awaiting further transition commands.
+In this example, the transition `initialize` is triggered by a command sent by the controller. The satellite enters the
+{bdg-secondary}`initializing` state and works through the instrument initialization code. Upon success, the satellite automatically
+transitions into the {bdg-secondary}`INIT` state and remains there, awaiting further transition commands.
 
 In this scheme, actions controlling and setting up the instrument hardware directly correspond to transitional states. The
 following transitional states are defined in the Constellation FSM:
 
-* The `initializing` state
-* The `launching` state
-* The `landing` state
-* The `starting` state
-* The `stopping` state
+* The {bdg-secondary}`initializing` state
+* The {bdg-secondary}`launching` state
+* The {bdg-secondary}`landing` state
+* The {bdg-secondary}`starting` state
+* The {bdg-secondary}`stopping` state
 
-In addition, the optional `reconfiguring` transitional state enables quick configuration updates of satellites in `ORBIT` state
-without having to pass through the `INIT` state. A typical example for reconfiguration is a high-voltage power supply unit,
-which is slowly ramped up to its target voltage in the `launching` state. Between runs, the applied voltage is supposed to be
-changed by a few volts - and instead of the time-consuming operation ramping down via the `landing` transition and ramping up again,
-the voltage is ramped directly from its current value to the target value in the `reconfigure` transitional state:
+In addition, the optional {bdg-secondary}`reconfiguring` transitional state enables quick configuration updates of satellites in {bdg-secondary}`ORBIT` state
+without having to pass through the {bdg-secondary}`INIT` state. A typical example for reconfiguration is a high-voltage power supply unit,
+which is slowly ramped up to its target voltage in the {bdg-secondary}`launching` state. Between runs, the applied voltage is supposed to be
+changed by a few volts - and instead of the time-consuming operation ramping down via the {bdg-secondary}`landing` transition and ramping up again,
+the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfigure` transitional state:
 
 ```plantuml
 @startuml
@@ -217,21 +217,21 @@ only required to initiate state transitions out of steady satellite states as de
 This situation implies that a mechanism should be in place to deal with unexpected events occurring in the operation of a single
 satellite, but also within the entire Constellation. For this purpose, the satellite FSM knows two additional steady states:
 
-The `ERROR` state is entered whenever an unexpected event occurs within the instrument control or the data transfer. This
-state can only be left by a manual intervention via a controller by resetting the satellite back into its `INIT` state.
+The {bdg-secondary}`ERROR` state is entered whenever an unexpected event occurs within the instrument control or the data transfer. This
+state can only be left by a manual intervention via a controller by resetting the satellite back into its {bdg-secondary}`INIT` state.
 
-The `SAFE` state on the other hand, is entered by the satellite when detecting an issue with *another* satellite in the
+The {bdg-secondary}`SAFE` state on the other hand, is entered by the satellite when detecting an issue with *another* satellite in the
 Constellation. This awareness of the Constellation status is achieved with the help of heartbeats. Each satellite in the
 Constellation transmits its current state as a heartbeat at regular intervals. This allows other
-satellites to react if the communicated status contains the `ERROR` state - or if the heartbeat is absent for a defined
+satellites to react if the communicated status contains the {bdg-secondary}`ERROR` state - or if the heartbeat is absent for a defined
 period of time.
-The `SAFE` state resembles that of an uncrewed spacecraft, where all non-essential systems are shut down and only essential
+The {bdg-secondary}`SAFE` state resembles that of an uncrewed spacecraft, where all non-essential systems are shut down and only essential
 functions such as communication and attitude control are active. For a Constellation satellite this could encompass powering
 down instruments or switching off voltages. Also this state can only be left by a manual intervention via a controller, and
-the satellite will transfer back to its `INIT` state.
+the satellite will transfer back to its {bdg-secondary}`INIT` state.
 
 The main difference between the two failure states is the possible statement about the condition of the respective satellite.
-The `SAFE` state is achieved via a controlled shutdown of components and is a well-defined procedure, while the `ERROR` state
+The {bdg-secondary}`SAFE` state is achieved via a controlled shutdown of components and is a well-defined procedure, while the {bdg-secondary}`ERROR` state
 is entered, for example, through a lack of control or communication with the instrument and therefore does not allow any
 statement to be made about the condition of attached hardware.
 
