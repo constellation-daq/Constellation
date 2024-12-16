@@ -23,8 +23,9 @@ This guide is structured in four different parts, each of which serve a differen
 * Finally, the **How-To Guides** provide concise answers on how to achieve a specific goal, such as the implementation of a
   new satellite, or the extension of a satellite with custom commands.
 
-Throughout this guide, buttons of graphical user interfaces will be displayed as {bdg-primary}`Buttons`, configuration parameters typeset
-as `parameter_name` and states of satellites or the entire Constellation denominated e.g. by {bdg-secondary}`ORBIT`.
+Throughout this guide, buttons of graphical user interfaces will be displayed as {bdg-primary}`Buttons`, configuration
+parameters and commands typeset as inline code such as `parameter_name`, and states of satellites or the entire Constellation
+will be denominated e.g. by {bdg-secondary}`ORBIT`.
 
 ```{warning}
 This software framework is still under construction and no stable version has been released yet.
