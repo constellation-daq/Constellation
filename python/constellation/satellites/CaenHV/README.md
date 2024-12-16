@@ -40,7 +40,7 @@ The following parameters need to be specified in the configuration file. System 
 |-----------|-------------|------|---------------|
 | `system` | The type of crate connected, e.g. `"SY5527"` | String | - |
 | `link` | The type of connection, e.g. `"TCPIP"` or `"USB"` | String | - |
-| `link_argument` | Additional information for the connection, e.g. the ip address `"192.168.8.2"` | String | - |
+| `link_argument` | Additional information for the connection, e.g. the IP address `"192.168.8.2"` | String | - |
 | `user` | The user name to connect with | String | - |
 | `password` | The password to connect with | String | - |
 | `metrics_poll_interval` | How often the metrics are polled, in seconds | - | - |
