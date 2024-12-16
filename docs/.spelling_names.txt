@@ -1,0 +1,17 @@
+Keithley
+Grafana
+Canopus
+CMake
+Doxygen
+libstdc
+libc
+avahi
+zeroconf
+spdlog
+cxxabi
+STL
+ccache
+plantuml
+QController
+SatelliteT
+DSOLoaderError

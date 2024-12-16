@@ -32,6 +32,7 @@ extensions = [
     "myst_parser",
     "breathe",
     "sphinxcontrib.plantuml",
+    "sphinxcontrib.spelling",
     "sphinx_design",
     "sphinx_favicon",
     "sphinx_copybutton",
@@ -146,6 +147,13 @@ breathe_projects = {
     "Constellation": docsdir.joinpath("doxygen").joinpath("xml"),
 }
 breathe_default_project = "Constellation"
+
+# Spell-checking settings
+spelling_lang = "en_US"
+tokenizer_lang = "en_US"
+spelling_word_list_filename = [".spelling_jargon.txt", ".spelling_names.txt"]
+spelling_warning = True
+spelling_show_suggestions = True
 
 # PlantUML settings
 plantuml_output_format = "svg_img"
