@@ -1,15 +1,15 @@
 # Controlling with MissionControl
 
-MissionControl is a graphical Controller for Constellation. This tutorial shows how to use MissionControl to control multiple
+MissionControl is a graphical Controller for Constellation. This tutorial demonstrates how to use MissionControl to control multiple
 satellites, including initialization and taking data.
 
-```{tip}
-It is recommend to read through the tutorial on how to start and control a single satellite first.
+```{seealso}
+It is recommend to read through the tutorial on how to [start and control a single satellite](single_satellite.md) first.
 ```
 
 ## Starting MissionControl
 
-MissionControl can be started using the `MissionControl` command or by searching for it in the application overview if
+MissionControl is started using the `MissionControl` command or by searching for it in the application overview if
 installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
 
 ```{figure} missioncontrol_startup.png
@@ -21,7 +21,7 @@ MissionControl startup window
 Alternatively, MissionControl can be started with a group directly using the `-g GROUP` command line argument.
 ```
 
-The main window of Constellation contains three parts:
+The main window of Constellation can be divided into three parts:
 
 - Information about the entire Constellation on top
 - A section for controlling the entire Constellation
@@ -89,15 +89,15 @@ More details on the finite state machine can be found in the [satellite chapter]
 MissionControl main window after first initialization
 ```
 
-The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its console output:
+The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its log messages either via the console output or a logging user interface:
 
 ```{error}
 Critical failure during transition: Key '_data_transmitters' does not exist
 ```
 
-The `_data_transmitters` configuration parameter is a required and contains the canonical name of all satellites from which
+The `_data_transmitters` configuration parameter is mandatory information and contains the canonical name of all satellites from which
 the receiver should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
-`RandomTransmitter.Sender`. To fix the initialization, the file should be adapted:
+`RandomTransmitter.Sender`. In order to correct this and allow a successful initialization, the file should be adapted as follows:
 
 ```toml
 [satellites.Sputnik]
@@ -118,11 +118,11 @@ output_directory = "/tmp/test"
 ```
 
 ```{hint}
-MissionControl reads the file parses the file every time the configuration is need - it is thus not required to select the
+MissionControl parses the file anew every time the configuration is requested - it is thus not required to select or reload the
 same configuration file again.
 ```
 
-With the fixed configuration, all satellites can be initialized properly by clicking {bdg-primary}`Initialize` again.
+With the amended configuration, all satellites can be initialized properly by clicking {bdg-primary}`Initialize` again.
 
 ```{tip}
 Instead of initializing all satellites, it also possible to just initialize the satellite that failed to initialize
@@ -145,6 +145,10 @@ stopped. In Constellation, each run has a run identifier, which can be given in 
 window. Next to the run identifier field is a run sequence counter. This number is appended to the run identifier and
 increased every time a run ended. In the top right of the MissionControl window the current or next run identifier is shown.
 
+```{seealso}
+More information on runs and their properties can be found in the [Data Processing section](../concepts/data.md) of this guide.
+```
+
 A new run can be started by clicking the {bdg-primary}`Start` button.
 
 ```{figure} missioncontrol_run.png
@@ -152,8 +156,9 @@ MissionControl main window in RUN state
 ```
 
 After a run has started, the state switched to {bdg-secondary}`RUN` and the run duration timer in the top right starts.
-While data is being taken, the controller can be closed without any impact on the data taking since the satellites are
-autonomous. This feature prevent that crash of the controller takes down the entire Constellation. When the controller is
+While data is being taken, the controller can be closed without any impact on the data taking since the satellites operate
+autonomously. This allows closing and re-opening of user interfaces such as the controller without interrupting datataking
+or even taking down the entire Constellation. When the controller is
 restarted, the run identifier and run duration are fetched from the Constellation automatically.
 
 The run can be stopped by clicking the {bdg-primary}`Stop` button. After this, the run sequence counter increases by one.
@@ -180,8 +185,8 @@ Response window of the command
 
 ## Deducing the Configuration of the Constellation
 
-Due to the satellites being independent of any controller, it is possible to start multiple controllers. This allows to
-quickly check in on the Constellation without accessing to a special computer. However, controllers do not necessarily have
+Satellites are operating independently of any controller, and it is possible to start multiple controllers. This allows to
+quickly check in on the Constellation without the need to access a specific computer. However, controllers do not necessarily have
 access to the same configuration file. To alleviate this problem, the configuration of all satellites can be deduced from the
 Constellation itself. This can be achieved by clicking the {bdg-primary}`Deduce` button. This will store a configuration file
 with the following content:
