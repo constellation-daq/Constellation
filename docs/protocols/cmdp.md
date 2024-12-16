@@ -11,7 +11,7 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Goals
 
-This specification is intended to formally document the names and expected behaviour of the monitoring message distribution between hosts of the Constellation framework.
+This specification is intended to formally document the names and expected behavior of the monitoring message distribution between hosts of the Constellation framework.
 This protocol specifies how CMDP hosts are
 
 * sending and receiving multicast messages with auxiliary status information to and from other CMDP hosts,
@@ -24,7 +24,7 @@ This protocol defines two message types which differ in purpose and message synt
 * Metrics data messages are intended for the distribution of machine-readable monitoring data from a CMDP host.
 
 Conforming implementations of this protocol SHOULD respect this specification, thus ensuring that applications can depend on predictable behavior.
-This specification is not transport specific, but not all behaviour will be reproducible on all transports.
+This specification is not transport specific, but not all behavior will be reproducible on all transports.
 
 ### Related Specifications
 

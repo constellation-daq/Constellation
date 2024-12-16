@@ -11,12 +11,12 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Goals
 
-This specification is intended to formally document the names and expected behaviour of the distribution and reception of heartbeat signals between hosts of the Constellation framework.
+This specification is intended to formally document the names and expected behavior of the distribution and reception of heartbeat signals between hosts of the Constellation framework.
 
 This protocol specifies how CHP hosts are sending and receiving multicast messages with host state information to and from other CHP hosts, and how these messages are formatted.
 
 Conforming implementations of this protocol SHOULD respect this specification, thus ensuring that applications can depend on predictable behavior.
-This specification is not transport specific, but not all behaviour will be reproducible on all transports.
+This specification is not transport specific, but not all behavior will be reproducible on all transports.
 
 ### Related Specifications
 
