@@ -78,6 +78,7 @@ docs = [
     "breathe",
     "ablog",
     "sphinxcontrib-plantuml",
+    "sphinxcontrib-spelling",
     "sphinx_design",
     "sphinx-favicon",
     "sphinx-copybutton",
