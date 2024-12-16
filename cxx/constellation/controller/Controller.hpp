@@ -41,7 +41,7 @@
 
 namespace constellation::controller {
 
-    /** Controller base class which handles satellite connections, command distribution and heartbeating */
+    /** Controller base class which handles satellite connections, command distribution and heartbeat reception */
     class CNSTLN_API Controller {
     public:
         /** Payload of a command function: variant with (configuration) dictionary, (argument) list or (run id) string */

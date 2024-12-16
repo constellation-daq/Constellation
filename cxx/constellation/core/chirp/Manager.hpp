@@ -223,7 +223,7 @@ namespace constellation::chirp {
                                                  std::any user_data);
 
         /**
-         * Unegister a previously registered callback for newly discovered or departing services
+         * Unregister a previously registered callback for newly discovered or departing services
          *
          * @param callback Function pointer to the callback of registered callback entry
          * @param service_id Service identifier of registered callback entry

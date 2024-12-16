@@ -19,7 +19,7 @@ namespace constellation::utils {
 
     // NOLINTBEGIN(readability-identifier-naming)
 
-    /** Hash for std::unorderd_map */
+    /** Hash for std::unordered_map */
     struct string_hash {
         using hash_type = std::hash<std::string_view>;
         using is_transparent = void;

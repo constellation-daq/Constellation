@@ -50,7 +50,7 @@ namespace constellation::satellite {
          *
          * In this function a satellite can for example check the configuration or establish connection to a device.
          *
-         * @note A satellite can be re-initializied from INIT, i.e. this function can be called twice in a row. Any actions
+         * @note A satellite can be re-initialized from INIT, i.e. this function can be called twice in a row. Any actions
          *       required to be undone before another initialization should be done in `launching()` instead.
          *
          * @param config Configuration of the satellite
@@ -128,7 +128,7 @@ namespace constellation::satellite {
         /**
          * @brief Failure function
          *
-         * In this function a response to uncatched errors can be implemented. It is executed after entering the ERROR state.
+         * In this function a response to uncaught errors can be implemented. It is executed after entering the ERROR state.
          *
          * @param previous_state State in which the satellite was before experiencing a failure
          */

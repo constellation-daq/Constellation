@@ -59,7 +59,7 @@ namespace constellation::utils {
      *
      * @note This is not portable and potentially ugly, use `demangle<T>()` instead if possible.
      *
-     * @param type Type info of type to demnalge (use `typeid`)
+     * @param type Type info of type to demangle (use `typeid`)
      * @return String with demangled type or mangled name if demangling failed
      */
     inline std::string demangle(const std::type_info& type) {
