@@ -11,7 +11,20 @@ where relevant, and can be found in the appendix of this manual.
 
 The five Constellation communication protocols are described in the following, ordered by significance of the information passed.
 
-## Heartbeating
+## Autonomous Operation
+
+Autonomous operation of the Constellation requires constant exchange of state information between all participants. This is
+implemented via heartbeats send via the Constellation Heartbeat Protocol (CHP). Heartbeat messages contain
+
+* The current state of the sender finite state machine
+* The time interval after which the next heartbeat is to be expected.
+
+With this information, heartbeat receivers can deduce independently whether a remote system is in {bdg-secondary}`ERROR` state
+or not responding due to network or machine failure.
+
+In addition to regular heartbeat patterns, so-called extrasystoles are sent out-of-order whenever the state of the sender
+changes. This enabled immediate reaction to remote state changes without having to wait for the next regular heartbeat update
+interval.
 
 ## Command & Controlling
 

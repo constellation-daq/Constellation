@@ -22,7 +22,7 @@ STAT("NAME", get_metric_value());
 ```
 
 ```{seealso}
-There are also macros available to only send metrics every *n*th iteration or at most every *t* seconds. These macros are
+There are also macros available to only send metrics every *nth* iteration or at most every *t* seconds. These macros are
 described in detail in the [framework reference](../../framework_reference/cxx/core/metrics.md).
 ```
 

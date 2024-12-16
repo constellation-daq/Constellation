@@ -1,4 +1,4 @@
-# Heartbeating
+# Heartbeat Protocol Implementation
 
 ## `constellation::heartbeat` Namespace
 

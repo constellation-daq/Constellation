@@ -23,7 +23,7 @@ Data consist of individual messages that are grouped to so-called runs. A run re
 conditions and with a fixed set of parameters.
 A new run starts upon entering the `RUN` state of the satellite [finite state machine](./satellite.md#the-finite-state-machine)
 and ends with the departure from this state.
-Each run is labelled by its _run identifier_, which is provided along with the `start` command sent to the satellite, and
+Each run is labeled by its _run identifier_, which is provided along with the `start` command sent to the satellite, and
 consists of individual data messages.
 The first message of a run is the so-called begin-of-run (BOR) message, the last one the end-of-run (EOR) message.
 This structure enables checks on sending and receiving side, e.g. that the connection is up and running or that all data have

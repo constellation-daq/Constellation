@@ -31,7 +31,7 @@ Meson downloads the required dependencies automatically if they are not found on
 System-wide installations of the dependencies can reduce the compilation time significantly.
 
 - ccache + how to setup CXX
-- meson deps, see docker images
+- meson dependencies, see docker images
 
 :::
 :::{tab-item} Python

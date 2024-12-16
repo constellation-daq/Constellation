@@ -13,10 +13,10 @@ meson configure build -Dprefix=CNSTLN_PREFIX # set installation directory here, 
 meson install -C build
 ```
 
-## Setting the pkg-config Search Path
+## Setting the `pkg-config` Search Path
 
-Constellation exports its dependency using pkg-config, which can be easily used in many build systems, including CMake.
-In order to find Constellation via pkg-config in a non-standard location when building external satellites, the prefix path
+Constellation exports its dependency using `pkg-config`, which can be easily used in many build systems, including CMake.
+In order to find Constellation via `pkg-config` in a non-standard location when building external satellites, the prefix path
 needs to be exported:
 
 ```sh

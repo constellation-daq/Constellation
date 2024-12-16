@@ -5,7 +5,7 @@ Constellation aims to strike between a maximum convenience for users and
 ## User Input is Case-Insensitive
 
 All user input should be matched against keys case-insensitively. This concerns configuration keys, but also satellite names
-and types, commands etc. The goal of this is to minimize the possibility of long bug-hunts for mis-configurations.
+and types, commands etc. The goal of this is to minimize the possibility of long bug-hunts for misconfiguration.
 
 ## Public Names
 
