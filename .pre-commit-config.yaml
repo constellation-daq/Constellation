@@ -11,6 +11,7 @@ repos:
       - id: check-symlinks
       - id: check-toml
       - id: check-yaml
+        exclude: ".clang-format"
       - id: end-of-file-fixer
       - id: fix-byte-order-marker
       - id: mixed-line-ending
