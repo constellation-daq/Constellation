@@ -36,7 +36,7 @@ C++ Move semantics `std::move` are strongly encouraged here in order to avoid co
 
 Finally, the message is send to the connected receiver via one of the following two methods:
 
-* The data can be sent with a pre-configured timeout. If the transmitter fails to send the data within this configured time
+* The data can be sent with a preconfigured timeout. If the transmitter fails to send the data within this configured time
   window, an exception is thrown and the satellite transitions into the `ERROR` state. This is the most commonly used method
   of transmitting data and ensuring that there is no data loss.
 

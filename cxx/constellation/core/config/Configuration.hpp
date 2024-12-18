@@ -72,7 +72,7 @@ namespace constellation::config {
         /**
          * @brief Construct a configuration object from a dictionary
          *
-         * @param dict Dictionary to construct config object from
+         * @param dict Dictionary to construct configuration object from
          * @param mark_used Whether to mark the key-value pairs in the dict as used
          */
         CNSTLN_API Configuration(const Dictionary& dict, bool mark_used = false);
@@ -90,7 +90,7 @@ namespace constellation::config {
             ALL,
             /** Configuration key-value pairs intended for framework users */
             USER,
-            /** Configuration key-value paris intended for internal framework usage */
+            /** Configuration key-value pairs intended for internal framework usage */
             INTERNAL,
         };
 
@@ -99,7 +99,7 @@ namespace constellation::config {
             ANY,
             /** Only used key-value pairs */
             USED,
-            /** Only unused key-value paris */
+            /** Only unused key-value pairs */
             UNUSED,
         };
 
@@ -115,7 +115,7 @@ namespace constellation::config {
         /**
          * @brief Check how many of the given keys are defined
          *
-         * This is useful to check if two or more conflicting config keys that are defined.
+         * This is useful to check if two or more conflicting configuration keys that are defined.
          *
          * @param keys Keys to check for existence
          * @return number of existing keys from the given list

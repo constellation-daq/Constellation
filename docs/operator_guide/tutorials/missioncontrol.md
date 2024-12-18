@@ -157,7 +157,7 @@ MissionControl main window in RUN state
 
 After a run has started, the state switched to {bdg-secondary}`RUN` and the run duration timer in the top right starts.
 While data is being taken, the controller can be closed without any impact on the data taking since the satellites operate
-autonomously. This allows closing and re-opening of user interfaces such as the controller without interrupting datataking
+autonomously. This allows closing and re-opening of user interfaces such as the controller without interrupting data taking
 or even taking down the entire Constellation. When the controller is
 restarted, the run identifier and run duration are fetched from the Constellation automatically.
 

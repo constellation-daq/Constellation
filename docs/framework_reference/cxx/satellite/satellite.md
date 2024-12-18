@@ -29,7 +29,7 @@ Sending data is not thread safe. If multiple threads need to access the sender, 
 ### Receiving Data
 
 The {cpp:class}`ReceiverSatellite <constellation::satellite::ReceiverSatellite>` class can be used to send data during
-a run over the network. It requires a given list of data transmitters, which is given by the `_data_transmitters` config
+a run over the network. It requires a given list of data transmitters, which is given by the `_data_transmitters` configuration
 parameter. Similar to the {cpp:class}`TransmitterSatellite <constellation::satellite::TransmitterSatellite>` mentioned
 above, executing transmitter transitions in addition to user transitions is achieve in the
 {cpp:class}`BaseSatellite <constellation::satellite::BaseSatellite>` by dynamically casting it to a

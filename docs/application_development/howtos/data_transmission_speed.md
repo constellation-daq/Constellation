@@ -13,7 +13,7 @@ To increase the data rate, two things can be done:
 The maximum data rate scales roughly linearly with the frame size until a certain limit is reached, either on the generation
 by the sending side or due to a network interface limitation. Below a benchmark is shown using the
 [`RandomTransmitter`](../../satellites/RandomTransmitter) and [`DevNullReceiver`](../../satellites/DevNullReceiver)
-satellites. In a debugoptimized build, at a frame size of 16kiB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
+satellites. In a `debugoptimized` build, at a frame size of 16KiB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
 cannot generate random data faster than the [`DevNullReceiver`](../../satellites/DevNullReceiver) can receive.
 
 ```{figure} bench_frame_size_vs_data_rate.png
@@ -25,7 +25,7 @@ Benchmarks shown here should not be taken at face value since they heavily depen
 these benchmarks.
 ```
 
-Note that debug builds can be significantly slower, particular on the sending side. A debugoptimized or release build is
+Note that debug builds can be significantly slower, particular on the sending side. A `debugoptimized` or `release` build is
 recommend for production.
 
 ## Impact of more Frames per Message

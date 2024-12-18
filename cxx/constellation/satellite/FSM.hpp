@@ -35,7 +35,7 @@ namespace constellation::satellite {
         using Transition = protocol::CSCP::Transition;
         using TransitionCommand = protocol::CSCP::TransitionCommand;
 
-        /** Payload of a transition function: variant with config, partial_config or run identifier */
+        /** Payload of a transition function: variant with configuration or run identifier */
         using TransitionPayload = std::variant<std::monostate, config::Configuration, std::string>;
 
         /** Function pointer for a transition function: takes the variant mentioned above, returns new State */

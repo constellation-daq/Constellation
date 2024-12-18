@@ -39,18 +39,18 @@ objects.
 | ------- | ------- | ---------- | ------------- | --------------
 | `get_name` | - | Canonical name of the Satellite | - | -
 | `get_version` | - | Constellation version identifier string | - | -
-| `get_commands` | - | Acknowledgement | List of commands as MsgPack map/dictionary with command names as keys and descriptions as values | -
-| `get_state` | - | Current state as string | Current state encoded as MsgPack integer | `last_changed` contains the time when the state last changed as MsgPack timepoint
+| `get_commands` | - | Acknowledgment | List of commands as MsgPack map/dictionary with command names as keys and descriptions as values | -
+| `get_state` | - | Current state as string | Current state encoded as MsgPack integer | `last_changed` contains the time when the state last changed as MsgPack time point
 | `get_status` | - | Current status | - | -
-| `get_config` | - | Acknowledgement | Satellite configuration as flat MsgPack map/dictionary | -
+| `get_config` | - | Acknowledgment | Satellite configuration as flat MsgPack map/dictionary | -
 | `get_run_id` | - | Current or last run identifier (as string) | - | -
-| `initialize` | Satellite configuration as flat MsgPack map/dictionary | Acknowledgement | - | -
-| `launch` | - | Acknowledgement | - | -
-| `land` | - | Acknowledgement | - | -
-| `reconfigure` | Partial configuration as flat MsgPack map/dictionary | Acknowledgement | - | -
-| `start` | Run identifier as MsgPack string | Acknowledgement | - | -
-| `stop` | - | Acknowledgement | - | -
-| `shutdown` | - | Acknowledgement | - | -
+| `initialize` | Satellite configuration as flat MsgPack map/dictionary | Acknowledgment | - | -
+| `launch` | - | Acknowledgment | - | -
+| `land` | - | Acknowledgment | - | -
+| `reconfigure` | Partial configuration as flat MsgPack map/dictionary | Acknowledgment | - | -
+| `start` | Run identifier as MsgPack string | Acknowledgment | - | -
+| `stop` | - | Acknowledgment | - | -
+| `shutdown` | - | Acknowledgment | - | -
 
 Command names shall only contain alphanumeric characters or underscores and cannot start with a digit (in regex: `\D\w*`).
 The run identifier shall only contain alphanumeric characters, underscores or dashes (in regex: `[\w-]+`).

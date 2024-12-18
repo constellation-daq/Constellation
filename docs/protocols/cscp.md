@@ -11,14 +11,14 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Goals
 
-This specification is intended to formally document the names and expected behaviour of the communication pattern between a controller host and a satellite host of the Constellation framework.
+This specification is intended to formally document the names and expected behavior of the communication pattern between a controller host and a satellite host of the Constellation framework.
 This protocol specifies how
 
 * the controller host sends requests with command verbs to the satellite host
 * the satellite host responds to requests from controller hosts.
 
 Conforming implementations of this protocol SHOULD respect this specification, thus ensuring that applications can depend on predictable behavior.
-This specification is not transport specific, but not all behaviour will be reproducible on all transports.
+This specification is not transport specific, but not all behavior will be reproducible on all transports.
 
 ### Related Specifications
 
@@ -102,19 +102,19 @@ The key MUST be of string-type and the values MAY be any of the types supported 
 
 The message verb SHALL contain an octet and a string, encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
-The octet MUST contain the message type, which SHALL be `%x00` for requests and SHALL be any of the following acknowledgement codes for replies:
+The octet MUST contain the message type, which SHALL be `%x00` for requests and SHALL be any of the following acknowledgment codes for replies:
 
-* `%x01` for acknowledgement verb `SUCCESS`: The command was successfully received and is executed.
-* `%x02` for acknowledgement verb `NOTIMPLEMENTED`: The command is valid but not implemented by the replying satellite host.
-* `%x03` for acknowledgement verb `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
-* `%x04` for acknowledgement verb `INVALID`: The command is invalid for the current state of the replying satellite host, e.g. it does not represent a valid transition out of its current state
-* `%x05` for acknowledgement verb `UNKNOWN`: The command is entirely unknown.
-* `%x06` for acknowledgement verb `ERROR`: The received message is not valid.
+* `%x01` for acknowledgment verb `SUCCESS`: The command was successfully received and is executed.
+* `%x02` for acknowledgment verb `NOTIMPLEMENTED`: The command is valid but not implemented by the replying satellite host.
+* `%x03` for acknowledgment verb `INCOMPLETE`: The command is valid but mandatory payload information for this command is missing or incorrectly formatted.
+* `%x04` for acknowledgment verb `INVALID`: The command is invalid for the current state of the replying satellite host, e.g. it does not represent a valid transition out of its current state
+* `%x05` for acknowledgment verb `UNKNOWN`: The command is entirely unknown.
+* `%x06` for acknowledgment verb `ERROR`: The received message is not valid.
 
 For request messages, the string SHALL contain the command.
 Commands SHALL be parsed and interpreted case-insensitive.
 
-For reply messages, the string SHALL provide additional information on the acknowledgement.
+For reply messages, the string SHALL provide additional information on the acknowledgment.
 
 ### Message Payload
 

@@ -14,7 +14,7 @@ is not installed, all appearances of `SatelliteSputnik` can be replaced with `Sa
 The `SatelliteSputnik` executable is used to start the example `Sputnik` satellite. It has two relevant command line
 arguments:
 
-- `--name, -n`: This is the name for satellite, which should be unique within the Constellation group (defaults to hostname).
+- `--name, -n`: This is the name for satellite, which should be unique within the Constellation group (defaults to the host name of the PC).
 - `--group, -g`: This is the name of the Constellation group this satellite should be a part of.
 
 ```sh
@@ -95,7 +95,7 @@ edda > for sat in constellation.satellites.values():
 Commands can either be sent to individual satellites, all satellites of a given type, or the entire constellation.
 All available commands for the `constellation` object are available via tab completion.
 
-To initialize the satellite, it needs to be sent an initialize command, with a dictionary of config options as an argument.
+To initialize the satellite, it needs to be sent an initialize command, with a dictionary of configuration options as an argument.
 In the following example, this dictionary is empty (`{}`) and directly passed to the command.
 
 ```python
@@ -186,4 +186,4 @@ Controllers in Constellation do not possess state and can be closed and restarte
 affecting the state of the satellites. When closing and starting the controller again, the satellites will still be in the
 `INIT` state from before.
 
-The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing Ctrl+D twice.
+The IPython CLI controller can be disconnected from the constellation using the command `quit` or by pressing {kbd}`Control-d` twice.
