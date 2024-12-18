@@ -121,7 +121,7 @@ std::string ControllerConfiguration::getAsTOML() const {
     tbl.prune();
 
     std::stringstream oss;
-    oss << tbl;
+    oss << tbl << "\n";
 
     return oss.str();
 }
