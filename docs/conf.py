@@ -29,7 +29,6 @@ release = "v" + version + " " + __version_code_name__
 # extensions
 extensions = [
     "ablog",
-    "pydata_sphinx_theme",
     "myst_parser",
     "breathe",
     "sphinxcontrib.plantuml",
