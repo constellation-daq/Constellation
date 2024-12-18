@@ -13,7 +13,7 @@ To increase the data rate, two things can be done:
 The maximum data rate scales roughly linearly with the frame size until a certain limit is reached, either on the generation
 by the sending side or due to a network interface limitation. Below a benchmark is shown using the
 [`RandomTransmitter`](../../satellites/RandomTransmitter) and [`DevNullReceiver`](../../satellites/DevNullReceiver)
-satellites. In a `debugoptimized` build, at a frame size of 16kB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
+satellites. In a `debugoptimized` build, at a frame size of 16KiB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
 cannot generate random data faster than the [`DevNullReceiver`](../../satellites/DevNullReceiver) can receive.
 
 ```{figure} bench_frame_size_vs_data_rate.png
