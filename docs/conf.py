@@ -7,6 +7,7 @@ import sphinx
 import sphinx.util.logging
 
 import copy_satellite_docs
+import latex_helpers
 
 from constellation.core import __version__
 from constellation.core import __version_code_name__
@@ -21,19 +22,20 @@ repodir = docsdir.parent
 project = "Constellation"
 project_copyright = "2024 DESY and the Constellation authors, CC-BY-4.0"
 author = "DESY and the Constellation authors"
+doc_author = r"Stephan Lachnit\and Simon Spannagel\and and the Constellation Authors"
 version = __version__
 release = "v" + version + " " + __version_code_name__
 
 # extensions
 extensions = [
     "ablog",
-    "pydata_sphinx_theme",
     "myst_parser",
     "breathe",
     "sphinxcontrib.plantuml",
     "sphinx_design",
     "sphinx_favicon",
     "sphinx_copybutton",
+    "sphinx.ext.imgconverter",
 ]
 
 # general settings
@@ -106,6 +108,28 @@ html_sidebars = {
 # Favicon
 favicons = [
     "logo.svg",
+]
+
+# LaTeX settings:
+latex_engine = "lualatex"
+latex_use_xindy = False
+latex_elements = {
+    "papersize": "a4paper",
+    "pointsize": "11pt",
+    "figure_align": "tbp",
+    "fncychap": "",
+    "babel": "",
+    "preamble": latex_helpers.preamble,
+    "maketitle": latex_helpers.maketitle,
+    "classoptions": "captions=tableheading,a4paper,11pt,numbers=noenddot,titlepage,twoside,openright,DIV=14,BCOR=8mm",
+}
+latex_logo = docsdir.joinpath("logo/logo_small.png").as_posix()
+latex_show_urls = "footnote"
+latex_theme = "manual"
+latex_documents = [
+    ("operator_guide/index", "operator_guide.tex", None, doc_author, "manual", False),
+    ("application_development/index", "application_development_guide.tex", None, doc_author, "manual", False),
+    ("framework_reference/index", "framework_development_guide.tex", None, doc_author, "manual", False),
 ]
 
 # myst settings

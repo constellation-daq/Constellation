@@ -1,5 +1,10 @@
 # Constellation Operator Guide
 
+```{raw} latex
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+```
+
 Welcome to the Constellation Operator Guide. This guide is intended to provide a comprehensive overview of the framework for
 people who will set up and operate Constellations, control satellites and monitor the performance of the system.
 
@@ -32,6 +37,10 @@ This software framework is still under construction and no stable version has be
 Features, protocols and the behavior of individual components may still change.
 ```
 
+```{raw} latex
+\part{Get started}
+```
+
 ```{toctree}
 :caption: Get started
 
@@ -39,11 +48,19 @@ get_started/install_from_source
 get_started/install_from_pypi
 ```
 
+```{raw} latex
+\part{Tutorials}
+```
+
 ```{toctree}
 :caption: Tutorials
 
 tutorials/single_satellite
 tutorials/missioncontrol
+```
+
+```{raw} latex
+\part{Concepts}
 ```
 
 ```{toctree}
@@ -56,6 +73,10 @@ concepts/autonomy
 concepts/logging
 concepts/telemetry
 concepts/data
+```
+
+```{raw} latex
+\part{How-To Guides}
 ```
 
 ```{toctree}

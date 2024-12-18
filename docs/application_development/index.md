@@ -1,8 +1,17 @@
 # Application Developer Guide
 
+```{raw} latex
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+```
+
 ```{warning}
 This software framework is still under construction and no stable version has been released yet.
 Features, protocols and the behavior of individual components may still change.
+```
+
+```{raw} latex
+\part{Tutorials}
 ```
 
 ```{toctree}
@@ -12,6 +21,10 @@ tutorials/satellite_cxx
 tutorials/satellite_py
 ```
 
+```{raw} latex
+\part{Adding Functionality}
+```
+
 ```{toctree}
 :caption: Adding Functionality
 
@@ -19,6 +32,10 @@ functionality/logging
 functionality/metrics
 functionality/data_transmission
 functionality/custom_commands
+```
+
+```{raw} latex
+\part{How-To Guides}
 ```
 
 ```{toctree}

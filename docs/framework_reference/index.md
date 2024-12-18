@@ -1,8 +1,17 @@
 # Framework Developer Guide
 
+```{raw} latex
+\chapter*{Preface}
+\addcontentsline{toc}{chapter}{Preface}
+```
+
 ```{note}
 This section of the manual contains technical details not required for understanding and operating Constellations, but
 only for implementing Constellation libraries in different languages, or for consulting the available APIs
+```
+
+```{raw} latex
+\part{General}
 ```
 
 ```{toctree}
@@ -11,12 +20,20 @@ only for implementing Constellation libraries in different languages, or for con
 contributing
 ```
 
+```{raw} latex
+\part{Technical Documentation}
+```
+
 ```{toctree}
 :caption: Technical Documentation
 
 satellite
 naming
 protocols
+```
+
+```{raw} latex
+\part{C++ Developer API}
 ```
 
 ```{toctree}
@@ -28,8 +45,16 @@ cxx/satellite/index
 cxx/controller/index
 ```
 
+```{raw} latex
+\part{Python Developer API}
+```
+
 ```{toctree}
 :caption: Python Developer API
+```
+
+```{raw} latex
+\part{Appendix}
 ```
 
 ```{toctree}

@@ -572,6 +572,20 @@ docs:html:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs html
 
+docs:pdf:
+  extends:
+    - .docs
+    - .python-venv
+    - .fedora-sphinx
+  variables:
+    SPHINXOPTS: -W --keep-going
+  needs:
+    - job: docs:doxygen
+      artifacts: true
+  script:
+    - pip install --no-build-isolation -e .[docs]
+    - make -C docs latexpdf
+
 # deploy stage
 
 .deploy:
