@@ -111,11 +111,14 @@ favicons = [
 ]
 
 # LaTeX settings:
+latex_engine = "lualatex"
+latex_use_xindy = False
 latex_elements = {
     "papersize": "a4paper",
     "pointsize": "11pt",
     "figure_align": "tbp",
     "fncychap": "",
+    "babel": "",
     "preamble": latex_helpers.preamble,
     "maketitle": latex_helpers.maketitle,
     "classoptions": "captions=tableheading,a4paper,11pt,numbers=noenddot,titlepage,twoside,openright,DIV=14,BCOR=8mm",
