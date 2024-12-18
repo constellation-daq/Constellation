@@ -5,6 +5,8 @@ title: "EudaqNativeWriter"
 description: "A satellite that receives data and writes it to EUDAQ2 native binary formatted files"
 ---
 
+## Description
+
 This satellite receives data from other satellites and encodes them in the EUDAQ2 native binary file format.
 The satellite can be used for compatibility when using analysis software that interfaces EUDAQ2 for decoding data.
 
