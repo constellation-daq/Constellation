@@ -30,4 +30,7 @@ PointerAlignment: Left
 SortIncludes: CaseInsensitive
 SpaceBeforeParens: Never
 SpaceBeforeCpp11BracedList: true
+---
+Language: Json
+BasedOnStyle: LLVM
 ...

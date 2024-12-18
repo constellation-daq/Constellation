@@ -7,36 +7,36 @@ Copy Satellite READMEs to documentation and convert them for MyST consumption
 
 import pathlib
 import re
-import yaml
+import urllib.request
 
 import sphinx.util.logging
+import yaml
 
 logger = sphinx.util.logging.getLogger(__name__)
 
 
-def guess_language(directory: pathlib.Path) -> tuple[str, str]:
+def guess_language(path: pathlib.Path) -> str:
     """
     Guess the language of the satellite implementation based on the path they have been found in
     """
+    if "cxx" in path.as_posix():
+        return "C++"
+    if "python" in path.as_posix():
+        return "Python"
+    return "Unknown"
 
-    if "cxx" in directory.as_posix():
-        return "cxx", "C++"
-    elif "python" in directory.as_posix():
-        return "py", "Python"
-    return "", "Unknown"
 
-
-def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
+def find_satellite_header(language: str, directory: pathlib.Path) -> tuple[pathlib.Path, str] | None:
     """
     Find the header file of a satellite in the specified directory and the class name.
-    For C++, this assumes the 'NameSatellite.hpp' naming scheme.
+    For C++, this assumes the `NameSatellite.hpp` naming scheme.
     For Python, this assumes the `from .XXX import Name` in `__main__` scheme.
     """
-    if lang == "cxx":
+    if language == "C++":
         for file in directory.glob("*Satellite.hpp"):
             # Return the first matching file (assuming only one matches)
             return file, file.name.removesuffix(".hpp")
-    elif lang == "py":
+    elif language == "Python":
         main_py_file = directory / "__main__.py"
         if main_py_file.exists():
             with open(main_py_file, "r") as file:
@@ -52,19 +52,18 @@ def find_header_file(lang: str, directory: pathlib.Path) -> tuple[pathlib.Path, 
     return None
 
 
-def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name: str) -> list[str] | None:
+def extract_parent_classes(language: str, satellite_header: pathlib.Path, satellite_name: str) -> list[str] | None:
     """
-    Extract the parent classes from the C++ header file or Python definition.
+    Extract the parent classes from the C++ header file or Python __main__ file
     """
-    with open(header_path, "r") as file:
+    with open(satellite_header, "r") as file:
         content = file.read()
-
-        if lang == "cxx":
+        if language == "C++":
             # Regular expression to find the parent class in C++ inheritance declaration
             match = re.search(rf"class\s+{satellite_name}\s*(?:final)?\s*:\s*public\s+((?:\w+::)*(\w*Satellite))\b", content)
             if match:
                 return [match.group(2)]
-        elif lang == "py":
+        elif language == "Python":
             # Regex to match Python class inheritance (might be multiple)
             match = re.search(rf"class\s+{satellite_name}\s*\((.+)\):", content)
             if match:
@@ -73,50 +72,74 @@ def extract_parent_classes(lang: str, header_path: pathlib.Path, satellite_name:
     return None
 
 
-def convert_satellite_readme(in_path: pathlib.Path, out_path: pathlib.Path) -> tuple[str, str]:
+def extract_front_matter(markdown: str) -> tuple[str, str, list[str]]:
     """
-    Converts and copies a satellite README. The output is written to `<out_path>/<satellite_type>.md`.
-
-    Args:
-        in_path: Path to README with YAML front-matter.
-        out_path: Path to directory where to write the converted <arkdown file.
-
-    Returns:
-        Tuple with satellite type (taken from the parent directory) and category name.
+    Extract category, language and parent classes from a YAML front-matter in Markdown
     """
+    category = "Uncategorized"
+    language = "Unknown"
+    parent_classes = []
 
-    # Guess the language
-    lang_code, lang = guess_language(in_path)
+    yaml_match = re.match(r"^---\n(.+?)\n---\n", markdown, flags=re.DOTALL)
+    if yaml_match:
+        raw_yaml = yaml_match.group(1)
+        yaml_data = yaml.safe_load(raw_yaml)
+        if "category" in yaml_data.keys():
+            category = str(yaml_data["category"])
+        if "language" in yaml_data.keys():
+            language = str(yaml_data["language"])
+        if "parent_class" in yaml_data.keys():
+            parent_classes = [str(yaml_data["parent_class"])]
 
-    # rewrite the file
-    with in_path.open(mode="r", encoding="utf-8") as in_file:
-        file_input = in_file.read()
-        file_output, category = convert_front_matter(lang, file_input)
-
-        # Parse base class and append configuration parameters
-        header_result = find_header_file(lang_code, in_path.parent)
-        if header_result:
-            header_path, satellite_name = header_result
-            logger.verbose(f"Satellite definition file for {satellite_name}: {header_path}")
-            # Extract the parent class from the header file
-            parent_classes = extract_parent_classes(lang_code, header_path, satellite_name)
-            if parent_classes:
-                logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
-                file_output += "\n```{include} _parameter_header.md\n```\n"
-                file_output += append_content(lang_code, parent_classes)
-            else:
-                logger.warning(f"No parent classes for {satellite_name} found in {header_path}")
-        else:
-            logger.warning(f"No satellite definition found in {in_path.parent}")
-
-        (out_path / in_path.parent.name).with_suffix(".md").write_text(file_output)
-
-        return in_path.parent.name, category
+    return category, language, parent_classes
 
 
-def append_content(lang: str, parent_classes: list[str]) -> str:
+def convert_front_matter(markdown: str, extra_front_matter: dict[str, str]):
     """
-    Append content to the README.md file based on the parent class.
+    Converts YAML front-matter in a string from Markdown to plain text in Markdown
+    """
+    yaml_match = re.match(r"^---\n(.+?)\n---\n", markdown, flags=re.DOTALL)
+    if yaml_match:
+        raw_yaml = yaml_match.group(1)
+        yaml_data = yaml.safe_load(raw_yaml)
+        yaml_endpos = yaml_match.end(0)
+        string_after_yaml = markdown[yaml_endpos:]
+
+        # Add title
+        converted_front_matter = "# " + yaml_data["title"] + " Satellite\n\n"
+
+        # Build header table
+        converted_front_matter += "| Name | " + yaml_data["title"] + " |\n"
+        converted_front_matter += "| ---- | ---- |\n"
+        skipped_keys = ["title", "parent_class"]
+        for key, value in yaml_data.items():
+            if key in skipped_keys:
+                continue
+            converted_front_matter += "| " + key.capitalize() + " | " + value + " |\n"
+        for key, value in extra_front_matter.items():
+            converted_front_matter += "| " + key.capitalize() + " | " + value + " |\n"
+
+        # Return new Markdown
+        return converted_front_matter + string_after_yaml
+
+    # No YAML data found, throw exception
+    raise Exception("No YAML data found")
+
+
+def language_shortcode(language: str) -> str:
+    """
+    Return the language shortcode used for parent class templates
+    """
+    if language == "C++":
+        return "cxx"
+    if language == "Python":
+        return "py"
+    return language
+
+
+def append_parent_classes(language: str, parent_classes: list[str]) -> str:
+    """
+    Append parent classes to the README.md file based on the parent class.
     """
     # List of classes whose content should be appended in order
     if any(class_name in ["ReceiverSatellite", "TransmitterSatellite"] for class_name in parent_classes):
@@ -125,56 +148,92 @@ def append_content(lang: str, parent_classes: list[str]) -> str:
     # Append content for each relevant class
     append = ""
     for class_name in parent_classes:
-        content_file = "_" + lang + "_" + class_name + ".md"
+        content_file = "_" + language_shortcode(language) + "_" + class_name + ".md"
         if content_file and (pathlib.Path("satellites") / content_file).exists():
-            append += "\n```{include} " + str(content_file) + "\n```\n"
+            append += "\n```{include} " + content_file + "\n```\n"
+        else:
+            logger.verbose(f"Could not find parent class {content_file}")
     return append
 
 
-def convert_front_matter(lang: str, string: str) -> tuple[str, str]:
+def convert_satellite_readme(
+    markdown: str, language: str, parent_classes: list[str], extra_front_matter: dict[str, str] = {}
+) -> str:
     """
-    Converts YAML front-matter in a string from Markdown to plain text in Markdown.
-
-    Args:
-        string: String formatted in Markdown with YAML front-matter.
-
-    Returns:
-        Tuple with string formatted in Markdown without YAML front-matter and category name.
+    Convert Markdown front-matter and append parent classes
     """
-    # extract yaml from string
-    yaml_match = re.match(r"^---\n(.+?)\n---\n", string, flags=re.DOTALL)
-    category = "Uncategorized"
+    # Convert front matter
+    markdown = convert_front_matter(markdown, extra_front_matter)
+    # Append parent classes
+    if parent_classes:
+        logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
+        markdown += "\n```{include} _parameter_header.md\n```\n"
+        markdown += append_parent_classes(language, parent_classes)
 
-    if yaml_match:
-        raw_yaml = yaml_match.group(1)
-        yaml_data = yaml.safe_load(raw_yaml)
-        yaml_endpos = yaml_match.end(0)
-        string_after_yaml = string[yaml_endpos:]
+    return markdown
 
-        # get satellite category:
-        if "category" in yaml_data.keys():
-            category = yaml_data["category"]
 
-        # amend language if missing:
-        if lang and "language" not in yaml_data.keys():
-            yaml_data["language"] = lang
+def convert_satellite_readme_repo(in_path: pathlib.Path, out_path: pathlib.Path) -> tuple[str, str]:
+    """
+    Converts a satellite README in the repo. The output is written to `<out_path>/<satellite_type>.md`.
+    Returns the satellite type and category.
+    """
+    # Read file contents
+    with in_path.open(mode="r", encoding="utf-8") as in_file:
+        markdown = in_file.read()
 
-        # Add title:
-        converted_front_matter = "# " + yaml_data["title"] + " Satellite\n"
+    # Extract category (language and parent classes are not defined in repo READMEs)
+    category, language, parent_classes = extract_front_matter(markdown)
 
-        # build header table
-        converted_front_matter += "| Name | " + yaml_data["title"] + " |\n"
-        converted_front_matter += "| ---- | ---- |\n"
+    # Extract language
+    language = guess_language(in_path)
 
-        for key, value in yaml_data.items():
-            if key == "title":
-                continue
+    # Find parent classes
+    header_result = find_satellite_header(language, in_path.parent)
+    if header_result:
+        satellite_header, satellite_name = header_result
+        logger.verbose(f"Satellite definition file for {satellite_name}: {satellite_header}")
+        parent_classes = extract_parent_classes(language, satellite_header, satellite_name)
+        if parent_classes:
+            logger.verbose(f"Appending parameters for parent classes: {parent_classes}")
+        else:
+            logger.warning(f"No parent classes for {satellite_name} found in {satellite_header}")
+            parent_classes = []
+    else:
+        logger.warning(f"No satellite definition found in {in_path.parent}")
 
-            converted_front_matter += "| " + key.capitalize() + " | " + value + " |\n"
+    # Convert markdown
+    markdown = convert_satellite_readme(markdown, language, parent_classes)
 
-        converted_front_matter += "\n"
-        converted_front_matter += "## Description\n"
+    # Write file
+    (out_path / in_path.parent.name).with_suffix(".md").write_text(markdown)
 
-        string = converted_front_matter + string_after_yaml
+    # Return satellite type and category
+    return in_path.parent.name, category
 
-    return string, category
+
+def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_path: pathlib.Path) -> str | None:
+    """
+    Converts and copies an external satellite README. The output is written to `<out_path>/<satellite_type>.md`.
+    """
+    # Run everything in try-except in case no internet connection or other error
+    try:
+        # Download README
+        request = urllib.request.urlopen(readme_url)
+        markdown = request.read().decode()
+
+        # Extract category, language and parent classes
+        category, language, parent_classes = extract_front_matter(markdown)
+
+        # Convert markdown
+        markdown = convert_satellite_readme(markdown, language, parent_classes, {"Website": f"[{website}]({website})"})
+
+        # Write Markdown
+        (out_path / name).with_suffix(".md").write_text(markdown)
+
+        # Return category
+        return category
+
+    except:  # noqa: E722
+        logger.warning(f"Failed to convert external satellite README for {name}")
+    return None
