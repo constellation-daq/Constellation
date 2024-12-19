@@ -21,6 +21,7 @@
 #include <Qt>
 #include <QVariant>
 
+#include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -35,7 +36,7 @@
  * methods and emits signals for their calls and allows querying connection details via QModelIndex.
  *
  */
-class QController : public QAbstractListModel, public constellation::controller::Controller {
+class CNSTLN_API QController : public QAbstractListModel, public constellation::controller::Controller {
     Q_OBJECT
 
 public:
@@ -202,7 +203,7 @@ private:
         "Type", "Name", "State", "Connection", "Last response", "Last message", "Heartbeat", "Lives"};
 };
 
-class QControllerSortProxy : public QSortFilterProxyModel {
+class CNSTLN_API QControllerSortProxy : public QSortFilterProxyModel {
     Q_OBJECT
 
 public:
