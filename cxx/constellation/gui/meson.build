@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+if not get_option('build_gui')
+  subdir_done()
+endif
 
 qt = import(get_option('qt_version'))
 qt_dep = dependency(get_option('qt_version'), modules: ['Core', 'Gui', 'Widgets'])
