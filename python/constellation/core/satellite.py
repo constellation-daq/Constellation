@@ -388,17 +388,17 @@ class Satellite(
             res_run = self._state_thread_fut.result(timeout=None)
             self._state_thread_evt = None
         self.log.debug("RUN thread finished, continue with INTERRUPTING.")
-        res: str = self.do_interrupting(payload)
+        res: str = self.do_interrupting()
         return f"{res_run}; {res}"
 
     @debug_log
-    def do_interrupting(self, payload: Any) -> str:
+    def do_interrupting(self) -> str:
         """Interrupt data acquisition and move to Safe state.
 
         Defaults to calling the stop and land handlers.
         """
-        self.do_stopping(payload)
-        self.do_landing(payload)
+        self.do_stopping()
+        self.do_landing()
         return "Interrupted."
 
     def _thread_exception(self, args: Any) -> None:
