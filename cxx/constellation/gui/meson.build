@@ -11,13 +11,14 @@ qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
 
 inc = include_directories('.')
 moc_files = qt.compile_moc(headers: ['QController.hpp'])
+qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
 gui_src = files(
   'QController.cpp',
 )
 
 gui_lib = library('ConstellationGUI',
-  sources: [gui_src, moc_files],
+  sources: [gui_src, moc_files, qrc_files],
   include_directories: constellation_inc,
   dependencies: [core_dep, controller_dep, qt_dep],
   gnu_symbol_visibility: 'hidden',
