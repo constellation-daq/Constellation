@@ -15,10 +15,9 @@ inc = include_directories('.')
 
 ui_files = qt.compile_ui(sources: 'MissionControl.ui')
 moc_files = qt.compile_moc(headers: ['MissionControl.hpp'])
-qrc_files = qt.compile_resources(sources: 'MissionControl.qrc')
 
 executable('MissionControl',
-  sources: ['MissionControl.cpp', ui_files, moc_files, qrc_files],
+  sources: ['MissionControl.cpp', ui_files, moc_files],
   include_directories: inc,
   dependencies: [exec_dep, argparse_dep, qt_dep, controller_dep, gui_dep],
   install: true,

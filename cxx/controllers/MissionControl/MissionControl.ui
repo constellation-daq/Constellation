@@ -17,7 +17,7 @@
    <string>Constellation Run Control</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="MissionControl.qrc">
+   <iconset resource="../../constellation/gui/Constellation.qrc">
     <normaloff>:/logo.png</normaloff>:/logo.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
@@ -82,7 +82,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="MissionControl.qrc">:/logo.png</pixmap>
+          <pixmap resource="../../constellation/gui/Constellation.qrc">:/logo.png</pixmap>
          </property>
          <property name="scaledContents">
           <bool>true</bool>
@@ -417,10 +417,14 @@
              <bool>false</bool>
             </property>
             <property name="toolTip">
-             <string>Stop the run</string>
+             <string>Stop run for all satellites</string>
             </property>
             <property name="text">
-             <string>Stop</string>
+             <string> Stop</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/stop</normaloff>:/stop</iconset>
             </property>
            </widget>
           </item>
@@ -430,10 +434,14 @@
              <bool>false</bool>
             </property>
             <property name="toolTip">
-             <string>Start a run</string>
+             <string>Start run for all satellites</string>
             </property>
             <property name="text">
-             <string>Start</string>
+             <string> Start</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/start</normaloff>:/start</iconset>
             </property>
            </widget>
           </item>
@@ -449,10 +457,14 @@
              </sizepolicy>
             </property>
             <property name="toolTip">
-             <string>Land the constellation</string>
+             <string>Land all satellites</string>
             </property>
             <property name="text">
-             <string>Land</string>
+             <string> Land</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/land</normaloff>:/land</iconset>
             </property>
            </widget>
           </item>
@@ -468,17 +480,31 @@
              </sizepolicy>
             </property>
             <property name="toolTip">
-             <string>Launch the constellation</string>
+             <string>Launch all satellites</string>
             </property>
             <property name="text">
-             <string>Launch</string>
+             <string> Launch</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/launch</normaloff>:/launch</iconset>
             </property>
            </widget>
           </item>
           <item row="0" column="0">
            <widget class="QPushButton" name="btnInit">
+            <property name="toolTip">
+             <string>Initialize all satellites</string>
+            </property>
             <property name="text">
-             <string>Initialize</string>
+             <string> Initialize</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/init</normaloff>:/init</iconset>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -491,7 +517,11 @@
              <string>Shutdown all satellites</string>
             </property>
             <property name="text">
-             <string>Shutdown</string>
+             <string> Shutdown</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/shutdown</normaloff>:/shutdown</iconset>
             </property>
            </widget>
           </item>
@@ -597,7 +627,7 @@
   <tabstop>viewConn</tabstop>
  </tabstops>
  <resources>
-  <include location="MissionControl.qrc"/>
+  <include location="../../constellation/gui/Constellation.qrc"/>
  </resources>
  <connections>
   <connection>
