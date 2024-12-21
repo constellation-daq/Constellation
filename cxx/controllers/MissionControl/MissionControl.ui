@@ -422,12 +422,21 @@
             <property name="toolTip">
              <string>Stop run for all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
              <string> Stop</string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/stop</normaloff>:/stop</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -439,12 +448,21 @@
             <property name="toolTip">
              <string>Start run for all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
              <string> Start</string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/start</normaloff>:/start</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -462,12 +480,21 @@
             <property name="toolTip">
              <string>Land all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
              <string> Land</string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/land</normaloff>:/land</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -485,12 +512,21 @@
             <property name="toolTip">
              <string>Launch all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
              <string> Launch</string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/launch</normaloff>:/launch</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -499,12 +535,21 @@
             <property name="toolTip">
              <string>Initialize all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
-             <string> Initialize</string>
+             <string> Initialize </string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/init</normaloff>:/init</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
             <property name="flat">
              <bool>false</bool>
@@ -516,15 +561,30 @@
             <property name="enabled">
              <bool>false</bool>
             </property>
+            <property name="minimumSize">
+             <size>
+              <width>105</width>
+              <height>0</height>
+             </size>
+            </property>
             <property name="toolTip">
              <string>Shutdown all satellites</string>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left;padding:2px</string>
+            </property>
             <property name="text">
-             <string> Shutdown</string>
+             <string> Shutdown </string>
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/shutdown</normaloff>:/shutdown</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
