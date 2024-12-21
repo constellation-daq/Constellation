@@ -28,5 +28,5 @@ SPDX-License-Identifier = "EUPL-1.2"
 
 [[annotations]]
 path = "cxx/constellation/gui/icons/**"
-SPDX-FileCopyrightText = "Font Awesome Free 6.7.2 by @fontawesome"
-SPDX-License-Identifier = "CC-BY-4.0"
+SPDX-FileCopyrightText = "Google Material Symbols"
+SPDX-License-Identifier = "Apache-2.0"

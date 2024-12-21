@@ -3,12 +3,12 @@
         <file alias="logo.png">../../../docs/logo/logo.png</file>
     </qresource>
     <qresource>
-        <file alias="init">icons/initialize.svg</file>
-        <file alias="launch">icons/launch.svg</file>
-        <file alias="land">icons/land.svg</file>
-        <file alias="start">icons/start.svg</file>
-        <file alias="stop">icons/stop.svg</file>
-        <file alias="reconf">icons/reconfigure.svg</file>
-        <file alias="shutdown">icons/shutdown.svg</file>
+        <file alias="init">icons/material-not_started.svg</file>
+        <file alias="launch">icons/material-expand_circle_up.svg</file>
+        <file alias="land">icons/material-expand_circle_down.svg</file>
+        <file alias="start">icons/material-play_circle.svg</file>
+        <file alias="stop">icons/material-stop_circle.svg</file>
+        <file alias="reconf">icons/material-change_circle.svg</file>
+        <file alias="shutdown">icons/material-power_settings_circle.svg</file>
     </qresource>
 </RCC>
