@@ -20,7 +20,7 @@ class CHPMessageFlags(IntFlag):
     IS_AUTONOMOUS = 0x02
 
 
-def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int]:
+def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
     """Decode a CHP binary message.
 
     Returns host, timestamp, state and interval.
@@ -38,7 +38,11 @@ def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHP
     flags = unpacker.unpack()
     interval = unpacker.unpack()
 
-    return host, timestamp, state, flags, interval
+    status = None
+    if len(msg) > 1:
+        status = msg[1].decode("utf-8")
+
+    return host, timestamp, state, flags, interval, status
 
 
 class CHPTransmitter:
@@ -49,7 +53,7 @@ class CHPTransmitter:
         self.name = name
         self._socket = socket
 
-    def send(self, state: int, interval: int, msgflags: CHPMessageFlags, flags: int = 0) -> None:
+    def send(self, state: int, interval: int, msgflags: CHPMessageFlags, status: str | None = None, flags: int = 0) -> None:
         """Send state and interval via CHP."""
         stream = io.BytesIO()
         packer = msgpack.Packer()
@@ -59,18 +63,26 @@ class CHPTransmitter:
         stream.write(packer.pack(state))
         stream.write(packer.pack(msgflags))
         stream.write(packer.pack(interval))
+
+        if status:
+            flags = zmq.SNDMORE | flags
+
         self._socket.send(stream.getbuffer(), flags=flags)
+
+        if status:
+            flags = flags & ~zmq.SNDMORE
+            self._socket.send_string(status, flags)
 
     def recv(
         self, flags: int = zmq.NOBLOCK
-    ) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int] | Tuple[None, None, None, None]:
+    ) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None] | Tuple[None, None, None, None, None]:
         """Receive a heartbeat via CHP."""
         try:
             msg = self._socket.recv_multipart(flags)
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
-            return None, None, None, None
+            return None, None, None, None, None
         return CHPDecodeMessage(msg)
 
     def close(self) -> None:
