@@ -37,13 +37,13 @@ using namespace constellation::protocol;
 using namespace std::string_view_literals;
 
 CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
-    if(frames.size() != 1) {
-        throw MessageDecodingError("CHP1 messages can only have one frame");
+    if(frames.size() < 1 || frames.size() > 2) {
+        throw MessageDecodingError("Wrong number of frames for CHP1 message");
     }
 
-    const auto frame = frames.pop();
-
     try {
+        const auto frame = frames.pop();
+
         // Offset since we decode five separate msgpack objects
         std::size_t offset = 0;
 
@@ -83,9 +83,9 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
         // Attempt to unpack a status message
         std::optional<std::string> status = {};
-        if(flags & CHP::MessageFlags::HAS_STATUS) {
-            const auto msgpack_status = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-            status = msgpack_status->as<std::string>();
+        if(frames.size() == 2) {
+            const auto status_frame = frames.pop();
+            status = std::string(status_frame.to_string_view());
         }
 
         // Construct message
@@ -109,16 +109,18 @@ zmq::multipart_t CHP1Message::assemble() {
     // then state
     msgpack_pack(sbuf, std::to_underlying(state_));
     // then flags
-    msgpack_pack(
-        sbuf, std::to_underlying(flags_ | (status_.has_value() ? CHP::MessageFlags::HAS_STATUS : CHP::MessageFlags::NONE)));
+    msgpack_pack(sbuf, std::to_underlying(flags_));
     // then interval
     msgpack_pack(sbuf, static_cast<uint16_t>(interval_.count()));
-    // then status
-    if(status_.has_value()) {
-        msgpack_pack(sbuf, status_.value());
-    }
 
     frames.add(PayloadBuffer(std::move(sbuf)).to_zmq_msg_release());
+
+    // then status
+    if(status_.has_value()) {
+        msgpack::sbuffer sbuf_status {};
+        msgpack_pack(sbuf_status, status_.value());
+        frames.add(PayloadBuffer(std::move(sbuf_status)).to_zmq_msg_release());
+    }
 
     return frames;
 }
