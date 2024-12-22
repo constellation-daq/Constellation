@@ -32,15 +32,15 @@ namespace constellation::message {
          * @param state State of the sender
          * @param interval Time interval until next message is expected
          * @param flags Message flags
-         * @param time Message time
          * @param status Optional status string for the message
+         * @param time Message time
          */
         CHP1Message(std::string sender,
                     protocol::CSCP::State state,
                     std::chrono::milliseconds interval,
                     protocol::CHP::MessageFlags flags = {},
-                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
-                    std::optional<std::string> status = {})
+                    std::optional<std::string> status = {},
+                    std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
             : sender_(std::move(sender)), time_(time), state_(state), flags_(flags), interval_(interval),
               status_(std::move(status)) {}
 
