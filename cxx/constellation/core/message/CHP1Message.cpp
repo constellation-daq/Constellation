@@ -36,7 +36,7 @@ using namespace constellation::protocol;
 using namespace std::string_view_literals;
 
 CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
-    if(frames.size() < 1 || frames.size() > 2) {
+    if(frames.empty() || frames.size() > 2) {
         throw MessageDecodingError("Wrong number of frames for CHP1 message");
     }
 
