@@ -80,7 +80,7 @@ void HeartbeatSend::sendExtrasystole(std::string_view status) {
         const std::lock_guard lock {mutex_};
         status_ = status;
     }
-    flags_ = flags_ | CHP::MessageFlags::IS_EXTRASYSTOLE;
+    flags_ = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
     cv_.notify_one();
 }
 
