@@ -148,7 +148,7 @@ class HeartbeatChecker:
                 sockets_ready = dict(self._poller.poll(timeout=50))
                 for socket in sockets_ready.keys():
                     binmsg = socket.recv_multipart()
-                    _host, timestamp, state, flags, interval = CHPDecodeMessage(binmsg)
+                    _host, timestamp, state, flags, interval, status = CHPDecodeMessage(binmsg)
                     hb = self._states[socket]
                     # update values
                     hb.refresh(timestamp.to_datetime())
