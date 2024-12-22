@@ -110,7 +110,7 @@ zmq::multipart_t CHP1Message::assemble() {
 
     // then status
     if(status_.has_value()) {
-        msgpack_pack(sbuf, status_.value());
+        frames.add(PayloadBuffer(std::move(status_.value())).to_zmq_msg_release());
     }
 
     return frames;
