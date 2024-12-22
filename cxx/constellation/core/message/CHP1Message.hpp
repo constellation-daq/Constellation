@@ -41,7 +41,8 @@ namespace constellation::message {
                     protocol::CHP::MessageFlags flags = {},
                     std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
                     std::optional<std::string> status = {})
-            : sender_(std::move(sender)), time_(time), state_(state), flags_(flags), status_(status), interval_(interval) {}
+            : sender_(std::move(sender)), time_(time), state_(state), flags_(flags), interval_(interval),
+              status_(std::move(status)) {}
 
         /** Return message protocol */
         constexpr protocol::Protocol getProtocol() const { return protocol_; }
@@ -85,8 +86,8 @@ namespace constellation::message {
         std::chrono::system_clock::time_point time_;
         protocol::CSCP::State state_;
         protocol::CHP::MessageFlags flags_;
-        std::optional<std::string> status_;
         std::chrono::milliseconds interval_;
+        std::optional<std::string> status_;
     };
 
 } // namespace constellation::message
