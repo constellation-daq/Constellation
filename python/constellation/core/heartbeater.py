@@ -11,7 +11,7 @@ from typing import Any
 
 import zmq
 
-from .chp import CHPTransmitter
+from .chp import CHPTransmitter, CHPMessageFlags
 from .fsm import SatelliteStateHandler
 
 
@@ -78,7 +78,7 @@ class HeartbeatSender(SatelliteStateHandler):
 
                 last = datetime.now()
                 state = self.fsm.current_state_value
-                self._hb_tm.send(state.value, self._heartbeat_period)
+                self._hb_tm.send(state.value, self._heartbeat_period, CHPMessageFlags.NONE)
                 self.fsm.transitioned = False
             else:
                 time.sleep(0.1)
