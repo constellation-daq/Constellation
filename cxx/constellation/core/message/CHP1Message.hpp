@@ -29,9 +29,11 @@ namespace constellation::message {
     public:
         /**
          * @param sender Sender name
-         * @param time Message time
          * @param state State of the sender
          * @param interval Time interval until next message is expected
+         * @param flags Message flags
+         * @param time Message time
+         * @param status Optional status string for the message
          */
         CHP1Message(std::string sender,
                     protocol::CSCP::State state,
