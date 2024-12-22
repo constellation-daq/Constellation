@@ -83,13 +83,13 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
         // Attempt to unpack a status message
         std::optional<std::string> status = {};
-        if(frames.size() == 2) {
+        if(!frames.empty()) {
             const auto status_frame = frames.pop();
             status = std::string(status_frame.to_string_view());
         }
 
         // Construct message
-        return {sender, state, interval, flags, time, status};
+        return {sender, state, interval, flags, status, time};
     } catch(const msgpack::type_error&) {
         throw MessageDecodingError("malformed data");
     } catch(const msgpack::unpack_error&) {
