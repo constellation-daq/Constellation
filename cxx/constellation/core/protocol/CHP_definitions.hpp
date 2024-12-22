@@ -29,9 +29,6 @@ namespace constellation::protocol::CHP {
 
         /* Indicate whether the current state has been reached autonomously or by CSCP command */
         IS_AUTONOMOUS = 0x02,
-
-        /* Indicate that this message contains a status text */
-        HAS_STATUS = 0x04,
     };
 
     /** Minimal interval between heartbeat messages */
