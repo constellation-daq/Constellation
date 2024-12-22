@@ -65,7 +65,7 @@ HeartbeatSend::~HeartbeatSend() {
 }
 
 void HeartbeatSend::sendExtrasystole() {
-    flags_ = flags_ | CHP::MessageFlags::IS_EXTRASYSTOLE;
+    flags_ = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
     cv_.notify_one();
 }
 
