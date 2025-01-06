@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: CC0-1.0
 
 # Disable all UI components which require Qt
-echo "-Dcontroller_missioncontrol=false"
+echo "-Dbuild_gui=none"
