@@ -52,15 +52,15 @@ The available parameter names for `board[BNUM]_ch[CHNUM]_[PARNAME]` depend on th
 
 A minimal configuration would be:
 
-```ini
+```toml
 [satellites.CaenHV.sy5527]
 # Device-specific system settings for the SY5527-controlling Satellite
-system="SY5527"
-link="TCPIP"
-link_argument="192.168.8.2"
-username="myuser"
-password="mypassword!"
-metrics_poll_interval=30
+system = "SY5527"
+link = "TCPIP"
+link_argument = "192.168.8.2"
+username = "myuser"
+password = "mypassword!"
+metrics_poll_interval = 30
 
 board1_ch1_V0Set = 1
 board1_ch1_pw = "on"

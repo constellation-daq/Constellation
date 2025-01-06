@@ -28,8 +28,8 @@ The following parameters are read and interpreted by this satellite. Parameters 
 
 An example configuration for this satellite which could be dropped into a Constellation configuration as a starting point
 
-```ini
-[Sputnik.1]
+```toml
+[Sputnik.One]
 my_param = 7
 other_param = "antenna"
 ```
