@@ -8,8 +8,7 @@ option('cxx_tools', type: 'boolean', value: true, description: 'Build C++ tools'
 option('cxx_tests', type: 'feature', value: 'auto', description: 'Build C++ tests')
 
 # GUI framework version
-option('build_gui', type: 'boolean', value: true, description: 'Build graphical user interfaces')
-option('qt_version', type: 'combo', choices: ['qt5', 'qt6'], value: 'qt6')
+option('build_gui', type: 'combo', choices: ['none', 'qt5', 'qt6'], value: 'qt6', description: 'Build Qt graphical UIs')
 
 # Controllers
 option('controller_missioncontrol', type: 'boolean', value: true, description: 'Build the MissionControl Qt Controller GUI')

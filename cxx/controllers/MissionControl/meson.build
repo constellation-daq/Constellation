@@ -1,12 +1,17 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-if not get_option('controller_missioncontrol') or not get_option('build_gui')
+if not get_option('controller_missioncontrol')
   subdir_done()
 endif
 
-qt = import(get_option('qt_version'))
-qt_dep = dependency(get_option('qt_version'), modules: ['Core', 'Gui', 'Widgets'])
+if get_option('build_gui') == 'none'
+  warning('Skipping MissionControl since build_gui is set to none')
+  subdir_done()
+endif
+
+qt = import(get_option('build_gui'))
+qt_dep = dependency(get_option('build_gui'), modules: ['Core', 'Gui', 'Widgets'])
 
 inc = include_directories('.')
 
