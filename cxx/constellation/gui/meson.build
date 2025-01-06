@@ -5,8 +5,9 @@ if get_option('build_gui') == 'none'
   subdir_done()
 endif
 
-qt = import(get_option('build_gui'))
-qt_dep = dependency(get_option('build_gui'), modules: ['Core', 'Gui', 'Widgets'])
+qt_version = get_option('build_gui')
+qt = import(qt_version)
+qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
 
 inc = include_directories('.')
 moc_files = qt.compile_moc(headers: ['QController.hpp'])

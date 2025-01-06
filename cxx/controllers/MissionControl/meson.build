@@ -10,8 +10,6 @@ if get_option('build_gui') == 'none'
   subdir_done()
 endif
 
-qt = import(get_option('build_gui'))
-qt_dep = dependency(get_option('build_gui'), modules: ['Core', 'Gui', 'Widgets'])
 
 inc = include_directories('.')
 
