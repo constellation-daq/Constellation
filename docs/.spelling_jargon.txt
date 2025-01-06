@@ -4,6 +4,7 @@ extrasystole
 extrasystoles
 destructor
 multicast
+subfolder
 namespace
 namespaces
 stateful
@@ -15,6 +16,8 @@ ramped
 reconfiguring
 uncrewed
 IPv
+heartbeating
+scriptable
 Subclassed
 demangle
 Demangle
@@ -34,6 +37,7 @@ unsubscriptions
 unpacker
 preconfigured
 microcontroller
+Hackathon
 init
 selectable
 pre
