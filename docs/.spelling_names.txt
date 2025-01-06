@@ -16,6 +16,7 @@ QController
 SatelliteT
 DSOLoaderError
 IPython
+Timepix
 Adenium
 Lund
 DVel
