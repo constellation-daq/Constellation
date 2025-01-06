@@ -293,6 +293,10 @@ void MissionControl::on_txtConfigFileName_textChanged() {
 }
 
 void MissionControl::on_btnShutdown_clicked() {
+    if(runcontrol_.getConnectionCount() == 0) {
+        return;
+    }
+
     // We don't close the GUI but shutdown satellites instead:
     if(QMessageBox::question(this, "Quitting", "Shutdown all satellites?", QMessageBox::Ok | QMessageBox::Cancel) ==
        QMessageBox::Cancel) {
