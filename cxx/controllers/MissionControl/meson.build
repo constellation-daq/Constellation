@@ -10,15 +10,11 @@ if get_option('build_gui') == 'none'
   subdir_done()
 endif
 
-
-inc = include_directories('.')
-
 ui_files = qt.compile_ui(sources: 'MissionControl.ui')
-moc_files = qt.compile_moc(headers: ['MissionControl.hpp'])
+moc_files = qt.compile_moc(headers: 'MissionControl.hpp')
 
 executable('MissionControl',
   sources: ['MissionControl.cpp', ui_files, moc_files],
-  include_directories: inc,
   dependencies: [exec_dep, argparse_dep, qt_dep, controller_dep, gui_dep],
   install: true,
   install_rpath: constellation_rpath,

@@ -9,7 +9,6 @@ qt_version = get_option('build_gui')
 qt = import(qt_version)
 qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
 
-inc = include_directories('.')
 moc_files = qt.compile_moc(headers: ['QController.hpp'])
 qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
