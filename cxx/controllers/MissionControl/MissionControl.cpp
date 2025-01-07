@@ -529,6 +529,19 @@ void MissionControl::custom_context_menu(const QPoint& point) {
         contextMenu.addAction(action);
     }
 
+    // Draw separator
+    contextMenu.addSeparator();
+
+    // Add possibility to run custom command
+    auto* customAction = new QAction("Custom...", this);
+    connect(customAction, &QAction::triggered, this, [this, index]() {
+        const QString text = QInputDialog::getText(nullptr, "Constellation", "Custom satellite command:", QLineEdit::Normal);
+        if(!text.isEmpty()) {
+            runcontrol_.sendQCommand(index, text.toStdString());
+        }
+    });
+    contextMenu.addAction(customAction);
+
     contextMenu.exec(viewConn->viewport()->mapToGlobal(point));
 }
 
