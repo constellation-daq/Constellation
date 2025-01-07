@@ -535,9 +535,12 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     // Add possibility to run custom command
     auto* customAction = new QAction("Custom...", this);
     connect(customAction, &QAction::triggered, this, [this, index]() {
-        const QString text = QInputDialog::getText(nullptr, "Constellation", "Custom satellite command:", QLineEdit::Normal);
-        if(!text.isEmpty()) {
-            runcontrol_.sendQCommand(index, text.toStdString());
+        QCommandDialog dialog(this);
+        if(dialog.exec() == QDialog::Accepted) {
+            auto response = runcontrol_.sendQCommand(index, dialog.getCommand(), dialog.getPayload());
+            if(response.has_value()) {
+                QMessageBox::information(nullptr, "Satellite Response", QString::fromStdString(response.value()));
+            }
         }
     });
     contextMenu.addAction(customAction);
