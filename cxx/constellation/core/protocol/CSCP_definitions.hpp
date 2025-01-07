@@ -64,6 +64,8 @@ namespace constellation::protocol::CSCP {
         reconfigure = std::to_underlying(Transition::reconfigure),
         start = std::to_underlying(Transition::start),
         stop = std::to_underlying(Transition::stop),
+        _interrupt = std::to_underlying(Transition::interrupt),
+        _failure = std::to_underlying(Transition::failure),
     };
 
     /** Possible standard (non-transition) commands via CSCP */
