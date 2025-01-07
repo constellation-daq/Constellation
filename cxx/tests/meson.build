@@ -3,7 +3,7 @@
 
 catch2_dep = dependency('catch2-with-main',
   version: '>=3.0.0',
-  default_options: ['tests=false'],
+  default_options: ['tests=false', 'install=false'],
   required: get_option('cxx_tests'),
 )
 
