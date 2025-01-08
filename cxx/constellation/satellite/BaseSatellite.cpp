@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <iomanip>
 #include <map>
 #include <mutex>
 #include <optional>
