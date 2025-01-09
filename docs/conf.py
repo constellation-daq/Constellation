@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+import json
 import pathlib
 
 import sphinx
@@ -176,14 +177,26 @@ satellite_files.extend(list((repodir / "python" / "constellation" / "satellites"
 # Retrieve satellite type and category
 satellites = {}
 for path in satellite_files:
-    satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme(path, docsdir / "satellites")
+    satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme_repo(path, docsdir / "satellites")
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{satellite_type}>")
+
+# Add external satellites
+ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()
+with ext_satellites_json.open() as ext_satellites_json_file:
+    ext_satellites = json.load(ext_satellites_json_file)["external_satellites"]
+    for satellite_json in ext_satellites:
+        name = satellite_json["name"]
+        readme = satellite_json["readme"]
+        website = satellite_json["website"]
+        satellite_category = copy_satellite_docs.convert_satellite_readme_ext(name, readme, website, docsdir / "satellites")
+        if satellite_category:
+            satellites.setdefault(satellite_category, []).append(f"{name} <{name}>")
 
 # Create tocs for categories
 satellite_tocs = ""
 for category, satellites_list in sorted(satellites.items()):
     satellite_tocs += f"\n```{{toctree}}\n:caption: {category}\n:maxdepth: 1\n\n"
-    for satellite in satellites_list:
+    for satellite in sorted(satellites_list):
         satellite_tocs += satellite + "\n"
     satellite_tocs += "```\n"
 

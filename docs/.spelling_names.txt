@@ -16,3 +16,7 @@ QController
 SatelliteT
 DSOLoaderError
 IPython
+Adenium
+Lund
+DVel
+Indico
