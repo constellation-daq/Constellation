@@ -67,8 +67,8 @@ of the Constellation repository with the following contents:
     <keyword>testbeam</keyword>
   </keywords>
   <branding>
-    <color type="primary" scheme_preference="light">#6fbbd8</color>
-    <color type="primary" scheme_preference="dark">#d97e7c</color>
+    <color type="primary" scheme_preference="light">#b5e2f4</color>
+    <color type="primary" scheme_preference="dark">#623030</color>
   </branding>
 
   <content_rating type="oars-1.1" />
