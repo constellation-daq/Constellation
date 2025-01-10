@@ -407,7 +407,7 @@ void MissionControl::update_run_infos() {
     // Update run timer:
     if(runcontrol_.getLowestState() == CSCP::State::RUN) {
         auto duration = duration_string(std::chrono::seconds(run_start_time_.secsTo(QDateTime::currentDateTime())));
-        runDuration->setStyleSheet("QLabel { font-weight: bold; color: black; }");
+        runDuration->setStyleSheet("QLabel { font-weight: bold; }");
         runDuration->setText(duration);
         runID->setText("<b>" + current_run_ + "</b>");
     } else {
