@@ -488,7 +488,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
     // Add standard commands
     for(const auto command : enum_names<CSCP::StandardCommand>()) {
-        if(command == "shutdown") {
+        if(command == "shutdown" || command.starts_with("_")) {
             // Already added above
             continue;
         }
