@@ -25,8 +25,10 @@
 
 namespace constellation::satellite {
 
-    inline void Satellite::register_metric(std::string name, std::string unit, metrics::MetricType type, std::string description) {
-        utils::ManagerLocator::getMetricsManager().registerMetric(std::move(name), std::move(unit), type, std::move(description));
+    inline void
+    Satellite::register_metric(std::string name, std::string unit, metrics::MetricType type, std::string description) {
+        utils::ManagerLocator::getMetricsManager().registerMetric(
+            std::move(name), std::move(unit), type, std::move(description));
     }
 
     template <typename C>
