@@ -35,7 +35,7 @@ namespace constellation::chirp {
         CNSTLN_API std::string to_string() const;
     };
 
-    /** Broadcast receiver for incoming CHIRP broadcasts on `CHIRP_PORT` */
+    /** Broadcast receiver for incoming CHIRP broadcasts on `CHIRP::PORT` */
     class BroadcastRecv {
     public:
         /**

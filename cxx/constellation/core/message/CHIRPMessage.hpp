@@ -45,7 +45,7 @@ namespace constellation::message {
     };
 
     /** CHIRP message assembled to array of bytes */
-    using AssembledMessage = std::array<std::byte, protocol::CHIRP::CHIRP_MESSAGE_LENGTH>;
+    using AssembledMessage = std::array<std::byte, protocol::CHIRP::MESSAGE_LENGTH>;
 
     /** CHIRP message */
     class CHIRPMessage {
