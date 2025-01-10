@@ -96,6 +96,8 @@ namespace constellation::log {
 
         void handle_log_subscriptions(bool subscribe, std::string_view topic);
 
+        void handle_stat_subscriptions(bool subscribe, std::string_view body);
+
     private:
         std::unique_ptr<Logger> logger_;
 
@@ -109,6 +111,7 @@ namespace constellation::log {
 
         std::jthread subscription_thread_;
         std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
+        std::map<std::string, std::size_t> stat_subscriptions_;
     };
 
 } // namespace constellation::log
