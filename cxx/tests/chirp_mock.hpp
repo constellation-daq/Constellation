@@ -33,7 +33,7 @@ inline void chirp_mock_service(std::string_view name,
     // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
     using namespace constellation::chirp;
     using namespace constellation::protocol::CHIRP;
-    BroadcastSend chirp_sender {"0.0.0.0", CHIRP_PORT};
+    BroadcastSend chirp_sender {"0.0.0.0", PORT};
     const auto msgtype = offer ? MessageType::OFFER : MessageType::DEPART;
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendBroadcast(chirp_msg.assemble());

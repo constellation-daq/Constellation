@@ -18,16 +18,16 @@
 namespace constellation::protocol::CHIRP {
 
     /** Protocol identifier for CHIRP */
-    constexpr std::string_view CHIRP_IDENTIFIER = "CHIRP";
+    constexpr std::string_view IDENTIFIER = "CHIRP";
 
     /** Version of CHIRP protocol */
-    constexpr std::uint8_t CHIRP_VERSION = '\x01';
+    constexpr std::uint8_t VERSION = '\x01';
 
     /** Port number of the CHIRP protocol */
-    constexpr networking::Port CHIRP_PORT = 7123;
+    constexpr networking::Port PORT = 7123;
 
     /** CHIRP Message length in bytes */
-    constexpr std::size_t CHIRP_MESSAGE_LENGTH = 42;
+    constexpr std::size_t MESSAGE_LENGTH = 42;
 
     /** CHIRP message type */
     enum class MessageType : std::uint8_t {
