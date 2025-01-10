@@ -229,6 +229,7 @@ namespace constellation::satellite {
         config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;
         bool mark_run_tainted_ {false};
+        bool discard_data_ {false};
     };
 
 } // namespace constellation::satellite
