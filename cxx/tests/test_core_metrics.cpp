@@ -62,7 +62,7 @@ public:
 
 protected:
     void host_connected(const DiscoveredService& service) final {
-        subscribe(service.host_id, "");
+        subscribe(service.host_id, "STAT/");
         subscribed_.store(true);
     }
 
