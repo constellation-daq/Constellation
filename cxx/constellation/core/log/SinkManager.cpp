@@ -29,9 +29,11 @@
 #include <wincon.h>
 #endif
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/CMDPSink.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/ProxySink.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::log;
@@ -247,7 +249,12 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string
 }
 
 void SinkManager::sendMetricNotification() {
-    cmdp_sink_->sinkNotification("STAT?", {});
+    const auto descriptions = utils::ManagerRegistry::getMetricsManager().getMetricsDescriptions();
+    config::Dictionary payload;
+    for(const auto& [key, value] : descriptions) {
+        payload.emplace(key, value);
+    }
+    cmdp_sink_->sinkNotification("STAT?", std::move(payload));
 }
 
 void SinkManager::sendLogNotification() {
