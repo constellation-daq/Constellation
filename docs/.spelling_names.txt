@@ -20,3 +20,4 @@ Adenium
 Lund
 DVel
 Indico
+Flatpak
