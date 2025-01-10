@@ -61,6 +61,9 @@ namespace constellation::chirp {
         /** Convert service information to a URI */
         CNSTLN_API std::string to_uri() const;
 
+        /** Convert service information to a string */
+        CNSTLN_API std::string to_string() const;
+
         CNSTLN_API bool operator<(const DiscoveredService& other) const;
     };
 
