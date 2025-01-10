@@ -245,3 +245,11 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string
         calculate_log_level(logger);
     }
 }
+
+void SinkManager::sendMetricNotification() {
+    cmdp_sink_->sinkNotification("STAT?", {});
+}
+
+void SinkManager::sendLogNotification() {
+    cmdp_sink_->sinkNotification("LOG?", {});
+}
