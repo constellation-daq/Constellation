@@ -103,7 +103,7 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     // Mock service and wait until subscribed
     const auto mocked_service =
         MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
-    // TODO(stephan.lachnit): if subscription check is implemented, we need enable enableCMDPSending()
+    SinkManager::getInstance().enableCMDPSending("test");
     metrics_receiver.waitSubscription();
 
     // Register new metric
