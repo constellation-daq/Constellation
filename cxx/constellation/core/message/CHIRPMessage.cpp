@@ -17,16 +17,16 @@
 #include <string_view>
 #include <utility>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/external/md5.h"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
-using namespace constellation::chirp;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol::CHIRP;
 
 MD5Hash::MD5Hash(std::string_view string) : array() {
     auto hasher = Chocobo1::MD5();

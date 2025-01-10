@@ -17,18 +17,18 @@
 #include <vector>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::listener {
 
     class CNSTLN_API CMDPListener
-        : public pools::SubscriberPool<message::CMDP1Message, chirp::ServiceIdentifier::MONITORING> {
+        : public pools::SubscriberPool<message::CMDP1Message, protocol::CHIRP::ServiceIdentifier::MONITORING> {
     public:
-        using SubscriberPoolT = pools::SubscriberPool<message::CMDP1Message, chirp::ServiceIdentifier::MONITORING>;
+        using SubscriberPoolT = pools::SubscriberPool<message::CMDP1Message, protocol::CHIRP::ServiceIdentifier::MONITORING>;
 
         /**
          * @brief Construct CMDPListener

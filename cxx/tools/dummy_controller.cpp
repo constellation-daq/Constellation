@@ -17,13 +17,13 @@
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 
 using namespace constellation;
@@ -54,7 +54,7 @@ namespace {
         auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
         chirp_manager.setAsDefaultInstance();
         chirp_manager.start();
-        chirp_manager.sendRequest(chirp::ServiceIdentifier::CONTROL);
+        chirp_manager.sendRequest(protocol::CHIRP::ServiceIdentifier::CONTROL);
 
         LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
         Controller controller(name);

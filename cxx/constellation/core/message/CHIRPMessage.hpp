@@ -17,8 +17,8 @@
 #include <string_view>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 namespace constellation::message {
 
@@ -45,7 +45,7 @@ namespace constellation::message {
     };
 
     /** CHIRP message assembled to array of bytes */
-    using AssembledMessage = std::array<std::byte, chirp::CHIRP_MESSAGE_LENGTH>;
+    using AssembledMessage = std::array<std::byte, protocol::CHIRP::CHIRP_MESSAGE_LENGTH>;
 
     /** CHIRP message */
     class CHIRPMessage {
@@ -58,10 +58,10 @@ namespace constellation::message {
          * @param port Service port
          */
         CNSTLN_API
-        CHIRPMessage(chirp::MessageType type,
+        CHIRPMessage(protocol::CHIRP::MessageType type,
                      MD5Hash group_id,
                      MD5Hash host_id,
-                     chirp::ServiceIdentifier service_id,
+                     protocol::CHIRP::ServiceIdentifier service_id,
                      networking::Port port);
 
         /**
@@ -72,14 +72,14 @@ namespace constellation::message {
          * @param port Service port
          */
         CNSTLN_API
-        CHIRPMessage(chirp::MessageType type,
+        CHIRPMessage(protocol::CHIRP::MessageType type,
                      std::string_view group,
                      std::string_view host,
-                     chirp::ServiceIdentifier service_id,
+                     protocol::CHIRP::ServiceIdentifier service_id,
                      networking::Port port);
 
         /** Return the message type */
-        constexpr chirp::MessageType getType() const { return type_; }
+        constexpr protocol::CHIRP::MessageType getType() const { return type_; }
 
         /** Return the group ID of the message */
         constexpr MD5Hash getGroupID() const { return group_id_; }
@@ -88,7 +88,7 @@ namespace constellation::message {
         constexpr MD5Hash getHostID() const { return host_id_; }
 
         /** Return the service identifier of the message */
-        constexpr chirp::ServiceIdentifier getServiceIdentifier() const { return service_id_; }
+        constexpr protocol::CHIRP::ServiceIdentifier getServiceIdentifier() const { return service_id_; }
 
         /** Return the service port of the message */
         constexpr networking::Port getPort() const { return port_; }
@@ -109,10 +109,10 @@ namespace constellation::message {
         CHIRPMessage() = default;
 
     private:
-        chirp::MessageType type_;
+        protocol::CHIRP::MessageType type_;
         MD5Hash group_id_;
         MD5Hash host_id_;
-        chirp::ServiceIdentifier service_id_;
+        protocol::CHIRP::ServiceIdentifier service_id_;
         networking::Port port_;
     };
 

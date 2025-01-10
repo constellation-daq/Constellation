@@ -15,7 +15,6 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
@@ -23,6 +22,7 @@
 #include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 #include "chirp_mock.hpp"
 
@@ -31,6 +31,7 @@ using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace constellation::pools;
+using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 

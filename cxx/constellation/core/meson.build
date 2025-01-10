@@ -67,7 +67,7 @@ pkg.generate(core_lib,
 install_headers(
   'chirp/BroadcastRecv.hpp',
   'chirp/BroadcastSend.hpp',
-  'chirp/CHIRP_definitions.hpp',
+  'protocol/CHIRP_definitions.hpp',
   'chirp/Manager.hpp',
   subdir: 'constellation/core/chirp',
 )

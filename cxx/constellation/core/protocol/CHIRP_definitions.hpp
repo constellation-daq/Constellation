@@ -15,7 +15,7 @@
 
 #include "constellation/core/networking/Port.hpp"
 
-namespace constellation::chirp {
+namespace constellation::protocol::CHIRP {
 
     /** Protocol identifier for CHIRP */
     constexpr std::string_view CHIRP_IDENTIFIER = "CHIRP";
@@ -58,4 +58,4 @@ namespace constellation::chirp {
     };
     using enum ServiceIdentifier;
 
-} // namespace constellation::chirp
+} // namespace constellation::protocol::CHIRP
