@@ -31,12 +31,12 @@
 #include <asio/ip/address_v4.hpp>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -44,6 +44,7 @@
 using namespace constellation::chirp;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 

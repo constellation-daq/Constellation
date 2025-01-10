@@ -31,7 +31,6 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
@@ -39,6 +38,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
@@ -61,8 +61,8 @@ void Controller::start() {
     LOG(logger_, DEBUG) << "Registering controller callback";
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerDiscoverCallback(&Controller::callback, chirp::CONTROL, this);
-        chirp_manager->sendRequest(chirp::CONTROL);
+        chirp_manager->registerDiscoverCallback(&Controller::callback, CHIRP::CONTROL, this);
+        chirp_manager->sendRequest(CHIRP::CONTROL);
     }
 
     // Start heartbeat receiver:
@@ -75,7 +75,7 @@ void Controller::stop() {
     // Unregister callback
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->unregisterDiscoverCallback(&Controller::callback, chirp::CONTROL);
+        chirp_manager->unregisterDiscoverCallback(&Controller::callback, CHIRP::CONTROL);
     }
 
     // Close all open connections

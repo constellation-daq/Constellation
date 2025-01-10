@@ -17,12 +17,12 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
@@ -175,7 +175,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     auto chirp_manager = create_chirp_manager();
 
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
 
     auto receiver = Receiver();
     auto config_receiver = Configuration();
@@ -215,7 +215,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
 
     auto config_receiver = Configuration();
     config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
@@ -287,7 +287,7 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -344,8 +344,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
-    chirp_mock_service("Dummy.t1", chirp::HEARTBEAT, transmitter.getHeartbeatPort());
+    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", CHIRP::HEARTBEAT, transmitter.getHeartbeatPort());
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -392,8 +392,8 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", chirp::DATA, transmitter.getDataPort());
-    chirp_mock_service("Dummy.t1", chirp::HEARTBEAT, transmitter.getHeartbeatPort());
+    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
+    chirp_mock_service("Dummy.t1", CHIRP::HEARTBEAT, transmitter.getHeartbeatPort());
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);

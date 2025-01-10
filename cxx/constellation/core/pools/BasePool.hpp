@@ -23,9 +23,9 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Logger.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 namespace constellation::pools {
 
@@ -39,7 +39,7 @@ namespace constellation::pools {
      * @tparam SERVICE CHIRP service to connect to
      * @tparam SOCKET_TYPE ZeroMQ socket type of connection
      */
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE> class BasePool {
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE> class BasePool {
     public:
         /**
          * @brief Construct BasePool

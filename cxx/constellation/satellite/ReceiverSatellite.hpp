@@ -20,13 +20,13 @@
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -37,7 +37,7 @@ namespace constellation::satellite {
      */
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
-          private pools::BasePool<message::CDTP1Message, chirp::DATA, zmq::socket_type::pull> {
+          private pools::BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
     private:
         enum class TransmitterState : std::uint8_t {
             NOT_CONNECTED,

@@ -16,7 +16,6 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
@@ -24,6 +23,7 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 
@@ -50,7 +50,7 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(chirp::DATA, cdtp_port_);
+        chirp_manager->registerService(CHIRP::DATA, cdtp_port_);
     }
     LOG(cdtp_logger_, INFO) << "Data will be sent on port " << cdtp_port_;
 }

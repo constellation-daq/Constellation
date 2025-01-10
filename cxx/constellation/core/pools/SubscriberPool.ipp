@@ -21,18 +21,18 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/exceptions.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 namespace constellation::pools {
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     SubscriberPool<MESSAGE, SERVICE>::SubscriberPool(std::string_view log_topic, std::function<void(MESSAGE&&)> callback)
         : BasePoolT(log_topic, std::move(callback)) {}
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::scribe(message::MD5Hash host_id, const std::string& topic, bool subscribe) {
         try {
             const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
@@ -54,7 +54,7 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::scribe_all(const std::string& topic, bool subscribe) {
 
         try {
@@ -75,32 +75,32 @@ namespace constellation::pools {
         }
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::subscribe(std::string_view host, const std::string& topic) {
         subscribe(message::MD5Hash(host), topic);
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::subscribe(message::MD5Hash host_id, const std::string& topic) {
         scribe(host_id, topic, true);
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::subscribe(const std::string& topic) {
         scribe_all(topic, true);
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::unsubscribe(std::string_view host, const std::string& topic) {
         unsubscribe(message::MD5Hash(host), topic);
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::unsubscribe(message::MD5Hash host_id, const std::string& topic) {
         scribe(host_id, topic, false);
     }
 
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::unsubscribe(const std::string& topic) {
         scribe_all(topic, false);
     }

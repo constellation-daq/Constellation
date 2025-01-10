@@ -29,7 +29,6 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -41,6 +40,7 @@
 #include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -84,7 +84,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(chirp::CONTROL, cscp_port_);
+        chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
     } else {
         LOG(cscp_logger_, WARNING)
             << "Failed to advertise command receiver on the network, satellite might not be discovered";

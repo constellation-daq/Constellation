@@ -6,11 +6,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 using namespace constellation::log;
 
@@ -164,6 +164,7 @@ TEST_CASE("Ephemeral CMDP port", "[logging]") {
 
 TEST_CASE("Register Service via CHIRP", "[logging]") {
     using namespace constellation::chirp;
+    using namespace constellation::protocol::CHIRP;
     auto manager = Manager("255.255.255.255", "0.0.0.0", "cnstln1", "sat1");
     manager.setAsDefaultInstance();
     SinkManager::getInstance().enableCMDPSending("satname");

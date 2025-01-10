@@ -15,13 +15,13 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace Catch::Matchers;
-using namespace constellation::chirp;
 using namespace constellation::message;
+using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
