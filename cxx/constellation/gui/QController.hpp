@@ -155,15 +155,6 @@ public:
      */
     static QString getStyledState(constellation::protocol::CSCP::State state, bool global);
 
-    /**
-     * @brief Helper to obtain the CSCP message type string with color and formatting
-     *
-     * @param type CSCP message type
-     *
-     * @return String for the CSCP response display
-     */
-    static QString getStyledResponse(constellation::message::CSCP1Message::Type type);
-
 signals:
     /**
      * @brief Signal emitted whenever a connection changed
