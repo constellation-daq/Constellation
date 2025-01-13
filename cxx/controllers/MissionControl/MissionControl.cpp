@@ -234,11 +234,11 @@ void MissionControl::startup(std::size_t num) {
         }
 
         // Read last run identifier from the connection:
-        auto run_id = std::string(runcontrol_.getRunIdentifier());
+        const auto run_id = std::string(runcontrol_.getRunIdentifier());
         if(!run_id.empty()) {
             // attempt to find a sequence number:
             const std::size_t pos = run_id.find_last_of('_');
-            auto identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
+            const auto& identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
             std::size_t sequence = 0;
             try {
                 sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
