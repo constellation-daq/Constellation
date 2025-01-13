@@ -10,14 +10,13 @@
 #pragma once
 
 #include <memory>
-#include <string>
+#include <string_view>
 
 #include <QDialog>
 #include <QStandardItemModel>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 
 namespace Ui { // NOLINT(readability-identifier-naming)
@@ -34,14 +33,23 @@ namespace constellation::gui {
         Q_OBJECT
 
     public:
+        /**
+         * @brief Constructor of the QResponseDialog
+         *
+         * @param parent Parent widget of the dialog
+         * @param message CSCP message returned by the satellite
+         */
         explicit QResponseDialog(QWidget* parent, const message::CSCP1Message& message);
 
     private:
+        /** Helper to fill the UI with a tabular response from a dictionary */
         void show_as_dictionary(const config::Dictionary& dict);
 
+        /** Helper to fill the UI with a list of returned values */
         void show_as_list(const config::List& list);
 
-        void show_as_string(std::string_view dict);
+        /** Helper to fill the UI with a text from the response or a verbatim display of the payload */
+        void show_as_string(std::string_view str);
 
     private:
         std::shared_ptr<Ui::QResponseDialog> ui_;

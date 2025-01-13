@@ -9,6 +9,7 @@
 
 #include "QResponseDialog.hpp"
 
+#include <iterator>
 #include <string>
 #include <string_view>
 
@@ -65,27 +66,32 @@ QResponseDialog::QResponseDialog(QWidget* parent, const CSCP1Message& message)
 }
 
 void QResponseDialog::show_as_dictionary(const Dictionary& dict) {
-    ui_->responseTable->setRowCount(dict.size());
+    ui_->responseTable->setRowCount(static_cast<int>(dict.size()));
     ui_->responseTable->setColumnCount(2);
     ui_->responseTable->setHorizontalHeaderLabels({"Key", "Value"});
     ui_->responseTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     auto it = dict.begin();
-    for(std::size_t idx = 0; idx < dict.size(); idx++) {
+    for(int idx = 0; idx < static_cast<int>(dict.size()); idx++) {
+        // QTableWidget takes ownership of assigned QTableWidgetItems
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->first)));
         ui_->responseTable->setItem(idx, 1, new QTableWidgetItem(QString::fromStdString(it->second.str())));
+        // NOLINTEND(cppcoreguidelines-owning-memory)
         std::advance(it, 1);
     }
 }
 
 void QResponseDialog::show_as_list(const List& list) {
-    ui_->responseTable->setRowCount(list.size());
+    ui_->responseTable->setRowCount(static_cast<int>(list.size()));
     ui_->responseTable->setColumnCount(1);
     ui_->responseTable->setHorizontalHeaderLabels({"Value"});
     ui_->responseTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     auto it = list.begin();
-    for(std::size_t idx = 0; idx < list.size(); idx++) {
+    for(int idx = 0; idx < static_cast<int>(list.size()); idx++) {
+        // QTableWidget takes ownership of assigned QTableWidgetItems
+        // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->str())));
         std::advance(it, 1);
     }
