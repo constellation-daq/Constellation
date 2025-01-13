@@ -529,7 +529,7 @@ format:clang-format:
 
 format:reuse:
   extends: .format
-  image: registry.cern.ch/docker.io/fsfe/reuse:latest
+  image: fsfe/reuse:latest
   script:
     - reuse lint
 
