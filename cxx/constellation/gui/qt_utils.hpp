@@ -17,7 +17,7 @@
 #include <QTimeZone>
 
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/enum.hpp"
 
 #if __cpp_lib_format >= 201907L
 #include <format>
@@ -33,7 +33,7 @@ namespace constellation::gui {
      * @return String for the CSCP response display
      */
     inline QString get_styled_response(message::CSCP1Message::Type type) {
-        const auto type_string = QString::fromStdString(utils::to_string(type));
+        const auto type_string = QString::fromStdString(utils::enum_name(type));
         switch(type) {
         case message::CSCP1Message::Type::REQUEST:
         case message::CSCP1Message::Type::NOTIMPLEMENTED: {
