@@ -125,7 +125,7 @@ void EudaqNativeWriterSatellite::FileSerializer::serialize_header(const constell
 
     // Writing ExtendWord (event description, used to identify decoder later on)
     const auto canonical_name = std::string(header.getSender());
-    const auto descriptor = eudaq_event_descriptors_.at(canonical_name);
+    const auto& descriptor = eudaq_event_descriptors_.at(canonical_name);
     write_int(cstr2hash(descriptor.c_str()));
 
     // Timestamps from header tags if available - we get them in ps form the Constellation header tags and write them in ns
