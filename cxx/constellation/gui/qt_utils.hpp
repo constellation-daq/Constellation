@@ -19,7 +19,7 @@
 #include <format>
 #endif
 
-namespace constellation::controller {
+namespace constellation::gui {
 
     inline QDateTime from_timepoint(const std::chrono::system_clock::time_point& time_point) {
 #if __cpp_lib_chrono >= 201907L
@@ -41,4 +41,4 @@ namespace constellation::controller {
             .arg(fdur.seconds().count(), 2, 10, QChar('0'));
 #endif
     }
-} // namespace constellation::controller
+} // namespace constellation::gui

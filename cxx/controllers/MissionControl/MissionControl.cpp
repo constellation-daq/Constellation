@@ -66,6 +66,7 @@ using namespace constellation;
 using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::networking;
 using namespace constellation::protocol;
