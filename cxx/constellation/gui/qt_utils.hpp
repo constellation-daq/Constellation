@@ -10,16 +10,49 @@
 #pragma once
 
 #include <chrono>
+#include <utility>
 
 #include <QDateTime>
 #include <QString>
 #include <QTimeZone>
 
+#include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/utils/enum.hpp"
+
 #if __cpp_lib_format >= 201907L
 #include <format>
 #endif
 
-namespace constellation::controller {
+namespace constellation::gui {
+
+    /**
+     * @brief Helper to obtain the CSCP message type string with color and formatting
+     *
+     * @param type CSCP message type
+     *
+     * @return String for the CSCP response display
+     */
+    inline QString get_styled_response(message::CSCP1Message::Type type) {
+        const auto type_string = QString::fromStdString(utils::enum_name(type));
+        switch(type) {
+        case message::CSCP1Message::Type::REQUEST:
+        case message::CSCP1Message::Type::NOTIMPLEMENTED: {
+            return "<font color='gray'>New</b>" + type_string + "</font>";
+        }
+        case message::CSCP1Message::Type::SUCCESS: {
+            return "<font color='green'>" + type_string + "</font>";
+        }
+        case message::CSCP1Message::Type::INCOMPLETE:
+        case message::CSCP1Message::Type::INVALID:
+        case message::CSCP1Message::Type::UNKNOWN: {
+            return "<font color='orange'>" + type_string + "</font>";
+        }
+        case message::CSCP1Message::Type::ERROR: {
+            return "<font color='darkred'>" + type_string + "</font>";
+        }
+        default: std::unreachable();
+        }
+    }
 
     inline QDateTime from_timepoint(const std::chrono::system_clock::time_point& time_point) {
 #if __cpp_lib_chrono >= 201907L
@@ -41,4 +74,4 @@ namespace constellation::controller {
             .arg(fdur.seconds().count(), 2, 10, QChar('0'));
 #endif
     }
-} // namespace constellation::controller
+} // namespace constellation::gui

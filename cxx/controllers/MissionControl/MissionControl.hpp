@@ -189,11 +189,11 @@ private:
                                                                                            const QModelIndex& index);
 
     /** The controller instance of the UI */
-    QController runcontrol_;
+    constellation::gui::QController runcontrol_;
     ConnectionItemDelegate item_delegate_;
 
     /** Sorting proxy for the connection list */
-    QControllerSortProxy sorting_proxy_;
+    constellation::gui::QControllerSortProxy sorting_proxy_;
 
     /** Logger used by the UI */
     constellation::log::Logger logger_;

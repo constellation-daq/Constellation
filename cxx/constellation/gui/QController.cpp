@@ -31,9 +31,11 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/gui/qt_utils.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::gui;
 using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
@@ -93,7 +95,7 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     }
     case 4: {
         // Last command response type
-        return getStyledResponse(conn.last_cmd_type);
+        return get_styled_response(conn.last_cmd_type);
     }
     case 5: {
         // Last command response message
@@ -164,29 +166,6 @@ QString QController::getStyledState(CSCP::State state, bool global) {
     }
     case CSCP::State::ERROR: {
         return "<font color='darkred'><b>Error</b>" + global_indicatior + "</font>";
-    }
-    default: std::unreachable();
-    }
-}
-
-QString QController::getStyledResponse(CSCP1Message::Type type) {
-
-    const auto type_string = QString::fromStdString(to_string(type));
-    switch(type) {
-    case CSCP1Message::Type::REQUEST:
-    case CSCP1Message::Type::NOTIMPLEMENTED: {
-        return "<font color='gray'>New</b>" + type_string + "</font>";
-    }
-    case CSCP1Message::Type::SUCCESS: {
-        return "<font color='green'>" + type_string + "</font>";
-    }
-    case CSCP1Message::Type::INCOMPLETE:
-    case CSCP1Message::Type::INVALID:
-    case CSCP1Message::Type::UNKNOWN: {
-        return "<font color='orange'>" + type_string + "</font>";
-    }
-    case CSCP1Message::Type::ERROR: {
-        return "<font color='darkred'>" + type_string + "</font>";
     }
     default: std::unreachable();
     }

@@ -51,3 +51,4 @@ undecoded
 uptime
 Gid
 KiB
+gui
