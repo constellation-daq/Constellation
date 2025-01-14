@@ -261,7 +261,7 @@ namespace {
     // NOLINTNEXTLINE(*-avoid-c-arrays)
     void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser) {
         // Listener name (-n)
-        parser.add_argument("-n", "--name").help("controller name").default_value("MissionControl");
+        parser.add_argument("-n", "--name").help("listener name").default_value("Observatory");
 
         // Constellation group (-g)
         parser.add_argument("-g", "--group").help("group name");
@@ -270,13 +270,7 @@ namespace {
         parser.add_argument("-l", "--level").help("log level").default_value("INFO");
 
         // Broadcast address (--brd)
-        std::string default_brd_addr {};
-        try {
-            default_brd_addr = asio::ip::address_v4::broadcast().to_string();
-        } catch(const asio::system_error& error) {
-            default_brd_addr = "255.255.255.255";
-        }
-        parser.add_argument("--brd").help("broadcast address").default_value(default_brd_addr);
+        parser.add_argument("--brd").help("broadcast address");
 
         // Any address (--any)
         std::string default_any_addr {};
@@ -303,49 +297,59 @@ namespace {
 
 int main(int argc, char** argv) {
     try {
-        QCoreApplication* qapp = new QApplication(argc, argv);
+        auto qapp = std::make_shared<QApplication>(argc, argv);
 
-        QCoreApplication::setOrganizationName("Constellation");
-        QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
-        QCoreApplication::setApplicationName("Observatory");
+        try {
+            QCoreApplication::setOrganizationName("Constellation");
+            QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
+            QCoreApplication::setApplicationName("Observatory");
+        } catch(const QException&) {
+            std::cerr << "Failed to set up UI application\n" << std::flush;
+            return 1;
+        }
 
         // Get the default logger
         auto& logger = Logger::getDefault();
 
         // CLI parsing
-        argparse::ArgumentParser parser {"Observatory", CNSTLN_VERSION};
+        argparse::ArgumentParser parser {"Observatory", CNSTLN_VERSION_FULL};
         try {
             parse_args(argc, argv, parser);
         } catch(const std::exception& error) {
             LOG(logger, CRITICAL) << "Argument parsing failed: " << error.what();
-            LOG(logger, CRITICAL) << "Run \""
-                                  << "Observatory"
-                                  << " --help\" for help";
+            LOG(logger, CRITICAL) << "Run " << std::quoted("Observatory --help") << " for help";
+
             return 1;
         }
 
         // Set log level
         const auto default_level = enum_cast<Level>(get_arg(parser, "level"));
         if(!default_level.has_value()) {
-            LOG(logger, CRITICAL) << "Log level \"" << get_arg(parser, "level") << "\" is not valid"
-                                  << ", possible values are: " << utils::list_enum_names<Level>();
+            LOG(logger, CRITICAL) << "Log level " << std::quoted(get_arg(parser, "level"))
+                                  << " is not valid, possible values are: " << list_enum_names<Level>();
             return 1;
         }
         SinkManager::getInstance().setConsoleLevels(default_level.value());
 
         // Check broadcast and any address
-        asio::ip::address_v4 brd_addr {};
+        std::optional<asio::ip::address_v4> brd_addr {};
         try {
-            brd_addr = asio::ip::make_address_v4(get_arg(parser, "brd"));
+            const auto brd_string = parser.present("brd");
+            if(brd_string.has_value()) {
+                brd_addr = asio::ip::make_address_v4(brd_string.value());
+            }
         } catch(const asio::system_error& error) {
             LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
             return 1;
+        } catch(const std::exception&) {
+            std::unreachable();
         }
+
         asio::ip::address_v4 any_addr {};
         try {
             any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
         } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid any address \"" << get_arg(parser, "any") << "\"";
+            LOG(logger, CRITICAL) << "Invalid any address " << std::quoted(get_arg(parser, "any"));
             return 1;
         }
 
@@ -353,7 +357,7 @@ int main(int argc, char** argv) {
         const auto logger_name = get_arg(parser, "name");
 
         // Log the version after all the basic checks are done
-        LOG(logger, STATUS) << "Constellation v" << CNSTLN_VERSION;
+        LOG(logger, STATUS) << "Constellation " << CNSTLN_VERSION_FULL;
 
         // Get Constellation group:
         std::string group_name;
@@ -383,9 +387,13 @@ int main(int argc, char** argv) {
         // Register CMDP in CHIRP and set sender name for CMDP
         SinkManager::getInstance().enableCMDPSending(logger_name);
 
-        Observatory gui(group_name);
-        gui.show();
-        return QCoreApplication::exec();
+        try {
+            Observatory gui(group_name);
+            gui.show();
+            return QCoreApplication::exec();
+        } catch(const QException&) {
+            std::cerr << "Failed to start UI application\n" << std::flush;
+        }
     } catch(...) {
         std::cerr << "Failed to start UI application\n";
         return 1;
