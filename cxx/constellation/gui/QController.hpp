@@ -93,11 +93,11 @@ namespace constellation::gui {
          * @param index QModelIndex of the satellite in question
          * @param verb Command verb to be sent
          * @param payload Optional payload to be attached to the command
-         * @return Optional satellite response from the CSCP verb
+         * @return Reference to the CSCP response message
          */
-        std::optional<std::string> sendQCommand(const QModelIndex& index,
-                                                const std::string& verb,
-                                                const CommandPayload& payload = {});
+        message::CSCP1Message sendQCommand(const QModelIndex& index,
+                                           const std::string& verb,
+                                           const CommandPayload& payload = {});
 
         /**
          * @brief Send a command to all connected satellites

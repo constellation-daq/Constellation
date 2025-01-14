@@ -60,6 +60,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/gui/QResponseDialog.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
 using namespace constellation;
@@ -490,9 +491,10 @@ void MissionControl::custom_context_menu(const QPoint& point) {
         const auto command_str = to_string(command);
         auto* action = new QAction(QString::fromStdString(command_str), this);
         connect(action, &QAction::triggered, this, [this, index, command_str]() {
-            auto response = runcontrol_.sendQCommand(index, command_str);
-            if(response.has_value()) {
-                QMessageBox::information(nullptr, "Satellite Response", QString::fromStdString(response.value()));
+            const auto& response = runcontrol_.sendQCommand(index, command_str);
+            if(response.hasPayload()) {
+                QResponseDialog dialog(this, response);
+                dialog.exec();
             }
         });
         contextMenu.addAction(action);
@@ -511,9 +513,10 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
         auto* action = new QAction(QString::fromStdString(key), this);
         connect(action, &QAction::triggered, this, [this, index, key]() {
-            auto response = runcontrol_.sendQCommand(index, key);
-            if(response.has_value()) {
-                QMessageBox::information(nullptr, "Satellite Response", QString::fromStdString(response.value()));
+            const auto& response = runcontrol_.sendQCommand(index, key);
+            if(response.hasPayload()) {
+                QResponseDialog dialog(this, response);
+                dialog.exec();
             }
         });
         contextMenu.addAction(action);

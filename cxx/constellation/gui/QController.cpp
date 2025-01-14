@@ -214,9 +214,7 @@ std::string QController::getQName(const QModelIndex& index) const {
     return it->first;
 }
 
-std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
-                                                     const std::string& verb,
-                                                     const CommandPayload& payload) {
+CSCP1Message QController::sendQCommand(const QModelIndex& index, const std::string& verb, const CommandPayload& payload) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
 
     // Select connection by index:
@@ -226,27 +224,9 @@ std::optional<std::string> QController::sendQCommand(const QModelIndex& index,
     // Unlock so the controller can grab it
     lock.unlock();
 
-    const auto& msg = Controller::sendCommand(it->first, verb, payload);
-    const auto& response = msg.getPayload();
-
-    if(!response.empty()) {
-        try {
-            return Dictionary::disassemble(response).to_string();
-        } catch(msgpack::type_error&) {
-            try {
-                return List::disassemble(response).to_string();
-            } catch(msgpack::type_error&) {
-                try {
-                    return Value::disassemble(response).str();
-                } catch(msgpack::type_error&) {
-                    return std::string(response.to_string_view());
-                }
-            }
-        }
-    }
-
+    auto msg = Controller::sendCommand(it->first, verb, payload);
     emit dataChanged(createIndex(index.row(), 0), createIndex(index.row(), headers_.size() - 1));
-    return {};
+    return msg;
 }
 
 std::map<std::string, CSCP1Message> QController::sendQCommands(std::string verb, const CommandPayload& payload) {
