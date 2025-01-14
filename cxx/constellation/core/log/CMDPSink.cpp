@@ -201,7 +201,7 @@ void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
         if(!msg.source.empty()) {
             msghead.setTag("filename", get_rel_file_path(msg.source.filename));
             msghead.setTag("lineno", static_cast<std::int64_t>(msg.source.line));
-            msghead.setTag("funcname", msg.source.funcname);
+            msghead.setTag("funcname", std::string(msg.source.funcname));
         }
     }
 
