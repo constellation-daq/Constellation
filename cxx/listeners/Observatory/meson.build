@@ -20,5 +20,4 @@ executable('Observatory', 'Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp
            dependencies: [exec_dep, argparse_dep, qt_dep, core_dep, gui_dep, listener_dep],
            install: true,
            install_rpath: constellation_rpath,
-           cpp_args: ['-Wno-deprecated-enum-enum-conversion', '-Wno-unused-variable'],
            )
