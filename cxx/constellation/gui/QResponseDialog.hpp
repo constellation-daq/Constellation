@@ -19,6 +19,7 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 
+// Expose Qt class auto-generated from the user interface XML:
 namespace Ui { // NOLINT(readability-identifier-naming)
     class QResponseDialog;
 } // namespace Ui
