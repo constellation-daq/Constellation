@@ -37,7 +37,7 @@ namespace constellation::gui {
         switch(type) {
         case message::CSCP1Message::Type::REQUEST:
         case message::CSCP1Message::Type::NOTIMPLEMENTED: {
-            return "<font color='gray'>New</b>" + type_string + "</font>";
+            return "<font color='gray'>" + type_string + "</font>";
         }
         case message::CSCP1Message::Type::SUCCESS: {
             return "<font color='green'>" + type_string + "</font>";
