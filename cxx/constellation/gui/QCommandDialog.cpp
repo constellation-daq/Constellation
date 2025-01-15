@@ -67,11 +67,14 @@ QCommandDialog::QCommandDialog(QWidget* parent,
     if(!command.empty()) {
         ui_->commandLineEdit->setText(QString::fromStdString(command));
         ui_->commandLineEdit->setReadOnly(true);
+        ui_->commandLineEdit->setFocusPolicy(Qt::FocusPolicy::NoFocus);
+        ui_->commandLineEdit->setProperty("clearButtonEnabled", true);
     }
     if(!description.empty()) {
         ui_->commandDescription->setText(QString::fromStdString(description));
         ui_->commandDescription->setReadOnly(true);
         ui_->commandDescription->setVisible(true);
+        ui_->commandDescription->setFocusPolicy(Qt::FocusPolicy::NoFocus);
     }
 }
 
