@@ -17,6 +17,7 @@
 #include <QGuiApplication>
 #include <QString>
 #include <QStyleHints>
+#include <QtGlobal>
 #include <QTimeZone>
 
 #include "constellation/core/log/Level.hpp"
@@ -28,6 +29,15 @@
 #endif
 
 namespace constellation::gui {
+
+    /** Check if in dark mode (requires Qt 6.5 or newer) */
+    inline bool is_dark_mode() {
+#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
+        return false;
+#else
+        return QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
+#endif
+    }
 
     /**
      * @brief Helper to obtain the CSCP message type string with color and formatting
@@ -60,24 +70,23 @@ namespace constellation::gui {
 
     /** Color assignment for log levels */
     inline QColor get_log_level_color(constellation::log::Level level) {
-        const auto dark = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         switch(level) {
         case constellation::log::Level::TRACE: {
-            if(dark) {
+            if(is_dark_mode()) {
                 return {67, 67, 67, 128};
             } else {
                 return {224, 224, 224, 128};
             }
         }
         case constellation::log::Level::DEBUG: {
-            if(dark) {
+            if(is_dark_mode()) {
                 return {85, 85, 85, 128};
             } else {
                 return {200, 200, 200, 128};
             }
         }
         case constellation::log::Level::INFO: {
-            if(dark) {
+            if(is_dark_mode()) {
                 return {100, 100, 100, 128};
             } else {
                 return {191, 191, 191, 128};
