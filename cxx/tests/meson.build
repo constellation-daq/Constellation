@@ -75,7 +75,7 @@ test('Core configuration test', test_core_config,
 
 test_core_pools = executable('test_core_pools',
   sources: 'test_core_pools.cpp',
-  dependencies: [core_dep, catch2_dep],
+  dependencies: [core_dep, cppzmq_dep, catch2_dep],
 )
 test('Core pools test', test_core_pools,
   args: ['--durations', 'yes', '--verbosity', 'high'],
@@ -154,4 +154,24 @@ test_controller_config = executable('test_controller_config',
 test('Controller config test', test_controller_config,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   env: ['CXX_TESTS_DIR='+meson.current_source_dir()],
+)
+
+# Listener
+
+test_listener_cmdp = executable('test_listener_cmdp',
+  sources: 'test_listener_cmdp.cpp',
+  dependencies: [core_dep, listener_dep, cppzmq_dep, catch2_dep],
+)
+test('Listener CMDPListener test', test_listener_cmdp,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
+
+test_listener_log = executable('test_listener_log',
+  sources: 'test_listener_log.cpp',
+  dependencies: [core_dep, listener_dep, cppzmq_dep, catch2_dep],
+)
+test('Listener LogListener test', test_listener_log,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
 )
