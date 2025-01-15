@@ -14,7 +14,6 @@
 #include <string_view>
 
 #include <QCloseEvent>
-#include <QColor>
 #include <QDialog>
 #include <QLocale>
 #include <QMainWindow>
@@ -89,17 +88,6 @@ private:
      * @param index QModelIndex of the item to be painted
      */
     void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-
-    /** Color assignment for log levels */
-    static inline std::map<constellation::log::Level, QColor> level_colors_ {
-        {constellation::log::Level::TRACE, QColor(224, 224, 224, 128)},
-        {constellation::log::Level::DEBUG, QColor(200, 200, 200, 128)},
-        {constellation::log::Level::INFO, QColor(191, 191, 191, 128)},
-        {constellation::log::Level::WARNING, QColor(255, 138, 0, 128)},
-        {constellation::log::Level::STATUS, QColor(0, 100, 0, 128)},
-        {constellation::log::Level::CRITICAL, QColor(255, 0, 0, 128)},
-        {constellation::log::Level::OFF, QColor(0, 0, 0, 128)},
-    };
 };
 
 /**

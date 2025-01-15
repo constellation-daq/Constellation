@@ -31,6 +31,7 @@
 #include <QMetaType>
 #include <QModelIndex>
 #include <QPainter>
+#include <QPalette>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
@@ -43,19 +44,25 @@
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/gui/qt_utils.hpp"
 
 #include "listeners/Observatory/QLogListener.hpp"
 #include "listeners/Observatory/QLogMessage.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
+using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::utils;
 
 LogDialog::LogDialog(const QLogMessage& msg) {
     setupUi(this);
     satelliteName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
-    logLevel->setText("<font color='gray'><b>" + msg[2].toString() + "</b></font>");
+
+    auto palette = logLevel->palette();
+    palette.setColor(QPalette::WindowText, get_log_level_color(msg.getLogLevel()));
+    logLevel->setPalette(palette);
+    logLevel->setText("<b>" + msg[2].toString() + "</b>");
 
     messageTable->setRowCount(QLogMessage::countExtendedColumns());
     messageTable->setColumnCount(2);
@@ -118,7 +125,7 @@ void LogItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
 
     // Get log level color
     const auto level_str = lvl_index.data().toString().toStdString();
-    const auto color = level_colors_.at(enum_cast<Level>(level_str).value_or(WARNING));
+    const auto color = get_log_level_color(enum_cast<Level>(level_str).value_or(WARNING));
 
     painter->fillRect(option.rect, QBrush(color));
     QStyledItemDelegate::paint(painter, option, index);
