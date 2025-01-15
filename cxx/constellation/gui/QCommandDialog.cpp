@@ -20,6 +20,7 @@
 #include "ui_QCommandDialog.h"
 
 using namespace constellation::config;
+using namespace constellation::controller;
 using namespace constellation::gui;
 
 void QCommandParameters::add(const Value& value) {
@@ -82,7 +83,7 @@ std::string QCommandDialog::getCommand() const {
     return ui_->commandLineEdit->text().toStdString();
 }
 
-constellation::controller::Controller::CommandPayload QCommandDialog::getPayload() const {
+Controller::CommandPayload QCommandDialog::getPayload() const {
     if(parameters_.empty()) {
         return std::monostate();
     }
