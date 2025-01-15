@@ -40,7 +40,7 @@ TEST_CASE("Changing subscriptions", "[listener]") {
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Pop subscription messages (note: subscriptions come alphabetically)
+    // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
 
@@ -85,7 +85,7 @@ TEST_CASE("Changing extra subscriptions", "[listener]") {
     auto sender2 = CMDPSender("CMDPSender.s2");
     chirp_mock_service(sender2.getName(), chirp::MONITORING, sender2.getPort());
 
-    // Pop subscription messages (note: subscriptions come alphabetically)
+    // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/INFO"));
     REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/STATUS"));
     REQUIRE(check_sub_message(sender2.recv().pop(), true, "LOG/INFO"));
@@ -157,7 +157,7 @@ TEST_CASE("Extra subscriptions on connection", "[listener]") {
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Pop subscription messages for global subscriptions (note: subscriptions come alphabetically)
+    // Pop subscription messages for global subscriptions (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
 

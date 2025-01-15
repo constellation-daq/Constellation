@@ -69,7 +69,7 @@ namespace constellation::listener {
          * @param subscribe_topics List of topics to subscribe to
          */
         CNSTLN_API void multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
-                                          std::vector<std::string> subscribe_topics);
+                                          const std::vector<std::string>& subscribe_topics);
 
         /**
          * @brief Get set of subscribed topics for all sockets
@@ -107,7 +107,7 @@ namespace constellation::listener {
          */
         CNSTLN_API void multiscribeExtraTopics(const std::string& host,
                                                const std::vector<std::string>& unsubscribe_topics,
-                                               std::vector<std::string> subscribe_topics);
+                                               const std::vector<std::string>& subscribe_topics);
 
         /**
          * @brief Get set of subscribed extra topics for a specific socket
@@ -140,26 +140,6 @@ namespace constellation::listener {
         CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
 
     private:
-        /**
-         * @brief Method to set the topics this pool subscribe to for all sockets
-         *
-         * @warning This replaces all previously subscribed topics
-         *
-         * @param topics Set of subscription topics to which to subscribe to
-         */
-        CNSTLN_API void set_topic_subscriptions(std::set<std::string> topics);
-
-        /**
-         * @brief Method to set the extra topics this pool subscribe to for a specific socket
-         *
-         * @note Extra topics are topics subscribed to in addition to the topics for every socket
-         * @warning This replaces all previously subscribed extra topics
-         *
-         * @param host Canonical name of the host to set subscription topics
-         * @param topics Set of subscription topics to which to subscribe all sockets
-         */
-        CNSTLN_API void set_extra_topic_subscriptions(const std::string& host, std::set<std::string> topics);
-
         // Hide subscribe/unsubscribe functions from SubscriberPool
         using SubscriberPoolT::subscribe;
         using SubscriberPoolT::unsubscribe;

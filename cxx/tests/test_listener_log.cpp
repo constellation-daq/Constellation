@@ -40,7 +40,7 @@ TEST_CASE("Global log level", "[listener]") {
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Pop subscription messages (note: subscriptions come alphabetically)
+    // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
@@ -50,22 +50,22 @@ TEST_CASE("Global log level", "[listener]") {
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({})));
     REQUIRE(listener.getGlobalLogLevel() == Level::INFO);
 
-    // Reduce global level (note: subscriptions come alphabetically)
+    // Reduce global level
     listener.setGlobalLogLevel(Level::TRACE);
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/DEBUG"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/TRACE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/DEBUG"));
 
-    // Increase global level (note: unsubscriptions come alphabetically)
+    // Increase global level
     listener.setGlobalLogLevel(Level::STATUS);
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/TRACE"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/DEBUG"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/INFO"));
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/TRACE"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING"));
 
-    // Turn off global subscription (note: unsubscriptions come alphabetically)
+    // Turn off global subscription
     listener.setGlobalLogLevel(Level::OFF);
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL"));
 }
 
 TEST_CASE("Topic subscriptions", "[listener]") {
@@ -83,27 +83,27 @@ TEST_CASE("Topic subscriptions", "[listener]") {
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Pop subscription messages (note: subscriptions come alphabetically)
+    // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/FSM"));
 
-    // Subscribe to new topic (note: subscriptions come alphabetically)
+    // Subscribe to new topic
     listener.subscribeLogTopic("SATELLITE", Level::WARNING);
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/SATELLITE"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/SATELLITE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/SATELLITE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/SATELLITE"));
 
     // Check subscribed topics
     REQUIRE_THAT(listener.getLogTopicSubscriptions(),
                  RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}, {"SATELLITE", Level::WARNING}})));
 
-    // Unsubscribe from a topic (note: unsubscriptions come alphabetically)
+    // Unsubscribe from a topic
     listener.unsubscribeLogTopic("SATELLITE");
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/SATELLITE"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/SATELLITE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/SATELLITE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/SATELLITE"));
 
     // Check subscribed topics again
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
@@ -124,22 +124,22 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
     // Subscribe to extra topic
     listener.subscribeExtaLogTopic(to_string(sender.getName()), "FSM", Level::INFO);
 
-    // Check subscription messages (note: subscriptions come alphabetically)
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/FSM"));
+    // Check subscription messages
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO/FSM"));
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/FSM"));
 
     // Check extra log topic subscriptions
     REQUIRE_THAT(listener.getExtraLogTopicSubscriptions(to_string(sender.getName())),
                  RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
 
-    // Unsubscribe from extra topic (note: unsubscriptions come alphabetically)
+    // Unsubscribe from extra topic
     listener.unsubscribeExtraLogTopic(to_string(sender.getName()), "FSM");
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/INFO/FSM"));
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/FSM"));
 }
 
 TEST_CASE("No empty topic subscription", "[listener]") {
@@ -181,21 +181,21 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
     // Set global log topic
     listener.setGlobalLogLevel(Level::INFO);
 
-    // Check subscription messages (note: subscriptions come alphabetically)
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL"));
+    // Check subscription messages
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL"));
 
-    // Subscribe to empty topic for host (note: subscriptions come alphabetically)
+    // Subscribe to empty topic for host
     listener.subscribeExtaLogTopic(to_string(sender.getName()), "", Level::TRACE);
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/DEBUG"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/TRACE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/DEBUG"));
 
-    // Increase empty topic for host (note: unsubscriptions come alphabetically)
+    // Increase empty topic for host
     listener.subscribeExtaLogTopic(to_string(sender.getName()), "", Level::WARNING);
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/DEBUG"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/TRACE"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/DEBUG"));
 
     // Increase global log level
     listener.setGlobalLogLevel(Level::STATUS);

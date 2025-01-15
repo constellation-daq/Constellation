@@ -48,41 +48,6 @@ void CMDPListener::host_connected(const chirp::DiscoveredService& service) {
     }
 }
 
-void CMDPListener::set_topic_subscriptions(std::set<std::string> topics) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-
-    // Set of topics to unsubscribe: current topics not in new topics
-    std::set<std::string_view> to_unsubscribe {};
-    std::ranges::for_each(subscribed_topics_, [&](const auto& topic) {
-        if(!topics.contains(topic)) {
-            to_unsubscribe.emplace(topic);
-        }
-    });
-    // Set of topics to subscribe: new topics not in current topics
-    std::set<std::string_view> to_subscribe {};
-    std::ranges::for_each(topics, [&](const auto& new_topic) {
-        if(!subscribed_topics_.contains(new_topic)) {
-            to_subscribe.emplace(new_topic);
-        }
-    });
-    // Unsubscribe from old topics
-    std::ranges::for_each(to_unsubscribe, [&](const auto& topic) { SubscriberPoolT::unsubscribe(topic); });
-    // Subscribe to new topics
-    std::ranges::for_each(to_subscribe, [&](const auto& topic) { SubscriberPoolT::subscribe(topic); });
-
-    // Check if extra topics contained unsubscribed topics, if so subscribe again
-    std::ranges::for_each(extra_subscribed_topics_, [&](const auto& host_p) {
-        std::ranges::for_each(host_p.second, [&](const auto& topic) {
-            if(to_unsubscribe.contains(topic)) {
-                SubscriberPoolT::subscribe(host_p.first, topic);
-            }
-        });
-    });
-
-    // Store new set of subscribed topics
-    subscribed_topics_ = std::move(topics);
-}
-
 void CMDPListener::subscribeTopic(std::string topic) {
     multiscribeTopics({}, {std::move(topic)});
 }
@@ -92,69 +57,38 @@ void CMDPListener::unsubscribeTopic(std::string topic) {
 }
 
 void CMDPListener::multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
-                                     std::vector<std::string> subscribe_topics) {
-    std::set<std::string> new_subscribed_topics {};
-    {
-        // Copy current topics
-        const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-        new_subscribed_topics = subscribed_topics_;
-    }
-    // Erase requested topics
-    std::size_t changed = 0;
-    for(const auto& topic : unsubscribe_topics) {
-        changed += new_subscribed_topics.erase(topic);
-    }
-    // Emplace new topics
-    for(auto& topic : std::move(subscribe_topics)) {
-        const auto insert_res = new_subscribed_topics.emplace(std::move(topic));
-        changed += static_cast<std::size_t>(insert_res.second);
-    }
-    // Handle logic in set_topic_subscriptions
-    if(changed > 0) [[likely]] {
-        set_topic_subscriptions(std::move(new_subscribed_topics));
-    }
+                                     const std::vector<std::string>& subscribe_topics) {
+    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+
+    // Unsubscribe from requested topics
+    std::set<std::string_view> actually_unsubscribed_topics {};
+    std::ranges::for_each(unsubscribe_topics, [&](const auto& topic) {
+        const auto erased = subscribed_topics_.erase(topic);
+        if(erased > 0) {
+            SubscriberPoolT::unsubscribe(topic);
+            actually_unsubscribed_topics.emplace(topic);
+        }
+    });
+    // Subscribe to requested topics
+    std::ranges::for_each(subscribe_topics, [&](const auto& topic) {
+        const auto [_, inserted] = subscribed_topics_.emplace(topic);
+        if(inserted) {
+            SubscriberPoolT::subscribe(topic);
+        }
+    });
+    // Check if extra topics contained unsubscribed topics, if so subscribe again
+    std::ranges::for_each(extra_subscribed_topics_, [&](const auto& host_p) {
+        std::ranges::for_each(host_p.second, [&](const auto& topic) {
+            if(actually_unsubscribed_topics.contains(topic)) {
+                SubscriberPoolT::subscribe(host_p.first, topic);
+            }
+        });
+    });
 }
 
 std::set<std::string> CMDPListener::getTopicSubscriptions() {
     const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
     return subscribed_topics_;
-}
-
-void CMDPListener::set_extra_topic_subscriptions(const std::string& host, std::set<std::string> topics) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-
-    // Check if extra topics already set
-    const auto host_it = extra_subscribed_topics_.find(host);
-    if(host_it != extra_subscribed_topics_.end()) {
-        // Set of topics to unsubscribe: current topics not in subscribed_topics or new topics
-        std::set<std::string_view> to_unsubscribe {};
-        std::ranges::for_each(host_it->second, [&](const auto& topic) {
-            if(!subscribed_topics_.contains(topic) && !topics.contains(topic)) {
-                to_unsubscribe.emplace(topic);
-            }
-        });
-        // Set of topics to subscribe: new topics not in subscribed_topics and current topics
-        std::set<std::string_view> to_subscribe {};
-        std::ranges::for_each(topics, [&](const auto& new_topic) {
-            if(!subscribed_topics_.contains(new_topic) && !host_it->second.contains(new_topic)) {
-                to_subscribe.emplace(new_topic);
-            }
-        });
-        // Unsubscribe from old topics
-        std::ranges::for_each(to_unsubscribe, [&](const auto& topic) { SubscriberPoolT::unsubscribe(host, topic); });
-        // Subscribe to new topics
-        std::ranges::for_each(to_subscribe, [&](const auto& topic) { SubscriberPoolT::subscribe(host, topic); });
-    } else {
-        // Subscribe to each topic not present in subscribed_topics_
-        std::ranges::for_each(topics, [&](const auto& topic) {
-            if(!subscribed_topics_.contains(topic)) {
-                SubscriberPoolT::subscribe(host, topic);
-            }
-        });
-    }
-
-    // Store new set of extra topics
-    extra_subscribed_topics_[host] = std::move(topics);
 }
 
 void CMDPListener::subscribeExtraTopic(const std::string& host, std::string topic) {
@@ -167,30 +101,37 @@ void CMDPListener::unsubscribeExtraTopic(const std::string& host, std::string to
 
 void CMDPListener::multiscribeExtraTopics(const std::string& host,
                                           const std::vector<std::string>& unsubscribe_topics,
-                                          std::vector<std::string> subscribe_topics) {
-    std::set<std::string> new_subscribed_topics {};
-    {
-        const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-        const auto host_it = extra_subscribed_topics_.find(host);
-        if(host_it != extra_subscribed_topics_.end()) {
-            // Copy current topics
-            new_subscribed_topics = host_it->second;
-        }
-    }
-    // Erase requested topics
-    std::size_t changed = 0;
-    for(const auto& topic : unsubscribe_topics) {
-        changed += new_subscribed_topics.erase(topic);
-    }
-    // Emplace new topics
-    for(auto& topic : std::move(subscribe_topics)) {
-        const auto insert_res = new_subscribed_topics.emplace(std::move(topic));
-        changed += static_cast<std::size_t>(insert_res.second);
-    }
+                                          const std::vector<std::string>& subscribe_topics) {
+    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
 
-    // Handle logic in set_extra_topic_subscriptions
-    if(changed > 0) [[likely]] {
-        set_extra_topic_subscriptions(host, std::move(new_subscribed_topics));
+    // Check if extra topics already set
+    const auto host_it = extra_subscribed_topics_.find(host);
+    if(host_it == extra_subscribed_topics_.end()) {
+        // Not present in map yet, subscribe to each topic and store
+        auto [set_it, _] = extra_subscribed_topics_.emplace(host, std::set<std::string>());
+        std::ranges::for_each(subscribe_topics, [&](const auto& topic) {
+            set_it->second.emplace(topic);
+            // Subscribe only if subscribed globally
+            if(!subscribed_topics_.contains(topic)) {
+                SubscriberPoolT::subscribe(host, topic);
+            }
+        });
+    } else {
+        // If present in map, simply unsubscribe and subscribe while checking global subscriptions
+        std::ranges::for_each(unsubscribe_topics, [&](const auto& topic) {
+            const auto erased = host_it->second.erase(topic);
+            // Do not unsubscribe if not in globally subscribed topic
+            if(erased > 0 && !subscribed_topics_.contains(topic)) {
+                SubscriberPoolT::unsubscribe(host, topic);
+            }
+        });
+        std::ranges::for_each(subscribe_topics, [&](const auto& topic) {
+            const auto [_, inserted] = host_it->second.emplace(topic);
+            // Do not subscribe if in globally subscribed topic
+            if(inserted && !subscribed_topics_.contains(topic)) {
+                SubscriberPoolT::subscribe(host, topic);
+            }
+        });
     }
 }
 
