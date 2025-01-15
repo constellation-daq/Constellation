@@ -113,6 +113,13 @@ get_channel_reading:  This command reads the current device value from the chann
 :::
 ::::
 
+```{tip}
+Commands can be hidden from the `get_commands` list by starting the command name with an underscore. These commands will not
+be advertised by the satellite, but will be executed upon reception. This can be useful for development commands which are
+not meant for the regular operator.
+```
+
+
 ## Command arguments and return values
 
 The command registry can handle commands with any number of arguments and can also provide return values from the called
