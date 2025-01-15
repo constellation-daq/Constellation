@@ -23,7 +23,6 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
