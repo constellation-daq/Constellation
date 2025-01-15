@@ -125,9 +125,6 @@ private:
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
 private:
-    /** Logger to use */
-    constellation::log::Logger logger_;
-
     /** Log messages & access mutex*/
     std::deque<QLogMessage> messages_;
     std::atomic_size_t message_count_;
