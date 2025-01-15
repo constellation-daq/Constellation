@@ -21,3 +21,14 @@ executable('Observatory', 'Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp
            install: true,
            install_rpath: constellation_rpath,
            )
+
+# Install metadata to find application
+install_data(
+  'de.desy.constellation.observatory.desktop',
+  install_dir: get_option('datadir') / 'applications',
+)
+install_data(
+  meson.project_source_root() / 'docs' / 'logo' / 'logo_observatory.svg',
+  rename: 'de.desy.constellation.observatory.svg',
+  install_dir: get_option('datadir') / 'icons' / 'hicolor' / 'scalable' / 'apps',
+)
