@@ -118,7 +118,7 @@ namespace constellation::controller {
         utils::string_hash_map<config::Dictionary> satellite_configs_;
 
         /* Logger */
-        log::Logger config_parser_logger_ {"CTRLCFG"};
+        log::Logger config_parser_logger_ {"CONF"};
     };
 
 } // namespace constellation::controller
