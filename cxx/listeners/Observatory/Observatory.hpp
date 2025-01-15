@@ -191,6 +191,9 @@ private:
     /** Status bar for message count display */
     LogStatusBar status_bar_;
 
+    /** Logger to use */
+    constellation::log::Logger logger_;
+
     /** UI Settings */
     QSettings gui_settings_;
 };

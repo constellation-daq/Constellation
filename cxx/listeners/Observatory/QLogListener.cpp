@@ -34,8 +34,7 @@ using namespace constellation::utils;
 
 QLogListener::QLogListener(QObject* parent)
     : QAbstractListModel(parent),
-      constellation::listener::LogListener("LOGRECV", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }),
-      logger_("QLGRCV") {}
+      constellation::listener::LogListener("LOG", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {}
 
 void QLogListener::clearMessages() {
     const std::lock_guard message_lock {message_mutex_};

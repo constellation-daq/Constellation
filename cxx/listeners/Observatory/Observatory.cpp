@@ -131,7 +131,7 @@ QString LogItemDelegate::displayText(const QVariant& value, const QLocale& local
     return QStyledItemDelegate::displayText(value, locale);
 }
 
-Observatory::Observatory(std::string_view group_name) {
+Observatory::Observatory(std::string_view group_name) : logger_("UI") {
 
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
