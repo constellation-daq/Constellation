@@ -155,6 +155,8 @@ tokenizer_lang = "en_US"
 spelling_word_list_filename = [".spelling_jargon.txt", ".spelling_names.txt"]
 spelling_warning = True
 spelling_show_suggestions = True
+# Exclude reference from spell-checking, this is taken care of by codespell:
+spelling_exclude_patterns = ["framework_reference/cxx/**"]
 
 # PlantUML settings
 plantuml_output_format = "svg_img"
