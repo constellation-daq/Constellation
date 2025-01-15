@@ -34,15 +34,74 @@ namespace constellation::listener {
          */
         CNSTLN_API LogListener(std::string_view log_topic, std::function<void(message::CMDP1LogMessage&&)> callback);
 
+        /**
+         * @brief Set log level for global log subscription
+         *
+         * This subscribes to `LOG/<level>` and all higher levels.
+         *
+         * @param level Lowest log level to subscribe to
+         */
         CNSTLN_API void setGlobalLogLevel(log::Level level);
+
+        /**
+         * @brief Get log level for global log subscription
+         *
+         * @return Lowest subscribed global log level
+         */
         CNSTLN_API log::Level getGlobalLogLevel() const;
 
+        /**
+         * @brief Subscribe to a specific log topic
+         *
+         * This subscribes to `LOG/<level>/<topic>` and all higher levels.
+         *
+         * @note The log topic might not be empty (use `setGlobalLogLevel()` instead)
+         *
+         * @param log_topic Topic to subscribe to
+         * @param level Lowest log level to subscribe to
+         */
         CNSTLN_API void subscribeLogTopic(const std::string& log_topic, log::Level level);
+
+        /**
+         * @brief Unsubscribe from a specific log topic
+         *
+         * @param log_topic Topic to unsubscribe from
+         */
         CNSTLN_API void unsubscribeLogTopic(const std::string& log_topic);
+
+        /**
+         * @brief Get map of subscribed log topics
+         *
+         * @return Map with log topics and their lowest subscribed levels
+         */
         CNSTLN_API std::map<std::string, log::Level> getLogTopicSubscriptions();
 
+        /**
+         * @brief Subscribe from an extra log topic for a specific host
+         *
+         * This subscribes to `LOG/<level>/<topic>` and all higher levels.
+         *
+         * @note The log topic can be empty to set a lower generic subscription for a host
+         *
+         * @param host Canonical name of the host
+         * @param log_topic Topic to subscribe to
+         * @param level Lowest log level to subscribe to
+         */
         CNSTLN_API void subscribeExtaLogTopic(const std::string& host, const std::string& log_topic, log::Level level);
+
+        /**
+         * @brief Unsubscribe from an extra log topic for a specific host
+         *
+         * @param host Canonical name of the host
+         * @param log_topic Topic to unsubscribe from
+         */
         CNSTLN_API void unsubscribeExtraLogTopic(const std::string& host, const std::string& log_topic);
+
+        /**
+         * @brief Get map of subscribed extra log topics for a specific host
+         *
+         * @return Map with log topics and their lowest subscribed levels
+         */
         CNSTLN_API std::map<std::string, log::Level> getExtraLogTopicSubscriptions(const std::string& host);
 
     private:

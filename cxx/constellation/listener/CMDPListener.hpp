@@ -66,7 +66,7 @@ namespace constellation::listener {
         /**
          * @brief Unsubscribe from a given topic for all sockets
          *
-         * @param topic Topic to unsubscribe
+         * @param topic Topic to unsubscribe from
          */
         CNSTLN_API void unsubscribeTopic(const std::string& topic);
 
@@ -104,7 +104,7 @@ namespace constellation::listener {
          * @note Only unsubscribes if not in topics that every socket is subscribed to
          *
          * @param host Canonical name of the host to unsubscribe from
-         * @param topic Topic to unsubscribe
+         * @param topic Topic to unsubscribe from
          */
         CNSTLN_API void unsubscribeExtraTopic(const std::string& host, const std::string& topic);
 
