@@ -40,7 +40,7 @@ public:
     void resetMessageCounts();
 
 private:
-    QHBoxLayout* layout_;
+    QHBoxLayout layout_;
     std::size_t msg_all_ {0};
     QLabel* label_all_;
     std::size_t msg_critical_ {0};
