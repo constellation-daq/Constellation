@@ -10,7 +10,7 @@ qt = import(qt_version)
 qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
 
 ui_files = qt.compile_ui(sources: ['QResponseDialog.ui', 'QLogMessageDialog.ui'])
-moc_files = qt.compile_moc(headers: ['QController.hpp', 'QResponseDialog.hpp', 'QLogMessageDialog.hpp', 'QLogMessage.hpp'])
+moc_files = qt.compile_moc(headers: ['QController.hpp', 'QResponseDialog.hpp', 'QLogMessageDialog.hpp'])
 qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
 gui_src = files(

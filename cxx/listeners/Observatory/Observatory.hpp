@@ -10,7 +10,6 @@
 #pragma once
 
 #include <cstddef>
-#include <map>
 #include <string_view>
 
 #include <QCloseEvent>
@@ -28,7 +27,7 @@
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
-#include "constellation/gui/QLogMessage.hpp"
+#include "constellation/core/log/Logger.hpp"
 
 #include "listeners/Observatory/QLogFilter.hpp"
 #include "listeners/Observatory/QLogListener.hpp"

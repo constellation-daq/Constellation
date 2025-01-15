@@ -61,25 +61,25 @@ namespace constellation::gui {
         switch(level) {
 
         case constellation::log::Level::TRACE: {
-            return QColor(224, 224, 224, 128);
+            return {224, 224, 224, 128};
         }
         case constellation::log::Level::DEBUG: {
-            return QColor(200, 200, 200, 128);
+            return {200, 200, 200, 128};
         }
         case constellation::log::Level::INFO: {
-            return QColor(191, 191, 191, 128);
+            return {191, 191, 191, 128};
         }
         case constellation::log::Level::WARNING: {
-            return QColor(255, 138, 0, 128);
+            return {255, 138, 0, 128};
         }
         case constellation::log::Level::STATUS: {
-            return QColor(0, 100, 0, 128);
+            return {0, 100, 0, 128};
         }
         case constellation::log::Level::CRITICAL: {
-            return QColor(255, 0, 0, 128);
+            return {255, 0, 0, 128};
         }
         case constellation::log::Level::OFF: {
-            return QColor(0, 0, 0, 128);
+            return {0, 0, 0, 128};
         }
         default: std::unreachable();
         }
