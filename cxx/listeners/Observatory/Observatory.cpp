@@ -52,6 +52,8 @@ using namespace constellation::utils;
 
 LogDialog::LogDialog(const QLogMessage& msg) {
     setupUi(this);
+    satelliteName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
+    logLevel->setText("<font color='gray'><b>" + msg[2].toString() + "</b></font>");
     for(int i = 0; i < QLogMessage::countExtendedColumns(); ++i) {
         auto* item = new QTreeWidgetItem(treeLogMessage);
         item->setText(0, QLogMessage::columnName(i));
