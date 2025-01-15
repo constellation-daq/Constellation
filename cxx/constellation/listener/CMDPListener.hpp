@@ -14,6 +14,7 @@
 #include <set>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/CHIRP_definitions.hpp"
@@ -48,15 +49,6 @@ namespace constellation::listener {
         CNSTLN_API virtual ~CMDPListener() = default;
 
         /**
-         * @brief Method to set the topics this pool subscribe to for all sockets
-         *
-         * @warning This replaces all previously subscribed topics
-         *
-         * @param topics Set of subscription topics to which to subscribe to
-         */
-        CNSTLN_API void setTopicSubscriptions(std::set<std::string> topics);
-
-        /**
          * @brief Subscribe to a given topic for all sockets
          *
          * @param topic Topic to subscribe to
@@ -68,7 +60,16 @@ namespace constellation::listener {
          *
          * @param topic Topic to unsubscribe from
          */
-        CNSTLN_API void unsubscribeTopic(const std::string& topic);
+        CNSTLN_API void unsubscribeTopic(std::string topic);
+
+        /**
+         * @brief Unsubscribe from and subscribe to multiple topics for all sockets
+         *
+         * @param unsubscribe_topics List of topics to unsubscribe from
+         * @param subscribe_topics List of topics to subscribe to
+         */
+        CNSTLN_API void multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
+                                          std::vector<std::string> subscribe_topics);
 
         /**
          * @brief Get set of subscribed topics for all sockets
@@ -76,17 +77,6 @@ namespace constellation::listener {
          * @return Set containing the currently subscribed topics
          */
         CNSTLN_API std::set<std::string> getTopicSubscriptions();
-
-        /**
-         * @brief Method to set the extra topics this pool subscribe to for a specific socket
-         *
-         * @note Extra topics are topics subscribed to in addition to the topics for every socket
-         * @warning This replaces all previously subscribed extra topics
-         *
-         * @param host Canonical name of the host to set subscription topics
-         * @param topics Set of subscription topics to which to subscribe all sockets
-         */
-        CNSTLN_API void setExtraTopicSubscriptions(const std::string& host, std::set<std::string> topics);
 
         /**
          * @brief Subscribe to a given topic for a specific socket
@@ -106,7 +96,18 @@ namespace constellation::listener {
          * @param host Canonical name of the host to unsubscribe from
          * @param topic Topic to unsubscribe from
          */
-        CNSTLN_API void unsubscribeExtraTopic(const std::string& host, const std::string& topic);
+        CNSTLN_API void unsubscribeExtraTopic(const std::string& host, std::string topic);
+
+        /**
+         * @brief Unsubscribe from and subscribe to multiple extra topics for a specific socket
+         *
+         * @param host Canonical name of the host to unsubscribe from and subscribe to
+         * @param unsubscribe_topics List of topics to unsubscribe from
+         * @param subscribe_topics List of topics to subscribe to
+         */
+        CNSTLN_API void multiscribeExtraTopics(const std::string& host,
+                                               const std::vector<std::string>& unsubscribe_topics,
+                                               std::vector<std::string> subscribe_topics);
 
         /**
          * @brief Get set of subscribed extra topics for a specific socket
@@ -139,6 +140,26 @@ namespace constellation::listener {
         CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
 
     private:
+        /**
+         * @brief Method to set the topics this pool subscribe to for all sockets
+         *
+         * @warning This replaces all previously subscribed topics
+         *
+         * @param topics Set of subscription topics to which to subscribe to
+         */
+        CNSTLN_API void set_topic_subscriptions(std::set<std::string> topics);
+
+        /**
+         * @brief Method to set the extra topics this pool subscribe to for a specific socket
+         *
+         * @note Extra topics are topics subscribed to in addition to the topics for every socket
+         * @warning This replaces all previously subscribed extra topics
+         *
+         * @param host Canonical name of the host to set subscription topics
+         * @param topics Set of subscription topics to which to subscribe all sockets
+         */
+        CNSTLN_API void set_extra_topic_subscriptions(const std::string& host, std::set<std::string> topics);
+
         // Hide subscribe/unsubscribe functions from SubscriberPool
         using SubscriberPoolT::subscribe;
         using SubscriberPoolT::unsubscribe;

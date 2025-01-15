@@ -25,7 +25,7 @@ using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::utils;
 
-TEST_CASE("Changing subscriptions", "[core][core::pools]") {
+TEST_CASE("Changing subscriptions", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
     auto chirp_manager = create_chirp_manager();
 
@@ -34,15 +34,15 @@ TEST_CASE("Changing subscriptions", "[core][core::pools]") {
     pool.startPool();
 
     // Set subscription topics
-    pool.setTopicSubscriptions({"LOG/STATUS", "LOG/INFO"});
+    pool.multiscribeTopics({}, {"LOG/STATUS", "LOG/INFO"});
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Check subscription messages
-    REQUIRE(sender.canRecv());
-    REQUIRE(sender.canRecv());
+    // Pop subscription messages (note: subscriptions come alphabetically)
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
 
     // Check topic subscriptions
     REQUIRE_THAT(pool.getTopicSubscriptions(), RangeEquals(std::set<std::string>({"LOG/STATUS", "LOG/INFO"})));
@@ -68,7 +68,7 @@ TEST_CASE("Changing subscriptions", "[core][core::pools]") {
     REQUIRE_THAT(pool.getTopicSubscriptions(), RangeEquals(std::set<std::string>({"LOG/STATUS", "LOG/TRACE"})));
 }
 
-TEST_CASE("Changing extra subscriptions", "[core][core::pools]") {
+TEST_CASE("Changing extra subscriptions", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
     auto chirp_manager = create_chirp_manager();
 
@@ -77,7 +77,7 @@ TEST_CASE("Changing extra subscriptions", "[core][core::pools]") {
     pool.startPool();
 
     // Set subscription topics
-    pool.setTopicSubscriptions({"LOG/STATUS", "LOG/INFO"});
+    pool.multiscribeTopics({}, {"LOG/STATUS", "LOG/INFO"});
 
     // Start the senders and mock via chirp
     auto sender1 = CMDPSender("CMDPSender.s1");
@@ -85,11 +85,11 @@ TEST_CASE("Changing extra subscriptions", "[core][core::pools]") {
     auto sender2 = CMDPSender("CMDPSender.s2");
     chirp_mock_service(sender2.getName(), chirp::MONITORING, sender2.getPort());
 
-    // Pop subscription messages
-    REQUIRE(sender1.canRecv());
-    REQUIRE(sender1.canRecv());
-    REQUIRE(sender2.canRecv());
-    REQUIRE(sender2.canRecv());
+    // Pop subscription messages (note: subscriptions come alphabetically)
+    REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/INFO"));
+    REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/STATUS"));
+    REQUIRE(check_sub_message(sender2.recv().pop(), true, "LOG/INFO"));
+    REQUIRE(check_sub_message(sender2.recv().pop(), true, "LOG/STATUS"));
 
     // Check no extra topic subscriptions yet
     REQUIRE_THAT(pool.getExtraTopicSubscriptions(to_string(sender1.getName())), RangeEquals(std::set<std::string>({})));
@@ -117,7 +117,7 @@ TEST_CASE("Changing extra subscriptions", "[core][core::pools]") {
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/WARNING"));
 
     // Replace extra subscription: s1 now at LOG/STATUS, LOG/INFO, LOG/DEBUG
-    pool.setExtraTopicSubscriptions(to_string(sender1.getName()), {"LOG/DEBUG", "LOG/INFO"});
+    pool.multiscribeExtraTopics(to_string(sender1.getName()), {"LOG/TRACE"}, {"LOG/DEBUG", "LOG/INFO"});
 
     // Check changing subscriptions
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/TRACE"));
@@ -140,7 +140,7 @@ TEST_CASE("Changing extra subscriptions", "[core][core::pools]") {
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/DEBUG"));
 }
 
-TEST_CASE("Extra subscriptions on connection", "[core][core::pools]") {
+TEST_CASE("Extra subscriptions on connection", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
     auto chirp_manager = create_chirp_manager();
 
@@ -149,17 +149,17 @@ TEST_CASE("Extra subscriptions on connection", "[core][core::pools]") {
     pool.startPool();
 
     // Set subscription topics
-    pool.setTopicSubscriptions({"LOG/STATUS", "LOG/INFO"});
-    pool.setExtraTopicSubscriptions("CMDPSender.s1", {"LOG/INFO", "SOMETHING", "ELSE"});
+    pool.multiscribeTopics({}, {"LOG/STATUS", "LOG/INFO"});
+    pool.multiscribeExtraTopics("CMDPSender.s1", {}, {"LOG/INFO", "SOMETHING", "ELSE"});
     pool.unsubscribeExtraTopic("CMDPSender.s1", "ELSE");
 
     // Start the senders and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
     chirp_mock_service(sender.getName(), chirp::MONITORING, sender.getPort());
 
-    // Pop subscription messages for global subscriptions
-    REQUIRE(sender.canRecv());
-    REQUIRE(sender.canRecv());
+    // Pop subscription messages for global subscriptions (note: subscriptions come alphabetically)
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
 
     // Check extra subscription message
     REQUIRE(check_sub_message(sender.recv().pop(), true, "SOMETHING"));
