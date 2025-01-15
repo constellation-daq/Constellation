@@ -44,41 +44,17 @@
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/gui/QLogMessage.hpp"
+#include "constellation/gui/QLogMessageDialog.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
 #include "listeners/Observatory/QLogListener.hpp"
-#include "listeners/Observatory/QLogMessage.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
 using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::utils;
-
-LogDialog::LogDialog(const QLogMessage& msg) {
-    setupUi(this);
-    satelliteName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
-
-    auto palette = logLevel->palette();
-    palette.setColor(QPalette::WindowText, get_log_level_color(msg.getLogLevel()));
-    logLevel->setPalette(palette);
-    logLevel->setText("<b>" + msg[2].toString() + "</b>");
-
-    messageTable->setRowCount(QLogMessage::countExtendedColumns());
-    messageTable->setColumnCount(2);
-    messageTable->setHorizontalHeaderLabels({"Key", "Value"});
-    messageTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-
-    for(int i = 0; i < QLogMessage::countExtendedColumns(); i++) {
-        // QTableWidget takes ownership of assigned QTableWidgetItems
-        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-        messageTable->setItem(i, 0, new QTableWidgetItem(QLogMessage::columnName(i)));
-        messageTable->setItem(i, 1, new QTableWidgetItem(msg[i].toString()));
-        // NOLINTEND(cppcoreguidelines-owning-memory)
-    }
-
-    show();
-}
 
 LogStatusBar::LogStatusBar() {
     layout_ = new QHBoxLayout(this);
@@ -258,7 +234,7 @@ void Observatory::on_filterMessage_editingFinished() {
 void Observatory::on_viewLog_activated(const QModelIndex& i) {
     // Translate to source index:
     const QModelIndex index = log_filter_.mapToSource(i);
-    new LogDialog(log_listener_.getMessage(index));
+    new QLogMessageDialog(this, log_listener_.getMessage(index));
 }
 
 void Observatory::on_clearFilters_clicked() {

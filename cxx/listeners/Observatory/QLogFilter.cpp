@@ -19,9 +19,9 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/gui/QLogMessage.hpp"
 
 #include "listeners/Observatory/QLogListener.hpp"
-#include "listeners/Observatory/QLogMessage.hpp"
 
 using namespace constellation::log;
 using namespace constellation::utils;
