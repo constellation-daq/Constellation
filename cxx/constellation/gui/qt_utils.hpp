@@ -14,7 +14,9 @@
 
 #include <QColor>
 #include <QDateTime>
+#include <QGuiApplication>
 #include <QString>
+#include <QStyleHints>
 #include <QTimeZone>
 
 #include "constellation/core/log/Level.hpp"
@@ -58,16 +60,28 @@ namespace constellation::gui {
 
     /** Color assignment for log levels */
     inline QColor get_log_level_color(constellation::log::Level level) {
+        const auto dark = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         switch(level) {
-
         case constellation::log::Level::TRACE: {
-            return {224, 224, 224, 128};
+            if(dark) {
+                return {67, 67, 67, 128};
+            } else {
+                return {224, 224, 224, 128};
+            }
         }
         case constellation::log::Level::DEBUG: {
-            return {200, 200, 200, 128};
+            if(dark) {
+                return {85, 85, 85, 128};
+            } else {
+                return {200, 200, 200, 128};
+            }
         }
         case constellation::log::Level::INFO: {
-            return {191, 191, 191, 128};
+            if(dark) {
+                return {100, 100, 100, 128};
+            } else {
+                return {191, 191, 191, 128};
+            }
         }
         case constellation::log::Level::WARNING: {
             return {255, 138, 0, 128};
