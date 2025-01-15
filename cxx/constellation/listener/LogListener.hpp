@@ -105,19 +105,21 @@ namespace constellation::listener {
         CNSTLN_API std::map<std::string, log::Level> getExtraLogTopicSubscriptions(const std::string& host);
 
     private:
-        CNSTLN_LOCAL static std::vector<std::string> generate_topics(const std::string& log_topic, log::Level level);
+        CNSTLN_LOCAL static std::vector<std::string> generate_topics(const std::string& log_topic,
+                                                                     log::Level level,
+                                                                     bool subscribe = true);
         CNSTLN_LOCAL static std::pair<std::string_view, log::Level> demangle_topic(std::string_view topic);
 
         // Hide subscribe/unsubscribe functions from CMDPListener
         // clang-format off
-        using CMDPListener::getExtraTopicSubscriptions;
-        using CMDPListener::getTopicSubscriptions;
-        using CMDPListener::setExtraTopicSubscriptions;
-        using CMDPListener::setTopicSubscriptions;
-        using CMDPListener::subscribeExtraTopic;
         using CMDPListener::subscribeTopic;
-        using CMDPListener::unsubscribeExtraTopic;
         using CMDPListener::unsubscribeTopic;
+        using CMDPListener::multiscribeTopics;
+        using CMDPListener::getTopicSubscriptions;
+        using CMDPListener::subscribeExtraTopic;
+        using CMDPListener::unsubscribeExtraTopic;
+        using CMDPListener::multiscribeExtraTopics;
+        using CMDPListener::getExtraTopicSubscriptions;
         using CMDPListener::removeExtraTopicSubscriptions;
         // clang-format on
 

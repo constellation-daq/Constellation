@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <utility>
+#include <vector>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
@@ -47,7 +48,7 @@ void CMDPListener::host_connected(const chirp::DiscoveredService& service) {
     }
 }
 
-void CMDPListener::setTopicSubscriptions(std::set<std::string> topics) {
+void CMDPListener::set_topic_subscriptions(std::set<std::string> topics) {
     const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
 
     // Set of topics to unsubscribe: current topics not in new topics
@@ -83,32 +84,34 @@ void CMDPListener::setTopicSubscriptions(std::set<std::string> topics) {
 }
 
 void CMDPListener::subscribeTopic(std::string topic) {
-    std::set<std::string> new_subscribed_topics {};
-    {
-        // Copy current topics
-        const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-        new_subscribed_topics = subscribed_topics_;
-    }
-    // Emplace new topic
-    const auto [_, inserted] = new_subscribed_topics.emplace(std::move(topic));
-    // Handle logic in setTopicSubscriptions
-    if(inserted) [[likely]] {
-        setTopicSubscriptions(std::move(new_subscribed_topics));
-    }
+    multiscribeTopics({}, {std::move(topic)});
 }
 
-void CMDPListener::unsubscribeTopic(const std::string& topic) {
+void CMDPListener::unsubscribeTopic(std::string topic) {
+    multiscribeTopics({std::move(topic)}, {});
+}
+
+void CMDPListener::multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
+                                     std::vector<std::string> subscribe_topics) {
     std::set<std::string> new_subscribed_topics {};
     {
         // Copy current topics
         const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
         new_subscribed_topics = subscribed_topics_;
     }
-    // Erase requested topic
-    const auto erased = new_subscribed_topics.erase(topic);
-    // Handle logic in setTopicSubscriptions
-    if(erased > 0) [[likely]] {
-        setTopicSubscriptions(std::move(new_subscribed_topics));
+    // Erase requested topics
+    std::size_t changed = 0;
+    for(const auto& topic : unsubscribe_topics) {
+        changed += new_subscribed_topics.erase(topic);
+    }
+    // Emplace new topics
+    for(auto& topic : std::move(subscribe_topics)) {
+        const auto insert_res = new_subscribed_topics.emplace(std::move(topic));
+        changed += static_cast<std::size_t>(insert_res.second);
+    }
+    // Handle logic in set_topic_subscriptions
+    if(changed > 0) [[likely]] {
+        set_topic_subscriptions(std::move(new_subscribed_topics));
     }
 }
 
@@ -117,7 +120,7 @@ std::set<std::string> CMDPListener::getTopicSubscriptions() {
     return subscribed_topics_;
 }
 
-void CMDPListener::setExtraTopicSubscriptions(const std::string& host, std::set<std::string> topics) {
+void CMDPListener::set_extra_topic_subscriptions(const std::string& host, std::set<std::string> topics) {
     const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
 
     // Check if extra topics already set
@@ -155,43 +158,39 @@ void CMDPListener::setExtraTopicSubscriptions(const std::string& host, std::set<
 }
 
 void CMDPListener::subscribeExtraTopic(const std::string& host, std::string topic) {
-    std::set<std::string> new_subscription_topics {};
-    bool run_logic {true};
-    {
-        const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
-        const auto host_it = extra_subscribed_topics_.find(host);
-        if(host_it != extra_subscribed_topics_.end()) {
-            // Copy current topics and emplace new topic
-            new_subscription_topics = host_it->second;
-            const auto [_, inserted] = new_subscription_topics.emplace(std::move(topic));
-            run_logic = inserted;
-        } else {
-            // No topics yet, add new topic
-            new_subscription_topics.emplace(std::move(topic));
-        }
-    }
-    // Handle logic in setExtraTopicSubscriptions
-    if(run_logic) [[likely]] {
-        setExtraTopicSubscriptions(host, std::move(new_subscription_topics));
-    }
+    multiscribeExtraTopics(host, {}, {std::move(topic)});
 }
 
-void CMDPListener::unsubscribeExtraTopic(const std::string& host, const std::string& topic) {
-    std::set<std::string> new_subscription_topics {};
-    bool run_logic {false};
+void CMDPListener::unsubscribeExtraTopic(const std::string& host, std::string topic) {
+    multiscribeExtraTopics(host, {std::move(topic)}, {});
+}
+
+void CMDPListener::multiscribeExtraTopics(const std::string& host,
+                                          const std::vector<std::string>& unsubscribe_topics,
+                                          std::vector<std::string> subscribe_topics) {
+    std::set<std::string> new_subscribed_topics {};
     {
         const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
         const auto host_it = extra_subscribed_topics_.find(host);
         if(host_it != extra_subscribed_topics_.end()) {
-            // Copy current topics and erase requested topic
-            new_subscription_topics = host_it->second;
-            const auto erased = new_subscription_topics.erase(topic);
-            run_logic = erased > 0;
+            // Copy current topics
+            new_subscribed_topics = host_it->second;
         }
     }
-    // Handle logic in setExtraTopicSubscriptions
-    if(run_logic) [[likely]] {
-        setExtraTopicSubscriptions(host, std::move(new_subscription_topics));
+    // Erase requested topics
+    std::size_t changed = 0;
+    for(const auto& topic : unsubscribe_topics) {
+        changed += new_subscribed_topics.erase(topic);
+    }
+    // Emplace new topics
+    for(auto& topic : std::move(subscribe_topics)) {
+        const auto insert_res = new_subscribed_topics.emplace(std::move(topic));
+        changed += static_cast<std::size_t>(insert_res.second);
+    }
+
+    // Handle logic in set_extra_topic_subscriptions
+    if(changed > 0) [[likely]] {
+        set_extra_topic_subscriptions(host, std::move(new_subscribed_topics));
     }
 }
 
