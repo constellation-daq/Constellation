@@ -482,8 +482,8 @@ lint:coverity-scan:
     - tar -xzf /tmp/cov-analysis-linux64.tgz
     - rm -r /tmp/cov-analysis-linux64.tgz
     - PATH=$PATH:$(echo cov-analysis-linux64-*/bin)
-    - CC=$(command -v gcc); CXX=$(command -v g++) # Set directly to avoid ccache
-    - cov-configure --comptype gcc --compiler $CXX
+    - CC=gcc; CXX=g++ # Set directly to avoid ccache
+    - cov-configure --gcc
     - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug
     - cov-build --dir cov-int ninja -C build ${NINJA_OPTIONS}
     - tar -czf cov-int.tgz cov-int
