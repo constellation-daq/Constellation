@@ -22,12 +22,12 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
-
-#include "listeners/Observatory/QLogMessage.hpp"
 
 using namespace constellation::message;
 using namespace constellation::chirp;
+using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::pools;
 using namespace constellation::utils;

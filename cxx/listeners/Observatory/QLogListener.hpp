@@ -25,9 +25,8 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
-
-#include "listeners/Observatory/QLogMessage.hpp"
 
 class QLogListener : public QAbstractListModel, public constellation::listener::LogListener {
     Q_OBJECT
@@ -46,7 +45,7 @@ public:
      * @param index QModelIndex of the message
      * @return Constant reference to the message
      */
-    const QLogMessage& getMessage(const QModelIndex& index) const;
+    const constellation::gui::QLogMessage& getMessage(const QModelIndex& index) const;
 
     /**
      * @brief Clear all currently stored messages
@@ -79,7 +78,7 @@ public:
 
     /* Qt accessor methods */
     int rowCount(const QModelIndex& /*parent*/) const override { return static_cast<int>(message_count_.load()); }
-    int columnCount(const QModelIndex& /*parent*/) const override { return QLogMessage::countColumns(); }
+    int columnCount(const QModelIndex& /*parent*/) const override { return constellation::gui::QLogMessage::countColumns(); }
     QVariant data(const QModelIndex& index, int role) const override;
     QVariant headerData(int column, Qt::Orientation orientation, int role) const override;
 
@@ -126,7 +125,7 @@ private:
 
 private:
     /** Log messages & access mutex*/
-    std::deque<QLogMessage> messages_;
+    std::deque<constellation::gui::QLogMessage> messages_;
     std::atomic_size_t message_count_;
     mutable std::mutex message_mutex_;
 

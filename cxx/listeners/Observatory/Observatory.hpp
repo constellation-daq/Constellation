@@ -28,21 +28,11 @@
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
+#include "constellation/gui/QLogMessage.hpp"
 
 #include "listeners/Observatory/QLogFilter.hpp"
 #include "listeners/Observatory/QLogListener.hpp"
-#include "listeners/Observatory/QLogMessage.hpp"
-#include "ui_LogDialog.h"
 #include "ui_Observatory.h"
-
-/**
- * @class LogDialog
- * @brief Dialog window to show details of individual log messages
- */
-class LogDialog : public QDialog, Ui::dlgLogMessage {
-public:
-    LogDialog(const QLogMessage& msg);
-};
 
 class LogStatusBar : public QWidget {
 public:

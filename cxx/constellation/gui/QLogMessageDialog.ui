@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>dlgLogMessage</class>
- <widget class="QDialog" name="dlgLogMessage">
+ <class>QLogMessageDialog</class>
+ <widget class="QDialog" name="QLogMessageDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -132,7 +132,7 @@
   <connection>
    <sender>btnClose</sender>
    <signal>accepted()</signal>
-   <receiver>dlgLogMessage</receiver>
+   <receiver>QLogMessageDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -148,7 +148,7 @@
   <connection>
    <sender>btnClose</sender>
    <signal>rejected()</signal>
-   <receiver>dlgLogMessage</receiver>
+   <receiver>QLogMessageDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
