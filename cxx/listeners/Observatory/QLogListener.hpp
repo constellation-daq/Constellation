@@ -14,7 +14,6 @@
 #include <mutex>
 #include <set>
 #include <string>
-#include <string_view>
 
 #include <QAbstractListModel>
 #include <QObject>
@@ -22,7 +21,6 @@
 #include <QString>
 #include <QVariant>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/Logger.hpp"

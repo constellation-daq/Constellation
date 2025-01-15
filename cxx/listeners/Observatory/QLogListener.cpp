@@ -9,7 +9,6 @@
 
 #include "QLogListener.hpp"
 
-#include <iomanip>
 #include <mutex>
 #include <set>
 #include <string>
@@ -21,13 +20,8 @@
 #include <QString>
 #include <QVariant>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/log/Level.hpp"
-#include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
-#include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 
 #include "listeners/Observatory/QLogMessage.hpp"
