@@ -56,11 +56,20 @@ LogDialog::LogDialog(const QLogMessage& msg) {
     setupUi(this);
     satelliteName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
     logLevel->setText("<font color='gray'><b>" + msg[2].toString() + "</b></font>");
-    for(int i = 0; i < QLogMessage::countExtendedColumns(); ++i) {
-        auto* item = new QTreeWidgetItem(treeLogMessage);
-        item->setText(0, QLogMessage::columnName(i));
-        item->setText(1, msg[i].toString());
+
+    messageTable->setRowCount(QLogMessage::countExtendedColumns());
+    messageTable->setColumnCount(2);
+    messageTable->setHorizontalHeaderLabels({"Key", "Value"});
+    messageTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+
+    for(int i = 0; i < QLogMessage::countExtendedColumns(); i++) {
+        // QTableWidget takes ownership of assigned QTableWidgetItems
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
+        messageTable->setItem(i, 0, new QTableWidgetItem(QLogMessage::columnName(i)));
+        messageTable->setItem(i, 1, new QTableWidgetItem(msg[i].toString()));
+        // NOLINTEND(cppcoreguidelines-owning-memory)
     }
+
     show();
 }
 

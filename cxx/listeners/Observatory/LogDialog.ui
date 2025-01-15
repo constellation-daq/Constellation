@@ -21,26 +21,16 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QTreeWidget" name="treeLogMessage">
-        <property name="rootIsDecorated">
+       <widget class="QTableWidget" name="messageTable">
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
          <bool>false</bool>
-        </property>
-        <property name="uniformRowHeights">
-         <bool>false</bool>
-        </property>
-        <property name="columnCount">
-         <number>2</number>
-        </property>
-        <column>
-         <property name="text">
-          <string>Key</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Value</string>
-         </property>
-        </column>
+        </attribute>
        </widget>
       </item>
      </layout>
