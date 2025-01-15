@@ -92,15 +92,25 @@ void LogStatusBar::countMessage(Level level) {
 }
 
 void LogItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    auto options = option;
+
     // Get sibling for column 2 (where the log level is stored) for current row:
     const QModelIndex lvl_index = index.sibling(index.row(), 2);
 
     // Get log level color
     const auto level_str = lvl_index.data().toString().toStdString();
-    const auto color = get_log_level_color(enum_cast<Level>(level_str).value_or(WARNING));
+    const auto level = enum_cast<Level>(level_str).value_or(WARNING);
 
-    painter->fillRect(option.rect, QBrush(color));
-    QStyledItemDelegate::paint(painter, option, index);
+    const auto color = get_log_level_color(level);
+    if(level > Level::INFO) {
+        // High levels get background coloring
+        painter->fillRect(options.rect, QBrush(color));
+    } else {
+        // Others just text color adjustment
+        options.palette.setColor(QPalette::Text, color);
+    }
+
+    QStyledItemDelegate::paint(painter, options, index);
 }
 
 QString LogItemDelegate::displayText(const QVariant& value, const QLocale& locale) const {
