@@ -30,7 +30,6 @@
 #include "dummy_satellite.hpp"
 
 using namespace Catch::Matchers;
-using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;

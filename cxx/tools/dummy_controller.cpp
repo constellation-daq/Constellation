@@ -31,6 +31,7 @@ using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
@@ -54,7 +55,7 @@ namespace {
         auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
         chirp_manager.setAsDefaultInstance();
         chirp_manager.start();
-        chirp_manager.sendRequest(protocol::CHIRP::ServiceIdentifier::CONTROL);
+        chirp_manager.sendRequest(CHIRP::ServiceIdentifier::CONTROL);
 
         LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
         Controller controller(name);

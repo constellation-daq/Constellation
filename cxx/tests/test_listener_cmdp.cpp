@@ -19,10 +19,10 @@
 #include "cmdp_mock.hpp"
 
 using namespace Catch::Matchers;
-using namespace constellation;
 using namespace constellation::listener;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 
 TEST_CASE("Changing subscriptions", "[listener]") {
@@ -38,7 +38,7 @@ TEST_CASE("Changing subscriptions", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), protocol::CHIRP::MONITORING, sender.getPort());
+    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
@@ -81,9 +81,9 @@ TEST_CASE("Changing extra subscriptions", "[listener]") {
 
     // Start the senders and mock via chirp
     auto sender1 = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender1.getName(), protocol::CHIRP::MONITORING, sender1.getPort());
+    chirp_mock_service(sender1.getName(), CHIRP::MONITORING, sender1.getPort());
     auto sender2 = CMDPSender("CMDPSender.s2");
-    chirp_mock_service(sender2.getName(), protocol::CHIRP::MONITORING, sender2.getPort());
+    chirp_mock_service(sender2.getName(), CHIRP::MONITORING, sender2.getPort());
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/INFO"));
@@ -155,7 +155,7 @@ TEST_CASE("Extra subscriptions on connection", "[listener]") {
 
     // Start the senders and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), protocol::CHIRP::MONITORING, sender.getPort());
+    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
 
     // Pop subscription messages for global subscriptions (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));

@@ -49,6 +49,7 @@ using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace constellation::networking;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
@@ -185,7 +186,7 @@ void CMDPSink::enableSending(std::string sender_name) {
     // Register service in CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(protocol::CHIRP::MONITORING, port_);
+        chirp_manager->registerService(CHIRP::MONITORING, port_);
     } else {
         LOG(*logger_, WARNING) << "Failed to advertise logging on the network, satellite might not be discovered";
     }
