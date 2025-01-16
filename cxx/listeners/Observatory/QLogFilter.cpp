@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "listeners/Observatory/QLogFilter.hpp"
+#include "QLogFilter.hpp"
 
 #include <string>
 
@@ -21,7 +21,7 @@
 #include "constellation/core/utils/string.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 
-#include "listeners/Observatory/QLogListener.hpp"
+#include "QLogListener.hpp"
 
 using namespace constellation::log;
 using namespace constellation::utils;

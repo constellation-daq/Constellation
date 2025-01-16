@@ -29,8 +29,8 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/Logger.hpp"
 
-#include "listeners/Observatory/QLogFilter.hpp"
-#include "listeners/Observatory/QLogListener.hpp"
+#include "QLogFilter.hpp"
+#include "QLogListener.hpp"
 #include "ui_Observatory.h"
 
 class LogStatusBar : public QWidget {

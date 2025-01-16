@@ -15,15 +15,14 @@
 #include <QApplication>
 #include <QColor>
 #include <QDateTime>
-#include <QGuiApplication>
 #include <QPalette>
 #include <QString>
-#include <QStyleHints>
 #include <QTimeZone>
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/std_future.hpp"
 
 #if __cpp_lib_format >= 201907L
 #include <format>
@@ -61,26 +60,26 @@ namespace constellation::gui {
     }
 
     /** Color assignment for log levels */
-    inline QColor get_log_level_color(constellation::log::Level level) {
+    inline QColor get_log_level_color(log::Level level) {
         switch(level) {
-        case constellation::log::Level::TRACE:
-        case constellation::log::Level::DEBUG: {
+        case log::Level::TRACE:
+        case log::Level::DEBUG: {
             return QColorConstants::Gray;
         }
-        case constellation::log::Level::INFO: {
+        case log::Level::INFO: {
             // Neutral:
             return QApplication::palette().text().color();
         }
-        case constellation::log::Level::WARNING: {
+        case log::Level::WARNING: {
             return {255, 138, 0, 128};
         }
-        case constellation::log::Level::STATUS: {
+        case log::Level::STATUS: {
             return {0, 100, 0, 128};
         }
-        case constellation::log::Level::CRITICAL: {
+        case log::Level::CRITICAL: {
             return {255, 0, 0, 128};
         }
-        case constellation::log::Level::OFF: {
+        case log::Level::OFF: {
             return {0, 0, 0, 128};
         }
         default: std::unreachable();

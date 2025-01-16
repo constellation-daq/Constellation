@@ -48,7 +48,7 @@
 #include "constellation/gui/QLogMessageDialog.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
-#include "listeners/Observatory/QLogListener.hpp"
+#include "QLogListener.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;

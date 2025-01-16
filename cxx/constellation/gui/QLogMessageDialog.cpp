@@ -16,9 +16,7 @@
 
 #include "ui_QLogMessageDialog.h"
 
-using namespace constellation::config;
 using namespace constellation::gui;
-using namespace constellation::message;
 
 QLogMessageDialog::QLogMessageDialog(QWidget* parent, const QLogMessage& msg)
     : QDialog(parent), ui_(new Ui::QLogMessageDialog) {

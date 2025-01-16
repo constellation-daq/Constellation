@@ -24,14 +24,14 @@ namespace constellation::gui {
      * @brief Wrapper class around CMDP1 Log messages which provide additional accessors to make them play nice with the
      * QAbstractListModel they are used in.
      */
-    class CNSTLN_API QLogMessage : public constellation::message::CMDP1LogMessage {
+    class CNSTLN_API QLogMessage : public message::CMDP1LogMessage {
     public:
         /**
          * @brief Constructing a Log message from a CMDP1LogMessage
          *
          * @param msg CMDP1 Log Message
          */
-        explicit QLogMessage(constellation::message::CMDP1LogMessage&& msg);
+        explicit QLogMessage(message::CMDP1LogMessage&& msg);
 
         /**
          * @brief Operator to fetch column information as string representation from the message
