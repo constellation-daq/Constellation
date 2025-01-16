@@ -2,14 +2,14 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="179.19701mm"
-   height="179.39999mm"
-   viewBox="-12 -26 227.95212 228.21041"
+   width="678.047"
+   height="678.047"
+   viewBox="-12 -26 228.21026 228.21034"
    version="1.1"
    id="svg5"
-   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
-   sodipodi:docname="logo_obs.svg"
-   inkscape:export-filename="logo_obs.png"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="logo_observatory.svg"
+   inkscape:export-filename="logo_observatory.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -31,8 +31,8 @@
      inkscape:zoom="1.1852195"
      inkscape:cx="283.91365"
      inkscape:cy="372.9267"
-     inkscape:window-width="2560"
-     inkscape:window-height="1371"
+     inkscape:window-width="1803"
+     inkscape:window-height="1133"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -44,37 +44,37 @@
      fit-margin-right="3"
      fit-margin-bottom="3">
     <sodipodi:guide
-       position="2.5013894,200.34327"
+       position="2.5013895,200.3432"
        orientation="0,-1"
        id="guide8640"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="175.35512,85.701481"
+       position="175.35512,85.701408"
        orientation="1,0"
        id="guide8642"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="16.163367,85.998479"
+       position="16.163367,85.998406"
        orientation="1,0"
        id="guide8644"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="80.909267,40.854543"
+       position="80.909269,40.854469"
        orientation="0,-1"
        id="guide8646"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="175.35512,200.64027"
+       position="175.35512,200.6402"
        orientation="0.70710678,-0.70710678"
        id="guide10100"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="100.42083,-16.241796"
+       position="100.42083,-16.241872"
        orientation="-0.70710678,-0.70710678"
        id="guide14500"
        inkscape:locked="false" />
     <sodipodi:guide
-       position="62.247701,77.193118"
+       position="62.247702,77.193044"
        orientation="1,0"
        id="guide1226"
        inkscape:locked="false" />
@@ -82,7 +82,10 @@
        type="xygrid"
        id="grid1228"
        originx="-36.114159"
-       originy="-18.857715" />
+       originy="-18.857716"
+       spacingy="1"
+       spacingx="1"
+       units="mm" />
   </sodipodi:namedview>
   <defs
      id="defs2">
@@ -159,7 +162,7 @@
          id="feComposite2990" />
     </filter>
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter6258"
        x="-0.03335835"
@@ -215,7 +218,7 @@
       <path
          id="path2504"
          style="fill:#2a2b2d;stroke-width:1.44732;stroke-linecap:round;stroke-linejoin:round"
-         d="M 96.461081 -14.193242 A 102.03301 102.03301 0 0 0 -5.5722244 87.839406 A 102.03301 102.03301 0 0 0 96.461081 189.87271 A 102.03301 102.03301 0 0 0 164.48109 163.88714 L 170.15282 163.88714 A 25.4415 25.4415 0 0 0 195.5941 138.44586 A 25.4415 25.4415 0 0 0 191.55986 124.78848 A 102.03301 102.03301 0 0 0 198.49373 87.839406 A 102.03301 102.03301 0 0 0 194.49959 59.604994 A 25.4415 25.4415 0 0 0 210.26579 36.129235 A 25.4415 25.4415 0 0 0 184.82452 10.68796 L 163.21501 10.68796 A 102.03301 102.03301 0 0 0 96.461081 -14.193242 z "
+         d="M 96.461081,-14.193242 A 102.03301,102.03301 0 0 0 -5.5722244,87.839406 102.03301,102.03301 0 0 0 96.461081,189.87271 102.03301,102.03301 0 0 0 164.48109,163.88714 h 5.67173 a 25.4415,25.4415 0 0 0 25.44128,-25.44128 25.4415,25.4415 0 0 0 -4.03424,-13.65738 102.03301,102.03301 0 0 0 6.93387,-36.949074 102.03301,102.03301 0 0 0 -3.99414,-28.234412 25.4415,25.4415 0 0 0 15.7662,-23.475759 A 25.4415,25.4415 0 0 0 184.82452,10.68796 H 163.21501 A 102.03301,102.03301 0 0 0 96.461081,-14.193242 Z"
          transform="translate(8.4137763,18.693011)" />
     </g>
     <path
