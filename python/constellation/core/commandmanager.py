@@ -196,7 +196,11 @@ class CommandReceiver(BaseSatelliteFrame):
         second line of the doc string, respectively (not counting empty lines).
 
         """
-        return f"{len(self._cmds)} commands known", self._cmds, None
+        public_cmds = {}
+        for key, value in self._cmds.items():
+            if not key.startswith("_"):
+                public_cmds[key] = value
+        return f"{len(public_cmds)} commands known", public_cmds, None
 
     @cscp_requestable
     def get_type(self, _request: CSCPMessage) -> Tuple[str, None, None]:
