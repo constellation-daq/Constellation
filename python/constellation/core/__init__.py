@@ -16,6 +16,6 @@ except:  # noqa: E722
 try:
     import importlib.resources
 
-    __version_code_name__ = importlib.resources.read_text("constellation.core", "version_code_name").strip("\n")
+    __version_code_name__ = (importlib.resources.files("constellation.core") / "version_code_name").open().read().strip("\n")
 except:  # noqa: E722
     __version_code_name__ = "unknown"
