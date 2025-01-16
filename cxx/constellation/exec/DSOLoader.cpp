@@ -69,7 +69,8 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
         // For directories, recursively iterate and add paths
         if(std::filesystem::is_directory(abs_path)) {
             LOG(logger, TRACE) << "Path " << std::quoted(abs_path.string()) << " is a directory, recursing through content";
-            for(const auto& entry : std::filesystem::recursive_directory_iterator(abs_path)) {
+            for(const auto& entry : std::filesystem::recursive_directory_iterator(
+                    abs_path, std::filesystem::directory_options::skip_permission_denied)) {
                 // Try adding path as file
                 add_file_path(entry.path());
             }
