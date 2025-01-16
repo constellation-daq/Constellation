@@ -203,15 +203,6 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(public_cmds)} commands known", public_cmds, None
 
     @cscp_requestable
-    def get_type(self, _request: CSCPMessage) -> Tuple[str, None, None]:
-        """Return the type of the Satellite.
-
-        No payload argument.
-
-        """
-        return self.type, None, None
-
-    @cscp_requestable
     def get_name(self, _request: CSCPMessage) -> Tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
