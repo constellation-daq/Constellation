@@ -67,7 +67,6 @@ pkg.generate(core_lib,
 install_headers(
   'chirp/BroadcastRecv.hpp',
   'chirp/BroadcastSend.hpp',
-  'protocol/CHIRP_definitions.hpp',
   'chirp/Manager.hpp',
   subdir: 'constellation/core/chirp',
 )
@@ -135,6 +134,7 @@ install_headers(
 
 install_headers(
   'protocol/CDTP_definitions.hpp',
+  'protocol/CHIRP_definitions.hpp',
   'protocol/CHP_definitions.hpp',
   'protocol/CSCP_definitions.hpp',
   'protocol/Protocol.hpp',
