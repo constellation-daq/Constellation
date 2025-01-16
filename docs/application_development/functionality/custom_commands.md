@@ -59,7 +59,7 @@ In Python, commands are registered by placing the `@cscp_requestable` decorator 
 The method needs to have a specific signature:
 
 ```python
-def COMMAND(self, request: cscp.CSCPMessage) -> tuple[str, Any, dict]:
+def COMMAND(self, request: cscp.CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
 ```
 
 The expected return values are:
@@ -74,7 +74,7 @@ In this example, the command `get_channel_reading(channel: int)` is added to a s
 
 ```python
 @cscp_requestable
-def get_channel_reading(self, request: CSCPMessage) -> tuple[str, Any, dict]:
+def get_channel_reading(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
     paramList = request.payload
     channel = paramList[0]
