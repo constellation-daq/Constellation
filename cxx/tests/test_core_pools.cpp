@@ -6,7 +6,6 @@
 
 #include <chrono>
 #include <condition_variable>
-#include <cstdint>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -16,8 +15,6 @@
 #include <utility>
 
 #include <catch2/catch_test_macros.hpp>
-#include <zmq.hpp>
-#include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
