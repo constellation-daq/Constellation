@@ -60,7 +60,7 @@ LogStatusBar::LogStatusBar()
     : layout_(this), label_all_(new QLabel("0 messages")), label_critical_(new QLabel()), label_warning_(new QLabel()) {
 
     label_all_->setStyleSheet("QLabel { font-size: 12px; font-weight: normal; color: gray; }");
-    label_critical_->setStyleSheet("QLabel { font-size: 12px; font-weight: normal; color: red; }");
+    label_critical_->setStyleSheet("QLabel { font-size: 12px; font-weight: bold; color: red; }");
     label_warning_->setStyleSheet("QLabel { font-size: 12px; font-weight: bold; color: orange; }");
 
     layout_.addWidget(label_critical_);
