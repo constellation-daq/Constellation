@@ -514,12 +514,12 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
         auto* action = new QAction(QString::fromStdString(key), this);
         connect(action, &QAction::triggered, this, [this, index, key, value]() {
-            QCommandDialog dialog(this, runcontrol_.getQName(index), key, value.str());
-            if(dialog.exec() == QDialog::Accepted) {
-                const auto& response = runcontrol_.sendQCommand(index, dialog.getCommand(), dialog.getPayload());
+            QCommandDialog cmd_dialog {this, runcontrol_.getQName(index), key, value.str()};
+            if(cmd_dialog.exec() == QDialog::Accepted) {
+                const auto& response = runcontrol_.sendQCommand(index, cmd_dialog.getCommand(), cmd_dialog.getPayload());
                 if(response.hasPayload()) {
-                    QResponseDialog dialog(this, response);
-                    dialog.exec();
+                    QResponseDialog re_dialog {this, response};
+                    re_dialog.exec();
                 }
             }
         });
