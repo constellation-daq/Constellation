@@ -24,7 +24,7 @@ QLogMessageDialog::QLogMessageDialog(QWidget* parent, const QLogMessage& msg)
     : QDialog(parent), ui_(new Ui::QLogMessageDialog) {
     ui_->setupUi(this);
 
-    ui_->satelliteName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
+    ui_->senderName->setText("<font color='gray'><b>" + msg[1].toString() + "</b></font>");
 
     auto palette = ui_->logLevel->palette();
     palette.setColor(QPalette::WindowText, get_log_level_color(msg.getLogLevel()));
