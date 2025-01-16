@@ -18,9 +18,9 @@
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
@@ -30,7 +30,6 @@
 #include "dummy_satellite.hpp"
 
 using namespace Catch::Matchers;
-using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;
@@ -62,7 +61,7 @@ TEST_CASE("Satellite connecting", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {};
-    chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.sat1", CHIRP::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
     while(controller.getConnectionCount() < 1) {
@@ -94,7 +93,7 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
 
     // Create and start satellite
     DummySatellite satellite1 {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite1.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satellite1.getCommandPort());
 
     // Check that satellite connected
     while(controller.getConnectionCount() < 1) {
@@ -105,7 +104,7 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
 
     // Create and start second satellite with same canonical name
     DummySatellite satellite2 {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite2.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satellite2.getCommandPort());
 
     // Check that second satellite was not connected
     REQUIRE(controller.getConnectionCount() == 1);
@@ -129,7 +128,7 @@ TEST_CASE("Satellite departing", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {};
-    chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.sat1", CHIRP::CONTROL, satellite.getCommandPort());
 
     // Check that satellite connected
     while(controller.getConnectionCount() < 1) {
@@ -139,7 +138,7 @@ TEST_CASE("Satellite departing", "[controller]") {
     REQUIRE(controller.isInState(CSCP::State::NEW));
 
     // Depart the satellite
-    chirp_mock_service("Dummy.sat1", chirp::CONTROL, satellite.getCommandPort(), false);
+    chirp_mock_service("Dummy.sat1", CHIRP::CONTROL, satellite.getCommandPort(), false);
 
     // Wait for CHIRP message to be processed:
     while(controller.getConnectionCount() > 0) {
@@ -161,7 +160,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satellite.getCommandPort());
 
     // Wait for connection
     while(controller.getConnectionCount() < 1) {
@@ -178,7 +177,7 @@ TEST_CASE("State Updates are propagated", "[controller]") {
 
     // Create and start second satellite
     DummySatellite satellite2 {"z"};
-    chirp_mock_service("Dummy.z", chirp::CONTROL, satellite2.getCommandPort());
+    chirp_mock_service("Dummy.z", CHIRP::CONTROL, satellite2.getCommandPort());
 
     // Wait for connection
     while(controller.getConnectionCount() < 2) {
@@ -209,8 +208,8 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satellite.getHeartbeatPort());
 
     // Wait for connection
     while(controller.getConnectionCount() < 1) {
@@ -242,10 +241,10 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     // Create and start satellite
     DummySatellite satelliteA {"a"};
     DummySatellite satelliteB {"b"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
-    chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
-    chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.b", CHIRP::CONTROL, satelliteB.getCommandPort());
+    chirp_mock_service("Dummy.b", CHIRP::HEARTBEAT, satelliteB.getHeartbeatPort());
 
     while(controller.getConnectionCount() < 2) {
         std::this_thread::sleep_for(50ms);
@@ -289,10 +288,10 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     // Create and start satellite
     DummySatellite satelliteA {"a"};
     DummySatellite satelliteB {"b"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
-    chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
-    chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.b", CHIRP::CONTROL, satelliteB.getCommandPort());
+    chirp_mock_service("Dummy.b", CHIRP::HEARTBEAT, satelliteB.getHeartbeatPort());
 
     // Await connections
     while(controller.getConnectionCount() < 2) {
@@ -373,10 +372,10 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     // Create and start satellite
     DummySatellite satelliteA {"a"};
     DummySatellite satelliteB {"b"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
-    chirp_mock_service("Dummy.b", chirp::CONTROL, satelliteB.getCommandPort());
-    chirp_mock_service("Dummy.b", chirp::HEARTBEAT, satelliteB.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.b", CHIRP::CONTROL, satelliteB.getCommandPort());
+    chirp_mock_service("Dummy.b", CHIRP::HEARTBEAT, satelliteB.getHeartbeatPort());
 
     // Await connection
     while(controller.getConnectionCount() < 2) {
@@ -432,8 +431,8 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
 
     // Create and start satellite
     DummySatellite satelliteA {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satelliteA.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satelliteA.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satelliteA.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satelliteA.getHeartbeatPort());
 
     // Await connection
     while(controller.getConnectionCount() < 1) {
@@ -466,8 +465,8 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
-    chirp_mock_service("Dummy.a", chirp::CONTROL, satellite.getCommandPort());
-    chirp_mock_service("Dummy.a", chirp::HEARTBEAT, satellite.getHeartbeatPort());
+    chirp_mock_service("Dummy.a", CHIRP::CONTROL, satellite.getCommandPort());
+    chirp_mock_service("Dummy.a", CHIRP::HEARTBEAT, satellite.getHeartbeatPort());
 
     // Await connection
     while(controller.getConnectionCount() < 1) {

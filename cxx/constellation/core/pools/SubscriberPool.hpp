@@ -12,9 +12,9 @@
 #include <functional>
 #include <string_view>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/pools/BasePool.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 #include "zmq.hpp"
 
@@ -29,7 +29,7 @@ namespace constellation::pools {
      * @warning Duplicate subscriptions also require duplicate unsubscriptions, this class does not contain any logic to
      *          to track subscription states.
      */
-    template <typename MESSAGE, chirp::ServiceIdentifier SERVICE>
+    template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     class SubscriberPool : public BasePool<MESSAGE, SERVICE, zmq::socket_type::sub> {
     public:
         using BasePoolT = BasePool<MESSAGE, SERVICE, zmq::socket_type::sub>;

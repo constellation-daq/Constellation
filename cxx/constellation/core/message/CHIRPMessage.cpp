@@ -17,16 +17,16 @@
 #include <string_view>
 #include <utility>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/external/md5.h"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
-using namespace constellation::chirp;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol::CHIRP;
 
 MD5Hash::MD5Hash(std::string_view string) : array() {
     auto hasher = Chocobo1::MD5();
@@ -72,11 +72,11 @@ AssembledMessage CHIRPMessage::assemble() const {
     AssembledMessage ret {};
 
     // Protocol identifier
-    for(std::size_t n = 0; n < CHIRP_IDENTIFIER.length(); ++n) {
-        ret.at(n) = std::byte(CHIRP_IDENTIFIER.at(n));
+    for(std::size_t n = 0; n < IDENTIFIER.length(); ++n) {
+        ret.at(n) = std::byte(IDENTIFIER.at(n));
     }
     // Protocol version
-    ret.at(5) = std::byte(CHIRP_VERSION);
+    ret.at(5) = std::byte(VERSION);
     // Message Type
     ret.at(6) = std::byte(std::to_underlying(type_));
     // Group Hash
@@ -101,17 +101,17 @@ CHIRPMessage CHIRPMessage::disassemble(std::span<const std::byte> assembled_mess
     auto chirp_message = CHIRPMessage();
 
     // Check size
-    if(assembled_message.size() != CHIRP_MESSAGE_LENGTH) {
-        throw MessageDecodingError("message length is not " + utils::to_string(CHIRP_MESSAGE_LENGTH) + " bytes");
+    if(assembled_message.size() != MESSAGE_LENGTH) {
+        throw MessageDecodingError("message length is not " + utils::to_string(MESSAGE_LENGTH) + " bytes");
     }
     // Check protocol identifier
-    for(std::size_t n = 0; n < CHIRP_IDENTIFIER.length(); ++n) {
-        if(std::to_integer<char>(assembled_message[n]) != CHIRP_IDENTIFIER.at(n)) {
+    for(std::size_t n = 0; n < IDENTIFIER.length(); ++n) {
+        if(std::to_integer<char>(assembled_message[n]) != IDENTIFIER.at(n)) {
             throw MessageDecodingError("not a CHIRP broadcast");
         }
     }
     // Check the protocol version
-    if(std::to_integer<std::uint8_t>(assembled_message[5]) != CHIRP_VERSION) {
+    if(std::to_integer<std::uint8_t>(assembled_message[5]) != VERSION) {
         throw MessageDecodingError("not a CHIRP v1 broadcast");
     }
     // Message Type

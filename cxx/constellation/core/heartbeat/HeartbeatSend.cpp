@@ -19,11 +19,11 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 using namespace constellation;
@@ -41,7 +41,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
     // Announce service via CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(chirp::HEARTBEAT, port_);
+        chirp_manager->registerService(CHIRP::HEARTBEAT, port_);
     }
 
     sender_thread_ = std::jthread(std::bind_front(&HeartbeatSend::loop, this));
@@ -52,7 +52,7 @@ HeartbeatSend::~HeartbeatSend() {
     // Send CHIRP depart message
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->unregisterService(chirp::HEARTBEAT, port_);
+        chirp_manager->unregisterService(CHIRP::HEARTBEAT, port_);
     }
 
     // Stop sender thread

@@ -20,12 +20,13 @@
 
 #include "constellation/core/chirp/BroadcastRecv.hpp"
 #include "constellation/core/chirp/BroadcastSend.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::message;
+using namespace constellation::protocol::CHIRP;
 using namespace std::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
@@ -127,7 +128,7 @@ TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
+    BroadcastSend sender {"0.0.0.0", PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.start();
 
@@ -138,7 +139,7 @@ TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chi
 }
 
 TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
+    BroadcastSend sender {"0.0.0.0", PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.start();
 
@@ -304,7 +305,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
 
 TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastRecv receiver {"0.0.0.0", CHIRP_PORT};
+    BroadcastRecv receiver {"0.0.0.0", PORT};
     // Note: it seems we have to construct receiver after manager, else we do not receive messages
     // Why? we can only have one working recv binding to the same socket per process unfortunately :/
 
@@ -323,7 +324,7 @@ TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
 
 TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
+    BroadcastSend sender {"0.0.0.0", PORT};
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
 
     // Register service
@@ -341,7 +342,7 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
 }
 
 TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", CHIRP_PORT};
+    BroadcastSend sender {"0.0.0.0", PORT};
     Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
     manager.start();
 

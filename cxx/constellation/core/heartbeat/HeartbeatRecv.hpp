@@ -11,10 +11,10 @@
 #include <functional>
 #include <utility>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 namespace constellation::heartbeat {
 
@@ -27,7 +27,7 @@ namespace constellation::heartbeat {
      *
      * @note Needs to be started with `start()` and stopped with `stop()`
      */
-    class HeartbeatRecv : public pools::SubscriberPool<message::CHP1Message, chirp::HEARTBEAT> {
+    class HeartbeatRecv : public pools::SubscriberPool<message::CHP1Message, protocol::CHIRP::HEARTBEAT> {
     public:
         /**
          * @brief Construct heartbeat receiver
@@ -35,7 +35,7 @@ namespace constellation::heartbeat {
          * @param callback Callback function pointer for received heartbeat messages
          */
         HeartbeatRecv(std::function<void(message::CHP1Message&&)> callback)
-            : SubscriberPool<message::CHP1Message, chirp::HEARTBEAT>("CHP", std::move(callback)) {}
+            : SubscriberPool<message::CHP1Message, protocol::CHIRP::HEARTBEAT>("CHP", std::move(callback)) {}
 
     private:
         void host_connected(const chirp::DiscoveredService& service) final {

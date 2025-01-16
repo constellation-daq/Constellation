@@ -30,7 +30,6 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
@@ -40,6 +39,7 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/windows.hpp"
@@ -49,6 +49,7 @@ using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace constellation::networking;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
@@ -185,7 +186,7 @@ void CMDPSink::enableSending(std::string sender_name) {
     // Register service in CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();
     if(chirp_manager != nullptr) {
-        chirp_manager->registerService(chirp::MONITORING, port_);
+        chirp_manager->registerService(CHIRP::MONITORING, port_);
     } else {
         LOG(*logger_, WARNING) << "Failed to advertise logging on the network, satellite might not be discovered";
     }

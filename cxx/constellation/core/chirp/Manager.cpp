@@ -31,12 +31,12 @@
 #include <asio/ip/address_v4.hpp>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -44,6 +44,7 @@
 using namespace constellation::chirp;
 using namespace constellation::message;
 using namespace constellation::networking;
+using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
@@ -109,7 +110,7 @@ Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
                  const asio::ip::address_v4& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
-    : receiver_(any_address, CHIRP_PORT), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
+    : receiver_(any_address, PORT), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
 
     std::set<asio::ip::address_v4> brd_addresses {};
     if(brd_address.has_value()) {
@@ -120,7 +121,7 @@ Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
         LOG(logger_, TRACE) << "Using broadcast addresses "
                             << range_to_string(brd_addresses, [](const auto& adr) { return adr.to_string(); });
     }
-    sender_ = std::make_unique<BroadcastSend>(brd_addresses, CHIRP_PORT);
+    sender_ = std::make_unique<BroadcastSend>(brd_addresses, PORT);
 
     LOG(logger_, TRACE) << "Using any address " << any_address.to_string();
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();

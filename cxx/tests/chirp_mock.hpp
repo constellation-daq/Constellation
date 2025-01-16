@@ -14,10 +14,10 @@
 #include <tuple>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
-#include "constellation/core/chirp/CHIRP_definitions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 inline std::shared_ptr<constellation::chirp::Manager> create_chirp_manager() {
     auto manager = std::make_shared<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
@@ -27,12 +27,13 @@ inline std::shared_ptr<constellation::chirp::Manager> create_chirp_manager() {
 }
 
 inline void chirp_mock_service(std::string_view name,
-                               constellation::chirp::ServiceIdentifier service,
+                               constellation::protocol::CHIRP::ServiceIdentifier service,
                                constellation::networking::Port port,
                                bool offer = true) {
     // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
     using namespace constellation::chirp;
-    BroadcastSend chirp_sender {"0.0.0.0", CHIRP_PORT};
+    using namespace constellation::protocol::CHIRP;
+    BroadcastSend chirp_sender {"0.0.0.0", PORT};
     const auto msgtype = offer ? MessageType::OFFER : MessageType::DEPART;
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendBroadcast(chirp_msg.assemble());
