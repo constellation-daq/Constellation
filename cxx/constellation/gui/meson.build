@@ -9,13 +9,15 @@ qt_version = get_option('build_gui')
 qt = import(qt_version)
 qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
 
-ui_files = qt.compile_ui(sources: 'QResponseDialog.ui')
-moc_files = qt.compile_moc(headers: ['QController.hpp', 'QResponseDialog.hpp'])
+ui_files = qt.compile_ui(sources: ['QResponseDialog.ui', 'QLogMessageDialog.ui'])
+moc_files = qt.compile_moc(headers: ['QController.hpp', 'QResponseDialog.hpp', 'QLogMessageDialog.hpp'])
 qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
 gui_src = files(
   'QController.cpp',
   'QResponseDialog.cpp',
+  'QLogMessage.cpp',
+  'QLogMessageDialog.cpp'
 )
 
 gui_lib = library('ConstellationGUI',
@@ -45,5 +47,7 @@ install_headers(
   'qt_utils.hpp',
   'QController.hpp',
   'QResponseDialog.hpp',
+  'QLogMessageDialog.hpp',
+  'QLogMessage.hpp',
   subdir: 'constellation/gui',
 )

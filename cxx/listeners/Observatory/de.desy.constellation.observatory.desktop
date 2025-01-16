@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Observatory
+Comment=Logging Interface Constellation
+Categories=Science;Physics;
+Keywords=Constellation;DAQ;testbeam;
+
+Icon=de.desy.constellation.observatory
+Exec=Observatory
+Terminal=false

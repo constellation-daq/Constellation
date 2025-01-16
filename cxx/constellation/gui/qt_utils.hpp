@@ -12,12 +12,17 @@
 #include <chrono>
 #include <utility>
 
+#include <QApplication>
+#include <QColor>
 #include <QDateTime>
+#include <QPalette>
 #include <QString>
 #include <QTimeZone>
 
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/std_future.hpp"
 
 #if __cpp_lib_format >= 201907L
 #include <format>
@@ -53,6 +58,33 @@ namespace constellation::gui {
         default: std::unreachable();
         }
     }
+
+    /** Color assignment for log levels */
+    inline QColor get_log_level_color(log::Level level) {
+        switch(level) {
+        case log::Level::TRACE:
+        case log::Level::DEBUG: {
+            return QColorConstants::Gray;
+        }
+        case log::Level::INFO: {
+            // Neutral:
+            return QApplication::palette().text().color();
+        }
+        case log::Level::WARNING: {
+            return {255, 138, 0, 128};
+        }
+        case log::Level::STATUS: {
+            return {0, 100, 0, 128};
+        }
+        case log::Level::CRITICAL: {
+            return {255, 0, 0, 128};
+        }
+        case log::Level::OFF: {
+            return {0, 0, 0, 128};
+        }
+        default: std::unreachable();
+        }
+    };
 
     inline QDateTime from_timepoint(const std::chrono::system_clock::time_point& time_point) {
 #if __cpp_lib_chrono >= 201907L
