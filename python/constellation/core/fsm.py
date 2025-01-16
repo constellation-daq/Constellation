@@ -250,7 +250,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def interrupt(self, request: CSCPMessage) -> Tuple[str, str, None]:
+    def _interrupt(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Initiate interrupt state transition via a CSCP request.
 
         No payload argument.
@@ -263,7 +263,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def failure(self, request: CSCPMessage) -> Tuple[str, str, None]:
+    def _failure(self, request: CSCPMessage) -> Tuple[str, str, None]:
         """Enter error state transition via a CSCP request.
 
         No payload argument.
