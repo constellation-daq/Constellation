@@ -114,7 +114,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             interval_ = CHP::calculate_interval(subscribers_, default_interval_);
 
             // Publish CHP message with current state and the updated interval
-            CHP1Message(sender_, state_callback_(), interval_.load(), status_, flags_.load()).assemble().send(pub_socket_);
+            CHP1Message(sender_, state_callback_(), interval_.load(), flags_.load(), status_).assemble().send(pub_socket_);
             status_.reset();
             flags_ = CHP::MessageFlags::NONE;
         } catch(const zmq::error_t& e) {
