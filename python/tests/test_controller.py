@@ -7,6 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import pytest
 import time
 from constellation.core.configuration import flatten_config
+from constellation.core.fsm import SatelliteState
 
 
 # %%%%%%%%%%%%%%%
@@ -38,7 +39,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
     while timeout > 0 and len(mock_controller.states) < 1:
         time.sleep(0.05)
         timeout -= 0.05
-    assert mock_controller.states["Satellite.mock_satellite"].name.lower() == "new"
+    assert mock_controller.states["Satellite.mock_satellite"] == SatelliteState.NEW
 
 
 @pytest.mark.forked
