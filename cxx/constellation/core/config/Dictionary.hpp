@@ -53,7 +53,8 @@ namespace constellation::config {
      */
     class Dictionary : public std::map<std::string, Value> {
     public:
-        template <typename T> static inline Dictionary fromMap(const std::map<std::string, T>& map) {
+        /** Create a dictionary object directly from a map with string keys */
+        template <typename T> static Dictionary fromMap(const std::map<std::string, T>& map) {
             Dictionary dict;
             for(const auto& [key, value] : map) {
                 dict.emplace(key, Value::set(value));

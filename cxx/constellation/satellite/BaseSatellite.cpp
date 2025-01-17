@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <map>
 #include <optional>
 #include <ranges>
 #include <stop_token>
@@ -23,6 +24,7 @@
 #include <typeinfo>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include <msgpack.hpp>
 #include <zmq.hpp>
