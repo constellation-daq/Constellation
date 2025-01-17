@@ -78,6 +78,7 @@ namespace constellation::protocol::CSCP {
         get_config,
         get_run_id,
         shutdown,
+        _get_commands,
         _get_remotes,
         _get_services,
     };

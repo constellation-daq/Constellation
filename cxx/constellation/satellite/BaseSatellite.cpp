@@ -219,6 +219,36 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         return_payload = command_dict.assemble();
         break;
     }
+    case _get_commands: {
+        auto command_dict = Dictionary();
+        // Hidden FSM commands
+        command_dict["_interrupt"] = "Send interrupt signal to satellite to transition to SAFE mode";
+        command_dict["_failure"] = "Send failure signal to satellite to transition to ERROR mode";
+        // Hidden commands
+        command_dict["_get_commands"] =
+            "Get hidden commands provided by satellite (returned in payload as flat MessagePack dict with strings as keys)";
+        ;
+        command_dict["_get_remotes"] = "Get remote services registered by the satellite (returned in payload as dictionary "
+                                       "with the remote host ID as key and a list of services as value)";
+        command_dict["_get_services"] = "Get services provided by the satellite (returned in payload as dictionary with the "
+                                        "service identifier as key and the port on which it is offered as value)";
+
+        // Append user commands
+        const auto user_commands = user_commands_.describeCommands();
+        for(const auto& cmd : user_commands) {
+            // Only commands starting with underscore are listed:
+            if(!cmd.first.starts_with("_")) {
+                continue;
+            }
+            command_dict.emplace(cmd.first, cmd.second);
+        }
+
+        return_verb = {CSCP1Message::Type::SUCCESS,
+                       to_string(command_dict.size()) + " hidden commands known, list attached in payload"};
+        // Pack dict
+        return_payload = command_dict.assemble();
+        break;
+    }
     case get_state: {
         return_verb = {CSCP1Message::Type::SUCCESS, to_string(fsm_.getState())};
         return_payload = Value::set(std::to_underlying(fsm_.getState())).assemble();
