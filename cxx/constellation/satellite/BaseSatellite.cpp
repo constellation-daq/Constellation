@@ -244,15 +244,19 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
             const auto& remotes = chirp_manager->getDiscoveredServices();
-            auto remotes_list = List();
+            auto remotes_dict = std::map<std::string, std::vector<std::string>>();
             for(const auto& remote : remotes) {
-                remotes_list.push_back(remote.to_string());
+                const auto host_id = remote.host_id.to_string();
+                if(!remotes_dict.contains(host_id)) {
+                    remotes_dict[host_id] = std::vector<std::string>();
+                }
+                remotes_dict.at(host_id).push_back(to_string(remote.identifier) + " @ " + remote.to_uri());
             }
 
             return_verb = {CSCP1Message::Type::SUCCESS,
-                           to_string(remotes_list.size()) + " remote services registered" +
-                               (remotes_list.empty() ? "" : ", list attached in payload")};
-            return_payload = remotes_list.assemble();
+                           to_string(remotes_dict.size()) + " remote services registered" +
+                               (remotes_dict.empty() ? "" : ", list attached in payload")};
+            return_payload = Dictionary::fromMap(remotes_dict).assemble();
         } else {
             return_verb = {CSCP1Message::Type::INVALID, "No network discovery service available"};
         }
