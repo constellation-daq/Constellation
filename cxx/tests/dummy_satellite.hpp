@@ -51,7 +51,7 @@ public:
     void reactFSM(constellation::satellite::FSM::Transition transition,
                   constellation::satellite::FSM::TransitionPayload payload = {},
                   bool progress = true) {
-        SatelliteT::getFSM().react(transition, std::move(payload));
+        SatelliteT::getFSM().react(transition, false, std::move(payload));
         if(progress) {
             progressFsm();
         }
