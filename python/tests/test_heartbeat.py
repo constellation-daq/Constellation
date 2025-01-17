@@ -13,11 +13,9 @@ from constellation.core.chirp import get_uuid
 from constellation.core.heartbeater import HeartbeatSender
 from constellation.core.fsm import SatelliteState
 
-
 HB_PORT = 33333
 
 
-# FIXTURES
 @pytest.fixture
 def mock_heartbeat_sender():
     """Create a mock HeartbeatSender base instance."""
@@ -64,31 +62,31 @@ def test_hb_send_recv(mock_heartbeat_sender, mock_heartbeat_checker):
     hbs = mock_heartbeat_sender
     hbc.HB_INIT_PERIOD = 180
     hbs.heartbeat_period = 200
-    hbc.register_heartbeat_host(get_uuid("mock_sender"), f"tcp://127.0.0.1:{HB_PORT}")
+    hbc.register_heartbeat_host(get_uuid("HeartbeatSender.mock_heartbeater"), f"tcp://127.0.0.1:{HB_PORT}")
     time.sleep(0.5)
     assert not hbc.get_failed()
     hbs.fsm.initialize("running mock init")
     hbs.fsm.initialized("done with mock init")
     time.sleep(0.5)
-    assert hbc.states["mock_sender"] == SatelliteState.INIT
+    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater"] == SatelliteState.INIT
 
 
 @pytest.mark.forked
 def test_hb_send_recv_lag(mock_heartbeat_sender, mock_heartbeat_checker):
     """Test that receiver can catch up to sender."""
-    hbc = mock_heartbeat_checker
     hbs = mock_heartbeat_sender
-    hbc.HB_INIT_PERIOD = 180
     hbs.heartbeat_period = 120
-    hbc.register_heartbeat_host(get_uuid("mock_sender"), f"tcp://127.0.0.1:{HB_PORT}")
+    hbc = mock_heartbeat_checker
+    hbc.HB_INIT_PERIOD = 180
     time.sleep(2)
     stack = len(mock_packet_queue_sender[HB_PORT])
     assert stack >= 8
+    hbc.register_heartbeat_host(get_uuid("HeartbeatSender.mock_heartbeater"), f"tcp://127.0.0.1:{HB_PORT}")
     hbs.fsm.initialize("running mock init")
     hbs.fsm.initialized("done with mock init")
     time.sleep(1)
     assert len(mock_packet_queue_sender[HB_PORT]) <= stack / 2
-    assert hbc.states["mock_sender"] == SatelliteState.INIT
+    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater"] == SatelliteState.INIT
     assert not hbc.get_failed()
 
 
@@ -110,7 +108,7 @@ def test_hb_extrasystoles(mock_heartbeat_sender):
 def test_hb_recv_fail(mock_heartbeat_checker):
     hbc = mock_heartbeat_checker
     hbc.HB_INIT_PERIOD = 200
-    hbc.register_heartbeat_host(get_uuid("mock_sender"), "tcp://127.0.0.1:23456")
+    hbc.register_heartbeat_host(get_uuid("HeartbeatSender.mock_heartbeater"), "tcp://127.0.0.1:23456")
     timeout = 4
     while timeout > 0 and not hbc.get_failed():
         time.sleep(0.1)

@@ -395,9 +395,11 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         if uuid in self._transmitters:
             # we are controlling this satellite
             if not self.heartbeat_host_is_registered(service.host_uuid):
+                name, cls = self.constellation._get_name_from_uuid(uuid)
                 self.register_heartbeat_host(
                     host=service.host_uuid,
                     address=f"tcp://{service.address}:{service.port}",
+                    name=f"{cls}.{name}",
                 )
 
     def _add_satellite(self, service: DiscoveredService) -> None:
@@ -448,8 +450,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
                     if self.heartbeat_host_is_registered(service.host_uuid):
                         self.unregister_heartbeat_host(service.host_uuid)
                     self.register_heartbeat_host(
-                        host=service.host_uuid,
-                        address=f"tcp://{hbservice.address}:{hbservice.port}",
+                        host=service.host_uuid, address=f"tcp://{hbservice.address}:{hbservice.port}", name=f"{cls}.{name}"
                     )
                     break
         except RuntimeError as e:

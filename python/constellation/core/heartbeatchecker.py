@@ -17,9 +17,9 @@ from .base import BaseSatelliteFrame
 
 
 class HeartbeatState:
-    def __init__(self, host: UUID, evt: threading.Event, lives: int, interval: int):
+    def __init__(self, host: UUID, name: str, evt: threading.Event, lives: int, interval: int):
         self.host = host
-        self.name = ""
+        self.name = name
         self.lives = lives
         self.interval = interval
         self.last_refresh = datetime.now(timezone.utc)
@@ -71,13 +71,18 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self.log.debug("Heartbeat receiver thread prepared and added to the pool.")
 
     def register_heartbeat_host(
-        self, host: UUID, address: str, context: Optional[zmq.Context] = None  # type: ignore[type-arg]
+        self, host: UUID, address: str, name: str = "", context: Optional[zmq.Context] = None  # type: ignore[type-arg]
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
 
         Returns threading.Event that will be set when a failure occurs.
 
         """
+        for hb in self._states.values():
+            if host == hb.host:
+                self.log.warning(f"Heartbeating for {host} already registered!")
+                return hb.failed
+
         ctx = context or zmq.Context()
         try:
             socket = ctx.socket(zmq.SUB)
@@ -92,7 +97,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         evt = threading.Event()
-        self._states[socket] = HeartbeatState(host, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
+        self._states[socket] = HeartbeatState(host, name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
 
         with self._socket_lock:
             self._poller.register(socket, zmq.POLLIN)

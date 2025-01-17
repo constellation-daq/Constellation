@@ -273,6 +273,10 @@ def mock_heartbeat_checker():
             mock_poller.poll.side_effect = poll
             mock_p.return_value = mock_poller
             hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
+            hbc._add_com_thread()
+            hbc._start_com_threads()
+            # give the threads a chance to start
+            time.sleep(0.1)
             yield hbc
 
 
