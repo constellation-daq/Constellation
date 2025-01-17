@@ -42,7 +42,7 @@ def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHP
     if len(msg) > 1:
         status = msg[1].decode("utf-8")
 
-    return host, timestamp, state, flags, interval, status
+    return name, timestamp, state, flags, interval, status
 
 
 class CHPTransmitter:
