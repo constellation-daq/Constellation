@@ -203,6 +203,24 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(public_cmds)} commands known", public_cmds, None
 
     @cscp_requestable
+    def _get_commands(self, _request: CSCPMessage | None = None) -> Tuple[str, dict[str, str], None]:
+        """Return all hidden commands supported by the Satellite.
+
+        No payload argument.
+
+        This will include all methods with the @cscp_requestable decorator starting with an underscore. The
+        doc string of the function will be used to derive the summary and payload argument description for
+        each command by using the first and the second line of the doc string, respectively (not counting
+        empty lines).
+
+        """
+        hidden_cmds = {}
+        for key, value in self._cmds.items():
+            if key.startswith("_"):
+                hidden_cmds[key] = value
+        return f"{len(hidden_cmds)} commands known", hidden_cmds, None
+
+    @cscp_requestable
     def get_name(self, _request: CSCPMessage) -> Tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
