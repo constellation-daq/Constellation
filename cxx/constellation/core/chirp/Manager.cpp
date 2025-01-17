@@ -65,10 +65,6 @@ std::string DiscoveredService::to_uri() const {
     return ::to_uri(address, port);
 }
 
-std::string DiscoveredService::to_string() const {
-    return host_id.to_string() + ": " + ::to_string(identifier) + " @ " + ::to_uri(address, port);
-}
-
 bool DiscoveredService::operator<(const DiscoveredService& other) const {
     // Ignore IP when sorting, we only care about the host
     auto ord_host_id = host_id <=> other.host_id;
