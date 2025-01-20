@@ -16,6 +16,7 @@
 
 #include <zmq.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"

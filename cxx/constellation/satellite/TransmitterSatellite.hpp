@@ -63,6 +63,9 @@ namespace constellation::satellite {
              */
             std::size_t countFrames() const { return countPayloadFrames(); }
 
+            /** Allow using the header to get e.g. sequence number */
+            using message::CDTP1Message::getHeader;
+
         private:
             // TransmitterSatellite needs access to constructor
             friend TransmitterSatellite;
