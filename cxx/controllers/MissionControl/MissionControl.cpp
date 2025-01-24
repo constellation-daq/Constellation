@@ -148,6 +148,9 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(viewConn, &QTreeView::customContextMenuRequested, this, &MissionControl::custom_context_menu);
 
+    // Enable uniform row height to allow for optimizations on Qt end:
+    viewConn->setUniformRowHeights(true);
+
     // Set default column width of main connection view
     viewConn->header()->setSectionResizeMode(0, QHeaderView::Interactive);
     viewConn->header()->resizeSection(0, 100);
