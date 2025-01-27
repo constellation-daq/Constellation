@@ -17,6 +17,7 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
@@ -266,6 +267,8 @@ TEST_CASE("Successful run", "[satellite]") {
     // Wait until EOR is handled
     receiver.awaitEOR();
     const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("version").get<std::string>() == CNSTLN_VERSION);
+    REQUIRE(eor.at("version_full").get<std::string>() == "Constellation " CNSTLN_VERSION_FULL);
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::GOOD);

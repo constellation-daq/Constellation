@@ -16,6 +16,7 @@
 
 #include <zmq.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
@@ -124,6 +125,8 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     seq_ = 0;
     run_metadata_ = {};
     mark_run_tainted_ = false;
+    set_run_metadata_tag("version", CNSTLN_VERSION);
+    set_run_metadata_tag("version_full", "Constellation " CNSTLN_VERSION_FULL);
     set_run_metadata_tag("run_id", run_identifier);
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
 
