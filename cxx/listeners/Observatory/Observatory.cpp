@@ -147,6 +147,8 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
             viewLog->setColumnWidth(col, width);
         }
     }
+    // Enable uniform row height to allow for optimizations on Qt end:
+    viewLog->setUniformRowHeights(true);
 
     // Restore window geometry:
     restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
