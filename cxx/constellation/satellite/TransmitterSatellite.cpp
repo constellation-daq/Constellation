@@ -126,7 +126,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     run_metadata_ = {};
     mark_run_tainted_ = false;
     set_run_metadata_tag("version", CNSTLN_VERSION);
-    set_run_metadata_tag("version_full", std::string("Constellation ") + CNSTLN_VERSION_FULL);
+    set_run_metadata_tag("version_full", "Constellation " CNSTLN_VERSION_FULL);
     set_run_metadata_tag("run_id", run_identifier);
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
 
