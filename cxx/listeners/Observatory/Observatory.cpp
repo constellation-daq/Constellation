@@ -125,6 +125,8 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
 
+    setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
+
     // Connect signals:
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) { filterSender->addItem(sender); });
     connect(&log_listener_, &QLogListener::newTopic, this, [&](const QString& topic) { filterTopic->addItem(topic); });
