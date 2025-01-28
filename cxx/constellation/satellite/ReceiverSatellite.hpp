@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <mutex>
@@ -206,6 +207,7 @@ namespace constellation::satellite {
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
+        std::atomic_uint64_t bytes_received_;
     };
 
 } // namespace constellation::satellite
