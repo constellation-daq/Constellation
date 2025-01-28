@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <stop_token>
@@ -89,6 +90,13 @@ namespace constellation::satellite {
          * @param run_metadata Dictionary with run meta data of the sending satellite to be stored
          */
         virtual void receive_eor(const message::CDTP1Message::Header& header, config::Dictionary run_metadata) = 0;
+
+        /**
+         * @brief Get amount of payload data received from all transmitters in the current run
+         *
+         * @return Amount of data in bytes
+         */
+        std::size_t get_bytes_received() const { return bytes_received_.load(); }
 
     public:
         /**
@@ -207,7 +215,7 @@ namespace constellation::satellite {
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
-        std::atomic_uint64_t bytes_received_;
+        std::atomic_size_t bytes_received_;
     };
 
 } // namespace constellation::satellite
