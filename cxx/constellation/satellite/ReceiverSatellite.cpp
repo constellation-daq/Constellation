@@ -27,6 +27,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
@@ -39,6 +40,7 @@
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::networking;
 using namespace constellation::pools;
 using namespace constellation::protocol;
@@ -49,7 +51,10 @@ using namespace std::chrono_literals;
 ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name),
       BasePool("CDTP", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
-      cdtp_logger_("CDTP") {}
+      cdtp_logger_("CDTP") {
+
+    register_timed_metric("BYTES_RECEIVED", "B", MetricType::LAST_VALUE, 10s, [this]() { return bytes_received_.load(); });
+}
 
 void ReceiverSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
@@ -92,6 +97,9 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
 void ReceiverSatellite::starting_receiver() {
     // Reset all transmitters to not connected
     reset_data_transmitter_states();
+
+    // Reset bytes received metric
+    bytes_received_ = 0;
 
     // Start BasePool thread
     startPool();
@@ -223,6 +231,7 @@ void ReceiverSatellite::handle_cdtp_message(CDTP1Message&& message) {
     [[likely]] case DATA: {
         LOG(cdtp_logger_, TRACE) << "Received data message " << message.getHeader().getSequenceNumber() << " from "
                                  << message.getHeader().getSender();
+        bytes_received_ += message.countPayloadBytes();
         handle_data_message(std::move(message));
         break;
     }
