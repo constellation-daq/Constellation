@@ -87,7 +87,7 @@ namespace constellation::gui {
     };
 
     inline QDateTime from_timepoint(const std::chrono::system_clock::time_point& time_point) {
-#if __cpp_lib_chrono >= 201907L
+#if __cpp_lib_chrono >= 201907L && QT_VERSION >= QT_VERSION_CHECK(6, 4, 0)
         return QDateTime::fromStdTimePoint(std::chrono::time_point_cast<std::chrono::milliseconds>(time_point));
 #else
         return QDateTime(QDate(1970, 1, 1), QTime(0, 0, 0), QTimeZone::utc())
