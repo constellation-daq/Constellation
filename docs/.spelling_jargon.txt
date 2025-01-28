@@ -52,3 +52,4 @@ uptime
 Gid
 KiB
 gui
+linter
