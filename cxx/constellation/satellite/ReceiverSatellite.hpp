@@ -79,7 +79,7 @@ namespace constellation::satellite {
          *
          * @param data_message Data message containing the header and the payload
          */
-        virtual void receive_data(message::CDTP1Message&& data_message) = 0;
+        virtual void receive_data(message::CDTP1Message data_message) = 0;
 
         /**
          * @brief Receive and handle End-of-Run (EOR) message

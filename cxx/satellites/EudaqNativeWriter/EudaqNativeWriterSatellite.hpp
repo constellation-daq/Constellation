@@ -183,7 +183,7 @@ protected:
                      constellation::config::Configuration config) final;
 
     /** Callback for receiving a DATA message */
-    void receive_data(constellation::message::CDTP1Message&& data_message) final;
+    void receive_data(constellation::message::CDTP1Message data_message) final;
 
     /** Callback for receiving a EOR message */
     void receive_eor(const constellation::message::CDTP1Message::Header& header,
