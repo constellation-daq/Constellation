@@ -71,12 +71,6 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
         void flush();
 
         /**
-         * @brief Helper to report the total number of bytes written to the file
-         * @return Total number of bytes written
-         */
-        std::uint64_t bytesWritten() const { return bytes_written_; }
-
-        /**
          * @brief Function to serialize BOR and EOR messages which delimit a run
          * @details This function serializes the BOR and EOR delimiter CDTP messages into EUDAQ native binary format. The
          * corresponding EUDAQ events are marked as BORE and EORE, respectively. The header of the EUDAQ event will contain
@@ -151,7 +145,6 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
 
     private:
         std::ofstream file_;
-        std::uint64_t bytes_written_ {};
         std::uint32_t run_sequence_;
 
         constellation::utils::string_hash_map<std::string> eudaq_event_descriptors_;
