@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <cstddef>
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
@@ -33,6 +32,5 @@ protected:
                      constellation::config::Dictionary run_metadata) final;
 
 private:
-    std::size_t bytes_received_ {};
     constellation::utils::StopwatchTimer timer_;
 };

@@ -99,7 +99,7 @@ void ReceiverSatellite::starting_receiver() {
     reset_data_transmitter_states();
 
     // Reset bytes received metric
-    bytes_received_ = 0;
+    bytes_received_ = 0UL;
 
     // Start BasePool thread
     startPool();
