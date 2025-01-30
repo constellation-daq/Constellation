@@ -21,6 +21,8 @@
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 
 using namespace constellation::message;
@@ -34,13 +36,13 @@ zmq::multipart_t CSCP1Message::assemble(bool keep_payload) {
 
     // First frame: header
     msgpack::sbuffer sbuf_header {};
-    msgpack::pack(sbuf_header, header_);
+    msgpack_pack(sbuf_header, header_);
     frames.add(PayloadBuffer(std::move(sbuf_header)).to_zmq_msg_release());
 
     // Second frame: body
     msgpack::sbuffer sbuf_body {};
-    msgpack::pack(sbuf_body, std::to_underlying(verb_.first));
-    msgpack::pack(sbuf_body, verb_.second);
+    msgpack_pack(sbuf_body, std::to_underlying(verb_.first));
+    msgpack_pack(sbuf_body, verb_.second);
     frames.add(PayloadBuffer(std::move(sbuf_body)).to_zmq_msg_release());
 
     // Third frame: payload
@@ -64,10 +66,9 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
         // Decode body
         const auto body_frame = frames.pop();
         std::size_t offset = 0;
-        const auto msgpack_type = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
-        const auto type = static_cast<Type>(msgpack_type->as<std::uint8_t>());
-        const auto msgpack_string = msgpack::unpack(to_char_ptr(body_frame.data()), body_frame.size(), offset);
-        const auto string = msgpack_string->as<std::string>();
+        const auto type =
+            static_cast<Type>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(body_frame.data()), body_frame.size(), offset));
+        const auto string = msgpack_unpack_to<std::string>(to_char_ptr(body_frame.data()), body_frame.size(), offset);
 
         // Create message
         auto cscp1_message = CSCP1Message(header, {type, string});
@@ -78,9 +79,7 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
         }
 
         return cscp1_message;
-    } catch(const msgpack::type_error&) {
-        throw MessageDecodingError("malformed data");
-    } catch(const msgpack::unpack_error&) {
-        throw MessageDecodingError("could not unpack data");
+    } catch(const MsgpackUnpackError& e) {
+        throw MessageDecodingError(e.what());
     }
 }

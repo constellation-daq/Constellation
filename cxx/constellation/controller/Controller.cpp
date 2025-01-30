@@ -36,12 +36,14 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
@@ -274,7 +276,7 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
             } catch(const msgpack::unpack_error&) {
                 continue;
             }
-        } catch(const NetworkError& e) {
+        } catch(const MessageDecodingError& e) {
             LOG(CRITICAL) << e.what();
             continue;
         }
@@ -349,7 +351,7 @@ CSCP1Message Controller::build_message(std::string verb, const CommandPayload& p
         send_msg.addPayload(std::get<List>(payload).assemble());
     } else if(std::holds_alternative<std::string>(payload)) {
         msgpack::sbuffer sbuf {};
-        msgpack::pack(sbuf, std::get<std::string>(payload));
+        msgpack_pack(sbuf, std::get<std::string>(payload));
         send_msg.addPayload(std::move(sbuf));
     }
     return send_msg;

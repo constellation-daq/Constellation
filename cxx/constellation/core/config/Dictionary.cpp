@@ -17,6 +17,7 @@
 
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
@@ -50,13 +51,12 @@ void List::msgpack_unpack(const msgpack::object& msgpack_object) {
 
 PayloadBuffer List::assemble() const {
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, *this);
+    utils::msgpack_pack(sbuf, *this);
     return {std::move(sbuf)};
 }
 
 List List::disassemble(const PayloadBuffer& message) {
-    const auto msgpack_dict = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size());
-    return msgpack_dict->as<List>();
+    return msgpack_unpack_to<List>(to_char_ptr(message.span().data()), message.span().size());
 }
 
 std::string List::to_string() const {
@@ -102,13 +102,12 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
 
 PayloadBuffer Dictionary::assemble() const {
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, *this);
+    utils::msgpack_pack(sbuf, *this);
     return {std::move(sbuf)};
 }
 
 Dictionary Dictionary::disassemble(const PayloadBuffer& message) {
-    const auto msgpack_dict = msgpack::unpack(to_char_ptr(message.span().data()), message.span().size());
-    return msgpack_dict->as<Dictionary>();
+    return msgpack_unpack_to<Dictionary>(to_char_ptr(message.span().data()), message.span().size());
 }
 
 std::string Dictionary::to_string(bool prefix) const {

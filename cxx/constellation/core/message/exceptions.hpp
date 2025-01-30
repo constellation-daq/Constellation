@@ -80,4 +80,15 @@ namespace constellation::message {
         }
     };
 
+    /**
+     * @ingroup Exceptions
+     * @brief Invalid message payload
+     *
+     * The message payload is invalid and cannot be used
+     */
+    class CNSTLN_API InvalidPayload : public MessageDecodingError {
+    public:
+        explicit InvalidPayload(std::string_view reason) { error_message_ = reason; }
+    };
+
 } // namespace constellation::message
