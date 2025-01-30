@@ -17,6 +17,7 @@
 
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
 using namespace constellation::message;
@@ -110,10 +111,12 @@ Dictionary Dictionary::disassemble(const PayloadBuffer& message) {
     return msgpack_dict->as<Dictionary>();
 }
 
-std::string Dictionary::to_string() const {
-    std::string out {};
-    for(const auto& [key, value] : *this) {
-        out += "\n " + key + ": " + value.str();
+std::string Dictionary::to_string(bool prefix) const {
+    std::string out = (prefix ? "\n" : "");
+    out += range_to_string(
+        *this, [prefix](const auto& it) { return (prefix ? " " : "") + it.first + ": " + it.second.str(); }, "\n");
+    if(out == "\n") {
+        out.clear();
     }
     return out;
 }
