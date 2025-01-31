@@ -11,21 +11,23 @@ from typing import Tuple
 from .protocol import Protocol
 
 
-def CHPDecodeMessage(buf: bytes) -> Tuple[str, msgpack.Timestamp, int, int]:
+def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, int]:
     """Decode a CHP binary message.
 
     Returns host, timestamp, state and interval.
 
     """
     unpacker = msgpack.Unpacker()
-    unpacker.feed(buf)
+    unpacker.feed(msg[0])
     protocol = unpacker.unpack()
+    if not protocol == Protocol.CHP.value:
+        raise RuntimeError(f"Received message with malformed CHP header: {protocol}!")
+
     name = unpacker.unpack()
     timestamp = unpacker.unpack()
     state = unpacker.unpack()
     interval = unpacker.unpack()
-    if not protocol == Protocol.CHP.value:
-        raise RuntimeError(f"Received message with malformed CHP header: {protocol}!")
+
     return name, timestamp, state, interval
 
 
@@ -51,12 +53,12 @@ class CHPTransmitter:
     def recv(self, flags: int = zmq.NOBLOCK) -> Tuple[str, msgpack.Timestamp, int, int] | Tuple[None, None, None, None]:
         """Receive a heartbeat via CHP."""
         try:
-            buf = self._socket.recv(flags)
+            msg = self._socket.recv_multipart(flags)
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
             return None, None, None, None
-        return CHPDecodeMessage(buf)
+        return CHPDecodeMessage(msg)
 
     def close(self) -> None:
         """Close the socket of the transmitter."""
