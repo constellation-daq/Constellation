@@ -28,9 +28,11 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -53,7 +55,12 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
       BasePool("CDTP", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
       cdtp_logger_("CDTP") {
 
-    register_timed_metric("BYTES_RECEIVED", "B", MetricType::LAST_VALUE, 10s, [this]() { return bytes_received_.load(); });
+    register_timed_metric("BYTES_RECEIVED",
+                          "B",
+                          MetricType::LAST_VALUE,
+                          10s,
+                          {CSCP::State::starting, CSCP::State::RUN, CSCP::State::stopping},
+                          [this]() { return bytes_received_.load(); });
 }
 
 void ReceiverSatellite::running(const std::stop_token& stop_token) {
@@ -99,7 +106,8 @@ void ReceiverSatellite::starting_receiver() {
     reset_data_transmitter_states();
 
     // Reset bytes received metric
-    bytes_received_ = 0UL;
+    bytes_received_ = 0;
+    STAT("BYTES_RECEIVED", 0);
 
     // Start BasePool thread
     startPool();
