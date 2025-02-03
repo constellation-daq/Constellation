@@ -3,6 +3,9 @@
 Constellation can be built and distributed as [Flatpak](https://flatpak.org/). The advantage is that this only requires an
 installation of Meson and Flatpak to build and makes it easy to distribute Constellation to the users.
 
+Information on how to start and run the Constellation Flatpak can be found in the
+[operator guide](../operator_guide/get_started/install_from_flathub.md#usage-notes).
+
 ## Setting up Flatpak
 
 The installation instruction for Flatpak can be found on the [Flatpak website](https://flatpak.org/setup/).
@@ -84,20 +87,4 @@ After the build, the linter can be run to check for any blockers for the submiss
 ```sh
 flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest de.desy.constellation.yml
 flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo repo
-```
-
-## Running the Flatpak
-
-Currently, the Flatpak only contains the C++ side of Constellation. It includes the hardware-independent satellites and the
-MissionControl GUI. The GUIs can be started like any other desktop application.
-
-Satellites can be started using the following command:
-
-```sh
-flatpak run de.desy.constellation -t Sputnik -n Flatpak -g edda
-```
-
-```{attention}
-Satellite that require access to the file system might require additional file system permissions for special data folder
-like e.g. `/data`. These path can be added using e.g. [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal).
 ```
