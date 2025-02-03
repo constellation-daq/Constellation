@@ -7,7 +7,7 @@
   <developer id="de.desy">
     <name>Deutsches Elektronen-Synchrotron DESY</name>
   </developer>
-  <summary>Control and Data Acquisition System</summary>
+  <summary>Control and data acquisition system</summary>
   <icon type="stock">de.desy.constellation</icon>
   <project_license>EUPL-1.2</project_license>
   <url type="homepage">https://constellation.pages.desy.de/</url>

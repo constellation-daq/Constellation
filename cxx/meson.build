@@ -94,7 +94,7 @@ subdir('tests')
 
 # Install metainfo and icon for Flathub
 install_data(
-  'de.desy.constellation.metainfo.xml',
+  meson.project_source_root() / 'docs' / 'etc' / 'de.desy.constellation.metainfo.xml',
   install_dir: get_option('datadir') / 'metainfo',
 )
 install_data(
