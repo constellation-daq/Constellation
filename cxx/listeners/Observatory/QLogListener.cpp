@@ -39,7 +39,8 @@ QLogListener::QLogListener(QObject* parent)
 
 void QLogListener::clearMessages() {
     message_count_.store(0);
-    const std::lock_guard message_lock {message_mutex_};
+    const std::lock_guard message_lock {message_read_mutex_};
+    const std::lock_guard message_lock_w {message_write_mutex_};
     if(!messages_.empty()) {
         beginRemoveRows(QModelIndex(), 0, static_cast<int>(messages_.size() - 1));
         messages_.clear();
@@ -64,7 +65,7 @@ void QLogListener::add_message(CMDP1LogMessage&& msg) {
     // Add new message to the end of the deque
     std::size_t messages_size {};
     {
-        const std::lock_guard message_lock {message_mutex_};
+        const std::lock_guard message_lock {message_write_mutex_};
         messages_.emplace_back(std::move(msg));
         messages_size = messages_.size();
     }
@@ -99,7 +100,7 @@ QVariant QLogListener::data(const QModelIndex& index, int role) const {
     }
 
     if(index.column() < QLogMessage::countColumns()) {
-        const std::lock_guard message_lock {message_mutex_};
+        const std::lock_guard message_lock {message_read_mutex_};
         if(index.row() < static_cast<int>(messages_.size())) {
             return messages_[index.row()][index.column()];
         }
@@ -109,7 +110,7 @@ QVariant QLogListener::data(const QModelIndex& index, int role) const {
 }
 
 const QLogMessage& QLogListener::getMessage(const QModelIndex& index) const {
-    const std::lock_guard message_lock {message_mutex_};
+    const std::lock_guard message_lock {message_read_mutex_};
     return messages_[index.row()];
 }
 
