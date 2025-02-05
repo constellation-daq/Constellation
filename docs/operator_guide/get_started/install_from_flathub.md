@@ -11,7 +11,7 @@ by running:
 flatpak install flathub de.desy.constellation
 ```
 
-Afterwards, Constellation's MissionControl and Observatory graphical user interfaces show up in the application search of the
+Afterwards, the graphical user interfaces of Constellation show up in the application search of the
 desktop environment.
 
 ```{important}
@@ -28,10 +28,10 @@ flatpak run de.desy.constellation -t Sputnik -n Flatpak -g edda
 ```
 
 ```{note}
-Currently, only C++ satellites is available on Flathub.
+Currently, only C++ satellites are available on Flathub.
 ```
 
-Further, Flatpak applications run in a sandbox with limited permissions to the file system. By default, Constellation can
+Flatpak applications run in a sandbox with limited permissions to the file system. By default, Constellation can
 only read and write to data in the user's home folder, which means that writing to `/data` with data receivers will fail.
 However, file system permissions for specific paths like `/data` can be added to Constellation using e.g.
 [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal).
