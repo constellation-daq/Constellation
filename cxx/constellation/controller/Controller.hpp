@@ -250,10 +250,11 @@ namespace constellation::controller {
          * update of a satellite or the joining or departing of a satellite, this method is called. This can e.g. be used to
          * emit signals for user interfaces or to trigger further actions.
          *
-         * @param state The new global state of the constellation
+         * @param old_state The previous lowest state of the constellation
+         * @param new_state The new global or lowest state of the constellation
          * @param global Flag indicating whether the new state is global or lowest
          */
-        virtual void reached_state(protocol::CSCP::State state, bool global);
+        virtual void reached_state(protocol::CSCP::State old_state, protocol::CSCP::State new_state, bool global);
 
         /**
          * @brief Method to propagate updates of connection data
