@@ -39,8 +39,7 @@ QLogListener::QLogListener(QObject* parent)
 
 void QLogListener::clearMessages() {
     message_count_.store(0);
-    const std::lock_guard message_lock {message_read_mutex_};
-    const std::lock_guard message_lock_w {message_write_mutex_};
+    const std::scoped_lock message_lock {message_read_mutex_, message_write_mutex_};
     if(!messages_.empty()) {
         beginRemoveRows(QModelIndex(), 0, static_cast<int>(messages_.size() - 1));
         messages_.clear();
