@@ -518,7 +518,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
         auto* action = new QAction(QString::fromStdString(key), this);
         connect(action, &QAction::triggered, this, [this, index, key, value]() {
             QCommandDialog cmd_dialog {this, runcontrol_.getQName(index), key, value.str()};
-            if(cmd_dialog.exec() == QDialog::Accepted) {
+            if(cmd_dialog.exec() == QDialog::Accepted && !cmd_dialog.getCommand().empty()) {
                 const auto& response = runcontrol_.sendQCommand(index, cmd_dialog.getCommand(), cmd_dialog.getPayload());
                 if(response.hasPayload()) {
                     QResponseDialog re_dialog {this, response};
@@ -536,7 +536,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     auto* customAction = new QAction("Custom...", this);
     connect(customAction, &QAction::triggered, this, [this, index]() {
         QCommandDialog dialog(this, runcontrol_.getQName(index));
-        if(dialog.exec() == QDialog::Accepted) {
+        if(dialog.exec() == QDialog::Accepted && !dialog.getCommand().empty()) {
             const auto& response = runcontrol_.sendQCommand(index, dialog.getCommand(), dialog.getPayload());
             if(response.hasPayload()) {
                 QResponseDialog dialog(this, response);
