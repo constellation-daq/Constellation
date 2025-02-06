@@ -55,6 +55,7 @@ QCommandDialog::QCommandDialog(QWidget* parent,
     ui_->satelliteName->setText("<font color='gray'><b>" + QString::fromStdString(satellite) + "</b></font>");
     ui_->commandDescription->setVisible(false);
 
+    ui_->parameterBox->hide();
     ui_->tableView->setModel(&parameters_);
 
     // Connect comboBox:
