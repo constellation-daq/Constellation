@@ -93,7 +93,8 @@ void Controller::stop() {
     connection_count_.store(connections_.size());
 }
 
-void Controller::reached_state(CSCP::State /*old_state*/, CSCP::State /*new_state*/, bool /*global*/) {};
+void Controller::reached_state(CSCP::State /*state*/, bool /*global*/) {};
+void Controller::leaving_state(CSCP::State /*state*/, bool /*global*/) {};
 void Controller::propagate_update(UpdateType /*type*/, std::size_t /*position*/, std::size_t /*total*/) {};
 
 // NOLINTNEXTLINE(performance-unnecessary-value-param)
@@ -106,6 +107,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
     // Store old state:
     const auto old_lowest_state = getLowestState();
+    const auto old_is_global = isInGlobalState();
 
     std::unique_lock<std::mutex> lock {connection_mutex_};
 
@@ -132,7 +134,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
             lock.unlock();
             // Propagate state change of the constellation
-            reached_state(old_lowest_state, getLowestState(), isInGlobalState());
+            leaving_state(old_lowest_state, old_is_global);
+            reached_state(getLowestState(), isInGlobalState());
         }
     } else if(status == chirp::ServiceStatus::DISCOVERED) {
         try {
@@ -175,7 +178,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
 
                 lock.unlock();
                 // Propagate state change of the constellation
-                reached_state(old_lowest_state, getLowestState(), isInGlobalState());
+                leaving_state(old_lowest_state, old_is_global);
+                reached_state(getLowestState(), isInGlobalState());
             }
         } catch(const zmq::error_t& e) {
             LOG(CRITICAL) << "ZeroMQ error: " << e.what();
@@ -189,6 +193,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
 
     // Cache old lowest state
     const auto old_lowest_state = getLowestState();
+    const auto old_is_global = isInGlobalState();
 
     std::unique_lock<std::mutex> lock {connection_mutex_};
     const auto now = std::chrono::system_clock::now();
@@ -224,7 +229,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
 
             lock.unlock();
             // Notify about this new state
-            reached_state(old_lowest_state, getLowestState(), isInGlobalState());
+            leaving_state(old_lowest_state, old_is_global);
+            reached_state(getLowestState(), isInGlobalState());
         }
     } else {
         LOG(logger_, TRACE) << "Ignoring heartbeat from " << msg.getSender() << ", satellite is not connected";

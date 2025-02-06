@@ -213,6 +213,13 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         labelState->setText(QController::getStyledState(state, global));
     });
 
+    connect(&runcontrol_, &QController::leavingState, this, [&](CSCP::State state, bool global) {
+        // If previous state was global RUN, increment sequence:
+        if(state == CSCP::State::RUN && global) {
+            runSequence->setValue(runSequence->value() + 1);
+        }
+    });
+
     // Attach validators & completers:
     runIdentifier->setValidator(&run_id_validator_);
     config_file_fs_.setRootPath({});
@@ -339,9 +346,6 @@ void MissionControl::on_btnStop_clicked() {
     for(auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << response.second.getVerb().first;
     }
-
-    // Increment run sequence:
-    runSequence->setValue(runSequence->value() + 1);
 }
 
 void MissionControl::on_btnLog_clicked() {

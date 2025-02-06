@@ -170,10 +170,13 @@ QString QController::getStyledState(CSCP::State state, bool global) {
     }
 }
 
-void QController::reached_state(protocol::CSCP::State old_state, protocol::CSCP::State new_state, bool global) {
-    LOG(logger_, DEBUG) << "Reached new " << (global ? "global" : "lowest") << " state " << new_state
-                        << ", entered from previous state " << old_state;
-    emit reachedState(new_state, global);
+void QController::reached_state(CSCP::State state, bool global) {
+    LOG(logger_, DEBUG) << "Reached new " << (global ? "global" : "lowest") << " state " << state;
+    emit reachedState(state, global);
+}
+
+void QController::leaving_state(CSCP::State state, bool global) {
+    emit leavingState(state, global);
 }
 
 void QController::propagate_update(UpdateType type, std::size_t position, std::size_t total) {
