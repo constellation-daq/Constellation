@@ -68,9 +68,10 @@ QCommandDialog::QCommandDialog(QWidget* parent,
     // Set command and description if provided
     if(!command.empty()) {
         ui_->commandLineEdit->setText(QString::fromStdString(command));
+        ui_->commandLineEdit->setEnabled(false);
         ui_->commandLineEdit->setReadOnly(true);
         ui_->commandLineEdit->setFocusPolicy(Qt::FocusPolicy::NoFocus);
-        ui_->commandLineEdit->setProperty("clearButtonEnabled", true);
+        ui_->commandLineEdit->setProperty("clearButtonEnabled", false);
     }
     if(!description.empty()) {
         ui_->commandDescription->setText(QString::fromStdString(description));
