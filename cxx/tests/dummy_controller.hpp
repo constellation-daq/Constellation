@@ -22,9 +22,11 @@ public:
 
     DummyController(std::string controller_name) : Controller(std::move(controller_name)) {}
 
-    void reached_state(constellation::protocol::CSCP::State state, bool global) final {
+    void reached_state(constellation::protocol::CSCP::State /*old_state*/,
+                       constellation::protocol::CSCP::State new_state,
+                       bool global) final {
         reached_state_global_ = global;
-        reached_state_ = state;
+        reached_state_ = new_state;
         reached_ = true;
     }
 
