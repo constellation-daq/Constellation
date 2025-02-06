@@ -156,6 +156,12 @@ TEST_CASE("Hidden commands", "[satellite]") {
         std::get<std::string>(get_commands_dict.at("_my_hidden_cmd")),
         Equals("A Hidden User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
 
+    // _get_remotes
+    sender.sendCommand("_get_remotes");
+    auto recv_msg_get_remotes = sender.recv();
+    REQUIRE(recv_msg_get_remotes.getVerb().first == CSCP1Message::Type::INVALID);
+    REQUIRE_THAT(to_string(recv_msg_get_remotes.getVerb().second), Equals("No network discovery service available"));
+
     // _get_services
     sender.sendCommand("_get_services");
     auto recv_msg_get_services = sender.recv();

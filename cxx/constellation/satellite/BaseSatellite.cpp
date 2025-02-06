@@ -275,14 +275,11 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     case _get_remotes: {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
-            const auto& remotes = chirp_manager->getDiscoveredServices();
             auto remotes_dict = std::map<std::string, std::vector<std::string>>();
-            for(const auto& remote : remotes) {
-                const auto host_id = remote.host_id.to_string();
-                if(!remotes_dict.contains(host_id)) {
-                    remotes_dict[host_id] = std::vector<std::string>();
-                }
-                remotes_dict.at(host_id).push_back(to_string(remote.identifier) + " @ " + remote.to_uri());
+            for(const auto& remote : chirp_manager->getDiscoveredServices()) {
+                // Emplace new vector or return existing one
+                auto [services_it, _] = remotes_dict.try_emplace(remote.host_id.to_string());
+                services_it->second.emplace_back(enum_name(remote.identifier) + " @ " + remote.to_uri());
             }
 
             return_verb = {CSCP1Message::Type::SUCCESS,
@@ -297,10 +294,9 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     case _get_services: {
         auto* chirp_manager = chirp::Manager::getDefaultInstance();
         if(chirp_manager != nullptr) {
-            const auto& services = chirp_manager->getRegisteredServices();
             auto service_dict = Dictionary();
-            for(const auto& service : services) {
-                service_dict[to_string(service.identifier)] = service.port;
+            for(const auto& service : chirp_manager->getRegisteredServices()) {
+                service_dict.emplace(enum_name(service.identifier), service.port);
             }
 
             return_verb = {CSCP1Message::Type::SUCCESS,
