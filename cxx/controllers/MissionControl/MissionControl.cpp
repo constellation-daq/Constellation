@@ -346,8 +346,10 @@ void MissionControl::on_btnStop_clicked() {
 
 void MissionControl::on_btnLog_clicked() {
     const auto msg = txtLogmsg->text().toStdString();
-    const auto level = static_cast<Level>(comboBoxLogLevel->currentIndex());
-    LOG(user_logger_, level) << msg;
+    if(!msg.empty()) {
+        const auto level = static_cast<Level>(comboBoxLogLevel->currentIndex());
+        LOG(user_logger_, level) << msg;
+    }
     txtLogmsg->clear();
 }
 
