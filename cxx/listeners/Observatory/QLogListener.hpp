@@ -110,6 +110,8 @@ signals:
      */
     void newTopic(QString topic);
 
+    void newTopics(QStringList topics);
+
 private:
     /**
      * @brief Callback registered for receiving log messages from the subscription pool
@@ -122,6 +124,8 @@ private:
 
     void host_connected(const constellation::chirp::DiscoveredService& service) override;
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
+
+    void topics_available(std::string_view sender, const std::map<std::string, std::string>& topics) override;
 
 private:
     /** Log messages & access mutex*/
