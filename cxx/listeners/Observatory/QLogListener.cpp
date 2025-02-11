@@ -33,6 +33,7 @@ using namespace constellation::chirp;
 using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::pools;
+using namespace constellation::utils;
 
 QLogListener::QLogListener(QObject* parent)
     : QAbstractListModel(parent),
