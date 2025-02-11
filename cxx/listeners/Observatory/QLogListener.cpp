@@ -10,6 +10,7 @@
 #include "QLogListener.hpp"
 
 #include <cstddef>
+#include <map>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
@@ -95,7 +96,7 @@ void QLogListener::host_disconnected(const DiscoveredService& service) {
     emit connectionsChanged(countSockets());
 }
 
-void QLogListener::topics_available(std::string_view, const std::map<std::string, std::string>& topics) {
+void QLogListener::topics_available(std::string_view /*sender*/, const std::map<std::string, std::string>& topics) {
 
     QStringList all_topics;
 

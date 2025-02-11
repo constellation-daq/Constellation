@@ -11,10 +11,12 @@
 
 #include <cstddef>
 #include <deque>
+#include <map>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
 #include <string>
+#include <string_view>
 
 #include <QAbstractListModel>
 #include <QObject>
