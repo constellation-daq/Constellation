@@ -52,6 +52,7 @@ namespace constellation::message {
         /** Return state of the message */
         constexpr protocol::CSCP::State getState() const { return state_; }
 
+        /** Return optional status of the message */
         constexpr std::optional<std::string> getStatus() const { return status_; }
 
         /** Return maxima time interval until next message is expected */

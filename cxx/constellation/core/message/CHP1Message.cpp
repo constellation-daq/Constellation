@@ -77,7 +77,7 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
             msgpack_unpack_to<std::uint16_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
         // Attempt to unpack a status message
-        std::optional<std::string> status = {};
+        std::optional<std::string> status {};
         if(!frames.empty()) {
             const auto status_frame = frames.pop();
             status = std::string(status_frame.to_string_view());
@@ -108,7 +108,7 @@ zmq::multipart_t CHP1Message::assemble() {
 
     frames.add(PayloadBuffer(std::move(sbuf)).to_zmq_msg_release());
 
-    // then status
+    // add status to new frame if available
     if(status_.has_value()) {
         frames.add(PayloadBuffer(std::move(status_.value())).to_zmq_msg_release());
     }
