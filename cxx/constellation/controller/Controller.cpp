@@ -209,8 +209,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
 
-        // Check if a state has changed and we need to calculate and propagate updates:
-        bool state_updated = (sat->second.state != msg.getState()) || (sat->second.interval != msg.getInterval());
+        // Check if information has changed and we need to calculate and propagate updates:
+        bool connection_updated = (sat->second.state != msg.getState()) || (sat->second.interval != msg.getInterval());
 
         // Update state and timers
         sat->second.interval = msg.getInterval();
@@ -221,7 +221,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         const auto status = msg.getStatus();
         if(status.has_value()) {
             sat->second.last_message = status.value();
-            state_updated = true;
+            connection_updated = true;
         }
 
         // Replenish lives unless we're in ERROR or SAFE state:
@@ -229,8 +229,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
             sat->second.lives = protocol::CHP::Lives;
         }
 
-        // A state was changed, propagate this:
-        if(state_updated) {
+        // Connection was changed, propagate this:
+        if(connection_updated) {
             // Notify derived classes of change
             propagate_update(UpdateType::UPDATED, std::distance(connections_.begin(), sat), connections_.size());
 
