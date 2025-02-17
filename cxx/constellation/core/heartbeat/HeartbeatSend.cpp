@@ -67,6 +67,7 @@ HeartbeatSend::~HeartbeatSend() {
 
 void HeartbeatSend::sendExtrasystole(std::string_view status) {
     if(!status.empty()) {
+        const std::lock_guard lock {mutex_};
         status_ = status;
     }
     cv_.notify_one();
