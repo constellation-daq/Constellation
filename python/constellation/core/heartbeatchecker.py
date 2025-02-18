@@ -192,7 +192,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                         if not hb.failed.is_set():
                             self.log.info(f"{hb.name} state causing interrupt callback to be called")
                             hb.failed.set()
-                            self._interrupt(hb.name, hb.state)
+                            self._interrupting(hb.name, hb.state)
                     else:
                         # recover?
                         if self.auto_recover and hb.failed.is_set():
@@ -215,7 +215,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             if not hb.failed.is_set():
                                 self.log.info(f"{hb.name} unresponsive causing interrupt callback to be called")
                                 hb.failed.set()
-                                self._interrupt(hb.name, SatelliteState.DEAD)
+                                self._interrupting(hb.name, SatelliteState.DEAD)
                                 # update state
                                 hb.state = SatelliteState.DEAD
                             # try again later
@@ -228,7 +228,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             # finally, wait a moment
             time.sleep(0.05)
 
-    def _interrupt(self, name: str, state: SatelliteState) -> None:
+    def _interrupting(self, name: str, state: SatelliteState) -> None:
         with self._callback_lock:
             if hasattr(self, "_callback") and self._callback:
                 try:
