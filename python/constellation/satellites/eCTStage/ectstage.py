@@ -714,7 +714,7 @@ class ECTstage(DataSender):
         """
         creates an list of positions
         """
-        list = np.round(np.arange(pos_range[0], pos_range[1] + 1, pos_range[2]), 3)  # mm
+        list = np.round(np.arange(pos_range[0], pos_range[1] + pos_range[2] / 2, pos_range[2]), 3)  # mm
         return list
 
     def _generate_zigzagPath(self, posX_list, posY_list, posR_list):
