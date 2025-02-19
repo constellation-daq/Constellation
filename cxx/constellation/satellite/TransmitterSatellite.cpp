@@ -151,7 +151,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
 
     // Create CDTP1 message for BOR
-    CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR, std::chrono::system_clock::now(), bor_tags_}, 1};
+    CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR, bor_tags_}, 1};
     msg.addPayload(config.getDictionary().assemble());
 
     // Send BOR
@@ -179,7 +179,7 @@ void TransmitterSatellite::send_eor() {
     set_run_metadata_tag("time_end", std::chrono::system_clock::now());
 
     // Create CDTP1 message for EOR
-    CDTP1Message msg {{getCanonicalName(), ++seq_, CDTP1Message::Type::EOR, std::chrono::system_clock::now(), eor_tags_}, 1};
+    CDTP1Message msg {{getCanonicalName(), ++seq_, CDTP1Message::Type::EOR, eor_tags_}, 1};
     msg.addPayload(run_metadata_.assemble());
 
     // Send EOR

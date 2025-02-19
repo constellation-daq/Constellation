@@ -66,10 +66,6 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
         // Unpack sender
         const auto sender = msgpack_unpack_to<std::string>(to_char_ptr(data.data()), data.size_bytes(), offset);
 
-        // Unpack time
-        const auto time =
-            msgpack_unpack_to<std::chrono::system_clock::time_point>(to_char_ptr(data.data()), data.size_bytes(), offset);
-
         // Unpack message type
         const auto type =
             static_cast<Type>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(data.data()), data.size_bytes(), offset));
@@ -82,7 +78,7 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
         const auto tags = msgpack_unpack_to<Dictionary>(to_char_ptr(data.data()), data.size_bytes(), offset);
 
         // Construct header
-        return {sender, time, tags, seq, type};
+        return {sender, tags, seq, type};
     } catch(const MsgpackUnpackError& e) {
         throw MessageDecodingError(e.what());
     }
@@ -93,8 +89,6 @@ void CDTP1Message::Header::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpa
     msgpack_packer.pack(get_protocol_identifier(CDTP1));
     // then sender
     msgpack_packer.pack(getSender());
-    // then time
-    msgpack_packer.pack(getTime());
     // then type
     msgpack_packer.pack(std::to_underlying(type_));
     // then seq
