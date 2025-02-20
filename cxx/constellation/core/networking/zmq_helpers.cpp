@@ -44,5 +44,6 @@ std::shared_ptr<zmq::context_t>& constellation::networking::global_zmq_context()
     static auto context = std::make_shared<zmq::context_t>();
     // Switch off blocky behavior of context - corresponds to setting linger = 0 for all sockets
     context->set(zmq::ctxopt::blocky, 0);
+    context->set(zmq::ctxopt::io_threads, 4);
     return context;
 }
