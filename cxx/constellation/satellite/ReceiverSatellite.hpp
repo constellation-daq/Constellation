@@ -39,7 +39,7 @@ namespace constellation::satellite {
      */
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
-          private pools::BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
+          private pools::BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pair> {
     private:
         enum class TransmitterState : std::uint8_t {
             NOT_CONNECTED,

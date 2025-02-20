@@ -42,7 +42,7 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
+    : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::pair),
       cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("CDTP") {
 
     register_timed_metric("BYTES_TRANSMITTED",
