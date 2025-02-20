@@ -206,12 +206,14 @@ void ReceiverSatellite::stopping_receiver() {
     stopPool();
 }
 
-void ReceiverSatellite::interrupting_receiver() {
-    // Stop as usual but do not throw if not all EOR messages received
-    try {
-        stopping_receiver();
-    } catch(const RecvTimeoutError& e) {
-        LOG(cdtp_logger_, WARNING) << e.what();
+void ReceiverSatellite::interrupting_receiver(CSCP::State previous_state) {
+    // If in RUN stop as usual but do not throw if not all EOR messages received
+    if(previous_state == CSCP::State::RUN) {
+        try {
+            stopping_receiver();
+        } catch(const RecvTimeoutError& e) {
+            LOG(cdtp_logger_, WARNING) << e.what();
+        }
     }
 }
 

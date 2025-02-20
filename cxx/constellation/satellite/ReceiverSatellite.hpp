@@ -29,6 +29,7 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -164,7 +165,7 @@ namespace constellation::satellite {
          *
          * This function calls the `stopping_receiver()` method, but emits fake EOR messages instead of throwing.
          */
-        void interrupting_receiver();
+        void interrupting_receiver(protocol::CSCP::State previous_state);
 
         /**
          * @brief Failure function for receiver components of satellite

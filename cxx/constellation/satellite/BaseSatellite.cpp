@@ -577,7 +577,7 @@ void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
         LOG(logger_, DEBUG) << "Interrupting: execute interrupting_receiver";
-        receiver_ptr->ReceiverSatellite::interrupting_receiver();
+        receiver_ptr->ReceiverSatellite::interrupting_receiver(previous_state);
     }
 
     interrupting(previous_state);
