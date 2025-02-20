@@ -11,6 +11,7 @@
 
 #include <charconv>
 #include <memory>
+#include <mutex>
 
 #include <zmq.hpp>
 
@@ -41,8 +42,15 @@ Port constellation::networking::bind_ephemeral_port(zmq::socket_t& socket) {
 }
 
 std::shared_ptr<zmq::context_t>& constellation::networking::global_zmq_context() {
-    static auto context = std::make_shared<zmq::context_t>();
-    // Switch off blocky behavior of context - corresponds to setting linger = 0 for all sockets
-    context->set(zmq::ctxopt::blocky, 0);
+    static std::once_flag context_flag {};
+    static std::shared_ptr<zmq::context_t> context {};
+
+    // Create context and set options
+    std::call_once(context_flag, []() {
+        context = std::make_shared<zmq::context_t>();
+        // Switch off blocky behavior of context - corresponds to setting linger = 0 for all sockets
+        context->set(zmq::ctxopt::blocky, 0);
+    });
+
     return context;
 }
