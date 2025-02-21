@@ -42,6 +42,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
 
 using namespace constellation;
@@ -182,6 +183,7 @@ void CMDPSink::enableSending(std::string sender_name) {
 
     // Start thread monitoring the socket for subscription messages
     subscription_thread_ = std::jthread(std::bind_front(&CMDPSink::subscription_loop, this));
+    set_thread_name(subscription_thread_, "CMDPSink");
 
     // Register service in CHIRP
     auto* chirp_manager = chirp::Manager::getDefaultInstance();

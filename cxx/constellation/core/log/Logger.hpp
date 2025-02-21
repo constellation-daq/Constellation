@@ -12,6 +12,7 @@
 #include <memory>
 #include <source_location>
 #include <sstream>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -91,6 +92,13 @@ namespace constellation::log {
          * @return Current log level
          */
         CNSTLN_API Level getLogLevel() const { return from_spdlog_level(spdlog_logger_->level()); }
+
+        /**
+         * @brief Return the topic of the logger
+         *
+         * @return Log topic
+         */
+        CNSTLN_API const std::string& getLogTopic() const { return spdlog_logger_->name(); }
 
         /**
          * @brief Log a message using a stream

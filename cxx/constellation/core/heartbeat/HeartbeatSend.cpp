@@ -25,12 +25,14 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/thread.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::protocol;
+using namespace constellation::utils;
 
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
@@ -45,6 +47,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
     }
 
     sender_thread_ = std::jthread(std::bind_front(&HeartbeatSend::loop, this));
+    set_thread_name(sender_thread_, "HeartbeatSend");
 }
 
 HeartbeatSend::~HeartbeatSend() {

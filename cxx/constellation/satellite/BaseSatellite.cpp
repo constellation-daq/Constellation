@@ -48,6 +48,7 @@
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/thread.hpp"
 #include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
@@ -95,6 +96,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 
     // Start receiving CSCP commands
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
+    set_thread_name(cscp_thread_, "CSCP");
 
     // Register state callback for extrasystoles
     fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });

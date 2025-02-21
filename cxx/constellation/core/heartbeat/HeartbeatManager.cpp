@@ -29,11 +29,12 @@
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/thread.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
-using namespace constellation::utils;
 using namespace constellation::protocol;
+using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string sender,
@@ -42,6 +43,7 @@ HeartbeatManager::HeartbeatManager(std::string sender,
     : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       sender_(std::move(sender), std::move(state_callback), 5000ms), interrupt_callback_(std::move(interrupt_callback)),
       logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
+    set_thread_name(watchdog_thread_, "HeartbeatManager");
     startPool();
 }
 

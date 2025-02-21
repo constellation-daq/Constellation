@@ -156,6 +156,7 @@ install_headers(
   'utils/std_future.hpp',
   'utils/string.hpp',
   'utils/string_hash_map.hpp',
+  'utils/thread.hpp',
   'utils/timers.hpp',
   'utils/type.hpp',
   subdir: 'constellation/core/utils',
