@@ -38,12 +38,8 @@ namespace constellation::message {
 
         class CNSTLN_API Header final : public BaseHeader {
         public:
-            Header(std::string sender,
-                   std::uint64_t seq,
-                   Type type,
-                   std::chrono::system_clock::time_point time = std::chrono::system_clock::now(),
-                   config::Dictionary tags = {})
-                : BaseHeader(protocol::CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
+            Header(std::string sender, std::uint64_t seq, Type type, config::Dictionary tags = {})
+                : BaseHeader(protocol::CDTP1, std::move(sender), {}, std::move(tags)), seq_(seq), type_(type) {}
 
             constexpr std::uint64_t getSequenceNumber() const { return seq_; }
 
@@ -56,12 +52,8 @@ namespace constellation::message {
             CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const final;
 
         private:
-            Header(std::string sender,
-                   std::chrono::system_clock::time_point time,
-                   config::Dictionary tags,
-                   std::uint64_t seq,
-                   Type type)
-                : BaseHeader(protocol::CDTP1, std::move(sender), time, std::move(tags)), seq_(seq), type_(type) {}
+            Header(std::string sender, config::Dictionary tags, std::uint64_t seq, Type type)
+                : BaseHeader(protocol::CDTP1, std::move(sender), {}, std::move(tags)), seq_(seq), type_(type) {}
 
         private:
             std::uint64_t seq_;

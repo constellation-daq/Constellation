@@ -32,7 +32,6 @@ class CDTPMessage:
     """Class holding details of a received CDTP command."""
 
     name: str = ""
-    timestamp: msgpack.Timestamp = msgpack.Timestamp(0)
     msgtype: CDTPMessageIdentifier | None = None
     sequence_number: int = -1
     meta: dict[str, Any] = {}
@@ -41,14 +40,12 @@ class CDTPMessage:
     def set_header(
         self,
         name: str,
-        timestamp: msgpack.Timestamp,
         msgtype: int,
         seqno: int,
         meta: dict[str, Any],
     ) -> None:
         """Sets information retrieved from a message header."""
         self.name = name
-        self.timestamp = timestamp
         try:
             self.msgtype = CDTPMessageIdentifier(msgtype)
         except ValueError as exc:
@@ -62,7 +59,6 @@ class CDTPMessage:
         s += "sequence number {} {} payload and meta {}."
         return s.format(
             self.name,
-            self.timestamp,
             self.msgtype,
             self.sequence_number,
             "with a" if self.payload is not None else "without a",

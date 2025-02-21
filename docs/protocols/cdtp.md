@@ -55,14 +55,11 @@ If a CDTP host receives a data message before the begin-of-run message, or if it
 ### Message Header
 
 The message header frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
-It SHALL contain two strings, followed by a 64-bit timestamp, a one-byte message type identifier, a 64-bit integer and a map.
+It SHALL contain two strings, followed by a one-byte message type identifier, a 64-bit integer and a map.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘D’, ‘T’ and ‘P’, followed by the protocol version number, which SHALL be `%x01`.
 
 The second string SHOULD contain the name of the sending CDTP host.
-
-The timestamp SHALL follow the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification for timestamps and contain a 64-bit UNIX epoch timestamp in units of nanoseconds.
-Possible values MAY be the time of sending the message or the time of generation of the payload at the sending CDTP host.
 
 The message type identifier SHALL be either `%x00` (dubbed ‘DAT‘ for data), `%x01` (dubbed ‘BOR’ for begin-of-run), or `%x02` (dubbed ‘EOR’ for end-of-run).
 

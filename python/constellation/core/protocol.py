@@ -46,17 +46,13 @@ class MessageHeader:
 
     def recv(
         self, socket: zmq.Socket, flags: int = 0  # type: ignore[type-arg]
-    ) -> (
-        Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, msgpack.Timestamp, int, int, dict[str, Any] | None]
-    ):
+    ) -> Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, int, int, dict[str, Any] | None]:
         """Receive header from socket and return all decoded fields."""
         return self.decode(socket.recv())
 
     def decode(
         self, header: Any
-    ) -> (
-        Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, msgpack.Timestamp, int, int, dict[str, Any] | None]
-    ):
+    ) -> Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, int, int, dict[str, Any] | None]:
         """Decode header string and return host, timestamp and meta map."""
         unpacker = msgpack.Unpacker()
         unpacker.feed(header)
@@ -64,12 +60,12 @@ class MessageHeader:
         if not protocol == self.protocol.value:
             raise RuntimeError(f"Received message with malformed {self.protocol.name} header: {header}!")
         host = unpacker.unpack()
-        timestamp = unpacker.unpack()
         if protocol == Protocol.CDTP:
             msgtype = unpacker.unpack()
             seqno = unpacker.unpack()
             meta = unpacker.unpack()
-            return host, timestamp, msgtype, seqno, meta
+            return host, msgtype, seqno, meta
+        timestamp = unpacker.unpack()
         meta = unpacker.unpack()
         return host, timestamp, meta
 
@@ -86,8 +82,9 @@ class MessageHeader:
         packer = msgpack.Packer()
         stream.write(packer.pack(self.protocol.value))
         stream.write(packer.pack(self.name))
-        stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
-        if self.protocol == Protocol.CDTP:
+        if self.protocol != Protocol.CDTP:
+            stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
+        else:
             stream.write(packer.pack(kwargs["msgtype"]))
             stream.write(packer.pack(kwargs["seqno"]))
         stream.write(packer.pack(meta))

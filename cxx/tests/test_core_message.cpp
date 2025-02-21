@@ -48,13 +48,10 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
 }
 
 TEST_CASE("Basic Header Functions (CDTP1)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
-
-    const CDTP1Message::Header cdtp1_header {"senderCDTP", 0, CDTP1Message::Type::BOR, tp};
+    const CDTP1Message::Header cdtp1_header {"senderCDTP", 0, CDTP1Message::Type::BOR};
 
     REQUIRE_THAT(to_string(cdtp1_header.getSender()), Equals("senderCDTP"));
     REQUIRE(cdtp1_header.getType() == CDTP1Message::Type::BOR);
-    REQUIRE(cdtp1_header.getTime() == tp);
     REQUIRE(cdtp1_header.getTags().empty());
     REQUIRE_THAT(cdtp1_header.to_string(), ContainsSubstring("CDTP1"));
 }
@@ -317,9 +314,7 @@ TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
 }
 
 TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {
-    auto tp = std::chrono::system_clock::now();
-
-    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA, tp}, 3};
+    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA}, 3};
 
     // Add payload frame
     for(int i = 0; i < 3; i++) {
