@@ -9,7 +9,6 @@
 
 #include "CDTP1Message.hpp"
 
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -40,7 +39,6 @@ using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
-using namespace std::string_view_literals;
 
 // Similar to BaseHeader::disassemble in BaseHeader.cpp, check when modifying
 CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte> data) {
