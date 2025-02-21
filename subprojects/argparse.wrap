@@ -1,13 +1,13 @@
 [wrap-file]
-directory = argparse-3.1
-source_url = https://github.com/p-ranav/argparse/archive/refs/tags/v3.1.tar.gz
-source_filename = argparse-3.1.tar.gz
-source_hash = d01733552ca4a18ab501ae8b8be878131baa32e89090fafdeef018ebfa4c6e46
-patch_filename = argparse_3.1-2_patch.zip
-patch_url = https://wrapdb.mesonbuild.com/v2/argparse_3.1-2/get_patch
-patch_hash = 681512473913fd9f918c1d1abc40a358a739e4d02df50d8b54bf3d863fa27266
-source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/argparse_3.1-2/argparse-3.1.tar.gz
-wrapdb_version = 3.1-2
+directory = argparse-3.2
+source_url = https://github.com/p-ranav/argparse/archive/refs/tags/v3.2.tar.gz
+source_filename = argparse-3.2.tar.gz
+source_hash = 9dcb3d8ce0a41b2a48ac8baa54b51a9f1b6a2c52dd374e28cc713bab0568ec98
+patch_filename = argparse_3.2-1_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/argparse_3.2-1/get_patch
+patch_hash = ddf1abdb00927ce60371fce3b751d66f07ddc879d1e55816218b017d7d972cf2
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/argparse_3.2-1/argparse-3.2.tar.gz
+wrapdb_version = 3.2-1
 
 [provide]
 argparse = argparse_dep
