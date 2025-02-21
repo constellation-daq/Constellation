@@ -51,7 +51,7 @@ namespace {
     std::function<void(int)> signal_handler_f {}; // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 } // namespace
 
-extern "C" void signal_hander(int signal) {
+extern "C" void signal_handler(int signal) {
     signal_handler_f(signal);
 }
 
@@ -223,8 +223,8 @@ int constellation::exec::satellite_main(int argc,
         });
     };
     // NOLINTBEGIN(cert-err33-c)
-    std::signal(SIGTERM, &signal_hander);
-    std::signal(SIGINT, &signal_hander);
+    std::signal(SIGTERM, &signal_handler);
+    std::signal(SIGINT, &signal_handler);
     // NOLINTEND(cert-err33-c)
 
     // Wait for signal to join
