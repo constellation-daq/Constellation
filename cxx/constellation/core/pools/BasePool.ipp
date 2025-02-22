@@ -110,6 +110,7 @@ namespace constellation::pools {
         try {
 
             zmq::socket_t socket {*networking::global_zmq_context(), SOCKET_TYPE};
+            socket.set(zmq::sockopt::busy_poll, true);
             socket.connect(service.to_uri());
 
             /**
