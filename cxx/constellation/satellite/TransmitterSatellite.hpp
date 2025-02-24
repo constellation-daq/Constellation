@@ -11,13 +11,19 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <exception>
+#include <mutex>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <utility>
 
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -87,26 +93,14 @@ namespace constellation::satellite {
         DataMessage newDataMessage(std::size_t frames = 1);
 
         /**
-         * @brief Attempt to send data message created with `newDataMessage()`
-         *
-         * @note The return value of this function *has* to be checked. If it is `false`, one should take action such as
-         *       discarding the message, trying to send it again or throwing an exception.
-         *
-         * @param message Reference to data message
-         * @return True if the message was successfully sent/queued, false otherwise
-         */
-        [[nodiscard]] bool trySendDataMessage(DataMessage& message);
-
-        /**
          * @brief Send data message created with `newDataMessage()`
          *
-         * @note This method will block until the message has been sent *or* the timeout for sending data messages has been
-         *       reached. In the latter case, a SendTimeoutError exception is thrown.
+         * @note TODO
          *
-         * @param message Reference to data message
+         * @param message Data message
          * @throw SendTimeoutError If data send timeout is reached
          */
-        void sendDataMessage(DataMessage& message);
+        void sendDataMessage(DataMessage&& message);
 
         /**
          * @brief Mark this run data as tainted
@@ -182,6 +176,9 @@ namespace constellation::satellite {
          */
         void starting_transmitter(std::string_view run_identifier, const config::Configuration& config);
 
+        /* TODO */
+        void send_loop(const std::stop_token& stop_token);
+
         /**
          * @brief Stop transmitter components of satellite and send the EOR
          *
@@ -208,6 +205,11 @@ namespace constellation::satellite {
         void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
 
         /**
+         * TODO
+         */
+        void send_data(zmq::multipart_t& mme_cdtp_message_mp);
+
+        /**
          * @brief Send the EOR message
          *
          * @throw SendTimeoutError If EOR send timeout is reached
@@ -229,6 +231,10 @@ namespace constellation::satellite {
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
         std::uint64_t seq_ {};
+        std::deque<DataMessage> data_queue_;
+        std::mutex data_queue_mutex_;
+        std::condition_variable data_queue_cv_;
+        std::exception_ptr data_exception_;
         config::Dictionary bor_tags_;
         config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;

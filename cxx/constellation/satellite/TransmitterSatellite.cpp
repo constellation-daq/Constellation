@@ -12,9 +12,12 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <exception>
+#include <stop_token>
 #include <string_view>
 
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
@@ -80,37 +83,19 @@ TransmitterSatellite::DataMessage TransmitterSatellite::newDataMessage(std::size
     return {getCanonicalName(), ++seq_, frames};
 }
 
-bool TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage& message) {
-    // Send data but do not wait for receiver
-    LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
+void TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage&& message) {
+    LOG(cdtp_logger_, TRACE) << "Queuing data message " << message.getHeader().getSequenceNumber();
 
-    try {
-        const auto payload_bytes = message.countPayloadBytes();
-        const auto sent = message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
-        if(sent) {
-            bytes_transmitted_ += payload_bytes;
-        } else {
-            LOG(cdtp_logger_, DEBUG) << "Could not send message " << message.getHeader().getSequenceNumber();
-        }
-
-        return sent;
-    } catch(const zmq::error_t& e) {
-        throw NetworkError(e.what());
+    // Rethrow any exceptions from data queue worker
+    if(data_exception_ != nullptr) {
+        std::rethrow_exception(data_exception_);
     }
-}
 
-void TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& message) {
-    LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
-    try {
-        const auto payload_bytes = message.countPayloadBytes();
-        const auto sent = message.assemble().send(cdtp_push_socket_);
-        if(!sent) {
-            throw SendTimeoutError("data message", data_msg_timeout_);
-        }
-        bytes_transmitted_ += payload_bytes;
-    } catch(const zmq::error_t& e) {
-        throw NetworkError(e.what());
-    }
+    // Add data message to queue
+    std::unique_lock data_queue_lock {data_queue_mutex_};
+    data_queue_.emplace_back(std::move(message));
+    data_queue_lock.unlock();
+    data_queue_cv_.notify_one();
 }
 
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
@@ -168,11 +153,80 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     }
     LOG(cdtp_logger_, DEBUG) << "Sent BOR message";
 
+    // Reset data exception
+    data_exception_ = nullptr;
+
     // Set timeout for data sending
     set_send_timeout(data_msg_timeout_);
 
     // Clear BOR tags:
     bor_tags_ = {};
+}
+
+void TransmitterSatellite::send_data(zmq::multipart_t& mme_cdtp_message_mp) {
+    try {
+        // Encode encoded CDTP messages again and send
+        const auto send_result = cdtp_push_socket_.send(mme_cdtp_message_mp.encode(), zmq::send_flags::dontwait);
+        if(send_result.has_value()) [[likely]] {
+            LOG(cdtp_logger_, TRACE) << "Sent data messages with combined size of " << send_result.value() << " bytes";
+            bytes_transmitted_ += send_result.value();
+        } else {
+            data_exception_ = std::make_exception_ptr(SendTimeoutError("data message", data_msg_timeout_));
+        }
+    } catch(const zmq::error_t& error) {
+        data_exception_ = std::make_exception_ptr(NetworkError(error.what()));
+    }
+
+    // TODO check if this needs to be added: mme_cdtp_message_mp.clear();
+}
+
+void TransmitterSatellite::send_loop(const std::stop_token& stop_token) {
+    auto last_send_time = std::chrono::steady_clock::now();
+    std::size_t accumulated_bytes = 0;
+
+    std::size_t cdtp_double_mme_threshold = 30000; // TODO: make configurable
+
+    // Notify condition variable when stop is requested
+    const std::stop_callback stop_callback {stop_token, [&]() { data_queue_cv_.notify_one(); }};
+
+    // Create variables for multi-message encoding
+    zmq::message_t mme_cdtp_message {};
+    zmq::multipart_t mme_cdtp_message_mp {};
+
+    while(!stop_token.stop_requested()) {
+        std::unique_lock data_queue_lock {data_queue_mutex_};
+        data_queue_cv_.wait(data_queue_lock);
+
+        // Get and encode data messages, add to multipart message
+        while(!data_queue_.empty()) {
+            mme_cdtp_message = data_queue_.front().assemble().encode();
+            data_queue_.pop_front();
+            accumulated_bytes += mme_cdtp_message.size();
+            mme_cdtp_message_mp.add(std::move(mme_cdtp_message));
+        }
+        data_queue_lock.unlock();
+
+        // Check if threshold is reached or time limit exceeded
+        if(accumulated_bytes >= cdtp_double_mme_threshold ||
+           (!mme_cdtp_message_mp.empty() && last_send_time > std::chrono::steady_clock::now() - 500ms)) {
+            // Send encoded data messages
+            send_data(mme_cdtp_message_mp);
+
+            // Reset accumulated bytes and last send time
+            accumulated_bytes = 0;
+            last_send_time = std::chrono::steady_clock::now();
+        }
+    }
+
+    // Send any remaining data messages
+    const std::lock_guard data_queue_lock {data_queue_mutex_};
+    while(!data_queue_.empty()) {
+        mme_cdtp_message_mp.add(data_queue_.front().assemble().encode());
+        data_queue_.pop_front();
+    }
+    if(!mme_cdtp_message_mp.empty()) {
+        send_data(mme_cdtp_message_mp);
+    }
 }
 
 void TransmitterSatellite::send_eor() {
@@ -201,6 +255,11 @@ void TransmitterSatellite::send_eor() {
 }
 
 void TransmitterSatellite::stopping_transmitter() {
+    // Rethrow any exceptions from data queue worker
+    if(data_exception_ != nullptr) {
+        std::rethrow_exception(data_exception_);
+    }
+
     if(mark_run_tainted_) {
         set_run_metadata_tag("condition_code", CDTP::RunCondition::TAINTED);
         set_run_metadata_tag("condition", enum_name(CDTP::RunCondition::TAINTED));
@@ -214,6 +273,11 @@ void TransmitterSatellite::stopping_transmitter() {
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
+        // Rethrow any exceptions from data queue worker
+        if(data_exception_ != nullptr) {
+            std::rethrow_exception(data_exception_);
+        }
+
         auto condition_code = CDTP::RunCondition::INTERRUPTED;
         if(mark_run_tainted_) {
             condition_code |= CDTP::RunCondition::TAINTED;
