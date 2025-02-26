@@ -4,51 +4,68 @@
 [x]
 serial_no = 45437174
 channel = 0
-# in mm
-velocity = 10
-acceleration = 2
-start_position = 50
+# in mm (mm/s)
+velocity = 1
+#velocity = 2
+acceleration = 1
+start_position = 0
+#start_position = 10.0
 
 [y]
 serial_no = 45455454
 channel = 0
 # in mm
 velocity = 10
-acceleration = 2
-start_position = 50
+acceleration = 10
+#start_position = 195
+start_position = 300
 
 [z]
 serial_no = 45454864
 channel = 0
 # in mm
-velocity = 6
-acceleration = 4
-start_position = 50
+velocity = 10
+acceleration = 2
+start_position = 190
 
 [r]
-# serial_no = 27252700
-serial_no = 27269817
+serial_no = 27252700
+# serial_no = 27269817
 channel = 0
 # in deg
 velocity = 8
 acceleration = 4
-start_position = 0
+start_position = 90
 
 [run]
-active_axes = ["x","y","z","r"]
-# active_axes = ["r"]
+active_axes = ["x","y","r"]
+#active_axes = ["z"]
 
 # wait time at each point (measurement window)
-stop_time_per_point_s = 1
+stop_time_per_point_s = 0.005
 # stage position sending frequency (in seconds) to data writer
-readout_freq_s = 0.1
+readout_freq_s = 0.01
 
 
 ## in mm
-position_x = [50,150,50]
-position_y = [50,150,50]
-position_z = [50,150,50]
+# note: use same dtype as toml doesn't like mixed-type arrays
+#       if stepsize is an int, use all ints, else add a decimal point in all elements
+#position_x = [215,255,40]
+#position_y = [180.0,260.0,0.5]
+#position_z = [0,300,300]
 ## in deg
-position_r = [-5,5,5]
+#position_r = [0,179,1]
 
-save_config = true
+#Berta
+position_x = [223.0,247.0,24.0]
+position_r = [90,279,1]
+#position_y = [235.0,245.0,0.1]
+#Burj:
+#position_x = [195,290,95]
+#position_y = [39.0,60.0,0.5]
+#Alu:
+#position_x = [45,290,245]
+#position_y = [19,41,2]
+
+
+save_config = false
