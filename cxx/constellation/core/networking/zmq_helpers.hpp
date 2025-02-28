@@ -16,6 +16,13 @@
 #include "constellation/build.hpp"
 #include "constellation/core/networking/Port.hpp"
 
+// TODO(stephan.lachnit): add version check once new release with https://github.com/zeromq/cppzmq/pull/648 is available
+namespace zmq::sockopt {
+#ifdef ZMQ_BUSY_POLL
+    ZMQ_DEFINE_INTEGRAL_BOOL_UNIT_OPT(ZMQ_BUSY_POLL, busy_poll, int);
+#endif
+} // namespace zmq::sockopt
+
 namespace constellation::networking {
 
     /**
