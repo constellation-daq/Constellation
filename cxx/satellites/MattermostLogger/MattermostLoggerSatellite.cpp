@@ -70,19 +70,30 @@ void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
 
 void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     std::ostringstream msg_formatted {};
+    if(msg.getLogLevel() == WARNING || msg.getLogLevel() == CRITICAL) {
+        msg_formatted << "@channel ";
+    }
     msg_formatted << "**" << msg.getLogLevel() << "** from **" << msg.getHeader().getSender() << "** on topic **"
                   << msg.getLogTopic() << "**:\n"
                   << msg.getLogMessage();
-    // TODO: add @channel for warning and critical?
     send_message(msg_formatted.str());
 }
 
 void MattermostLoggerSatellite::send_message(std::string&& message) {
-    // TODO: escape " in message
     const auto response = cpr::Post(cpr::Url(webhook_url_),
                                     cpr::Header({{"Content-Type", "application/json"}}),
-                                    cpr::Body({R"({"text": ")" + std::move(message) + "\"}"}));
+                                    cpr::Body({R"({"text": ")" + escape_quotes(std::move(message)) + "\"}"}));
     if(response.status_code != 200) [[unlikely]] {
         throw CommunicationError("Failed to send message to Mattermost");
     }
+}
+
+std::string MattermostLoggerSatellite::escape_quotes(std::string message) {
+    // Escape quotes to generate valid JSON
+    std::string::size_type pos = 0;
+    while((pos = message.find('"', pos)) != std::string::npos) {
+        message.replace(pos, 1, "\\\"");
+        pos += 2;
+    }
+    return message;
 }
