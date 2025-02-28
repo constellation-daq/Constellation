@@ -9,6 +9,7 @@ import pathlib
 import re
 import urllib.request
 
+from slugify import slugify
 import sphinx.util.logging
 import yaml
 
@@ -218,7 +219,7 @@ def convert_satellite_readme_repo(in_path: pathlib.Path, out_path: pathlib.Path)
     markdown = convert_satellite_readme(markdown, language, parent_classes)
 
     # Write file
-    (out_path / in_path.parent.name).with_suffix(".md").write_text(markdown)
+    (out_path / slugify(in_path.parent.name, lowercase=False)).with_suffix(".md").write_text(markdown)
 
     # Return satellite type and category
     return in_path.parent.name, category
@@ -241,7 +242,7 @@ def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_p
         markdown = convert_satellite_readme(markdown, language, parent_classes, {"Website": f"[{website}]({website})"})
 
         # Write Markdown
-        (out_path / name).with_suffix(".md").write_text(markdown)
+        (out_path / slugify(name, lowercase=False)).with_suffix(".md").write_text(markdown)
 
         # Return category
         return category

@@ -83,6 +83,7 @@ docs = [
     "sphinx-favicon",
     "sphinx-copybutton",
     "PyYAML",
+    "python-slugify",
 ]
 # Feature components
 cli = ["ipython"]
