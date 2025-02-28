@@ -1,8 +1,8 @@
 [wrap-file]
-directory = HighFive-3.0.0-beta1
-source_url = https://github.com/BlueBrain/HighFive/archive/refs/tags/v3.0.0-beta1.tar.gz
-source_filename = highfive-3.0.0-beta1.tar.gz
-source_hash = ca6df714a70c6ebeb13792c16835df9cd8a95e5445e2d5633b7c7a6147fc9409
+directory = highfive-3.0.0-beta2
+source_url = https://github.com/highfive-devs/highfive/archive/refs/tags/v3.0.0-beta2.tar.gz
+source_filename = highfive-3.0.0-beta2.tar.gz
+source_hash = c2f16a6380ab6febcb84350273ab3d010f85f0079b76cb8e294d556e145f5547
 patch_directory = highfive
 
 [provide]

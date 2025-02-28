@@ -1,5 +1,5 @@
 project('HighFive', 'cpp',
-  version: '3.0.0-beta1',
+  version: '3.0.0-beta2',
   license: 'BSL-1.0',
   default_options: ['cpp_std=c++17'],
 )
