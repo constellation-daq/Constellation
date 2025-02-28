@@ -12,3 +12,6 @@ plantuml
 libc
 libstdc
 IPython
+pxar
+pxarCore
+DTB

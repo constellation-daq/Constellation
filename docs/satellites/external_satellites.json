@@ -4,6 +4,11 @@
       "name": "Adenium",
       "readme": "https://gitlab.desy.de/beam-telescopes/adenium/-/raw/main/source/constellation/README.md",
       "website": "https://gitlab.desy.de/beam-telescopes/adenium"
+    },
+    {
+      "name": "CMS Pixel / pxar",
+      "readme": "https://raw.githubusercontent.com/simonspa/pxar/refs/heads/cnstln-testbeam-extend/constellation/README.md",
+      "website": "https://github.com/simonspa/pxar/tree/cnstln-testbeam-extend"
     }
   ]
 }
