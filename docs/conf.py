@@ -4,6 +4,7 @@
 import json
 import pathlib
 
+from slugify import slugify
 import sphinx
 import sphinx.util.logging
 
@@ -180,7 +181,7 @@ satellite_files.extend(list((repodir / "python" / "constellation" / "satellites"
 satellites = {}
 for path in satellite_files:
     satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme_repo(path, docsdir / "satellites")
-    satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{satellite_type}>")
+    satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{slugify(satellite_type, lowercase=False)}>")
 
 # Add external satellites
 ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()
@@ -192,7 +193,7 @@ with ext_satellites_json.open() as ext_satellites_json_file:
         website = satellite_json["website"]
         satellite_category = copy_satellite_docs.convert_satellite_readme_ext(name, readme, website, docsdir / "satellites")
         if satellite_category:
-            satellites.setdefault(satellite_category, []).append(f"{name} <{name}>")
+            satellites.setdefault(satellite_category, []).append(f"{name} <{slugify(name, lowercase=False)}>")
 
 # Create tocs for categories
 satellite_tocs = ""
