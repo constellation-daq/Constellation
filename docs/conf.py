@@ -11,6 +11,8 @@ import sphinx.util.logging
 import copy_satellite_docs
 import latex_helpers
 
+from slugify import slugify
+
 from constellation.core import __version__
 from constellation.core import __version_code_name__
 
