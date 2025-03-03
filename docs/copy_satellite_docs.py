@@ -216,7 +216,7 @@ def convert_satellite_readme_repo(in_path: pathlib.Path, out_path: pathlib.Path)
         logger.warning(f"No satellite definition found in {in_path.parent}")
 
     # Convert markdown
-    markdown = convert_satellite_readme(markdown, language, parent_classes)
+    markdown = convert_satellite_readme(markdown, language, parent_classes, {"Language": language})
 
     # Write file
     (out_path / slugify(in_path.parent.name, lowercase=False)).with_suffix(".md").write_text(markdown)
@@ -228,6 +228,7 @@ def convert_satellite_readme_repo(in_path: pathlib.Path, out_path: pathlib.Path)
 def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_path: pathlib.Path) -> str | None:
     """
     Converts and copies an external satellite README. The output is written to `<out_path>/<satellite_type>.md`.
+    Returns the category (if external satellite readme can be converted, else None).
     """
     # Run everything in try-except in case no internet connection or other error
     try:

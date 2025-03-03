@@ -2,7 +2,8 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "H5DataWriter"
-description: "Satellite receiving data and writing it to HDF5 files "
+description: "Satellite receiving data and writing it to HDF5 files"
+category: "Data Receivers"
 ---
 
 ## Description

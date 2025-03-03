@@ -2,7 +2,8 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "EudaqNativeWriter"
-description: "A satellite that receives data and writes it to EUDAQ2 native binary formatted files"
+description: "Satellite receiving data and writing it to EUDAQ2 native binary formatted files"
+category: "Data Receivers"
 ---
 
 ## Description
