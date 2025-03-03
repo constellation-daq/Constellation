@@ -9,6 +9,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <stop_token>
 #include <string_view>
 #include <thread>
@@ -16,11 +17,16 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/Satellite.hpp"
+#include "constellation/satellite/TransmitterSatellite.hpp"
+
+#include "chirp_mock.hpp"
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 template <class SatelliteT = constellation::satellite::Satellite> class DummySatelliteNR : public SatelliteT {
@@ -103,7 +109,35 @@ public:
     void exit() {
         skip_transitional_ = true;
         SatelliteT::terminate();
+        mocked_services_.clear();
         SatelliteT::join();
+    }
+
+    void mockChirpService(constellation::protocol::CHIRP::ServiceIdentifier service) {
+        using namespace constellation;
+        using enum protocol::CHIRP::ServiceIdentifier;
+        const auto canonical_name = SatelliteT::getCanonicalName();
+        switch(service) {
+        case CONTROL: {
+            mocked_services_.emplace_back(canonical_name, service, SatelliteT::getCommandPort());
+            break;
+        }
+        case HEARTBEAT: {
+            mocked_services_.emplace_back(canonical_name, service, SatelliteT::getHeartbeatPort());
+            break;
+        }
+        case MONITORING: {
+            mocked_services_.emplace_back(canonical_name, service, log::SinkManager::getInstance().getCMDPPort());
+            break;
+        }
+        case DATA: {
+            if constexpr(std::same_as<SatelliteT, constellation::satellite::TransmitterSatellite>) {
+                mocked_services_.emplace_back(canonical_name, service, SatelliteT::getDataPort());
+            }
+            break;
+        }
+        default: break;
+        }
     }
 
 protected:
@@ -135,6 +169,7 @@ private:
     std::atomic_bool progress_fsm_ {false};
     std::atomic_bool skip_transitional_ {false};
     std::atomic_bool throw_transitional_ {false};
+    std::deque<MockedChirpService> mocked_services_;
 };
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)

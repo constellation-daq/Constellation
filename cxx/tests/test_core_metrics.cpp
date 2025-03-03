@@ -101,9 +101,9 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
-    chirp_mock_service("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+    const auto mocked_service =
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
     // TODO(stephan.lachnit): if subscription check is implemented, we need enable enableCMDPSending()
-    //                        this also requires making the chirp manager static in create_chirp_manager()
     metrics_receiver.waitSubscription();
 
     // Register new metric
@@ -123,6 +123,7 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    chirp_manager->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive with STAT macros", "[core][metrics]") {
@@ -133,7 +134,8 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
-    chirp_mock_service("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+    const auto mocked_service =
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register metrics
@@ -180,7 +182,8 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
-    chirp_mock_service("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+    const auto mocked_service =
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register timed metric
@@ -203,7 +206,8 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
-    chirp_mock_service("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+    const auto mocked_service =
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register timed metric

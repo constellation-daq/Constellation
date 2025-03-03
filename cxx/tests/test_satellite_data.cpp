@@ -176,7 +176,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     auto chirp_manager = create_chirp_manager();
 
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
+    transmitter.mockChirpService(CHIRP::DATA);
 
     auto receiver = Receiver();
     auto config_receiver = Configuration();
@@ -206,8 +206,8 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
                            SendTimeoutError,
                            Message("Failed sending data message after 1s"));
 
-    transmitter.exit();
     receiver.exit();
+    transmitter.exit();
 }
 
 TEST_CASE("Successful run", "[satellite]") {
@@ -216,7 +216,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
+    transmitter.mockChirpService(CHIRP::DATA);
 
     auto config_receiver = Configuration();
     config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
@@ -280,8 +280,8 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
     REQUIRE(transmitter.getState() == FSM::State::ORBIT);
 
-    transmitter.exit();
     receiver.exit();
+    transmitter.exit();
 }
 
 TEST_CASE("Tainted run", "[satellite]") {
@@ -290,7 +290,7 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
+    transmitter.mockChirpService(CHIRP::DATA);
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -337,8 +337,8 @@ TEST_CASE("Tainted run", "[satellite]") {
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
     REQUIRE(transmitter.getState() == FSM::State::ORBIT);
 
-    transmitter.exit();
     receiver.exit();
+    transmitter.exit();
 }
 
 TEST_CASE("Transmitter interrupted run", "[satellite]") {
@@ -347,8 +347,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
-    chirp_mock_service("Dummy.t1", CHIRP::HEARTBEAT, transmitter.getHeartbeatPort());
+    transmitter.mockChirpService(CHIRP::DATA);
+    transmitter.mockChirpService(CHIRP::HEARTBEAT);
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -385,8 +385,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     // Ensure all satellite are in safe mode
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
 
-    transmitter.exit();
     receiver.exit();
+    transmitter.exit();
 }
 
 TEST_CASE("Transmitter failure run", "[satellite]") {
@@ -395,8 +395,8 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     auto receiver = Receiver();
     auto transmitter = Transmitter();
-    chirp_mock_service("Dummy.t1", CHIRP::DATA, transmitter.getDataPort());
-    chirp_mock_service("Dummy.t1", CHIRP::HEARTBEAT, transmitter.getHeartbeatPort());
+    transmitter.mockChirpService(CHIRP::DATA);
+    transmitter.mockChirpService(CHIRP::HEARTBEAT);
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
@@ -434,8 +434,8 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     REQUIRE(receiver.getState() == FSM::State::SAFE);
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
 
-    transmitter.exit();
     receiver.exit();
+    transmitter.exit();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -9,20 +9,27 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <string_view>
 #include <thread>
 #include <tuple>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 
 inline std::shared_ptr<constellation::chirp::Manager> create_chirp_manager() {
-    auto manager = std::make_shared<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
-    manager->setAsDefaultInstance();
-    manager->start();
+    static std::once_flag manager_flag {};
+    static std::shared_ptr<constellation::chirp::Manager> manager {};
+    std::call_once(manager_flag, [&] {
+        LOG(STATUS) << "Creating chirp manager";
+        manager = std::make_shared<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
+        manager->setAsDefaultInstance();
+        manager->start();
+    });
     return manager;
 }
 
@@ -44,7 +51,25 @@ inline void chirp_mock_service(std::string_view name,
                              [](const auto& discovered_service) {
                                  return std::make_tuple(
                                      discovered_service.host_id, discovered_service.identifier, discovered_service.port);
-                             }) == 0) {
+                             }) == (msgtype == MessageType::OFFER ? 0 : 1)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
+
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
+class MockedChirpService {
+public:
+    MockedChirpService(std::string_view name,
+                       constellation::protocol::CHIRP::ServiceIdentifier service,
+                       constellation::networking::Port port)
+        : name_(name), service_(service), port_(port) {
+        chirp_mock_service(name, service, port, true);
+    }
+
+    ~MockedChirpService() { chirp_mock_service(name_, service_, port_, false); }
+
+private:
+    std::string name_;
+    constellation::protocol::CHIRP::ServiceIdentifier service_;
+    constellation::networking::Port port_;
+};

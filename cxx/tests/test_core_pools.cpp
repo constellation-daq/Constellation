@@ -92,7 +92,7 @@ TEST_CASE("Message callback", "[core][core::pools]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Wait until socket is connected
     while(pool.countSockets() < 1) {
@@ -169,7 +169,7 @@ TEST_CASE("Dispose", "[core][core::pools]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Wait until socket is connected
     REQUIRE(connected_fut.get() == std::cv_status::no_timeout);
@@ -177,8 +177,8 @@ TEST_CASE("Dispose", "[core][core::pools]") {
     // Get future for socket_disposed callback
     auto disconnected_fut = pool.waitCallback();
 
-    // Dispose of the socket:
-    chirp_manager->forgetDiscoveredServices(MD5Hash("CMDPSender.s1"));
+    // Dispose of the socket
+    chirp_manager->forgetDiscoveredServices(MD5Hash(sender.getName()));
 
     // Wait until socket is disposed
     REQUIRE(disconnected_fut.get() == std::cv_status::no_timeout);
@@ -202,9 +202,9 @@ TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
 
     // Start the senders and mock via chirp
     auto sender1 = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender1.getName(), CHIRP::MONITORING, sender1.getPort());
+    sender1.mockChirpService();
     auto sender2 = CMDPSender("CMDPSender.s2");
-    chirp_mock_service(sender2.getName(), CHIRP::MONITORING, sender2.getPort());
+    sender2.mockChirpService();
 
     // Wait until sockets are connected
     while(pool.countSockets() < 2) {
@@ -234,9 +234,9 @@ TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pool
 
     // Start the senders and mock via chirp
     auto sender1 = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender1.getName(), CHIRP::MONITORING, sender1.getPort());
+    sender1.mockChirpService();
     auto sender2 = CMDPSender("CMDPSender.s2");
-    chirp_mock_service(sender2.getName(), CHIRP::MONITORING, sender2.getPort());
+    sender2.mockChirpService();
 
     // Wait until sockets are connected
     while(pool.countSockets() < 2) {
