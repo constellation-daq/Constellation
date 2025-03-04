@@ -167,7 +167,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1)", "[core][core::message]") {
 
     auto log_msg2_raw = CMDP1Message::disassemble(log_frames);
     REQUIRE(log_msg2_raw.isLogMessage());
-    REQUIRE_THAT(to_string(log_msg2_raw.getTopic()), Equals("LOG/STATUS/LOGGER_TOPIC"));
+    REQUIRE_THAT(to_string(log_msg2_raw.getMessageTopic()), Equals("LOG/STATUS/LOGGER_TOPIC"));
 
     const auto log_msg2 = CMDP1LogMessage(std::move(log_msg2_raw));
     REQUIRE_THAT(log_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCMDP"));

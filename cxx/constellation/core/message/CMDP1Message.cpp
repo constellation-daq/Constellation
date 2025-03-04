@@ -123,7 +123,7 @@ CMDP1LogMessage::CMDP1LogMessage(CMDP1Message&& message) : CMDP1Message(std::mov
         throw IncorrectMessageType("Not a log message");
     }
 
-    const auto topic = getTopic();
+    const auto topic = getMessageTopic();
     level_ = get_log_level_from_topic(topic);
 
     // Search for a '/' after "LOG/"
@@ -154,7 +154,7 @@ CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::m
     }
 
     // Assign topic after prefix "STAT/"
-    const auto topic = std::string(getTopic().substr(5));
+    const auto topic = std::string(getMessageTopic().substr(5));
 
     try {
         metric_value_ = MetricValue::disassemble(topic, get_payload());
