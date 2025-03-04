@@ -16,6 +16,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/log/Level.hpp"
+#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
@@ -27,7 +28,9 @@ class CMDPSender {
 public:
     CMDPSender(std::string name)
         : name_(std::move(name)), pub_socket_(*constellation::networking::global_zmq_context(), zmq::socket_type::xpub),
-          port_(constellation::networking::bind_ephemeral_port(pub_socket_)) {}
+          port_(constellation::networking::bind_ephemeral_port(pub_socket_)) {
+        constellation::log::SinkManager::getInstance().enableCMDPSending(name_);
+    }
 
     constellation::networking::Port getPort() const { return port_; }
 
