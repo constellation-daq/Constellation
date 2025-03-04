@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cstdint>
+#include <deque>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -18,6 +19,9 @@
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
+
+#include "chirp_mock.hpp"
 
 class CMDPSender {
 public:
@@ -30,7 +34,7 @@ public:
     std::string_view getName() const { return name_; }
 
     void sendLogMessage(constellation::log::Level level, std::string topic, std::string message) {
-        auto msg = constellation::message::CMDP1LogMessage(level, std::move(topic), {"CMDPSender.s1"}, std::move(message));
+        auto msg = constellation::message::CMDP1LogMessage(level, std::move(topic), {name_}, std::move(message));
         msg.assemble().send(pub_socket_);
     }
 
@@ -50,10 +54,13 @@ public:
         return recv_res.has_value();
     }
 
+    void mockChirpService() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::MONITORING, getPort()); }
+
 private:
     std::string name_;
     zmq::socket_t pub_socket_;
     constellation::networking::Port port_;
+    std::deque<MockedChirpService> mocked_service_;
 };
 
 inline bool check_sub_message(zmq::message_t msg, bool subscribe, std::string_view topic) {

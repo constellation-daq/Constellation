@@ -12,7 +12,6 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -38,7 +37,7 @@ TEST_CASE("Global log level", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL"));
@@ -66,6 +65,8 @@ TEST_CASE("Global log level", "[listener]") {
     listener.setGlobalLogLevel(Level::OFF);
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL"));
+
+    listener.stopPool();
 }
 
 TEST_CASE("Topic subscriptions", "[listener]") {
@@ -81,7 +82,7 @@ TEST_CASE("Topic subscriptions", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/FSM"));
@@ -107,6 +108,8 @@ TEST_CASE("Topic subscriptions", "[listener]") {
 
     // Check subscribed topics again
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
+
+    listener.stopPool();
 }
 
 TEST_CASE("Extra topic subscriptions", "[listener]") {
@@ -119,7 +122,7 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Subscribe to extra topic
     listener.subscribeExtaLogTopic(to_string(sender.getName()), "FSM", Level::INFO);
@@ -140,6 +143,8 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/FSM"));
+
+    listener.stopPool();
 }
 
 TEST_CASE("No empty topic subscription", "[listener]") {
@@ -152,7 +157,7 @@ TEST_CASE("No empty topic subscription", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Subscribe to empty topic
     listener.subscribeLogTopic("", Level::DEBUG);
@@ -164,6 +169,7 @@ TEST_CASE("No empty topic subscription", "[listener]") {
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({})));
 
     listener.unsubscribeLogTopic("");
+    listener.stopPool();
 }
 
 TEST_CASE("Empty extra topic subscription", "[listener]") {
@@ -176,7 +182,7 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Set global log topic
     listener.setGlobalLogLevel(Level::INFO);
@@ -203,4 +209,6 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
     // Check extra log topic subscriptions
     REQUIRE_THAT(listener.getExtraLogTopicSubscriptions(to_string(sender.getName())),
                  RangeEquals(std::map<std::string, Level>({{"", Level::WARNING}})));
+
+    listener.stopPool();
 }

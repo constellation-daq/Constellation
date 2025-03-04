@@ -11,7 +11,6 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
-#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/CMDPListener.hpp"
 
@@ -38,7 +37,7 @@ TEST_CASE("Changing subscriptions", "[listener]") {
 
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
@@ -66,6 +65,8 @@ TEST_CASE("Changing subscriptions", "[listener]") {
 
     // Check topic subscriptions again
     REQUIRE_THAT(pool.getTopicSubscriptions(), RangeEquals(std::set<std::string>({"LOG/STATUS", "LOG/TRACE"})));
+
+    pool.stopPool();
 }
 
 TEST_CASE("Changing extra subscriptions", "[listener]") {
@@ -81,9 +82,9 @@ TEST_CASE("Changing extra subscriptions", "[listener]") {
 
     // Start the senders and mock via chirp
     auto sender1 = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender1.getName(), CHIRP::MONITORING, sender1.getPort());
+    sender1.mockChirpService();
     auto sender2 = CMDPSender("CMDPSender.s2");
-    chirp_mock_service(sender2.getName(), CHIRP::MONITORING, sender2.getPort());
+    sender2.mockChirpService();
 
     // Pop subscription messages (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender1.recv().pop(), true, "LOG/INFO"));
@@ -138,6 +139,8 @@ TEST_CASE("Changing extra subscriptions", "[listener]") {
     // Remove extra subscriptions
     pool.removeExtraTopicSubscriptions(to_string(sender1.getName()));
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/DEBUG"));
+
+    pool.stopPool();
 }
 
 TEST_CASE("Extra subscriptions on connection", "[listener]") {
@@ -155,7 +158,7 @@ TEST_CASE("Extra subscriptions on connection", "[listener]") {
 
     // Start the senders and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
-    chirp_mock_service(sender.getName(), CHIRP::MONITORING, sender.getPort());
+    sender.mockChirpService();
 
     // Pop subscription messages for global subscriptions (note: subscriptions come alphabetically if iterated from set)
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
@@ -169,4 +172,6 @@ TEST_CASE("Extra subscriptions on connection", "[listener]") {
 
     // Check unsubscription message
     REQUIRE(check_sub_message(sender.recv().pop(), false, "SOMETHING"));
+
+    pool.stopPool();
 }
