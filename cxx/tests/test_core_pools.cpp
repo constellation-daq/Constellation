@@ -104,7 +104,7 @@ TEST_CASE("Message callback", "[core][core::pools]") {
     pool.subscribe("LOG/");
 
     // Check that we got subscription message
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/"));
 
     // Send log message
     sender.sendLogMessage(Level::STATUS, "", "test");

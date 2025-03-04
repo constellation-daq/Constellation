@@ -45,6 +45,7 @@ TEST_CASE("Global log level", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
 
     // Check global subscription is not returned in topic subscriptions
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({})));
@@ -91,6 +92,7 @@ TEST_CASE("Topic subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/INFO/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/FSM"));
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/FSM"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
 
     // Subscribe to new topic
     listener.subscribeLogTopic("SATELLITE", Level::WARNING);
@@ -126,6 +128,9 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
     sender.mockChirpService();
+
+    // Pop CMD notification message from subscription at construction
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
 
     // Subscribe to extra topic
     listener.subscribeExtaLogTopic(to_string(sender.getName()), "FSM", Level::INFO);
@@ -163,6 +168,9 @@ TEST_CASE("No empty topic subscription", "[listener]") {
     auto sender = CMDPSender("CMDPSender.s1");
     sender.mockChirpService();
 
+    // Pop CMD notification message from subscription at construction
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
+
     // Subscribe to empty topic
     listener.subscribeLogTopic("", Level::DEBUG);
 
@@ -188,6 +196,9 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
     // Start the sender and mock via chirp
     auto sender = CMDPSender("CMDPSender.s1");
     sender.mockChirpService();
+
+    // Pop CMD notification message from subscription at construction
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
 
     // Set global log topic
     listener.setGlobalLogLevel(Level::INFO);
