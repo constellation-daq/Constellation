@@ -96,7 +96,7 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     return {topic, header, std::move(payload)};
 }
 
-std::string_view CMDP1Message::getTopic() const {
+std::string CMDP1Message::getTopic() const {
     if(topic_.starts_with("LOG/")) {
         // Search for second slash after "LOG/" to get substring with log topic
         const auto level_endpos = topic_.find_first_of('/', 4);
