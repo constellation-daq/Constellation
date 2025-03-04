@@ -173,6 +173,13 @@ namespace constellation::listener {
          */
         CNSTLN_API virtual void new_topics_available(std::string_view sender);
 
+        /**
+         * @brief Method for derived classes to act on new senders
+         *
+         * @param sender New CMDP sending host
+         */
+        CNSTLN_API virtual void new_sender_available(std::string_view sender);
+
     private:
         /**
          * @brief Helper methods to separate notification messages from regular CMDP messages. Notifications are handled
