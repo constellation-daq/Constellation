@@ -59,7 +59,7 @@ namespace constellation::message {
         /**
          * @return CMDP message topic
          */
-        std::string_view getTopic() const { return topic_; };
+        std::string_view getMessageTopic() const { return topic_; };
 
         /**
          * @return If the message is a log message
