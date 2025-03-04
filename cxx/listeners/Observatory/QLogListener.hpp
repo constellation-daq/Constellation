@@ -27,6 +27,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -127,7 +128,8 @@ private:
     void host_connected(const constellation::chirp::DiscoveredService& service) override;
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
-    void topics_available(std::string_view sender, const std::map<std::string, std::string>& topics) override;
+    void topics_available(std::string_view sender,
+                          const constellation::utils::string_hash_map<std::string>& topics) override;
 
 private:
     /** Log messages & access mutex*/

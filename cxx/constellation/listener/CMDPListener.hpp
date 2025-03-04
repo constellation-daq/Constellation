@@ -138,7 +138,7 @@ namespace constellation::listener {
          * @param sender Sending CMDP host to get available topics for
          * @return Map with available topics as keys and their description as values
          */
-        CNSTLN_API std::map<std::string, std::string> getAvailableTopics(std::string_view sender);
+        CNSTLN_API utils::string_hash_map<std::string> getAvailableTopics(std::string_view sender);
 
     protected:
         /**
@@ -155,7 +155,7 @@ namespace constellation::listener {
          * @param sender CMDP sending host of the topic notification
          * @param topics Map with notification topics and their description
          */
-        CNSTLN_API virtual void topics_available(std::string_view sender, const std::map<std::string, std::string>& topics);
+        CNSTLN_API virtual void topics_available(std::string_view sender, const utils::string_hash_map<std::string>& topics);
 
     private:
         /**
@@ -182,7 +182,7 @@ namespace constellation::listener {
 
         /* Available topics from notification */
         std::mutex available_topics_mutex_;
-        utils::string_hash_map<std::map<std::string, std::string>> available_topics_;
+        utils::string_hash_map<utils::string_hash_map<std::string>> available_topics_;
     };
 
 } // namespace constellation::listener

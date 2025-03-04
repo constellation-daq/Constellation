@@ -26,6 +26,7 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -96,7 +97,7 @@ void QLogListener::host_disconnected(const DiscoveredService& service) {
     emit connectionsChanged(countSockets());
 }
 
-void QLogListener::topics_available(std::string_view /*sender*/, const std::map<std::string, std::string>& topics) {
+void QLogListener::topics_available(std::string_view /*sender*/, const string_hash_map<std::string>& topics) {
 
     QStringList all_topics;
 
