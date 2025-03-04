@@ -26,7 +26,6 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
-#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -35,7 +34,6 @@ using namespace constellation::chirp;
 using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::pools;
-using namespace constellation::utils;
 
 QLogListener::QLogListener(QObject* parent)
     : QAbstractListModel(parent),
@@ -52,16 +50,6 @@ void QLogListener::clearMessages() {
 }
 
 void QLogListener::add_message(CMDP1LogMessage&& msg) {
-
-    const auto [s_it, s_inserted] = sender_list_.emplace(msg.getHeader().getSender());
-    if(s_inserted) {
-        emit newSender(QString::fromStdString(std::string(msg.getHeader().getSender())));
-    }
-
-    const auto [t_it, t_inserted] = topic_list_.emplace(msg.getLogTopic());
-    if(t_inserted) {
-        emit newTopic(QString::fromStdString(std::string(msg.getLogTopic())));
-    }
 
     const auto level = msg.getLogLevel();
 
@@ -97,11 +85,16 @@ void QLogListener::host_disconnected(const DiscoveredService& service) {
     emit connectionsChanged(countSockets());
 }
 
-void QLogListener::topics_available(std::string_view /*sender*/, const string_hash_map<std::string>& topics) {
+void QLogListener::new_sender_available(std::string_view sender) {
+    emit newSender(QString::fromStdString(std::string(sender)));
+}
+
+void QLogListener::new_topics_available(std::string_view /*sender*/) {
 
     QStringList all_topics;
 
-    for(const auto& [topic, desc] : topics) {
+    // Fetch full list from CMDPListener
+    for(const auto& [topic, desc] : getAvailableTopics()) {
         all_topics.append(QString::fromStdString(topic));
     }
     all_topics.removeDuplicates();

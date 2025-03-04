@@ -128,8 +128,8 @@ private:
     void host_connected(const constellation::chirp::DiscoveredService& service) override;
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
-    void topics_available(std::string_view sender,
-                          const constellation::utils::string_hash_map<std::string>& topics) override;
+    void new_topics_available(std::string_view sender) override;
+    void new_sender_available(std::string_view sender) override;
 
 private:
     /** Log messages & access mutex*/
