@@ -52,7 +52,7 @@ void QLogFilter::setFilterLevel(Level level) {
 
 void QLogFilter::setFilterSender(const std::string& sender) {
     const auto* listener = dynamic_cast<QLogListener*>(sourceModel());
-    if(sender == "- All -" || listener->isSenderKnown(sender)) {
+    if(sender == "- All -" || listener->isSenderAvailable(sender)) {
         LOG(logger_, DEBUG) << "Updating filter sender to " << sender;
         filter_sender_ = sender;
         invalidateFilter();
@@ -61,7 +61,7 @@ void QLogFilter::setFilterSender(const std::string& sender) {
 
 void QLogFilter::setFilterTopic(const std::string& topic) {
     const auto* listener = dynamic_cast<QLogListener*>(sourceModel());
-    if(topic == "- All -" || listener->isTopicKnown(topic)) {
+    if(topic == "- All -" || listener->isTopicAvailable(topic)) {
         LOG(logger_, DEBUG) << "Updating filter topic to " << topic;
         filter_topic_ = topic;
         invalidateFilter();
