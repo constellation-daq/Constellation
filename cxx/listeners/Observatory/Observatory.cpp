@@ -131,7 +131,6 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
 
     // Connect signals:
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) { filterSender->addItem(sender); });
-    connect(&log_listener_, &QLogListener::newTopic, this, [&](const QString& topic) { filterTopic->addItem(topic); });
     connect(&log_listener_, &QLogListener::newTopics, this, [&](const QStringList& topics) {
         filterTopic->clear();
         filterTopic->addItem("- All -");
