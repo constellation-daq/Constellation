@@ -138,6 +138,12 @@ bool CMDPListener::isTopicAvailable(std::string_view topic) const {
     return false;
 }
 
+bool CMDPListener::isSenderAvailable(std::string_view sender) const {
+    const std::lock_guard topics_lock {available_topics_mutex_};
+
+    return (available_topics_.find(sender) != available_topics_.end());
+}
+
 void CMDPListener::subscribeTopic(std::string topic) {
     multiscribeTopics({}, {std::move(topic)});
 }
