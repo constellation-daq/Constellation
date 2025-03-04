@@ -92,7 +92,7 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
 void CMDPListener::new_topics_available(std::string_view /* sender */) {}
 
-std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) {
+std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) const {
     const std::lock_guard topics_lock {available_topics_mutex_};
     const auto sender_it = available_topics_.find(sender);
     if(sender_it != available_topics_.end()) {
@@ -103,7 +103,7 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_
     return {};
 }
 
-std::map<std::string, std::string> CMDPListener::getAvailableTopics() {
+std::map<std::string, std::string> CMDPListener::getAvailableTopics() const {
     const std::lock_guard topics_lock {available_topics_mutex_};
 
     std::map<std::string, std::string> topics;
@@ -112,6 +112,18 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics() {
     }
 
     return topics;
+}
+
+bool CMDPListener::isTopicAvailable(std::string_view topic) const {
+    const std::lock_guard topics_lock {available_topics_mutex_};
+
+    for(const auto& [sender, sender_topics] : available_topics_) {
+        if(sender_topics.find(topic) != sender_topics.end()) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void CMDPListener::subscribeTopic(std::string topic) {
