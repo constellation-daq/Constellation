@@ -58,26 +58,31 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
         const auto& topics = notification.getTopics();
         const auto sender = std::string(notification.getHeader().getSender());
 
-        const std::lock_guard available_topics_lock {available_topics_mutex_};
-
         bool new_topics = false;
+        std::unique_lock available_topics_lock {available_topics_mutex_};
         for(const auto& [top, desc] : topics) {
             const auto [it, inserted] = available_topics_[sender].insert_or_assign(top, desc.str());
             new_topics |= inserted;
         }
+        available_topics_lock.unlock();
 
         // Call method for derived classes to propagate information
         if(new_topics) {
-            topics_available(sender, available_topics_[sender]);
+            new_topics_available(sender);
         }
     } else {
         const auto topic = std::string(msg.getTopic());
         const auto sender = std::string(msg.getHeader().getSender());
 
-        const std::lock_guard available_topics_lock {available_topics_mutex_};
+        bool new_topic = false;
+        std::unique_lock available_topics_lock {available_topics_mutex_};
         if(available_topics_[sender].find(topic) == available_topics_[sender].end()) {
             available_topics_[sender].insert({topic, {}});
-            topics_available(sender, available_topics_[sender]);
+        }
+        available_topics_lock.unlock();
+
+        if(new_topic) {
+            new_topics_available(sender);
         }
 
         // Pass regular messages on to registered callback
@@ -85,17 +90,28 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
     }
 }
 
-void CMDPListener::topics_available(std::string_view /* sender */, const utils::string_hash_map<std::string>& /* topics */) {
-}
+void CMDPListener::new_topics_available(std::string_view /* sender */) {}
 
-utils::string_hash_map<std::string> CMDPListener::getAvailableTopics(std::string_view sender) {
+std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) {
     const std::lock_guard topics_lock {available_topics_mutex_};
     const auto sender_it = available_topics_.find(sender);
     if(sender_it != available_topics_.end()) {
-        return sender_it->second;
+        // Create regular map for easy consumption:
+        return {sender_it->second.begin(), sender_it->second.end()};
     }
 
     return {};
+}
+
+std::map<std::string, std::string> CMDPListener::getAvailableTopics() {
+    const std::lock_guard topics_lock {available_topics_mutex_};
+
+    std::map<std::string, std::string> topics;
+    for(const auto& [sender, sender_topics] : available_topics_) {
+        std::ranges::for_each(sender_topics.cbegin(), sender_topics.cend(), [&](const auto& p) { topics.insert(p); });
+    }
+
+    return topics;
 }
 
 void CMDPListener::subscribeTopic(std::string topic) {
