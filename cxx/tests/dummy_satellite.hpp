@@ -9,6 +9,7 @@
 #include <array>
 #include <atomic>
 #include <chrono>
+#include <concepts>
 #include <deque>
 #include <stop_token>
 #include <string_view>
@@ -58,14 +59,15 @@ public:
 
     void progressFsm() {
         auto old_state = SatelliteT::getState();
-        LOG(DEBUG) << "Progressing FSM, old state " << old_state;
+        LOG(DEBUG) << "Progressing FSM, old state " << old_state << " (" << SatelliteT::getCanonicalName() << ")";
         progress_fsm_ = true;
         // wait for state change
         while(old_state == SatelliteT::getState()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
         progress_fsm_ = false;
-        LOG(DEBUG) << "Progressed FSM, new state " << SatelliteT::getState();
+        LOG(DEBUG) << "Progressed FSM, new state " << SatelliteT::getState() << " (" << SatelliteT::getCanonicalName()
+                   << ")";
     }
 
     void setSupportReconfigure(bool support_reconfigure) { SatelliteT::support_reconfigure(support_reconfigure); }
@@ -73,34 +75,34 @@ public:
 
     void initializing(constellation::config::Configuration& config) override {
         SatelliteT::initializing(config);
-        transitional_state();
+        transitional_state("initializing");
     }
     void launching() override {
         SatelliteT::launching();
-        transitional_state();
+        transitional_state("launching");
     }
     void landing() override {
         SatelliteT::landing();
-        transitional_state();
+        transitional_state("landing");
     }
     void reconfiguring(const constellation::config::Configuration& partial_config) override {
         SatelliteT::reconfiguring(partial_config);
-        transitional_state();
+        transitional_state("reconfiguring");
     }
     void starting(std::string_view run_identifier) override {
         SatelliteT::starting(run_identifier);
-        transitional_state();
+        transitional_state("starting");
     }
     void stopping() override {
         SatelliteT::stopping();
-        transitional_state();
+        transitional_state("stopping");
     }
     void interrupting(constellation::protocol::CSCP::State previous_state) override {
         // Note: the default implementation calls `stopping()` and `landing()`, both of which call `transitional_state()`
         progress_fsm_ = true;
         SatelliteT::interrupting(previous_state);
         progress_fsm_ = false;
-        transitional_state();
+        transitional_state("interrupting");
     }
     void failure(constellation::protocol::CSCP::State previous_state) override { SatelliteT::failure(previous_state); }
 
@@ -141,10 +143,10 @@ public:
     }
 
 protected:
-    void transitional_state() {
-        LOG(TRACE) << "Entering transitional state";
+    void transitional_state(std::string_view state) {
+        LOG(TRACE) << "Entering transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
         if(skip_transitional_) {
-            LOG(TRACE) << "Skipping transitional state";
+            LOG(TRACE) << "Skipping transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
             return;
         }
         while(!progress_fsm_) {
@@ -153,7 +155,7 @@ protected:
                 throw constellation::utils::Exception("Throwing in transitional state as requested");
             }
         }
-        LOG(TRACE) << "Leaving transitional state";
+        LOG(TRACE) << "Leaving transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
     }
 
 private:
@@ -180,6 +182,6 @@ public:
 
     void running(const std::stop_token& stop_token) override {
         SatelliteT::running(stop_token);
-        DummySatelliteNR<SatelliteT>::transitional_state();
+        DummySatelliteNR<SatelliteT>::transitional_state("running");
     }
 };
