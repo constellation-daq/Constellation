@@ -60,13 +60,18 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         bool new_topics = false;
         std::unique_lock available_topics_lock {available_topics_mutex_};
+        const auto& [sender_it, new_sender] = available_topics_.insert({sender, {}});
+
         for(const auto& [top, desc] : topics) {
-            const auto [it, inserted] = available_topics_[sender].insert_or_assign(top, desc.str());
+            const auto [it, inserted] = sender_it->second.insert_or_assign(top, desc.str());
             new_topics |= inserted;
         }
         available_topics_lock.unlock();
 
         // Call method for derived classes to propagate information
+        if(new_sender) {
+            new_sender_available(sender);
+        }
         if(new_topics) {
             new_topics_available(sender);
         }
@@ -76,11 +81,17 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         bool new_topic = false;
         std::unique_lock available_topics_lock {available_topics_mutex_};
-        if(available_topics_[sender].find(topic) == available_topics_[sender].end()) {
-            available_topics_[sender].insert({topic, {}});
+        const auto& [sender_it, new_sender] = available_topics_.insert({sender, {}});
+
+        if(sender_it->second.find(topic) == sender_it->second.end()) {
+            sender_it->second.insert({topic, {}});
         }
         available_topics_lock.unlock();
 
+        // Call method for derived classes to propagate information
+        if(new_sender) {
+            new_sender_available(sender);
+        }
         if(new_topic) {
             new_topics_available(sender);
         }
@@ -90,6 +101,7 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
     }
 }
 
+void CMDPListener::new_sender_available(std::string_view /* sender */) {}
 void CMDPListener::new_topics_available(std::string_view /* sender */) {}
 
 std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) const {
