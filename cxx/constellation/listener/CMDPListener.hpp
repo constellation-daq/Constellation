@@ -157,6 +157,16 @@ namespace constellation::listener {
          */
         CNSTLN_API bool isTopicAvailable(std::string_view topic) const;
 
+        /**
+         * @brief Check if a given sender is in the list of available topics
+         *
+         * @note the comparison here is case-sensitive.
+         *
+         * @param sender Sender to search for
+         * @return Boolean indicating whether the sender is available or not
+         */
+        CNSTLN_API bool isSenderAvailable(std::string_view sender) const;
+
     protected:
         /**
          * @brief Method for derived classes to act on newly connected sockets
