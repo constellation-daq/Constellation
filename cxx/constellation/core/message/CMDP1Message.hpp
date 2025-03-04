@@ -62,6 +62,12 @@ namespace constellation::message {
         std::string_view getMessageTopic() const { return topic_; };
 
         /**
+         * @brief Get topic without CMDP identifier (LOG or STAT)
+         * @return topic
+         */
+        CNSTLN_API std::string_view getTopic() const;
+
+        /**
          * @return If the message is a log message
          */
         CNSTLN_API bool isLogMessage() const;

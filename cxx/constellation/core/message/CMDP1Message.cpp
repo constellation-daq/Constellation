@@ -96,6 +96,18 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     return {topic, header, std::move(payload)};
 }
 
+std::string_view CMDP1Message::getTopic() const {
+    if(topic_.starts_with("LOG/")) {
+        // Search for second slash after "LOG/" to get substring with log topic
+        const auto level_endpos = topic_.find_first_of('/', 4);
+        return topic_.substr(level_endpos + 1);
+    } else if(topic_.starts_with("STAT/")) {
+        return topic_.substr(5);
+    }
+
+    throw IncorrectMessageType("Neither log nor stat message");
+}
+
 Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     if(!topic.starts_with("LOG/")) {
         throw IncorrectMessageType("Not a log message");
