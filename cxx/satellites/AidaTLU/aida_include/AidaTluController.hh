@@ -6,11 +6,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include "constellation/core/log/Logger.hpp"
+
 #include "AidaTluDisplay.hh"
 #include "AidaTluHardware.hh"
 #include "AidaTluI2c.hh"
 #include "AidaTluPowerModule.hh"
-#include "constellation/core/log/Logger.hpp"
 
 typedef unsigned char uchar_t;
 
@@ -107,6 +109,12 @@ namespace tlu {
             s4 = ReadRRegister("triggerInputs.ThrCount4R");
             s5 = ReadRRegister("triggerInputs.ThrCount5R");
         }
+        uint32_t GetScalar0() { return ReadRRegister("triggerInputs.ThrCount0R"); }
+        uint32_t GetScalar1() { return ReadRRegister("triggerInputs.ThrCount1R"); }
+        uint32_t GetScalar2() { return ReadRRegister("triggerInputs.ThrCount2R"); }
+        uint32_t GetScalar3() { return ReadRRegister("triggerInputs.ThrCount3R"); }
+        uint32_t GetScalar4() { return ReadRRegister("triggerInputs.ThrCount4R"); }
+        uint32_t GetScalar5() { return ReadRRegister("triggerInputs.ThrCount5R"); }
 
         std::string parseURI();
 

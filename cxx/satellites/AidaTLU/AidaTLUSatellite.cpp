@@ -13,12 +13,14 @@
 
 #include <unistd.h>
 
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation::config;
+using namespace constellation::metrics;
 using namespace constellation::protocol;
 
 AidaTLUSatellite::AidaTLUSatellite(std::string_view type, std::string_view name) : TransmitterSatellite(type, name) {
@@ -30,12 +32,12 @@ AidaTLUSatellite::AidaTLUSatellite(std::string_view type, std::string_view name)
                      this);
 
     register_timed_metric(
-        "TRIGGER_NUMBER", "", metrics::Type::LAST_VALUE, std::chrono::seconds(1), {CSCP::State::RUN}, [this]() {
+        "TRIGGER_NUMBER", "", MetricType::LAST_VALUE, std::chrono::seconds(1), {CSCP::State::RUN}, [this]() {
             return m_current_trigger_n.load();
         });
 
     register_timed_metric(
-        "TRIGGER_RATE", "Hz", metrics::Type::LAST_VALUE, std::chrono::seconds(1), {CSCP::State::RUN}, [this]() {
+        "TRIGGER_RATE", "Hz", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::RUN}, [this]() {
             // Load current values and store them as last values
             const auto current_ts = m_current_ts.load();
             const auto current_trigger_n = m_current_trigger_n.load();
@@ -49,7 +51,38 @@ AidaTLUSatellite::AidaTLUSatellite(std::string_view type, std::string_view name)
             return static_cast<double>(current_trigger_n - last_trigger_n) / time_diff;
         });
 
-    LOG(STATUS) << getCanonicalName() << " created";
+    register_timed_metric(
+        "SCALAR_0", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar0();
+        });
+    register_timed_metric(
+        "SCALAR_1", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar1();
+        });
+    register_timed_metric(
+        "SCALAR_2", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar2();
+        });
+    register_timed_metric(
+        "SCALAR_3", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar3();
+        });
+    register_timed_metric(
+        "SCALAR_4", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar4();
+        });
+    register_timed_metric(
+        "SCALAR_5", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetScalar5();
+        });
+    register_timed_metric(
+        "PRE_VETO", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetPreVetoTriggers();
+        });
+    register_timed_metric(
+        "POST_VETO", "", MetricType::LAST_VALUE, std::chrono::seconds(5), {CSCP::State::ORBIT, CSCP::State::RUN}, [this]() {
+            return m_tlu->GetPostVetoTriggers();
+        });
 }
 
 void AidaTLUSatellite::initializing(constellation::config::Configuration& config) {
