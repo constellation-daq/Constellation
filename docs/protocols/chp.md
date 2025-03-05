@@ -31,9 +31,9 @@ The definitions of ‘frame’ and ‘multipart message’ follow those defined 
 
 ### Overall Behavior
 
-A CHP sending host SHALL advertise its CHP service through CHIRP.
+A CHP sending host SHALL advertise its CHP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) with service identifier `%x02`.
 
-Upon service discovery through CHIRP, a CHP receiving host MAY subscribe to the CHP sending hosts as defined by 29/PUBSUB.
+Upon service discovery through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md), a CHP receiving host MAY subscribe to the CHP sending hosts as defined by [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
 
 A CHP sending host MUST publish messages to all subscribed CHP receiving hosts in regular time intervals. These messages are called "heartbeats". The CHP sending host SHALL publish messages over the entirety of its existence.
 
@@ -46,7 +46,7 @@ A receiving CHP host SHALL discard messages that it receives with an invalid for
 The heartbeat and extrasystole message frame MUST be encoded according to the MessagePack specification.
 It SHALL contain two strings, followed by a 64-bit timestamp, a 1-OCTET integer value and a 2-OCTET integer value.
 
-The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘H’ and ‘P’, followed by the protocol version number, which SHALL be %x01.
+The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘H’ and ‘P’, followed by the protocol version number, which SHALL be `%x01`.
 
 The second string SHOULD contain the name of the sending CHP host.
 

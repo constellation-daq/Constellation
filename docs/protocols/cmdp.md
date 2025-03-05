@@ -46,7 +46,7 @@ The message SHALL consist of the following frames, in this order:
 
 ### Overall Behavior
 
-A CMDP sending host SHALL advertise its CMDP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md).
+A CMDP sending host SHALL advertise its CMDP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) with service identifier `%x03`.
 
 Upon service discovery through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md), a CMDP host MAY subscribe to one or multiple topics as defined by [29/PUBSUB](http://rfc.zeromq.org/spec:29/PUBSUB).
 
