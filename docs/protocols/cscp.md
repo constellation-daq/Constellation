@@ -54,7 +54,7 @@ For processing incoming messages:
 
 The satellite host SHALL implement a REP socket as defined by [28/REQREP](http://rfc.zeromq.org/spec:28/REQREP) and SHALL act as service for a set of CSCP controller hosts, receiving requests and sending replies back to the requesting CSCP controller host.
 
-A CSCP satellite host SHALL advertise its CSCP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md).
+A CSCP satellite host SHALL advertise its CSCP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) with service identifier `%x01`.
 
 General behavior:
 
