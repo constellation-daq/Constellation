@@ -2,10 +2,10 @@
 
 This section of the manual provides an overview of the concepts and design principles of the Constellation framework.
 
-Constellation is a network-distributed supervisory control and data acquisition framework (SCADA) geared towards flexibility
-and easy integration of new sensors, detectors and other devices. The components of the framework run on a single computer or
-multiple machines across a local IP-based network, and allow to distribute commands, record data and collect monitoring and
-logging information from its different constituents.
+Constellation is a network-distributed control and data acquisition framework geared towards flexibility and easy integration
+of new sensors, detectors and other devices. The components of the framework run on a single computer or multiple machines
+across a local IP-based network, and allow to distribute commands, record data and collect monitoring and logging information
+from its different constituents.
 
 ## General Considerations
 
