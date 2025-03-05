@@ -120,13 +120,13 @@ variables:
     - pip install meson-python meson ninja
 
 .python-3.11:
-  image: python:3.11
+  image: tollerort.desy.de/hub.docker.com/python:3.11
 
 .python-3.12:
-  image: python:3.12
+  image: tollerort.desy.de/hub.docker.com/python:3.12
 
 .python-3.13:
-  image: python:3.13
+  image: tollerort.desy.de/hub.docker.com/python:3.13
 
 # Combined Python / C++ templates
 
@@ -529,7 +529,7 @@ format:clang-format:
 
 format:reuse:
   extends: .format
-  image: fsfe/reuse:latest
+  image: tollerort.desy.de/hub.docker.com/fsfe/reuse:latest
   script:
     - reuse lint
 
@@ -607,7 +607,7 @@ docs:spelling:
 deploy:source:
   extends:
     - .deploy
-  image: alpine:latest
+  image: tollerort.desy.de/hub.docker.com/alpine:latest
   variables:
     GITLAB_HOST: $CI_SERVER_URL
   script:
