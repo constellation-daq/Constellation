@@ -92,7 +92,8 @@ private:
     std::unique_ptr<tlu::AidaTluController> m_tlu;
     std::mutex m_tlu_mutex;
 
-    std::atomic_uint32_t m_trigger_n;
-    std::atomic_uint64_t m_starttime;
-    std::atomic_uint64_t m_lasttime;
+    std::atomic_uint64_t m_current_ts;
+    std::atomic_uint32_t m_current_trigger_n;
+    std::atomic_uint64_t m_last_ts;
+    std::atomic_uint32_t m_last_trigger_n;
 };

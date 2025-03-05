@@ -16,7 +16,7 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/satellite/Satellite.hpp"
+#include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation::config;
 using namespace constellation::protocol;
@@ -31,16 +31,22 @@ AidaTLUSatellite::AidaTLUSatellite(std::string_view type, std::string_view name)
 
     register_timed_metric(
         "TRIGGER_NUMBER", "", metrics::Type::LAST_VALUE, std::chrono::seconds(1), {CSCP::State::RUN}, [this]() {
-            return m_trigger_n.load();
+            return m_current_trigger_n.load();
         });
 
     register_timed_metric(
         "TRIGGER_RATE", "Hz", metrics::Type::LAST_VALUE, std::chrono::seconds(1), {CSCP::State::RUN}, [this]() {
-            const auto time_diff = 1e-9 * static_cast<double>(m_lasttime.load() - m_starttime.load());
-            if(time_diff == 0.) {
+            // Load current values and store them as last values
+            const auto current_ts = m_current_ts.load();
+            const auto current_trigger_n = m_current_trigger_n.load();
+            const auto last_ts = m_last_ts.exchange(current_ts);
+            const auto last_trigger_n = m_last_trigger_n.exchange(current_trigger_n);
+            // Convert time difference to seconds and check for division by zero and negative time difference
+            const auto time_diff = 1e-9 * static_cast<double>(current_ts - last_ts);
+            if(time_diff <= 0.) {
                 return 0.;
             }
-            return static_cast<double>(m_trigger_n.load()) / time_diff;
+            return static_cast<double>(current_trigger_n - last_trigger_n) / time_diff;
         });
 
     LOG(STATUS) << getCanonicalName() << " created";
@@ -320,15 +326,19 @@ void AidaTLUSatellite::stopping() {
     LOG(INFO) << "Stopping TLU...";
     m_tlu->SetTriggerVeto(1);
     m_tlu->SetRunActive(0);
+
+    // Reset trigger numbers and timestamps for metrics
+    m_last_trigger_n.store(0);
+    m_current_trigger_n.store(0);
+    m_last_ts.store(m_tlu->GetCurrentTimestamp() * 25);
+    m_current_ts.store(m_last_ts.load());
 }
 
 void AidaTLUSatellite::running(const std::stop_token& stop_token) {
     std::lock_guard<std::mutex> lock {m_tlu_mutex};
 
-    m_starttime.store(m_tlu->GetCurrentTimestamp() * 25);
-
     while(!stop_token.stop_requested()) {
-        m_lasttime.store(m_tlu->GetCurrentTimestamp() * 25);
+        const auto current_ts = m_tlu->GetCurrentTimestamp() * 25;
 
         m_tlu->ReceiveEvents(m_launch_config.verbose);
         while(!m_tlu->IsBufferEmpty()) {
@@ -338,10 +348,11 @@ void AidaTLUSatellite::running(const std::stop_token& stop_token) {
             uint64_t ts_ns = ts_raw * 25;
             LOG_IF(DEBUG, trigger_n % 1000 == 0) << "Received trigger " << trigger_n << " after " << ts_ns / 1e9 << " s.";
 
-            // Store trigger number
-            m_trigger_n.store(trigger_n);
+            // Store timestamp and trigger number for metrics
+            m_current_ts.store(current_ts);
+            m_current_trigger_n.store(trigger_n);
 
-            // Store data:
+            // Store data
             auto msg = newDataMessage();
 
             // Add timestamps in picoseconds and trigger number
