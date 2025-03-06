@@ -18,14 +18,14 @@
 using namespace constellation;
 
 QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
-                                           const std::string& name,
+                                           const QString& name,
                                            std::function<void(const std::string&, const std::string&, log::Level)> callback)
     : QWidget(parent), name_(name), ui_(new Ui::QSenderSubscriptions), callback_(std::move(callback)) {
     ui_->setupUi(this);
-    ui_->senderName->setText(QString::fromStdString(name_));
+    ui_->senderName->setText(name_);
 }
 
 void QSenderSubscriptions::on_senderLevel_currentIndexChanged(int index) {
     const auto lvl = log::Level(index);
-    callback_(name_, "", lvl);
+    callback_(name_.toStdString(), "", lvl);
 }
