@@ -14,23 +14,58 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/gui/qt_utils.hpp"
 
 #include "ui_QSenderSubscriptions.h"
 
 using namespace constellation;
+using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::utils;
+
+void QLogLevelDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
+    auto options = option;
+
+    // Get log level color
+    const auto level_str = index.data().toString().toStdString();
+    const auto level = enum_cast<Level>(level_str).value_or(INFO);
+
+    const auto color = get_log_level_color(level);
+    if(level > Level::INFO) {
+        // High levels get background coloring
+        painter->fillRect(options.rect, QBrush(color));
+    } else {
+        // Others just text color adjustment
+        options.palette.setColor(QPalette::Text, color);
+    }
+
+    QStyledItemDelegate::paint(painter, options, index);
+}
+
+QLogLevelComboBox::QLogLevelComboBox(QWidget* parent, bool descending, const std::string& neutral) : QComboBox(parent) {
+    if(!neutral.empty()) {
+        addItem(QString::fromStdString(neutral));
+    }
+
+    if(descending) {
+        for(int level_it = std::to_underlying(Level::TRACE); level_it <= std::to_underlying(Level::CRITICAL); ++level_it) {
+            addItem(QString::fromStdString(enum_name(Level(level_it))));
+        }
+    } else {
+        for(int level_it = std::to_underlying(Level::CRITICAL); level_it >= std::to_underlying(Level::TRACE); --level_it) {
+            addItem(QString::fromStdString(enum_name(Level(level_it))));
+        }
+    }
+
+    // Set item delegate:
+    setItemDelegate(&delegate_);
+}
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(QObject* parent) : QStyledItemDelegate(parent) {}
 
 QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const {
     // Create the combobox and populate it
-    QComboBox* cb = new QComboBox(parent);
-    cb->addItem("- global -");
-    for(int level_it = std::to_underlying(Level::CRITICAL); level_it >= std::to_underlying(Level::TRACE); --level_it) {
-        cb->addItem(QString::fromStdString(enum_name(Level(level_it))));
-    }
-    return cb;
+    return new QLogLevelComboBox(parent, false, "- global -");
 }
 
 void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const {

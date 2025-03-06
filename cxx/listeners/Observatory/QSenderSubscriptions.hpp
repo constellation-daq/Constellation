@@ -12,7 +12,9 @@
 #include <functional>
 #include <memory>
 
+#include <QComboBox>
 #include <QItemSelection>
+#include <QPainter>
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QStyledItemDelegate>
@@ -23,6 +25,25 @@
 namespace Ui {
     class QSenderSubscriptions;
 }
+
+class QLogLevelDelegate : public QStyledItemDelegate {
+public:
+    QLogLevelDelegate() = default;
+
+private:
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+};
+
+class QLogLevelComboBox : public QComboBox {
+    Q_OBJECT
+
+public:
+    QLogLevelComboBox(QWidget* parent = nullptr, bool descending = false, const std::string& neutral = "");
+    ~QLogLevelComboBox() = default;
+
+private:
+    QLogLevelDelegate delegate_;
+};
 
 class ComboBoxItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
