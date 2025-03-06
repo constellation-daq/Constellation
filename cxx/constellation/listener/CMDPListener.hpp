@@ -171,7 +171,7 @@ namespace constellation::listener {
         /**
          * @brief Method for derived classes to act on newly connected sockets
          *
-         * @warning Derived functions should always call `CMDPPool::socket_connected()` to ensure that sockets are
+         * @warning Derived functions should always call `CMDPListener::host_connected()` to ensure that sockets are
          *          subscribed to the correct topics.
          */
         CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
