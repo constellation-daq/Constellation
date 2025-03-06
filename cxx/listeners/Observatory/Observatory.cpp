@@ -137,7 +137,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
             filterSender->addItem(sender);
         }
     });
-    connect(&log_listener_, &QLogListener::newTopics, this, [&](const QStringList& topics) {
+    connect(&log_listener_, &QLogListener::newGlobalTopics, this, [&](const QStringList& topics) {
         filterTopic->clear();
         filterTopic->addItem("- All -");
         filterTopic->addItems(topics);
@@ -145,12 +145,24 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     connect(&log_listener_, &QLogListener::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
+    connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
+        auto it = senders_.find(sender);
+        if(it != senders_.end()) {
+            it->second->setTopics(topics);
+        }
+    });
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
         senders_.emplace(host,
                          std::make_shared<QSenderSubscriptions>(
-                             this, host, [&](const std::string& host, const std::string& topic, Level level) {
+                             this,
+                             host,
+                             [&](const std::string& host, const std::string& topic, Level level) {
                                  LOG(INFO) << "subscribing for " << host << std::endl;
                                  log_listener_.subscribeExtaLogTopic(host, topic, level);
+                             },
+                             [&](const std::string& host, const std::string& topic) {
+                                 LOG(INFO) << "unsubscribing from " << host << std::endl;
+                                 log_listener_.unsubscribeExtraLogTopic(host, topic);
                              }));
         senderSubscriptions->addWidget(senders_[host].get());
     });
