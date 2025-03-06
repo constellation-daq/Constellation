@@ -85,7 +85,8 @@ signals:
      */
     void newSender(QString sender);
 
-    void newTopics(QStringList topics);
+    void newGlobalTopics(QStringList topics);
+    void newSenderTopics(QString sender, QStringList topics);
 
 private:
     /**

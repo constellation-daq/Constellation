@@ -87,7 +87,7 @@ void QLogListener::new_sender_available(std::string_view sender) {
     emit newSender(QString::fromStdString(std::string(sender)));
 }
 
-void QLogListener::new_topics_available(std::string_view /*sender*/) {
+void QLogListener::new_topics_available(std::string_view sender) {
 
     QStringList all_topics;
 
@@ -98,10 +98,17 @@ void QLogListener::new_topics_available(std::string_view /*sender*/) {
     all_topics.removeDuplicates();
     all_topics.sort();
 
-    // Emit signal for global topic list change:
-    emit newTopics(all_topics);
+    QStringList sender_topics;
+    for(const auto& [topic, desc] : getAvailableTopics(sender)) {
+        sender_topics.append(QString::fromStdString(topic));
+    }
+    sender_topics.removeDuplicates();
+    sender_topics.sort();
 
-    // emit newSenderTopics(QString::fromStdString(std::string(sender)), {});
+    // Emit signal for global topic list change:
+    emit newGlobalTopics(all_topics);
+
+    emit newSenderTopics(QString::fromStdString(std::string(sender)), sender_topics);
 }
 
 QVariant QLogListener::data(const QModelIndex& index, int role) const {
