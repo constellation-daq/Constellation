@@ -48,26 +48,16 @@
    <item row="0" column="1">
     <widget class="QComboBox" name="senderLevel">
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <item>
       <property name="text">
-       <string>TRACE</string>
+       <string>- global -</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>DEBUG</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>INFO</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>WARNING</string>
+       <string>CRITICAL</string>
       </property>
      </item>
      <item>
@@ -77,7 +67,22 @@
      </item>
      <item>
       <property name="text">
-       <string>CRITICAL</string>
+       <string>WARNING</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>INFO</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>DEBUG</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>TRACE</string>
       </property>
      </item>
     </widget>
