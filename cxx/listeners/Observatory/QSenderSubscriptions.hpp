@@ -25,7 +25,7 @@ class QSenderSubscriptions : public QWidget {
 
 public:
     QSenderSubscriptions(QWidget* parent,
-                         const std::string& name,
+                         const QString& name,
                          std::function<void(const std::string&, const std::string&, constellation::log::Level)> callback);
 
 private slots:
@@ -37,7 +37,7 @@ private slots:
     void on_senderLevel_currentIndexChanged(int index);
 
 private:
-    std::string name_;
+    QString name_;
     std::shared_ptr<Ui::QSenderSubscriptions> ui_;
     std::function<void(const std::string&, const std::string&, constellation::log::Level)> callback_;
 };

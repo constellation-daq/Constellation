@@ -160,7 +160,7 @@ private slots:
 private:
     /** Subscription pool listening to new log messages */
     QLogListener log_listener_;
-    std::map<std::string, std::shared_ptr<QSenderSubscriptions>> senders_;
+    std::map<QString, std::shared_ptr<QSenderSubscriptions>> senders_;
 
     /** Sorting and filtering proxy for displaying log messages */
     QLogFilter log_filter_;
