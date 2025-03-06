@@ -15,6 +15,7 @@
 #include <QItemSelection>
 #include <QStandardItemModel>
 #include <QStringList>
+#include <QStyledItemDelegate>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -22,6 +23,18 @@
 namespace Ui {
     class QSenderSubscriptions;
 }
+
+class ComboBoxItemDelegate : public QStyledItemDelegate {
+    Q_OBJECT
+
+public:
+    ComboBoxItemDelegate(QObject* parent = nullptr);
+    ~ComboBoxItemDelegate() = default;
+
+    QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    void setEditorData(QWidget* editor, const QModelIndex& index) const override;
+    void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
+};
 
 class QSenderSubscriptions : public QWidget {
     Q_OBJECT
@@ -49,5 +62,6 @@ private:
     std::function<void(const std::string&, const std::string&)> unsub_callback_;
 
     // Topics
+    ComboBoxItemDelegate delegate_;
     QStandardItemModel topics_;
 };

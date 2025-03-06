@@ -396,8 +396,14 @@
       </item>
       <item row="2" column="1">
        <widget class="QScrollArea" name="scrollArea">
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
         <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+         <enum>Qt::ScrollBarAsNeeded</enum>
         </property>
         <property name="widgetResizable">
          <bool>true</bool>
@@ -407,8 +413,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>276</width>
-           <height>510</height>
+           <width>278</width>
+           <height>512</height>
           </rect>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -428,7 +434,11 @@
            <number>0</number>
           </property>
           <item>
-           <layout class="QVBoxLayout" name="senderSubscriptions"/>
+           <layout class="QVBoxLayout" name="senderSubscriptions">
+            <property name="spacing">
+             <number>16</number>
+            </property>
+           </layout>
           </item>
          </layout>
         </widget>
