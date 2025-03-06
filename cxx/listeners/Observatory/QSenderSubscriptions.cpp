@@ -26,7 +26,7 @@ ComboBoxItemDelegate::ComboBoxItemDelegate(QObject* parent) : QStyledItemDelegat
 QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const {
     // Create the combobox and populate it
     QComboBox* cb = new QComboBox(parent);
-    cb->addItem("(global)");
+    cb->addItem("- global -");
     for(int level_it = std::to_underlying(Level::CRITICAL); level_it >= std::to_underlying(Level::TRACE); --level_it) {
         cb->addItem(QString::fromStdString(enum_name(Level(level_it))));
     }
@@ -61,20 +61,7 @@ QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
     ui_->topicsView->setModel(&topics_);
     ui_->topicsView->setItemDelegateForColumn(1, &delegate_);
 
-    // Connect selection change from topics list:
-    connect(ui_->topicsView->selectionModel(),
-            &QItemSelectionModel::selectionChanged,
-            this,
-            [&](const QItemSelection& selected, const QItemSelection& deselected) {
-                for(const auto& idx : selected.indexes()) {
-                    const auto topic = topics_.itemFromIndex(idx)->text().toStdString();
-                    sub_callback_(name_.toStdString(), topic, Level::TRACE);
-                }
-                for(const auto& idx : deselected.indexes()) {
-                    const auto topic = topics_.itemFromIndex(idx)->text().toStdString();
-                    unsub_callback_(name_.toStdString(), topic);
-                }
-            });
+    // Connect item change to subscription:
     connect(&topics_, &QStandardItemModel::itemChanged, this, [&](QStandardItem* item) {
         const auto topic = topics_.item(item->index().row())->text().toStdString();
         const auto level = enum_cast<Level>(item->text().toStdString());
@@ -87,8 +74,12 @@ QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
 }
 
 void QSenderSubscriptions::on_senderLevel_currentIndexChanged(int index) {
-    const auto lvl = Level(index);
-    sub_callback_(name_.toStdString(), "", lvl);
+    const auto level = enum_cast<Level>(ui_->senderLevel->itemText(index).toStdString());
+    if(level.has_value()) {
+        sub_callback_(name_.toStdString(), "", level.value());
+    } else {
+        unsub_callback_(name_.toStdString(), "");
+    }
 }
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
