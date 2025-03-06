@@ -145,7 +145,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     connect(&log_listener_, &QLogListener::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
-    connect(&log_listener_, &QLogListener::senderConnected, this, [&](const std::string& host) {
+    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
         senders_.emplace(host,
                          std::make_shared<QSenderSubscriptions>(
                              this, host, [&](const std::string& host, const std::string& topic, Level level) {
