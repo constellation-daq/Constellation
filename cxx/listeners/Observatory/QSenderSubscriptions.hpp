@@ -12,6 +12,9 @@
 #include <functional>
 #include <memory>
 
+#include <QItemSelection>
+#include <QStandardItemModel>
+#include <QStringList>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -26,7 +29,10 @@ class QSenderSubscriptions : public QWidget {
 public:
     QSenderSubscriptions(QWidget* parent,
                          const QString& name,
-                         std::function<void(const std::string&, const std::string&, constellation::log::Level)> callback);
+                         std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
+                         std::function<void(const std::string&, const std::string&)> unsub_callback);
+
+    void setTopics(const QStringList& topics);
 
 private slots:
     /**
@@ -39,5 +45,9 @@ private slots:
 private:
     QString name_;
     std::shared_ptr<Ui::QSenderSubscriptions> ui_;
-    std::function<void(const std::string&, const std::string&, constellation::log::Level)> callback_;
+    std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback_;
+    std::function<void(const std::string&, const std::string&)> unsub_callback_;
+
+    // Topics
+    QStandardItemModel topics_;
 };
