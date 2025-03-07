@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import logging
@@ -10,21 +10,17 @@ import threading
 import time
 from datetime import datetime
 from functools import wraps
-from logging.handlers import QueueHandler, QueueListener
+from logging.handlers import QueueListener
 from queue import Empty, Queue
 from typing import Any, Callable, ParamSpec, TypeVar, cast
 
 import zmq
 
-from .base import (
-    EPILOG,
-    BaseSatelliteFrame,
-    ConstellationArgumentParser,
-    setup_cli_logging,
-)
+from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
-from .cmdp import CMDPTransmitter, Metric, MetricsType
+from .cmdp import CMDPTransmitter, Metric, MetricsType, decode_metric
+from .logging import setup_cli_logging
 
 P = ParamSpec("P")
 B = TypeVar("B", bound=BaseSatelliteFrame)
@@ -75,30 +71,11 @@ class MonitoringSender(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, mon_port: int, interface: str, **kwds: Any):
+    def __init__(self, **kwds: Any):
         """Set up logging and metrics transmitters."""
-        super().__init__(name=name, interface=interface, **kwds)
+        super().__init__(**kwds)
 
-        # Create monitoring socket and bind interface
-        socket = self.context.socket(zmq.PUB)
-        if not mon_port:
-            self.mon_port = socket.bind_to_random_port(f"tcp://{interface}")
-        else:
-            socket.bind(f"tcp://{interface}:{mon_port}")
-            self.mon_port = mon_port
-
-        self._mon_tm = CMDPTransmitter(self.name, socket)
-
-        # Set up ZMQ logging
-        # ROOT logger needs to have a level set (initializes with level=NOSET)
-        # The root level should be the lowest level that we want to see on any
-        # handler, even streamed via ZMQ.
-        logger = logging.getLogger()
-        logger.setLevel("DEBUG")
-        # NOTE: Logger object is a singleton and setup is only necessary once
-        # for the given name.
-        self._zmq_log_handler = ZeroMQSocketLogHandler(self._mon_tm)
-        self.log.addHandler(self._zmq_log_handler)
+        self.log_cmdp_s = self.get_logger("CMDP")
 
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
@@ -133,7 +110,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
     def send_metric(self, metric: Metric) -> None:
         """Send a single metric via ZMQ."""
-        self._mon_tm.send_metric(metric)
+        self._cmdp_transmitter.send_metric(metric)
 
     def reset_scheduled_metrics(self) -> None:
         """Reset all previously scheduled metrics.
@@ -147,7 +124,7 @@ class MonitoringSender(BaseSatelliteFrame):
         """Add the metric sender thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["metric_sender"] = threading.Thread(target=self._send_metrics, daemon=True)
-        self.log.debug("Metric sender thread prepared and added to the pool.")
+        self.log_cmdp_s.debug("Metric sender thread prepared and added to the pool.")
 
     def _send_metrics(self) -> None:
         """Metrics sender loop."""
@@ -168,34 +145,13 @@ class MonitoringSender(BaseSatelliteFrame):
                         if metric.value is not None:
                             self.send_metric(metric)
                         else:
-                            self.log.debug(f"Not sending metric {metric_name}: currently None")
+                            self.log_cmdp_s.debug(f"Not sending metric {metric_name}: currently None")
                     except Exception as e:
-                        self.log.error(f"Could not retrieve metric {metric_name}: {repr(e)}")
+                        self.log_cmdp_s.error(f"Could not retrieve metric {metric_name}: {repr(e)}")
                     last_update[metric_name] = datetime.now()
 
             time.sleep(0.1)
-        self.log.info("Monitoring metrics thread shutting down.")
-        # clean up
-        self.close()
-
-    def close(self) -> None:
-        """Close the ZMQ socket."""
-        self.log.removeHandler(self._zmq_log_handler)
-        self._mon_tm.close()
-
-
-class ZeroMQSocketLogHandler(QueueHandler):
-    """This handler sends records to a ZMQ socket."""
-
-    def __init__(self, transmitter: CMDPTransmitter):
-        super().__init__(cast(Queue, transmitter))  # type: ignore[type-arg]
-
-    def enqueue(self, record: logging.LogRecord) -> None:
-        self.queue.send(record)  # type: ignore[attr-defined]
-
-    def close(self) -> None:
-        if not self.queue.closed:  # type: ignore[attr-defined]
-            self.queue.close()  # type: ignore[attr-defined]
+        self.log_cmdp_s.info("Monitoring metrics thread shutting down.")
 
 
 class ZeroMQSocketLogListener(QueueListener):
@@ -235,7 +191,7 @@ class ZeroMQSocketLogListener(QueueListener):
 class StatListener(CHIRPBroadcaster):
     """Simple listener class to receive metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, **kwds: Any):
+    def __init__(self, name: str, group: str, interface: str, mon_port: int | None = None, **kwds: Any):
         """Initialize values.
 
         Arguments:
@@ -243,7 +199,9 @@ class StatListener(CHIRPBroadcaster):
         - group ::  group of controller
         - interface :: the interface to connect to
         """
-        super().__init__(name=name, group=group, interface=interface, **kwds)
+        super().__init__(name=name, group=group, interface=interface, mon_port=mon_port, **kwds)
+
+        self.log_cmdp_l = self.get_logger("CMDP")
 
         # Set up the metric poller which will monitor all ZMQ metric subscription sockets
         self._metric_sockets: dict[str, zmq.Socket] = {}  # type: ignore[type-arg]
@@ -254,7 +212,7 @@ class StatListener(CHIRPBroadcaster):
 
     def metric_callback(self, metric: Metric) -> None:
         """Metric callback."""
-        self.log.debug(f"Received metric {metric.name} from {metric.sender}: {metric.value} {metric.unit}")
+        self.log_cmdp_l.debug(f"Received metric {metric.name} from {metric.sender}: {metric.value} {metric.unit}")
 
     @chirp_callback(CHIRPServiceIdentifier.MONITORING)
     def _add_satellite_callback(self, service: DiscoveredService) -> None:
@@ -267,7 +225,7 @@ class StatListener(CHIRPBroadcaster):
     def _add_satellite(self, service: DiscoveredService) -> None:
         address = "tcp://" + service.address + ":" + str(service.port)
         uuid = str(service.host_uuid)
-        self.log.debug("Connecting to %s, address %s...", uuid, address)
+        self.log_cmdp_l.debug("Connecting to %s, address %s...", uuid, address)
 
         # create socket for metrics
         socket = self.context.socket(zmq.SUB)
@@ -278,7 +236,7 @@ class StatListener(CHIRPBroadcaster):
 
     def _remove_satellite(self, service: DiscoveredService) -> None:
         uuid = str(service.host_uuid)
-        self.log.debug("Departure of %s.", service.host_uuid)
+        self.log_cmdp_l.debug("Departure of %s.", service.host_uuid)
         try:
             with self._metric_poller_lock:
                 socket = self._metric_sockets.pop(uuid)
@@ -291,14 +249,12 @@ class StatListener(CHIRPBroadcaster):
         """Add the metric receiver thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["metric_receiver"] = threading.Thread(target=self._receive_metrics, daemon=True)
-        self.log.debug("Metric receiver thread prepared and added to the pool.")
+        self.log_cmdp_l.debug("Metric receiver thread prepared and added to the pool.")
 
     def _receive_metrics(self) -> None:
         """Main loop to receive metrics."""
         # assert for mypy static type analysis
         assert isinstance(self._com_thread_evt, threading.Event), "Thread Event not set up correctly"
-        # set up transmitter for decoding metrics
-        transmitter = CMDPTransmitter("", None)
 
         while not self._com_thread_evt.is_set():
             with self._metric_poller_lock:
@@ -306,7 +262,7 @@ class StatListener(CHIRPBroadcaster):
                 if sockets_ready:
                     for socket in sockets_ready.keys():
                         binmsg = socket.recv_multipart()
-                        metric = transmitter.decode_metric(binmsg[0].decode("utf-8"), binmsg)
+                        metric = decode_metric("", binmsg[0].decode("utf-8"), binmsg)
                         self.metric_callback(metric)
                     continue
             # If no sockets are connected, the poller returns immediately -> sleep to prevent hot loop
@@ -330,7 +286,7 @@ class StatListener(CHIRPBroadcaster):
             try:
                 time.sleep(250e-3)
             except KeyboardInterrupt:
-                self.log.warning("Listener caught KeyboardInterrupt, shutting down.")
+                self.log_cmdp_l.warning("Listener caught KeyboardInterrupt, shutting down.")
                 break
 
 
@@ -356,11 +312,12 @@ class MonitoringListener(StatListener):
         socket = self.context.socket(zmq.SUB)
         # add timeout to avoid deadlocks
         socket.setsockopt(zmq.RCVTIMEO, 250)
+        # subscribe and create log listener
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
         listener = ZeroMQSocketLogListener(
             CMDPTransmitter(self.name, socket),
-            *self.log.handlers,
+            *self.log_cmdp_l.handlers,
             respect_handler_level=True,  # handlers can have different log lvls
         )
         self._log_listeners[uuid] = listener
@@ -388,7 +345,7 @@ class MonitoringListener(StatListener):
                 try:
                     callback(*args)
                 except Exception as e:
-                    self.log.exception(e)
+                    self.log_cmdp_l.exception(e)
             except Empty:
                 # nothing to process
                 pass
@@ -426,7 +383,7 @@ class FileMonitoringListener(MonitoringListener):
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
         handler.setFormatter(formatter)
         handler.setLevel(logging.DEBUG)
-        self.log.addHandler(handler)
+        self.log_cmdp_l.addHandler(handler)
 
     def metric_callback(self, metric: Metric) -> None:
         super().metric_callback(metric)
@@ -450,7 +407,7 @@ def main(args: Any = None) -> None:
     args = vars(parser.parse_args(args))
 
     # set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args.pop("log_level"))
 
     mon: MonitoringListener
 

@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
-
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import threading
@@ -14,7 +12,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 import zmq
 
 from . import __version__, __version_code_name__
-from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
+from .base import EPILOG, ConstellationArgumentParser
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier, get_uuid
 from .commandmanager import get_cscp_commands
@@ -23,6 +21,7 @@ from .cscp import CommandTransmitter
 from .error import debug_log
 from .fsm import SatelliteState
 from .heartbeatchecker import HeartbeatChecker
+from .logging import setup_cli_logging
 from .satellite import Satellite
 
 
@@ -643,11 +642,9 @@ def main(args: Any = None) -> None:
     args = vars(parser.parse_args(args))
 
     # set up logging
-    logger = setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args.pop("log_level"))
 
     cfg_file = args.pop("config")
-
-    logger.debug("Starting up CLI Controller!")
 
     # start server with args
     ctrl = BaseController(**args)
