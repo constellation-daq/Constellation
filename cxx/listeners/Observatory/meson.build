@@ -13,7 +13,7 @@ endif
 
 qrc_files = qt.compile_resources(sources: 'Observatory.qrc')
 ui_files = qt.compile_ui(sources: ['Observatory.ui', 'QSenderSubscriptions.ui'])
-moc_files = qt.compile_moc(headers: ['QLogFilter.hpp', 'QLogListener.hpp', 'QSenderSubscriptions.hpp', 'Observatory.hpp'])
+moc_files = qt.compile_moc(headers: ['QLogFilter.hpp', 'QLogListener.hpp', 'QSenderSubscriptions.hpp', 'QSubscriptionList.hpp', 'Observatory.hpp'])
 
 executable('Observatory',
   sources: ['Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp', 'QSenderSubscriptions.cpp', qrc_files, ui_files, moc_files],
