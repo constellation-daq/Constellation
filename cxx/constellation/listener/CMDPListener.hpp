@@ -177,6 +177,13 @@ namespace constellation::listener {
         CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
 
         /**
+         * @brief Method for derived classes to act on sockets before disconnecting
+         *
+         * @warning Derived functions should always call `CMDPListener::host_disconnected()`
+         */
+        CNSTLN_API void host_disconnected(const chirp::DiscoveredService& service) override;
+
+        /**
          * @brief Method for derived classes to act on topic notifications
          *
          * @param sender CMDP sending host of the topic notification
@@ -189,6 +196,13 @@ namespace constellation::listener {
          * @param sender New CMDP sending host
          */
         CNSTLN_API virtual void new_sender_available(std::string_view sender);
+
+        /**
+         * @brief Method for derived classes to act on disconnecting senders
+         *
+         * @param sender Disconnected CMDP sending host
+         */
+        CNSTLN_API virtual void sender_disconnected(std::string_view sender);
 
     private:
         /**
