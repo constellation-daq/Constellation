@@ -15,6 +15,8 @@
 #include <QDialog>
 #include <QMap>
 #include <QStandardItemModel>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -25,6 +27,11 @@ namespace Ui { // NOLINT(readability-identifier-naming)
 } // namespace Ui
 
 namespace constellation::gui {
+
+    class ConnectionDialogItemDelegate : public QStyledItemDelegate {
+    protected:
+        void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+    };
 
     /**
      * @class QConnectionDialog
@@ -53,6 +60,7 @@ namespace constellation::gui {
 
     private:
         std::shared_ptr<Ui::QConnectionDialog> ui_;
+        ConnectionDialogItemDelegate item_delegate_;
     };
 
 } // namespace constellation::gui
