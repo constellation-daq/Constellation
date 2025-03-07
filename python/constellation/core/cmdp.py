@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 Module implementing the Constellation Monitoring Distribution Protocol.
 """
@@ -42,14 +41,14 @@ class Metric:
         self.time: msgpack.Timestamp = msgpack.Timestamp(0)
         self.meta: dict[str, Any] | None = None
 
-    def pack(self) -> memoryview:
+    def pack(self) -> bytes:
         """Pack metric for CMDP payload."""
         stream = io.BytesIO()
         packer = msgpack.Packer()
         stream.write(packer.pack(self.value))
         stream.write(packer.pack(self.handling.value))
         stream.write(packer.pack(self.unit))
-        return stream.getbuffer()
+        return stream.getvalue()
 
     def __str__(self) -> str:
         """Convert to string."""
@@ -62,11 +61,17 @@ class Metric:
 class CMDPTransmitter:
     """Class for sending Constellation monitoring messages via ZMQ."""
 
-    def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
+    def __init__(self, name: str, context: zmq.Context, interface: str, port: int | None):  # type: ignore[type-arg]
         """Initialize transmitter."""
         self.name = name
         self.msgheader = MessageHeader(name, Protocol.CMDP)
-        self._socket = socket
+        # Create socket
+        self._socket = context.socket(zmq.PUB)
+        if not port:
+            self.port = self._socket.bind_to_random_port(f"tcp://{interface}")
+        else:
+            self._socket.bind(f"tcp://{interface}:{port}")
+            self.port = port
         self._lock = Lock()
 
     def send(self, data: logging.LogRecord | Metric) -> None:
@@ -93,7 +98,7 @@ class CMDPTransmitter:
         meta = {
             "name": record.name,
             "msg": record.msg,
-            "args": record.args,
+            # "args": record.args,
             "levelname": record.levelname,
             "levelno": record.levelno,
             "pathname": record.pathname,

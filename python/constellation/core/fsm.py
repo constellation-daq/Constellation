@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import re
@@ -18,6 +17,7 @@ from msgpack import Timestamp  # type: ignore[import-untyped]
 from .cscp import CSCPMessage
 from .error import debug_log, handle_error
 from .base import BaseSatelliteFrame
+from .logging import ConstellationLogger
 from .commandmanager import cscp_requestable
 
 
@@ -141,8 +141,13 @@ class SatelliteFSM(StateMachine):
 
 
 class SatelliteStateHandler(BaseSatelliteFrame):
+    log: ConstellationLogger
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
+
+        # Create FSM logger
+        SatelliteStateHandler.log = self.get_logger("FSM")
 
         # instantiate state machine
         self.fsm = SatelliteFSM()
@@ -290,9 +295,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
         """
         # call FSM transition, will throw exception if not allowed
-        self.log.debug("State transition %s requested", target)
+        SatelliteStateHandler.log.debug("State transition %s requested", target)
         getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
-        self.log.info("State transition %s initiated.", target)
+        SatelliteStateHandler.log.info("State transition %s initiated.", target)
         transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
         if thread:
@@ -314,7 +319,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             prev = self.fsm.current_state_value.name
             self.fsm.complete(res)
             now = self.fsm.current_state_value.name
-            self.log.info(f"State transition to steady state completed ({prev} -> {now}).")
+            SatelliteStateHandler.log.info(f"State transition to steady state completed ({prev} -> {now}).")
         except TransitionNotAllowed:
             if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
@@ -332,7 +337,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @handle_error
     def _state_transition_thread_complete(self, fut: Future) -> None:  # type: ignore[type-arg]
         """Callback method when a transition thread is done."""
-        self.log.trace("Transition thread completed and callback received.")
+        SatelliteStateHandler.log.trace("Transition thread completed and callback received.")
         # Get the thread's return value. This raises any exception thrown in the
         # thread, which will be handled by the @handle_error decorator to put us
         # into ERROR state.
@@ -353,7 +358,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
             prev = self.fsm.current_state_value.name
             self.fsm.complete(res)
             now = self.fsm.current_state_value.name
-            self.log.info(f"State transition to steady state completed ({prev} -> {now}).")
+            SatelliteStateHandler.log.info(f"State transition to steady state completed ({prev} -> {now}).")
         except TransitionNotAllowed:
             if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady

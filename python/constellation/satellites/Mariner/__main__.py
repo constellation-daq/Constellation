@@ -5,7 +5,8 @@ SPDX-License-Identifier: CC-BY-4.0
 Provides the entry point for the Mariner example satellite
 """
 
-from constellation.core.base import setup_cli_logging, EPILOG
+from constellation.core.base import EPILOG
+from constellation.core.logging import setup_cli_logging
 from constellation.core.satellite import SatelliteArgumentParser
 
 from .Mariner import Mariner
@@ -17,7 +18,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # Set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args.pop("log_level"))
 
     # Start satellite with remaining args
     s = Mariner(**args)

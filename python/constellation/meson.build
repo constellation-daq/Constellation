@@ -19,6 +19,7 @@ core_files = files(
   'core/fsm.py',
   'core/heartbeatchecker.py',
   'core/heartbeater.py',
+  'core/logging.py',
   'core/monitoring.py',
   'core/network.py',
   'core/protocol.py',

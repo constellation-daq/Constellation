@@ -14,14 +14,10 @@ from functools import wraps
 from datetime import datetime
 from typing import Callable, cast, ParamSpec, TypeVar, Any
 from queue import Queue
-from logging.handlers import QueueHandler, QueueListener
+from logging.handlers import QueueListener
 
-from .base import (
-    BaseSatelliteFrame,
-    ConstellationArgumentParser,
-    EPILOG,
-    setup_cli_logging,
-)
+from .base import BaseSatelliteFrame, ConstellationArgumentParser, EPILOG
+from .logging import setup_cli_logging
 from .cmdp import CMDPTransmitter, Metric, MetricsType
 from .chirp import CHIRPServiceIdentifier
 from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
@@ -76,30 +72,9 @@ class MonitoringSender(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, name: str, mon_port: int, interface: str, **kwds: Any):
+    def __init__(self, **kwds: Any):
         """Set up logging and metrics transmitters."""
-        super().__init__(name=name, interface=interface, **kwds)
-
-        # Create monitoring socket and bind interface
-        socket = self.context.socket(zmq.PUB)
-        if not mon_port:
-            self.mon_port = socket.bind_to_random_port(f"tcp://{interface}")
-        else:
-            socket.bind(f"tcp://{interface}:{mon_port}")
-            self.mon_port = mon_port
-
-        self._mon_tm = CMDPTransmitter(self.name, socket)
-
-        # Set up ZMQ logging
-        # ROOT logger needs to have a level set (initializes with level=NOSET)
-        # The root level should be the lowest level that we want to see on any
-        # handler, even streamed via ZMQ.
-        logger = logging.getLogger()
-        logger.setLevel("DEBUG")
-        # NOTE: Logger object is a singleton and setup is only necessary once
-        # for the given name.
-        self._zmq_log_handler = ZeroMQSocketLogHandler(self._mon_tm)
-        self.log.addHandler(self._zmq_log_handler)
+        super().__init__(**kwds)
 
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
@@ -134,7 +109,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
     def send_metric(self, metric: Metric) -> None:
         """Send a single metric via ZMQ."""
-        self._mon_tm.send_metric(metric)
+        self._cmdp_transmitter.send_metric(metric)
 
     def reset_scheduled_metrics(self) -> None:
         """Reset all previously scheduled metrics.
@@ -176,27 +151,6 @@ class MonitoringSender(BaseSatelliteFrame):
 
             time.sleep(0.1)
         self.log.info("Monitoring metrics thread shutting down.")
-        # clean up
-        self.close()
-
-    def close(self) -> None:
-        """Close the ZMQ socket."""
-        self.log.removeHandler(self._zmq_log_handler)
-        self._mon_tm.close()
-
-
-class ZeroMQSocketLogHandler(QueueHandler):
-    """This handler sends records to a ZMQ socket."""
-
-    def __init__(self, transmitter: CMDPTransmitter):
-        super().__init__(cast(Queue, transmitter))  # type: ignore[type-arg]
-
-    def enqueue(self, record: logging.LogRecord) -> None:
-        self.queue.send(record)  # type: ignore[attr-defined]
-
-    def close(self) -> None:
-        if not self.queue.closed:  # type: ignore[attr-defined]
-            self.queue.close()  # type: ignore[attr-defined]
 
 
 class ZeroMQSocketLogListener(QueueListener):
@@ -451,7 +405,7 @@ def main(args: Any = None) -> None:
     args = vars(parser.parse_args(args))
 
     # set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args.pop("log_level"))
 
     mon: MonitoringListener
 
