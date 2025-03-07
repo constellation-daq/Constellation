@@ -75,6 +75,13 @@ QLogLevelComboBox::QLogLevelComboBox(QWidget* parent) : QComboBox(parent) {
     setItemDelegate(&delegate_);
 }
 
+void QLogLevelComboBox::setCurrentLevel(constellation::log::Level level) {
+    auto idx = findText(QString::fromStdString(enum_name(level)), Qt::MatchFixedString);
+    if(idx > -1) {
+        setCurrentIndex(idx);
+    }
+}
+
 void QLogLevelComboBox::fill_items() {
     clear();
 

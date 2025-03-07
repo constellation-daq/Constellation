@@ -44,6 +44,8 @@ public:
     void setDescending(bool descending);
     void addNeutralElement(const std::string& neutral);
 
+    void setCurrentLevel(constellation::log::Level level);
+
 private:
     void paintEvent(QPaintEvent* event) override;
 
