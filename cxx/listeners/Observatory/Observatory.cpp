@@ -191,6 +191,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     }
     // Enable uniform row height to allow for optimizations on Qt end:
     viewLog->setUniformRowHeights(true);
+    filterLevel->setDescending(true);
 
     // Restore window geometry:
     restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
