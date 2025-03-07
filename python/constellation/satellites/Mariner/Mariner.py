@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 Provides the class for the Mariner example satellite
 """
@@ -83,7 +83,7 @@ class Mariner(Satellite):
             # Example work to be done while satellite is running
             ...
             time.sleep(self.device.sample_period)
-            print(f"New sample at {self.device.voltage} V")
+            self.log.status(f"New sample at {self.device.voltage} V")
         return "Finished acquisition."
 
     @cscp_requestable
