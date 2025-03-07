@@ -216,6 +216,9 @@ namespace constellation::gui {
         // Column headers of the connection details
         static constexpr std::array<const char*, 7> headers_ {
             "Type", "Name", "State", "Last response", "Last message", "Heartbeat", "Lives"};
+        // Additional headers for connection dialog
+        static constexpr std::array<const char*, 4> headers_details_ {
+            "Connection URI", "MD5 host ID", "Last heartbeat", "Last Check"};
     };
 
     class CNSTLN_API QControllerSortProxy : public QSortFilterProxyModel {

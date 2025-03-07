@@ -114,6 +114,18 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
             return QString::fromStdString(e.what());
         }
     }
+    case 8: {
+        // MD5 host ID
+        return QString::fromStdString(conn.host_id.to_string());
+    }
+    case 9: {
+        // Last heartbeat
+        return from_timepoint(conn.last_heartbeat);
+    }
+    case 10: {
+        // Last checked
+        return from_timepoint(conn.last_checked);
+    }
     default: {
         return QString("");
     }
@@ -122,11 +134,7 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
 
 QMap<QString, QVariant> QController::getQDetails(const QModelIndex& index) const {
 
-    if(!index.isValid()) {
-        return {};
-    }
-
-    if(index.row() >= static_cast<int>(getConnectionCount()) || index.column() >= static_cast<int>(headers_.size())) {
+    if(!index.isValid() || index.row() >= static_cast<int>(getConnectionCount())) {
         return {};
     }
 
@@ -138,6 +146,9 @@ QMap<QString, QVariant> QController::getQDetails(const QModelIndex& index) const
     QMap<QString, QVariant> details;
     for(std::size_t i = 0; i < headers_.size(); i++) {
         details.insert(headers_.at(i), get_data(it, i));
+    }
+    for(std::size_t i = 0; i < headers_details_.size(); i++) {
+        details.insert(headers_details_.at(i), get_data(it, i + headers_.size()));
     }
 
     return details;
