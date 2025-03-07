@@ -12,6 +12,8 @@
 #include <functional>
 #include <iostream>
 
+#include <QPaintEvent>
+
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/gui/qt_utils.hpp"
@@ -42,12 +44,45 @@ void QLogLevelDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
     QStyledItemDelegate::paint(painter, options, index);
 }
 
-QLogLevelComboBox::QLogLevelComboBox(QWidget* parent, bool descending, const std::string& neutral) : QComboBox(parent) {
-    if(!neutral.empty()) {
-        addItem(QString::fromStdString(neutral));
+void QLogLevelComboBox::paintEvent(QPaintEvent* event) {
+    QComboBox::paintEvent(event);
+
+    const auto item = this->itemData(this->currentIndex(), Qt::DisplayRole);
+    if(!item.isNull()) {
+        QPainter painter(this);
+        QStyleOptionViewItem option;
+        option.initFrom(this);
+
+        // Get log level color
+        const auto level_str = item.toString().toStdString();
+        const auto level = enum_cast<Level>(level_str).value_or(INFO);
+
+        const auto color = get_log_level_color(level);
+        if(level > Level::INFO) {
+            // High levels get background coloring
+            painter.fillRect(event->rect(), QBrush(color));
+        } else {
+            // Others just text color adjustment
+            option.palette.setColor(QPalette::Text, color);
+        }
+    }
+}
+
+QLogLevelComboBox::QLogLevelComboBox(QWidget* parent) : QComboBox(parent) {
+    fill_items();
+
+    // Set item delegate:
+    setItemDelegate(&delegate_);
+}
+
+void QLogLevelComboBox::fill_items() {
+    clear();
+
+    if(!neutral_.empty()) {
+        addItem(QString::fromStdString(neutral_));
     }
 
-    if(descending) {
+    if(descending_) {
         for(int level_it = std::to_underlying(Level::TRACE); level_it <= std::to_underlying(Level::CRITICAL); ++level_it) {
             addItem(QString::fromStdString(enum_name(Level(level_it))));
         }
@@ -56,16 +91,26 @@ QLogLevelComboBox::QLogLevelComboBox(QWidget* parent, bool descending, const std
             addItem(QString::fromStdString(enum_name(Level(level_it))));
         }
     }
+}
 
-    // Set item delegate:
-    setItemDelegate(&delegate_);
+void QLogLevelComboBox::setDescending(bool descending) {
+    descending_ = descending;
+    fill_items();
+}
+
+void QLogLevelComboBox::addNeutralElement(const std::string& neutral) {
+    neutral_ = neutral;
+    fill_items();
 }
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(QObject* parent) : QStyledItemDelegate(parent) {}
 
 QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const {
     // Create the combobox and populate it
-    return new QLogLevelComboBox(parent, false, "- global -");
+    auto box = new QLogLevelComboBox(parent);
+    box->setDescending(false);
+    box->addNeutralElement("- global -");
+    return box;
 }
 
 void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const {
@@ -95,6 +140,9 @@ QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
     ui_->senderName->setText(name_);
     ui_->topicsView->setModel(&topics_);
     ui_->topicsView->setItemDelegateForColumn(1, &delegate_);
+
+    ui_->senderLevel->setDescending(false);
+    ui_->senderLevel->addNeutralElement("- global -");
 
     ui_->collapseButton->setText("Log Topics");
     ui_->collapseButton->setContent(ui_->topicsView);
