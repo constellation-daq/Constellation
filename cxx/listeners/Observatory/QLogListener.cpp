@@ -88,6 +88,10 @@ void QLogListener::sender_connected(std::string_view sender) {
     emit newSender(QString::fromStdString(std::string(sender)));
 }
 
+void QLogListener::sender_disconnected(std::string_view sender) {
+    emit disconnectedSender(QString::fromStdString(std::string(sender)));
+}
+
 void QLogListener::topics_changed(std::string_view sender) {
 
     QStringList all_topics;
