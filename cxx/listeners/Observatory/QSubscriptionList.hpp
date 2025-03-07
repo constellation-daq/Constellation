@@ -26,6 +26,14 @@ public:
     }
     ~QSubscriptionList() = default;
 
+    void setTopics(const QString& host, const QStringList& topics) {
+        auto it = senders_.find(host);
+        if(it != senders_.end()) {
+            auto* widget = static_cast<QSenderSubscriptions*>(itemWidget(it->second.get()));
+            widget->setTopics(topics);
+        }
+    }
+
     void emplace(const QString& host, QLogListener& log_listener) {
         // Make new QListWidgetItem and store it
         auto list_item = std::make_shared<QListWidgetItem>();
