@@ -166,6 +166,14 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
                              }));
         senderSubscriptions->addWidget(senders_[host].get());
     });
+    connect(&log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) {
+        auto it = senders_.find(sender);
+        if(it != senders_.end()) {
+            senderSubscriptions->removeWidget(it->second.get());
+            senders_.erase(it);
+        }
+    });
+
     // Start the log receiver pool
     log_listener_.startPool();
 
