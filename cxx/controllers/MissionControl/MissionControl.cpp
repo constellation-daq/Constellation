@@ -81,13 +81,13 @@ void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem
 
     painter->save();
 
-    // Get sibling for column 7 (where the lives are stored) for current row:
-    const auto lives = index.sibling(index.row(), 7).data().toInt();
-    if(lives < 3 && index.column() >= 6) {
+    // Get sibling for column 6 (where the lives are stored) for current row:
+    const auto lives = index.sibling(index.row(), 6).data().toInt();
+    if(lives < 3 && index.column() >= 5) {
         const auto alpha = (3 - lives) * 85;
         QLinearGradient gradient(
             options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
-        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 6 ? 0 : alpha)));
+        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 5 ? 0 : alpha)));
         gradient.setColorAt(1, QColor(255, 0, 0, alpha));
         painter->fillRect(options.rect, QBrush(gradient));
     }
@@ -159,15 +159,13 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->header()->resizeSection(1, 100);
     viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
     viewConn->header()->resizeSection(2, 120);
-    viewConn->header()->setSectionResizeMode(3, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(3, 180);
-    viewConn->header()->setSectionResizeMode(4, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(4, 140);
-    viewConn->header()->setSectionResizeMode(5, QHeaderView::Stretch);
-    viewConn->header()->setSectionResizeMode(6, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(6, 80);
-    viewConn->header()->setSectionResizeMode(7, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(7, 40);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(3, 140);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(5, 80);
+    viewConn->header()->setSectionResizeMode(6, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(6, 40);
 
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {

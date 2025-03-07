@@ -214,8 +214,8 @@ namespace constellation::gui {
         static QVariant get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection, std::size_t idx);
 
         // Column headers of the connection details
-        static constexpr std::array<const char*, 8> headers_ {
-            "Type", "Name", "State", "Connection", "Last response", "Last message", "Heartbeat", "Lives"};
+        static constexpr std::array<const char*, 7> headers_ {
+            "Type", "Name", "State", "Last response", "Last message", "Heartbeat", "Lives"};
     };
 
     class CNSTLN_API QControllerSortProxy : public QSortFilterProxyModel {

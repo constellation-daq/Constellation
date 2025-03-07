@@ -90,6 +90,22 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         return get_styled_state(conn.state, true);
     }
     case 3: {
+        // Last command response type
+        return get_styled_response(conn.last_cmd_type);
+    }
+    case 4: {
+        // Last command response message
+        return QString::fromStdString(conn.last_message);
+    }
+    case 5: {
+        // Heartbeat period
+        return QString::fromStdString(to_string(conn.interval));
+    }
+    case 6: {
+        // Remaining lives:
+        return conn.lives;
+    }
+    case 7: {
         // Connection (URI)
         try {
             const std::string last_endpoint = conn.req.get(zmq::sockopt::last_endpoint);
@@ -97,22 +113,6 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         } catch(const zmq::error_t& e) {
             return QString::fromStdString(e.what());
         }
-    }
-    case 4: {
-        // Last command response type
-        return get_styled_response(conn.last_cmd_type);
-    }
-    case 5: {
-        // Last command response message
-        return QString::fromStdString(conn.last_message);
-    }
-    case 6: {
-        // Heartbeat period
-        return QString::fromStdString(to_string(conn.interval));
-    }
-    case 7: {
-        // Remaining lives:
-        return conn.lives;
     }
     default: {
         return QString("");
