@@ -50,7 +50,7 @@
 #include "constellation/gui/qt_utils.hpp"
 
 #include "QLogListener.hpp"
-#include "QSenderSubscriptions.hpp"
+#include "QSubscriptionList.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
@@ -152,27 +152,10 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         }
     });
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
-        senders_.emplace(host,
-                         std::make_shared<QSenderSubscriptions>(
-                             this,
-                             host,
-                             [&](const std::string& host, const std::string& topic, Level level) {
-                                 LOG(INFO) << "subscribing for " << host << std::endl;
-                                 log_listener_.subscribeExtaLogTopic(host, topic, level);
-                             },
-                             [&](const std::string& host, const std::string& topic) {
-                                 LOG(INFO) << "unsubscribing from " << host << std::endl;
-                                 log_listener_.unsubscribeExtraLogTopic(host, topic);
-                             }));
-        senderSubscriptions->addWidget(senders_[host].get());
+        listWidget->emplace(host, log_listener_);
     });
-    connect(&log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) {
-        auto it = senders_.find(sender);
-        if(it != senders_.end()) {
-            senderSubscriptions->removeWidget(it->second.get());
-            senders_.erase(it);
-        }
-    });
+    connect(
+        &log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) { listWidget->erase(sender); });
 
     // Start the log receiver pool
     log_listener_.startPool();

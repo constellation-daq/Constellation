@@ -121,20 +121,20 @@ QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent, const QStyleOptionV
 }
 
 void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const {
-    QComboBox* cb = qobject_cast<QComboBox*>(editor);
-    Q_ASSERT(cb);
+    auto* box = static_cast<QComboBox*>(editor);
+
     // get the index of the text in the combobox that matches the current value of the item
     const QString currentText = index.data(Qt::EditRole).toString();
-    const int cbIndex = cb->findText(currentText);
+    const int idx = box->findText(currentText);
     // if it is valid, adjust the combobox
-    if(cbIndex >= 0)
-        cb->setCurrentIndex(cbIndex);
+    if(idx >= 0) {
+        box->setCurrentIndex(idx);
+    }
 }
 
 void ComboBoxItemDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const {
-    QComboBox* cb = qobject_cast<QComboBox*>(editor);
-    Q_ASSERT(cb);
-    model->setData(index, cb->currentText(), Qt::EditRole);
+    auto* box = static_cast<QComboBox*>(editor);
+    model->setData(index, box->currentText(), Qt::EditRole);
 }
 
 QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
