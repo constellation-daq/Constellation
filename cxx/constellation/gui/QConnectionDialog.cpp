@@ -17,6 +17,7 @@
 #include <QString>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
+#include <QTextDocument>
 
 #include "constellation/core/config/Dictionary.hpp"
 
