@@ -13,7 +13,10 @@
 #include <string>
 
 #include <QDialog>
+#include <QPainter>
 #include <QString>
+#include <QStyledItemDelegate>
+#include <QStyleOptionViewItem>
 
 #include "constellation/core/config/Dictionary.hpp"
 
@@ -22,6 +25,26 @@
 using namespace constellation::config;
 using namespace constellation::gui;
 using namespace constellation::message;
+
+void ConnectionDialogItemDelegate::paint(QPainter* painter,
+                                         const QStyleOptionViewItem& option,
+                                         const QModelIndex& index) const {
+    auto options = option;
+    initStyleOption(&options, index);
+    painter->save();
+
+    QTextDocument doc;
+    doc.setHtml(options.text);
+
+    options.text = "";
+    options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);
+
+    painter->translate(options.rect.left(), options.rect.top());
+    const QRect clip(0, 0, options.rect.width(), options.rect.height());
+    doc.drawContents(painter, clip);
+
+    painter->restore();
+}
 
 QConnectionDialog::QConnectionDialog(QWidget* parent,
                                      const std::string& name,
@@ -41,6 +64,7 @@ QConnectionDialog::QConnectionDialog(QWidget* parent,
     ui_->connectionTable->setRowCount(static_cast<int>(details.size()));
     ui_->connectionTable->setColumnCount(2);
     ui_->connectionTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    ui_->connectionTable->setItemDelegate(&item_delegate_);
 
     auto it = details.cbegin();
     for(int idx = 0; idx < static_cast<int>(details.size()); idx++) {
