@@ -85,6 +85,8 @@ signals:
      */
     void newSender(QString sender);
 
+    void disconnectedSender(QString sender);
+
     void newGlobalTopics(QStringList topics);
     void newSenderTopics(QString sender, QStringList topics);
 
@@ -103,6 +105,7 @@ private:
 
     void new_topics_available(std::string_view sender) override;
     void new_sender_available(std::string_view sender) override;
+    void sender_disconnected(std::string_view sender) override;
 
 private:
     /** Log messages & access mutex*/
