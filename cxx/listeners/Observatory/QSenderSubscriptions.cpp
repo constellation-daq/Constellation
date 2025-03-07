@@ -96,6 +96,9 @@ QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
     ui_->topicsView->setModel(&topics_);
     ui_->topicsView->setItemDelegateForColumn(1, &delegate_);
 
+    ui_->collapseButton->setText("Log Topics");
+    ui_->collapseButton->setContent(ui_->topicsView);
+
     // Connect item change to subscription:
     connect(&topics_, &QStandardItemModel::itemChanged, this, [&](QStandardItem* item) {
         const auto topic = topics_.item(item->index().row())->text().toStdString();
