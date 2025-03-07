@@ -34,7 +34,6 @@ public:
     void setText(const QString& text) { QToolButton::setText(" " + text); }
 
     void setContent(QWidget* content) {
-        assert(content != nullptr);
         content_ = content;
         animation_ = std::make_shared<QPropertyAnimation>(content_, "maximumHeight");
         animation_->setStartValue(0);
