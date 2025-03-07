@@ -38,10 +38,19 @@ class QLogLevelComboBox : public QComboBox {
     Q_OBJECT
 
 public:
-    QLogLevelComboBox(QWidget* parent = nullptr, bool descending = false, const std::string& neutral = "");
+    QLogLevelComboBox(QWidget* parent = nullptr);
     ~QLogLevelComboBox() = default;
 
+    void setDescending(bool descending);
+    void addNeutralElement(const std::string& neutral);
+
 private:
+    void paintEvent(QPaintEvent* event) override;
+
+    void fill_items();
+
+    bool descending_ {false};
+    std::string neutral_ {};
     QLogLevelDelegate delegate_;
 };
 
