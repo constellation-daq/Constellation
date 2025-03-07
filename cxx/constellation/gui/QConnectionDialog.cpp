@@ -35,7 +35,7 @@ QConnectionDialog::QConnectionDialog(QWidget* parent,
 
     // Set header information:
     ui_->satelliteName->setText("<font color='gray'><b>" + QString::fromStdString(name) + "</b></font>");
-    // ui_->satelliteState->setText(get_styled_state(state, true) + "</b></font>");
+    ui_->satelliteState->setText(details.value("State").toString());
 
     // Set connection details:
     ui_->connectionTable->setRowCount(static_cast<int>(details.size()));
