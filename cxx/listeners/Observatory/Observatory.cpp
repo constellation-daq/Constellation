@@ -227,7 +227,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     const auto qslevel = gui_settings_.value("subscriptions/level").toString();
     const auto slevel = enum_cast<Level>(qslevel.toStdString());
     log_listener_.setGlobalLogLevel(slevel.value_or(Level::WARNING));
-    globalLevel->setCurrentIndex(std::to_underlying(slevel.value_or(Level::WARNING)));
+    globalLevel->setCurrentLevel(slevel.value_or(Level::WARNING));
 
     // Set up status bar:
     statusBar()->addPermanentWidget(&status_bar_);
