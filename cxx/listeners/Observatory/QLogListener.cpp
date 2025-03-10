@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <utility>
 
@@ -99,7 +100,7 @@ QVariant QLogListener::data(const QModelIndex& index, int role) const {
     }
 
     if(index.column() < QLogMessage::countColumns()) {
-        const std::lock_guard message_lock {message_read_mutex_};
+        const std::shared_lock message_lock {message_read_mutex_};
         if(index.row() < static_cast<int>(messages_.size())) {
             return messages_[index.row()][index.column()];
         }
@@ -109,7 +110,7 @@ QVariant QLogListener::data(const QModelIndex& index, int role) const {
 }
 
 const QLogMessage& QLogListener::getMessage(const QModelIndex& index) const {
-    const std::lock_guard message_lock {message_read_mutex_};
+    const std::shared_lock message_lock {message_read_mutex_};
     return messages_[index.row()];
 }
 

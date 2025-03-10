@@ -13,6 +13,7 @@
 #include <deque>
 #include <mutex>
 #include <set>
+#include <shared_mutex>
 #include <string>
 
 #include <QAbstractListModel>
@@ -126,7 +127,7 @@ private:
     /** Log messages & access mutex*/
     std::deque<constellation::gui::QLogMessage> messages_;
     std::atomic_size_t message_count_;
-    mutable std::mutex message_read_mutex_;
+    mutable std::shared_mutex message_read_mutex_;
     mutable std::mutex message_write_mutex_;
 
     /** Available senders and topics */
