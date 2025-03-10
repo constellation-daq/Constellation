@@ -64,9 +64,9 @@ variables:
 
 .cpp-hi-load: &cpp-hi-load
   variables:
-    NINJA_OPTIONS: "-j4"
-    KUBERNETES_CPU_REQUEST: "4"
-    KUBERNETES_MEMORY_REQUEST: "10Gi"
+    NINJA_OPTIONS: "-j8"
+    KUBERNETES_CPU_REQUEST: "8"
+    KUBERNETES_MEMORY_REQUEST: "16Gi"
   tags:
     - hi-load
 
@@ -168,6 +168,7 @@ variables:
 build:alma9-cern:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .alma9-cern
   cache:
     - <<: *meson-wrap-cache
@@ -180,6 +181,7 @@ build:alma9-cern:
 build:debian-clang:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
@@ -188,6 +190,7 @@ build:debian-clang:
 build:debian-clang-libcxx:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .debian-clang
   variables:
     BUILD_TYPE: "debugoptimized"
@@ -198,6 +201,7 @@ build:debian-clang-libcxx:
 build:debian-gcc:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .debian-gcc
   variables:
     BUILD_TYPE: "debug"
@@ -207,6 +211,7 @@ build:debian-gcc:
 build:fedora-clang:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .fedora-clang
   variables:
     BUILD_TYPE: "debugoptimized"
@@ -234,6 +239,7 @@ build:ubuntu-22.04:
 build:ubuntu-24.04:
   extends:
     - .build-cpp
+    - .cpp-hi-load
     - .ubuntu-24.04
   variables:
     BUILD_TYPE: "debugoptimized"
@@ -425,6 +431,7 @@ lint:clang-tidy:
   extends:
     - .lint
     - .debian-clang
+    - .cpp-hi-load
   needs:
     - job: build:debian-clang
       artifacts: true
@@ -437,6 +444,7 @@ lint:clang-tidy-diff:
   extends:
     - .lint
     - .debian-clang
+    - .cpp-hi-load
   needs:
     - job: build:debian-clang
       artifacts: true
