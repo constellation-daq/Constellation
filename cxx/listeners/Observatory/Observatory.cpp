@@ -248,7 +248,7 @@ void Observatory::on_filterLevel_currentIndexChanged(int index) {
 
 void Observatory::on_globalLevel_currentIndexChanged(int index) {
     const auto level = enum_cast<Level>(globalLevel->itemText(index).toStdString());
-    log_listener_.setGlobalLogLevel(level.value());
+    log_listener_.setGlobalLogLevel(level.value_or(Level::WARNING));
 }
 
 void Observatory::on_filterSender_currentTextChanged(const QString& text) {
