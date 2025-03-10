@@ -229,6 +229,9 @@ namespace constellation::satellite {
         zmq::socket_t cscp_rep_socket_;
         networking::Port cscp_port_;
 
+        // Satellite status string
+        std::string status_;
+
         std::string_view satellite_type_;
         std::string_view satellite_name_;
         FSM fsm_;
@@ -236,7 +239,6 @@ namespace constellation::satellite {
         log::Logger cscp_logger_;
         std::jthread cscp_thread_;
         bool support_reconfigure_ {false};
-        std::string status_;
         config::Configuration config_;
         std::string run_identifier_;
 
