@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import time
@@ -18,9 +17,9 @@ mock_packet_queue_sender = []
 
 
 # SIDE EFFECTS RECEIVER
-def mock_sock_send_recv(payload, flags):
+def mock_sock_send_recv(data, flags):
     """Append buf to queue."""
-    mock_packet_queue_sender.append(payload)
+    mock_packet_queue_sender.append(data)
 
 
 def mock_sock_recv_multipart_recv(flags):
@@ -33,9 +32,9 @@ def mock_sock_recv_multipart_recv(flags):
 
 
 # SIDE EFFECTS SENDER
-def mock_sock_send_sender(payload, flags):
+def mock_sock_send_sender(data, flags):
     """Append buf to queue."""
-    mock_packet_queue_recv.append(payload)
+    mock_packet_queue_recv.append(data)
 
 
 def mock_sock_recv_multipart_sender(flags):
