@@ -23,13 +23,17 @@
 #include <spdlog/details/log_msg.h>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <zmq.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/log/CMDPSink.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
+
+// Forward declaration
+namespace constellation::utils {
+    class ManagerRegistry;
+} // namespace constellation::utils
 
 namespace constellation::log {
     /**
@@ -58,10 +62,6 @@ namespace constellation::log {
         };
 
     public:
-        CNSTLN_API static SinkManager& getInstance();
-
-        ~SinkManager() = default;
-
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         SinkManager(const SinkManager& other) = delete;
@@ -69,6 +69,8 @@ namespace constellation::log {
         SinkManager(SinkManager&& other) = delete;
         SinkManager& operator=(SinkManager&& other) = delete;
         /// @endcond
+
+        CNSTLN_API ~SinkManager() = default;
 
         /**
          * @brief Get the ephemeral port to which the CMDP sink is bound to
@@ -124,7 +126,8 @@ namespace constellation::log {
                                          std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
 
     private:
-        SinkManager();
+        friend utils::ManagerRegistry;
+        CNSTLN_API SinkManager();
 
         /**
          * @brief Create a new asynchronous spdlog logger
@@ -142,8 +145,6 @@ namespace constellation::log {
         void calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger);
 
     private:
-        std::shared_ptr<zmq::context_t> zmq_context_;
-
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 

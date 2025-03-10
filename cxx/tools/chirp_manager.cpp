@@ -24,11 +24,11 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::log;
@@ -106,7 +106,7 @@ namespace {
         }
 
         // Turn off console logging
-        SinkManager::getInstance().setConsoleLevels(OFF);
+        ManagerRegistry::getSinkManager().setConsoleLevels(OFF);
 
         Manager manager {brd_address, any_address, group, name};
 

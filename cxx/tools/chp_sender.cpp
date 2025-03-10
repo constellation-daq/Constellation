@@ -18,9 +18,9 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -50,7 +50,7 @@ namespace {
             interval = std::chrono::milliseconds(std::stoi(args[3]));
         }
 
-        SinkManager::getInstance().setConsoleLevels(WARNING);
+        ManagerRegistry::getSinkManager().setConsoleLevels(WARNING);
 
         auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
         chirp_manager.setAsDefaultInstance();

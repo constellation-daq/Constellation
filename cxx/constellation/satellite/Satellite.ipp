@@ -20,13 +20,13 @@
 #include <utility>
 
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 namespace constellation::satellite {
 
     inline void Satellite::register_metric(std::string name, std::string unit, metrics::MetricType type) {
-        metrics::MetricsManager::getInstance().registerMetric(std::move(name), std::move(unit), type);
+        utils::ManagerRegistry::getMetricsManager().registerMetric(std::move(name), std::move(unit), type);
     }
 
     template <typename C>
@@ -36,7 +36,7 @@ namespace constellation::satellite {
                                                  metrics::MetricType type,
                                                  std::chrono::steady_clock::duration interval,
                                                  C value_callback) {
-        metrics::MetricsManager::getInstance().registerTimedMetric(
+        utils::ManagerRegistry::getMetricsManager().registerTimedMetric(
             std::move(name), std::move(unit), type, interval, std::move(value_callback));
     }
 
@@ -48,7 +48,7 @@ namespace constellation::satellite {
                                                  std::chrono::steady_clock::duration interval,
                                                  std::set<protocol::CSCP::State> allowed_states,
                                                  C value_callback) {
-        metrics::MetricsManager::getInstance().registerTimedMetric(
+        utils::ManagerRegistry::getMetricsManager().registerTimedMetric(
             std::move(name),
             std::move(unit),
             type,

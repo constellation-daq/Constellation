@@ -21,10 +21,10 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 using namespace constellation;
 using namespace constellation::config;
@@ -40,7 +40,7 @@ namespace {
     void cli_loop(std::span<char*> args) {
         // Get the default logger
         auto& logger = Logger::getDefault();
-        SinkManager::getInstance().setConsoleLevels(INFO);
+        ManagerRegistry::getSinkManager().setConsoleLevels(INFO);
         LOG(logger, STATUS) << "Usage: dummy_controller CONSTELLATION_GROUP";
 
         // Get group via cmdline

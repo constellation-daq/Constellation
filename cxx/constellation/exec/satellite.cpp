@@ -30,9 +30,9 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
@@ -114,7 +114,7 @@ int constellation::exec::satellite_main(int argc,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     // Ensure that ZeroMQ doesn't fail creating the CMDP sink
     try {
-        SinkManager::getInstance();
+        ManagerRegistry::getInstance();
     } catch(const NetworkError& error) {
         std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
         return 1;
@@ -143,7 +143,7 @@ int constellation::exec::satellite_main(int argc,
                               << ", possible values are: " << utils::list_enum_names<Level>();
         return 1;
     }
-    SinkManager::getInstance().setConsoleLevels(default_level.value());
+    ManagerRegistry::getSinkManager().setConsoleLevels(default_level.value());
 
     // Check broadcast and any address
     std::optional<asio::ip::address_v4> brd_addr {};
@@ -202,7 +202,7 @@ int constellation::exec::satellite_main(int argc,
     }
 
     // Register CMDP in CHIRP and set sender name for CMDP
-    SinkManager::getInstance().enableCMDPSending(canonical_name);
+    ManagerRegistry::getSinkManager().enableCMDPSending(canonical_name);
 
     // Create satellite
     LOG(logger, STATUS) << "Starting satellite " << canonical_name;

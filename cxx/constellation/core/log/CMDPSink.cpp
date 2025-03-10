@@ -34,13 +34,13 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
@@ -75,8 +75,9 @@ namespace {
     }
 } // namespace
 
-CMDPSink::CMDPSink(std::shared_ptr<zmq::context_t> context)
-    : context_(std::move(context)), pub_socket_(*context_, zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)) {
+CMDPSink::CMDPSink()
+    : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
+      context_(global_zmq_context()) {
     // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
     // while reading and cannot log at the same time.
     try {
@@ -171,7 +172,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
 
         // Update subscriptions
-        SinkManager::getInstance().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
+        ManagerRegistry::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
     }
 }
 

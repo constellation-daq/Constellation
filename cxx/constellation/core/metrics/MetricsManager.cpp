@@ -23,19 +23,15 @@
 
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
+using namespace constellation::utils;
 using namespace std::chrono_literals;
-
-MetricsManager& MetricsManager::getInstance() {
-    static MetricsManager instance {};
-    return instance;
-}
 
 MetricsManager::MetricsManager() : logger_("STAT"), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
@@ -146,7 +142,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(metric_it != metrics_.end()) {
                 LOG(logger_, TRACE) << "Sending metric " << std::quoted(name) << ": " << value.str() << " ["
                                     << metric_it->second->unit() << "]";
-                SinkManager::getInstance().sendCMDPMetric({metric_it->second, std::move(value)});
+                ManagerRegistry::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
                 LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
             }
@@ -166,7 +162,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
                 if(value.has_value()) {
                     LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric->name()) << ": "
                                         << value.value().str() << " [" << timed_metric->unit() << "]";
-                    SinkManager::getInstance().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
+                    ManagerRegistry::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
                     LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric->name()) << ": no value";

@@ -18,11 +18,11 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/Satellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
@@ -129,11 +129,11 @@ public:
             break;
         }
         case MONITORING: {
-            mocked_services_.emplace_back(canonical_name, service, log::SinkManager::getInstance().getCMDPPort());
+            mocked_services_.emplace_back(canonical_name, service, utils::ManagerRegistry::getSinkManager().getCMDPPort());
             break;
         }
         case DATA: {
-            if constexpr(std::same_as<SatelliteT, constellation::satellite::TransmitterSatellite>) {
+            if constexpr(std::same_as<SatelliteT, satellite::TransmitterSatellite>) {
                 mocked_services_.emplace_back(canonical_name, service, SatelliteT::getDataPort());
             }
             break;

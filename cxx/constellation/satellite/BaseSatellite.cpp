@@ -38,13 +38,13 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
-#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -111,7 +111,7 @@ void BaseSatellite::join() {
         cscp_thread_.join();
     }
     fsm_.unregisterStateCallback("extrasystoles");
-    MetricsManager::getInstance().unregisterMetrics();
+    ManagerRegistry::getMetricsManager().unregisterMetrics();
 }
 
 void BaseSatellite::terminate() {

@@ -20,8 +20,12 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/ManagerRegistry.hpp"
 
 inline std::shared_ptr<constellation::chirp::Manager> create_chirp_manager() {
+    // TODO(stephan.lachnit): CHIRP manager should be part of registry,
+    //                        for destruction order reasons needs to be created afterwards ManagerRegistry
+    constellation::utils::ManagerRegistry::getInstance();
     static std::once_flag manager_flag {};
     static std::shared_ptr<constellation::chirp::Manager> manager {};
     std::call_once(manager_flag, [&] {
