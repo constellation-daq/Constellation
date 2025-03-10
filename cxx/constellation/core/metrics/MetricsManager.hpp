@@ -28,16 +28,15 @@
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/timers.hpp"
 
+namespace constellation::core {
+    class ManagerRegistry;
+} // namespace constellation::core
+
 namespace constellation::metrics {
 
     /** Manager for Metrics handling & transmission */
     class MetricsManager {
     public:
-        /**
-         * @brief Return instance of metrics manager
-         */
-        CNSTLN_API static MetricsManager& getInstance();
-
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         MetricsManager(MetricsManager& other) = delete;
@@ -116,6 +115,7 @@ namespace constellation::metrics {
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
     private:
+        friend constellation::core::ManagerRegistry;
         MetricsManager();
 
         /**

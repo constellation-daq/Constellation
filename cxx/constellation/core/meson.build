@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
+  'ManagerRegistry.cpp',
   'chirp/BroadcastRecv.cpp',
   'chirp/BroadcastSend.cpp',
   'chirp/Manager.cpp',
@@ -62,6 +63,11 @@ pkg.generate(core_lib,
   description: 'Constellation core library',
   extra_cflags: constellation_args,
   libraries: [asio_dep, asio_raw_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
+)
+
+install_headers(
+  'ManagerRegistry.hpp',
+  subdir: 'constellation/core',
 )
 
 install_headers(

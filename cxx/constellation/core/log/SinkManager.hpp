@@ -31,6 +31,10 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
 
+namespace constellation::core {
+    class ManagerRegistry;
+} // namespace constellation::core
+
 namespace constellation::log {
     /**
      * @brief Global sink manager
@@ -58,10 +62,6 @@ namespace constellation::log {
         };
 
     public:
-        CNSTLN_API static SinkManager& getInstance();
-
-        ~SinkManager() = default;
-
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         SinkManager(const SinkManager& other) = delete;
@@ -69,6 +69,8 @@ namespace constellation::log {
         SinkManager(SinkManager&& other) = delete;
         SinkManager& operator=(SinkManager&& other) = delete;
         /// @endcond
+
+        CNSTLN_API ~SinkManager() = default;
 
         /**
          * @brief Get the ephemeral port to which the CMDP sink is bound to
@@ -124,6 +126,7 @@ namespace constellation::log {
                                          std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
 
     private:
+        friend constellation::core::ManagerRegistry;
         SinkManager();
 
         /**
@@ -142,8 +145,6 @@ namespace constellation::log {
         void calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger);
 
     private:
-        std::shared_ptr<zmq::context_t> zmq_context_;
-
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 
