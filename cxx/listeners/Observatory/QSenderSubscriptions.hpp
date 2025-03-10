@@ -11,6 +11,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include <QComboBox>
 #include <QItemSelection>
@@ -22,9 +23,10 @@
 
 #include "constellation/core/log/Level.hpp"
 
-namespace Ui {
+// Expose Qt class auto-generated from the user interface XML:
+namespace Ui { // NOLINT(readability-identifier-naming)
     class QSenderSubscriptions;
-}
+} // namespace Ui
 
 class QLogLevelDelegate : public QStyledItemDelegate {
 public:
@@ -39,7 +41,15 @@ class QLogLevelComboBox : public QComboBox {
 
 public:
     QLogLevelComboBox(QWidget* parent = nullptr);
-    ~QLogLevelComboBox() = default;
+    virtual ~QLogLevelComboBox() = default;
+
+    // No copy constructor/assignment/move constructor/assignment
+    /// @cond doxygen_suppress
+    QLogLevelComboBox(const QLogLevelComboBox& other) = delete;
+    QLogLevelComboBox& operator=(const QLogLevelComboBox& other) = delete;
+    QLogLevelComboBox(QLogLevelComboBox&& other) noexcept = delete;
+    QLogLevelComboBox& operator=(QLogLevelComboBox&& other) = delete;
+    /// @endcond
 
     void setDescending(bool descending);
     void addNeutralElement(const std::string& neutral);
@@ -52,7 +62,7 @@ private:
     void fill_items();
 
     bool descending_ {false};
-    std::string neutral_ {};
+    std::string neutral_;
     QLogLevelDelegate delegate_;
 };
 
@@ -61,7 +71,15 @@ class ComboBoxItemDelegate : public QStyledItemDelegate {
 
 public:
     ComboBoxItemDelegate(QObject* parent = nullptr);
-    ~ComboBoxItemDelegate() = default;
+    virtual ~ComboBoxItemDelegate() = default;
+
+    // No copy constructor/assignment/move constructor/assignment
+    /// @cond doxygen_suppress
+    ComboBoxItemDelegate(const ComboBoxItemDelegate& other) = delete;
+    ComboBoxItemDelegate& operator=(const ComboBoxItemDelegate& other) = delete;
+    ComboBoxItemDelegate(ComboBoxItemDelegate&& other) noexcept = delete;
+    ComboBoxItemDelegate& operator=(ComboBoxItemDelegate&& other) = delete;
+    /// @endcond
 
     QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     void setEditorData(QWidget* editor, const QModelIndex& index) const override;
@@ -73,7 +91,7 @@ class QSenderSubscriptions : public QWidget {
 
 public:
     QSenderSubscriptions(QWidget* parent,
-                         const QString& name,
+                         QString name,
                          std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
                          std::function<void(const std::string&, const std::string&)> unsub_callback);
 

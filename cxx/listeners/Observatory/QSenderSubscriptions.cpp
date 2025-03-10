@@ -10,7 +10,7 @@
 #include "QSenderSubscriptions.hpp"
 
 #include <functional>
-#include <iostream>
+#include <utility>
 
 #include <QPaintEvent>
 
@@ -112,16 +112,20 @@ void QLogLevelComboBox::addNeutralElement(const std::string& neutral) {
 
 ComboBoxItemDelegate::ComboBoxItemDelegate(QObject* parent) : QStyledItemDelegate(parent) {}
 
-QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent, const QStyleOptionViewItem&, const QModelIndex&) const {
+QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
+                                            const QStyleOptionViewItem& /*option*/,
+                                            const QModelIndex& /*index*/) const {
     // Create the combobox and populate it
-    auto box = new QLogLevelComboBox(parent);
+    // Ownership is transferred to the caller
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+    auto* box = new QLogLevelComboBox(parent);
     box->setDescending(false);
     box->addNeutralElement("- global -");
     return box;
 }
 
 void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& index) const {
-    auto* box = static_cast<QComboBox*>(editor);
+    auto* box = dynamic_cast<QComboBox*>(editor);
 
     // get the index of the text in the combobox that matches the current value of the item
     const QString currentText = index.data(Qt::EditRole).toString();
@@ -133,15 +137,15 @@ void ComboBoxItemDelegate::setEditorData(QWidget* editor, const QModelIndex& ind
 }
 
 void ComboBoxItemDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const {
-    auto* box = static_cast<QComboBox*>(editor);
+    auto* box = dynamic_cast<QComboBox*>(editor);
     model->setData(index, box->currentText(), Qt::EditRole);
 }
 
 QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
-                                           const QString& name,
+                                           QString name,
                                            std::function<void(const std::string&, const std::string&, Level)> sub_callback,
                                            std::function<void(const std::string&, const std::string&)> unsub_callback)
-    : QWidget(parent), name_(name), ui_(new Ui::QSenderSubscriptions), sub_callback_(std::move(sub_callback)),
+    : QWidget(parent), name_(std::move(name)), ui_(new Ui::QSenderSubscriptions), sub_callback_(std::move(sub_callback)),
       unsub_callback_(std::move(unsub_callback)), delegate_(this) {
     ui_->setupUi(this);
     ui_->senderName->setText(name_);
@@ -183,12 +187,14 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
     // Add new topics
     for(const auto& topic : topics) {
+        // Underlying QStandardItemModel takes ownership of QStandardItem instances
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         QList<QStandardItem*> row;
-        auto* item = new QStandardItem(topic);
-        row.append(item);
+        row.append(new QStandardItem(topic));
         auto* item2 = new QStandardItem();
         row.append(item2);
         topics_.appendRow(row);
         ui_->topicsView->openPersistentEditor(item2->index());
+        // NOLINTEND(cppcoreguidelines-owning-memory)
     }
 }

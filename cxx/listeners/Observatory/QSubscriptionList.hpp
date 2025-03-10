@@ -9,6 +9,10 @@
 
 #pragma once
 
+#include <map>
+#include <memory>
+#include <string>
+
 #include <QListWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -24,12 +28,20 @@ public:
         setStyleSheet("QListWidget { background-color: transparent; }");
         setAutoFillBackground(false);
     }
-    ~QSubscriptionList() = default;
+    virtual ~QSubscriptionList() = default;
+
+    // No copy constructor/assignment/move constructor/assignment
+    /// @cond doxygen_suppress
+    QSubscriptionList(const QSubscriptionList& other) = delete;
+    QSubscriptionList& operator=(const QSubscriptionList& other) = delete;
+    QSubscriptionList(QSubscriptionList&& other) noexcept = delete;
+    QSubscriptionList& operator=(QSubscriptionList&& other) = delete;
+    /// @endcond
 
     void setTopics(const QString& host, const QStringList& topics) {
         auto it = senders_.find(host);
         if(it != senders_.end()) {
-            auto* widget = static_cast<QSenderSubscriptions*>(itemWidget(it->second.get()));
+            auto* widget = dynamic_cast<QSenderSubscriptions*>(itemWidget(it->second.get()));
             widget->setTopics(topics);
         }
     }
@@ -44,13 +56,9 @@ public:
             this,
             host,
             [&](const std::string& host, const std::string& topic, constellation::log::Level level) {
-                LOG(INFO) << "subscribing for " << host << std::endl;
                 log_listener.subscribeExtaLogTopic(host, topic, level);
             },
-            [&](const std::string& host, const std::string& topic) {
-                LOG(INFO) << "unsubscribing from " << host << std::endl;
-                log_listener.unsubscribeExtraLogTopic(host, topic);
-            });
+            [&](const std::string& host, const std::string& topic) { log_listener.unsubscribeExtraLogTopic(host, topic); });
         list_item->setSizeHint(widget->sizeHint());
 
         // Add to QListWidget:

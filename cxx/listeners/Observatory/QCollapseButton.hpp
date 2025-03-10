@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <QAbstractAnimation>
 #include <QApplication>
 #include <QPropertyAnimation>
@@ -16,7 +18,7 @@
 
 class QCollapseButton : public QToolButton {
 public:
-    QCollapseButton(QWidget* parent) : QToolButton(parent), content_(nullptr) {
+    QCollapseButton(QWidget* parent) : QToolButton(parent) {
         setCheckable(true);
         setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-size: 12px; font-weight: normal; }");
 
@@ -56,6 +58,6 @@ public:
     }
 
 private:
-    QWidget* content_;
+    QWidget* content_ {nullptr};
     std::shared_ptr<QPropertyAnimation> animation_;
 };
