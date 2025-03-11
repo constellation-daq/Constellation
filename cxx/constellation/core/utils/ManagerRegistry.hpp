@@ -20,7 +20,11 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 
 namespace constellation::utils {
-
+    /**
+     * @brief Manager registry
+     *
+     * This class is a singleton that manages the creation and destruction of various managers.
+     */
     class ManagerRegistry {
     public:
         CNSTLN_API static ManagerRegistry& getInstance() {

@@ -116,8 +116,10 @@ namespace constellation::metrics {
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
     private:
+        /// @cond doxygen_suppress
         friend utils::ManagerRegistry;
         CNSTLN_API MetricsManager();
+        /// @endcond
 
         /**
          * Main loop listening and responding to incoming CHIRP broadcasts

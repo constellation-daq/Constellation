@@ -126,8 +126,10 @@ namespace constellation::log {
                                          std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
 
     private:
+        /// @cond doxygen_suppress
         friend utils::ManagerRegistry;
         CNSTLN_API SinkManager();
+        /// @endcond
 
         /**
          * @brief Create a new asynchronous spdlog logger
