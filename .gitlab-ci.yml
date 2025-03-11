@@ -67,6 +67,7 @@ variables:
     NINJA_OPTIONS: "-j8"
     KUBERNETES_CPU_REQUEST: "8"
     KUBERNETES_MEMORY_REQUEST: "16Gi"
+    MESON_NUM_PROCESSES: "8"
   tags:
     - hi-load
 
@@ -450,7 +451,7 @@ lint:clang-tidy-diff:
       artifacts: true
   script:
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
-    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $(nproc)
+    - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | clang-tidy-diff -p 1 -path build -j $MESON_NUM_PROCESSES
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes
