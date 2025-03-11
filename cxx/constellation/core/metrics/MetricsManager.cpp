@@ -62,7 +62,7 @@ void MetricsManager::registerMetric(std::shared_ptr<Metric> metric, std::string 
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, std::move(metric));
     metrics_descriptions_.insert_or_assign(name, std::move(description));
-    SinkManager::getInstance().sendMetricNotification();
+    ManagerRegistry::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     if(!inserted) {
@@ -83,7 +83,7 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric, st
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, metric);
     metrics_descriptions_.insert_or_assign(name, std::move(description));
-    SinkManager::getInstance().sendMetricNotification();
+    ManagerRegistry::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     if(!inserted) {
@@ -111,7 +111,7 @@ void MetricsManager::unregisterMetric(std::string_view name) {
     if(itd != metrics_descriptions_.end()) {
         metrics_descriptions_.erase(itd);
     }
-    SinkManager::getInstance().sendMetricNotification();
+    ManagerRegistry::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
@@ -126,7 +126,7 @@ void MetricsManager::unregisterMetrics() {
     std::unique_lock metrics_lock {metrics_mutex_};
     metrics_.clear();
     metrics_descriptions_.clear();
-    SinkManager::getInstance().sendMetricNotification();
+    ManagerRegistry::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
