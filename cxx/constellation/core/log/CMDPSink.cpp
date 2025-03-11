@@ -125,11 +125,11 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         if(body.starts_with("LOG/")) {
             handle_log_subscriptions(subscribe, body);
         } else if(body.starts_with("LOG?") && subscribe) {
-            SinkManager::getInstance().sendLogNotification();
+            ManagerRegistry::getSinkManager().sendLogNotification();
         } else if(body.starts_with("STAT/")) {
             handle_stat_subscriptions(subscribe, body);
         } else if(body.starts_with("STAT?") && subscribe) {
-            SinkManager::getInstance().sendMetricNotification();
+            ManagerRegistry::getSinkManager().sendMetricNotification();
         } else {
             LOG(*logger_, WARNING) << "Received " << (subscribe ? "" : "un") << "subscribe message with invalid topic "
                                    << body << ", ignoring";
@@ -210,7 +210,7 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     }
 
     // Update subscriptions
-    MetricsManager::getInstance().updateSubscriptions(global_subscription, std::move(subscription_topics));
+    ManagerRegistry::getMetricsManager().updateSubscriptions(global_subscription, std::move(subscription_topics));
 }
 
 void CMDPSink::enableSending(std::string sender_name) {
