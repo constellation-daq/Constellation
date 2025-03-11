@@ -10,7 +10,6 @@
 #include "QLogListener.hpp"
 
 #include <cstddef>
-#include <map>
 #include <mutex>
 #include <set>
 #include <shared_mutex>
