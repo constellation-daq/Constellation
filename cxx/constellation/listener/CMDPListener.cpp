@@ -101,6 +101,7 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         if(sender_it->second.find(topic) == sender_it->second.end()) {
             sender_it->second.insert({topic, {}});
+            new_topic = true;
         }
         available_topics_lock.unlock();
 
@@ -146,13 +147,7 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics() const {
 bool CMDPListener::isTopicAvailable(std::string_view topic) const {
     const std::lock_guard topics_lock {available_topics_mutex_};
 
-    for(const auto& [sender, sender_topics] : available_topics_) {
-        if(sender_topics.find(topic) != sender_topics.end()) {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of(available_topics_, [&](const auto& s) { return s.second.find(topic) != s.second.end(); });
 }
 
 bool CMDPListener::isSenderAvailable(std::string_view sender) const {
