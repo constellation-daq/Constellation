@@ -23,7 +23,6 @@
 #include <string>
 #include <string_view>
 #include <thread>
-#include <unordered_set>
 #include <utility>
 
 #include <spdlog/async_logger.h>
@@ -44,6 +43,7 @@
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
 
@@ -202,7 +202,8 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     const auto global_subscription = (stat_subscriptions_.contains("") && stat_subscriptions_.at("") > 0);
 
     // List of subscribed topics:
-    std::unordered_set<std::string_view> subscription_topics;
+    string_hash_set subscription_topics;
+    subscription_topics.reserve(stat_subscriptions_.size());
     for(const auto& [topic, counter] : stat_subscriptions_) {
         if(counter > 0) {
             subscription_topics.insert(topic);
