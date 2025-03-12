@@ -194,8 +194,8 @@ int constellation::exec::satellite_main(int argc,
     std::unique_ptr<chirp::Manager> chirp_manager {};
     try {
         chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, parser.get("group"), canonical_name);
-        chirp_manager->setAsDefaultInstance();
         chirp_manager->start();
+        ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
     } catch(const std::exception& error) {
         LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
         // TODO(stephan.lachnit): should we continue anyway or abort?
@@ -231,7 +231,7 @@ int constellation::exec::satellite_main(int argc,
     satellite->join();
 
     // Unregister callbacks
-    chirp_manager->unregisterDiscoverCallbacks();
+    ManagerRegistry::getCHIRPManager()->unregisterDiscoverCallbacks();
 
     return 0;
 }

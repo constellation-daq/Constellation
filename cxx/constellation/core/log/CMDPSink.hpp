@@ -32,7 +32,7 @@ namespace constellation::log {
      *
      * Note that ZeroMQ sockets are not thread-safe, meaning that the sink requires a mutex.
      */
-    class CMDPSink : public spdlog::sinks::base_sink<std::mutex> {
+    class CMDPSink final : public spdlog::sinks::base_sink<std::mutex> {
     public:
         /**
          * @brief Construct a new CMDPSink
@@ -42,7 +42,7 @@ namespace constellation::log {
         /**
          * @brief Deconstruct the CMDPSink
          */
-        ~CMDPSink() override;
+        ~CMDPSink() = default;
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -67,6 +67,11 @@ namespace constellation::log {
         void enableSending(std::string sender_name);
 
         /**
+         * @brief Disable sending by stopping the subscription thread
+         */
+        void disableSending();
+
+        /**
          * Sink metric
          *
          * @param metric_value Metric value to sink
@@ -89,8 +94,6 @@ namespace constellation::log {
 
         std::jthread subscription_thread_;
         std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
-
-        std::shared_ptr<zmq::context_t> context_;
     };
 
 } // namespace constellation::log

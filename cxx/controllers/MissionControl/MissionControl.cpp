@@ -734,8 +734,8 @@ int main(int argc, char** argv) {
         std::unique_ptr<chirp::Manager> chirp_manager {};
         try {
             chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, group_name, controller_name);
-            chirp_manager->setAsDefaultInstance();
             chirp_manager->start();
+            ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
         } catch(const std::exception& error) {
             LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
         }

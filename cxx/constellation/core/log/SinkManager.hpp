@@ -70,7 +70,7 @@ namespace constellation::log {
         SinkManager& operator=(SinkManager&& other) = delete;
         /// @endcond
 
-        CNSTLN_API ~SinkManager() = default;
+        ~SinkManager() = default;
 
         /**
          * @brief Get the ephemeral port to which the CMDP sink is bound to
@@ -85,6 +85,11 @@ namespace constellation::log {
          * @param sender_name Canonical name of the satellite
          */
         CNSTLN_API void enableCMDPSending(std::string sender_name);
+
+        /**
+         * @brief Stop sending via CMDP
+         */
+        CNSTLN_API void stopCMDPSending();
 
         /**
          * Send metric via the CMDP sink

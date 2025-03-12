@@ -10,6 +10,7 @@
 #include <chrono> // IWYU pragma: keep
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <string>
 #include <utility>
@@ -52,13 +53,13 @@ namespace {
 
         const std::string name = "dummy_controller";
 
-        auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, name);
-        chirp_manager.setAsDefaultInstance();
-        chirp_manager.start();
-        chirp_manager.sendRequest(CHIRP::ServiceIdentifier::CONTROL);
+        auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, name);
+        chirp_manager->start();
+        chirp_manager->sendRequest(CHIRP::ServiceIdentifier::CONTROL);
+        ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
 
         LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
-        Controller controller(name);
+        Controller controller {name};
 
         while(true) {
             // Flush logger before printing to cout

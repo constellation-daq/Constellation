@@ -6,11 +6,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/ManagerRegistry.hpp"
+
+#include "chirp_mock.hpp"
 
 using namespace constellation::log;
 using namespace constellation::utils;
@@ -164,13 +165,12 @@ TEST_CASE("Ephemeral CMDP port", "[logging]") {
 }
 
 TEST_CASE("Register Service via CHIRP", "[logging]") {
-    using namespace constellation::chirp;
-    using namespace constellation::protocol::CHIRP;
-    auto manager = Manager("255.255.255.255", "0.0.0.0", "cnstln1", "sat1");
-    manager.setAsDefaultInstance();
+    auto* manager = create_chirp_manager();
     ManagerRegistry::getSinkManager().enableCMDPSending("satname");
-    REQUIRE(manager.getRegisteredServices().size() == 1);
-    REQUIRE(manager.getRegisteredServices().contains({MONITORING, ManagerRegistry::getSinkManager().getCMDPPort()}));
+    REQUIRE(manager->getRegisteredServices().size() == 1);
+    using namespace constellation::protocol::CHIRP;
+    REQUIRE(manager->getRegisteredServices().contains({MONITORING, ManagerRegistry::getSinkManager().getCMDPPort()}));
+    manager->forgetDiscoveredServices();
 }
 
 // TODO(stephan.lachnit): test log message decoding

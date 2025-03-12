@@ -115,6 +115,10 @@ void SinkManager::enableCMDPSending(std::string sender_name) {
     cmdp_sink_->enableSending(std::move(sender_name));
 }
 
+void SinkManager::stopCMDPSending() {
+    cmdp_sink_->disableSending();
+}
+
 std::shared_ptr<spdlog::async_logger> SinkManager::getLogger(std::string_view topic) {
     // Acquire lock for loggers_
     std::unique_lock loggers_lock {loggers_mutex_};

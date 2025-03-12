@@ -30,7 +30,6 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/heartbeat/HeartbeatManager.hpp"
@@ -53,7 +52,6 @@
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
-using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::heartbeat;
 using namespace constellation::message;
@@ -85,7 +83,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     }
 
     // Announce service via CHIRP
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
     } else {
@@ -150,8 +148,8 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
 }
 
 void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_verb,
-                               message::PayloadBuffer payload,
-                               config::Dictionary tags) {
+                               PayloadBuffer payload,
+                               Dictionary tags) {
     try {
         auto msg =
             CSCP1Message({getCanonicalName(), std::chrono::system_clock::now(), std::move(tags)}, std::move(reply_verb));
@@ -162,11 +160,11 @@ void BaseSatellite::send_reply(std::pair<CSCP1Message::Type, std::string> reply_
     }
 }
 
-std::optional<std::tuple<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer, config::Dictionary>>
+std::optional<std::tuple<std::pair<CSCP1Message::Type, std::string>, PayloadBuffer, Dictionary>>
 BaseSatellite::handle_standard_command(std::string_view command) {
-    std::pair<message::CSCP1Message::Type, std::string> return_verb {};
-    message::PayloadBuffer return_payload {};
-    config::Dictionary return_tags {};
+    std::pair<CSCP1Message::Type, std::string> return_verb {};
+    PayloadBuffer return_payload {};
+    Dictionary return_tags {};
 
     auto command_enum = enum_cast<CSCP::StandardCommand>(command);
     if(!command_enum.has_value()) {
@@ -275,7 +273,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case _get_remotes: {
-        auto* chirp_manager = chirp::Manager::getDefaultInstance();
+        auto* chirp_manager = ManagerRegistry::getCHIRPManager();
         if(chirp_manager != nullptr) {
             auto remotes_dict = std::map<std::string, std::vector<std::string>>();
             for(const auto& remote : chirp_manager->getDiscoveredServices()) {
@@ -294,7 +292,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case _get_services: {
-        auto* chirp_manager = chirp::Manager::getDefaultInstance();
+        auto* chirp_manager = ManagerRegistry::getCHIRPManager();
         if(chirp_manager != nullptr) {
             auto service_dict = Dictionary();
             for(const auto& service : chirp_manager->getRegisteredServices()) {
@@ -325,17 +323,17 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     return std::make_tuple(return_verb, std::move(return_payload), std::move(return_tags));
 }
 
-std::optional<std::pair<std::pair<message::CSCP1Message::Type, std::string>, message::PayloadBuffer>>
-BaseSatellite::handle_user_command(std::string_view command, const message::PayloadBuffer& payload) {
+std::optional<std::pair<std::pair<CSCP1Message::Type, std::string>, PayloadBuffer>>
+BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer& payload) {
     LOG(cscp_logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
 
-    std::pair<message::CSCP1Message::Type, std::string> return_verb {};
-    message::PayloadBuffer return_payload {};
+    std::pair<CSCP1Message::Type, std::string> return_verb {};
+    PayloadBuffer return_payload {};
 
-    config::List args {};
+    List args {};
     try {
         if(!payload.empty()) {
-            args = config::List::disassemble(payload);
+            args = List::disassemble(payload);
         }
 
         auto retval = user_commands_.call(fsm_.getState(), std::string(command), args);
@@ -436,9 +434,9 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
     }
 }
 
-void BaseSatellite::store_config(config::Configuration&& config) {
-    using enum config::Configuration::Group;
-    using enum config::Configuration::Usage;
+void BaseSatellite::store_config(Configuration&& config) {
+    using enum Configuration::Group;
+    using enum Configuration::Usage;
 
     // Check for unused KVPs
     const auto unused_kvps = config.getDictionary(ALL, UNUSED);
@@ -458,9 +456,9 @@ void BaseSatellite::store_config(config::Configuration&& config) {
                         << config_.getDictionary(INTERNAL).to_string();
 }
 
-void BaseSatellite::update_config(const config::Configuration& partial_config) {
-    using enum config::Configuration::Group;
-    using enum config::Configuration::Usage;
+void BaseSatellite::update_config(const Configuration& partial_config) {
+    using enum Configuration::Group;
+    using enum Configuration::Usage;
 
     // Check for unused KVPs
     const auto unused_kvps = partial_config.getDictionary(ALL, UNUSED);
@@ -478,7 +476,7 @@ void BaseSatellite::update_config(const config::Configuration& partial_config) {
                         << config_.getDictionary(INTERNAL).to_string();
 }
 
-void BaseSatellite::apply_internal_config(const config::Configuration& config) {
+void BaseSatellite::apply_internal_config(const Configuration& config) {
 
     if(config.has("_heartbeat_interval")) {
         const auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -492,7 +490,7 @@ void BaseSatellite::apply_internal_config(const config::Configuration& config) {
     }
 }
 
-void BaseSatellite::initializing_wrapper(config::Configuration&& config) {
+void BaseSatellite::initializing_wrapper(Configuration&& config) {
     apply_internal_config(config);
 
     initializing(config);
@@ -519,7 +517,7 @@ void BaseSatellite::landing_wrapper() {
     landing();
 }
 
-void BaseSatellite::reconfiguring_wrapper(const config::Configuration& partial_config) {
+void BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
     apply_internal_config(partial_config);
 
     reconfiguring(partial_config);

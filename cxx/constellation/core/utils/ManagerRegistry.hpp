@@ -11,10 +11,12 @@
 
 #include <memory>
 #include <mutex>
+#include <utility>
 
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
@@ -54,8 +56,27 @@ namespace constellation::utils {
             return *instance.metrics_manager_;
         }
 
+        /**
+         * @brief Return the CHIRP manager
+         */
+        CNSTLN_API static chirp::Manager* getCHIRPManager() {
+            auto& instance = getInstance();
+            // TODO(stephan.lachnit): use create_dependent_managers() once CHIRPManager has been reworked
+            return instance.chirp_manager_.get();
+        }
+
+        /**
+         * @brief Create the default CHIRP manager
+         */
+        CNSTLN_API static void setDefaultCHIRPManager(std::unique_ptr<chirp::Manager> manager) {
+            getInstance().chirp_manager_ = std::move(manager);
+        }
+
         ~ManagerRegistry() {
-            // Destruction order: MetricsManager, SinkManager, global ZeroMQ context
+            // Stop the subscription loop in the CMDP sink
+            sink_manager_->stopCMDPSending();
+            // Destruction order: CHIRPManager, MetricsManager, SinkManager, global ZeroMQ context
+            chirp_manager_.reset();
             metrics_manager_.reset();
             sink_manager_.reset();
             zmq_context_.reset();
@@ -63,20 +84,24 @@ namespace constellation::utils {
 
     private:
         ManagerRegistry() {
-            // Creation order: global ZeroMQ context, SinkManager, MetricsManager
+            // Creation order: global ZeroMQ context, SinkManager, MetricsManager, CHIRPManager
             zmq_context_ = networking::global_zmq_context(); // NOLINT(cppcoreguidelines-prefer-member-initializer)
             sink_manager_ = std::unique_ptr<log::SinkManager>(new log::SinkManager());
-            // Cannot create MetricsManager duration creation: requires ManagerRegistry instance to get SinkManager instance
+            // Cannot create MetricsManager and CHIRP Manager during creation
+            // since they require a ManagerRegistry instance to get SinkManager instance for logging
         }
 
         void create_dependent_managers() {
+            // Creation order: MetricsManager, CHIRPManager
             metrics_manager_ = std::unique_ptr<metrics::MetricsManager>(new metrics::MetricsManager());
+            // TODO(stephan.lachnit): CHIRPManager requires rework to be able to be created here
         }
 
     private:
         std::shared_ptr<zmq::context_t> zmq_context_;
-        std::unique_ptr<metrics::MetricsManager> metrics_manager_;
         std::unique_ptr<log::SinkManager> sink_manager_;
+        std::unique_ptr<metrics::MetricsManager> metrics_manager_;
+        std::unique_ptr<chirp::Manager> chirp_manager_;
         std::once_flag creation_flag_;
     };
 

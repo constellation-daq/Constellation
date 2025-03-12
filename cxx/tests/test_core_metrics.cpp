@@ -92,9 +92,9 @@ TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
 }
 
 TEST_CASE("Receive triggered metric", "[core][metrics]") {
+    create_chirp_manager();
     auto& metrics_manager = ManagerRegistry::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
@@ -121,13 +121,13 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
-    chirp_manager->forgetDiscoveredServices();
+    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive with STAT macros", "[core][metrics]") {
+    create_chirp_manager();
     auto& metrics_manager = ManagerRegistry::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
@@ -170,12 +170,13 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive timed metric", "[core][metrics]") {
+    create_chirp_manager();
     auto& metrics_manager = ManagerRegistry::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
@@ -194,12 +195,13 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
+    create_chirp_manager();
     auto& metrics_manager = ManagerRegistry::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
@@ -245,4 +247,5 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
 }
