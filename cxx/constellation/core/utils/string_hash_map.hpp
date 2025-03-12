@@ -14,6 +14,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace constellation::utils {
 
@@ -31,6 +32,9 @@ namespace constellation::utils {
 
     /** Unordered string map using hashes for fast lookup  */
     template <typename V> using string_hash_map = std::unordered_map<std::string, V, string_hash, std::equal_to<>>;
+
+    /** Unordered string set using hashes for fast lookup  */
+    using string_hash_set = std::unordered_set<std::string, string_hash, std::equal_to<>>;
 
     // NOLINTEND(readability-identifier-naming)
 
