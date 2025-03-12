@@ -19,11 +19,11 @@
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <set>
 #include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 #include <spdlog/async_logger.h>
@@ -202,7 +202,7 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     const auto global_subscription = (stat_subscriptions_.contains("") && stat_subscriptions_.at("") > 0);
 
     // List of subscribed topics:
-    std::set<std::string_view> subscription_topics;
+    std::unordered_set<std::string_view> subscription_topics;
     for(const auto& [topic, counter] : stat_subscriptions_) {
         if(counter > 0) {
             subscription_topics.insert(topic);

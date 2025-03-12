@@ -15,11 +15,11 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <set>
 #include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 #include "constellation/build.hpp"
@@ -127,7 +127,7 @@ namespace constellation::metrics {
          * @param global Global Flag for global subscription to all topics
          * @param topic_subscriptions List of individual subscription topics
          */
-        void updateSubscriptions(bool global, std::set<std::string_view> topic_subscriptions = {});
+        void updateSubscriptions(bool global, std::unordered_set<std::string_view> topic_subscriptions = {});
 
         /**
          * @brief Obtain map of registered metrics along with their descriptions
@@ -173,7 +173,7 @@ namespace constellation::metrics {
         log::Logger logger_;
 
         // List of topics with active subscribers:
-        std::set<std::string_view> subscribed_topics_;
+        std::unordered_set<std::string_view> subscribed_topics_;
         bool global_subscription_;
 
         // Contains all metrics, including timed ones

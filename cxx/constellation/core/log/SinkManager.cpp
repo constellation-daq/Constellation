@@ -249,7 +249,7 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string
 }
 
 void SinkManager::sendMetricNotification() {
-    const auto descriptions = utils::ManagerRegistry::getMetricsManager().getMetricsDescriptions();
+    const auto descriptions = ManagerRegistry::getMetricsManager().getMetricsDescriptions();
     config::Dictionary payload;
     for(const auto& [key, value] : descriptions) {
         payload.emplace(key, value);

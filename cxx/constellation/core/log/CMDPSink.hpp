@@ -27,6 +27,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::log {
     /**
@@ -111,8 +112,8 @@ namespace constellation::log {
         std::string sender_name_;
 
         std::jthread subscription_thread_;
-        std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
-        std::map<std::string, std::size_t> stat_subscriptions_;
+        utils::string_hash_map<std::map<Level, std::size_t>> log_subscriptions_;
+        utils::string_hash_map<std::size_t> stat_subscriptions_;
     };
 
 } // namespace constellation::log

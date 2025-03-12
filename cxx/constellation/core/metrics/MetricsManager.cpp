@@ -16,10 +16,10 @@
 #include <iomanip>
 #include <memory>
 #include <mutex>
-#include <set>
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 #include "constellation/core/config/Value.hpp"
@@ -49,7 +49,7 @@ bool MetricsManager::shouldStat(std::string_view name) const {
     return global_subscription_ || subscribed_topics_.contains(name);
 }
 
-void MetricsManager::updateSubscriptions(bool global, std::set<std::string_view> topic_subscriptions) {
+void MetricsManager::updateSubscriptions(bool global, std::unordered_set<std::string_view> topic_subscriptions) {
     // Acquire lock for metric variables and update them
     const std::lock_guard levels_lock {metrics_mutex_};
     global_subscription_ = global;
