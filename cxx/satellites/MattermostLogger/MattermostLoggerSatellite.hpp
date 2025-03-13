@@ -30,7 +30,7 @@ public:
 
 private:
     void log_callback(constellation::message::CMDP1LogMessage msg);
-    void send_message(std::string&& message);
+    void send_message(std::string&& message, std::string&& priority = "standard");
     static std::string escape_quotes(std::string message);
 
 private:
