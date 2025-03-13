@@ -10,6 +10,7 @@
 #include "QController.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <map>
 #include <mutex>
@@ -65,10 +66,15 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     auto it = connections_.begin();
     std::advance(it, index.row());
 
-    const auto& name = it->first;
-    const auto& conn = it->second;
+    return get_data(it, index.column());
+}
 
-    switch(index.column()) {
+QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection, std::size_t idx) {
+
+    const auto& name = connection->first;
+    const auto& conn = connection->second;
+
+    switch(idx) {
     case 0: {
         // Satellite type
         const auto type_endpos = name.find_first_of('.', 0);
@@ -81,9 +87,25 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     }
     case 2: {
         // State
-        return getStyledState(conn.state, true);
+        return get_styled_state(conn.state, true);
     }
     case 3: {
+        // Last command response type
+        return get_styled_response(conn.last_cmd_type);
+    }
+    case 4: {
+        // Last command response message
+        return QString::fromStdString(conn.last_message);
+    }
+    case 5: {
+        // Heartbeat period
+        return QString::fromStdString(to_string(conn.interval));
+    }
+    case 6: {
+        // Remaining lives:
+        return conn.lives;
+    }
+    case 7: {
         // Connection (URI)
         try {
             const std::string last_endpoint = conn.req.get(zmq::sockopt::last_endpoint);
@@ -92,26 +114,44 @@ QVariant QController::data(const QModelIndex& index, int role) const {
             return QString::fromStdString(e.what());
         }
     }
-    case 4: {
-        // Last command response type
-        return get_styled_response(conn.last_cmd_type);
+    case 8: {
+        // MD5 host ID
+        return QString::fromStdString(conn.host_id.to_string());
     }
-    case 5: {
-        // Last command response message
-        return QString::fromStdString(conn.last_message);
+    case 9: {
+        // Last heartbeat
+        return from_timepoint(conn.last_heartbeat);
     }
-    case 6: {
-        // Heartbeat period
-        return QString::fromStdString(to_string(conn.interval));
-    }
-    case 7: {
-        // Remaining lives:
-        return conn.lives;
+    case 10: {
+        // Last checked
+        return from_timepoint(conn.last_checked);
     }
     default: {
         return QString("");
     }
     }
+}
+
+QMap<QString, QVariant> QController::getQDetails(const QModelIndex& index) const {
+
+    if(!index.isValid() || index.row() >= static_cast<int>(getConnectionCount())) {
+        return {};
+    }
+
+    const std::lock_guard connection_lock {connection_mutex_};
+    // Select connection by index:
+    auto it = connections_.begin();
+    std::advance(it, index.row());
+
+    QMap<QString, QVariant> details;
+    for(std::size_t i = 0; i < headers_.size(); i++) {
+        details.insert(headers_.at(i), get_data(it, i));
+    }
+    for(std::size_t i = 0; i < headers_details_.size(); i++) {
+        details.insert(headers_details_.at(i), get_data(it, i + headers_.size()));
+    }
+
+    return details;
 }
 
 QVariant QController::headerData(int column, Qt::Orientation orientation, int role) const {
@@ -120,54 +160,6 @@ QVariant QController::headerData(int column, Qt::Orientation orientation, int ro
         return QString::fromStdString(headers_.at(column));
     }
     return {};
-}
-
-QString QController::getStyledState(CSCP::State state, bool global) {
-
-    const QString global_indicatior = (global ? "" : " ≊");
-
-    switch(state) {
-    case CSCP::State::NEW: {
-        return "<font color='gray'><b>New</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::initializing: {
-        return "<font color='gray'><b>Initializing...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::INIT: {
-        return "<font color='gray'><b>Initialized</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::launching: {
-        return "<font color='orange'><b>Launching...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::landing: {
-        return "<font color='orange'><b>Landing...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::reconfiguring: {
-        return "<font color='orange'><b>Reconfiguring...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::ORBIT: {
-        return "<font color='orange'><b>Orbiting</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::starting: {
-        return "<font color='green'><b>Starting...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::stopping: {
-        return "<font color='green'><b>Stopping...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::RUN: {
-        return "<font color='green'><b>Running</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::SAFE: {
-        return "<font color='red'><b>Safe Mode</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::interrupting: {
-        return "<font color='red'><b>Interrupting...</b>" + global_indicatior + "</font>";
-    }
-    case CSCP::State::ERROR: {
-        return "<font color='darkred'><b>Error</b>" + global_indicatior + "</font>";
-    }
-    default: std::unreachable();
-    }
 }
 
 void QController::reached_state(CSCP::State state, bool global) {

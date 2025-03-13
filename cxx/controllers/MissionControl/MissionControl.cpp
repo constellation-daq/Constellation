@@ -61,6 +61,7 @@
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/gui/QCommandDialog.hpp"
+#include "constellation/gui/QConnectionDialog.hpp"
 #include "constellation/gui/QResponseDialog.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
@@ -80,13 +81,13 @@ void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem
 
     painter->save();
 
-    // Get sibling for column 7 (where the lives are stored) for current row:
-    const auto lives = index.sibling(index.row(), 7).data().toInt();
-    if(lives < 3 && index.column() >= 6) {
+    // Get sibling for column 6 (where the lives are stored) for current row:
+    const auto lives = index.sibling(index.row(), 6).data().toInt();
+    if(lives < 3 && index.column() >= 5) {
         const auto alpha = (3 - lives) * 85;
         QLinearGradient gradient(
             options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
-        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 6 ? 0 : alpha)));
+        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 5 ? 0 : alpha)));
         gradient.setColorAt(1, QColor(255, 0, 0, alpha));
         painter->fillRect(options.rect, QBrush(gradient));
     }
@@ -138,7 +139,7 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     // Set initial values for header bar
     const auto state = runcontrol_.getLowestState();
     cnstlnName->setText(QString::fromStdString("<font color=gray><b>" + std::string(group_name) + "</b></font>"));
-    labelState->setText(QController::getStyledState(state, runcontrol_.isInGlobalState()));
+    labelState->setText(get_styled_state(state, runcontrol_.isInGlobalState()));
     labelNrSatellites->setText("<font color='gray'><b>" + QString::number(runcontrol_.getConnections().size()) +
                                "</b></font>");
 
@@ -158,15 +159,13 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->header()->resizeSection(1, 100);
     viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
     viewConn->header()->resizeSection(2, 120);
-    viewConn->header()->setSectionResizeMode(3, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(3, 180);
-    viewConn->header()->setSectionResizeMode(4, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(4, 140);
-    viewConn->header()->setSectionResizeMode(5, QHeaderView::Stretch);
-    viewConn->header()->setSectionResizeMode(6, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(6, 80);
-    viewConn->header()->setSectionResizeMode(7, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(7, 40);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(3, 140);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(5, 80);
+    viewConn->header()->setSectionResizeMode(6, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(6, 40);
 
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {
@@ -210,7 +209,7 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     // Connect state update signal:
     connect(&runcontrol_, &QController::reachedState, this, [&](CSCP::State state, bool global) {
         update_button_states(state);
-        labelState->setText(QController::getStyledState(state, global));
+        labelState->setText(get_styled_state(state, global));
     });
 
     connect(&runcontrol_, &QController::leavingState, this, [&](CSCP::State state, bool global) {
@@ -284,6 +283,19 @@ void MissionControl::update_run_identifier(const QString& text, int number) {
     gui_settings_.setValue("run/sequence", number);
 
     LOG(logger_, DEBUG) << "Updated run identifier to " << current_run_.toStdString();
+}
+
+void MissionControl::on_viewConn_activated(const QModelIndex& i) {
+    // Use the sorting proxy to obtain the correct model index of the source:
+    const QModelIndex index = sorting_proxy_.mapToSource(i);
+    if(!index.isValid()) {
+        return;
+    }
+
+    const auto name = runcontrol_.getQName(index);
+    const auto details = runcontrol_.getQDetails(index);
+    const auto cmds = runcontrol_.getQCommands(index);
+    new QConnectionDialog(this, name, details, cmds);
 }
 
 void MissionControl::on_btnInit_clicked() {
