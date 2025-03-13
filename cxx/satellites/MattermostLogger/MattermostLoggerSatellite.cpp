@@ -60,7 +60,7 @@ void MattermostLoggerSatellite::stopping() {
 }
 
 void MattermostLoggerSatellite::interrupting(CSCP::State previous_state) {
-    send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)));
+    send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), "important");
 }
 
 void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
@@ -69,24 +69,32 @@ void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
 
 void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     std::ostringstream msg_formatted {};
-    if(msg.getLogLevel() == WARNING || msg.getLogLevel() == CRITICAL) {
-        msg_formatted << "@channel ";
+    // If warning or critical, notify and set message priority
+    std::string priority {"standard"};
+    if(msg.getLogLevel() == WARNING) {
+        msg_formatted << "@channel\n";
+        priority = "important";
+    } else if(msg.getLogLevel() == CRITICAL) {
+        msg_formatted << "@channel\n";
+        priority = "urgent";
     }
     msg_formatted << "**" << msg.getLogLevel() << "** from **" << msg.getHeader().getSender() << "** on topic **"
-                  << msg.getLogTopic() << "**:\n"
+                  << msg.getLogTopic() << "**:\n\n"
                   << msg.getLogMessage();
     // Try to send message, on failure go to ERROR state
     try {
-        send_message(msg_formatted.str());
+        send_message(msg_formatted.str(), std::move(priority));
     } catch(const CommunicationError& error) {
         getFSM().requestFailure(error.what());
     }
 }
 
-void MattermostLoggerSatellite::send_message(std::string&& message) {
-    const auto response = cpr::Post(cpr::Url(webhook_url_),
-                                    cpr::Header({{"Content-Type", "application/json"}}),
-                                    cpr::Body({R"({"text": ")" + escape_quotes(std::move(message)) + "\"}"}));
+void MattermostLoggerSatellite::send_message(std::string&& message, std::string&& priority) {
+    const auto response =
+        cpr::Post(cpr::Url(webhook_url_),
+                  cpr::Header({{"Content-Type", "application/json"}}),
+                  cpr::Body({R"({"text":")" + escape_quotes(std::move(message)) + R"(","priority":{"priority":")" +
+                             escape_quotes(std::move(priority)) + R"("}})"}));
     if(response.status_code != 200) [[unlikely]] {
         throw CommunicationError("Failed to send message to Mattermost");
     }
