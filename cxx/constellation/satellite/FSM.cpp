@@ -179,7 +179,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
 void FSM::requestInterrupt(std::string_view reason) {
     LOG(logger_, DEBUG) << "Attempting to interrupt...";
 
-    //  Wait until we are in a steady state
+    // Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
@@ -192,6 +192,19 @@ void FSM::requestInterrupt(std::string_view reason) {
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
+}
+
+void FSM::requestFailure(std::string_view reason) {
+    LOG(logger_, DEBUG) << "Attempting to trigger failure...";
+
+    // Wait until we are in a steady state
+    while(!is_steady(state_.load())) {
+        LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+    }
+
+    // Trigger failure
+    LOG(logger_, CRITICAL) << "Failure during satellite operation: " << reason;
+    react(Transition::failure);
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
