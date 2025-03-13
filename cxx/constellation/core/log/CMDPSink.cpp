@@ -125,11 +125,11 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         if(body.starts_with("LOG/")) {
             handle_log_subscriptions(subscribe, body);
         } else if(body.starts_with("LOG?") && subscribe) {
-            ManagerRegistry::getSinkManager().sendLogNotification();
+            ManagerLocator::getSinkManager().sendLogNotification();
         } else if(body.starts_with("STAT/")) {
             handle_stat_subscriptions(subscribe, body);
         } else if(body.starts_with("STAT?") && subscribe) {
-            ManagerRegistry::getSinkManager().sendMetricNotification();
+            ManagerLocator::getSinkManager().sendMetricNotification();
         } else {
             LOG(*logger_, WARNING) << "Received " << (subscribe ? "" : "un") << "subscribe message with invalid topic "
                                    << body << ", ignoring";
@@ -179,9 +179,8 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
 
     LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
 
-        // Update subscriptions
-        ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
-    }
+    // Update subscriptions
+    ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
 }
 
 void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) {
@@ -211,7 +210,7 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     }
 
     // Update subscriptions
-    ManagerRegistry::getMetricsManager().updateSubscriptions(global_subscription, std::move(subscription_topics));
+    ManagerLocator::getMetricsManager().updateSubscriptions(global_subscription, std::move(subscription_topics));
 }
 
 void CMDPSink::enableSending(std::string sender_name) {
