@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 This module provides classes for managing CSCP requests/replies within
 Constellation Satellites.
@@ -82,6 +82,8 @@ class CommandReceiver(BaseSatelliteFrame):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
         super().__init__(name=name, interface=interface, **kwds)
 
+        self.log_cscp = self.get_logger("CSCP")
+
         # set up the command channel
         sock = self.context.socket(zmq.REP)
         if not cmd_port:
@@ -90,7 +92,7 @@ class CommandReceiver(BaseSatelliteFrame):
             sock.bind(f"tcp://{interface}:{cmd_port}")
             self.cmd_port = cmd_port
 
-        self.log.info(f"Satellite listening on command port {self.cmd_port}")
+        self.log_cscp.info(f"Satellite listening on command port {self.cmd_port}")
         self._cmd_tm = CommandTransmitter(self.name, sock)
         # cached list of supported commands
         self._cmds = get_cscp_commands(self)
@@ -99,7 +101,7 @@ class CommandReceiver(BaseSatelliteFrame):
         """Add the command receiver thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["cmd_receiver"] = threading.Thread(target=self._recv_cmds, daemon=True)
-        self.log.debug("Command receiver thread prepared and added to the pool.")
+        self.log_cscp.debug("Command receiver thread prepared and added to the pool.")
 
     def _recv_cmds(self) -> None:
         """Request receive loop."""
@@ -110,7 +112,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 req = self._cmd_tm.get_message(flags=zmq.NOBLOCK)
             except zmq.ZMQError as e:
                 # something wrong with the ZMQ socket, wait a while for recovery
-                self.log.exception(e)
+                self.log_cscp.exception(e)
                 time.sleep(0.5)
                 continue
             if not req:
@@ -119,7 +121,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 continue
             # check that it is actually a REQUEST
             if req.msg_verb != CSCPMessageVerb.REQUEST:
-                self.log.error(f"Received malformed request with msg verb: {req.msg_verb}")
+                self.log_cscp.error(f"Received malformed request with msg verb: {req.msg_verb}")
                 self._cmd_tm.send_reply(
                     f"Received malformed request with msg verb: {req.msg_verb}",
                     CSCPMessageVerb.INVALID,
@@ -128,7 +130,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
             # find a matching callback
             if req.msg not in self._cmds:
-                self.log.error("Unknown command: %s", req)
+                self.log_cscp.error("Unknown command: %s", req)
                 self._cmd_tm.send_reply(f"Unknown command: {req.msg}", CSCPMessageVerb.UNKNOWN)
                 continue
             # test whether callback is allowed by calling the
@@ -136,7 +138,7 @@ class CommandReceiver(BaseSatelliteFrame):
             try:
                 is_allowed = getattr(self, f"_{req.msg}_is_allowed")(req)
                 if not is_allowed:
-                    self.log.error("Command not allowed: %s", req)
+                    self.log_cscp.error("Command not allowed: %s", req)
                     self._cmd_tm.send_reply(
                         "Command not allowed (in current state)",
                         CSCPMessageVerb.INVALID,
@@ -146,10 +148,10 @@ class CommandReceiver(BaseSatelliteFrame):
                 pass
             # perform the actual callback
             try:
-                self.log.debug("Calling command %s with argument %s", req.msg, req)
+                self.log_cscp.debug("Calling command %s with argument %s", req.msg, req)
                 res, payload, meta = getattr(self, req.msg)(req)
             except (AttributeError, NotImplementedError) as e:
-                self.log.error("Command failed with %s: %s", e, req)
+                self.log_cscp.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
                     f"WrongImplementation: {repr(e)}",
                     CSCPMessageVerb.NOTIMPLEMENTED,
@@ -157,30 +159,30 @@ class CommandReceiver(BaseSatelliteFrame):
                 )
                 continue
             except TransitionNotAllowed as e:
-                self.log.error("Transition '%s' not allowed: %s", req.msg, e)
+                self.log_cscp.error("Transition '%s' not allowed: %s", req.msg, e)
                 self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCPMessageVerb.INVALID, repr(e))
                 continue
             except (TypeError, ValueError) as e:
-                self.log.error("Command '%s' received wrong argument: %s", req.msg, repr(e))
+                self.log_cscp.error("Command '%s' received wrong argument: %s", req.msg, repr(e))
                 self._cmd_tm.send_reply(f"Wrong argument: {repr(e)}", CSCPMessageVerb.INCOMPLETE, repr(e))
                 continue
             except Exception as e:
-                self.log.error("Command '%s' failed: %s", req.msg, repr(e))
+                self.log_cscp.error("Command '%s' failed: %s", req.msg, repr(e))
                 self._cmd_tm.send_reply(f"Exception: {repr(e)}", CSCPMessageVerb.INVALID, repr(e))
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if res is None:
-                self.log.error("Command returned nothing: %s", req)
+                self.log_cscp.error("Command returned nothing: %s", req)
                 self._cmd_tm.send_reply("Command returned nothing", CSCPMessageVerb.INCOMPLETE)
                 continue
             # finally, assemble a proper response!
-            self.log.debug("Command succeeded with '%s': %s", res, req)
+            self.log_cscp.debug("Command succeeded with '%s': %s", res, req)
             try:
                 self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
             except TypeError as e:
-                self.log.exception("Sending response '%s' failed: %s", res, e)
+                self.log_cscp.exception("Sending response '%s' failed: %s", res, e)
                 self._cmd_tm.send_reply(str(e), CSCPMessageVerb.ERROR, None, None)
-        self.log.info("CommandReceiver thread shutting down.")
+        self.log_cscp.info("CommandReceiver thread shutting down.")
         # shutdown
         self._cmd_tm.socket.close()
 

@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 Module implementing the Constellation communication protocols.
 """
@@ -58,7 +57,7 @@ class MessageHeader:
         unpacker.feed(header)
         protocol = unpacker.unpack()
         if not protocol == self.protocol.value:
-            raise RuntimeError(f"Received message with malformed {self.protocol.name} header: {header}!")
+            raise RuntimeError(f"Received message with malformed {self.protocol.name} header: {bytes(header)!r}!")
         host = unpacker.unpack()
         if protocol == Protocol.CDTP:
             msgtype = unpacker.unpack()

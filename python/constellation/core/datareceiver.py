@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 Base module for Constellation Satellites that receive data.
 """
@@ -42,6 +41,8 @@ class DataReceiver(Satellite):
         # initialize Satellite attributes
         super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
+        # logging
+        self.log_cdtp_r = self.get_logger("CDTP")
 
     def do_initializing(self, config: dict[str, Any]) -> str:
         """Initialize and configure the satellite."""
@@ -113,7 +114,7 @@ class DataReceiver(Satellite):
                 else:
                     if not self.active_satellites:
                         # no Satellites connected
-                        self.log.info("All EOR received, stopping.")
+                        self.log_cdtp_r.info("All EOR received, stopping.")
                         break
                 # request available data from zmq poller; timeout prevents
                 # deadlock when stopping.
@@ -129,7 +130,7 @@ class DataReceiver(Satellite):
                     try:
                         item = transmitter.decode(binmsg)
                     except Exception as e:
-                        self.log.critical(
+                        self.log_cdtp_r.critical(
                             "Could not decode message '%s' due to exception: %s",
                             binmsg,
                             repr(e),
@@ -145,14 +146,14 @@ class DataReceiver(Satellite):
                         else:
                             self._write_data(outfile, item)
                     except Exception as e:
-                        self.log.critical("Could not write message '%s' to file: %s", item, repr(e))
+                        self.log_cdtp_r.critical("Could not write message '%s' to file: %s", item, repr(e))
                         raise RuntimeError(f"Could not write message '{item}' to file") from e
                     if (datetime.datetime.now() - last_msg).total_seconds() > 2.0:
                         if self._state_thread_evt.is_set():
                             msg = "Finishing with"
                         else:
                             msg = "Processing"
-                        self.log.status(
+                        self.log_cdtp_r.info(
                             "%s data packet %s from %s",
                             msg,
                             item.sequence_number,
@@ -163,7 +164,7 @@ class DataReceiver(Satellite):
         finally:
             self._close_file(outfile)
             if self.active_satellites:
-                self.log.warning(
+                self.log_cdtp_r.warning(
                     "Never received EOR from following Satellites: %s",
                     ", ".join(self.active_satellites),
                 )
@@ -227,7 +228,7 @@ class DataReceiver(Satellite):
         Adds an interface (host, port) to receive data from.
         """
         self._pull_interfaces[service.host_uuid] = (service.address, service.port)
-        self.log.info("Adding interface tcp://%s:%s to listen to.", service.address, service.port)
+        self.log_cdtp_r.info("Adding interface tcp://%s:%s to listen to.", service.address, service.port)
         # handle late-coming satellite offers
         if self.fsm.current_state_value in [
             SatelliteState.ORBIT,
@@ -245,7 +246,7 @@ class DataReceiver(Satellite):
 
     def _add_socket(self, uuid: UUID, address: str, port: int) -> None:
         interface = f"tcp://{address}:{port}"
-        self.log.info("Connecting to %s", interface)
+        self.log_cdtp_r.info("Connecting to %s", interface)
         socket = self.context.socket(zmq.PULL)
         socket.connect(interface)
         self._pull_sockets[uuid] = socket
@@ -274,7 +275,7 @@ class DataReceiver(Satellite):
         self.reset_scheduled_metrics()
         self._reset_receiver_stats()
         for stat in self.receiver_stats:
-            self.log.info("Configuring monitoring for '%s' metric", stat)
+            self.log_cdtp_r.info("Configuring monitoring for '%s' metric", stat)
             # add a callback using partial
             self.schedule_metric(
                 stat,
