@@ -13,12 +13,11 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
-#include "constellation/core/pools/SubscriberPool.hpp"
+#include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 class FlightRecorderSatellite final : public constellation::satellite::Satellite,
-                                      public constellation::pools::SubscriberPool<constellation::message::CMDP1LogMessage,
-                                                                                  constellation::chirp::MONITORING> {
+                                      public constellation::listener::LogListener {
 public:
     FlightRecorderSatellite(std::string_view type, std::string_view name);
 
@@ -28,6 +27,5 @@ private:
     void add_message(constellation::message::CMDP1LogMessage&& msg);
 
 private:
-    constellation::log::Level global_level_ {constellation::log::Level::WARNING};
     std::shared_ptr<spdlog::logger> file_logger_;
 };

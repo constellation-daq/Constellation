@@ -15,7 +15,7 @@ satellite_sources = files(
 )
 
 # Additional dependencies for this satellite
-satellite_dependencies = []
+satellite_dependencies = [listener_dep]
 
 # Add [type, sources, dependencies] to build list
 satellites_to_build += [[satellite_type, satellite_sources, satellite_dependencies]]
