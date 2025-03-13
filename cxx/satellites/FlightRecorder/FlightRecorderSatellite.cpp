@@ -18,6 +18,8 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
+#include "spdlog/sinks/rotating_file_sink.h"
+
 using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::log;
@@ -32,9 +34,18 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
 
+    const auto path = config.getPath("file_path");
+
+    const auto rotate = config.has("rotate_files");
     try {
-        file_logger_ = spdlog::basic_logger_mt("file_logger", "/tmp/basic-log.txt");
-        spdlog::flush_every(std::chrono::seconds(1));
+        if(rotate) {
+            const auto max_files = config.get<size_t>("rotate_files");
+            const auto max_size = config.get<size_t>("rotate_filesize", 10) * 1048576; // in bytes
+            file_logger_ = spdlog::rotating_logger_mt("file_logger", path, max_size, max_files);
+        } else {
+            file_logger_ = spdlog::basic_logger_mt("file_logger", path);
+        }
+        spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 1)));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }
@@ -45,7 +56,6 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
 }
 
 void FlightRecorderSatellite::add_message(CMDP1LogMessage&& msg) {
-    LOG(WARNING) << "Logging: " << msg.getLogMessage();
     if(file_logger_) {
         file_logger_->info(msg.getLogMessage());
     }
