@@ -28,16 +28,16 @@
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/timers.hpp"
 
+// Forward declaration
+namespace constellation::utils {
+    class ManagerLocator;
+} // namespace constellation::utils
+
 namespace constellation::metrics {
 
     /** Manager for Metrics handling & transmission */
     class MetricsManager {
     public:
-        /**
-         * @brief Return instance of metrics manager
-         */
-        CNSTLN_API static MetricsManager& getInstance();
-
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         MetricsManager(MetricsManager& other) = delete;
@@ -52,8 +52,9 @@ namespace constellation::metrics {
          * Register a (manually triggered) metric
          *
          * @param metric Shared pointer to the metric
+         * @param description Description of the metric
          */
-        CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric);
+        CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric, std::string description);
 
         /**
          * Register a (manually triggered) metric
@@ -61,15 +62,17 @@ namespace constellation::metrics {
          * @param name Unique topic of the metric
          * @param unit Unit of the provided value
          * @param type Type of the metric
+         * @param description Description of the metric
          */
-        void registerMetric(std::string name, std::string unit, metrics::MetricType type);
+        void registerMetric(std::string name, std::string unit, metrics::MetricType type, std::string description);
 
         /**
          * Register a timed metric
          *
          * @param metric Shared pointer to the timed metric
+         * @param description Description of the metric
          */
-        CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric);
+        CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric, std::string description);
 
         /**
          * Register a timed metric
@@ -77,6 +80,7 @@ namespace constellation::metrics {
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
+         * @param description Description of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
          */
@@ -85,6 +89,7 @@ namespace constellation::metrics {
         void registerTimedMetric(std::string name,
                                  std::string unit,
                                  metrics::MetricType type,
+                                 std::string description,
                                  std::chrono::steady_clock::duration interval,
                                  C value_callback);
 
@@ -105,7 +110,7 @@ namespace constellation::metrics {
         /**
          * Check if a metric should be send given the subscription status
          */
-        static constexpr bool shouldStat(std::string_view /*name*/) { return true; }
+        CNSTLN_API bool shouldStat(std::string_view name) const;
 
         /**
          * Manually trigger a metric
@@ -115,8 +120,26 @@ namespace constellation::metrics {
          */
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
+        /**
+         * @brief Update topic subscriptions
+         *
+         * @param global Global Flag for global subscription to all topics
+         * @param topic_subscriptions List of individual subscription topics
+         */
+        void updateSubscriptions(bool global, utils::string_hash_set topic_subscriptions = {});
+
+        /**
+         * @brief Obtain map of registered metrics along with their descriptions
+         *
+         * @return Map with metric descriptions
+         */
+        utils::string_hash_map<std::string> getMetricsDescriptions() const { return metrics_descriptions_; }
+
     private:
-        MetricsManager();
+        /// @cond doxygen_suppress
+        friend utils::ManagerLocator;
+        CNSTLN_API MetricsManager();
+        /// @endcond
 
         /**
          * Main loop listening and responding to incoming CHIRP broadcasts
@@ -148,8 +171,13 @@ namespace constellation::metrics {
     private:
         log::Logger logger_;
 
+        // List of topics with active subscribers:
+        utils::string_hash_set subscribed_topics_;
+        bool global_subscription_;
+
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
+        utils::string_hash_map<std::string> metrics_descriptions_;
         std::mutex metrics_mutex_;
 
         // Only timed metrics for background thread

@@ -14,6 +14,7 @@
 #include <mutex>
 #include <set>
 #include <string>
+#include <string_view>
 
 #include <QAbstractListModel>
 #include <QObject>
@@ -51,28 +52,6 @@ public:
      */
     void clearMessages();
 
-    /**
-     * @brief Helper to check if a given sender is known already
-     * This is used to e.g. cross-check filter settings
-     *
-     * @note the comparison here is not case-insensitive.
-     *
-     * @param sender Sender to be checked for
-     * @return True if this sender has been sending messages, false otherwise
-     */
-    bool isSenderKnown(const std::string& sender) const { return sender_list_.contains(sender); }
-
-    /**
-     * @brief Helper to check if a given topic is known already
-     * This is used to e.g. cross-check filter settings
-     *
-     * @note the comparison here is not case-insensitive.
-     *
-     * @param topic Topic to be checked for
-     * @return True if this topic has been found in any message, false otherwise
-     */
-    bool isTopicKnown(const std::string& topic) const { return topic_list_.contains(topic); }
-
     /// @cond doxygen_suppress
 
     /* Qt accessor methods */
@@ -103,11 +82,7 @@ signals:
      */
     void newSender(QString sender);
 
-    /**
-     * @brief Signal emitted whenever a message with a new topic has been received
-     * @param topic Topic
-     */
-    void newTopic(QString topic);
+    void newTopics(QStringList topics);
 
 private:
     /**
@@ -122,13 +97,12 @@ private:
     void host_connected(const constellation::chirp::DiscoveredService& service) override;
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
+    void new_topics_available(std::string_view sender) override;
+    void new_sender_available(std::string_view sender) override;
+
 private:
     /** Log messages & access mutex*/
     std::deque<constellation::gui::QLogMessage> messages_;
     std::atomic_size_t message_count_;
     mutable std::mutex message_mutex_;
-
-    /** Available senders and topics */
-    std::set<std::string> sender_list_;
-    std::set<std::string> topic_list_;
 };

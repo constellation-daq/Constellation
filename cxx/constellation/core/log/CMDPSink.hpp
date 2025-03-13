@@ -15,16 +15,19 @@
 #include <mutex>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <thread>
 
 #include <spdlog/async_logger.h>
 #include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::log {
     /**
@@ -32,18 +35,17 @@ namespace constellation::log {
      *
      * Note that ZeroMQ sockets are not thread-safe, meaning that the sink requires a mutex.
      */
-    class CMDPSink : public spdlog::sinks::base_sink<std::mutex> {
+    class CMDPSink final : public spdlog::sinks::base_sink<std::mutex> {
     public:
         /**
          * @brief Construct a new CMDPSink
-         * @param context ZMQ context to be used
          */
-        CMDPSink(std::shared_ptr<zmq::context_t> context);
+        CMDPSink();
 
         /**
          * @brief Deconstruct the CMDPSink
          */
-        ~CMDPSink() override;
+        ~CMDPSink() = default;
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -68,11 +70,24 @@ namespace constellation::log {
         void enableSending(std::string sender_name);
 
         /**
+         * @brief Disable sending by stopping the subscription thread
+         */
+        void disableSending();
+
+        /**
          * Sink metric
          *
          * @param metric_value Metric value to sink
          */
         void sinkMetric(metrics::MetricValue metric_value);
+
+        /**
+         * Sink notification
+         *
+         * @param id Notification type
+         * @param topics Topics for the given notification type
+         */
+        void sinkNotification(const std::string& id, config::Dictionary topics);
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) final;
@@ -81,18 +96,24 @@ namespace constellation::log {
     private:
         void subscription_loop(const std::stop_token& stop_token);
 
+        void handle_log_subscriptions(bool subscribe, std::string_view body);
+
+        void handle_stat_subscriptions(bool subscribe, std::string_view body);
+
     private:
         std::unique_ptr<Logger> logger_;
 
-        // Needs to store shared pointer since CMDPSink is owned by static SinkManager
-        std::shared_ptr<zmq::context_t> context_;
+        // CMDPSink is a shared instance and is destroyed late -> requires shared ownership of the global context
+        // otherwise the context will be destroyed before the socket is closed and wait for all sockets to be closed
+        std::shared_ptr<zmq::context_t> global_context_;
 
         zmq::socket_t pub_socket_;
         networking::Port port_;
         std::string sender_name_;
 
         std::jthread subscription_thread_;
-        std::map<std::string, std::map<Level, std::size_t>> log_subscriptions_;
+        utils::string_hash_map<std::map<Level, std::size_t>> log_subscriptions_;
+        utils::string_hash_map<std::size_t> stat_subscriptions_;
     };
 
 } // namespace constellation::log

@@ -6,27 +6,29 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
+
+#include "chirp_mock.hpp"
 
 using namespace constellation::log;
+using namespace constellation::utils;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
 TEST_CASE("Delayed first message", "[logging]") {
     // First message is delayed by 500ms, so call this here for better timing analysis
-    SinkManager::getInstance().updateCMDPLevels(TRACE);
-    SinkManager::getInstance().setConsoleLevels(OFF);
+    ManagerLocator::getSinkManager().updateCMDPLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(OFF);
     auto logger = Logger("DelayedFirstMessage");
     LOG(logger, TRACE) << "";
-    SinkManager::getInstance().updateCMDPLevels(OFF);
+    ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
 }
 
 TEST_CASE("Default logger", "[logging]") {
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
     LOG(Logger::getDefault(), STATUS) << "Message from default logger";
     // Default logger is not destructed and thus requires manual flushing
     Logger::getDefault().flush();
@@ -35,7 +37,7 @@ TEST_CASE("Default logger", "[logging]") {
 TEST_CASE("Basic logging", "[logging]") {
     auto logger = Logger("BasicLogging");
 
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
     REQUIRE(logger.shouldLog(TRACE));
 
     LOG(logger, TRACE) << "trace";
@@ -48,7 +50,7 @@ TEST_CASE("Basic logging", "[logging]") {
 
 TEST_CASE("Logging with default logger", "[logging]") {
 
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
 
     LOG(TRACE) << "trace";
     LOG(DEBUG) << "debug";
@@ -68,7 +70,7 @@ TEST_CASE("Logging from const function", "[logging]") {
         Logger logger_ {"ConstLogging"};
     };
 
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
     const LogTest log_test {};
     log_test.log();
 }
@@ -76,7 +78,7 @@ TEST_CASE("Logging from const function", "[logging]") {
 TEST_CASE("Logging macros", "[logging]") {
     auto logger = Logger("LoggingMacros");
 
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
 
     int count_once {0};
     int count_n {0};
@@ -98,7 +100,7 @@ TEST_CASE("Logging macros", "[logging]") {
 
 TEST_CASE("Logging macros with default logger", "[logging]") {
 
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
 
     int count_once {0};
     int count_n {0};
@@ -118,58 +120,57 @@ TEST_CASE("Logging macros with default logger", "[logging]") {
 TEST_CASE("Log levels", "[logging]") {
     auto logger = Logger("LogLevels");
 
-    SinkManager::getInstance().setConsoleLevels(STATUS);
-    SinkManager::getInstance().updateCMDPLevels(STATUS);
+    ManagerLocator::getSinkManager().setConsoleLevels(STATUS);
+    ManagerLocator::getSinkManager().updateCMDPLevels(STATUS);
     REQUIRE(logger.getLogLevel() == STATUS);
 
     // Test global CMDP subscription
-    SinkManager::getInstance().updateCMDPLevels(DEBUG);
+    ManagerLocator::getSinkManager().updateCMDPLevels(DEBUG);
     REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test global CMDP unsubscription
-    SinkManager::getInstance().updateCMDPLevels(OFF);
+    ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
     REQUIRE(logger.getLogLevel() == STATUS);
 
     // Test topic CMDP subscription - topics are uppercase
-    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}});
+    ManagerLocator::getSinkManager().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}});
     REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test topic CMDP subscription via matching - topics are uppercase
-    SinkManager::getInstance().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}, {"LOGLE", TRACE}});
+    ManagerLocator::getSinkManager().updateCMDPLevels(STATUS, {{"LOGLEVELS", DEBUG}, {"LOGLE", TRACE}});
     REQUIRE(logger.getLogLevel() == TRACE);
 
     // Test higher CMDP topic level higher than global does not lower logger level
-    SinkManager::getInstance().updateCMDPLevels(DEBUG, {{"LOGLEVELS", INFO}});
+    ManagerLocator::getSinkManager().updateCMDPLevels(DEBUG, {{"LOGLEVELS", INFO}});
     REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test higher console level than CMDP level does not lower global level
-    SinkManager::getInstance().setConsoleLevels(WARNING, {{"LOGLEVELS", CRITICAL}});
+    ManagerLocator::getSinkManager().setConsoleLevels(WARNING, {{"LOGLEVELS", CRITICAL}});
     REQUIRE(logger.getLogLevel() == DEBUG);
 
     // Test global console level
-    SinkManager::getInstance().updateCMDPLevels(OFF, {{"LOGLEVELS", CRITICAL}});
-    SinkManager::getInstance().setConsoleLevels(TRACE);
+    ManagerLocator::getSinkManager().updateCMDPLevels(OFF, {{"LOGLEVELS", CRITICAL}});
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE);
     REQUIRE(logger.getLogLevel() == TRACE);
 
     // Test topic console level overwrites global console level
-    SinkManager::getInstance().setConsoleLevels(TRACE, {{"LOGLEVELS", WARNING}});
+    ManagerLocator::getSinkManager().setConsoleLevels(TRACE, {{"LOGLEVELS", WARNING}});
     REQUIRE(logger.getLogLevel() == WARNING);
 }
 
 TEST_CASE("Ephemeral CMDP port", "[logging]") {
     // Port number of ephemeral port should always be >=1024 on all OSes
-    auto port_number = SinkManager::getInstance().getCMDPPort();
+    auto port_number = ManagerLocator::getSinkManager().getCMDPPort();
     REQUIRE(port_number >= 1024);
 }
 
 TEST_CASE("Register Service via CHIRP", "[logging]") {
-    using namespace constellation::chirp;
+    auto* manager = create_chirp_manager();
+    ManagerLocator::getSinkManager().enableCMDPSending("satname");
+    REQUIRE(manager->getRegisteredServices().size() == 1);
     using namespace constellation::protocol::CHIRP;
-    auto manager = Manager("255.255.255.255", "0.0.0.0", "cnstln1", "sat1");
-    manager.setAsDefaultInstance();
-    SinkManager::getInstance().enableCMDPSending("satname");
-    REQUIRE(manager.getRegisteredServices().size() == 1);
-    REQUIRE(manager.getRegisteredServices().contains({MONITORING, SinkManager::getInstance().getCMDPPort()}));
+    REQUIRE(manager->getRegisteredServices().contains({MONITORING, ManagerLocator::getSinkManager().getCMDPPort()}));
+    manager->forgetDiscoveredServices();
 }
 
 // TODO(stephan.lachnit): test log message decoding

@@ -30,9 +30,9 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/DSOLoader.hpp"
@@ -114,7 +114,7 @@ int constellation::exec::satellite_main(int argc,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     // Ensure that ZeroMQ doesn't fail creating the CMDP sink
     try {
-        SinkManager::getInstance();
+        ManagerLocator::getInstance();
     } catch(const NetworkError& error) {
         std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
         return 1;
@@ -143,7 +143,7 @@ int constellation::exec::satellite_main(int argc,
                               << ", possible values are: " << utils::list_enum_names<Level>();
         return 1;
     }
-    SinkManager::getInstance().setConsoleLevels(default_level.value());
+    ManagerLocator::getSinkManager().setConsoleLevels(default_level.value());
 
     // Check broadcast and any address
     std::optional<asio::ip::address_v4> brd_addr {};
@@ -194,15 +194,15 @@ int constellation::exec::satellite_main(int argc,
     std::unique_ptr<chirp::Manager> chirp_manager {};
     try {
         chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, parser.get("group"), canonical_name);
-        chirp_manager->setAsDefaultInstance();
         chirp_manager->start();
+        ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
     } catch(const std::exception& error) {
         LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
         // TODO(stephan.lachnit): should we continue anyway or abort?
     }
 
     // Register CMDP in CHIRP and set sender name for CMDP
-    SinkManager::getInstance().enableCMDPSending(canonical_name);
+    ManagerLocator::getSinkManager().enableCMDPSending(canonical_name);
 
     // Create satellite
     LOG(logger, STATUS) << "Starting satellite " << canonical_name;
@@ -231,7 +231,7 @@ int constellation::exec::satellite_main(int argc,
     satellite->join();
 
     // Unregister callbacks
-    chirp_manager->unregisterDiscoverCallbacks();
+    ManagerLocator::getCHIRPManager()->unregisterDiscoverCallbacks();
 
     return 0;
 }

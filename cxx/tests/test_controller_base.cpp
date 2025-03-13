@@ -22,6 +22,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 
@@ -50,7 +51,7 @@ namespace std {
 
 TEST_CASE("Satellite connecting", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -78,11 +79,12 @@ TEST_CASE("Satellite connecting", "[controller]") {
 
     // Exit satellite
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Attempt connection from satellites with same canonical name", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -113,11 +115,12 @@ TEST_CASE("Attempt connection from satellites with same canonical name", "[contr
     controller.stop();
     satellite1.exit();
     satellite2.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Satellite departing", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -148,11 +151,12 @@ TEST_CASE("Satellite departing", "[controller]") {
     // Stop controller and exit satellite
     controller.stop();
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("State Updates are propagated", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -196,11 +200,12 @@ TEST_CASE("State Updates are propagated", "[controller]") {
     controller.stop();
     satellite.exit();
     satellite2.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Satellite state updates are received", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -228,11 +233,12 @@ TEST_CASE("Satellite state updates are received", "[controller]") {
     // Stop controller and exit satellite
     controller.stop();
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Mixed and global states are reported", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -275,11 +281,12 @@ TEST_CASE("Mixed and global states are reported", "[controller]") {
     controller.stop();
     satelliteA.exit();
     satelliteB.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Controller commands are sent and answered", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -359,11 +366,12 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     controller.stop();
     satelliteA.exit();
     satelliteB.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Controller sends command with different payloads", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -418,12 +426,12 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     controller.stop();
     satelliteA.exit();
     satelliteB.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Erroneous attempts to send commands", "[controller]") {
-
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -453,11 +461,12 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     // Stop controller and exit satellites
     controller.stop();
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Controller can read run identifier and time", "[controller]") {
     // Create CHIRP manager for control service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Create and start controller
     DummyController controller {"ctrl"};
@@ -498,6 +507,7 @@ TEST_CASE("Controller can read run identifier and time", "[controller]") {
     // Stop controller and exit satellites
     controller.stop();
     satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -23,19 +23,15 @@
 
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
+using namespace constellation::utils;
 using namespace std::chrono_literals;
-
-MetricsManager& MetricsManager::getInstance() {
-    static MetricsManager instance {};
-    return instance;
-}
 
 MetricsManager::MetricsManager() : logger_("STAT"), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
@@ -48,11 +44,24 @@ MetricsManager::~MetricsManager() noexcept {
     }
 }
 
-void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
+bool MetricsManager::shouldStat(std::string_view name) const {
+    return global_subscription_ || subscribed_topics_.contains(name);
+}
+
+void MetricsManager::updateSubscriptions(bool global, string_hash_set topic_subscriptions) {
+    // Acquire lock for metric variables and update them
+    const std::lock_guard levels_lock {metrics_mutex_};
+    global_subscription_ = global;
+    subscribed_topics_ = std::move(topic_subscriptions);
+}
+
+void MetricsManager::registerMetric(std::shared_ptr<Metric> metric, std::string description) {
     const auto name = std::string(metric->name());
 
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, std::move(metric));
+    metrics_descriptions_.insert_or_assign(name, std::move(description));
+    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     if(!inserted) {
@@ -66,12 +75,14 @@ void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
     LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(name);
 }
 
-void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
+void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric, std::string description) {
     const auto name = std::string(metric->name());
 
     // Add to metrics map
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, metric);
+    metrics_descriptions_.insert_or_assign(name, std::move(description));
+    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     if(!inserted) {
@@ -95,6 +106,11 @@ void MetricsManager::unregisterMetric(std::string_view name) {
     if(it != metrics_.end()) {
         metrics_.erase(it);
     }
+    auto itd = metrics_descriptions_.find(name);
+    if(itd != metrics_descriptions_.end()) {
+        metrics_descriptions_.erase(itd);
+    }
+    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
@@ -108,6 +124,8 @@ void MetricsManager::unregisterMetric(std::string_view name) {
 void MetricsManager::unregisterMetrics() {
     std::unique_lock metrics_lock {metrics_mutex_};
     metrics_.clear();
+    metrics_descriptions_.clear();
+    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
@@ -146,7 +164,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(metric_it != metrics_.end()) {
                 LOG(logger_, TRACE) << "Sending metric " << std::quoted(name) << ": " << value.str() << " ["
                                     << metric_it->second->unit() << "]";
-                SinkManager::getInstance().sendCMDPMetric({metric_it->second, std::move(value)});
+                ManagerLocator::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
                 LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
             }
@@ -160,13 +178,13 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         // Check timed metrics
         const std::lock_guard timed_metrics_lock {timed_metrics_mutex_};
         for(auto& [name, timed_metric] : timed_metrics_) {
-            // If last time sent larger than interval and allowed -> send metric
-            if(timed_metric.timeoutReached()) {
+            // If last time sent larger than interval and allowed and there is a subscription -> send metric
+            if(timed_metric.timeoutReached() && shouldStat(name)) {
                 auto value = timed_metric->currentValue();
                 if(value.has_value()) {
                     LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric->name()) << ": "
                                         << value.value().str() << " [" << timed_metric->unit() << "]";
-                    SinkManager::getInstance().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
+                    ManagerLocator::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
                     LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric->name()) << ": no value";

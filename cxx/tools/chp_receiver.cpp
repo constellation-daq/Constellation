@@ -12,10 +12,12 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <span>
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <utility>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatRecv.hpp"
@@ -23,6 +25,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
@@ -53,9 +56,9 @@ namespace {
         }
         std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
 
-        auto chirp_manager = chirp::Manager("255.255.255.255", "0.0.0.0", group, "chp_receiver");
-        chirp_manager.setAsDefaultInstance();
-        chirp_manager.start();
+        auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, "chp_receiver");
+        chirp_manager->start();
+        ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
         Logger logger {"chp_receiver"};
 
