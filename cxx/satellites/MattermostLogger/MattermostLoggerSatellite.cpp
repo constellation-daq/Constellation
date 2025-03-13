@@ -46,7 +46,8 @@ void MattermostLoggerSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(log_level);
     LOG(STATUS) << "Set log level to " << log_level;
 
-    // TODO: can startPool be called more than once safely?
+    // Stop pool in case it was already started
+    stopPool();
     startPool();
 }
 
