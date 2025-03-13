@@ -67,8 +67,6 @@ void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
     stopPool();
 }
 
-// TODO: how to handle errors? do we need to trigger a failure ourselves?
-
 void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     std::ostringstream msg_formatted {};
     if(msg.getLogLevel() == WARNING || msg.getLogLevel() == CRITICAL) {
@@ -77,7 +75,12 @@ void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     msg_formatted << "**" << msg.getLogLevel() << "** from **" << msg.getHeader().getSender() << "** on topic **"
                   << msg.getLogTopic() << "**:\n"
                   << msg.getLogMessage();
-    send_message(msg_formatted.str());
+    // Try to send message, on failure go to ERROR state
+    try {
+        send_message(msg_formatted.str());
+    } catch(const CommunicationError& error) {
+        getFSM().requestFailure(error.what());
+    }
 }
 
 void MattermostLoggerSatellite::send_message(std::string&& message) {
