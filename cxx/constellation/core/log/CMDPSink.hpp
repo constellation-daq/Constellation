@@ -88,6 +88,10 @@ namespace constellation::log {
     private:
         std::unique_ptr<Logger> logger_;
 
+        // CMDPSink is a shared instance and is destroyed late -> requires shared ownership of the global context
+        // otherwise the context will be destroyed before the socket is closed and wait for all sockets to be closed
+        std::shared_ptr<zmq::context_t> global_context_;
+
         zmq::socket_t pub_socket_;
         networking::Port port_;
         std::string sender_name_;

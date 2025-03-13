@@ -73,7 +73,9 @@ namespace {
     }
 } // namespace
 
-CMDPSink::CMDPSink() : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)) {
+CMDPSink::CMDPSink()
+    : global_context_(global_zmq_context()), pub_socket_(*global_context_, zmq::socket_type::xpub),
+      port_(bind_ephemeral_port(pub_socket_)) {
     // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
     // while reading and cannot log at the same time.
     try {
@@ -189,6 +191,12 @@ void CMDPSink::enableSending(std::string sender_name) {
 }
 
 void CMDPSink::disableSending() {
+    // Nothing to disable if sending was never enabled
+    if(logger_ == nullptr) {
+        return;
+    }
+
+    LOG(*logger_, DEBUG) << "Disabling logging via CMDP";
     set_level(to_spdlog_level(OFF));
 
     subscription_thread_.request_stop();

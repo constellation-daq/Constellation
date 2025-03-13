@@ -103,9 +103,9 @@ SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OF
     console_sink_->set_color(to_spdlog_level(TRACE), "\x1B[90m");      // Grey
 #endif
 
-    // CMDP sink, log level always TRACE since only accessed via ProxySink
+    // CMDP sink, log level will be set when sending is enabled
     cmdp_sink_ = std::make_shared<CMDPSink>();
-    cmdp_sink_->set_level(to_spdlog_level(TRACE));
+    cmdp_sink_->set_level(to_spdlog_level(OFF));
 
     // Create default logger without topic
     default_logger_ = create_logger("DEFAULT");
