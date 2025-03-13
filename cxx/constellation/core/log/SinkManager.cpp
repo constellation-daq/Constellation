@@ -33,7 +33,7 @@
 #include "constellation/core/log/CMDPSink.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/ProxySink.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::log;
@@ -249,7 +249,7 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string
 }
 
 void SinkManager::sendMetricNotification() {
-    const auto descriptions = ManagerRegistry::getMetricsManager().getMetricsDescriptions();
+    const auto descriptions = ManagerLocator::getMetricsManager().getMetricsDescriptions();
     config::Dictionary payload;
     for(const auto& [key, value] : descriptions) {
         payload.emplace(key, value);
