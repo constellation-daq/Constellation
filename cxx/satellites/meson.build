@@ -9,6 +9,7 @@ subdir('AidaTLU')
 subdir('Caribou')
 subdir('DevNullReceiver')
 subdir('EudaqNativeWriter')
+subdir('MattermostLogger')
 subdir('RandomTransmitter')
 subdir('Sputnik')
 

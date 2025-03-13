@@ -124,6 +124,8 @@ namespace constellation::satellite {
          */
         CNSTLN_API void requestInterrupt(std::string_view reason);
 
+        CNSTLN_API void requestFailure(std::string_view reason);
+
         /**
          * @brief Registering a callback to be executed when a new state was entered
          *

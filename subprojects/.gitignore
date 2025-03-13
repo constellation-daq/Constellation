@@ -16,3 +16,6 @@
 
 # Satellite dependencies
 /peary/
+/cpr-*/
+/curl-*/
+/openssl-*/
