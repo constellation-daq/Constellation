@@ -70,7 +70,7 @@ namespace constellation::log {
         SinkManager& operator=(SinkManager&& other) = delete;
         /// @endcond
 
-        ~SinkManager() = default;
+        CNSTLN_API ~SinkManager();
 
         /**
          * @brief Get the ephemeral port to which the CMDP sink is bound to

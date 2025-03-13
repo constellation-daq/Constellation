@@ -170,9 +170,6 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
 void CMDPSink::enableSending(std::string sender_name) {
     sender_name_ = std::move(sender_name);
 
-    // Set log level to TRACE since only accessed via ProxySink
-    set_level(to_spdlog_level(TRACE));
-
     // Get CMDP logger
     logger_ = std::make_unique<Logger>("CMDP");
 
@@ -197,7 +194,6 @@ void CMDPSink::disableSending() {
     }
 
     LOG(*logger_, DEBUG) << "Disabling logging via CMDP";
-    set_level(to_spdlog_level(OFF));
 
     subscription_thread_.request_stop();
     if(subscription_thread_.joinable()) {
@@ -212,6 +208,9 @@ void CMDPSink::disableSending() {
     // Reset log levels
     log_subscriptions_.clear();
     ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
+
+    // Delete CDMP logger to avoid circular dependency on destruction of CMDPSink
+    logger_.reset();
 }
 
 void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
