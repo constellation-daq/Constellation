@@ -115,7 +115,7 @@ void SinkManager::enableCMDPSending(std::string sender_name) {
     cmdp_sink_->enableSending(std::move(sender_name));
 }
 
-void SinkManager::stopCMDPSending() {
+void SinkManager::disableCMDPSending() {
     cmdp_sink_->disableSending();
 }
 

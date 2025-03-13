@@ -39,7 +39,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
@@ -163,7 +163,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
 
         // Update subscriptions
-        ManagerRegistry::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
+        ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
     }
 }
 
@@ -181,7 +181,7 @@ void CMDPSink::enableSending(std::string sender_name) {
     set_thread_name(subscription_thread_, "CMDPSink");
 
     // Register service in CHIRP
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::MONITORING, port_);
     } else {
@@ -204,14 +204,14 @@ void CMDPSink::disableSending() {
         subscription_thread_.join();
     }
 
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->unregisterService(CHIRP::MONITORING, port_);
     }
 
     // Reset log levels
     log_subscriptions_.clear();
-    ManagerRegistry::getSinkManager().updateCMDPLevels(OFF);
+    ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
 }
 
 void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {

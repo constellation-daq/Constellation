@@ -13,16 +13,16 @@
 #include <string_view>
 #include <thread>
 
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 using namespace constellation::log;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-Logger::Logger(std::string_view topic) : spdlog_logger_(ManagerRegistry::getSinkManager().getLogger(topic)) {}
+Logger::Logger(std::string_view topic) : spdlog_logger_(ManagerLocator::getSinkManager().getLogger(topic)) {}
 
 Logger& Logger::getDefault() {
-    static Logger instance {ManagerRegistry::getSinkManager().getDefaultLogger()};
+    static Logger instance {ManagerLocator::getSinkManager().getDefaultLogger()};
     return instance;
 }
 

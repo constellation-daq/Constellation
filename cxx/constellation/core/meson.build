@@ -153,7 +153,7 @@ install_headers(
   'utils/casts.hpp',
   'utils/enum.hpp',
   'utils/exceptions.hpp',
-  'utils/ManagerRegistry.hpp',
+  'utils/ManagerLocator.hpp',
   'utils/std_future.hpp',
   'utils/string.hpp',
   'utils/string_hash_map.hpp',

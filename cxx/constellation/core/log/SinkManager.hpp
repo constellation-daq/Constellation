@@ -32,7 +32,7 @@
 
 // Forward declaration
 namespace constellation::utils {
-    class ManagerRegistry;
+    class ManagerLocator;
 } // namespace constellation::utils
 
 namespace constellation::log {
@@ -87,9 +87,9 @@ namespace constellation::log {
         CNSTLN_API void enableCMDPSending(std::string sender_name);
 
         /**
-         * @brief Stop sending via CMDP
+         * @brief Disable sending via CMDP
          */
-        CNSTLN_API void stopCMDPSending();
+        CNSTLN_API void disableCMDPSending();
 
         /**
          * Send metric via the CMDP sink
@@ -132,7 +132,7 @@ namespace constellation::log {
 
     private:
         /// @cond doxygen_suppress
-        friend utils::ManagerRegistry;
+        friend utils::ManagerLocator;
         CNSTLN_API SinkManager();
         /// @endcond
 

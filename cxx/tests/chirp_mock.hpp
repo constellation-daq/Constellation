@@ -21,20 +21,20 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 inline constellation::chirp::Manager* create_chirp_manager() {
     // TODO(stephan.lachnit): CHIRP manager should be part of registry,
-    //                        for destruction order reasons needs to be created afterwards ManagerRegistry
-    constellation::utils::ManagerRegistry::getInstance();
+    //                        for destruction order reasons needs to be created afterwards ManagerLocator
+    constellation::utils::ManagerLocator::getInstance();
     static std::once_flag manager_flag {};
     std::call_once(manager_flag, [&] {
         LOG(STATUS) << "Creating chirp manager";
         auto manager = std::make_unique<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
         manager->start();
-        constellation::utils::ManagerRegistry::setDefaultCHIRPManager(std::move(manager));
+        constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
-    return constellation::utils::ManagerRegistry::getCHIRPManager();
+    return constellation::utils::ManagerLocator::getCHIRPManager();
 }
 
 inline void chirp_mock_service(std::string_view name,
@@ -49,7 +49,7 @@ inline void chirp_mock_service(std::string_view name,
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendBroadcast(chirp_msg.assemble());
     // Wait until broadcast is received
-    auto* manager = constellation::utils::ManagerRegistry::getCHIRPManager();
+    auto* manager = constellation::utils::ManagerLocator::getCHIRPManager();
     while(std::ranges::count(manager->getDiscoveredServices(),
                              std::make_tuple(constellation::message::MD5Hash(name), service, port),
                              [](const auto& discovered_service) {

@@ -25,7 +25,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
@@ -58,7 +58,7 @@ namespace {
 
         auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, "chp_receiver");
         chirp_manager->start();
-        ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
+        ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
         Logger logger {"chp_receiver"};
 

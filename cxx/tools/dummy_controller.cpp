@@ -25,7 +25,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 using namespace constellation;
 using namespace constellation::config;
@@ -41,7 +41,7 @@ namespace {
     void cli_loop(std::span<char*> args) {
         // Get the default logger
         auto& logger = Logger::getDefault();
-        ManagerRegistry::getSinkManager().setConsoleLevels(INFO);
+        ManagerLocator::getSinkManager().setConsoleLevels(INFO);
         LOG(logger, STATUS) << "Usage: dummy_controller CONSTELLATION_GROUP";
 
         // Get group via cmdline
@@ -56,7 +56,7 @@ namespace {
         auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, name);
         chirp_manager->start();
         chirp_manager->sendRequest(CHIRP::ServiceIdentifier::CONTROL);
-        ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
+        ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
         LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
         Controller controller {name};

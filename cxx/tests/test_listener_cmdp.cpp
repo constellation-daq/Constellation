@@ -11,7 +11,7 @@
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/CMDPListener.hpp"
 
@@ -68,7 +68,7 @@ TEST_CASE("Changing subscriptions", "[listener]") {
     REQUIRE_THAT(pool.getTopicSubscriptions(), RangeEquals(std::set<std::string>({"LOG/STATUS", "LOG/TRACE"})));
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Changing extra subscriptions", "[listener]") {
@@ -143,7 +143,7 @@ TEST_CASE("Changing extra subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender1.recv().pop(), false, "LOG/DEBUG"));
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Extra subscriptions on connection", "[listener]") {
@@ -177,5 +177,5 @@ TEST_CASE("Extra subscriptions on connection", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "SOMETHING"));
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }

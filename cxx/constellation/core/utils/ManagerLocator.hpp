@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Manager registry
+ * @brief Manager locator
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -23,23 +23,25 @@
 
 namespace constellation::utils {
     /**
-     * @brief Manager registry
+     * @brief Manager locator
      *
-     * This class is a singleton that manages the creation and destruction of various managers.
+     * This class is a singleton that manages the access, creation and destruction of various managers.
+     * It acts as a single global instance to avoid issues with static order initialization
+     * when managers have dependencies on each other.
      */
-    class ManagerRegistry {
+    class ManagerLocator {
     public:
-        CNSTLN_API static ManagerRegistry& getInstance() {
-            static ManagerRegistry instance {};
+        CNSTLN_API static ManagerLocator& getInstance() {
+            static ManagerLocator instance {};
             return instance;
         }
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
-        ManagerRegistry(ManagerRegistry& other) = delete;
-        ManagerRegistry& operator=(ManagerRegistry other) = delete;
-        ManagerRegistry(ManagerRegistry&& other) = delete;
-        ManagerRegistry& operator=(ManagerRegistry&& other) = delete;
+        ManagerLocator(ManagerLocator& other) = delete;
+        ManagerLocator& operator=(ManagerLocator other) = delete;
+        ManagerLocator(ManagerLocator&& other) = delete;
+        ManagerLocator& operator=(ManagerLocator&& other) = delete;
         /// @endcond
 
         /**
@@ -72,9 +74,9 @@ namespace constellation::utils {
             getInstance().chirp_manager_ = std::move(manager);
         }
 
-        ~ManagerRegistry() {
+        ~ManagerLocator() {
             // Stop the subscription loop in the CMDP sink
-            sink_manager_->stopCMDPSending();
+            sink_manager_->disableCMDPSending();
             // Destruction order: CHIRPManager, MetricsManager, SinkManager, global ZeroMQ context
             chirp_manager_.reset();
             metrics_manager_.reset();
@@ -83,12 +85,12 @@ namespace constellation::utils {
         }
 
     private:
-        ManagerRegistry() {
+        ManagerLocator() {
             // Creation order: global ZeroMQ context, SinkManager, MetricsManager, CHIRPManager
             zmq_context_ = networking::global_zmq_context(); // NOLINT(cppcoreguidelines-prefer-member-initializer)
             sink_manager_ = std::unique_ptr<log::SinkManager>(new log::SinkManager());
             // Cannot create MetricsManager and CHIRP Manager during creation
-            // since they require a ManagerRegistry instance to get SinkManager instance for logging
+            // since they require a ManagerLocator instance to get SinkManager instance for logging
         }
 
         void create_dependent_managers() {

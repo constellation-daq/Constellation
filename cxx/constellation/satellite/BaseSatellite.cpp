@@ -43,7 +43,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -83,7 +83,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     }
 
     // Announce service via CHIRP
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
     } else {
@@ -109,7 +109,7 @@ void BaseSatellite::join() {
         cscp_thread_.join();
     }
     fsm_.unregisterStateCallback("extrasystoles");
-    ManagerRegistry::getMetricsManager().unregisterMetrics();
+    ManagerLocator::getMetricsManager().unregisterMetrics();
 }
 
 void BaseSatellite::terminate() {
@@ -273,7 +273,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case _get_remotes: {
-        auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+        auto* chirp_manager = ManagerLocator::getCHIRPManager();
         if(chirp_manager != nullptr) {
             auto remotes_dict = std::map<std::string, std::vector<std::string>>();
             for(const auto& remote : chirp_manager->getDiscoveredServices()) {
@@ -292,7 +292,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case _get_services: {
-        auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+        auto* chirp_manager = ManagerLocator::getCHIRPManager();
         if(chirp_manager != nullptr) {
             auto service_dict = Dictionary();
             for(const auto& service : chirp_manager->getRegisteredServices()) {

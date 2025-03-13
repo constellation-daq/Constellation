@@ -28,7 +28,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 #include "Satellite.hpp"
 
@@ -60,7 +60,7 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
     }
 
     // Announce service via CHIRP
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::DATA, cdtp_port_);
     }

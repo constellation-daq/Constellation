@@ -24,7 +24,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/thread.hpp"
 
 using namespace constellation::heartbeat;
@@ -40,7 +40,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
       sender_(std::move(sender)), state_callback_(std::move(state_callback)), interval_(interval) {
 
     // Announce service via CHIRP
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::HEARTBEAT, port_);
     }
@@ -52,7 +52,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
 HeartbeatSend::~HeartbeatSend() {
 
     // Send CHIRP depart message
-    auto* chirp_manager = ManagerRegistry::getCHIRPManager();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->unregisterService(CHIRP::HEARTBEAT, port_);
     }

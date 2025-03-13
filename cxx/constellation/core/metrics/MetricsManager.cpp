@@ -24,7 +24,7 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 using namespace constellation::config;
 using namespace constellation::log;
@@ -142,7 +142,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(metric_it != metrics_.end()) {
                 LOG(logger_, TRACE) << "Sending metric " << std::quoted(name) << ": " << value.str() << " ["
                                     << metric_it->second->unit() << "]";
-                ManagerRegistry::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
+                ManagerLocator::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
                 LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
             }
@@ -162,7 +162,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
                 if(value.has_value()) {
                     LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric->name()) << ": "
                                         << value.value().str() << " [" << timed_metric->unit() << "]";
-                    ManagerRegistry::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
+                    ManagerLocator::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
                     LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric->name()) << ": no value";

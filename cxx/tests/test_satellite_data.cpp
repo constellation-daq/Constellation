@@ -24,7 +24,7 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
@@ -209,7 +209,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
 
     receiver.exit();
     transmitter.exit();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Successful run", "[satellite]") {
@@ -284,7 +284,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     receiver.exit();
     transmitter.exit();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Tainted run", "[satellite]") {
@@ -342,7 +342,7 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     receiver.exit();
     transmitter.exit();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Transmitter interrupted run", "[satellite]") {
@@ -391,7 +391,7 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     receiver.exit();
     transmitter.exit();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Transmitter failure run", "[satellite]") {
@@ -441,7 +441,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     receiver.exit();
     transmitter.exit();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

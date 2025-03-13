@@ -43,7 +43,7 @@
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/gui/QLogMessageDialog.hpp"
@@ -318,7 +318,7 @@ int main(int argc, char** argv) {
 
         // Ensure that ZeroMQ doesn't fail creating the CMDP sink
         try {
-            ManagerRegistry::getInstance();
+            ManagerLocator::getInstance();
         } catch(const NetworkError& error) {
             std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
             return 1;
@@ -345,7 +345,7 @@ int main(int argc, char** argv) {
                                   << " is not valid, possible values are: " << list_enum_names<Level>();
             return 1;
         }
-        ManagerRegistry::getSinkManager().setConsoleLevels(default_level.value());
+        ManagerLocator::getSinkManager().setConsoleLevels(default_level.value());
 
         // Check broadcast and any address
         std::optional<asio::ip::address_v4> brd_addr {};
@@ -395,13 +395,13 @@ int main(int argc, char** argv) {
         try {
             chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, group_name, logger_name);
             chirp_manager->start();
-            ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
+            ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
         } catch(const std::exception& error) {
             LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
         }
 
         // Register CMDP in CHIRP and set sender name for CMDP
-        ManagerRegistry::getSinkManager().enableCMDPSending(logger_name);
+        ManagerLocator::getSinkManager().enableCMDPSending(logger_name);
 
         try {
             Observatory gui(group_name);

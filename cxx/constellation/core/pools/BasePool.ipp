@@ -30,7 +30,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/thread.hpp"
 
 namespace constellation::pools {
@@ -45,7 +45,7 @@ namespace constellation::pools {
         pool_thread_ = std::jthread(std::bind_front(&BasePool::loop, this));
         utils::set_thread_name(pool_thread_, pool_logger_.getLogTopic());
 
-        auto* chirp_manager = utils::ManagerRegistry::getCHIRPManager();
+        auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
         if(chirp_manager != nullptr) {
             // Call callback for all already discovered services
             const auto discovered_services = chirp_manager->getDiscoveredServices(SERVICE);
@@ -62,7 +62,7 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::stopPool() {
-        auto* chirp_manager = utils::ManagerRegistry::getCHIRPManager();
+        auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
         if(chirp_manager != nullptr) {
             // Unregister CHIRP discovery callback:
             chirp_manager->unregisterDiscoverCallback(&BasePool::callback, SERVICE);

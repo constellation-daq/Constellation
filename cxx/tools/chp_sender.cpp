@@ -21,7 +21,7 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -51,11 +51,11 @@ namespace {
             interval = std::chrono::milliseconds(std::stoi(args[3]));
         }
 
-        ManagerRegistry::getSinkManager().setConsoleLevels(WARNING);
+        ManagerLocator::getSinkManager().setConsoleLevels(WARNING);
 
         auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, name);
         chirp_manager->start();
-        ManagerRegistry::setDefaultCHIRPManager(std::move(chirp_manager));
+        ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
         auto state = CSCP::State::NEW;
 

@@ -22,7 +22,7 @@
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 #include "chirp_mock.hpp"
 #include "cmdp_mock.hpp"
@@ -119,7 +119,7 @@ TEST_CASE("Message callback", "[core][core::pools]") {
 
     msg_lock.unlock();
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Disconnect", "[core][core::pools]") {
@@ -156,7 +156,7 @@ TEST_CASE("Disconnect", "[core][core::pools]") {
     REQUIRE_FALSE(sender.canRecv());
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Dispose", "[core][core::pools]") {
@@ -225,7 +225,7 @@ TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
     REQUIRE(check_sub_message(sender2.recv().pop(), false, "LOG/STATUS"));
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pools]") {
@@ -262,5 +262,5 @@ TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pool
     REQUIRE_FALSE(sender2.canRecv());
 
     pool.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }

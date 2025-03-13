@@ -30,7 +30,7 @@
 
 // Forward declaration
 namespace constellation::utils {
-    class ManagerRegistry;
+    class ManagerLocator;
 } // namespace constellation::utils
 
 namespace constellation::metrics {
@@ -117,7 +117,7 @@ namespace constellation::metrics {
 
     private:
         /// @cond doxygen_suppress
-        friend utils::ManagerRegistry;
+        friend utils::ManagerLocator;
         CNSTLN_API MetricsManager();
         /// @endcond
 

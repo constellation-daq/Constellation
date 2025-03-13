@@ -12,7 +12,7 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/utils/ManagerRegistry.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -68,7 +68,7 @@ TEST_CASE("Global log level", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL"));
 
     listener.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Topic subscriptions", "[listener]") {
@@ -112,7 +112,7 @@ TEST_CASE("Topic subscriptions", "[listener]") {
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
 
     listener.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Extra topic subscriptions", "[listener]") {
@@ -148,7 +148,7 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/FSM"));
 
     listener.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("No empty topic subscription", "[listener]") {
@@ -174,7 +174,7 @@ TEST_CASE("No empty topic subscription", "[listener]") {
 
     listener.unsubscribeLogTopic("");
     listener.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Empty extra topic subscription", "[listener]") {
@@ -216,5 +216,5 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
                  RangeEquals(std::map<std::string, Level>({{"", Level::WARNING}})));
 
     listener.stopPool();
-    ManagerRegistry::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }

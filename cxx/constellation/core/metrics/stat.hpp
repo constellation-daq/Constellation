@@ -12,7 +12,7 @@
 #include <atomic> // IWYU pragma: keep
 #include <chrono> // IWYU pragma: keep
 
-#include "constellation/core/utils/ManagerRegistry.hpp" // IWYU pragma: keep
+#include "constellation/core/utils/ManagerLocator.hpp" // IWYU pragma: keep
 
 // NOLINTBEGIN(cppcoreguidelines-macro-usage)
 
@@ -24,7 +24,7 @@
 #define STAT_VAR STAT_CONCAT_NESTED(STAT_VAR_L, __LINE__)
 #define STAT_VAR2 STAT_CONCAT_NESTED(STAT_VAR2_L, __LINE__)
 
-#define STAT_METRICS_MANAGER constellation::utils::ManagerRegistry::getMetricsManager()
+#define STAT_METRICS_MANAGER constellation::utils::ManagerLocator::getMetricsManager()
 
 /// @endcond
 
