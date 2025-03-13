@@ -25,14 +25,12 @@ using namespace constellation::message;
 using namespace constellation::satellite;
 
 FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), SubscriberPool<CMDP1LogMessage, MONITORING>(
-                                 "LOGRECV", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {
+    : Satellite(type, name), LogListener("LOGRECV", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {
     // Start the log receiver pool
     startPool();
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
-    global_level_ = config.get<Level>("global_recording_level", WARNING);
 
     try {
         file_logger_ = spdlog::basic_logger_mt("file_logger", "/tmp/basic-log.txt");
@@ -41,10 +39,9 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         throw SatelliteError(ex.what());
     }
 
-    std::string global_topic = "LOG/";
-    global_topic += magic_enum::enum_name(global_level_);
     // subscribe for all endpoints to global topic:
-    subscribe(global_topic);
+    const auto global_level = config.get<Level>("global_recording_level", WARNING);
+    setGlobalLogLevel(global_level);
 }
 
 void FlightRecorderSatellite::add_message(CMDP1LogMessage&& msg) {
