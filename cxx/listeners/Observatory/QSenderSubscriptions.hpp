@@ -97,6 +97,11 @@ public:
 
     void setTopics(const QStringList& topics);
 
+    void updateListItemSize();
+
+signals:
+    void sizeChanged();
+
 private slots:
     /**
      * @brief Private slot for changes of the sender log level setting

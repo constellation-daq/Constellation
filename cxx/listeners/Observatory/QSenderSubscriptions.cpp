@@ -12,6 +12,7 @@
 #include <functional>
 #include <utility>
 
+#include <QListWidget>
 #include <QPaintEvent>
 
 #include "constellation/core/log/Level.hpp"
@@ -168,6 +169,8 @@ QSenderSubscriptions::QSenderSubscriptions(QWidget* parent,
             unsub_callback_(name_.toStdString(), topic);
         }
     });
+
+    connect(ui_->collapseButton, &QToolButton::toggled, this, &QSenderSubscriptions::updateListItemSize);
 }
 
 void QSenderSubscriptions::on_senderLevel_currentIndexChanged(int index) {
@@ -177,6 +180,18 @@ void QSenderSubscriptions::on_senderLevel_currentIndexChanged(int index) {
     } else {
         unsub_callback_(name_.toStdString(), "");
     }
+}
+
+void QSenderSubscriptions::updateListItemSize() {
+    adjustSize(); // Ensure the widget computes its new height
+
+    if(auto* listWidget = dynamic_cast<QListWidget*>(parentWidget())) {
+        if(auto* item = listWidget->itemAt(pos())) {
+            item->setSizeHint(sizeHint());
+            listWidget->updateGeometry();
+        }
+    }
+    emit sizeChanged();
 }
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
