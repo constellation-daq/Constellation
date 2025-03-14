@@ -31,6 +31,7 @@ tutorials/satellite_py
 functionality/logging
 functionality/metrics
 functionality/data_transmission
+functionality/data_reception
 functionality/custom_commands
 ```
 
