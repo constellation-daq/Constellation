@@ -30,6 +30,7 @@ public:
         connect(this, &QToolButton::toggled, [&](bool checked) {
             setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
             content_ != nullptr&& checked ? showContent() : hideContent();
+            updateGeometry();
         });
     }
 

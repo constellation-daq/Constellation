@@ -27,6 +27,9 @@ public:
     QSubscriptionList(QWidget* parent = nullptr) : QListWidget(parent) {
         setStyleSheet("QListWidget { background-color: transparent; }");
         setAutoFillBackground(false);
+        setResizeMode(QListView::Adjust);
+        setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+        setUniformItemSizes(false);
     }
     virtual ~QSubscriptionList() = default;
 
@@ -64,6 +67,11 @@ public:
         // Add to QListWidget:
         addItem(list_item.get());
         setItemWidget(list_item.get(), widget);
+
+        // Listen for size changes
+        connect(widget, &QSenderSubscriptions::sizeChanged, this, [list_item, widget]() {
+            list_item->setSizeHint(widget->sizeHint());
+        });
     }
     void erase(const QString& host) {
         auto it = senders_.find(host);
