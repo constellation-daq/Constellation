@@ -13,6 +13,7 @@
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <utility>
 
 #include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/Manager.hpp"
@@ -20,17 +21,20 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
-inline std::shared_ptr<constellation::chirp::Manager> create_chirp_manager() {
+inline constellation::chirp::Manager* create_chirp_manager() {
+    // TODO(stephan.lachnit): CHIRP manager should be part of registry,
+    //                        for destruction order reasons needs to be created afterwards ManagerLocator
+    constellation::utils::ManagerLocator::getInstance();
     static std::once_flag manager_flag {};
-    static std::shared_ptr<constellation::chirp::Manager> manager {};
     std::call_once(manager_flag, [&] {
         LOG(STATUS) << "Creating chirp manager";
-        manager = std::make_shared<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
-        manager->setAsDefaultInstance();
+        auto manager = std::make_unique<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
         manager->start();
+        constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
-    return manager;
+    return constellation::utils::ManagerLocator::getCHIRPManager();
 }
 
 inline void chirp_mock_service(std::string_view name,
@@ -45,7 +49,7 @@ inline void chirp_mock_service(std::string_view name,
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendBroadcast(chirp_msg.assemble());
     // Wait until broadcast is received
-    auto* manager = Manager::getDefaultInstance();
+    auto* manager = constellation::utils::ManagerLocator::getCHIRPManager();
     while(std::ranges::count(manager->getDiscoveredServices(),
                              std::make_tuple(constellation::message::MD5Hash(name), service, port),
                              [](const auto& discovered_service) {

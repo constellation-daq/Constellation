@@ -28,16 +28,16 @@
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/timers.hpp"
 
+// Forward declaration
+namespace constellation::utils {
+    class ManagerLocator;
+} // namespace constellation::utils
+
 namespace constellation::metrics {
 
     /** Manager for Metrics handling & transmission */
     class MetricsManager {
     public:
-        /**
-         * @brief Return instance of metrics manager
-         */
-        CNSTLN_API static MetricsManager& getInstance();
-
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         MetricsManager(MetricsManager& other) = delete;
@@ -116,7 +116,10 @@ namespace constellation::metrics {
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
 
     private:
-        MetricsManager();
+        /// @cond doxygen_suppress
+        friend utils::ManagerLocator;
+        CNSTLN_API MetricsManager();
+        /// @endcond
 
         /**
          * Main loop listening and responding to incoming CHIRP broadcasts

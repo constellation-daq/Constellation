@@ -31,7 +31,6 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
@@ -43,6 +42,7 @@
 #include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -61,7 +61,7 @@ Controller::Controller(std::string controller_name)
 
 void Controller::start() {
     LOG(logger_, DEBUG) << "Registering controller callback";
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerDiscoverCallback(&Controller::callback, CHIRP::CONTROL, this);
         chirp_manager->sendRequest(CHIRP::CONTROL);
@@ -75,7 +75,7 @@ void Controller::stop() {
     heartbeat_receiver_.stopPool();
 
     // Unregister callback
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->unregisterDiscoverCallback(&Controller::callback, CHIRP::CONTROL);
     }
@@ -503,7 +503,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
 
                     // Discard all CHIRP services for this host - this will remove the connection through the callback:
                     lock.unlock();
-                    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+                    auto* chirp_manager = ManagerLocator::getCHIRPManager();
                     if(chirp_manager != nullptr) {
                         chirp_manager->forgetDiscoveredServices(conn->second.host_id);
                     }

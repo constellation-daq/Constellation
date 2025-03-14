@@ -12,6 +12,7 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include "constellation/core/log/Level.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -26,7 +27,7 @@ using namespace constellation::utils;
 
 TEST_CASE("Global log level", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto listener = LogListener("listener", {});
@@ -67,11 +68,12 @@ TEST_CASE("Global log level", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL"));
 
     listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Topic subscriptions", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto listener = LogListener("listener", {});
@@ -110,11 +112,12 @@ TEST_CASE("Topic subscriptions", "[listener]") {
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));
 
     listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Extra topic subscriptions", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto listener = LogListener("listener", {});
@@ -145,11 +148,12 @@ TEST_CASE("Extra topic subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/FSM"));
 
     listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("No empty topic subscription", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto listener = LogListener("listener", {});
@@ -170,11 +174,12 @@ TEST_CASE("No empty topic subscription", "[listener]") {
 
     listener.unsubscribeLogTopic("");
     listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Empty extra topic subscription", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto listener = LogListener("listener", {});
@@ -211,4 +216,5 @@ TEST_CASE("Empty extra topic subscription", "[listener]") {
                  RangeEquals(std::map<std::string, Level>({{"", Level::WARNING}})));
 
     listener.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }

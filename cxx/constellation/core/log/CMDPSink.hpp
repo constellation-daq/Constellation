@@ -32,18 +32,17 @@ namespace constellation::log {
      *
      * Note that ZeroMQ sockets are not thread-safe, meaning that the sink requires a mutex.
      */
-    class CMDPSink : public spdlog::sinks::base_sink<std::mutex> {
+    class CMDPSink final : public spdlog::sinks::base_sink<std::mutex> {
     public:
         /**
          * @brief Construct a new CMDPSink
-         * @param context ZMQ context to be used
          */
-        CMDPSink(std::shared_ptr<zmq::context_t> context);
+        CMDPSink();
 
         /**
          * @brief Deconstruct the CMDPSink
          */
-        ~CMDPSink() override;
+        ~CMDPSink() = default;
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -68,6 +67,11 @@ namespace constellation::log {
         void enableSending(std::string sender_name);
 
         /**
+         * @brief Disable sending by stopping the subscription thread
+         */
+        void disableSending();
+
+        /**
          * Sink metric
          *
          * @param metric_value Metric value to sink
@@ -84,8 +88,9 @@ namespace constellation::log {
     private:
         std::unique_ptr<Logger> logger_;
 
-        // Needs to store shared pointer since CMDPSink is owned by static SinkManager
-        std::shared_ptr<zmq::context_t> context_;
+        // CMDPSink is a shared instance and is destroyed late -> requires shared ownership of the global context
+        // otherwise the context will be destroyed before the socket is closed and wait for all sockets to be closed
+        std::shared_ptr<zmq::context_t> global_context_;
 
         zmq::socket_t pub_socket_;
         networking::Port port_;

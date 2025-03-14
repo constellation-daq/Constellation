@@ -30,22 +30,20 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
 
-using namespace constellation;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
@@ -75,21 +73,15 @@ namespace {
     }
 } // namespace
 
-CMDPSink::CMDPSink(std::shared_ptr<zmq::context_t> context)
-    : context_(std::move(context)), pub_socket_(*context_, zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)) {
+CMDPSink::CMDPSink()
+    : global_context_(global_zmq_context()), pub_socket_(*global_context_, zmq::socket_type::xpub),
+      port_(bind_ephemeral_port(pub_socket_)) {
     // Set reception timeout for subscription messages on XPUB socket to zero because we need to mutex-lock the socket
     // while reading and cannot log at the same time.
     try {
         pub_socket_.set(zmq::sockopt::rcvtimeo, 0);
     } catch(const zmq::error_t& e) {
         throw NetworkError(e.what());
-    }
-}
-
-CMDPSink::~CMDPSink() {
-    subscription_thread_.request_stop();
-    if(subscription_thread_.joinable()) {
-        subscription_thread_.join();
     }
 }
 
@@ -171,7 +163,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
 
         // Update subscriptions
-        SinkManager::getInstance().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
+        ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
     }
 }
 
@@ -186,13 +178,39 @@ void CMDPSink::enableSending(std::string sender_name) {
     set_thread_name(subscription_thread_, "CMDPSink");
 
     // Register service in CHIRP
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::MONITORING, port_);
     } else {
         LOG(*logger_, WARNING) << "Failed to advertise logging on the network, satellite might not be discovered";
     }
     LOG(*logger_, INFO) << "Starting to log on port " << port_;
+}
+
+void CMDPSink::disableSending() {
+    // Nothing to disable if sending was never enabled
+    if(logger_ == nullptr) {
+        return;
+    }
+
+    LOG(*logger_, DEBUG) << "Disabling logging via CMDP";
+
+    subscription_thread_.request_stop();
+    if(subscription_thread_.joinable()) {
+        subscription_thread_.join();
+    }
+
+    auto* chirp_manager = ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        chirp_manager->unregisterService(CHIRP::MONITORING, port_);
+    }
+
+    // Reset log levels
+    log_subscriptions_.clear();
+    ManagerLocator::getSinkManager().updateCMDPLevels(OFF);
+
+    // Delete CDMP logger to avoid circular dependency on destruction of CMDPSink
+    logger_.reset();
 }
 
 void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {

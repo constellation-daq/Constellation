@@ -32,11 +32,9 @@
 #include "constellation/core/log/CMDPSink.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/ProxySink.hpp"
-#include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::log;
-using namespace constellation::networking;
 using namespace constellation::utils;
 
 SinkManager::ConstellationLevelFormatter::ConstellationLevelFormatter(bool format_short) : format_short_(format_short) {}
@@ -72,12 +70,10 @@ std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::ConstellationTopicFo
     return std::make_unique<ConstellationTopicFormatter>();
 }
 
-SinkManager& SinkManager::getInstance() {
-    static SinkManager instance {};
-    return instance;
-}
+SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OFF) {
+    // Disable global spdlog registration of loggers
+    spdlog::set_automatic_registration(false);
 
-SinkManager::SinkManager() : zmq_context_(global_zmq_context()), console_global_level_(TRACE), cmdp_global_level_(OFF) {
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
 
@@ -111,15 +107,31 @@ SinkManager::SinkManager() : zmq_context_(global_zmq_context()), console_global_
 #endif
 
     // CMDP sink, log level always TRACE since only accessed via ProxySink
-    cmdp_sink_ = std::make_shared<CMDPSink>(zmq_context_);
+    cmdp_sink_ = std::make_shared<CMDPSink>();
     cmdp_sink_->set_level(to_spdlog_level(TRACE));
 
     // Create default logger without topic
     default_logger_ = create_logger("DEFAULT");
 }
 
+SinkManager::~SinkManager() {
+    // Remove all loggers
+    std::unique_lock loggers_lock {loggers_mutex_};
+    loggers_.clear();
+    loggers_lock.unlock();
+    // Reset all sinks
+    console_sink_.reset();
+    cmdp_sink_.reset();
+    // Run spdlog cleanup
+    spdlog::shutdown();
+}
+
 void SinkManager::enableCMDPSending(std::string sender_name) {
     cmdp_sink_->enableSending(std::move(sender_name));
+}
+
+void SinkManager::disableCMDPSending() {
+    cmdp_sink_->disableSending();
 }
 
 std::shared_ptr<spdlog::async_logger> SinkManager::getLogger(std::string_view topic) {

@@ -16,18 +16,16 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/log/SinkManager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
-#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 #include "chirp_mock.hpp"
 
 using namespace constellation::chirp;
-using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
 using namespace constellation::pools;
@@ -75,7 +73,7 @@ private:
 };
 
 TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
-    auto& metrics_manager = MetricsManager::getInstance();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
 
     // Register metrics
     metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE);
@@ -94,15 +92,15 @@ TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
 }
 
 TEST_CASE("Receive triggered metric", "[core][metrics]") {
-    auto& metrics_manager = MetricsManager::getInstance();
+    create_chirp_manager();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
     const auto mocked_service =
-        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
     // TODO(stephan.lachnit): if subscription check is implemented, we need enable enableCMDPSending()
     metrics_receiver.waitSubscription();
 
@@ -123,19 +121,19 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
-    chirp_manager->forgetDiscoveredServices();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive with STAT macros", "[core][metrics]") {
-    auto& metrics_manager = MetricsManager::getInstance();
+    create_chirp_manager();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
     const auto mocked_service =
-        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register metrics
@@ -172,18 +170,19 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive timed metric", "[core][metrics]") {
-    auto& metrics_manager = MetricsManager::getInstance();
+    create_chirp_manager();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
     const auto mocked_service =
-        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register timed metric
@@ -196,18 +195,19 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
-    auto& metrics_manager = MetricsManager::getInstance();
+    create_chirp_manager();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
 
-    auto chirp_manager = create_chirp_manager();
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
 
     // Mock service and wait until subscribed
     const auto mocked_service =
-        MockedChirpService("Sender", ServiceIdentifier::MONITORING, SinkManager::getInstance().getCMDPPort());
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
     metrics_receiver.waitSubscription();
 
     // Register timed metric
@@ -247,4 +247,5 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }

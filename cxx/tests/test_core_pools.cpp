@@ -22,6 +22,7 @@
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 
 #include "chirp_mock.hpp"
 #include "cmdp_mock.hpp"
@@ -74,7 +75,7 @@ private:
 
 TEST_CASE("Message callback", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Callback: move to shared_ptr
     std::mutex msg_mutex {};
@@ -118,11 +119,12 @@ TEST_CASE("Message callback", "[core][core::pools]") {
 
     msg_lock.unlock();
     pool.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Disconnect", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto pool = TestPool();
@@ -154,11 +156,12 @@ TEST_CASE("Disconnect", "[core][core::pools]") {
     REQUIRE_FALSE(sender.canRecv());
 
     pool.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Dispose", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    auto* chirp_manager = create_chirp_manager();
 
     // Start pool
     auto pool = TestPool();
@@ -194,7 +197,7 @@ TEST_CASE("Dispose", "[core][core::pools]") {
 
 TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto pool = SubscriberPool<CMDP1Message, CHIRP::MONITORING>("pool", {});
@@ -222,11 +225,12 @@ TEST_CASE("Sending and receiving subscriptions", "[core][core::pools]") {
     REQUIRE(check_sub_message(sender2.recv().pop(), false, "LOG/STATUS"));
 
     pool.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
 TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pools]") {
     // Create CHIRP manager for monitoring service discovery
-    auto chirp_manager = create_chirp_manager();
+    create_chirp_manager();
 
     // Start pool
     auto pool = SubscriberPool<CMDP1Message, CHIRP::MONITORING>("pool", {});
@@ -258,4 +262,5 @@ TEST_CASE("Sending and receiving subscriptions, single host", "[core][core::pool
     REQUIRE_FALSE(sender2.canRecv());
 
     pool.stopPool();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
