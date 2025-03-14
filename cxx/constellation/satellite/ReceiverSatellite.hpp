@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -86,7 +87,9 @@ namespace constellation::satellite {
          *
          * @return Validated canonical path to the output file
          */
-        std::filesystem::path validate_output_file(std::filesystem::path path, std::string file_name, std::string ext = "");
+        std::filesystem::path validate_output_file(const std::filesystem::path& path,
+                                                   const std::string& file_name,
+                                                   const std::string& ext = "");
 
         /**
          * @brief Create the final output file from output directory, file name and extension
@@ -98,8 +101,10 @@ namespace constellation::satellite {
          *
          * @return Output file stream to the target file
          */
-        std::ofstream
-        create_output_file(std::filesystem::path path, std::string file_name, std::string ext = "", bool binary = true);
+        std::ofstream create_output_file(const std::filesystem::path& path,
+                                         const std::string& file_name,
+                                         const std::string& ext = "",
+                                         bool binary = true);
 
         /**
          * @brief Receive and handle Begin-of-Run (BOR) message

@@ -90,9 +90,9 @@ void ReceiverSatellite::validate_output_directory(const std::filesystem::path& p
     }
 }
 
-std::filesystem::path ReceiverSatellite::validate_output_file(std::filesystem::path path,
-                                                              std::string file_name,
-                                                              std::string ext) {
+std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesystem::path& path,
+                                                              const std::string& file_name,
+                                                              const std::string& ext) {
     // Create full file path from directory and name
     std::filesystem::path file = path / file_name;
 
@@ -136,13 +136,16 @@ std::filesystem::path ReceiverSatellite::validate_output_file(std::filesystem::p
     return file;
 }
 
-std::ofstream
-ReceiverSatellite::create_output_file(std::filesystem::path path, std::string file_name, std::string ext, bool binary) {
+std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path& path,
+                                                    const std::string& file_name,
+                                                    const std::string& ext,
+                                                    bool binary) {
     // Validate and build absolute path:
-    const auto file = validate_output_file(std::move(path), std::move(file_name), std::move(ext));
+    const auto file = validate_output_file(path, file_name, ext);
+    const auto flags = binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out;
 
     // Open file stream and return
-    return {file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out};
+    return {file, flags};
 }
 
 void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {

@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
