@@ -9,10 +9,12 @@
 
 #include "BaseSatellite.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
 #include <exception>
 #include <functional>
+#include <iomanip>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -32,6 +34,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/heartbeat/HeartbeatManager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -98,6 +101,9 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 
     // Register state callback for extrasystoles
     fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
+
+    // Register remote state callback to retrieve information on distant satellites
+    fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });
 }
 
 std::string BaseSatellite::getCanonicalName() const {
@@ -487,6 +493,43 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
 
     if(config.has("_allow_departure")) {
         heartbeat_manager_.allowDeparture(config.get<bool>("_allow_departure"));
+    }
+
+    // Clear previously stored conditions
+    fsm_.clearRemoteCondition();
+
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = "_require_" + to_string(state) + "_after";
+        if(config.has(key)) {
+            auto register_condition = [this, &config, key, state](auto& remote) {
+                if(transform(remote, ::tolower) == transform(getCanonicalName(), ::tolower)) {
+                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
+                }
+                fsm_.registerRemoteCondition(remote, state);
+            };
+
+            try {
+                const auto remotes = config.getArray<std::string>(key);
+                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
+                                   << " and remotes " << range_to_string(remotes);
+                std::ranges::for_each(remotes, register_condition);
+            } catch(InvalidTypeError&) {
+                const auto remote = config.get<std::string>(key);
+                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
+                                   << " and remote " << remote;
+                register_condition(remote);
+            }
+        }
+    }
+
+    // Set timeout for conditional transitions:
+    if(config.has("_conditional_transition_timeout")) {
+        fsm_.setRemoteConditionTimeout(std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout")));
     }
 }
 
