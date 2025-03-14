@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <ios>
 #include <mutex>
 #include <optional>
 #include <ranges>
@@ -107,16 +108,16 @@ std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem
                     LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
                     LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
 
-                    const auto available_mb = space.available >> 20u;
+                    const auto available_mb = space.available >> 20U;
 
                     // Less than 10G disk space - let's warn the user via logs!
-                    if(available_mb >> 10u < 3) {
+                    if(available_mb >> 10U < 3) {
                         LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
-                    } else if(available_mb >> 10u < 10) {
+                    } else if(available_mb >> 10U < 10) {
                         LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
                     }
 
-                    return std::optional(available_mb);
+                    return {available_mb};
                 } catch(const std::filesystem::filesystem_error& e) {
                     LOG(cdtp_logger_, WARNING) << e.what();
                 }
