@@ -25,3 +25,6 @@ Perrey
 jemalloc
 Lachnit
 Spannagel
+Carboard
+Xtensa
+Platformio
