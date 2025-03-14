@@ -100,29 +100,35 @@ std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem
         // Convert the file to an absolute path
         file = std::filesystem::canonical(file);
 
-        register_timed_metric(
-            "DISKSPACE_FREE", "MB", MetricType::LAST_VALUE, 10s, [this, file]() -> std::optional<uint64_t> {
-                try {
-                    const auto space = std::filesystem::space(file);
-                    LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
-                    LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
-                    LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
+        register_timed_metric("DISKSPACE_FREE",
+                              "MB",
+                              MetricType::LAST_VALUE,
+                              "Free disk space on output partition",
+                              10s,
+                              [this, file]() -> std::optional<uint64_t> {
+                                  try {
+                                      const auto space = std::filesystem::space(file);
+                                      LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
+                                      LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
+                                      LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
 
-                    const auto available_mb = space.available >> 20u;
+                                      const auto available_mb = space.available >> 20U;
 
-                    // Less than 10G disk space - let's warn the user via logs!
-                    if(available_mb >> 10u < 3) {
-                        LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
-                    } else if(available_mb >> 10u < 10) {
-                        LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
-                    }
+                                      // Less than 10G disk space - let's warn the user via logs!
+                                      if(available_mb >> 10U < 3) {
+                                          LOG(cdtp_logger_, CRITICAL)
+                                              << "Available disk space critically low, " << available_mb << "MB left";
+                                      } else if(available_mb >> 10U < 10) {
+                                          LOG(cdtp_logger_, WARNING)
+                                              << "Available disk space low, " << available_mb << "MB left";
+                                      }
 
-                    return std::optional(available_mb);
-                } catch(const std::filesystem::filesystem_error& e) {
-                    LOG(cdtp_logger_, WARNING) << e.what();
-                }
-                return std::nullopt;
-            });
+                                      return {available_mb};
+                                  } catch(const std::filesystem::filesystem_error& e) {
+                                      LOG(cdtp_logger_, WARNING) << e.what();
+                                  }
+                                  return std::nullopt;
+                              });
 
     } catch(std::filesystem::filesystem_error& e) {
         const auto msg = std::string("Issue with output path: ") + e.what();
