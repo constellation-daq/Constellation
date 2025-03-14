@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <iomanip>
 #include <ios>
 #include <span>
@@ -30,18 +31,8 @@ using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-EudaqNativeWriterSatellite::FileSerializer::FileSerializer(const std::filesystem::path& path,
-                                                           std::uint32_t run_sequence,
-                                                           bool overwrite)
-    : file_(path, std::ios::binary), run_sequence_(run_sequence) {
-    if(std::filesystem::exists(path) && !overwrite) {
-        throw SatelliteError("File path exists: " + path.string());
-    }
-
-    if(!file_.good()) {
-        throw SatelliteError("Error opening file: " + path.string());
-    }
-}
+EudaqNativeWriterSatellite::FileSerializer::FileSerializer(std::ofstream file, std::uint32_t run_sequence)
+    : file_(std::move(file)), run_sequence_(run_sequence) {}
 
 EudaqNativeWriterSatellite::FileSerializer::~FileSerializer() {
     if(file_.is_open()) {

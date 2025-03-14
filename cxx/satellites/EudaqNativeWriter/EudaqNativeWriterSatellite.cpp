@@ -53,11 +53,11 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
         LOG(DEBUG) << "Could not determine run sequence from run identifier, assuming 0";
     }
 
-    // Build target file path:
-    const auto file_path = validate_output_file(base_path_, "data_" + std::string(run_identifier), "raw");
+    // Open target file
+    auto file = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
 
     LOG(STATUS) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
-    serializer_ = std::make_unique<FileSerializer>(file_path, sequence, true);
+    serializer_ = std::make_unique<FileSerializer>(std::move(file), sequence);
 
     // Start timer for flushing data to file
     flush_timer_.reset();
