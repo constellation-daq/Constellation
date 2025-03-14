@@ -68,6 +68,28 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           [this]() { return bytes_received_.load(); });
 }
 
+void ReceiverSatellite::validate_output_directory(const std::filesystem::path& path) {
+    try {
+        // Convert the file to an absolute path
+        const auto dir = std::filesystem::canonical(path);
+
+        // Create all the required directories
+        std::filesystem::create_directories(dir);
+
+        // Check that output directory is a directory indeed
+        if(!std::filesystem::is_directory(dir)) {
+            throw SatelliteError("Requested output directory " + dir.string() + " is not a directory");
+        }
+
+        // Register or update disk space metrics:
+        register_diskspace_metric(dir);
+
+    } catch(std::filesystem::filesystem_error& e) {
+        const auto msg = std::string("Issue with output directory: ") + e.what();
+        throw SatelliteError(msg);
+    }
+}
+
 std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem::path& path, const std::string& extension) {
     std::filesystem::path file = path;
     try {
@@ -100,29 +122,8 @@ std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem
         // Convert the file to an absolute path
         file = std::filesystem::canonical(file);
 
-        register_timed_metric(
-            "DISKSPACE_FREE", "MB", MetricType::LAST_VALUE, 10s, [this, file]() -> std::optional<uint64_t> {
-                try {
-                    const auto space = std::filesystem::space(file);
-                    LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
-                    LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
-                    LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
-
-                    const auto available_mb = space.available >> 20U;
-
-                    // Less than 10G disk space - let's warn the user via logs!
-                    if(available_mb >> 10U < 3) {
-                        LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
-                    } else if(available_mb >> 10U < 10) {
-                        LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
-                    }
-
-                    return {available_mb};
-                } catch(const std::filesystem::filesystem_error& e) {
-                    LOG(cdtp_logger_, WARNING) << e.what();
-                }
-                return std::nullopt;
-            });
+        // Register or update disk space metrics:
+        register_diskspace_metric(file);
 
     } catch(std::filesystem::filesystem_error& e) {
         const auto msg = std::string("Issue with output path: ") + e.what();
@@ -130,6 +131,32 @@ std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem
     }
 
     return file;
+}
+
+void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
+
+    register_timed_metric("DISKSPACE_FREE", "MB", MetricType::LAST_VALUE, 10s, [this, path]() -> std::optional<uint64_t> {
+        try {
+            const auto space = std::filesystem::space(path);
+            LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
+            LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
+            LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
+
+            const auto available_mb = space.available >> 20U;
+
+            // Less than 10G disk space - let's warn the user via logs!
+            if(available_mb >> 10U < 3) {
+                LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
+            } else if(available_mb >> 10U < 10) {
+                LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
+            }
+
+            return {available_mb};
+        } catch(const std::filesystem::filesystem_error& e) {
+            LOG(cdtp_logger_, WARNING) << e.what();
+        }
+        return std::nullopt;
+    });
 }
 
 void ReceiverSatellite::running(const std::stop_token& stop_token) {

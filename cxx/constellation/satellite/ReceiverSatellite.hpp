@@ -69,6 +69,15 @@ namespace constellation::satellite {
         ReceiverSatellite(std::string_view type, std::string_view name);
 
         /**
+         * @brief Helper to validate an output directory
+         * @details This method checks if the directory exists and is a directory, creates all parent directories if
+         * necessary, and registers a disk space metric for the path.
+         *
+         * @param path Prospective output directory
+         */
+        void validate_output_directory(const std::filesystem::path& path);
+
+        /**
          * @brief Create and return an absolute path to be used for output from a relative path
          * @return Canonical path to an output file
          */
@@ -216,6 +225,12 @@ namespace constellation::satellite {
          * @throw InvalidCDTPMessageType If no BOR received yet
          */
         void handle_eor_message(message::CDTP1Message eor_message);
+
+        /**
+         * @brief Register or update metrics for available disk space
+         * @param path Path for which the available filesystem disk space should be evaluated
+         */
+        void register_diskspace_metric(const std::filesystem::path& path);
 
     private:
         log::Logger cdtp_logger_;
