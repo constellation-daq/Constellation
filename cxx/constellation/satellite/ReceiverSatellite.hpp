@@ -68,6 +68,12 @@ namespace constellation::satellite {
         ReceiverSatellite(std::string_view type, std::string_view name);
 
         /**
+         * @brief Create and return an absolute path to be used for output from a relative path
+         * @return Canonical path to an output file
+         */
+        std::filesystem::path checkOutputFile(const std::filesystem::path& path, const std::string& extension = "");
+
+        /**
          * @brief Receive and handle Begin-of-Run (BOR) message
          *
          * @param header Header of the BOR message containing e.g. the sender name
@@ -213,6 +219,7 @@ namespace constellation::satellite {
     private:
         log::Logger cdtp_logger_;
         std::chrono::seconds data_eor_timeout_ {};
+        bool allow_overwriting_ {};
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;

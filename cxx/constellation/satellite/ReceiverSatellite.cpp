@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <fstream>
 #include <mutex>
 #include <ranges>
 #include <stop_token>
@@ -37,6 +38,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
+#include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation;
@@ -63,6 +65,70 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           [this]() { return bytes_received_.load(); });
 }
 
+std::filesystem::path ReceiverSatellite::checkOutputFile(const std::filesystem::path& path, const std::string& extension) {
+    std::filesystem::path file = path;
+    try {
+
+        // Replace extension if desired
+        if(!extension.empty()) {
+            file.replace_extension(extension);
+        }
+
+        // Create all the required main directories and possible sub-directories from the filename
+        std::filesystem::create_directories(file.parent_path());
+
+        // Check if file exists
+        if(std::filesystem::is_regular_file(file)) {
+            if(!allow_overwriting_) {
+                throw SatelliteError("Overwriting of existing file " + file.string() + " denied.");
+            }
+            LOG(cdtp_logger_, WARNING) << "File " << file << " exists and will be overwritten.";
+            std::filesystem::remove(file);
+        } else if(std::filesystem::is_directory(file)) {
+            throw SatelliteError("Requested output file " + file.string() + " is an existing directory");
+        }
+
+        // Open the file to check if it can be accessed
+        std::fstream file_stream(file, std::ios_base::out | std::ios_base::app);
+        if(!file_stream.good()) {
+            throw SatelliteError("File " + file.string() + " not accessible");
+        }
+
+        // Convert the file to an absolute path
+        file = std::filesystem::canonical(file);
+
+        register_timed_metric(
+            "DISKSPACE_FREE", "MB", MetricType::LAST_VALUE, 10s, [this, file]() -> std::optional<uint64_t> {
+                try {
+                    const auto space = std::filesystem::space(file);
+                    LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
+                    LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
+                    LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
+
+                    const auto available_mb = space.available >> 20;
+
+                    // Less than 10G disk space - let's warn the user via logs!
+                    if(available_mb >> 10 < 3) {
+                        LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
+                    } else if(available_mb >> 10 < 10) {
+                        LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
+                    }
+
+                    return std::optional(available_mb);
+                } catch(const std::filesystem::filesystem_error& e) {
+                    LOG(cdtp_logger_, WARNING) << e.what();
+                }
+                return std::nullopt;
+            });
+
+    } catch(std::filesystem::filesystem_error& e) {
+        const auto msg = std::string("Issue with output path: ") + e.what();
+        throw SatelliteError(msg);
+    }
+
+    return file;
+}
+
 void ReceiverSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         // Check and rethrow exception from BasePool
@@ -85,6 +151,9 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     data_transmitters_ = config.getArray<std::string>("_data_transmitters");
     reset_data_transmitter_states();
     LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
+
+    allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
+    LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
