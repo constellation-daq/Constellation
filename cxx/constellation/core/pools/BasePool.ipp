@@ -24,6 +24,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
