@@ -78,7 +78,7 @@ namespace constellation::satellite {
         void validate_output_directory(const std::filesystem::path& path);
 
         /**
-         * @brief Create the final output file path from output directory, file name and extension and validate access
+         * @brief Create the final output file path from output directory, file name and extension and validates access
          *
          * @param path Output directory the file will be located in
          * @param file_name Name of the file
@@ -87,6 +87,19 @@ namespace constellation::satellite {
          * @return Validated canonical path to the output file
          */
         std::filesystem::path validate_output_file(std::filesystem::path path, std::string file_name, std::string ext = "");
+
+        /**
+         * @brief Create the final output file from output directory, file name and extension
+         *
+         * @param path Output directory the file will be located in
+         * @param file_name Name of the file
+         * @param ext File extension of the file, will be only set if not empty
+         * @param binary Bollean flag whether the file should be opened in binary mode or not
+         *
+         * @return Output file stream to the target file
+         */
+        std::ofstream
+        create_output_file(std::filesystem::path path, std::string file_name, std::string ext = "", bool binary = true);
 
         /**
          * @brief Receive and handle Begin-of-Run (BOR) message

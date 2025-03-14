@@ -117,7 +117,7 @@ std::filesystem::path ReceiverSatellite::validate_output_file(std::filesystem::p
         }
 
         // Open the file to check if it can be accessed
-        const auto file_stream = std::fstream(file, std::ios_base::out | std::ios_base::app);
+        const auto file_stream = std::ofstream(file);
         if(!file_stream.good()) {
             throw SatelliteError("File " + file.string() + " not accessible");
         }
@@ -134,6 +134,15 @@ std::filesystem::path ReceiverSatellite::validate_output_file(std::filesystem::p
     }
 
     return file;
+}
+
+std::ofstream
+ReceiverSatellite::create_output_file(std::filesystem::path path, std::string file_name, std::string ext, bool binary) {
+    // Validate and build absolute path:
+    const auto file = validate_output_file(std::move(path), std::move(file_name), std::move(ext));
+
+    // Open file stream and return
+    return {file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out};
 }
 
 void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
