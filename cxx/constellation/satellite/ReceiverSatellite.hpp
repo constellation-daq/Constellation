@@ -69,7 +69,7 @@ namespace constellation::satellite {
         ReceiverSatellite(std::string_view type, std::string_view name);
 
         /**
-         * @brief Helper to validate an output directory
+         * @brief Validate the output directory
          * @details This method checks if the directory exists and is a directory, creates all parent directories if
          * necessary, and registers a disk space metric for the path.
          *
@@ -78,10 +78,15 @@ namespace constellation::satellite {
         void validate_output_directory(const std::filesystem::path& path);
 
         /**
-         * @brief Create and return an absolute path to be used for output from a relative path
-         * @return Canonical path to an output file
+         * @brief Create the final output file path from output directory, file name and extension and validate access
+         *
+         * @param path Output directory the file will be located in
+         * @param file_name Name of the file
+         * @param ext File extension of the file, will be only set if not empty
+         *
+         * @return Validated canonical path to the output file
          */
-        std::filesystem::path check_output_file(const std::filesystem::path& path, const std::string& extension = "");
+        std::filesystem::path validate_output_file(std::filesystem::path path, std::string file_name, std::string ext = "");
 
         /**
          * @brief Receive and handle Begin-of-Run (BOR) message

@@ -90,13 +90,16 @@ void ReceiverSatellite::validate_output_directory(const std::filesystem::path& p
     }
 }
 
-std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem::path& path, const std::string& extension) {
-    std::filesystem::path file = path;
-    try {
+std::filesystem::path ReceiverSatellite::validate_output_file(std::filesystem::path path,
+                                                              std::string file_name,
+                                                              std::string ext) {
+    // Create full file path from directory and name
+    std::filesystem::path file = path / file_name;
 
+    try {
         // Replace extension if desired
-        if(!extension.empty()) {
-            file.replace_extension(extension);
+        if(!ext.empty()) {
+            file.replace_extension(ext);
         }
 
         // Create all the required main directories and possible sub-directories from the filename
