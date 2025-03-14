@@ -3,6 +3,7 @@
 
 import json
 import os
+import gitlab
 import pathlib
 import sys
 
@@ -184,11 +185,21 @@ satellite_files = []
 satellite_files.extend(list((repodir / "cxx" / "satellites").glob("**/README.md")))
 satellite_files.extend(list((repodir / "python" / "constellation" / "satellites").glob("**/README.md")))
 
-# Retrieve satellite type and category
+# Retrieve local satellite type and category
 satellites = {}
 for path in satellite_files:
     satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme_repo(path, docsdir / "satellites")
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{slugify(satellite_type, lowercase=False)}>")
+
+# Retrieve satellites from Constellation organization:
+gl = gitlab.Gitlab("https://gitlab.desy.de")
+gitlab_satellites = gl.groups.get("26685").projects
+for glproject in gitlab_satellites.list():
+    glproject = gl.projects.get(glproject.id)
+    name = glproject.name
+    satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
+    if satellite_category:
+        satellites.setdefault(satellite_category, []).append(f"{name} <{slugify(name, lowercase=False)}>")
 
 # Add external satellites
 ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()

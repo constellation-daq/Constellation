@@ -80,6 +80,7 @@ docs = [
     "sphinx-favicon",
     "sphinx-copybutton",
     "PyYAML",
+    "python-gitlab",
     "python-slugify",
 ]
 # Feature components
