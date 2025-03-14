@@ -170,6 +170,7 @@ TEST_CASE("Register Service via CHIRP", "[logging]") {
     REQUIRE(manager->getRegisteredServices().size() == 1);
     using namespace constellation::protocol::CHIRP;
     REQUIRE(manager->getRegisteredServices().contains({MONITORING, ManagerLocator::getSinkManager().getCMDPPort()}));
+    ManagerLocator::getSinkManager().disableCMDPSending();
     manager->forgetDiscoveredServices();
 }
 
