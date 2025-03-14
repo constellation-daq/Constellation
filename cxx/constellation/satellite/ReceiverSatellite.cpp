@@ -12,8 +12,10 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <mutex>
+#include <optional>
 #include <ranges>
 #include <stop_token>
 #include <string>
@@ -65,7 +67,7 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           [this]() { return bytes_received_.load(); });
 }
 
-std::filesystem::path ReceiverSatellite::checkOutputFile(const std::filesystem::path& path, const std::string& extension) {
+std::filesystem::path ReceiverSatellite::check_output_file(const std::filesystem::path& path, const std::string& extension) {
     std::filesystem::path file = path;
     try {
 
@@ -89,7 +91,7 @@ std::filesystem::path ReceiverSatellite::checkOutputFile(const std::filesystem::
         }
 
         // Open the file to check if it can be accessed
-        std::fstream file_stream(file, std::ios_base::out | std::ios_base::app);
+        const auto file_stream = std::fstream(file, std::ios_base::out | std::ios_base::app);
         if(!file_stream.good()) {
             throw SatelliteError("File " + file.string() + " not accessible");
         }
@@ -105,12 +107,12 @@ std::filesystem::path ReceiverSatellite::checkOutputFile(const std::filesystem::
                     LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
                     LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
 
-                    const auto available_mb = space.available >> 20;
+                    const auto available_mb = space.available >> 20u;
 
                     // Less than 10G disk space - let's warn the user via logs!
-                    if(available_mb >> 10 < 3) {
+                    if(available_mb >> 10u < 3) {
                         LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
-                    } else if(available_mb >> 10 < 10) {
+                    } else if(available_mb >> 10u < 10) {
                         LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
                     }
 
