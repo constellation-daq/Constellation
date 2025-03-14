@@ -192,6 +192,7 @@ void CaribouSatellite::initializing(constellation::config::Configuration& config
         register_timed_metric(transform(signal, ::toupper),
                               unit,
                               MetricType::LAST_VALUE,
+                              "Caribou ADC signal",
                               interval,
                               {CSCP::State::ORBIT, CSCP::State::RUN},
                               [this, signal, conversion]() {
