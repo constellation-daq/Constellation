@@ -10,6 +10,8 @@
 #pragma once
 
 #include <cstddef>
+#include <map>
+#include <memory>
 #include <string_view>
 
 #include <QCloseEvent>
@@ -31,6 +33,7 @@
 
 #include "QLogFilter.hpp"
 #include "QLogListener.hpp"
+#include "QSenderSubscriptions.hpp"
 #include "ui_Observatory.h"
 
 class LogStatusBar : public QWidget {
@@ -158,6 +161,7 @@ private slots:
 private:
     /** Subscription pool listening to new log messages */
     QLogListener log_listener_;
+    std::map<QString, std::shared_ptr<QSenderSubscriptions>> senders_;
 
     /** Sorting and filtering proxy for displaying log messages */
     QLogFilter log_filter_;

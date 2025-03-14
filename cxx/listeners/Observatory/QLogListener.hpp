@@ -69,6 +69,9 @@ signals:
      */
     void connectionsChanged(std::size_t connections);
 
+    void senderConnected(const std::string& host);
+    void senderDisconnected(const std::string& host);
+
     /**
      * @brief Signal emitted whenever a new message has been added
      * @param index QModelIndex at which the message has been inserted
@@ -82,7 +85,10 @@ signals:
      */
     void newSender(QString sender);
 
-    void newTopics(QStringList topics);
+    void disconnectedSender(QString sender);
+
+    void newGlobalTopics(QStringList topics);
+    void newSenderTopics(QString sender, QStringList topics);
 
 private:
     /**
@@ -99,6 +105,7 @@ private:
 
     void new_topics_available(std::string_view sender) override;
     void new_sender_available(std::string_view sender) override;
+    void sender_disconnected(std::string_view sender) override;
 
 private:
     /** Log messages & access mutex*/

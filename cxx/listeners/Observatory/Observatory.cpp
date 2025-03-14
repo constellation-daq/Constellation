@@ -50,6 +50,7 @@
 #include "constellation/gui/qt_utils.hpp"
 
 #include "QLogListener.hpp"
+#include "QSubscriptionList.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
@@ -130,8 +131,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
     // Connect signals:
-    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) { filterSender->addItem(sender); });
-    connect(&log_listener_, &QLogListener::newTopics, this, [&](const QStringList& topics) {
+    connect(&log_listener_, &QLogListener::newGlobalTopics, this, [&](const QStringList& topics) {
         filterTopic->clear();
         filterTopic->addItem("- All -");
         filterTopic->addItems(topics);
@@ -139,6 +139,15 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     connect(&log_listener_, &QLogListener::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
+    connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
+        listWidget->setTopics(sender, topics);
+    });
+    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) { filterSender->addItem(sender); });
+    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
+        listWidget->emplace(host, log_listener_);
+    });
+    connect(
+        &log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) { listWidget->erase(sender); });
 
     // Start the log receiver pool
     log_listener_.startPool();
@@ -157,6 +166,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     }
     // Enable uniform row height to allow for optimizations on Qt end:
     viewLog->setUniformRowHeights(true);
+    filterLevel->setDescending(true);
 
     // Restore window geometry:
     restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
@@ -192,7 +202,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     const auto qslevel = gui_settings_.value("subscriptions/level").toString();
     const auto slevel = enum_cast<Level>(qslevel.toStdString());
     log_listener_.setGlobalLogLevel(slevel.value_or(Level::WARNING));
-    globalLevel->setCurrentIndex(std::to_underlying(slevel.value_or(Level::WARNING)));
+    globalLevel->setCurrentLevel(slevel.value_or(Level::WARNING));
 
     // Set up status bar:
     statusBar()->addPermanentWidget(&status_bar_);
@@ -232,7 +242,8 @@ void Observatory::on_filterLevel_currentIndexChanged(int index) {
 }
 
 void Observatory::on_globalLevel_currentIndexChanged(int index) {
-    log_listener_.setGlobalLogLevel(Level(index));
+    const auto level = enum_cast<Level>(globalLevel->itemText(index).toStdString());
+    log_listener_.setGlobalLogLevel(level.value_or(Level::WARNING));
 }
 
 void Observatory::on_filterSender_currentTextChanged(const QString& text) {
