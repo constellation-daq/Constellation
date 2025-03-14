@@ -9,6 +9,7 @@ import pathlib
 import re
 import urllib.request
 
+from gitlab.v4.objects.projects import Project
 from slugify import slugify
 import sphinx.util.logging
 import yaml
@@ -250,4 +251,34 @@ def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_p
 
     except:  # noqa: E722
         logger.warning(f"Failed to convert external satellite README for {name}")
+    return None
+
+
+def convert_satellite_readme_gitlab(name: str, project: Project, out_path: pathlib.Path) -> str | None:
+    """
+    Converts and copies a satellite README from a GitLab project. The output is written to `<out_path>/<satellite_type>.md`.
+    Returns the category (if satellite readme can be converted, else None).
+    """
+    # Run everything in try-except in case no internet connection or other error
+    try:
+        website = project.web_url
+
+        # Download README
+        # TODO(simonspa) look if we can get the latest tag and use that as reference
+        markdown = project.files.raw(file_path="README.md", ref="main").decode()
+
+        # Extract category, language and parent classes
+        category, language, parent_classes = extract_front_matter(markdown)
+
+        # Convert markdown
+        markdown = convert_satellite_readme(markdown, language, parent_classes, {"Website": f"[{website}]({website})"})
+
+        # Write Markdown
+        (out_path / slugify(name, lowercase=False)).with_suffix(".md").write_text(markdown)
+
+        # Return category
+        return category
+
+    except:  # noqa: E722
+        logger.warning(f"Failed to convert Constellation satellite README for {name}")
     return None
