@@ -31,6 +31,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
