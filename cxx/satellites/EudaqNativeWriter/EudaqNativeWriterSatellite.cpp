@@ -36,7 +36,6 @@ EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, st
     : ReceiverSatellite(type, name) {}
 
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
-    allow_overwriting_ = config.get<bool>("allow_overwriting", false);
     base_path_ = config.getPath("output_directory", true);
     flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
 }
@@ -53,7 +52,7 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     }
 
     // Build target file path:
-    const auto file_path = base_path_ / std::filesystem::path("data_" + std::string(run_identifier) + ".raw");
+    const auto file_path = checkOutputFile(base_path_ / std::filesystem::path("data_" + std::string(run_identifier)), "raw");
 
     LOG(STATUS) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
     serializer_ = std::make_unique<FileSerializer>(file_path, sequence, true);

@@ -184,7 +184,6 @@ protected:
 
 private:
     std::unique_ptr<FileSerializer> serializer_;
-    bool allow_overwriting_ {false};
     std::filesystem::path base_path_;
     constellation::utils::TimeoutTimer flush_timer_ {std::chrono::seconds(3)};
 };
