@@ -70,11 +70,11 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
 
 void ReceiverSatellite::validate_output_directory(const std::filesystem::path& path) {
     try {
+        // Create all the required directories
+        std::filesystem::create_directories(path);
+
         // Convert the file to an absolute path
         const auto dir = std::filesystem::canonical(path);
-
-        // Create all the required directories
-        std::filesystem::create_directories(dir);
 
         // Check that output directory is a directory indeed
         if(!std::filesystem::is_directory(dir)) {
