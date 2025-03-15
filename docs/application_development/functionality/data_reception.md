@@ -15,12 +15,12 @@ In many cases, the receiving satellite will store data to a file on disk.
 The `ReceiverSatellite` class provides a few convenience methods which ease this task and provide additional functionality
 to the user:
 
-The `validate_output_directory` should be called in the `initializing` method of the receiver satellite. It will check
-for the existence and accessibility of the selected storage directory. A `SatelliteError` exception is thrown upon any
-issue detected. In addition, this method will register the `DISKSPACE_FREE` metric for the selected storage location,
-which will regularly broadcast the available space on the target storage device. In addition, log messages are emitted on
-`WARNING` level when the available storage falls below 10 GB, and on `CRITICAL` level when the available disk space is
-less than 3 GB.
+The `validate_output_directory` should be called in the {bdg-secondary}`initializing` method of the receiver satellite.
+It will check for the existence and accessibility of the selected storage directory. A `SatelliteError` exception is thrown
+upon any issue detected. In addition, this method will register the `DISKSPACE_FREE` metric for the selected storage
+location, which will regularly broadcast the available space on the target storage device. In addition, log messages are
+emitted on `WARNING` level when the available storage falls below 10 GB, and on `CRITICAL` level when the available disk
+space is less than 3 GB.
 
 An example for using the method is given below:
 
@@ -31,11 +31,11 @@ void MyWriterSatellite::initializing(Configuration& config) {
 }
 ```
 
-During the `starting` transition, also the final file name is known, which likely uses the current run identifier as part of
-the file name. In order to ensure that the file can be created properly, no other data is overwritten, and the storage is
-writable, the `validate_output_file` should be used. It takes the base path, a file name and an extension as arguments,
-making it convenient for assembling the final storage path. The function returns the validated canonical path to the target
-file.
+During the {bdg-secondary}`starting` transition, also the final file name is known, which likely uses the current run
+identifier as part of the file name. In order to ensure that the file can be created properly, no other data is overwritten,
+and the storage is writable, the `validate_output_file` should be used. It takes the base path, a file name and an extension
+as arguments, making it convenient for assembling the final storage path. The function returns the validated canonical path
+to the target file.
 
 A possible application could be the following, where the output file path is validated and a binary file stream is opened:
 
