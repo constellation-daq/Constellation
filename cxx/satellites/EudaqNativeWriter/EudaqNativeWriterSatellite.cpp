@@ -37,7 +37,7 @@ EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, st
     : ReceiverSatellite(type, name) {}
 
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
-    base_path_ = config.getPath("output_directory", true);
+    base_path_ = config.getPath("output_directory");
     validate_output_directory(base_path_);
 
     flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
