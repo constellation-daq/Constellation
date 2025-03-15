@@ -142,10 +142,10 @@ std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path&
                                                     bool binary) {
     // Validate and build absolute path:
     const auto file = validate_output_file(path, file_name, ext);
-    const auto flags = binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out;
 
     // Open file stream and return
-    return {file, flags};
+    auto stream = std::ofstream(file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out);
+    return stream;
 }
 
 void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
