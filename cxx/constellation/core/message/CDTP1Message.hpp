@@ -90,7 +90,7 @@ namespace constellation::message {
         /**
          * @return Current number of payload frames in this message
          */
-        std::size_t countPayloadFrames() const { return payload_buffers_.size(); }
+        CNSTLN_API std::size_t countPayloadFrames() const { return payload_buffers_.size(); }
 
         /**
          * @return Payload size in bytes of all payload frames in this message
