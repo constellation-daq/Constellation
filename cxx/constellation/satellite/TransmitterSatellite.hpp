@@ -234,6 +234,7 @@ namespace constellation::satellite {
         config::Dictionary run_metadata_;
         bool mark_run_tainted_ {false};
         std::atomic_size_t bytes_transmitted_;
+        std::atomic_size_t frames_transmitted_;
     };
 
 } // namespace constellation::satellite

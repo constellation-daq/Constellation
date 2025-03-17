@@ -52,6 +52,13 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
                           {CSCP::State::starting, CSCP::State::RUN, CSCP::State::stopping},
                           [this]() { return bytes_transmitted_.load(); });
 
+    register_timed_metric("FRAMES_TRANSMITTED",
+                          "",
+                          MetricType::LAST_VALUE,
+                          3s,
+                          {CSCP::State::starting, CSCP::State::RUN, CSCP::State::stopping},
+                          [this]() { return frames_transmitted_.load(); });
+
     try {
         // Only send to completed connections
         cdtp_push_socket_.set(zmq::sockopt::immediate, true);
@@ -86,9 +93,11 @@ bool TransmitterSatellite::trySendDataMessage(TransmitterSatellite::DataMessage&
 
     try {
         const auto payload_bytes = message.countPayloadBytes();
+        const auto payload_frames = message.countPayloadFrames();
         const auto sent = message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
         if(sent) {
             bytes_transmitted_ += payload_bytes;
+            frames_transmitted_ += payload_frames;
         } else {
             LOG(cdtp_logger_, DEBUG) << "Could not send message " << message.getHeader().getSequenceNumber();
         }
@@ -103,11 +112,13 @@ void TransmitterSatellite::sendDataMessage(TransmitterSatellite::DataMessage& me
     LOG(cdtp_logger_, TRACE) << "Sending data message " << message.getHeader().getSequenceNumber();
     try {
         const auto payload_bytes = message.countPayloadBytes();
+        const auto payload_frames = message.countPayloadFrames();
         const auto sent = message.assemble().send(cdtp_push_socket_);
         if(!sent) {
             throw SendTimeoutError("data message", data_msg_timeout_);
         }
         bytes_transmitted_ += payload_bytes;
+        frames_transmitted_ += payload_frames;
     } catch(const zmq::error_t& e) {
         throw NetworkError(e.what());
     }
@@ -137,9 +148,11 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
 }
 
 void TransmitterSatellite::starting_transmitter(std::string_view run_identifier, const config::Configuration& config) {
-    // Reset bytes transmitted metric
+    // Reset bytes and frames transmitted metrics
     bytes_transmitted_ = 0;
+    frames_transmitted_ = 0;
     STAT("BYTES_TRANSMITTED", 0);
+    STAT("FRAMES_TRANSMITTED", 0);
 
     // Reset run metadata and sequence counter
     seq_ = 0;
