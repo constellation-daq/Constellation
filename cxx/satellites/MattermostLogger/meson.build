@@ -6,7 +6,7 @@ if not get_option('satellite_mattermost_logger')
 endif
 
 # cpr might require curl and openssl, disable test and unnecessary features in case fallback is used
-dependency('openssl', default_options: ['warning_level=0'])
+dependency('openssl', default_options: ['warning_level=0', 'werror=false'])
 dependency('libcurl', default_options: [
   'tool=disabled',
   'tests=disabled',
