@@ -324,7 +324,9 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
     if(remote_callback_ && !remote_conditions_.empty()) {
         LOG(logger_, INFO) << "Checking remote conditions...";
 
-        const TimeoutTimer timer {remote_condition_timeout_};
+        TimeoutTimer timer {remote_condition_timeout_};
+        // Start the timer:
+        timer.reset();
         while(true) {
             bool satisfied = true;
             for(const auto& condition : remote_conditions_) {
