@@ -44,6 +44,5 @@ functionality/custom_commands
 
 howtos/external_satellite
 howtos/port_eudaq
-howtos/receiver_cxx
 howtos/data_transmission_speed
 ```

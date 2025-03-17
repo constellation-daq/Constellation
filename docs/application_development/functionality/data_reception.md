@@ -1,5 +1,9 @@
 # Receiving Data in C++
 
+This how-to guide describes the concepts of receiving data from other satellites.
+It is recommended to read through the [implementation tutorial](../tutorials/satellite_cxx.md) of satellites in C++
+to get a good understanding of implementing a basic satellite.
+
 ```{seealso}
 For the basic concepts behind data transmission and processing in Constellation
 check the [chapter in the operator’s guide](../../operator_guide/concepts/data.md).
