@@ -11,10 +11,12 @@
 
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <map>
 #include <string>
 
 #include <QAbstractListModel>
+#include <QMap>
 #include <QObject>
 #include <QSortFilterProxyModel>
 #include <Qt>
@@ -145,14 +147,12 @@ namespace constellation::gui {
         std::string getQName(const QModelIndex& index) const;
 
         /**
-         * @brief Helper to obtain the state string with color and formatting
+         * @brief Helper to obtain a map of connection details
          *
-         * @param state State to obtain string for
-         * @param global Marker if the state is global or not
-         *
-         * @return String for the state display
+         * @param index QModelIndex of the satellite in question
+         * @return Map with connection details
          */
-        static QString getStyledState(protocol::CSCP::State state, bool global);
+        QMap<QString, QVariant> getQDetails(const QModelIndex& index) const;
 
     signals:
         /**
@@ -206,9 +206,19 @@ namespace constellation::gui {
         void propagate_update(Controller::UpdateType type, std::size_t position, std::size_t total) final;
 
     private:
+        /**
+         * @brief Helper to obtain data entries. This call is not protected by a mutex.
+         *
+         * @return QVariant holding the connection detail data for the requested cell
+         */
+        static QVariant get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection, std::size_t idx);
+
         // Column headers of the connection details
-        static constexpr std::array<const char*, 8> headers_ {
-            "Type", "Name", "State", "Connection", "Last response", "Last message", "Heartbeat", "Lives"};
+        static constexpr std::array<const char*, 7> headers_ {
+            "Type", "Name", "State", "Last response", "Last message", "Heartbeat", "Lives"};
+        // Additional headers for connection dialog
+        static constexpr std::array<const char*, 4> headers_details_ {
+            "Connection URI", "MD5 host ID", "Last heartbeat", "Last Check"};
     };
 
     class CNSTLN_API QControllerSortProxy : public QSortFilterProxyModel {
