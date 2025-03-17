@@ -77,3 +77,35 @@ data recorded. Runs are marked with any of the following run condition flags:
 * `INCOMPLETE` (code: `0x02`): The receiver has noticed missing messages in the sequence
 * `INTERRUPTED` (code: `0x04`): The run has been interrupted by this sender because of a failure condition elsewhere in the Constellation
 * `ABORTED` (code: `0x08`): The run has been aborted by the sender and the EOR message has been appended by the receiver
+
+
+## Receiving and Storing Data
+
+Receiver satellites accept data form one or more satellites within the same Constellation. In order to assign transmitter
+satellites to a specific receiver, the receiver requires the `_data_transmitters` parameter which holds a list of all
+canonical names of transmitters it should connect to.
+
+Usually, receiver satellites will take great care that the data are stored properly, e.g. by testing access to the storage
+location, and by checking sufficient available disk space. They also emit telemetry data on the remaining disk space at the
+selected storage location via the `DISKSPACE_FREE` metric, so monitoring of this parameter on receiving satellites can be
+set up e.g. with [Grafana](../howtos/setup_influxdb_grafana.md):
+
+```{figure} diskspace_grafana.png
+Grafana Dashboard detail showing the available disk space on a receiver satellite. Several sections of data reception are
+visible, corresponding to individual runs, and times of constant available disk space, indicating pauses between consecutive
+runs.
+```
+
+In addition, receiver satellites will emit `WARNING` or `CRITICAL` log messages when the available disk space at the
+selected storage location falls below 10 GB or 3 GB, respectively. This provides yet another way to notify the operator to
+take action, free disk space or select a different storage location:
+
+```{figure} diskspace_observatory.png
+Detail of the Observatory logging interface displaying `WARNING` messages about low disk space every 10 seconds, until the
+available space falls below 3GB, when the message severity changes to `CRITICAL`.
+```
+
+```{seealso}
+More details about receiving telemetry information or log messages are provided in the respective sections on
+[telemetry](../concepts/telemetry.md) and [logging](../concepts/logging.md).
+```

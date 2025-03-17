@@ -46,11 +46,10 @@ class EudaqNativeWriterSatellite final : public constellation::satellite::Receiv
          * @brief Constructor for file serializer
          * This attempts to open the file and checks if the path already exists
          *
-         * @param path File path to open and to write to
+         * @param file Output file stream to write to
          * @param run_sequence Sequence portion of the run identifier, used to store in EUDAQ event header
-         * @param overwrite Boolean flag whether overwriting of files is allowed or not
          */
-        FileSerializer(const std::filesystem::path& path, std::uint32_t run_sequence, bool overwrite = false);
+        FileSerializer(std::ofstream file, std::uint32_t run_sequence);
 
         /**
          * @brief Destructor which flushes data to file and closes the file
@@ -184,7 +183,6 @@ protected:
 
 private:
     std::unique_ptr<FileSerializer> serializer_;
-    bool allow_overwriting_ {false};
     std::filesystem::path base_path_;
     constellation::utils::TimeoutTimer flush_timer_ {std::chrono::seconds(3)};
 };

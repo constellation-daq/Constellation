@@ -13,6 +13,8 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <stop_token>
 #include <string>
@@ -66,6 +68,43 @@ namespace constellation::satellite {
          * @param name Name of this satellite instance
          */
         ReceiverSatellite(std::string_view type, std::string_view name);
+
+        /**
+         * @brief Validate the output directory
+         * @details This method checks if the directory exists and is a directory, creates all parent directories if
+         * necessary, and registers a disk space metric for the path.
+         *
+         * @param path Prospective output directory
+         */
+        void validate_output_directory(const std::filesystem::path& path);
+
+        /**
+         * @brief Create the final output file path from output directory, file name and extension and validates access
+         *
+         * @param path Output directory the file will be located in
+         * @param file_name Name of the file
+         * @param ext File extension of the file, will be only set if not empty
+         *
+         * @return Validated canonical path to the output file
+         */
+        std::filesystem::path validate_output_file(const std::filesystem::path& path,
+                                                   const std::string& file_name,
+                                                   const std::string& ext = "");
+
+        /**
+         * @brief Create the final output file from output directory, file name and extension
+         *
+         * @param path Output directory the file will be located in
+         * @param file_name Name of the file
+         * @param ext File extension of the file, will be only set if not empty
+         * @param binary Bollean flag whether the file should be opened in binary mode or not
+         *
+         * @return Output file stream to the target file
+         */
+        std::ofstream create_output_file(const std::filesystem::path& path,
+                                         const std::string& file_name,
+                                         const std::string& ext = "",
+                                         bool binary = true);
 
         /**
          * @brief Receive and handle Begin-of-Run (BOR) message
@@ -210,9 +249,16 @@ namespace constellation::satellite {
          */
         void handle_eor_message(message::CDTP1Message eor_message);
 
+        /**
+         * @brief Register or update metrics for available disk space
+         * @param path Path for which the available filesystem disk space should be evaluated
+         */
+        void register_diskspace_metric(const std::filesystem::path& path);
+
     private:
         log::Logger cdtp_logger_;
         std::chrono::seconds data_eor_timeout_ {};
+        bool allow_overwriting_ {};
         std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;

@@ -12,7 +12,11 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <ios>
 #include <mutex>
+#include <optional>
 #include <ranges>
 #include <stop_token>
 #include <string>
@@ -37,6 +41,7 @@
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
+#include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation;
@@ -63,6 +68,112 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           [this]() { return bytes_received_.load(); });
 }
 
+void ReceiverSatellite::validate_output_directory(const std::filesystem::path& path) {
+    try {
+        // Create all the required directories
+        std::filesystem::create_directories(path);
+
+        // Convert the file to an absolute path
+        const auto dir = std::filesystem::canonical(path);
+
+        // Check that output directory is a directory indeed
+        if(!std::filesystem::is_directory(dir)) {
+            throw SatelliteError("Requested output directory " + dir.string() + " is not a directory");
+        }
+
+        // Register or update disk space metrics:
+        register_diskspace_metric(dir);
+
+    } catch(std::filesystem::filesystem_error& e) {
+        const auto msg = std::string("Issue with output directory: ") + e.what();
+        throw SatelliteError(msg);
+    }
+}
+
+std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesystem::path& path,
+                                                              const std::string& file_name,
+                                                              const std::string& ext) {
+    // Create full file path from directory and name
+    std::filesystem::path file = path / file_name;
+
+    try {
+        // Replace extension if desired
+        if(!ext.empty()) {
+            file.replace_extension(ext);
+        }
+
+        // Create all the required main directories and possible sub-directories from the filename
+        std::filesystem::create_directories(file.parent_path());
+
+        // Check if file exists
+        if(std::filesystem::is_regular_file(file)) {
+            if(!allow_overwriting_) {
+                throw SatelliteError("Overwriting of existing file " + file.string() + " denied");
+            }
+            LOG(cdtp_logger_, WARNING) << "File " << file << " exists and will be overwritten";
+            std::filesystem::remove(file);
+        } else if(std::filesystem::is_directory(file)) {
+            throw SatelliteError("Requested output file " + file.string() + " is an existing directory");
+        }
+
+        // Open the file to check if it can be accessed
+        const auto file_stream = std::ofstream(file);
+        if(!file_stream.good()) {
+            throw SatelliteError("File " + file.string() + " not accessible");
+        }
+
+        // Convert the file to an absolute path
+        file = std::filesystem::canonical(file);
+
+        // Register or update disk space metrics:
+        register_diskspace_metric(file);
+
+    } catch(std::filesystem::filesystem_error& e) {
+        const auto msg = std::string("Issue with output path: ") + e.what();
+        throw SatelliteError(msg);
+    }
+
+    return file;
+}
+
+std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path& path,
+                                                    const std::string& file_name,
+                                                    const std::string& ext,
+                                                    bool binary) {
+    // Validate and build absolute path:
+    const auto file = validate_output_file(path, file_name, ext);
+
+    // Open file stream and return
+    auto stream = std::ofstream(file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out);
+    return stream;
+}
+
+void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
+
+    register_timed_metric("DISKSPACE_FREE", "MiB", MetricType::LAST_VALUE, 10s, [this, path]() -> std::optional<uint64_t> {
+        try {
+            const auto space = std::filesystem::space(path);
+            LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
+            LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
+            LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
+
+            const auto available_mb = space.available >> 20U;
+
+            // Less than 10GiB disk space - let's warn the user via logs!
+            if(available_mb >> 10U < 3) {
+                LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MiB left";
+            } else if(available_mb >> 10U < 10) {
+                LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MiB left";
+            }
+
+            return {available_mb};
+        } catch(const std::filesystem::filesystem_error& e) {
+            LOG(cdtp_logger_, WARNING) << e.what();
+        }
+        return std::nullopt;
+    });
+}
+
 void ReceiverSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
         // Check and rethrow exception from BasePool
@@ -85,6 +196,9 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     data_transmitters_ = config.getArray<std::string>("_data_transmitters");
     reset_data_transmitter_states();
     LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
+
+    allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
+    LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {

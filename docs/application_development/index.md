@@ -31,6 +31,7 @@ tutorials/satellite_py
 functionality/logging
 functionality/metrics
 functionality/data_transmission
+functionality/data_reception
 functionality/custom_commands
 ```
 
@@ -43,6 +44,5 @@ functionality/custom_commands
 
 howtos/external_satellite
 howtos/port_eudaq
-howtos/receiver_cxx
 howtos/data_transmission_speed
 ```
