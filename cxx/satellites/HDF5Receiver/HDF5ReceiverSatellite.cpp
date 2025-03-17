@@ -87,16 +87,15 @@ HDF5ReceiverSatellite::HDF5ReceiverSatellite(std::string_view type, std::string_
 }
 
 void HDF5ReceiverSatellite::initializing(Configuration& config) {
-    output_directory_ = config.getPath("output_directory", true);
-    if(!std::filesystem::is_directory(output_directory_)) {
-        throw InvalidValueError(output_directory_.string(), "output_directory", "needs to be a directory");
-    }
+    output_directory_ = config.getPath("output_directory");
+    validate_output_directory(output_directory_);
+
     const auto flush_interval_s = config.get<std::int64_t>("flush_interval", 60);
     flush_timer_.setTimeout(std::chrono::seconds(flush_interval_s));
 }
 
 void HDF5ReceiverSatellite::starting(std::string_view run_identifier) {
-    const auto file_path = output_directory_ / (to_string(run_identifier) + ".h5");
+    const auto file_path = validate_output_file(output_directory_, to_string(run_identifier), "h5");
     hdf5_file_ = std::make_shared<HighFive::File>(file_path.string(), HighFive::File::Create);
     flush_timer_.reset();
 }
