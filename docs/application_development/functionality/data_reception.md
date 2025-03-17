@@ -30,7 +30,7 @@ An example for using the method is given below:
 
 ```cpp
 void MyWriterSatellite::initializing(Configuration& config) {
-    base_path_ = config.getPath("output_directory", true);
+    base_path_ = config.getPath("output_directory");
     validate_output_directory(base_path_);
 }
 ```

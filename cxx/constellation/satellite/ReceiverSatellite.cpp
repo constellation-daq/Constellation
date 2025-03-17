@@ -150,7 +150,7 @@ std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path&
 
 void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
 
-    register_timed_metric("DISKSPACE_FREE", "MB", MetricType::LAST_VALUE, 10s, [this, path]() -> std::optional<uint64_t> {
+    register_timed_metric("DISKSPACE_FREE", "MiB", MetricType::LAST_VALUE, 10s, [this, path]() -> std::optional<uint64_t> {
         try {
             const auto space = std::filesystem::space(path);
             LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
@@ -159,11 +159,11 @@ void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& p
 
             const auto available_mb = space.available >> 20U;
 
-            // Less than 10G disk space - let's warn the user via logs!
+            // Less than 10GiB disk space - let's warn the user via logs!
             if(available_mb >> 10U < 3) {
-                LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MB left";
+                LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MiB left";
             } else if(available_mb >> 10U < 10) {
-                LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MB left";
+                LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MiB left";
             }
 
             return {available_mb};
