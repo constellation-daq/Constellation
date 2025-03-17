@@ -108,7 +108,7 @@ std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesys
         // Check if file exists
         if(std::filesystem::is_regular_file(file)) {
             if(!allow_overwriting_) {
-                throw SatelliteError("Overwriting of existing file " + file.string() + " denied.");
+                throw SatelliteError("Overwriting of existing file " + file.string() + " denied");
             }
             LOG(cdtp_logger_, WARNING) << "File " << file << " exists and will be overwritten.";
             std::filesystem::remove(file);
