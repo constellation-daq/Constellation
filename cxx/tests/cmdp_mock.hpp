@@ -20,7 +20,6 @@
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/utils/ManagerLocator.hpp"
 
 #include "chirp_mock.hpp"
 
@@ -28,9 +27,7 @@ class CMDPSender {
 public:
     CMDPSender(std::string name)
         : name_(std::move(name)), pub_socket_(*constellation::networking::global_zmq_context(), zmq::socket_type::xpub),
-          port_(constellation::networking::bind_ephemeral_port(pub_socket_)) {
-        constellation::utils::ManagerLocator::getSinkManager().enableCMDPSending(name_);
-    }
+          port_(constellation::networking::bind_ephemeral_port(pub_socket_)) {}
 
     constellation::networking::Port getPort() const { return port_; }
 
