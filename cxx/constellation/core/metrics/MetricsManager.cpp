@@ -45,13 +45,13 @@ MetricsManager::~MetricsManager() noexcept {
     }
 }
 
-bool MetricsManager::shouldStat(std::string_view name) const {
+bool MetricsManager::shouldStat(std::string_view name) {
+    const std::lock_guard subscription_lock {subscription_mutex_};
     return global_subscription_ || subscribed_topics_.contains(name);
 }
 
 void MetricsManager::updateSubscriptions(bool global, string_hash_set topic_subscriptions) {
-    // Acquire lock for metric variables and update them
-    const std::lock_guard levels_lock {metrics_mutex_};
+    const std::lock_guard subscription_lock {subscription_mutex_};
     global_subscription_ = global;
     subscribed_topics_ = std::move(topic_subscriptions);
 }
