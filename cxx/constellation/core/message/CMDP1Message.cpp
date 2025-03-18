@@ -101,7 +101,8 @@ std::string CMDP1Message::getTopic() const {
         // Search for second slash after "LOG/" to get substring with log topic
         const auto level_endpos = topic_.find_first_of('/', 4);
         return topic_.substr(level_endpos + 1);
-    } else if(topic_.starts_with("STAT/")) {
+    }
+    if(topic_.starts_with("STAT/")) {
         return topic_.substr(5);
     }
 
