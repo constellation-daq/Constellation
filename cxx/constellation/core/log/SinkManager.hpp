@@ -10,7 +10,6 @@
 #pragma once
 
 #include <ctime>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -29,6 +28,7 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 // Forward declaration
 namespace constellation::utils {
@@ -129,7 +129,7 @@ namespace constellation::log {
          * @param global_level Global log level for console output
          * @param topic_levels Log level overwrites for specific topics
          */
-        CNSTLN_API void setConsoleLevels(Level global_level, std::map<std::string, Level> topic_levels = {});
+        CNSTLN_API void setConsoleLevels(Level global_level, utils::string_hash_map<Level> topic_levels = {});
 
         /**
          * @brief Update individual logger levels from CMDP subscriptions
@@ -137,8 +137,7 @@ namespace constellation::log {
          * @param cmdp_global_level Global subscription level
          * @param cmdp_sub_topic_levels Map of individual logger subscription levels
          */
-        CNSTLN_API void updateCMDPLevels(Level cmdp_global_level,
-                                         std::map<std::string_view, Level> cmdp_sub_topic_levels = {});
+        CNSTLN_API void updateCMDPLevels(Level cmdp_global_level, utils::string_hash_map<Level> cmdp_sub_topic_levels = {});
 
     private:
         /// @cond doxygen_suppress
@@ -171,9 +170,9 @@ namespace constellation::log {
         std::mutex loggers_mutex_;
 
         Level console_global_level_;
-        std::map<std::string, Level> console_topic_levels_;
+        utils::string_hash_map<Level> console_topic_levels_;
         Level cmdp_global_level_;
-        std::map<std::string_view, Level> cmdp_sub_topic_levels_;
+        utils::string_hash_map<Level> cmdp_sub_topic_levels_;
         std::mutex levels_mutex_;
     };
 } // namespace constellation::log

@@ -15,7 +15,6 @@
 #include <filesystem>
 #include <functional>
 #include <iomanip>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -168,7 +167,8 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
 
     // Figure out lowest level for each topic
     auto cmdp_global_level = Level::OFF;
-    std::map<std::string_view, Level> cmdp_sub_topic_levels;
+    string_hash_map<Level> cmdp_sub_topic_levels {};
+    cmdp_sub_topic_levels.reserve(log_subscriptions_.size());
     for(const auto& [logger, levels] : log_subscriptions_) {
         auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
         if(it != levels.end()) {
@@ -207,7 +207,7 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     const auto global_subscription = (global_it != stat_subscriptions_.cend() && global_it->second > 0);
 
     // List of subscribed topics:
-    string_hash_set subscription_topics;
+    string_hash_set subscription_topics {};
     subscription_topics.reserve(stat_subscriptions_.size());
     for(const auto& [topic, counter] : stat_subscriptions_) {
         if(counter > 0) {
