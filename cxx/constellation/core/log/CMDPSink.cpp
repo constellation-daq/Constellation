@@ -104,10 +104,10 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
             throw NetworkError(e.what());
         }
 
-        // Return if timed out or wrong number of frames received:
+        // Return if timed out or wrong number of frames received
         if(!received || recv_msg.size() != 1) {
-            // Only check every 300ms for new subscription messages:
-            std::this_thread::sleep_for(300ms);
+            // Only check every 100ms for new subscription messages
+            std::this_thread::sleep_for(100ms);
             continue;
         }
 
