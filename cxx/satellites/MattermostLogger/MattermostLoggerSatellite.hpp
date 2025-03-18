@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 
@@ -29,8 +30,24 @@ public:
     void failure(constellation::protocol::CSCP::State previous_state) final;
 
 private:
+    enum class Priority : std::uint8_t {
+        DEFAULT,
+        STANDARD,
+        IMPORTANT,
+        URGENT,
+    };
+    using enum Priority;
+
+private:
     void log_callback(constellation::message::CMDP1LogMessage msg);
-    void send_message(std::string&& message, std::string&& priority = "standard");
+    void send_message(std::string&& text,
+                      Priority priority = DEFAULT,
+                      std::string_view username = "",
+                      std::string_view card = "");
+    static std::string text_json(std::string&& text);
+    static std::string priority_json(Priority priority);
+    static std::string username_json(std::string_view username);
+    static std::string card_json(std::string_view card);
     static std::string escape_quotes(std::string message);
 
 private:
