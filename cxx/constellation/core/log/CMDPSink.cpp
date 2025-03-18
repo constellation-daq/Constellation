@@ -138,7 +138,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
 }
 
 void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
-
+    // Find log level
     const auto level_endpos = body.find_first_of('/', 4);
     const auto level_str = body.substr(4, level_endpos - 4);
 
@@ -151,16 +151,19 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
         return;
     }
 
+    // Extract topic
     const auto topic = (level_endpos != std::string_view::npos ? body.substr(level_endpos + 1) : std::string_view());
     const auto topic_uc = transform(topic, ::toupper);
-    LOG(*logger_, TRACE) << "In/decrementing subscription counters for topic " << std::quoted(topic_uc);
 
+    // Adjust subscription counter
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
+                         << std::quoted(topic_uc);
+    // Note: new counter automatically initialized to zero
+    auto& counter = log_subscriptions_[topic_uc][level.value()];
     if(subscribe) {
-        log_subscriptions_[topic_uc][level.value()] += 1;
-    } else {
-        if(log_subscriptions_[topic_uc][level.value()] > 0) {
-            log_subscriptions_[topic_uc][level.value()] -= 1;
-        }
+        counter += 1;
+    } else if(counter > 0) {
+        counter -= 1;
     }
 
     // Figure out lowest level for each topic
@@ -184,21 +187,24 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
 }
 
 void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) {
-
+    // Find stat topic
     const auto topic = body.substr(5);
     const auto topic_uc = transform(topic, ::toupper);
-    LOG(*logger_, TRACE) << "In/decrementing subscription counters for topic " << std::quoted(topic_uc);
 
+    // Adjust subcrption counter
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
+                         << std::quoted(topic_uc);
+    // Note: new counter automatically initialized to zero
+    auto& counter = stat_subscriptions_[topic_uc];
     if(subscribe) {
-        stat_subscriptions_[topic_uc] += 1;
-    } else {
-        if(stat_subscriptions_[topic_uc] > 0) {
-            stat_subscriptions_[topic_uc] -= 1;
-        }
+        counter += 1;
+    } else if(counter > 0) {
+        counter -= 1;
     }
 
     // Global subscription to all topics
-    const auto global_subscription = (stat_subscriptions_.contains("") && stat_subscriptions_.at("") > 0);
+    const auto global_it = stat_subscriptions_.find("");
+    const auto global_subscription = (global_it != stat_subscriptions_.cend() && global_it->second > 0);
 
     // List of subscribed topics:
     string_hash_set subscription_topics;
