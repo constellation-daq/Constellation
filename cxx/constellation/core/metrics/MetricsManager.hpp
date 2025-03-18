@@ -171,9 +171,9 @@ namespace constellation::metrics {
     private:
         log::Logger logger_;
 
-        // List of topics with active subscribers:
-        utils::string_hash_set subscribed_topics_;
+        // List of topics with active subscribers
         bool global_subscription_;
+        utils::string_hash_set subscribed_topics_;
 
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
