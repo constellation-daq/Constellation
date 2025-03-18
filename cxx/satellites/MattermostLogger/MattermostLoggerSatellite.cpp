@@ -88,7 +88,7 @@ void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     try {
         send_message(std::move(text), priority, msg.getHeader().getSender(), std::move(card));
     } catch(const CommunicationError& error) {
-        getFSM().requestFailure(error.what());
+        getFSM().requestFailure(error.what()); // TODO: this not safe! Might be called multiple times
     }
 }
 
