@@ -9,7 +9,7 @@
 
 #include "MattermostLoggerSatellite.hpp"
 
-#include <sstream>
+#include <chrono> // IWYU pragma: keep
 #include <string>
 #include <string_view>
 #include <utility>
@@ -33,6 +33,8 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
+using namespace std::string_literals;
 
 MattermostLoggerSatellite::MattermostLoggerSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), LogListener("MATTERMOST", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
@@ -60,7 +62,7 @@ void MattermostLoggerSatellite::stopping() {
 }
 
 void MattermostLoggerSatellite::interrupting(CSCP::State previous_state) {
-    send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), "important");
+    send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), IMPORTANT);
 }
 
 void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
@@ -68,36 +70,76 @@ void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
 }
 
 void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
-    std::ostringstream msg_formatted {};
-    // If warning or critical, notify and set message priority
-    std::string priority {"standard"};
+    // If warning or critical, prefix channel notification and set message priority
+    std::string text {};
+    Priority priority {DEFAULT};
     if(msg.getLogLevel() == WARNING) {
-        msg_formatted << "@channel\n";
-        priority = "important";
+        text = "@channel ";
+        priority = IMPORTANT;
     } else if(msg.getLogLevel() == CRITICAL) {
-        msg_formatted << "@channel\n";
-        priority = "urgent";
+        text = "@channel ";
+        priority = URGENT;
     }
-    msg_formatted << "**" << msg.getLogLevel() << "** from **" << msg.getHeader().getSender() << "** on topic **"
-                  << msg.getLogTopic() << "**:\n\n"
-                  << msg.getLogMessage();
+    // Add log message
+    text += msg.getLogMessage();
+    // Add level and topic to card
+    auto card = "**Level**: " + enum_name(msg.getLogLevel()) + "\\n\\n**Topic**: ";
+    card += msg.getLogTopic();
     // Try to send message, on failure go to ERROR state
     try {
-        send_message(msg_formatted.str(), std::move(priority));
+        send_message(std::move(text), priority, msg.getHeader().getSender(), std::move(card));
     } catch(const CommunicationError& error) {
         getFSM().requestFailure(error.what());
     }
 }
 
-void MattermostLoggerSatellite::send_message(std::string&& message, std::string&& priority) {
-    const auto response =
-        cpr::Post(cpr::Url(webhook_url_),
-                  cpr::Header({{"Content-Type", "application/json"}}),
-                  cpr::Body({R"({"text":")" + escape_quotes(std::move(message)) + R"(","priority":{"priority":")" +
-                             escape_quotes(std::move(priority)) + R"("}})"}));
-    if(response.status_code != 200) [[unlikely]] {
-        throw CommunicationError("Failed to send message to Mattermost");
+void MattermostLoggerSatellite::send_message(std::string&& text,
+                                             Priority priority,
+                                             std::string_view username,
+                                             std::string_view card) {
+    const auto response = cpr::Post(cpr::Url(webhook_url_),
+                                    cpr::Header({{"Content-Type", "application/json"}}),
+                                    cpr::Body({"{" + text_json(std::move(text)) + priority_json(priority) +
+                                               username_json(username) + card_json(card) + "}"}),
+                                    cpr::Timeout({1s}));
+    if(response.error) [[unlikely]] {
+        throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
     }
+}
+
+std::string MattermostLoggerSatellite::text_json(std::string&& text) {
+    constexpr const char* prefix = R"("text":")";
+    constexpr const char* suffix = R"(")";
+    return prefix + escape_quotes(std::move(text)) + suffix;
+}
+
+std::string MattermostLoggerSatellite::priority_json(Priority priority) {
+    constexpr const char* prefix = R"(,"priority":{"priority":")";
+    constexpr const char* suffix = R"("})";
+    switch(priority) {
+    case STANDARD: return prefix + "standard"s + suffix;
+    case IMPORTANT: return prefix + "important"s + suffix;
+    case URGENT: return prefix + "urgent"s + suffix;
+    default: return "";
+    }
+}
+
+std::string MattermostLoggerSatellite::username_json(std::string_view username) {
+    if(username.empty()) {
+        return "";
+    }
+    constexpr const char* prefix = R"(,"username":")";
+    constexpr const char* suffix = R"(")";
+    return prefix + escape_quotes(std::string(username)) + suffix;
+}
+
+std::string MattermostLoggerSatellite::card_json(std::string_view card) {
+    if(card.empty()) {
+        return "";
+    }
+    constexpr const char* prefix = R"(,"props":{"card":")";
+    constexpr const char* suffix = R"("})";
+    return prefix + escape_quotes(std::string(card)) + suffix;
 }
 
 std::string MattermostLoggerSatellite::escape_quotes(std::string message) {
