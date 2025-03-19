@@ -469,7 +469,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
     auto contextMenu = QMenu(viewConn);
 
-    auto* initialiseAction = new QAction(QIcon(":/init"), "Initialize", this);
+    auto* initialiseAction = new QAction(QIcon(":/init.svg"), "Initialize", this);
     connect(initialiseAction, &QAction::triggered, this, [this, index]() {
         auto config = parse_config_file(txtConfigFileName->text(), index);
         if(!config.has_value()) {
@@ -479,25 +479,25 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     });
     contextMenu.addAction(initialiseAction);
 
-    auto* launchAction = new QAction(QIcon(":/launch"), "Launch", this);
+    auto* launchAction = new QAction(QIcon(":/launch.svg"), "Launch", this);
     connect(launchAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "launch"); });
     contextMenu.addAction(launchAction);
 
-    auto* landAction = new QAction(QIcon(":/land"), "Land", this);
+    auto* landAction = new QAction(QIcon(":/land.svg"), "Land", this);
     connect(landAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "land"); });
     contextMenu.addAction(landAction);
 
-    auto* startAction = new QAction(QIcon(":/start"), "Start", this);
+    auto* startAction = new QAction(QIcon(":/start.svg"), "Start", this);
     connect(startAction, &QAction::triggered, this, [this, index]() {
         runcontrol_.sendQCommand(index, "start", current_run_.toStdString());
     });
     contextMenu.addAction(startAction);
 
-    auto* stopAction = new QAction(QIcon(":/stop"), "Stop", this);
+    auto* stopAction = new QAction(QIcon(":/stop.svg"), "Stop", this);
     connect(stopAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "stop"); });
     contextMenu.addAction(stopAction);
 
-    auto* terminateAction = new QAction(QIcon(":/shutdown"), "Shutdown", this);
+    auto* terminateAction = new QAction(QIcon(":/shutdown.svg"), "Shutdown", this);
     connect(terminateAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "shutdown"); });
     contextMenu.addAction(terminateAction);
 
