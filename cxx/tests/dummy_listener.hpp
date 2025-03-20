@@ -27,7 +27,7 @@ public:
     constellation::message::CMDP1Message popNextMessage() {
         while(true) {
             std::unique_lock messages_lock {messages_mutex_};
-            if(messages_.size() > 0) {
+            if(!messages_.empty()) {
                 break;
             }
             messages_lock.unlock();

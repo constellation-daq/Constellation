@@ -5,6 +5,7 @@
  */
 
 #include <chrono> // IWYU pragma: keep
+#include <map>
 #include <set>
 #include <string>
 #include <thread>
@@ -15,6 +16,7 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/CMDPListener.hpp"
@@ -221,7 +223,7 @@ TEST_CASE("Available topics", "[listener]") {
 
     // Check that STAT/C was added (without description)
     REQUIRE(pool.isTopicAvailable("STAT/C"));
-    REQUIRE(pool.getAvailableTopics().at("STAT/C") == "");
+    REQUIRE(pool.getAvailableTopics().at("STAT/C").empty());
 
     // Send a notification to trigger topic addition
     sender1.sendNotification("STAT?", {{{"STAT/A", "A"}, {"STAT/B", "B"}}});
@@ -295,7 +297,7 @@ TEST_CASE("Available senders", "[listener]") {
     REQUIRE_FALSE(pool.isSenderAvailable("CMDPSender.s1"));
 
     // Check that topic is gone
-    REQUIRE(pool.getAvailableTopics().size() == 0);
+    REQUIRE(pool.getAvailableTopics().empty());
 
     pool.stopPool();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
