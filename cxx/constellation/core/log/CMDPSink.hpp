@@ -87,7 +87,7 @@ namespace constellation::log {
          * @param id Notification type
          * @param topics Topics for the given notification type
          */
-        void sinkNotification(const std::string& id, config::Dictionary topics);
+        void sinkNotification(std::string id, config::Dictionary topics);
 
     protected:
         void sink_it_(const spdlog::details::log_msg& msg) final;
