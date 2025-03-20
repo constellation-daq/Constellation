@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 
