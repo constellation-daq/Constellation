@@ -61,11 +61,12 @@ void CMDPListener::host_disconnected(const chirp::DiscoveredService& service) {
         return;
     }
 
+    const auto name = topic_it->first;
     available_topics_.erase(topic_it);
     available_topics_lock.unlock();
 
     // Notify of disconnected sender
-    sender_disconnected(topic_it->first);
+    sender_disconnected(name);
 }
 
 void CMDPListener::handle_message(message::CMDP1Message&& msg) {
