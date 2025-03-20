@@ -45,7 +45,7 @@ MetricsManager::~MetricsManager() noexcept {
     }
 }
 
-bool MetricsManager::shouldStat(std::string_view name) {
+bool MetricsManager::shouldStat(std::string_view name) const {
     const std::lock_guard subscription_lock {subscription_mutex_};
     return global_subscription_ || subscribed_topics_.contains(name);
 }
