@@ -307,7 +307,7 @@ void CMDPSink::sinkMetric(MetricValue metric_value) {
     }
 }
 
-void CMDPSink::sinkNotification(const std::string& id, Dictionary topics) {
+void CMDPSink::sinkNotification(std::string id, Dictionary topics) {
     // Create message header
     auto msghead = CMDP1Message::Header(sender_name_, std::chrono::system_clock::now());
 
@@ -316,7 +316,7 @@ void CMDPSink::sinkNotification(const std::string& id, Dictionary topics) {
 
     try {
         // Create and send CMDP message
-        CMDP1Notification(std::move(msghead), id, std::move(topics)).assemble().send(pub_socket_);
+        CMDP1Notification(std::move(msghead), std::move(id), std::move(topics)).assemble().send(pub_socket_);
     } catch(const zmq::error_t& e) {
         throw NetworkError(e.what());
     }
