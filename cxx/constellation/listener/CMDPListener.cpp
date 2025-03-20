@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <iomanip>
 #include <map>
 #include <mutex>
 #include <set>
@@ -66,6 +67,7 @@ void CMDPListener::host_disconnected(const chirp::DiscoveredService& service) {
     available_topics_lock.unlock();
 
     // Notify of disconnected sender
+    LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(name) << " disconnected";
     sender_disconnected(name);
 }
 
@@ -88,9 +90,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(sender) << " connected";
             sender_connected(sender);
         }
         if(new_topics) {
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << std::quoted(sender) << " updated";
             topics_changed(sender);
         }
     } else {
@@ -109,9 +113,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(sender) << " connected";
             sender_connected(sender);
         }
         if(new_topic) {
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << std::quoted(sender) << " updated";
             topics_changed(sender);
         }
 
