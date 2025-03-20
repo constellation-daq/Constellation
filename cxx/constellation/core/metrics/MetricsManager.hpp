@@ -12,6 +12,7 @@
 #include <chrono>
 #include <concepts>
 #include <condition_variable>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -52,9 +53,8 @@ namespace constellation::metrics {
          * Register a (manually triggered) metric
          *
          * @param metric Shared pointer to the metric
-         * @param description Description of the metric
          */
-        CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric, std::string description);
+        CNSTLN_API void registerMetric(std::shared_ptr<Metric> metric);
 
         /**
          * Register a (manually triggered) metric
@@ -70,9 +70,8 @@ namespace constellation::metrics {
          * Register a timed metric
          *
          * @param metric Shared pointer to the timed metric
-         * @param description Description of the metric
          */
-        CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric, std::string description);
+        CNSTLN_API void registerTimedMetric(std::shared_ptr<TimedMetric> metric);
 
         /**
          * Register a timed metric
@@ -133,7 +132,7 @@ namespace constellation::metrics {
          *
          * @return Map with metric descriptions
          */
-        utils::string_hash_map<std::string> getMetricsDescriptions() const { return metrics_descriptions_; }
+        CNSTLN_API std::map<std::string, std::string> getMetricsDescriptions() const;
 
     private:
         /// @cond doxygen_suppress
@@ -178,8 +177,7 @@ namespace constellation::metrics {
 
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
-        utils::string_hash_map<std::string> metrics_descriptions_;
-        std::mutex metrics_mutex_;
+        mutable std::mutex metrics_mutex_;
 
         // Only timed metrics for background thread
         utils::string_hash_map<TimedMetricEntry> timed_metrics_;

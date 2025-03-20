@@ -14,6 +14,7 @@
 #include <condition_variable>
 #include <functional>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <stop_token>
@@ -56,14 +57,13 @@ void MetricsManager::updateSubscriptions(bool global, string_hash_set topic_subs
     subscribed_topics_ = std::move(topic_subscriptions);
 }
 
-void MetricsManager::registerMetric(std::shared_ptr<Metric> metric, std::string description) {
+void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
     const auto name = std::string(metric->name());
 
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, std::move(metric));
-    metrics_descriptions_.insert_or_assign(name, std::move(description));
-    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
+    ManagerLocator::getSinkManager().sendMetricNotification();
 
     if(!inserted) {
         // Erase from timed metrics map in case previously registered as timed metric
@@ -76,15 +76,14 @@ void MetricsManager::registerMetric(std::shared_ptr<Metric> metric, std::string 
     LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(name);
 }
 
-void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric, std::string description) {
+void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
     const auto name = std::string(metric->name());
 
     // Add to metrics map
     std::unique_lock metrics_lock {metrics_mutex_};
     const auto [it, inserted] = metrics_.insert_or_assign(name, metric);
-    metrics_descriptions_.insert_or_assign(name, std::move(description));
-    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
+    ManagerLocator::getSinkManager().sendMetricNotification();
 
     if(!inserted) {
         LOG(logger_, DEBUG) << "Replaced already registered metric " << std::quoted(name);
@@ -107,12 +106,8 @@ void MetricsManager::unregisterMetric(std::string_view name) {
     if(it != metrics_.end()) {
         metrics_.erase(it);
     }
-    auto itd = metrics_descriptions_.find(name);
-    if(itd != metrics_descriptions_.end()) {
-        metrics_descriptions_.erase(itd);
-    }
-    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
+    ManagerLocator::getSinkManager().sendMetricNotification();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
     auto it_timed = timed_metrics_.find(name);
@@ -125,9 +120,8 @@ void MetricsManager::unregisterMetric(std::string_view name) {
 void MetricsManager::unregisterMetrics() {
     std::unique_lock metrics_lock {metrics_mutex_};
     metrics_.clear();
-    metrics_descriptions_.clear();
-    ManagerLocator::getSinkManager().sendMetricNotification();
     metrics_lock.unlock();
+    ManagerLocator::getSinkManager().sendMetricNotification();
 
     std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
     timed_metrics_.clear();
@@ -140,6 +134,13 @@ void MetricsManager::triggerMetric(std::string name, Value value) {
     triggered_queue_.emplace(std::move(name), std::move(value));
     triggered_queue_lock.unlock();
     cv_.notify_one();
+}
+
+std::map<std::string, std::string> MetricsManager::getMetricsDescriptions() const {
+    std::map<std::string, std::string> metrics_descriptions {};
+    const std::lock_guard metrics_lock {metrics_mutex_};
+    std::ranges::for_each(metrics_, [&](const auto& p) { metrics_descriptions.emplace(p.first, p.second->description()); });
+    return metrics_descriptions;
 }
 
 void MetricsManager::run(const std::stop_token& stop_token) {
