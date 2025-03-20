@@ -52,22 +52,20 @@ void CMDPListener::host_connected(const chirp::DiscoveredService& service) {
 
 void CMDPListener::host_disconnected(const chirp::DiscoveredService& service) {
     // Remove available topics for disconnected host
-    std::string_view sender_name {};
     std::unique_lock available_topics_lock {available_topics_mutex_};
-    bool notify = false;
     const auto topic_it =
         std::ranges::find(available_topics_, service.host_id, [&](const auto& host_p) { return MD5Hash(host_p.first); });
-    if(topic_it != available_topics_.end()) {
-        sender_name = topic_it->first;
-        available_topics_.erase(topic_it);
-        notify = true;
+
+    // Skip if sender never connected
+    if(topic_it == available_topics_.cend()) {
+        return;
     }
+
+    available_topics_.erase(topic_it);
     available_topics_lock.unlock();
 
     // Notify of disconnected sender
-    if(notify) {
-        sender_disconnected(sender_name);
-    }
+    sender_disconnected(topic_it->first);
 }
 
 void CMDPListener::handle_message(message::CMDP1Message&& msg) {
