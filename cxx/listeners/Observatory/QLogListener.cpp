@@ -84,11 +84,11 @@ void QLogListener::host_disconnected(const DiscoveredService& service) {
     emit connectionsChanged(countSockets());
 }
 
-void QLogListener::new_sender_available(std::string_view sender) {
+void QLogListener::sender_connected(std::string_view sender) {
     emit newSender(QString::fromStdString(std::string(sender)));
 }
 
-void QLogListener::new_topics_available(std::string_view /*sender*/) {
+void QLogListener::topics_changed(std::string_view /*sender*/) {
 
     QStringList all_topics;
 

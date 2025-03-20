@@ -158,7 +158,7 @@ namespace constellation::listener {
         CNSTLN_API bool isTopicAvailable(std::string_view topic) const;
 
         /**
-         * @brief Check if a given sender is in the list of available topics
+         * @brief Check if a given sender is known and available
          *
          * @note the comparison here is case-sensitive.
          *
@@ -188,14 +188,14 @@ namespace constellation::listener {
          *
          * @param sender CMDP sending host of the topic notification
          */
-        CNSTLN_API virtual void new_topics_available(std::string_view sender);
+        CNSTLN_API virtual void topics_changed(std::string_view sender);
 
         /**
          * @brief Method for derived classes to act on new senders
          *
          * @param sender New CMDP sending host
          */
-        CNSTLN_API virtual void new_sender_available(std::string_view sender);
+        CNSTLN_API virtual void sender_connected(std::string_view sender);
 
         /**
          * @brief Method for derived classes to act on disconnecting senders

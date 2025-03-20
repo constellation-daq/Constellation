@@ -127,8 +127,8 @@ private:
     void host_connected(const constellation::chirp::DiscoveredService& service) override;
     void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
-    void new_topics_available(std::string_view sender) override;
-    void new_sender_available(std::string_view sender) override;
+    void topics_changed(std::string_view sender) override;
+    void sender_connected(std::string_view sender) override;
 
 private:
     /** Log messages & access mutex*/

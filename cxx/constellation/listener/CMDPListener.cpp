@@ -85,10 +85,10 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            new_sender_available(sender);
+            sender_connected(sender);
         }
         if(new_topics) {
-            new_topics_available(sender);
+            topics_changed(sender);
         }
     } else {
         const auto topic = msg.getTopic();
@@ -106,10 +106,10 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            new_sender_available(sender);
+            sender_connected(sender);
         }
         if(new_topic) {
-            new_topics_available(sender);
+            topics_changed(sender);
         }
 
         // Pass regular messages on to registered callback
@@ -117,8 +117,8 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
     }
 }
 
-void CMDPListener::new_sender_available(std::string_view /* sender */) {}
-void CMDPListener::new_topics_available(std::string_view /* sender */) {}
+void CMDPListener::topics_changed(std::string_view /* sender */) {}
+void CMDPListener::sender_connected(std::string_view /* sender */) {}
 void CMDPListener::sender_disconnected(std::string_view /* sender */) {}
 
 std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) const {
