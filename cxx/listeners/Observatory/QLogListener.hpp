@@ -26,7 +26,6 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
-#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
 
@@ -53,28 +52,6 @@ public:
      * @brief Clear all currently stored messages
      */
     void clearMessages();
-
-    /**
-     * @brief Helper to check if a given sender is known already
-     * This is used to e.g. cross-check filter settings
-     *
-     * @note the comparison here is not case-insensitive.
-     *
-     * @param sender Sender to be checked for
-     * @return True if this sender has been sending messages, false otherwise
-     */
-    bool isSenderKnown(const std::string& sender) const { return sender_list_.contains(sender); }
-
-    /**
-     * @brief Helper to check if a given topic is known already
-     * This is used to e.g. cross-check filter settings
-     *
-     * @note the comparison here is not case-insensitive.
-     *
-     * @param topic Topic to be checked for
-     * @return True if this topic has been found in any message, false otherwise
-     */
-    bool isTopicKnown(const std::string& topic) const { return topic_list_.contains(topic); }
 
     /// @cond doxygen_suppress
 
@@ -136,8 +113,4 @@ private:
     std::atomic_size_t message_count_;
     mutable std::shared_mutex message_read_mutex_;
     mutable std::mutex message_write_mutex_;
-
-    /** Available senders and topics */
-    std::set<std::string> sender_list_;
-    std::set<std::string> topic_list_;
 };
