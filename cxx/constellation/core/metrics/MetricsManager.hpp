@@ -110,7 +110,7 @@ namespace constellation::metrics {
         /**
          * Check if a metric should be send given the subscription status
          */
-        CNSTLN_API bool shouldStat(std::string_view name);
+        CNSTLN_API bool shouldStat(std::string_view name) const;
 
         /**
          * Manually trigger a metric
@@ -174,7 +174,7 @@ namespace constellation::metrics {
         // List of topics with active subscribers
         bool global_subscription_;
         utils::string_hash_set subscribed_topics_;
-        std::mutex subscription_mutex_;
+        mutable std::mutex subscription_mutex_;
 
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
