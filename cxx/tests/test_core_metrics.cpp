@@ -10,6 +10,7 @@
 #include <mutex>
 #include <numbers>
 #include <optional>
+#include <string>
 #include <thread>
 #include <utility>
 
@@ -36,17 +37,21 @@ using namespace std::chrono_literals;
 class MetricsReceiver : public SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING> {
 public:
     using SubscriberPoolT = SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING>;
-    MetricsReceiver()
-        : SubscriberPoolT("STAT", [this](CMDP1StatMessage&& msg) {
-              const std::lock_guard last_message_lock {last_message_mutex_};
-              last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));
-              last_message_updated_.store(true);
-          }) {}
+    MetricsReceiver(std::string topic = "")
+        : SubscriberPoolT("STAT",
+                          [this](CMDP1StatMessage&& msg) {
+                              const std::lock_guard last_message_lock {last_message_mutex_};
+                              last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));
+                              last_message_updated_.store(true);
+                          }),
+          topic_(std::move(topic)) {}
     void waitSubscription() {
         while(!subscribed_.load()) {
             std::this_thread::sleep_for(50ms);
         }
         subscribed_.store(false);
+        // Metric manager updates subscriptions every 100ms, wait until processed time
+        std::this_thread::sleep_for(150ms);
     }
     void waitNextMessage() {
         while(!last_message_updated_.load()) {
@@ -61,7 +66,7 @@ public:
 
 protected:
     void host_connected(const DiscoveredService& service) final {
-        subscribe(service.host_id, "");
+        subscribe(service.host_id, "STAT/" + topic_);
         subscribed_.store(true);
     }
 
@@ -70,18 +75,19 @@ private:
     std::atomic_bool last_message_updated_ {false};
     std::mutex last_message_mutex_;
     std::shared_ptr<CMDP1StatMessage> last_message_;
+    std::string topic_;
 };
 
 TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
     auto& metrics_manager = ManagerLocator::getMetricsManager();
 
     // Register metrics
-    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE);
-    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, 100ms, []() { return 0; });
+    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, "description", 100ms, []() { return 0; });
 
     // Overwrite registered metric
-    metrics_manager.registerMetric("TEST", "u", MetricType::LAST_VALUE);
-    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, 100ms, []() { return 1; });
+    metrics_manager.registerMetric("TEST", "u", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, "description", 100ms, []() { return 1; });
 
     // Unregister metric
     metrics_manager.unregisterMetric("TEST");
@@ -94,6 +100,7 @@ TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
 TEST_CASE("Receive triggered metric", "[core][metrics]") {
     create_chirp_manager();
     auto& metrics_manager = ManagerLocator::getMetricsManager();
+    ManagerLocator::getSinkManager().enableCMDPSending("test");
 
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
@@ -101,11 +108,10 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     // Mock service and wait until subscribed
     const auto mocked_service =
         MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
-    // TODO(stephan.lachnit): if subscription check is implemented, we need enable enableCMDPSending()
     metrics_receiver.waitSubscription();
 
     // Register new metric
-    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE);
+    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE, "description");
     // Trigger metric
     metrics_manager.triggerMetric("TEST", 0);
     // Trigger unregistered metric (does nothing)
@@ -122,11 +128,13 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getSinkManager().disableCMDPSending();
 }
 
 TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     create_chirp_manager();
     auto& metrics_manager = ManagerLocator::getMetricsManager();
+    ManagerLocator::getSinkManager().enableCMDPSending("test");
 
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
@@ -137,10 +145,10 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register metrics
-    metrics_manager.registerMetric("STAT", "counts", MetricType::LAST_VALUE);
-    metrics_manager.registerMetric("STAT_IF", "counts", MetricType::LAST_VALUE);
-    metrics_manager.registerMetric("STAT_NTH", "counts", MetricType::LAST_VALUE);
-    metrics_manager.registerMetric("STAT_T", "counts", MetricType::LAST_VALUE);
+    metrics_manager.registerMetric("STAT", "counts", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerMetric("STAT_IF", "counts", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerMetric("STAT_NTH", "counts", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerMetric("STAT_T", "counts", MetricType::LAST_VALUE, "description");
 
     // Trigger metric with macro
     STAT("STAT", 1);
@@ -171,11 +179,13 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getSinkManager().disableCMDPSending();
 }
 
 TEST_CASE("Receive timed metric", "[core][metrics]") {
     create_chirp_manager();
     auto& metrics_manager = ManagerLocator::getMetricsManager();
+    ManagerLocator::getSinkManager().enableCMDPSending("test");
 
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
@@ -186,7 +196,7 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register timed metric
-    metrics_manager.registerTimedMetric("TIMED", "t", MetricType::LAST_VALUE, 10ms, []() { return 3.14; });
+    metrics_manager.registerTimedMetric("TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, []() { return 3.14; });
 
     // Receive metric
     std::this_thread::sleep_for(50ms);
@@ -196,11 +206,13 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getSinkManager().disableCMDPSending();
 }
 
 TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     create_chirp_manager();
     auto& metrics_manager = ManagerLocator::getMetricsManager();
+    ManagerLocator::getSinkManager().enableCMDPSending("test");
 
     auto metrics_receiver = MetricsReceiver();
     metrics_receiver.startPool();
@@ -214,10 +226,11 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     std::atomic_bool nullopt = false;
     std::mutex value_mutex;
     double value = std::numbers::phi;
-    metrics_manager.registerTimedMetric("TIMED", "t", MetricType::LAST_VALUE, 10ms, [&]() -> std::optional<double> {
-        const std::lock_guard value_lock {value_mutex};
-        return nullopt.load() ? std::nullopt : std::optional(value);
-    });
+    metrics_manager.registerTimedMetric(
+        "TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, [&]() -> std::optional<double> {
+            const std::lock_guard value_lock {value_mutex};
+            return nullopt.load() ? std::nullopt : std::optional(value);
+        });
 
     // Receive metric, first time triggered immediately
     metrics_receiver.waitNextMessage();
@@ -248,4 +261,28 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     metrics_receiver.stopPool();
     metrics_manager.unregisterMetrics();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getSinkManager().disableCMDPSending();
+}
+
+TEST_CASE("Stat topic subscriptions", "[core][metrics]") {
+    create_chirp_manager();
+    auto& metrics_manager = ManagerLocator::getMetricsManager();
+    ManagerLocator::getSinkManager().enableCMDPSending("test");
+
+    auto metrics_receiver = MetricsReceiver("SOME_TOPIC");
+    metrics_receiver.startPool();
+
+    // Mock service and wait until subscribed
+    const auto mocked_service =
+        MockedChirpService("Sender", ServiceIdentifier::MONITORING, ManagerLocator::getSinkManager().getCMDPPort());
+    metrics_receiver.waitSubscription();
+
+    // Check subscribes topics
+    REQUIRE(metrics_manager.shouldStat("SOME_TOPIC"));
+    REQUIRE_FALSE(metrics_manager.shouldStat("SOME_OTHER_TOPIC"));
+
+    metrics_receiver.stopPool();
+    metrics_manager.unregisterMetrics();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    ManagerLocator::getSinkManager().disableCMDPSending();
 }

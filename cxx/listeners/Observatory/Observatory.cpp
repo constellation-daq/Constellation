@@ -130,8 +130,17 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
     // Connect signals:
-    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) { filterSender->addItem(sender); });
-    connect(&log_listener_, &QLogListener::newTopic, this, [&](const QString& topic) { filterTopic->addItem(topic); });
+    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) {
+        // Only add if not listed yet
+        if(filterSender->findText(sender) < 0) {
+            filterSender->addItem(sender);
+        }
+    });
+    connect(&log_listener_, &QLogListener::newTopics, this, [&](const QStringList& topics) {
+        filterTopic->clear();
+        filterTopic->addItem("- All -");
+        filterTopic->addItems(topics);
+    });
     connect(&log_listener_, &QLogListener::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });

@@ -10,7 +10,6 @@
 #include "SinkManager.hpp"
 
 #include <ctime>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -29,10 +28,13 @@
 #include <wincon.h>
 #endif
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/CMDPSink.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/ProxySink.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 using namespace constellation::log;
 using namespace constellation::utils;
@@ -216,7 +218,7 @@ void SinkManager::calculate_log_level(std::shared_ptr<spdlog::async_logger>& log
     logger->set_level(to_spdlog_level(min_level(new_console_level, min_cmdp_proxy_level)));
 }
 
-void SinkManager::setConsoleLevels(Level global_level, std::map<std::string, Level> topic_levels) {
+void SinkManager::setConsoleLevels(Level global_level, string_hash_map<Level> topic_levels) {
     // Acquire lock for level variables and update them
     std::unique_lock levels_lock {levels_mutex_};
     console_global_level_ = global_level;
@@ -231,7 +233,7 @@ void SinkManager::setConsoleLevels(Level global_level, std::map<std::string, Lev
     }
 }
 
-void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string_view, Level> cmdp_sub_topic_levels) {
+void SinkManager::updateCMDPLevels(Level cmdp_global_level, string_hash_map<Level> cmdp_sub_topic_levels) {
     // Acquire lock for level variables and update them
     std::unique_lock levels_lock {levels_mutex_};
     cmdp_global_level_ = cmdp_global_level;
@@ -244,4 +246,26 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, std::map<std::string
     for(auto& logger : loggers_) {
         calculate_log_level(logger);
     }
+}
+
+void SinkManager::sendMetricNotification() {
+    const auto descriptions = ManagerLocator::getMetricsManager().getMetricsDescriptions();
+    config::Dictionary payload;
+    for(const auto& [key, value] : descriptions) {
+        payload.emplace(key, value);
+    }
+    cmdp_sink_->sinkNotification("STAT?", std::move(payload));
+}
+
+void SinkManager::sendLogNotification() {
+    config::Dictionary payload;
+
+    std::unique_lock loggers_lock {loggers_mutex_};
+    for(const auto& logger : loggers_) {
+        // TODO(simonspa): Loggers don't have a description yet - leaving empty
+        payload.emplace(logger->name(), "");
+    }
+    loggers_lock.unlock();
+
+    cmdp_sink_->sinkNotification("LOG?", std::move(payload));
 }

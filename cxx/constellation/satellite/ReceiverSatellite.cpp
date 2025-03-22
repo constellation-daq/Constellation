@@ -63,6 +63,7 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
     register_timed_metric("BYTES_RECEIVED",
                           "B",
                           MetricType::LAST_VALUE,
+                          "Number of bytes received by this satellite in the current run",
                           10s,
                           {CSCP::State::starting, CSCP::State::RUN, CSCP::State::stopping},
                           [this]() { return bytes_received_.load(); });
@@ -150,28 +151,35 @@ std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path&
 
 void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& path) {
 
-    register_timed_metric("DISKSPACE_FREE", "MiB", MetricType::LAST_VALUE, 10s, [this, path]() -> std::optional<uint64_t> {
-        try {
-            const auto space = std::filesystem::space(path);
-            LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
-            LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
-            LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
+    register_timed_metric("DISKSPACE_FREE",
+                          "MiB",
+                          MetricType::LAST_VALUE,
+                          "Available disk space at the target location of the output file",
+                          10s,
+                          [this, path]() -> std::optional<uint64_t> {
+                              try {
+                                  const auto space = std::filesystem::space(path);
+                                  LOG(cdtp_logger_, TRACE) << "Disk space capacity:  " << space.capacity;
+                                  LOG(cdtp_logger_, TRACE) << "Disk space free:      " << space.free;
+                                  LOG(cdtp_logger_, TRACE) << "Disk space available: " << space.available;
 
-            const auto available_mb = space.available >> 20U;
+                                  const auto available_mb = space.available >> 20U;
 
-            // Less than 10GiB disk space - let's warn the user via logs!
-            if(available_mb >> 10U < 3) {
-                LOG(cdtp_logger_, CRITICAL) << "Available disk space critically low, " << available_mb << "MiB left";
-            } else if(available_mb >> 10U < 10) {
-                LOG(cdtp_logger_, WARNING) << "Available disk space low, " << available_mb << "MiB left";
-            }
+                                  // Less than 10GiB disk space - let's warn the user via logs!
+                                  if(available_mb >> 10U < 3) {
+                                      LOG(cdtp_logger_, CRITICAL)
+                                          << "Available disk space critically low, " << available_mb << "MiB left";
+                                  } else if(available_mb >> 10U < 10) {
+                                      LOG(cdtp_logger_, WARNING)
+                                          << "Available disk space low, " << available_mb << "MiB left";
+                                  }
 
-            return {available_mb};
-        } catch(const std::filesystem::filesystem_error& e) {
-            LOG(cdtp_logger_, WARNING) << e.what();
-        }
-        return std::nullopt;
-    });
+                                  return {available_mb};
+                              } catch(const std::filesystem::filesystem_error& e) {
+                                  LOG(cdtp_logger_, WARNING) << e.what();
+                              }
+                              return std::nullopt;
+                          });
 }
 
 void ReceiverSatellite::running(const std::stop_token& stop_token) {

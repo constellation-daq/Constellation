@@ -20,6 +20,7 @@
 #include <QDateTime>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 
 #include "constellation/core/chirp/Manager.hpp"
@@ -32,7 +33,6 @@ using namespace constellation::chirp;
 using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::pools;
-using namespace constellation::utils;
 
 QLogListener::QLogListener(QObject* parent)
     : QAbstractListModel(parent),
@@ -49,16 +49,6 @@ void QLogListener::clearMessages() {
 }
 
 void QLogListener::add_message(CMDP1LogMessage&& msg) {
-
-    const auto [s_it, s_inserted] = sender_list_.emplace(msg.getHeader().getSender());
-    if(s_inserted) {
-        emit newSender(QString::fromStdString(std::string(msg.getHeader().getSender())));
-    }
-
-    const auto [t_it, t_inserted] = topic_list_.emplace(msg.getLogTopic());
-    if(t_inserted) {
-        emit newTopic(QString::fromStdString(std::string(msg.getLogTopic())));
-    }
 
     const auto level = msg.getLogLevel();
 
@@ -92,6 +82,27 @@ void QLogListener::host_disconnected(const DiscoveredService& service) {
 
     // Emit the signal with the current number of connections
     emit connectionsChanged(countSockets());
+}
+
+void QLogListener::sender_connected(std::string_view sender) {
+    emit newSender(QString::fromStdString(std::string(sender)));
+}
+
+void QLogListener::topics_changed(std::string_view /*sender*/) {
+
+    QStringList all_topics;
+
+    // Fetch full list from CMDPListener
+    for(const auto& [topic, desc] : getAvailableTopics()) {
+        all_topics.append(QString::fromStdString(topic));
+    }
+    all_topics.removeDuplicates();
+    all_topics.sort();
+
+    // Emit signal for global topic list change:
+    emit newTopics(all_topics);
+
+    // emit newSenderTopics(QString::fromStdString(std::string(sender)), {});
 }
 
 QVariant QLogListener::data(const QModelIndex& index, int role) const {

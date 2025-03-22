@@ -52,12 +52,13 @@ namespace constellation::metrics {
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
+         * @param description Description of the metric
          */
-        Metric(std::string name, std::string unit, MetricType type)
-            : name_(std::move(name)), unit_(std::move(unit)), type_(type) {}
+        Metric(std::string name, std::string unit, MetricType type, std::string description = "")
+            : name_(std::move(name)), unit_(std::move(unit)), type_(type), description_(std::move(description)) {}
 
         /**
-         * @brief Obtain the name of the metrics
+         * @brief Obtain the name of the metric
          * @return Name of the metric
          */
         std::string_view name() const { return name_; }
@@ -69,6 +70,12 @@ namespace constellation::metrics {
         std::string_view unit() const { return unit_; }
 
         /**
+         * @brief Obtain the description of the metric
+         * @return Description of the metric
+         */
+        std::string_view description() const { return description_; }
+
+        /**
          * @brief Obtain type of the metric
          * @return Metric type
          */
@@ -78,6 +85,7 @@ namespace constellation::metrics {
         std::string name_;
         std::string unit_;
         MetricType type_;
+        std::string description_;
     };
 
     /**
@@ -94,15 +102,17 @@ namespace constellation::metrics {
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
+         * @param description Description of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
          */
         TimedMetric(std::string name,
                     std::string unit,
                     MetricType type,
+                    std::string description,
                     std::chrono::nanoseconds interval,
                     std::function<std::optional<config::Value>()> value_callback)
-            : Metric(std::move(name), std::move(unit), type), interval_(interval),
+            : Metric(std::move(name), std::move(unit), type, std::move(description)), interval_(interval),
               value_callback_(std::move(value_callback)) {}
 
         /**

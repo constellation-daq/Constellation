@@ -10,6 +10,7 @@
 #pragma once
 
 #include <functional>
+#include <map>
 #include <mutex>
 #include <set>
 #include <string>
@@ -130,14 +131,87 @@ namespace constellation::listener {
          */
         CNSTLN_API void removeExtraTopicSubscriptions();
 
+        /**
+         * @brief Obtain available topics for given sender. Topics are parsed from CMDP notification messages and cached per
+         * sender. Returns an empty map if the sender is not known or has not sent a topic notification yet.
+         *
+         * @param sender Sending CMDP host to get available topics for
+         * @return Map with available topics as keys and their description as values
+         */
+        CNSTLN_API std::map<std::string, std::string> getAvailableTopics(std::string_view sender) const;
+
+        /**
+         * @brief Obtain all available topics from any sender.
+         *
+         * @return Map with available topics as keys and their description as values
+         */
+        CNSTLN_API std::map<std::string, std::string> getAvailableTopics() const;
+
+        /**
+         * @brief Check if a given topic is in the list of available topics
+         *
+         * @note the comparison here is case-sensitive.
+         *
+         * @param topic Topic to search for
+         * @return Boolean indicating whether the topic is available or not
+         */
+        CNSTLN_API bool isTopicAvailable(std::string_view topic) const;
+
+        /**
+         * @brief Check if a given sender is known and available
+         *
+         * @note the comparison here is case-sensitive.
+         *
+         * @param sender Sender to search for
+         * @return Boolean indicating whether the sender is available or not
+         */
+        CNSTLN_API bool isSenderAvailable(std::string_view sender) const;
+
     protected:
         /**
          * @brief Method for derived classes to act on newly connected sockets
          *
-         * @warning Derived functions should always call `CMDPPool::socket_connected()` to ensure that sockets are
+         * @warning Derived functions should always call `CMDPListener::host_connected()` to ensure that sockets are
          *          subscribed to the correct topics.
          */
         CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
+
+        /**
+         * @brief Method for derived classes to act on sockets before disconnecting
+         *
+         * @warning Derived functions should always call `CMDPListener::host_disconnected()`
+         */
+        CNSTLN_API void host_disconnected(const chirp::DiscoveredService& service) override;
+
+        /**
+         * @brief Method for derived classes to act on topic notifications
+         *
+         * @param sender CMDP sending host of the topic notification
+         */
+        CNSTLN_API virtual void topics_changed(std::string_view sender);
+
+        /**
+         * @brief Method for derived classes to act on new senders
+         *
+         * @param sender New CMDP sending host
+         */
+        CNSTLN_API virtual void sender_connected(std::string_view sender);
+
+        /**
+         * @brief Method for derived classes to act on disconnecting senders
+         *
+         * @param sender Disconnected CMDP sending host
+         */
+        CNSTLN_API virtual void sender_disconnected(std::string_view sender);
+
+    private:
+        /**
+         * @brief Helper methods to separate notification messages from regular CMDP messages. Notifications are handled
+         * internally while regular messages are passed on to the provided callback of the implementing class.
+         *
+         * @param msg CMDP message to process
+         */
+        void handle_message(message::CMDP1Message&& msg);
 
     private:
         // Hide subscribe/unsubscribe functions from SubscriberPool
@@ -145,9 +219,17 @@ namespace constellation::listener {
         using SubscriberPoolT::unsubscribe;
 
     private:
+        /* Callback */
+        std::function<void(message::CMDP1Message&&)> callback_;
+
+        /* Subscribed topics */
         std::mutex subscribed_topics_mutex_;
         std::set<std::string> subscribed_topics_;
         utils::string_hash_map<std::set<std::string>> extra_subscribed_topics_;
+
+        /* Available topics from notification */
+        mutable std::mutex available_topics_mutex_;
+        utils::string_hash_map<utils::string_hash_map<std::string>> available_topics_;
     };
 
 } // namespace constellation::listener

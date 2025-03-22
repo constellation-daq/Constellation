@@ -15,7 +15,6 @@
 #include <filesystem>
 #include <functional>
 #include <iomanip>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -30,20 +29,24 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/metrics/MetricsManager.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/thread.hpp"
 #include "constellation/core/utils/windows.hpp"
 
+using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
@@ -100,10 +103,10 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
             throw NetworkError(e.what());
         }
 
-        // Return if timed out or wrong number of frames received:
+        // Return if timed out or wrong number of frames received
         if(!received || recv_msg.size() != 1) {
-            // Only check every 300ms for new subscription messages:
-            std::this_thread::sleep_for(300ms);
+            // Only check every 100ms for new subscription messages
+            std::this_thread::sleep_for(100ms);
             continue;
         }
 
@@ -117,54 +120,103 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         body.remove_prefix(1);
         LOG(*logger_, TRACE) << "Received " << (subscribe ? "" : "un") << "subscribe message for " << body;
 
-        // TODO(simonspa) At some point we also have to treat STAT here
-        if(!body.starts_with("LOG/")) {
-            continue;
-        }
-
-        const auto level_endpos = body.find_first_of('/', 4);
-        const auto level_str = body.substr(4, level_endpos - 4);
-
-        // Empty level means subscription to everything
-        const auto level = (level_str.empty() ? std::optional<Level>(TRACE) : enum_cast<Level>(level_str));
-
-        // Only accept valid levels
-        if(!level.has_value()) {
-            LOG(*logger_, TRACE) << "Invalid log level " << std::quoted(level_str) << ", ignoring";
-            continue;
-        }
-
-        const auto topic = (level_endpos != std::string_view::npos ? body.substr(level_endpos + 1) : std::string_view());
-        const auto topic_uc = transform(topic, ::toupper);
-        LOG(*logger_, TRACE) << "In/decrementing subscription counters for topic " << std::quoted(topic_uc);
-
-        if(subscribe) {
-            log_subscriptions_[topic_uc][level.value()] += 1;
+        // Handle subscriptions as well as notification subscriptions:
+        if(body.starts_with("LOG/")) {
+            handle_log_subscriptions(subscribe, body);
+        } else if(body.starts_with("LOG?") && subscribe) {
+            ManagerLocator::getSinkManager().sendLogNotification();
+        } else if(body.starts_with("STAT/")) {
+            handle_stat_subscriptions(subscribe, body);
+        } else if(body.starts_with("STAT?") && subscribe) {
+            ManagerLocator::getSinkManager().sendMetricNotification();
         } else {
-            if(log_subscriptions_[topic_uc][level.value()] > 0) {
-                log_subscriptions_[topic_uc][level.value()] -= 1;
-            }
+            LOG(*logger_, WARNING) << "Received " << (subscribe ? "" : "un") << "subscribe message with invalid topic "
+                                   << body << ", ignoring";
         }
-
-        // Figure out lowest level for each topic
-        auto cmdp_global_level = Level::OFF;
-        std::map<std::string_view, Level> cmdp_sub_topic_levels;
-        for(const auto& [logger, levels] : log_subscriptions_) {
-            auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
-            if(it != levels.end()) {
-                if(!logger.empty()) {
-                    cmdp_sub_topic_levels[logger] = it->first;
-                } else {
-                    cmdp_global_level = it->first;
-                }
-            }
-        }
-
-        LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
-
-        // Update subscriptions
-        ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
     }
+}
+
+void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
+    // Find log level
+    const auto level_endpos = body.find_first_of('/', 4);
+    const auto level_str = body.substr(4, level_endpos - 4);
+
+    // Empty level means subscription to everything
+    const auto level = (level_str.empty() ? std::optional<Level>(TRACE) : enum_cast<Level>(level_str));
+
+    // Only accept valid levels
+    if(!level.has_value()) {
+        LOG(*logger_, TRACE) << "Invalid log level " << std::quoted(level_str) << ", ignoring";
+        return;
+    }
+
+    // Extract topic
+    const auto topic = (level_endpos != std::string_view::npos ? body.substr(level_endpos + 1) : std::string_view());
+    const auto topic_uc = transform(topic, ::toupper);
+
+    // Adjust subscription counter
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
+                         << std::quoted(topic_uc);
+    // Note: new counter automatically initialized to zero
+    auto& counter = log_subscriptions_[topic_uc][level.value()];
+    if(subscribe) {
+        counter += 1;
+    } else if(counter > 0) {
+        counter -= 1;
+    }
+
+    // Figure out lowest level for each topic
+    auto cmdp_global_level = Level::OFF;
+    string_hash_map<Level> cmdp_sub_topic_levels {};
+    cmdp_sub_topic_levels.reserve(log_subscriptions_.size());
+    for(const auto& [logger, levels] : log_subscriptions_) {
+        auto it = std::ranges::find_if(levels, [](const auto& i) { return i.second > 0; });
+        if(it != levels.end()) {
+            if(!logger.empty()) {
+                cmdp_sub_topic_levels[logger] = it->first;
+            } else {
+                cmdp_global_level = it->first;
+            }
+        }
+    }
+
+    LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
+
+    // Update subscriptions
+    ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
+}
+
+void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) {
+    // Find stat topic
+    const auto topic = body.substr(5);
+    const auto topic_uc = transform(topic, ::toupper);
+
+    // Adjust subcrption counter
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
+                         << std::quoted(topic_uc);
+    // Note: new counter automatically initialized to zero
+    auto& counter = stat_subscriptions_[topic_uc];
+    if(subscribe) {
+        counter += 1;
+    } else if(counter > 0) {
+        counter -= 1;
+    }
+
+    // Global subscription to all topics
+    const auto global_it = stat_subscriptions_.find("");
+    const auto global_subscription = (global_it != stat_subscriptions_.cend() && global_it->second > 0);
+
+    // List of subscribed topics:
+    string_hash_set subscription_topics {};
+    subscription_topics.reserve(stat_subscriptions_.size());
+    for(const auto& [topic, counter] : stat_subscriptions_) {
+        if(counter > 0) {
+            subscription_topics.insert(topic);
+        }
+    }
+
+    // Update subscriptions
+    ManagerLocator::getMetricsManager().updateSubscriptions(global_subscription, std::move(subscription_topics));
 }
 
 void CMDPSink::enableSending(std::string sender_name) {
@@ -250,6 +302,21 @@ void CMDPSink::sinkMetric(MetricValue metric_value) {
     try {
         // Create and send CMDP message
         CMDP1StatMessage(std::move(msghead), std::move(metric_value)).assemble().send(pub_socket_);
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
+    }
+}
+
+void CMDPSink::sinkNotification(std::string id, Dictionary topics) {
+    // Create message header
+    auto msghead = CMDP1Message::Header(sender_name_, std::chrono::system_clock::now());
+
+    // Lock the mutex - automatically done for regular logging:
+    const std::lock_guard<std::mutex> lock {mutex_};
+
+    try {
+        // Create and send CMDP message
+        CMDP1Notification(std::move(msghead), std::move(id), std::move(topics)).assemble().send(pub_socket_);
     } catch(const zmq::error_t& e) {
         throw NetworkError(e.what());
     }

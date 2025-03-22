@@ -19,6 +19,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
@@ -58,7 +59,13 @@ namespace constellation::message {
         /**
          * @return CMDP message topic
          */
-        std::string_view getTopic() const { return topic_; };
+        std::string_view getMessageTopic() const { return topic_; };
+
+        /**
+         * @brief Get topic without CMDP identifier (LOG or STAT)
+         * @return topic
+         */
+        CNSTLN_API std::string getTopic() const;
 
         /**
          * @return If the message is a log message
@@ -69,6 +76,11 @@ namespace constellation::message {
          * @return If the message is a stat message
          */
         CNSTLN_API bool isStatMessage() const;
+
+        /**
+         * @return if the message is a notification
+         */
+        CNSTLN_API bool isNotification() const;
 
         /**
          * Assemble full message to frames for ZeroMQ
@@ -207,4 +219,43 @@ namespace constellation::message {
         metrics::MetricValue metric_value_;
     };
 
+    class CMDP1Notification : public CMDP1Message {
+    public:
+        /**
+         * Construct a new CMDP1 message for metrics
+         *
+         * @note The message topic will be taken as the metric name
+         *
+         * @param header CMDP1 header of the message
+         * @param id Identifier of notification
+         * @param topics Dictionary with available topics for the given identifier
+         */
+        CNSTLN_API CMDP1Notification(Header header, std::string id, config::Dictionary topics);
+
+        /**
+         * Construct a CMDP1Notification from a decoded CMDP1Message
+         *
+         * @throw IncorrectMessageType If the message is not a (valid) notification
+         */
+        CNSTLN_API CMDP1Notification(CMDP1Message&& message);
+
+        /**
+         * @return List of topics
+         */
+        CNSTLN_API const config::Dictionary& getTopics() const { return topics_; }
+
+        /**
+         * Disassemble stats message from ZeroMQ frames
+         *
+         * This function moves the payload.
+         *
+         * @return New CMDP1Notification assembled from ZeroMQ frames
+         * @throw MessageDecodingError If the message is not a valid CMDP1 message
+         * @throw IncorrectMessageType If the message is a valid CMDP1 message but not a (valid) stat message
+         */
+        CNSTLN_API static CMDP1Notification disassemble(zmq::multipart_t& frames);
+
+    private:
+        config::Dictionary topics_;
+    };
 } // namespace constellation::message

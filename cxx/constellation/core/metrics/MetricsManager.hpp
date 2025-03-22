@@ -12,6 +12,7 @@
 #include <chrono>
 #include <concepts>
 #include <condition_variable>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -61,8 +62,9 @@ namespace constellation::metrics {
          * @param name Unique topic of the metric
          * @param unit Unit of the provided value
          * @param type Type of the metric
+         * @param description Description of the metric
          */
-        void registerMetric(std::string name, std::string unit, metrics::MetricType type);
+        void registerMetric(std::string name, std::string unit, metrics::MetricType type, std::string description);
 
         /**
          * Register a timed metric
@@ -77,6 +79,7 @@ namespace constellation::metrics {
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
          * @param type Type of the metric
+         * @param description Description of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
          */
@@ -85,6 +88,7 @@ namespace constellation::metrics {
         void registerTimedMetric(std::string name,
                                  std::string unit,
                                  metrics::MetricType type,
+                                 std::string description,
                                  std::chrono::steady_clock::duration interval,
                                  C value_callback);
 
@@ -105,7 +109,7 @@ namespace constellation::metrics {
         /**
          * Check if a metric should be send given the subscription status
          */
-        static constexpr bool shouldStat(std::string_view /*name*/) { return true; }
+        CNSTLN_API bool shouldStat(std::string_view name) const;
 
         /**
          * Manually trigger a metric
@@ -114,6 +118,21 @@ namespace constellation::metrics {
          * @param value Value of the metric
          */
         CNSTLN_API void triggerMetric(std::string name, config::Value value);
+
+        /**
+         * @brief Update topic subscriptions
+         *
+         * @param global Global Flag for global subscription to all topics
+         * @param topic_subscriptions List of individual subscription topics
+         */
+        void updateSubscriptions(bool global, utils::string_hash_set topic_subscriptions = {});
+
+        /**
+         * @brief Obtain map of registered metrics along with their descriptions
+         *
+         * @return Map with metric descriptions
+         */
+        CNSTLN_API std::map<std::string, std::string> getMetricsDescriptions() const;
 
     private:
         /// @cond doxygen_suppress
@@ -151,9 +170,14 @@ namespace constellation::metrics {
     private:
         log::Logger logger_;
 
+        // List of topics with active subscribers
+        bool global_subscription_;
+        utils::string_hash_set subscribed_topics_;
+        mutable std::mutex subscription_mutex_;
+
         // Contains all metrics, including timed ones
         utils::string_hash_map<std::shared_ptr<Metric>> metrics_;
-        std::mutex metrics_mutex_;
+        mutable std::mutex metrics_mutex_;
 
         // Only timed metrics for background thread
         utils::string_hash_map<TimedMetricEntry> timed_metrics_;

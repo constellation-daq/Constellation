@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -15,8 +16,11 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -38,6 +42,21 @@ public:
         msg.assemble().send(pub_socket_);
     }
 
+    void sendStatMessage(std::string name,
+                         std::string unit,
+                         constellation::metrics::MetricType type,
+                         constellation::config::Value&& value) {
+        auto msg = constellation::message::CMDP1StatMessage(
+            {name_},
+            {std::make_shared<constellation::metrics::Metric>(std::move(name), std::move(unit), type), std::move(value)});
+        msg.assemble().send(pub_socket_);
+    }
+
+    void sendNotification(std::string id, constellation::config::Dictionary topics) {
+        auto msg = constellation::message::CMDP1Notification({name_}, std::move(id), std::move(topics));
+        msg.assemble().send(pub_socket_);
+    }
+
     void sendRaw(zmq::multipart_t& msg) { msg.send(pub_socket_); }
 
     zmq::multipart_t recv() {
@@ -54,7 +73,7 @@ public:
         return recv_res.has_value();
     }
 
-    void mockChirpService() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::MONITORING, getPort()); }
+    void mockChirpService() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::MONITORING, port_); }
 
 private:
     std::string name_;

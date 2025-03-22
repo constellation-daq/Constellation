@@ -18,6 +18,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
@@ -46,6 +47,10 @@ bool CMDP1Message::isStatMessage() const {
     return topic_.starts_with("STAT/");
 }
 
+bool CMDP1Message::isNotification() const {
+    return topic_.starts_with("STAT?") || topic_.starts_with("LOG?");
+}
+
 zmq::multipart_t CMDP1Message::assemble() {
     zmq::multipart_t frames {};
 
@@ -70,8 +75,9 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
 
     // Decode topic
     const auto topic = frames.pop().to_string();
-    if(!(topic.starts_with("LOG/") || topic.starts_with("STAT/"))) {
-        throw MessageDecodingError("Invalid message topic, neither log nor telemetry message");
+    if(!(topic.starts_with("LOG/") || topic.starts_with("STAT/") || topic.starts_with("LOG?") ||
+         topic.starts_with("STAT?"))) {
+        throw MessageDecodingError("Invalid message topic \"" + topic + "\", neither log nor telemetry message");
     }
 
     // Check if valid log level by trying to decode it
@@ -90,9 +96,22 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     return {topic, header, std::move(payload)};
 }
 
+std::string CMDP1Message::getTopic() const {
+    if(topic_.starts_with("LOG/")) {
+        // Search for second slash after "LOG/" to get substring with log topic
+        const auto level_endpos = topic_.find_first_of('/', 4);
+        return topic_.substr(level_endpos + 1);
+    }
+    if(topic_.starts_with("STAT/")) {
+        return topic_.substr(5);
+    }
+
+    throw IncorrectMessageType("Neither log nor stat message");
+}
+
 Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     if(!topic.starts_with("LOG/")) {
-        throw MessageDecodingError("Not a log message");
+        throw IncorrectMessageType("Not a log message");
     }
 
     // Search for second slash after "LOG/" to get substring with log level
@@ -117,7 +136,7 @@ CMDP1LogMessage::CMDP1LogMessage(CMDP1Message&& message) : CMDP1Message(std::mov
         throw IncorrectMessageType("Not a log message");
     }
 
-    const auto topic = getTopic();
+    const auto topic = getMessageTopic();
     level_ = get_log_level_from_topic(topic);
 
     // Search for a '/' after "LOG/"
@@ -144,11 +163,11 @@ CMDP1StatMessage::CMDP1StatMessage(Header header, metrics::MetricValue metric_va
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
     if(!isStatMessage()) {
-        throw MessageDecodingError("Not a telemetry message");
+        throw IncorrectMessageType("Not a telemetry message");
     }
 
     // Assign topic after prefix "STAT/"
-    const auto topic = std::string(getTopic().substr(5));
+    const auto topic = std::string(getMessageTopic().substr(5));
 
     try {
         metric_value_ = MetricValue::disassemble(topic, get_payload());
@@ -158,6 +177,26 @@ CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::m
 }
 
 CMDP1StatMessage CMDP1StatMessage::disassemble(zmq::multipart_t& frames) {
+    // Use disassemble from base class and cast via constructor
+    return {CMDP1Message::disassemble(frames)};
+}
+
+CMDP1Notification::CMDP1Notification(Header header, std::string id, Dictionary topics)
+    : CMDP1Message(std::move(id), std::move(header), topics.assemble()), topics_(std::move(topics)) {}
+
+CMDP1Notification::CMDP1Notification(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
+    if(!isNotification()) {
+        throw IncorrectMessageType("Not a CMDP notification");
+    }
+
+    try {
+        topics_ = Dictionary::disassemble(get_payload());
+    } catch(const std::invalid_argument& e) {
+        throw MessageDecodingError(e.what());
+    }
+}
+
+CMDP1Notification CMDP1Notification::disassemble(zmq::multipart_t& frames) {
     // Use disassemble from base class and cast via constructor
     return {CMDP1Message::disassemble(frames)};
 }

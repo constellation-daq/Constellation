@@ -57,6 +57,7 @@ MetricValue MetricValue::disassemble(std::string name, const message::PayloadBuf
             throw std::invalid_argument("Invalid metric type");
         }
 
+        // Create metric with empty description
         return {std::make_shared<Metric>(std::move(name), unit, type.value()), std::move(value)};
     } catch(const MsgpackUnpackError& e) {
         throw std::invalid_argument(e.what());

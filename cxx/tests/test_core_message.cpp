@@ -167,7 +167,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1)", "[core][core::message]") {
 
     auto log_msg2_raw = CMDP1Message::disassemble(log_frames);
     REQUIRE(log_msg2_raw.isLogMessage());
-    REQUIRE_THAT(to_string(log_msg2_raw.getTopic()), Equals("LOG/STATUS/LOGGER_TOPIC"));
+    REQUIRE_THAT(to_string(log_msg2_raw.getMessageTopic()), Equals("LOG/STATUS/LOGGER_TOPIC"));
 
     const auto log_msg2 = CMDP1LogMessage(std::move(log_msg2_raw));
     REQUIRE_THAT(log_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCMDP"));
@@ -204,9 +204,10 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core:
     zmq::message_t invalid_topic {"INVALID/TOPIC"s};
     log_frames.at(0).swap(invalid_topic);
 
-    REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
-                           MessageDecodingError,
-                           Message("Error decoding message: Invalid message topic, neither log nor telemetry message"));
+    REQUIRE_THROWS_MATCHES(
+        CMDP1Message::disassemble(log_frames),
+        MessageDecodingError,
+        Message("Error decoding message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][core::message]") {
