@@ -9,6 +9,7 @@
 
 #include "asio_helpers.hpp"
 
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -22,18 +23,19 @@
 #include <sys/socket.h>
 #endif
 
+#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::networking;
 using namespace constellation::utils;
 
-std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresses() {
+std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresses(std::optional<std::string> iface) {
     std::set<asio::ip::address_v4> addresses {};
 
 #if defined(_WIN32)
 
-    // TODO(stephan.lachnit): implement this on Windows, right now take default brd address
+    // TODO(stephan.lachnit): implement this on Windows, right now take default brd address, ignoring iface name
     addresses.emplace(asio::ip::address_v4::broadcast());
 
 #else
@@ -55,6 +57,12 @@ std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresse
 
         // Ensure that the interface holds a broadcast address
         if((ifa->ifa_flags & IFF_BROADCAST) == 0U) {
+            continue;
+        }
+
+        // Select only relevant interfaces by name
+        const auto name = std::string(ifa->ifa_name);
+        if(iface.value_or(name) != name && !iface.value_or("").empty()) {
             continue;
         }
 
@@ -80,6 +88,10 @@ std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresse
 
 #endif
 
+    // Check that we have at least one broadcast address:
+    if(addresses.empty()) {
+        throw NetworkError("Could not find a broadcast address matching the provide criteria");
+    }
     return addresses;
 }
 

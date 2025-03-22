@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <optional>
 #include <set>
 #include <string>
 #include <string_view>
@@ -21,11 +22,12 @@
 namespace constellation::networking {
 
     /**
-     * @brief Get all broadcast addresses
+     * @brief Get all interfaces and broadcast addresses
      *
+     * @param iface Optional interface name to search for
      * @return Set with all broadcast addresses
      */
-    CNSTLN_API std::set<asio::ip::address_v4> get_broadcast_addresses();
+    CNSTLN_API std::set<asio::ip::address_v4> get_broadcast_addresses(std::optional<std::string> iface);
 
     /**
      * @brief Build a URI from an IP address and a port
