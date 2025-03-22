@@ -99,6 +99,7 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
 }
 
 Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
+                 const std::optional<std::string>& iface,
                  const asio::ip::address_v4& any_address,
                  std::string_view group_name,
                  std::string_view host_name)
@@ -109,7 +110,7 @@ Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
         brd_addresses = {brd_address.value()};
         LOG(logger_, TRACE) << "Using provided broadcast address " << brd_address.value().to_string();
     } else {
-        brd_addresses = get_broadcast_addresses();
+        brd_addresses = get_broadcast_addresses(iface);
         LOG(logger_, TRACE) << "Using broadcast addresses "
                             << range_to_string(brd_addresses, [](const auto& adr) { return adr.to_string(); });
     }
@@ -120,8 +121,13 @@ Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 }
 
-Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
-    : Manager(asio::ip::make_address_v4(brd_ip), asio::ip::make_address_v4(any_ip), group_name, host_name) {}
+Manager::Manager(std::string_view brd_ip,
+                 std::string_view iface,
+                 std::string_view any_ip,
+                 std::string_view group_name,
+                 std::string_view host_name)
+    : Manager(
+          asio::ip::make_address_v4(brd_ip), std::string(iface), asio::ip::make_address_v4(any_ip), group_name, host_name) {}
 
 Manager::~Manager() {
     // First stop Run function

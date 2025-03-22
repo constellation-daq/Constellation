@@ -110,23 +110,30 @@ namespace constellation::chirp {
     public:
         /**
          * @param brd_address Broadcast address for outgoing broadcast messages
+         * @param iface Interface name to select for outgoing broadcast messages
          * @param any_address Any address for incoming broadcast messages
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
         CNSTLN_API Manager(const std::optional<asio::ip::address_v4>& brd_address,
+                           const std::optional<std::string>& iface,
                            const asio::ip::address_v4& any_address,
                            std::string_view group_name,
                            std::string_view host_name);
 
         /**
          * @param brd_ip Broadcast IP for outgoing broadcast messages
+         * @param iface Interface name to select for outgoing broadcast messages
          * @param any_ip Any IP for incoming broadcast messages
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
         CNSTLN_API
-        Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name);
+        Manager(std::string_view brd_ip,
+                std::string_view iface,
+                std::string_view any_ip,
+                std::string_view group_name,
+                std::string_view host_name);
 
         CNSTLN_API virtual ~Manager();
 
