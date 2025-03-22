@@ -82,12 +82,6 @@ signals:
      */
     void newSender(QString sender);
 
-    /**
-     * @brief Signal emitted whenever a message with a new topic has been received
-     * @param topic Topic
-     */
-    void newTopic(QString topic);
-
     void newTopics(QStringList topics);
 
 private:
