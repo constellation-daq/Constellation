@@ -33,6 +33,11 @@ using namespace constellation::utils;
 std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresses(std::optional<std::string> iface) {
     std::set<asio::ip::address_v4> addresses {};
 
+    // DO not consider the interface hint if empty:
+    if(iface.has_value() && iface.value().empty()) {
+        iface.reset();
+    }
+
 #if defined(_WIN32)
 
     // TODO(stephan.lachnit): implement this on Windows, right now take default brd address, ignoring iface name
@@ -62,7 +67,7 @@ std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresse
 
         // Select only relevant interfaces by name
         const auto name = std::string(ifa->ifa_name);
-        if(iface.value_or(name) != name && !iface.value_or("").empty()) {
+        if(iface.value_or(name) != name) {
             continue;
         }
 
