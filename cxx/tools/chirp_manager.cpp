@@ -74,12 +74,13 @@ namespace {
 
     void cli_loop(std::span<char*> args) {
         // Get constellation group, name, brd address, and any address via cmdline
-        std::cout << "Usage: chirp_manager CONSTELLATION_GROUP NAME BRD_ADDR ANY_ADDR\n" << std::flush;
+        std::cout << "Usage: chirp_manager CONSTELLATION_GROUP NAME BRD_ADDR|IFACE ANY_ADDR\n" << std::flush;
 
         auto group = "constellation"s;
         auto name = "chirp_manager"s;
         auto brd_address = asio::ip::address_v4::broadcast();
         auto any_address = asio::ip::address_v4::any();
+        std::optional<std::string> iface {};
         if(args.size() >= 2) {
             group = args[1];
         }
@@ -91,9 +92,7 @@ namespace {
             try {
                 brd_address = asio::ip::make_address_v4(args[3]);
             } catch(const asio::system_error& error) {
-                std::cerr << "Unable to use specified broadcast address " << std::quoted(args[3])
-                          << ", using default instead\n"
-                          << std::flush;
+                iface = args[3];
             }
         }
         if(args.size() >= 5) {
@@ -108,7 +107,7 @@ namespace {
         // Turn off console logging
         ManagerLocator::getSinkManager().setConsoleLevels(OFF);
 
-        Manager manager {brd_address, any_address, group, name};
+        Manager manager {brd_address, iface, any_address, group, name};
 
         std::cout << "Commands: "
                   << "\n list_registered_services"

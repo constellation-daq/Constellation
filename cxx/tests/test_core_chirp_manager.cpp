@@ -81,7 +81,7 @@ TEST_CASE("Sorting of discover callbacks", "[chirp]") {
 }
 
 TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
 
     // test that first register works
     REQUIRE(manager.registerService(CONTROL, 23999));
@@ -100,7 +100,7 @@ TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
 
     // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
     auto callback = [](DiscoveredService, ServiceStatus, std::any) {};
@@ -121,7 +121,7 @@ TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     manager.start();
     // This is purely a coverage test to ensure that the async receive works
     std::this_thread::sleep_for(100ms);
@@ -129,7 +129,7 @@ TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
 
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group2", "sat2", CONTROL, 23999).assemble();
@@ -140,7 +140,7 @@ TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chi
 
 TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group1", "sat1", CONTROL, 23999).assemble();
@@ -150,8 +150,8 @@ TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::man
 }
 
 TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
+    Manager manager1 {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
+    Manager manager2 {"0.0.0.0", "", "0.0.0.0", "group1", "sat2"};
     manager2.start();
 
     // Register service, should send OFFER
@@ -201,8 +201,8 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
+    Manager manager1 {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
+    Manager manager2 {"0.0.0.0", "", "0.0.0.0", "group1", "sat2"};
     manager2.start();
 
     // Callback test struct to test if callback was properly executed
@@ -304,7 +304,7 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     BroadcastRecv receiver {"0.0.0.0", PORT};
     // Note: it seems we have to construct receiver after manager, else we do not receive messages
     // Why? we can only have one working recv binding to the same socket per process unfortunately :/
@@ -323,7 +323,7 @@ TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     BroadcastSend sender {"0.0.0.0", PORT};
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
 
@@ -343,7 +343,7 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
 
 TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::manager]") {
     BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"0.0.0.0", "", "0.0.0.0", "group1", "sat1"};
     manager.start();
 
     // Create invalid message

@@ -30,7 +30,7 @@ inline constellation::chirp::Manager* create_chirp_manager() {
     static std::once_flag manager_flag {};
     std::call_once(manager_flag, [&] {
         LOG(STATUS) << "Creating chirp manager";
-        auto manager = std::make_unique<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
+        auto manager = std::make_unique<constellation::chirp::Manager>("0.0.0.0", "", "0.0.0.0", "edda", "chirp_manager");
         manager->start();
         constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
