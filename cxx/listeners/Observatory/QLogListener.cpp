@@ -11,7 +11,6 @@
 
 #include <cstddef>
 #include <mutex>
-#include <set>
 #include <shared_mutex>
 #include <string>
 #include <utility>
