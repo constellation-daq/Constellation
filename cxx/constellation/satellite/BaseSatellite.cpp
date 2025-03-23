@@ -97,7 +97,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     set_thread_name(cscp_thread_, "CSCP");
 
     // Register state callback for extrasystoles
-    fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(status_); });
+    fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole({}); });
 }
 
 std::string BaseSatellite::getCanonicalName() const {
@@ -258,7 +258,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_status: {
-        return_verb = {CSCP1Message::Type::SUCCESS, status_};
+        return_verb = {CSCP1Message::Type::SUCCESS, std::string(fsm_.getStatus())};
         break;
     }
     case get_config: {

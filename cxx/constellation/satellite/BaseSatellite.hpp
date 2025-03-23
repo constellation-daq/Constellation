@@ -91,7 +91,7 @@ namespace constellation::satellite {
         /**
          * @brief Return the current status of the satellite
          */
-        std::string_view getStatus() const { return status_; }
+        std::string_view getStatus() const { return fsm_.getStatus(); }
 
         /**
          * @brief Return the current or last used run identifier
@@ -188,16 +188,6 @@ namespace constellation::satellite {
          */
         void update_config(const config::Configuration& partial_config);
 
-        /**
-         * @brief Set a new status message
-         */
-        void set_status(std::string status) { status_ = std::move(status); }
-
-        /**
-         * @brief Clears the status message
-         */
-        void clear_status() { status_.clear(); }
-
     public:
         /// @cond doxygen_suppress
         virtual void initializing(config::Configuration& config) = 0;
@@ -228,9 +218,6 @@ namespace constellation::satellite {
     private:
         zmq::socket_t cscp_rep_socket_;
         networking::Port cscp_port_;
-
-        // Satellite status string
-        std::string status_;
 
         std::string_view satellite_type_;
         std::string_view satellite_name_;

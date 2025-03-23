@@ -262,9 +262,10 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     try {
         // Call transition function of satellite
         (satellite_->*func)(std::forward<Args>(args)...);
+
         // If success transition is not failure or interrupt, reset the status:
         if(success_transition != Transition::failure && success_transition != Transition::interrupt) {
-            satellite_->clear_status();
+            clear_status();
         }
         // Finish transition
         return success_transition;
@@ -275,7 +276,7 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     }
     // Something went wrong, log and go to error state
     LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-    satellite_->set_status("Critical failure during transition: " + error_message);
+    set_status("Critical failure during transition: " + error_message);
     return Transition::failure;
 }
 
