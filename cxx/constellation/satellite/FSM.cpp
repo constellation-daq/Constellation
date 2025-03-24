@@ -237,8 +237,13 @@ void FSM::terminate() {
     join_failure_thread();
 }
 
-void FSM::call_state_callbacks() {
+void FSM::call_state_callbacks(bool only_with_status) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+
+    // Check if the status has been emitted:
+    if(status_emitted_.load() && only_with_status) {
+        return;
+    }
 
     // Fetch the status message unless emitted already
     std::unique_lock status_lock {status_mutex_};

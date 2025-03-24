@@ -191,8 +191,10 @@ namespace constellation::satellite {
 
         /**
          * @brief Call all state callbacks
+         *
+         * @param only_with_status Boolean to set whether callbacks are always called or only with a new status
          */
-        void call_state_callbacks();
+        void call_state_callbacks(bool only_with_status = false);
 
         /**
          * @brief Call a satellite function
