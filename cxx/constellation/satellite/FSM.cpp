@@ -81,9 +81,16 @@ void FSM::set_state(FSM::State new_state) {
 }
 
 void FSM::set_status(std::string status) {
+    const std::lock_guard status_lock {status_mutex_};
+
     // Store the status message and reset emission flag:
     status_ = std::move(status);
     status_emitted_.store(false);
+}
+
+std::string_view FSM::getStatus() const {
+    const std::lock_guard status_lock {status_mutex_};
+    return status_;
 }
 
 bool FSM::isAllowed(Transition transition) const {
@@ -233,8 +240,10 @@ void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
 
     // Fetch the status message unless emitted already
+    std::unique_lock status_lock {status_mutex_};
     const auto status = (status_emitted_.load() ? "" : status_);
     status_emitted_.store(true);
+    status_lock.unlock();
 
     std::vector<std::future<void>> futures {};
     futures.reserve(state_callbacks_.size());

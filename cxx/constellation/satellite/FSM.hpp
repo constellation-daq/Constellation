@@ -74,7 +74,7 @@ namespace constellation::satellite {
         /**
          * @brief Returns the current status message of the FSM
          */
-        std::string_view getStatus() const { return status_; }
+        std::string_view getStatus() const;
 
         /**
          * @brief Return the timestamp of the last state change
@@ -185,11 +185,6 @@ namespace constellation::satellite {
         void set_status(std::string status);
 
         /**
-         * @brief Clears the status message
-         */
-        void clear_status() { status_.clear(); }
-
-        /**
          * @brief Call all state callbacks
          */
         void call_state_callbacks();
@@ -296,6 +291,7 @@ namespace constellation::satellite {
         std::atomic<State> state_ {State::NEW};
         std::atomic<std::chrono::system_clock::time_point> last_changed_;
 
+        mutable std::mutex status_mutex_;
         std::string status_;
         std::atomic<bool> status_emitted_;
 
