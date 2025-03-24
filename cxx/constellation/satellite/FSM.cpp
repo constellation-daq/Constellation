@@ -74,6 +74,9 @@ void FSM::set_state(FSM::State new_state) {
     state_.store(new_state);
     last_changed_.store(std::chrono::system_clock::now());
     LOG(logger_, STATUS) << "New state: " << new_state;
+
+    // Pass state to callbacks
+    call_state_callbacks();
 }
 
 bool FSM::isAllowed(Transition transition) const {
@@ -95,9 +98,6 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     // Execute transition function
     const auto new_state = (this->*transition_function)(std::move(payload));
     set_state(new_state);
-
-    // Pass state to callbacks
-    call_state_callbacks();
 }
 
 bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
@@ -168,9 +168,6 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     // Execute transition function
     const auto new_state = (this->*transition_function)(std::move(fsm_payload));
     set_state(new_state);
-
-    // Pass state to callbacks
-    call_state_callbacks();
 
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
