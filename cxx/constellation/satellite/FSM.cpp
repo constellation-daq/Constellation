@@ -360,7 +360,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                         // Set status message and emit if new:
                         set_status(msg);
-                        call_state_callbacks();
+                        call_state_callbacks(true);
 
                         satisfied = false;
                         break;
