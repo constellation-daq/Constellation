@@ -339,7 +339,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
                     if(!remote_state.has_value()) {
                         error_message = "Dependent remote satellite " + condition.remote + " not present";
                         LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                        satellite_->set_status("Critical failure during transition: " + error_message);
+                        set_status("Critical failure during transition: " + error_message);
                         return Transition::failure;
                     }
 
@@ -348,14 +348,20 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
                         error_message = "Dependent remote satellite " + condition.remote + " reports state " +
                                         to_string(remote_state.value());
                         LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                        satellite_->set_status("Critical failure during transition: " + error_message);
+                        set_status("Critical failure during transition: " + error_message);
                         return Transition::failure;
                     }
 
                     // Check if condition is fulfilled:
                     if(!condition.isSatisfied(remote_state.value())) {
-                        LOG(logger_, DEBUG) << "Awaiting state from " << condition.remote
-                                            << ", currently: " << to_string(remote_state.value());
+                        const auto msg =
+                            "Awaiting state from " + condition.remote + ", currently: " + to_string(remote_state.value());
+                        LOG(logger_, DEBUG) << msg;
+
+                        // Set status message and emit if new:
+                        set_status(msg);
+                        call_state_callbacks();
+
                         satisfied = false;
                         break;
                     }
@@ -372,7 +378,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
             if(timer.timeoutReached()) {
                 error_message = "Could not satisfy remote conditions within timeout";
                 LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                satellite_->set_status("Critical failure during transition: " + error_message);
+                set_status("Critical failure during transition: " + error_message);
                 return Transition::failure;
             }
 
