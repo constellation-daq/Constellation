@@ -190,6 +190,9 @@ void FSM::requestInterrupt(std::string_view reason) {
     const auto interrupting = reactIfAllowed(Transition::interrupt);
 
     if(interrupting) {
+        // FIXME we should call set_status() here with the reason, but reactIfAllowed will directly emit the extrasystole which
+        // should hold the status message
+
         LOG(logger_, WARNING) << "Interrupting satellite operation: " << reason;
 
         // We could be in interrupting, so wait for steady state
