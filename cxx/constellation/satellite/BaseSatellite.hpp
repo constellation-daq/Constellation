@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <stop_token>
 #include <string>

@@ -8,6 +8,7 @@
 #include <chrono> // IWYU pragma: keep
 #include <future>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 

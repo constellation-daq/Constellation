@@ -10,6 +10,7 @@
 #include "BaseSatellite.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -567,7 +568,7 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
 
-    return {"Satellite started run " + run_identifier + " successfully"};
+    return {"Satellite started run " + run_identifier_ + " successfully"};
 }
 
 std::optional<std::string> BaseSatellite::stopping_wrapper() {
