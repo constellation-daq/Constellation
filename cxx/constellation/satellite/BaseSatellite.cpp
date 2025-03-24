@@ -435,7 +435,7 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
     }
 }
 
-void BaseSatellite::store_config(Configuration&& config) {
+std::size_t BaseSatellite::store_config(Configuration&& config) {
     using enum Configuration::Group;
     using enum Configuration::Usage;
 
@@ -455,9 +455,11 @@ void BaseSatellite::store_config(Configuration&& config) {
     LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
     LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
                         << config_.getDictionary(INTERNAL).to_string();
+
+    return unused_kvps.size();
 }
 
-void BaseSatellite::update_config(const Configuration& partial_config) {
+std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
     using enum Configuration::Group;
     using enum Configuration::Usage;
 
@@ -475,6 +477,8 @@ void BaseSatellite::update_config(const Configuration& partial_config) {
     LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
     LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
                         << config_.getDictionary(INTERNAL).to_string();
+
+    return unused_kvps.size();
 }
 
 void BaseSatellite::apply_internal_config(const Configuration& config) {
@@ -491,7 +495,7 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
     }
 }
 
-void BaseSatellite::initializing_wrapper(Configuration&& config) {
+std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& config) {
     apply_internal_config(config);
 
     initializing(config);
@@ -507,18 +511,25 @@ void BaseSatellite::initializing_wrapper(Configuration&& config) {
     }
 
     // Store config after initializing
-    store_config(std::move(config));
+    const auto unused_kvps = store_config(std::move(config));
+
+    return {(unused_kvps > 0 ? "Satellite initialized, " + std::to_string(unused_kvps) + " unused keys"
+                             : "Satellite initialized successfully")};
 }
 
-void BaseSatellite::launching_wrapper() {
+std::optional<std::string> BaseSatellite::launching_wrapper() {
     launching();
+
+    return {"Satellite launched successfully"};
 }
 
-void BaseSatellite::landing_wrapper() {
+std::optional<std::string> BaseSatellite::landing_wrapper() {
     landing();
+
+    return {"Satellite landed successfully"};
 }
 
-void BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
+std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
     apply_internal_config(partial_config);
 
     reconfiguring(partial_config);
@@ -534,10 +545,13 @@ void BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
     }
 
     // Update stored config after reconfigure
-    update_config(partial_config);
+    const auto unused_kvps = update_config(partial_config);
+
+    return {(unused_kvps > 0 ? "Satellite reconfigured, " + std::to_string(unused_kvps) + " unused keys"
+                             : "Satellite reconfigured successfully")};
 }
 
-void BaseSatellite::starting_wrapper(std::string run_identifier) {
+std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_identifier) {
     starting(run_identifier);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
@@ -552,9 +566,11 @@ void BaseSatellite::starting_wrapper(std::string run_identifier) {
 
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
+
+    return {"Satellite started run " + run_identifier + " successfully"};
 }
 
-void BaseSatellite::stopping_wrapper() {
+std::optional<std::string> BaseSatellite::stopping_wrapper() {
     // stopping from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -567,13 +583,17 @@ void BaseSatellite::stopping_wrapper() {
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::stopping_transmitter();
     }
+
+    return {"Satellite stopped run successfully"};
 }
 
-void BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
+std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
     running(stop_token);
+
+    return std::nullopt;
 }
 
-void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
     // Interrupting from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -588,9 +608,11 @@ void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
         LOG(logger_, DEBUG) << "Interrupting: execute interrupting_transmitter";
         transmitter_ptr->TransmitterSatellite::interrupting_transmitter(previous_state);
     }
+
+    return std::nullopt;
 }
 
-void BaseSatellite::failure_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_state) {
     // failure from receiver needs to come first to stop BasePool thread
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -598,4 +620,6 @@ void BaseSatellite::failure_wrapper(CSCP::State previous_state) {
     }
 
     failure(previous_state);
+
+    return std::nullopt;
 }

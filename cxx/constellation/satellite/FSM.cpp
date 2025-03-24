@@ -272,12 +272,12 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     std::string error_message {};
     try {
         // Call transition function of satellite
-        (satellite_->*func)(std::forward<Args>(args)...);
+        const auto status = (satellite_->*func)(std::forward<Args>(args)...);
 
-        // If success transition is not failure or interrupt, reset the status:
-        if(success_transition != Transition::failure && success_transition != Transition::interrupt) {
-            clear_status();
+        if(status.has_value()) {
+            set_status(status.value());
         }
+
         // Finish transition
         return success_transition;
     } catch(const std::exception& error) {

@@ -180,13 +180,15 @@ namespace constellation::satellite {
 
         /**
          * @brief Store configuration in satellite
+         * @return Number of unused key-value pairs in the configuration
          */
-        void store_config(config::Configuration&& config);
+        std::size_t store_config(config::Configuration&& config);
 
         /**
          * @brief Update configuration stored in satellite
+         * @return Number of unused key-value pairs in the configuration
          */
-        void update_config(const config::Configuration& partial_config);
+        std::size_t update_config(const config::Configuration& partial_config);
 
     public:
         /// @cond doxygen_suppress
@@ -202,15 +204,15 @@ namespace constellation::satellite {
         /// @endcond
 
     private:
-        void initializing_wrapper(config::Configuration&& config);
-        void launching_wrapper();
-        void landing_wrapper();
-        void reconfiguring_wrapper(const config::Configuration& partial_config);
-        void starting_wrapper(std::string run_identifier);
-        void stopping_wrapper();
-        void running_wrapper(const std::stop_token& stop_token);
-        void interrupting_wrapper(protocol::CSCP::State previous_state);
-        void failure_wrapper(protocol::CSCP::State previous_state);
+        std::optional<std::string> initializing_wrapper(config::Configuration&& config);
+        std::optional<std::string> launching_wrapper();
+        std::optional<std::string> landing_wrapper();
+        std::optional<std::string> reconfiguring_wrapper(const config::Configuration& partial_config);
+        std::optional<std::string> starting_wrapper(std::string run_identifier);
+        std::optional<std::string> stopping_wrapper();
+        std::optional<std::string> running_wrapper(const std::stop_token& stop_token);
+        std::optional<std::string> interrupting_wrapper(protocol::CSCP::State previous_state);
+        std::optional<std::string> failure_wrapper(protocol::CSCP::State previous_state);
 
     protected:
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
