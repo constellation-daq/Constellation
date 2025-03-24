@@ -83,9 +83,11 @@ void FSM::set_state(FSM::State new_state) {
 void FSM::set_status(std::string status) {
     const std::lock_guard status_lock {status_mutex_};
 
-    // Store the status message and reset emission flag:
-    status_ = std::move(status);
-    status_emitted_.store(false);
+    // Store the status message and reset emission flag if new:
+    if(status != status_) {
+        status_ = std::move(status);
+        status_emitted_.store(false);
+    }
 }
 
 std::string_view FSM::getStatus() const {
