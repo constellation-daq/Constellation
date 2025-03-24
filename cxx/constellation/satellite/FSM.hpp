@@ -152,7 +152,8 @@ namespace constellation::satellite {
          * @param identifier Identifier string for this callback
          * @param callback Callback taking the new state as argument
          */
-        CNSTLN_API void registerStateCallback(const std::string& identifier, std::function<void(State)> callback);
+        CNSTLN_API void registerStateCallback(const std::string& identifier,
+                                              std::function<void(State, std::string_view)> callback);
 
         /**
          * @brief Unregistering a state callback
@@ -181,7 +182,7 @@ namespace constellation::satellite {
         /**
          * @brief Set a new status message
          */
-        void set_status(std::string status) { status_ = std::move(status); }
+        void set_status(std::string status);
 
         /**
          * @brief Clears the status message
@@ -296,6 +297,7 @@ namespace constellation::satellite {
         std::atomic<std::chrono::system_clock::time_point> last_changed_;
 
         std::string status_;
+        std::atomic<bool> status_emitted_;
 
         BaseSatellite* satellite_;
         log::Logger logger_;
@@ -305,7 +307,7 @@ namespace constellation::satellite {
         std::thread failure_thread_;
 
         /** State update callback */
-        std::map<std::string, std::function<void(State)>> state_callbacks_;
+        std::map<std::string, std::function<void(State, std::string_view)>> state_callbacks_;
         std::mutex state_callbacks_mutex_;
     };
 

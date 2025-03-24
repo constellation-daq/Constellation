@@ -79,6 +79,12 @@ void FSM::set_state(FSM::State new_state) {
     call_state_callbacks();
 }
 
+void FSM::set_status(std::string status) {
+    // Store the status message and reset emission flag:
+    status_ = std::move(status);
+    status_emitted_.store(false);
+}
+
 bool FSM::isAllowed(Transition transition) const {
     try {
         find_transition_function(transition);
@@ -209,7 +215,7 @@ void FSM::requestFailure(std::string_view reason) {
         << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
-void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
+void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
     state_callbacks_.emplace(identifier, std::move(callback));
 }
@@ -221,12 +227,17 @@ void FSM::unregisterStateCallback(const std::string& identifier) {
 
 void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+
+    // Fetch the status message unless emitted already
+    const auto status = (status_emitted_.load() ? "" : status_);
+    status_emitted_.store(true);
+
     std::vector<std::future<void>> futures {};
     futures.reserve(state_callbacks_.size());
     for(const auto& [id, callback] : state_callbacks_) {
         futures.emplace_back(std::async(std::launch::async, [&]() {
             try {
-                callback(state_.load());
+                callback(state_.load(), status);
             } catch(...) {
                 LOG(logger_, WARNING) << "State callback " << std::quoted(id) << " threw an exception";
             }
