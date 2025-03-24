@@ -12,9 +12,7 @@
 #include <cstddef>
 #include <deque>
 #include <mutex>
-#include <set>
 #include <shared_mutex>
-#include <string>
 #include <string_view>
 
 #include <QAbstractListModel>
