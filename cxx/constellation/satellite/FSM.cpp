@@ -186,14 +186,14 @@ void FSM::requestInterrupt(std::string_view reason) {
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
-    // In a steady state, try to react to interrupt
-    const auto interrupting = reactIfAllowed(Transition::interrupt);
+
+    const auto msg = "Interrupting satellite operation: " + std::string(reason);
+
+    // In a steady state, try to react to interrupt and pass the reason as payload:
+    const auto interrupting = reactIfAllowed(Transition::interrupt, {msg});
 
     if(interrupting) {
-        // FIXME we should call set_status() here with the reason, but reactIfAllowed will directly emit the extrasystole which
-        // should hold the status message
-
-        LOG(logger_, WARNING) << "Interrupting satellite operation: " << reason;
+        LOG(logger_, WARNING) << msg;
 
         // We could be in interrupting, so wait for steady state
         while(!is_steady(state_.load())) {
@@ -401,7 +401,12 @@ FSM::State FSM::stopped(TransitionPayload /* payload */) {
     return State::ORBIT;
 }
 
-FSM::State FSM::interrupt(TransitionPayload /* payload */) {
+FSM::State FSM::interrupt(TransitionPayload payload) {
+    // Set status message with information from payload:
+    if(std::holds_alternative<std::string>(payload)) {
+        set_status(std::get<std::string>(std::move(payload)));
+    }
+
     auto call_wrapper = [this](State previous_state) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
