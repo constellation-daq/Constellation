@@ -28,6 +28,8 @@ namespace constellation::protocol {
         CMDP1,
         /** Constellation Data Transmission Protocol v1 */
         CDTP1,
+        /** Constellation Data Transmission Protocol v2 */
+        CDTP2,
         /** Constellation Heartbeat Protocol v1 */
         CHP1,
     };
@@ -44,6 +46,7 @@ namespace constellation::protocol {
         case CSCP1: return {"CSCP\x01"};
         case CMDP1: return {"CMDP\x01"};
         case CDTP1: return {"CDTP\x01"};
+        case CDTP2: return {"CDTP\x02"};
         case CHP1: return {"CHP\x01"};
         default: std::unreachable();
         }
@@ -57,8 +60,8 @@ namespace constellation::protocol {
      */
     constexpr Protocol get_protocol(std::string_view protocol_identifier) {
         // Check sorted by message throughput
-        if(protocol_identifier == "CDTP\x01") {
-            return CDTP1;
+        if(protocol_identifier == "CDTP\x02") {
+            return CDTP2;
         }
         if(protocol_identifier == "CMDP\x01") {
             return CMDP1;
@@ -68,6 +71,9 @@ namespace constellation::protocol {
         }
         if(protocol_identifier == "CSCP\x01") {
             return CSCP1;
+        }
+        if(protocol_identifier == "CDTP\x01") {
+            return CDTP1;
         }
         // Unknown protocol
         throw std::invalid_argument(std::string(protocol_identifier).c_str());

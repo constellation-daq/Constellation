@@ -15,6 +15,7 @@ core_src = files(
   'log/SinkManager.cpp',
   'message/BaseHeader.cpp',
   'message/CDTP1Message.cpp',
+  'message/CDTP2Message.cpp',
   'message/CHIRPMessage.cpp',
   'message/CHP1Message.cpp',
   'message/CMDP1Message.cpp',
@@ -106,6 +107,7 @@ install_headers(
 install_headers(
   'message/BaseHeader.hpp',
   'message/CDTP1Message.hpp',
+  'message/CDTP2Message.hpp',
   'message/CHIRPMessage.hpp',
   'message/CHP1Message.hpp',
   'message/CMDP1Message.hpp',
