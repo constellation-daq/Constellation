@@ -32,7 +32,7 @@ repos:
       - id: clang-format
 
   - repo: https://github.com/pycqa/flake8
-    rev: 7.1.1
+    rev: 7.1.2
     hooks:
       - id: flake8
         additional_dependencies: [Flake8-pyproject]
