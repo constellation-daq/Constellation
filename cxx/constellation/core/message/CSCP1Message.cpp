@@ -10,7 +10,6 @@
 #include "CSCP1Message.hpp"
 
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <utility>
 
@@ -66,8 +65,7 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
         // Decode body
         const auto body_frame = frames.pop();
         std::size_t offset = 0;
-        const auto type =
-            static_cast<Type>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(body_frame.data()), body_frame.size(), offset));
+        const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(body_frame.data()), body_frame.size(), offset);
         const auto string = msgpack_unpack_to<std::string>(to_char_ptr(body_frame.data()), body_frame.size(), offset);
 
         // Create message

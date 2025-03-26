@@ -34,7 +34,7 @@ void List::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const
 
 void List::msgpack_unpack(const msgpack::object& msgpack_object) {
     // Unpack map
-    if(msgpack_object.type != msgpack::type::ARRAY) {
+    if(msgpack_object.type != msgpack::type::ARRAY) [[unlikely]] {
         throw msgpack::type_error();
     }
     const auto msgpack_array_raw = msgpack_object.via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
@@ -78,7 +78,7 @@ void Dictionary::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer)
 
 void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
     // Unpack map
-    if(msgpack_object.type != msgpack::type::MAP) {
+    if(msgpack_object.type != msgpack::type::MAP) [[unlikely]] {
         throw msgpack::type_error();
     }
     const auto msgpack_map_raw = msgpack_object.via.map; // NOLINT(cppcoreguidelines-pro-type-union-access)
@@ -86,7 +86,7 @@ void Dictionary::msgpack_unpack(const msgpack::object& msgpack_object) {
 
     for(const auto& msgpack_kv : msgpack_map) {
         // Unpack key
-        if(msgpack_kv.key.type != msgpack::type::STR) {
+        if(msgpack_kv.key.type != msgpack::type::STR) [[unlikely]] {
             throw msgpack::type_error();
         }
         const auto key = msgpack_kv.key.as<std::string>();

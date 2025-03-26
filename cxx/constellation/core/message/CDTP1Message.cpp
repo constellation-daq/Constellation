@@ -65,9 +65,7 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
         const auto sender = msgpack_unpack_to<std::string>(to_char_ptr(data.data()), data.size_bytes(), offset);
 
         // Unpack message type
-        const auto type =
-            static_cast<Type>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(data.data()), data.size_bytes(), offset));
-        // TODO(stephan.lachnit): check range and throw if outside
+        const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(data.data()), data.size_bytes(), offset);
 
         // Unpack sequence number
         const auto seq = msgpack_unpack_to<std::uint64_t>(to_char_ptr(data.data()), data.size_bytes(), offset);
@@ -151,7 +149,8 @@ CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
     }
 
     // If BOR / EOR, exactly one frame needed
-    if((header.getType() == Type::BOR || header.getType() == Type::EOR) && cdtp_message.getPayload().size() != 1) {
+    if((header.getType() == Type::BOR || header.getType() == Type::EOR) && cdtp_message.getPayload().size() != 1)
+        [[unlikely]] {
         throw MessageDecodingError("Wrong number of frames for " + to_string(header.getType()) +
                                    ", exactly one payload frame expected");
     }

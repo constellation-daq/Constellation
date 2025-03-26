@@ -132,7 +132,7 @@ CMDP1LogMessage::CMDP1LogMessage(Level level, std::string log_topic, CMDP1Messag
       level_(level), log_topic_(std::move(log_topic)) {}
 
 CMDP1LogMessage::CMDP1LogMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
-    if(!isLogMessage()) {
+    if(!isLogMessage()) [[unlikely]] {
         throw IncorrectMessageType("Not a log message");
     }
 
@@ -162,7 +162,7 @@ CMDP1StatMessage::CMDP1StatMessage(Header header, metrics::MetricValue metric_va
       metric_value_(std::move(metric_value)) {}
 
 CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
-    if(!isStatMessage()) {
+    if(!isStatMessage()) [[unlikely]] {
         throw IncorrectMessageType("Not a telemetry message");
     }
 
@@ -185,7 +185,7 @@ CMDP1Notification::CMDP1Notification(Header header, std::string id, Dictionary t
     : CMDP1Message(std::move(id), std::move(header), topics.assemble()), topics_(std::move(topics)) {}
 
 CMDP1Notification::CMDP1Notification(CMDP1Message&& message) : CMDP1Message(std::move(message)) {
-    if(!isNotification()) {
+    if(!isNotification()) [[unlikely]] {
         throw IncorrectMessageType("Not a CMDP notification");
     }
 

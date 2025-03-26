@@ -56,19 +56,20 @@ namespace constellation::protocol {
      * @return Protocol
      */
     constexpr Protocol get_protocol(std::string_view protocol_identifier) {
-        if(protocol_identifier == "CSCP\x01") {
-            return CSCP1;
+        // Check sorted by message throughput
+        if(protocol_identifier == "CDTP\x01") {
+            return CDTP1;
         }
         if(protocol_identifier == "CMDP\x01") {
             return CMDP1;
         }
-        if(protocol_identifier == "CDTP\x01") {
-            return CDTP1;
-        }
         if(protocol_identifier == "CHP\x01") {
             return CHP1;
         }
-        // Unknown protocol:
+        if(protocol_identifier == "CSCP\x01") {
+            return CSCP1;
+        }
+        // Unknown protocol
         throw std::invalid_argument(std::string(protocol_identifier).c_str());
     }
 
@@ -92,8 +93,7 @@ namespace constellation::protocol {
      * @return Protocol identifier string with byte version replaced to human-readable version
      */
     inline std::string get_readable_protocol(Protocol protocol) {
-        auto protocol_identifier = get_protocol_identifier(protocol);
-        return get_readable_protocol(protocol_identifier);
+        return get_readable_protocol(get_protocol_identifier(protocol));
     }
 
 } // namespace constellation::protocol
