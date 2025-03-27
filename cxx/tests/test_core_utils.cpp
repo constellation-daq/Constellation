@@ -6,20 +6,28 @@
 
 #include <array>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <msgpack.hpp>
 
+#include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/core/utils/type.hpp"
 
@@ -28,6 +36,9 @@ using namespace constellation::utils;
 
 namespace test {
     class TestClass {};
+    enum class TestEnum : std::uint8_t {
+        A = '\x01',
+    };
 }; // namespace test
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
@@ -85,6 +96,22 @@ TEST_CASE("Enum names", "[core]") {
     enum ColorMix : std::uint8_t { WHITE = 0x0, RED = 0x1, BLUE = 0x2, GREEN = 0x4 };
     REQUIRE_THAT(enum_name(ColorMix::WHITE), Equals("WHITE"));
     REQUIRE_THAT(enum_name(ColorMix::RED | ColorMix::BLUE), Equals("RED|BLUE"));
+}
+
+TEST_CASE("Msgpack enum", "[core]") {
+    msgpack::sbuffer sbuf {};
+    std::size_t offset = 0;
+    // Pack and unpack valid enum
+    const auto valid_enum = test::TestEnum::A;
+    msgpack_pack(sbuf, std::to_underlying(valid_enum));
+    const auto valid_enum_unpack = msgpack_unpack_to_enum<test::TestEnum>(to_char_ptr(sbuf.data()), sbuf.size(), offset);
+    REQUIRE(valid_enum_unpack == valid_enum);
+    // Pack and unpack invalid enum
+    const auto invalid_enum = static_cast<test::TestEnum>('\x03');
+    msgpack_pack(sbuf, std::to_underlying(invalid_enum));
+    REQUIRE_THROWS_MATCHES(msgpack_unpack_to_enum<test::TestEnum>(to_char_ptr(sbuf.data()), sbuf.size(), offset),
+                           MsgpackUnpackError,
+                           Message("Type error for test::TestEnum: value out of range"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
