@@ -5,35 +5,35 @@ name: Sync PRs to DESY GitLab
 
 on:
   pull_request_target:
-    types: [opened, synchronize]
-  schedule:
-    - cron: '0 * * * *'  # Runs every hour
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     env:
       GITLAB_REPOSITORY: "gitlab.desy.de/constellation/constellation"
-      GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
       GITLAB_PROJECT_TOKEN: ${{ secrets.GITLAB_PROJECT_TOKEN }}
-      BRANCH_PREFIX: "github-"
+      REMOTE_TARGET_BRANCH: "main"
 
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.ref }}
+          run: |
+            git remote add gitlab https://github:$GITLAB_PROJECT_TOKEN@$GITLAB_REPOSITORY.git
+            git fetch gitlab $REMOTE_TARGET_BRANCH
 
       - name: Push branch to GitLab
         env:
+          REMOTE_BRANCH_PREFIX: "github-${{ github.event.pull_request.author.login }}-"
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LINK: ${{ github.event.pull_request.permalink }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
-          git remote add gitlab "https://$GITLAB_REPOSITORY.git"
-          git push --force "https://oauth2:$GITLAB_TOKEN@$GITLAB_REPOSITORY.git" "$PR_BRANCH:$BRANCH_PREFIX$PR_BRANCH"
-
-      - name: Open Merge Request at GitLab
-        run: |
-          curl --request POST "$GITLAB_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests" \
-            --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
-            --data "source_branch=$BRANCH_PREFIX$PR_BRANCH&target_branch=main&labels=github&title=${{ github.event.pull_request.title }}&description=${{ github.event.pull_request.body }}"
+          git push gitlab --force "$PR_BRANCH:$REMOTE_BRANCH_PREFIX$PR_BRANCH" \
+            -o merge_request.create -o merge_request.target=$REMOTE_TARGET_BRANCH \
+            -o merge_request.title="$PR_BRANCH" -o merge_request.label=github \
+            -o merge_request.description="[GitHub PR #$PR_NUMBER]($PR_LINK)\n\n$PR_DESCRIPTION"
