@@ -12,16 +12,17 @@ from tempfile import TemporaryDirectory
 from unittest.mock import MagicMock, patch
 
 import h5py
-import zmq
 import numpy as np
 import pytest
+import zmq
 from conftest import mocket, wait_for_state
+
+from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService
 from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.datasender import DataSender
-from constellation.core import __version__
 from constellation.satellites.H5DataWriter.H5DataWriter import H5DataWriter
 
 DATA_PORT = 50101

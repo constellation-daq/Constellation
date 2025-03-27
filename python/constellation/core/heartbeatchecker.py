@@ -6,14 +6,14 @@ SPDX-License-Identifier: CC-BY-4.0
 import threading
 import time
 from datetime import datetime, timezone
+from typing import Any, Callable, Optional
 from uuid import UUID
 
 import zmq
 
-from typing import Optional, Callable, Any
-from .fsm import SatelliteState
-from .chp import CHPDecodeMessage
 from .base import BaseSatelliteFrame
+from .chp import CHPDecodeMessage
+from .fsm import SatelliteState
 
 
 class HeartbeatState:

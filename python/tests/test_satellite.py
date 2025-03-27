@@ -4,27 +4,24 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
-import time
 import threading
+import time
 from unittest.mock import MagicMock, patch
 
-from constellation.core.cscp import CSCPMessageVerb, CommandTransmitter
-from constellation.core.fsm import SatelliteState
-
-from constellation.core.satellite import Satellite
+import pytest
+from conftest import mocket, wait_for_state
 
 from constellation.core.broadcastmanager import (
-    chirp_callback,
     DiscoveredService,
+    chirp_callback,
 )
-
 from constellation.core.chirp import (
     CHIRPMessageType,
     CHIRPServiceIdentifier,
 )
-
-from conftest import mocket, wait_for_state
+from constellation.core.cscp import CommandTransmitter, CSCPMessageVerb
+from constellation.core.fsm import SatelliteState
+from constellation.core.satellite import Satellite
 
 
 @pytest.fixture

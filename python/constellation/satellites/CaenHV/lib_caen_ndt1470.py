@@ -11,9 +11,10 @@ HV crate series is used whenever possible.
 """
 
 import socket
-import time
 import threading
-from typing import List, Any, Dict
+import time
+from typing import Any, Dict, List
+
 import serial  # type: ignore[import-untyped]
 
 # available parameters (to monitor) in the NDT1470

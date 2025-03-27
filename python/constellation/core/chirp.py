@@ -5,12 +5,12 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Host Identification and Reconnaissance Protocol (CHIRP).
 """
 
-from hashlib import md5
 import io
-from uuid import UUID
 from enum import Enum
-from .network import get_broadcast, get_broadcast_socket, decode_ancdata, ANC_BUF_SIZE
+from hashlib import md5
+from uuid import UUID
 
+from .network import ANC_BUF_SIZE, decode_ancdata, get_broadcast, get_broadcast_socket
 
 CHIRP_PORT = 7123
 CHIRP_HEADER = "CHIRP\x01"

@@ -6,9 +6,10 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides a tool to list available network interfaces.
 """
 
-import socket
-import ipaddress
 import argparse
+import ipaddress
+import socket
+
 from constellation.core.network import get_addr, get_netmask
 
 EPILOG = "This command is part of the Constellation tool set."

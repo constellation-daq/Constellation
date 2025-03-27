@@ -5,19 +5,20 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides a base class for Constellation Satellite modules.
 """
 
-import re
-import zmq
-import threading
+import atexit
 import logging
+import re
+import socket
+import threading
 from argparse import ArgumentParser
 from queue import Queue
-from typing import cast, Any
-import socket
-import atexit
+from typing import Any, cast
+
 import coloredlogs  # type: ignore[import-untyped]
+import zmq
 
 from . import __version__, __version_code_name__
-from .network import validate_interface, get_interfaces
+from .network import get_interfaces, validate_interface
 
 
 @atexit.register

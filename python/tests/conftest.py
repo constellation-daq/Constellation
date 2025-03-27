@@ -3,33 +3,31 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import random
-import pytest
-from unittest.mock import patch, MagicMock
 import operator
-import threading
-from tempfile import TemporaryDirectory
-import time
-import zmq
 import os
+import random
+import threading
+import time
+from tempfile import TemporaryDirectory
+from unittest.mock import MagicMock, patch
 
-from constellation.core.satellite import Satellite
+import pytest
+import zmq
 
+from constellation.core.cdtp import DataTransmitter
 from constellation.core.chirp import (
     CHIRP_PORT,
     CHIRPBeaconTransmitter,
     get_uuid,
 )
-
+from constellation.core.configuration import Configuration, flatten_config, load_config
+from constellation.core.controller import BaseController
+from constellation.core.cscp import CommandTransmitter
+from constellation.core.heartbeatchecker import HeartbeatChecker
 from constellation.core.monitoring import (
     FileMonitoringListener,
 )
-
-from constellation.core.cscp import CommandTransmitter
-from constellation.core.cdtp import DataTransmitter
-from constellation.core.controller import BaseController
-from constellation.core.configuration import Configuration, flatten_config, load_config
-from constellation.core.heartbeatchecker import HeartbeatChecker
+from constellation.core.satellite import Satellite
 
 # chirp
 mock_chirp_packet_queue = []

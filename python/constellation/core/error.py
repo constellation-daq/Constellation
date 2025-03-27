@@ -5,10 +5,11 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides error handling decorators and exceptions.
 """
 
-from functools import wraps
 import traceback
+from functools import wraps
+from typing import Any, Callable
+
 from statemachine.exceptions import TransitionNotAllowed
-from typing import Callable, Any
 
 
 def handle_error(func: Callable[..., Any]) -> Callable[..., Any]:

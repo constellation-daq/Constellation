@@ -6,26 +6,25 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for a Constellation Satellite.
 """
 
-import time
-from queue import Empty
-from typing import Any
 import threading
+import time
 import traceback
 from concurrent.futures import Future
+from queue import Empty
+from typing import Any
 
-from .fsm import SatelliteState
 from . import __version__
-from .heartbeater import HeartbeatSender
-from .heartbeatchecker import HeartbeatChecker
-
-from .cscp import CSCPMessage
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
-from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration, make_lowercase
-from .monitoring import MonitoringSender
+from .cscp import CSCPMessage
 from .error import debug_log, handle_error
-from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
+from .fsm import SatelliteState
+from .heartbeatchecker import HeartbeatChecker
+from .heartbeater import HeartbeatSender
+from .monitoring import MonitoringSender
 
 
 class Satellite(

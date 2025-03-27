@@ -10,16 +10,16 @@ import datetime
 import pathlib
 import sys
 import threading
-
-import zmq
-from uuid import UUID
 from functools import partial
 from typing import Any, Tuple
+from uuid import UUID
 
-from .broadcastmanager import chirp_callback, DiscoveredService
+import zmq
+
+from .broadcastmanager import DiscoveredService, chirp_callback
 from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
-from .cmdp import MetricsType
 from .chirp import CHIRPServiceIdentifier
+from .cmdp import MetricsType
 from .commandmanager import cscp_requestable
 from .cscp import CSCPMessage
 from .fsm import SatelliteState

@@ -5,18 +5,18 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides the class for the LakeShore218 satellite.
 """
 
-from typing import Any
 from threading import Lock
-
-from constellation.core.commandmanager import cscp_requestable
-from constellation.core.configuration import Configuration
-from constellation.core.cmdp import MetricsType
-from constellation.core.cscp import CSCPMessage
-from constellation.core.monitoring import schedule_metric
-from constellation.core.satellite import Satellite
+from typing import Any
 
 import pyvisa
 import pyvisa.constants
+
+from constellation.core.cmdp import MetricsType
+from constellation.core.commandmanager import cscp_requestable
+from constellation.core.configuration import Configuration
+from constellation.core.cscp import CSCPMessage
+from constellation.core.monitoring import schedule_metric
+from constellation.core.satellite import Satellite
 
 
 class LakeShore218(Satellite):
