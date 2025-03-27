@@ -3,29 +3,28 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import time
 import logging
-import zmq
-import threading
 import os
 import pathlib
-from queue import Empty
-from functools import wraps
+import threading
+import time
 from datetime import datetime
-from typing import Callable, cast, ParamSpec, TypeVar, Any
-from queue import Queue
+from functools import wraps
 from logging.handlers import QueueHandler, QueueListener
+from queue import Empty, Queue
+from typing import Any, Callable, ParamSpec, TypeVar, cast
+
+import zmq
 
 from .base import (
+    EPILOG,
     BaseSatelliteFrame,
     ConstellationArgumentParser,
-    EPILOG,
     setup_cli_logging,
 )
-from .cmdp import CMDPTransmitter, Metric, MetricsType
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
-from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
-
+from .cmdp import CMDPTransmitter, Metric, MetricsType
 
 P = ParamSpec("P")
 B = TypeVar("B", bound=BaseSatelliteFrame)

@@ -5,20 +5,21 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 import re
-from typing import Callable, Any
-from threading import Event
-from concurrent.futures import ThreadPoolExecutor, Future
-from enum import Enum
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
+from enum import Enum
+from threading import Event
+from typing import Any, Callable
+
+from msgpack import Timestamp  # type: ignore[import-untyped]
 from statemachine import StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 from statemachine.states import States
-from msgpack import Timestamp  # type: ignore[import-untyped]
 
-from .cscp import CSCPMessage
-from .error import debug_log, handle_error
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
+from .cscp import CSCPMessage
+from .error import debug_log, handle_error
 
 
 class SatelliteState(Enum):

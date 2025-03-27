@@ -11,7 +11,7 @@ from typing import Any
 from pycaenhv import CaenHVModule  # type: ignore[import-untyped]
 
 from constellation.core.cmdp import MetricsType
-from constellation.core.commandmanager import cscp_requestable, CSCPMessage
+from constellation.core.commandmanager import CSCPMessage, cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.fsm import SatelliteState
 from constellation.core.satellite import Satellite

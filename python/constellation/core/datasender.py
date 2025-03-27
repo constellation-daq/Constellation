@@ -6,20 +6,20 @@ SPDX-License-Identifier: CC-BY-4.0
 A base module for a Constellation Satellite that sends data.
 """
 
-import time
-import threading
 import logging
-from typing import Any
-from queue import Queue, Empty
-
 import random
+import threading
+import time
+from queue import Empty, Queue
+from typing import Any
+
 import numpy as np
 import zmq
 
-from .cdtp import DataTransmitter, CDTPMessageIdentifier
-from .satellite import Satellite, SatelliteArgumentParser
 from .base import EPILOG, setup_cli_logging
 from .broadcastmanager import CHIRPServiceIdentifier
+from .cdtp import CDTPMessageIdentifier, DataTransmitter
+from .satellite import Satellite, SatelliteArgumentParser
 
 
 class PushThread(threading.Thread):

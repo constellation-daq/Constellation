@@ -5,8 +5,8 @@ SPDX-License-Identifier: CC-BY-4.0
 Abstract serial interface for Keithleys.
 """
 
-from abc import ABCMeta, abstractmethod
 import time
+from abc import ABCMeta, abstractmethod
 from threading import Lock
 
 import serial

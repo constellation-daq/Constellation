@@ -3,15 +3,15 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
 import time
 from unittest.mock import MagicMock, patch
 
-from conftest import mocket, mock_packet_queue_recv, mock_packet_queue_sender
+import pytest
+from conftest import mock_packet_queue_recv, mock_packet_queue_sender, mocket
 
 from constellation.core.chirp import get_uuid
-from constellation.core.heartbeater import HeartbeatSender
 from constellation.core.fsm import SatelliteState
+from constellation.core.heartbeater import HeartbeatSender
 
 HB_PORT = 33333
 

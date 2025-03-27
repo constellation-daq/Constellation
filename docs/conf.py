@@ -4,15 +4,13 @@
 import json
 import pathlib
 
-from slugify import slugify
-import sphinx
-import sphinx.util.logging
-
 import copy_satellite_docs
 import latex_helpers
+import sphinx
+import sphinx.util.logging
+from slugify import slugify
 
-from constellation.core import __version__
-from constellation.core import __version_code_name__
+from constellation.core import __version__, __version_code_name__
 
 logger = sphinx.util.logging.getLogger(__name__)
 

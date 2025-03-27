@@ -7,6 +7,7 @@ SPDX-License-Identifier: CC-BY-4.0
 import time
 
 import pytest
+
 from constellation.core.configuration import flatten_config
 from constellation.core.cscp import CSCPMessageVerb
 

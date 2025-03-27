@@ -4,15 +4,14 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
 import time
 from unittest.mock import MagicMock, patch
+
+import pytest
 import zmq
 
-from constellation.core.cscp import CSCPMessageVerb, CommandTransmitter
-
-from constellation.core.commandmanager import cscp_requestable, CommandReceiver
-
+from constellation.core.commandmanager import CommandReceiver, cscp_requestable
+from constellation.core.cscp import CommandTransmitter, CSCPMessageVerb
 
 mock_packet_queue_recv = []
 mock_packet_queue_sender = []

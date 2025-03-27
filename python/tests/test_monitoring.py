@@ -3,27 +3,25 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
 import logging
-import time
 import os
+import time
 from unittest.mock import MagicMock, patch
 
-from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
-
-from constellation.core.monitoring import (
-    ZeroMQSocketLogListener,
-    MonitoringSender,
-    schedule_metric,
-)
+import pytest
+from conftest import mock_packet_queue_sender, mocket, send_port
 
 from constellation.core.chirp import (
     CHIRPBeaconTransmitter,
-    CHIRPServiceIdentifier,
     CHIRPMessageType,
+    CHIRPServiceIdentifier,
 )
-
-from conftest import mock_packet_queue_sender, mocket, send_port
+from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
+from constellation.core.monitoring import (
+    MonitoringSender,
+    ZeroMQSocketLogListener,
+    schedule_metric,
+)
 
 
 @pytest.fixture

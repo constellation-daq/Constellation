@@ -6,13 +6,14 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Monitoring Distribution Protocol.
 """
 
-import msgpack  # type: ignore[import-untyped]
-import zmq
 import io
 import logging
 from enum import Enum
 from threading import Lock
 from typing import Any
+
+import msgpack  # type: ignore[import-untyped]
+import zmq
 
 from .protocol import MessageHeader, Protocol
 

@@ -3,11 +3,13 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import time
 import io
+import time
+from typing import Tuple
+
 import msgpack  # type: ignore[import-untyped]
 import zmq
-from typing import Tuple
+
 from .protocol import Protocol
 
 

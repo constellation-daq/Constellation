@@ -4,13 +4,14 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from constellation.core.chirp import (
     CHIRPBeaconTransmitter,
-    CHIRPServiceIdentifier,
     CHIRPMessageType,
+    CHIRPServiceIdentifier,
 )
 
 

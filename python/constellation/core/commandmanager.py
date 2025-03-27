@@ -8,14 +8,14 @@ Constellation Satellites.
 
 import threading
 import time
-import zmq
-from typing import Tuple, Any, Callable, TypeVar, ParamSpec
 from functools import wraps
+from typing import Any, Callable, ParamSpec, Tuple, TypeVar
+
+import zmq
 from statemachine.exceptions import TransitionNotAllowed
 
-from .cscp import CommandTransmitter, CSCPMessageVerb, CSCPMessage
 from .base import BaseSatelliteFrame
-
+from .cscp import CommandTransmitter, CSCPMessage, CSCPMessageVerb
 
 T = TypeVar("T")
 P = ParamSpec("P")

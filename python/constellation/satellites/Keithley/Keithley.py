@@ -7,16 +7,16 @@ Provides the class for the Keithley satellite
 
 from typing import Any
 
+from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.cmdp import MetricsType
 from constellation.core.cscp import CSCPMessage
 from constellation.core.fsm import SatelliteState
 from constellation.core.monitoring import schedule_metric
 from constellation.core.satellite import Satellite
 
-from .KeithleyInterface import KeithleyInterface
 from .Keithley2410 import Keithley2410
+from .KeithleyInterface import KeithleyInterface
 
 _SUPPORTED_DEVICES = {
     "2410": Keithley2410,

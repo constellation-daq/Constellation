@@ -3,16 +3,16 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
-import time
 import threading
+import time
 from unittest.mock import MagicMock, patch
+
+import pytest
+from conftest import mocket, wait_for_state
 
 from constellation.core.configuration import Configuration
 from constellation.core.cscp import CSCPMessageVerb
 from constellation.satellites.Mariner.Mariner import Mariner as MarinerDef
-
-from conftest import mocket, wait_for_state
 
 
 class Mariner(MarinerDef):

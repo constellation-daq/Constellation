@@ -5,6 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 """
 
 from pathlib import Path
+
 import h5py
 
 
@@ -111,6 +112,7 @@ class H5DataReader:
 
 def main(args=None):
     import argparse
+
     from IPython import embed
 
     parser = argparse.ArgumentParser()

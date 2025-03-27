@@ -6,13 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation communication protocols.
 """
 
-import msgpack  # type: ignore[import-untyped]
-import zmq
-
 import io
 import time
 from enum import StrEnum
 from typing import Any, Tuple
+
+import msgpack  # type: ignore[import-untyped]
+import zmq
 
 
 class Protocol(StrEnum):

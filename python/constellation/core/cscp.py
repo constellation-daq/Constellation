@@ -6,11 +6,13 @@ SPDX-License-Identifier: CC-BY-4.0
 Module implementing the Constellation Satellite Control Protocol.
 """
 
-from typing import Any, Optional
 import io
 from enum import Enum
-import zmq
+from typing import Any, Optional
+
 import msgpack  # type: ignore[import-untyped]
+import zmq
+
 from .protocol import MessageHeader, Protocol
 
 

@@ -7,23 +7,23 @@ SPDX-License-Identifier: CC-BY-4.0
 
 import threading
 import time
-from queue import Empty
-from typing import Dict, Callable, Any, Tuple, Optional
 from enum import Enum
+from queue import Empty
+from typing import Any, Callable, Dict, Optional, Tuple
 
 import zmq
 
-from .broadcastmanager import CHIRPBroadcaster, chirp_callback, DiscoveredService
+from . import __version__, __version_code_name__
+from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
+from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier, get_uuid
+from .commandmanager import get_cscp_commands
+from .configuration import flatten_config, load_config
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .fsm import SatelliteState
-from .satellite import Satellite
-from .base import EPILOG, ConstellationArgumentParser, setup_cli_logging
-from .commandmanager import get_cscp_commands
-from .configuration import load_config, flatten_config
 from .heartbeatchecker import HeartbeatChecker
-from . import __version__, __version_code_name__
+from .satellite import Satellite
 
 
 class ControllerState(Enum):
@@ -633,9 +633,9 @@ def main(args: Any = None) -> None:
     Constellation group via IPython terminal.
 
     """
+    from IPython.terminal.embed import InteractiveShellEmbed
     from IPython.terminal.prompts import Prompts, Token
     from traitlets.config.loader import Config
-    from IPython.terminal.embed import InteractiveShellEmbed
 
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
     parser.add_argument("-c", "--config", type=str, help="Path to the TOML configuration file to load.")

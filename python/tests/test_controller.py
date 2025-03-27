@@ -4,11 +4,12 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import pytest
 import time
+
+import pytest
+
 from constellation.core.configuration import flatten_config
 from constellation.core.fsm import SatelliteState
-
 
 # %%%%%%%%%%%%%%%
 # TESTS

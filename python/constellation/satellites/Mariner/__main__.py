@@ -5,7 +5,7 @@ SPDX-License-Identifier: CC-BY-4.0
 Provides the entry point for the Mariner example satellite
 """
 
-from constellation.core.base import setup_cli_logging, EPILOG
+from constellation.core.base import EPILOG, setup_cli_logging
 from constellation.core.satellite import SatelliteArgumentParser
 
 from .Mariner import Mariner

@@ -3,8 +3,8 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: CC-BY-4.0
 """
 
-import tomllib
 import json
+import tomllib
 import typing
 from typing import Any
 

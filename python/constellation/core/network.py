@@ -5,12 +5,13 @@ SPDX-License-Identifier: CC-BY-4.0
 This module provides network helper routines.
 """
 
-import socket
-import ipaddress
-import psutil
 import argparse
+import ipaddress
+import socket
 import struct
-from typing import Tuple, List
+from typing import List, Tuple
+
+import psutil
 
 # From ip(7):  This boolean option enables the IP_ORIGDSTADDR ancillary message
 #              in recvmsg(2), in which the kernel returns the original destina-

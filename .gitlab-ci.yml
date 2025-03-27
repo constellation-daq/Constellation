@@ -518,6 +518,15 @@ format:black:
   script:
     - pip install --no-build-isolation -e .[dev]
     - black --check python/
+  
+format:isort:
+  extends:
+    - .format
+    - .python-venv
+    - .python-3.11
+  script:
+    - pip install --no-build-isolation -e .[dev]
+    - isort --check .
 
 format:flake8:
   extends:

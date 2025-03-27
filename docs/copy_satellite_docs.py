@@ -9,9 +9,9 @@ import pathlib
 import re
 import urllib.request
 
-from slugify import slugify
 import sphinx.util.logging
 import yaml
+from slugify import slugify
 
 logger = sphinx.util.logging.getLogger(__name__)
 
