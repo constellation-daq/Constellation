@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+name: Sync PRs to DESY GitLab
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  schedule:
+    - cron: '0 * * * *'  # Runs every hour
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GITLAB_REPOSITORY: "gitlab.desy.de/constellation/constellation"
+      GITLAB_PROJECT_ID: ${{ secrets.GITLAB_PROJECT_ID }}
+      GITLAB_PROJECT_TOKEN: ${{ secrets.GITLAB_PROJECT_TOKEN }}
+      BRANCH_PREFIX: "github-"
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Push branch to GitLab
+        env:
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+
+        run: |
+          git remote add gitlab "https://$GITLAB_REPOSITORY.git"
+          git push --force "https://oauth2:$GITLAB_TOKEN@$GITLAB_REPOSITORY.git" "$PR_BRANCH:$BRANCH_PREFIX$PR_BRANCH"
+
+      - name: Open Merge Request at GitLab
+        run: |
+          curl --request POST "$GITLAB_URL/api/v4/projects/$GITLAB_PROJECT_ID/merge_requests" \
+            --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+            --data "source_branch=$BRANCH_PREFIX$PR_BRANCH&target_branch=main&labels=github&title=${{ github.event.pull_request.title }}&description=${{ github.event.pull_request.body }}"
