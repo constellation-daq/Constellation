@@ -35,10 +35,10 @@ jobs:
           PR_BRANCH: ${{ github.event.pull_request.head.ref }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_LINK: ${{ github.event.pull_request.permalink }}
+          PR_LINK: ${{ github.event.pull_request.html_url }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
         run: |
           git push gitlab --force "$PR_BRANCH:$REMOTE_BRANCH_PREFIX-$PR_AUTHOR-$PR_BRANCH" \
             -o merge_request.create -o merge_request.target=$REMOTE_TARGET_BRANCH \
-            -o merge_request.title="$PR_BRANCH" -o merge_request.label=github \
+            -o merge_request.title="$PR_TITLE" -o merge_request.label=github \
             -o merge_request.description="[GitHub PR #$PR_NUMBER]($PR_LINK)\n\n$PR_DESCRIPTION"
