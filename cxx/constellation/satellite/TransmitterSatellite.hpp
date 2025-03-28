@@ -11,11 +11,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
-#include <string>
+#include <deque>
+#include <mutex>
+#include <stop_token>
 #include <string_view>
-#include <utility>
+#include <thread>
 
 #include <zmq.hpp>
 
@@ -23,8 +26,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
-#include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -37,77 +39,23 @@ namespace constellation::satellite {
      * @brief Satellite class with additional functions to transmit data
      */
     class CNSTLN_API TransmitterSatellite : public Satellite {
-    private:
-        /**
-         * @brief Wrapper for a CDTP message
-         */
-        class DataMessage : private message::CDTP1Message {
-        public:
-            /**
-             * @brief Add data in a new frame to the message
-             *
-             * @param data Data to add (see `PayloadBuffer` class for details)
-             */
-            void addFrame(message::PayloadBuffer&& data) { addPayload(std::move(data)); }
-
-            /**
-             * @brief Add a tag to the header of the message
-             *
-             * @param key Key of the tag
-             * @param value Value of the tag
-             */
-            template <typename T> void addTag(const std::string& key, const T& value) { getHeader().setTag(key, value); }
-
-            /**
-             * @brief Obtain current number of frames in this message
-             *
-             * @return Current number of data frames
-             */
-            std::size_t countFrames() const { return countPayloadFrames(); }
-
-            /** Allow using the header to get e.g. sequence number */
-            using message::CDTP1Message::getHeader;
-
-        private:
-            // TransmitterSatellite needs access to constructor
-            friend TransmitterSatellite;
-
-            DataMessage(std::string sender, std::uint64_t seq, std::size_t frames)
-                : message::CDTP1Message({std::move(sender), seq, message::CDTP1Message::Type::DATA}, frames) {}
-        };
-
     public:
         /**
-         * @brief Create new message for attaching data frames
+         * @brief Create new data block for attaching data frames
          *
          * @note This function increases the CDTP sequence number.
-         * @note To send the data message, use `sendDataMessage()`.
+         * @note To send the data block, use `sendDataBlock()`.
          *
-         * @param frames Number of data frames to reserve
+         * @param frames Number of data block frames to reserve
          */
-        DataMessage newDataMessage(std::size_t frames = 1);
+        message::CDTP2Message::DataBlock newDataBlock(std::size_t frames = 1);
 
         /**
-         * @brief Attempt to send data message created with `newDataMessage()`
+         * @brief Queue data block for sending created with `newDataBlock()`
          *
-         * @note The return value of this function *has* to be checked. If it is `false`, one should take action such as
-         *       discarding the message, trying to send it again or throwing an exception.
-         *
-         * @param message Reference to data message
-         * @return True if the message was successfully sent/queued, false otherwise
+         * @param data_block Data block to send
          */
-        [[nodiscard]] bool trySendDataMessage(DataMessage& message);
-
-        /**
-         * @brief Send data message created with `newDataMessage()`
-         *
-         * @note This method will block until the message has been sent *or* the timeout for sending data messages has been
-         *       reached. In the latter case, a SendTimeoutError exception is thrown.
-         *
-         * @param message Reference to data message
-         * @throw SendTimeoutError If data send timeout is reached
-         */
-        void sendDataMessage(DataMessage& message);
+        void sendDataBlock(message::CDTP2Message::DataBlock&& data_block);
 
         /**
          * @brief Mark this run data as tainted
@@ -204,6 +152,17 @@ namespace constellation::satellite {
         void interrupting_transmitter(protocol::CSCP::State previous_state);
 
         /**
+         * @brief Failure function of transmitter
+         *
+         * If the previous state is RUN, this marks the run as tainted and sends an EOR message marking the end of the run.
+         *
+         * @throw SendTimeoutError If EOR send timeout is reached
+         *
+         * @param previous_state State in which the satellite was being interrupted
+         */
+        void failure_transmitter(protocol::CSCP::State previous_state);
+
+        /**
          * @brief Set send timeout
          *
          * @param timeout Timeout, -1 is infinite (block until sent)
@@ -232,21 +191,38 @@ namespace constellation::satellite {
          */
         protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
 
+        /**
+         * @brief Sending loop sending data blocks from the queue
+         *
+         * @param stop_token Stop token
+         */
+        void sending_loop(const std::stop_token& stop_token);
+
     private:
         zmq::socket_t cdtp_push_socket_;
         networking::Port cdtp_port_;
         log::Logger cdtp_logger_;
+
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
+
         std::uint64_t seq_ {};
+        std::mutex data_block_queue_mutex_;
+        std::deque<message::CDTP2Message::DataBlock> data_block_queue_;
+        std::condition_variable data_block_queue_cv_;
+        std::jthread sending_thread_;
+
         config::Dictionary bor_tags_;
         config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;
         std::string data_license_;
         bool mark_run_tainted_ {false};
+
         std::atomic_size_t bytes_transmitted_;
+        std::atomic_size_t data_blocks_transmitted_;
         std::atomic_size_t frames_transmitted_;
+        std::atomic_size_t messages_transmitted_;
     };
 
 } // namespace constellation::satellite
