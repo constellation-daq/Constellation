@@ -23,3 +23,9 @@ meson configure build -Dsatellite_random_transmitter=true
 | `seed` | Unsigned 32-bit integer | Seed for the random engine | Random |
 | `frame_size` | Unsigned integer | Size of a data frame in bytes | `1024` |
 | `number_of_frames` | Unsigned integer | Number of data frames per data message | `1` |
+
+## Metrics
+
+| Metric | Description | Value Type | Metric Type | Interval |
+|--------|-------------|------------|-------------|----------|
+| `RATE_LIMITED` | Counts how often data sending was skipped due the data rate limitations | Integer | `LAST_VALUE` | 5s |
