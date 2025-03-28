@@ -10,19 +10,24 @@
 #include <numbers>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -352,6 +357,81 @@ TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
     // Compare unpacked header
     REQUIRE(cdtp1_header_unpacked.getType() == CDTP1Message::Type::EOR);
     REQUIRE(cdtp1_header_unpacked.getSequenceNumber() == seq_no);
+}
+
+// CDTP2
+
+TEST_CASE("CDTP2 DATA Packing / Unpacking", "[core][core::message]") {
+    // Create some dummy data
+    const std::vector<std::int32_t> vec_1 {1, 2, 3, 4};
+    const std::vector<std::int32_t> vec_2 {5, 6, 7, 8, 9};
+    const std::vector<std::int32_t> vec_3 {3, 1, 4, 1, 5, 9};
+    // Create DATA message
+    auto data_message = CDTP2Message("sender", CDTP2Message::Type::DATA, 2);
+    auto data_block_1 = CDTP2Message::DataBlock(1, {{{"block", 1}}});
+    data_block_1.addFrame({std::vector(vec_1)});
+    REQUIRE(data_block_1.countPayloadBytes() == 16);
+    data_message.addDataBlock(std::move(data_block_1));
+    auto data_block_2 = CDTP2Message::DataBlock(2, {{{"block", 2}}}, 2);
+    data_block_2.addTag("vecs", "2&3");
+    data_block_2.addFrame({std::vector(vec_2)});
+    data_block_2.addFrame({std::vector(vec_3)});
+    REQUIRE(data_block_2.countPayloadBytes() == 44);
+    data_message.addDataBlock(std::move(data_block_2));
+    REQUIRE(data_message.countPayloadBytes() == 60);
+    auto zmq_mpm = data_message.assemble();
+    // Decode DATA message
+    const auto data_message_decoded = CDTP2Message::disassemble(zmq_mpm);
+    REQUIRE_THAT(std::string(data_message_decoded.getSender()), Equals("sender"));
+    REQUIRE(data_message_decoded.getType() == CDTP2Message::Type::DATA);
+    REQUIRE(data_message_decoded.getDataBlocks().size() == 2);
+    const auto& data_block_1_decoded = data_message_decoded.getDataBlocks().at(0);
+    REQUIRE(data_block_1_decoded.getSequenceNumber() == 1);
+    REQUIRE(data_block_1_decoded.getTags().at("block") == 1);
+    REQUIRE(data_block_1_decoded.countPayloadBytes() == 16);
+    REQUIRE(data_block_1_decoded.getFrames().size() == 1);
+    REQUIRE_THAT(data_block_1_decoded.getFrames().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_1)).span()));
+    const auto& data_block_2_decoded = data_message_decoded.getDataBlocks().at(1);
+    REQUIRE(data_block_2_decoded.getSequenceNumber() == 2);
+    REQUIRE(data_block_2_decoded.getTags().at("block") == 2);
+    REQUIRE(data_block_2_decoded.getTags().at("vecs") == "2&3"s);
+    REQUIRE(data_block_2_decoded.countPayloadBytes() == 44);
+    REQUIRE(data_block_2_decoded.getFrames().size() == 2);
+    REQUIRE_THAT(data_block_2_decoded.getFrames().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_2)).span()));
+    REQUIRE_THAT(data_block_2_decoded.getFrames().at(1).span(), RangeEquals(PayloadBuffer(std::vector(vec_3)).span()));
+}
+
+TEST_CASE("CDTP2 BOR Packing / Unpacking", "[core][core::message]") {
+    // Create dummy user tags and configuration
+    Dictionary user_tags {};
+    user_tags["test"] = 1234;
+    Configuration config {};
+    config.set("used", "this is used", true);
+    config.set("unused", "this is not used", false);
+    // Create BOR message
+    const auto bor_message = CDTP2BORMessage("sender", user_tags, config);
+    auto zmq_mpm = bor_message.assemble();
+    // Decode BOR message and check content
+    const auto bor_message_decoded = CDTP2BORMessage(CDTP2Message::disassemble(zmq_mpm));
+    REQUIRE(bor_message_decoded.getUserTags().at("test") == 1234);
+    const auto config_decoded = bor_message_decoded.getConfiguration();
+    REQUIRE(config_decoded.get<std::string>("used") == "this is used");
+    REQUIRE_FALSE(config_decoded.has("unused"));
+}
+
+TEST_CASE("CDTP2 EOR Packing / Unpacking", "[core][core::message]") {
+    // Create dummy user tags and run metadata
+    Dictionary user_tags {};
+    user_tags["test"] = 1234;
+    Dictionary run_metadata {};
+    run_metadata["run_finished"] = "yes";
+    // Create EOR message
+    const auto eor_message = CDTP2EORMessage("sender", user_tags, run_metadata);
+    auto zmq_mpm = eor_message.assemble();
+    // Decode EOR message and check content
+    const auto eor_message_decoded = CDTP2EORMessage(CDTP2Message::disassemble(zmq_mpm));
+    REQUIRE(eor_message_decoded.getUserTags().at("test") == 1234);
+    REQUIRE(eor_message_decoded.getRunMetadata().at("run_finished") == "yes"s);
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
