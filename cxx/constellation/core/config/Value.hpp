@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <concepts>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -73,6 +74,17 @@ namespace constellation::config {
          * @param value Value to be set
          */
         template <typename T> Value& operator=(const T& value);
+
+        /**
+         * @brief Equality operator for better automatic comparison
+         *
+         * @param value Value to be compared
+         */
+        template <typename T>
+            requires(!std::same_as<T, Value>)
+        bool operator==(const T& value) const {
+            return get<T>() == value;
+        }
 
         /**
          * @brief Convert value to string representation
