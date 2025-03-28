@@ -15,7 +15,6 @@
 #include <mutex>
 #include <stop_token>
 #include <string>
-#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -76,10 +75,10 @@ void HeartbeatSend::terminate() {
     }
 }
 
-void HeartbeatSend::sendExtrasystole(std::string_view status) {
+void HeartbeatSend::sendExtrasystole(std::string status) {
     if(!status.empty()) {
         const std::lock_guard lock {mutex_};
-        status_ = status;
+        status_ = std::move(status);
     }
     flags_ = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
     cv_.notify_one();

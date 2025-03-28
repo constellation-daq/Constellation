@@ -221,7 +221,7 @@ void FSM::requestFailure(std::string_view reason) {
         << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
-void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
+void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string)> callback) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
     state_callbacks_.emplace(identifier, std::move(callback));
 }
