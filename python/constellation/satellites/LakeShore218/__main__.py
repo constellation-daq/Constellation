@@ -1,22 +1,24 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 This is the entry point for the keithley satellite.
 """
 
-from constellation.core.base import EPILOG, setup_cli_logging
+from constellation.core.logging import setup_cli_logging
 from constellation.core.satellite import SatelliteArgumentParser
 
 from .LakeShore218 import LakeShore218
 
 
 def main(args=None):
-    parser = SatelliteArgumentParser(description=main.__doc__, epilog=EPILOG)
+    """Satellite controlling a LakeShore Model 218 temperature monitor"""
+
+    parser = SatelliteArgumentParser(description=main.__doc__)
     args = vars(parser.parse_args(args))
 
     # set up logging
-    setup_cli_logging(args["name"], args.pop("log_level"))
+    setup_cli_logging(args.pop("log_level"))
 
     # start server with remaining args
     s = LakeShore218(**args)

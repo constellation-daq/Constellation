@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import logging
@@ -59,7 +59,7 @@ def mock_monitoringsender():
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        m = MyStatProducer("mock_sender", send_port, interface="127.0.0.1")
+        m = MyStatProducer(name="mock_sender", interface="*", mon_port=send_port)
         yield m
 
 
@@ -74,7 +74,7 @@ def monitoringsender():
             # self.log.info("Got the answer!")
             return 42
 
-    m = MyStatProducer("mock_sender", send_port, interface="*")
+    m = MyStatProducer(name="mock_sender", interface="*", mon_port=send_port)
     yield m
 
 
@@ -125,11 +125,7 @@ def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
 @pytest.mark.forked
 def test_log_monitoring(mock_listener, mock_monitoringsender):
     listener, stream = mock_listener
-    # ROOT logger needs to have a level set
-    logger = logging.getLogger()
-    logger.setLevel("DEBUG")
-    # get a "remote" logger
-    lr = logging.getLogger("mock_sender")
+    lr = mock_monitoringsender.get_logger("mock_sender")
     lr.warning("mock warning before start")
     time.sleep(0.2)
     assert len(mock_packet_queue_sender[send_port]) == 3
@@ -149,11 +145,7 @@ def test_log_monitoring(mock_listener, mock_monitoringsender):
 @pytest.mark.forked
 def test_log_levels(mock_listener, mock_monitoringsender):
     listener, stream = mock_listener
-    # ROOT logger needs to have a level set
-    logger = logging.getLogger()
-    logger.setLevel(1)
-    # get a "remote" logger
-    lr = logging.getLogger("mock_sender")
+    lr = mock_monitoringsender.get_logger("mock_sender")
     # log a custom level
     lr.trace("mock trace message")
     lr.status("mock status message")

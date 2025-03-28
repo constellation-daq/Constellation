@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 """
 
 import threading
@@ -54,6 +54,8 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
+        self.log_chp = self.get_logger("CHP")
+
         self._callback_lock = threading.Lock()
         self._poller = zmq.Poller()
         # dict to keep states mapped to socket
@@ -68,7 +70,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         """Add the heartbeat listener thread to the communication thread pool."""
         super()._add_com_thread()
         self._com_thread_pool["heartbeatrecv"] = threading.Thread(target=self._run_thread, daemon=True)
-        self.log.debug("Heartbeat receiver thread prepared and added to the pool.")
+        self.log_chp.debug("Heartbeat receiver thread prepared and added to the pool.")
 
     def register_heartbeat_host(
         self, host: UUID, address: str, name: str = "", context: Optional[zmq.Context] = None  # type: ignore[type-arg]
@@ -80,7 +82,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         """
         for hb in self._states.values():
             if host == hb.host:
-                self.log.warning(f"Heartbeating for {host} already registered!")
+                self.log_chp.warning(f"Heartbeating for {host} already registered!")
                 return hb.failed
 
         ctx = context or zmq.Context()
@@ -88,7 +90,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             socket = ctx.socket(zmq.SUB)
         except zmq.ZMQError as e:
             if "Too many open files" in e.strerror:
-                self.log.error(
+                self.log_chp.error(
                     "System reports too many open files: cannot open further connections.\n"
                     "Please consider increasing the limit of your OS."
                     "On Linux systems, use 'ulimit' to set a higher value."
@@ -102,7 +104,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         with self._socket_lock:
             self._poller.register(socket, zmq.POLLIN)
 
-        self.log.info(f"Registered heartbeating check for {address}")
+        self.log_chp.info(f"Registered heartbeating check for {address}")
         return evt
 
     def unregister_heartbeat_host(self, host: UUID) -> None:
@@ -120,7 +122,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             self._poller.unregister(s)
             self._states.pop(s)
             s.close()
-        self.log.info("Removed heartbeat check for %s", name)
+        self.log_chp.info("Removed heartbeat check for %s", name)
 
     def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
@@ -149,7 +151,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         return res
 
     def _run_thread(self) -> None:
-        self.log.info("Starting heartbeat check thread")
+        self.log_chp.info("Starting heartbeat check thread")
         last_check = datetime.now(timezone.utc)
 
         # refresh all tokens
@@ -166,7 +168,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 for socket in sockets_ready.keys():
                     binmsg = socket.recv_multipart()
                     name, timestamp, state, interval, status = CHPDecodeMessage(binmsg)
-                    self.log.debug(f"Received heartbeat from {name}, state {state}, next in {interval}")
+                    self.log_chp.debug(f"Received heartbeat from {name}, state {state}, next in {interval}")
                     hb = self._states[socket]
                     # update values
                     hb.name = name
@@ -175,7 +177,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     hb.interval = interval
                     # refresh lives
                     if hb.lives != self.HB_INIT_LIVES:
-                        self.log.log(
+                        self.log_chp.log(
                             5,
                             "%s had %d lives left (interval %d), refreshing",
                             hb.name,
@@ -190,7 +192,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     ]:
                         # satellite in error state, interrupt
                         if not hb.failed.is_set():
-                            self.log.info(f"{hb.name} state causing interrupt callback to be called")
+                            self.log_chp.info(f"{hb.name} state causing interrupt callback to be called")
                             hb.failed.set()
                             self._interrupting(hb.name, hb.state)
                     else:
@@ -204,7 +206,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     if hb.seconds_since_refresh > (hb.interval / 1000) * 1.5 and not hb.failed.is_set():
                         # no message after 150% of the interval, subtract life
                         hb.lives -= 1
-                        self.log.log(
+                        self.log_chp.log(
                             5,
                             "%s unresponsive, removed life, now %d",
                             hb.name,
@@ -213,7 +215,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                         if hb.lives <= 0:
                             # no lives left, interrupt
                             if not hb.failed.is_set():
-                                self.log.info(f"{hb.name} unresponsive causing interrupt callback to be called")
+                                self.log_chp.info(f"{hb.name} unresponsive causing interrupt callback to be called")
                                 hb.failed.set()
                                 self._interrupting(hb.name, SatelliteState.DEAD)
                                 # update state

@@ -1,6 +1,6 @@
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 This module provides a base class for Constellation Satellite modules.
 """
@@ -18,6 +18,8 @@ import coloredlogs  # type: ignore[import-untyped]
 import zmq
 
 from . import __version__, __version_code_name__
+from .cmdp import CMDPTransmitter
+from .logging import ConstellationLogger, ZeroMQSocketLogHandler
 from .network import get_interfaces, validate_interface
 
 
@@ -76,53 +78,6 @@ class ConstellationArgumentParser(ArgumentParser):
 EPILOG = "This command is part of the Constellation Python core package."
 
 
-class ConstellationLogger(logging.getLoggerClass()):  # type: ignore[misc]
-    """Custom Logger class for Constellation.
-
-    Defines the following log levels:
-
-    - logging.NOTSET : 0
-    - logging.TRACE : 5
-    - logging.DEBUG : 10
-    - logging.INFO : 20
-    - logging.STATUS : 25
-    - logging.WARNING : 30
-    - logging.ERROR : mapped to CRITICAL
-    - logging.CRITICAL : 50
-
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any):
-        """Init logger and define extra levels."""
-        super().__init__(*args, **kwargs)
-        logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
-        logging.addLevelName(logging.DEBUG - 5, "TRACE")
-        logging.STATUS = logging.INFO + 5  # type: ignore[attr-defined]
-        logging.addLevelName(logging.INFO + 5, "STATUS")
-
-    def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        """Define level for verbose information which allows to follow the call
-        stack of the host program."""
-        self.log(logging.TRACE, msg, *args, **kwargs)  # type: ignore[attr-defined]
-
-    def status(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        """Define level for important information about the host program to the
-        end user with low frequency."""
-        self.log(logging.STATUS, msg, *args, **kwargs)  # type: ignore[attr-defined]
-
-    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
-        """Map error level to CRITICAL."""
-        self.log(logging.CRITICAL, msg, *args, **kwargs)
-
-
-def setup_cli_logging(name: str, level: str) -> ConstellationLogger:
-    logging.setLoggerClass(ConstellationLogger)
-    logger = cast(ConstellationLogger, logging.getLogger(name))
-    log_level = level
-    coloredlogs.install(level=log_level.upper(), logger=logger)
-    return logger
-
-
 class BaseSatelliteFrame:
     """Base class for all Satellite components to inherit from.
 
@@ -132,7 +87,7 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name: str, interface: str, **_kwds: Any):
+    def __init__(self, name: str, interface: str, mon_port: int | None = None, **_kwds: Any):
         # type name == python class name
         self.type = type(self).__name__
         # Check if provided name is valid:
@@ -140,11 +95,19 @@ class BaseSatelliteFrame:
             raise ValueError("Satellite name contains invalid characters")
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"
-        logging.setLoggerClass(ConstellationLogger)
-        self.log = cast(ConstellationLogger, logging.getLogger(name))
         self.context = zmq.Context()
-
         self.interface = interface
+
+        cmdp_socket = self.context.socket(zmq.PUB)
+        if not mon_port:
+            self.mon_port = cmdp_socket.bind_to_random_port(f"tcp://{interface}")
+        else:
+            cmdp_socket.bind(f"tcp://{interface}:{mon_port}")
+            self.mon_port = mon_port
+        self._cmdp_transmitter = CMDPTransmitter(self.name, cmdp_socket)
+        self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
+
+        self.log = self.get_logger(self.type.upper())
 
         # Set up a queue for handling tasks related to incoming requests via
         # CSCP or offers via CHIRP. This makes sure that these can be performed
@@ -163,6 +126,14 @@ class BaseSatelliteFrame:
         # add self to list of satellites to destroy on shutdown
         global SATELLITE_LIST
         SATELLITE_LIST.append(self)
+
+    def get_logger(self, name: str) -> ConstellationLogger:
+        logging.setLoggerClass(ConstellationLogger)
+        logger = cast(ConstellationLogger, logging.getLogger(name))
+        logger.addHandler(self._zmq_log_handler)
+        logger.setLevel(logging.DEBUG)
+        coloredlogs.install(logger=logger, level=coloredlogs.DEFAULT_LOG_LEVEL)
+        return logger
 
     def _add_com_thread(self) -> None:
         """Method to add a background communication service thread to the pool.

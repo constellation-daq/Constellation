@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 """
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-SPDX-License-Identifier: CC-BY-4.0
+SPDX-License-Identifier: EUPL-1.2
 
 Module implementing the Constellation Monitoring Distribution Protocol.
 """
@@ -43,14 +42,14 @@ class Metric:
         self.time: msgpack.Timestamp = msgpack.Timestamp(0)
         self.meta: dict[str, Any] | None = None
 
-    def pack(self) -> memoryview:
+    def pack(self) -> bytes:
         """Pack metric for CMDP payload."""
         stream = io.BytesIO()
         packer = msgpack.Packer()
         stream.write(packer.pack(self.value))
         stream.write(packer.pack(self.handling.value))
         stream.write(packer.pack(self.unit))
-        return stream.getbuffer()
+        return stream.getvalue()
 
     def __str__(self) -> str:
         """Convert to string."""
@@ -58,6 +57,49 @@ class Metric:
         if self.time:
             t = f" at {self.time}"
         return f"{self.name}: {self.value} [{self.unit}]{t}"
+
+
+def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
+    """Receive a Constellation log message."""
+    # Read header
+    header = MessageHeader(name, Protocol.CMDP).decode(msg[1])
+    # assert to help mypy determine len of tuple returned
+    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
+    sender, time, record = header
+    # assert to help mypy determine type
+    assert isinstance(record, dict)
+    # receive payload
+    message = msg[2].decode()
+    # message == msg % args
+    if "msg" not in record and "args" not in record:
+        record["msg"] = message
+    record["created"] = time.to_datetime().timestamp()
+    record["name"] = sender
+    record["levelname"] = topic.split("/")[1]
+    record["levelno"] = logging.getLevelName(topic.split("/")[1])
+    return logging.makeLogRecord(record)
+
+
+def decode_metric(name: str, topic: str, msg: list[Any]) -> Metric:
+    """Receive a Constellation STATS message and return a Metric."""
+    name = topic.split("/")[1]
+    # Read header
+    header = MessageHeader(name, Protocol.CMDP).decode(msg[1])
+    # assert to help mypy determine len of tuple returned
+    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
+    sender, time, record = header
+    # Unpack metric payload
+    unpacker = msgpack.Unpacker()
+    unpacker.feed(msg[2])
+    value = unpacker.unpack()
+    handling = unpacker.unpack()
+    unit = unpacker.unpack()
+    # Create metric and fill in sender
+    m = Metric(name, unit, MetricsType(handling), value)
+    m.sender = sender
+    m.time = time
+    m.meta = record
+    return m
 
 
 class CMDPTransmitter:
@@ -94,7 +136,7 @@ class CMDPTransmitter:
         meta = {
             "name": record.name,
             "msg": record.msg,
-            "args": record.args,
+            # "args": record.args,
             "levelname": record.levelname,
             "levelno": record.levelno,
             "pathname": record.pathname,
@@ -136,9 +178,9 @@ class CMDPTransmitter:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
             return None
         if topic.startswith("STAT/"):
-            return self.decode_metric(topic, msg)
+            return decode_metric(self.name, topic, msg)
         elif topic.startswith("LOG/"):
-            return self.decode_log(topic, msg)
+            return decode_log(self.name, topic, msg)
         else:
             raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
 
@@ -158,47 +200,6 @@ class CMDPTransmitter:
             raise RuntimeError("Monitoring ZMQ socket misconfigured")
         with self._lock:
             self._socket.close()
-
-    def decode_log(self, topic: str, msg: list[bytes]) -> logging.LogRecord:
-        """Receive a Constellation log message."""
-        # Read header
-        header = self.msgheader.decode(msg[1])
-        # assert to help mypy determine len of tuple returned
-        assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
-        sender, time, record = header
-        # assert to help mypy determine type
-        assert isinstance(record, dict)
-        # receive payload
-        message = msg[2].decode()
-        # message == msg % args
-        if "msg" not in record and "args" not in record:
-            record["msg"] = message
-        record["created"] = time.to_datetime().timestamp()
-        record["name"] = sender
-        record["levelname"] = topic.split("/")[1]
-        record["levelno"] = logging.getLevelName(topic.split("/")[1])
-        return logging.makeLogRecord(record)
-
-    def decode_metric(self, topic: str, msg: list[Any]) -> Metric:
-        """Receive a Constellation STATS message and return a Metric."""
-        name = topic.split("/")[1]
-        # Read header
-        header = self.msgheader.decode(msg[1])
-        # assert to help mypy determine len of tuple returned
-        assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
-        sender, time, record = header
-        # Unpack metric payload
-        unpacker = msgpack.Unpacker()
-        unpacker.feed(msg[2])
-        value = unpacker.unpack()
-        handling = unpacker.unpack()
-        unit = unpacker.unpack()
-        # Create metric and fill in sender
-        m = Metric(name, unit, MetricsType(handling), value)
-        m.sender = sender
-        m.time = time
-        m.meta = record
-        return m
 
     def _dispatch(
         self,
