@@ -48,17 +48,13 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
 
         // Unpack protocol
         const auto protocol_identifier = msgpack_unpack_to<std::string>(to_char_ptr(frame.data()), frame.size(), offset);
-
-        // Try to decode protocol identifier into protocol
-        Protocol protocol_recv {};
         try {
-            protocol_recv = get_protocol(protocol_identifier);
+            const auto protocol_recv = get_protocol(protocol_identifier);
+            if(protocol_recv != CHP1) [[unlikely]] {
+                throw UnexpectedProtocolError(protocol_recv, CHP1);
+            }
         } catch(const std::invalid_argument& error) {
-            throw InvalidProtocolError(error.what());
-        }
-
-        if(protocol_recv != CHP1) {
-            throw UnexpectedProtocolError(protocol_recv, CHP1);
+            throw InvalidProtocolError(protocol_identifier);
         }
 
         // Unpack sender

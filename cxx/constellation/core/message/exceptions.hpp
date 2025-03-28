@@ -42,7 +42,7 @@ namespace constellation::message {
      */
     class CNSTLN_API InvalidProtocolError : public MessageDecodingError {
     public:
-        explicit InvalidProtocolError(const std::string& protocol) {
+        explicit InvalidProtocolError(std::string_view protocol) {
             error_message_ = "Invalid protocol identifier \"";
             error_message_ += protocol;
             error_message_ += "\"";
