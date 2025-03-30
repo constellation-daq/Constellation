@@ -14,7 +14,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 
@@ -26,11 +26,13 @@ public:
     void stopping() final;
 
 protected:
-    void receive_bor(const constellation::message::CDTP1Message::Header& header,
-                     constellation::config::Configuration config) final;
-    void receive_data(constellation::message::CDTP1Message data_message) final;
-    void receive_eor(const constellation::message::CDTP1Message::Header& header,
-                     constellation::config::Dictionary run_metadata) final;
+    void receive_bor(std::string_view sender,
+                     const constellation::config::Dictionary& user_tags,
+                     const constellation::config::Configuration& config) final;
+    void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataBlock& data_block) final;
+    void receive_eor(std::string_view sender,
+                     const constellation::config::Dictionary& user_tags,
+                     const constellation::config::Dictionary& run_metadata) final;
 
 private:
     constellation::utils::StopwatchTimer timer_;
