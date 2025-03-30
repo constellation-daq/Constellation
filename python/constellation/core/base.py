@@ -124,7 +124,7 @@ class BaseSatelliteFrame:
         self._com_thread_evt: threading.Event | None = None
 
         # add self to list of satellites to destroy on shutdown
-        global SATELLITE_LIST
+        global SATELLITE_LIST  # noqa
         SATELLITE_LIST.append(self)
 
     def get_logger(self, name: str) -> ConstellationLogger:
