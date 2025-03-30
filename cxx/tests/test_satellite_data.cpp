@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <cstddef>
 #include <map>
 #include <mutex>
+#include <set>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -19,12 +21,11 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
-#include "constellation/core/networking/exceptions.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/ManagerLocator.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
@@ -46,29 +47,29 @@ public:
     Receiver(std::string_view name = "r1") : DummySatelliteNR<ReceiverSatellite>(name) {}
 
 protected:
-    void receive_bor(const CDTP1Message::Header& header, Configuration config) override {
-        const auto sender = to_string(header.getSender());
+    void receive_bor(std::string_view sender, const Dictionary& user_tags, const Configuration& config) override {
+        const auto sender_str = std::string(sender);
         const std::lock_guard map_lock {map_mutex_};
-        bor_map_.erase(sender);
-        bor_map_.emplace(sender, std::move(config));
-        bor_tag_map_.erase(sender);
-        bor_tag_map_.emplace(sender, header.getTags());
+        bor_map_.erase(sender_str);
+        bor_map_.emplace(sender, Configuration(config.getDictionary()));
+        bor_tag_map_.erase(sender_str);
+        bor_tag_map_.emplace(sender, user_tags);
         bor_received_ = true;
     }
-    void receive_data(CDTP1Message data_message) override {
-        const auto sender = to_string(data_message.getHeader().getSender());
+    void receive_data(std::string_view sender, const CDTP2Message::DataBlock& data_block) override {
+        const auto sender_str = std::string(sender);
         const std::lock_guard map_lock {map_mutex_};
-        last_data_map_.erase(sender);
-        last_data_map_.emplace(sender, std::move(data_message));
+        last_data_map_.erase(sender_str);
+        last_data_map_.emplace(sender, copy_block(data_block));
         data_received_ = true;
     }
-    void receive_eor(const CDTP1Message::Header& header, Dictionary run_metadata) override {
-        const auto sender = to_string(header.getSender());
+    void receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) override {
+        const auto sender_str = std::string(sender);
         const std::lock_guard map_lock {map_mutex_};
-        eor_map_.erase(sender);
-        eor_map_.emplace(sender, std::move(run_metadata));
-        eor_tag_map_.erase(sender);
-        eor_tag_map_.emplace(sender, header.getTags());
+        eor_map_.erase(sender_str);
+        eor_map_.emplace(sender, run_metadata);
+        eor_tag_map_.erase(sender_str);
+        eor_tag_map_.emplace(sender, user_tags);
         eor_received_ = true;
     }
 
@@ -102,7 +103,7 @@ public:
         const std::lock_guard map_lock {map_mutex_};
         return bor_tag_map_.at(sender);
     }
-    const CDTP1Message& getLastData(const std::string& sender) {
+    const CDTP2Message::DataBlock& getLastData(const std::string& sender) {
         const std::lock_guard map_lock {map_mutex_};
         return last_data_map_.at(sender);
     }
@@ -116,13 +117,25 @@ public:
     }
 
 private:
+    static CDTP2Message::DataBlock copy_block(const CDTP2Message::DataBlock& data_block) {
+        // Data blocks cannot be copied for good reason, but we need to for testing purposes
+        CDTP2Message::DataBlock block_copy {
+            data_block.getSequenceNumber(), data_block.getTags(), data_block.getFrames().size()};
+        for(const auto& frame : data_block.getFrames()) {
+            std::vector<std::byte> frame_copy {frame.span().begin(), frame.span().end()};
+            block_copy.addFrame(std::move(frame_copy));
+        }
+        return block_copy;
+    }
+
+private:
     std::mutex map_mutex_;
     std::atomic_bool bor_received_ {false};
     std::atomic_bool data_received_ {false};
     std::atomic_bool eor_received_ {false};
     std::map<std::string, Configuration> bor_map_;
     std::map<std::string, Dictionary> bor_tag_map_;
-    std::map<std::string, CDTP1Message> last_data_map_;
+    std::map<std::string, CDTP2Message::DataBlock> last_data_map_;
     std::map<std::string, Dictionary> eor_map_;
     std::map<std::string, Dictionary> eor_tag_map_;
 };
@@ -131,18 +144,11 @@ class Transmitter : public DummySatellite<TransmitterSatellite> {
 public:
     Transmitter(std::string_view name = "t1") : DummySatellite<TransmitterSatellite>(name) {}
 
-    template <typename T> bool trySendData(T data) {
-        auto msg = newDataMessage();
-        msg.addFrame(std::move(data));
-        msg.addTag("test", 1);
-        return trySendDataMessage(msg);
-    }
-
     template <typename T> void sendData(T data) {
-        auto msg = newDataMessage();
-        msg.addFrame(std::move(data));
-        msg.addTag("test", 1);
-        sendDataMessage(msg);
+        auto data_block = newDataBlock();
+        data_block.addFrame(std::move(data));
+        data_block.addTag("test", 1);
+        sendDataBlock(std::move(data_block));
     }
 };
 
@@ -199,7 +205,7 @@ TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     transmitter.exit();
 }
 
-TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
+TEST_CASE("Transmitter / EOR timeout", "[satellite]") {
     // Create CHIRP manager for data service discovery
     create_chirp_manager();
 
@@ -212,7 +218,6 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
 
     auto config_transmitter = Configuration();
-    config_transmitter.set("_data_timeout", 1);
     config_transmitter.set("_eor_timeout", 1);
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
@@ -236,10 +241,11 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
     receiver.exit();
 
-    // Attempt to send a data frame and catch its failure
-    REQUIRE_THROWS_MATCHES(transmitter.sendData(std::vector<int>({1, 2, 3, 4})),
-                           SendTimeoutError,
-                           Message("Failed sending data message after 1s"));
+    // Stop the transmitter to send EOR
+    transmitter.reactFSM(FSM::Transition::stop);
+
+    // Check that transmitter went to ERROR since EOR was not received
+    REQUIRE(transmitter.getState() == FSM::State::ERROR);
 
     transmitter.exit();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
@@ -266,9 +272,13 @@ TEST_CASE("Successful run", "[satellite]") {
     config2_receiver.set("_eor_timeout", 1);
     auto config2_transmitter = Configuration();
     config2_transmitter.set("_bor_timeout", 1);
+    config2_transmitter.set("_data_timeout", 1);
     config2_transmitter.set("_eor_timeout", 1);
     config2_transmitter.set("_data_timeout", 1);
+    config2_transmitter.set("_payload_threshold", 0);
+    config2_transmitter.set("_queue_size", 2);
     config2_transmitter.set("_data_license", "PDDL-1.0");
+
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
 
@@ -286,13 +296,13 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
     // Send a data frame
-    const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
-    REQUIRE(sent);
+    transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
+    REQUIRE_FALSE(transmitter.checkDataRateLimited());
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_msg = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_msg.countPayloadFrames() == 1);
-    REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
+    const auto& data_block = receiver.getLastData(transmitter.getCanonicalName());
+    REQUIRE(data_block.getFrames().size() == 1);
+    REQUIRE(data_block.getTags().at("test") == 1);
 
     // Set a tag for EOR
     transmitter.setEORTag("buggy_events", 10);
@@ -337,6 +347,8 @@ TEST_CASE("Tainted run", "[satellite]") {
     auto config_transmitter = Configuration();
     config_transmitter.set("_bor_timeout", 1);
     config_transmitter.set("_eor_timeout", 1);
+    config_transmitter.set("_payload_threshold", 1024);
+    config_transmitter.set("_queue_size", 2);
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -350,13 +362,12 @@ TEST_CASE("Tainted run", "[satellite]") {
     REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
     // Send a data frame
-    const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
-    REQUIRE(sent);
+    transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_msg = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_msg.countPayloadFrames() == 1);
-    REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
+    const auto& data_block = receiver.getLastData(transmitter.getCanonicalName());
+    REQUIRE(data_block.getFrames().size() == 1);
+    REQUIRE(data_block.getTags().at("test") == 1);
 
     // Mark run as tainted:
     transmitter.markRunTainted();
@@ -476,11 +487,13 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     receiver.awaitEOR();
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
-    REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
+    REQUIRE(eor.at("condition").get<std::string>() == "TAINTED|ABORTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() ==
+            (CDTP::RunCondition::TAINTED | CDTP::RunCondition::ABORTED));
 
     // Wait until receiver has handled interrupting
-    while(receiver.getState() == FSM::State::interrupting) {
+    const auto run_interrupting = std::set<FSM::State>({FSM::State::RUN, FSM::State::interrupting});
+    while(run_interrupting.contains(receiver.getState())) {
         std::this_thread::yield();
     }
 
