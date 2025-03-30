@@ -22,7 +22,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
@@ -79,15 +79,16 @@ void EudaqNativeWriterSatellite::failure(CSCP::State /*previous_state*/, std::st
     serializer_.reset();
 }
 
-void EudaqNativeWriterSatellite::receive_bor(const CDTP1Message::Header& header, Configuration config) {
-    LOG(INFO) << "Received BOR from " << header.getSender() << " with config" << config.getDictionary().to_string();
-    serializer_->serializeDelimiterMsg(header, config.getDictionary());
+void EudaqNativeWriterSatellite::receive_bor(std::string_view sender,
+                                             const Dictionary& user_tags,
+                                             const Configuration& config) {
+    LOG(INFO) << "Received BOR from " << sender << " with config" << config.getDictionary().to_string();
+    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::BOR, user_tags, config.getDictionary());
 }
 
-void EudaqNativeWriterSatellite::receive_data(CDTP1Message data_message) {
-    const auto& header = data_message.getHeader();
-    LOG(DEBUG) << "Received data message from " << header.getSender();
-    serializer_->serializeDataMsg(data_message);
+void EudaqNativeWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataBlock& data_block) {
+    LOG(DEBUG) << "Received data message from " << sender;
+    serializer_->serializeDataBlock(sender, data_block);
 
     // Flush if necessary and reset timer
     if(flush_timer_.timeoutReached()) {
@@ -96,7 +97,9 @@ void EudaqNativeWriterSatellite::receive_data(CDTP1Message data_message) {
     }
 }
 
-void EudaqNativeWriterSatellite::receive_eor(const CDTP1Message::Header& header, Dictionary run_metadata) {
-    LOG(INFO) << "Received EOR from " << header.getSender() << " with metadata" << run_metadata.to_string();
-    serializer_->serializeDelimiterMsg(header, run_metadata);
+void EudaqNativeWriterSatellite::receive_eor(std::string_view sender,
+                                             const Dictionary& user_tags,
+                                             const Dictionary& run_metadata) {
+    LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
+    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::EOR, user_tags, run_metadata);
 }
