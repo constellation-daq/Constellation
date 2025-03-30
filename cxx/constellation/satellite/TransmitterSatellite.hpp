@@ -206,6 +206,7 @@ namespace constellation::satellite {
         std::chrono::seconds data_bor_timeout_ {};
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
+        std::size_t data_payload_threshold_ {};
 
         std::uint64_t seq_ {};
         std::mutex data_block_queue_mutex_;
