@@ -118,6 +118,10 @@ void TransmitterSatellite::sendDataBlock(CDTP2Message::DataBlock&& data_block) {
     data_block_queue_cv_.notify_one();
 }
 
+bool TransmitterSatellite::checkDataRateLimited() const {
+    return current_payload_bytes_.load() > 2 * data_payload_threshold_;
+}
+
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     data_bor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_bor_timeout", 10));
     data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
@@ -278,7 +282,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     // Notify condition variable when stop is requested
     const std::stop_callback stop_callback {stop_token, [&]() { data_block_queue_cv_.notify_all(); }};
 
-    std::size_t current_payload_bytes = 0;
+    current_payload_bytes_ = 0;
     std::vector<CDTP2Message::DataBlock> current_data_blocks {};
 
     // Always run loop at least once in case of early stop NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while)
@@ -289,7 +293,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
         // Pop all message from queue
         while(!data_block_queue_.empty()) {
-            current_payload_bytes += data_block_queue_.front().countPayloadBytes();
+            current_payload_bytes_ += data_block_queue_.front().countPayloadBytes();
             current_data_blocks.emplace_back(std::move(data_block_queue_.front()));
             data_block_queue_.pop_front();
         }
@@ -297,7 +301,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
         // If message was queued and stop not requested, check if data threshold is met
         if(cv_status == std::cv_status::no_timeout && !stop_token.stop_requested()) [[likely]] {
-            if(current_payload_bytes < data_payload_threshold_) {
+            if(current_payload_bytes_ < data_payload_threshold_) {
                 continue;
             }
         }
@@ -308,9 +312,9 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
         // Log and update telemetry
         LOG(cdtp_logger_, TRACE) << "Sending data blocks from " << current_data_blocks.front().getSequenceNumber() << " to "
-                                 << current_data_blocks.back().getSequenceNumber() << " (" << current_payload_bytes
+                                 << current_data_blocks.back().getSequenceNumber() << " (" << current_payload_bytes_
                                  << " bytes)";
-        bytes_transmitted_ += current_payload_bytes;
+        bytes_transmitted_ += current_payload_bytes_;
         frames_transmitted_ += std::transform_reduce(
             current_data_blocks.begin(), current_data_blocks.end(), 0UL, std::plus(), [](const auto& data_block) {
                 return data_block.getFrames().size();
@@ -334,7 +338,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
         // Reset message counters
         current_data_blocks.clear();
-        current_payload_bytes = 0;
+        current_payload_bytes_ = 0;
 
     } while(!stop_token.stop_requested());
 }

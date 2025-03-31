@@ -58,6 +58,13 @@ namespace constellation::satellite {
         void sendDataBlock(message::CDTP2Message::DataBlock&& data_block);
 
         /**
+         * @brief Check if sending is data rate limited
+         *
+         * @return True if sending data is currently limited, false otherwise
+         */
+        bool checkDataRateLimited() const;
+
+        /**
          * @brief Mark this run data as tainted
          * @details This will set the condition tag in the run metadata to `TAINTED` instead of `GOOD` to mark that there
          *          might be an issue with the data recorded during this run.
@@ -211,6 +218,7 @@ namespace constellation::satellite {
         std::uint64_t seq_ {};
         std::mutex data_block_queue_mutex_;
         std::deque<message::CDTP2Message::DataBlock> data_block_queue_;
+        std::atomic_size_t current_payload_bytes_;
         std::condition_variable data_block_queue_cv_;
         std::jthread sending_thread_;
 
