@@ -514,20 +514,27 @@ std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& c
     // Store config after initializing
     const auto unused_kvps = store_config(std::move(config));
 
-    return {(unused_kvps > 0 ? "Satellite initialized, " + std::to_string(unused_kvps) + " unused keys"
-                             : "Satellite initialized successfully")};
+    const auto status =
+        user_status_.value_or((unused_kvps > 0 ? "Satellite initialized, " + std::to_string(unused_kvps) + " unused keys"
+                                               : "Satellite initialized successfully"));
+    user_status_.reset();
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::launching_wrapper() {
     launching();
 
-    return {"Satellite launched successfully"};
+    const auto status = user_status_.value_or("Satellite launched successfully");
+    user_status_.reset();
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::landing_wrapper() {
     landing();
 
-    return {"Satellite landed successfully"};
+    const auto status = user_status_.value_or("Satellite landed successfully");
+    user_status_.reset();
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
@@ -548,8 +555,12 @@ std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configurat
     // Update stored config after reconfigure
     const auto unused_kvps = update_config(partial_config);
 
-    return {(unused_kvps > 0 ? "Satellite reconfigured, " + std::to_string(unused_kvps) + " unused keys"
-                             : "Satellite reconfigured successfully")};
+    const auto status =
+        user_status_.value_or((unused_kvps > 0 ? "Satellite reconfigured, " + std::to_string(unused_kvps) + " unused keys"
+                                               : "Satellite reconfigured successfully"));
+    user_status_.reset();
+
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_identifier) {
@@ -568,7 +579,9 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
 
-    return {"Satellite started run " + run_identifier_ + " successfully"};
+    const auto status = user_status_.value_or("Satellite started run " + run_identifier_ + " successfully");
+    user_status_.reset();
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::stopping_wrapper() {
@@ -585,11 +598,16 @@ std::optional<std::string> BaseSatellite::stopping_wrapper() {
         transmitter_ptr->TransmitterSatellite::stopping_transmitter();
     }
 
-    return {"Satellite stopped run successfully"};
+    const auto status = user_status_.value_or("Satellite stopped run successfully");
+    user_status_.reset();
+    return {status};
 }
 
 std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
     running(stop_token);
+
+    // Reset user status
+    user_status_.reset();
 
     return std::nullopt;
 }
@@ -610,6 +628,10 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
         transmitter_ptr->TransmitterSatellite::interrupting_transmitter(previous_state);
     }
 
+    // Reset user status
+    user_status_.reset();
+
+    // Do not provide status, the message comes from the `requestInterrupt()` function directly
     return std::nullopt;
 }
 
@@ -622,5 +644,9 @@ std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_s
 
     failure(previous_state);
 
+    // Reset user status
+    user_status_.reset();
+
+    // Do not provide status, the message comes from the exception which triggered the failure
     return std::nullopt;
 }

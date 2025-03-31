@@ -229,6 +229,7 @@ namespace constellation::satellite {
         log::Logger cscp_logger_;
         std::jthread cscp_thread_;
         bool support_reconfigure_ {false};
+        std::optional<std::string> user_status_;
         config::Configuration config_;
         std::string run_identifier_;
 

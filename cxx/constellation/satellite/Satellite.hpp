@@ -153,6 +153,15 @@ namespace constellation::satellite {
         constexpr void support_reconfigure(bool enable = true) { support_reconfigure_ = enable; }
 
         /**
+         * @brief Submit a new status message
+         *
+         * This status message will be transmitted to the FSM at the end of the current transition
+         *
+         * @param status Status message
+         */
+        constexpr void submit_status(std::string status) { user_status_ = std::move(status); }
+
+        /**
          * @brief Register a metric which can be emitted manually
          *
          * @param name Unique topic of the metric
