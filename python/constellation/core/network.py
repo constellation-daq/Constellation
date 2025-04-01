@@ -33,10 +33,8 @@ def get_broadcast_socket() -> socket.socket:
     if platform.system() == "Linux":
         sock.setsockopt(socket.IPPROTO_IP, IP_RECVORIGDSTADDR, 1)
 
-    # on socket layer (SOL_SOCKET), enable reusing address in case
-    # already bound (REUSEPORT)
+    # on socket layer (SOL_SOCKET), enable reusing address in case already bound (REUSEADDR)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     # enable broadcasting
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     return sock
