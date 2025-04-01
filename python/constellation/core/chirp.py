@@ -243,7 +243,7 @@ class CHIRPBeaconTransmitter:
             return None
 
         msg.from_address = from_address[0]
-        msg.dest_address, _destport = decode_ancdata(ancdata)
+        msg.dest_address = decode_ancdata(ancdata, msg.from_address)
         return msg
 
     def close(self) -> None:

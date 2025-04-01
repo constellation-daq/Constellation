@@ -7,6 +7,7 @@ This module provides network helper routines.
 
 import argparse
 import ipaddress
+import platform
 import socket
 import struct
 from typing import List, Tuple
@@ -19,16 +20,18 @@ import psutil
 #              sage contains a struct sockaddr_in.
 # Not yet defined in socket lib.
 IP_RECVORIGDSTADDR = 20
-
 MAX_ANCILLARY_SIZE = 28  # sizeof(struct sockaddr_in6)
-ANC_BUF_SIZE = socket.CMSG_SPACE(MAX_ANCILLARY_SIZE)
+ANC_BUF_SIZE = 48
+if hasattr(socket, "CMSG_SPACE"):
+    ANC_BUF_SIZE = socket.CMSG_SPACE(MAX_ANCILLARY_SIZE)
 
 
 def get_broadcast_socket() -> socket.socket:
     """Create a broadcast socket and return it."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     # add destination information to ancillary message in recvmsg
-    sock.setsockopt(socket.IPPROTO_IP, IP_RECVORIGDSTADDR, 1)
+    if platform.system() == "Linux":
+        sock.setsockopt(socket.IPPROTO_IP, IP_RECVORIGDSTADDR, 1)
 
     # on socket layer (SOL_SOCKET), enable reusing address in case
     # already bound (REUSEPORT)
@@ -39,8 +42,12 @@ def get_broadcast_socket() -> socket.socket:
     return sock
 
 
-def decode_ancdata(ancdata: List[Tuple[int, int, bytes]]) -> Tuple[str, int]:
-    """Decode ancillary message received via recvmsg and return destination ip+port."""
+def decode_ancdata(ancdata: List[Tuple[int, int, bytes]], fallback: str) -> str:
+    """Decode ancillary message received via recvmsg and return destination ip."""
+    # IP_RECVORIGDSTADDR is only available on Linux
+    if platform.system() != "Linux":
+        return fallback
+    # Decode IP_RECVORIGDSTADDR
     for cmsg_level, cmsg_type, cmsg_data in ancdata:
         # Handling IPv4
         if cmsg_level == socket.SOL_IP and cmsg_type == IP_RECVORIGDSTADDR:
@@ -51,9 +58,8 @@ def decode_ancdata(ancdata: List[Tuple[int, int, bytes]]) -> Tuple[str, int]:
                 continue  # Unknown family, continue
 
             ip = socket.inet_ntop(family, cmsg_data[4:8])
-            destination = (ip, port)
-            return destination
-    return "", -1
+            return ip
+    return fallback
 
 
 def get_addr(if_name: str) -> str | None:
