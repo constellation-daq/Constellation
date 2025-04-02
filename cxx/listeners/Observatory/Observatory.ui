@@ -339,7 +339,7 @@
         <property name="title">
          <string>Individual Subscriptions</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout">
+        <layout class="QVBoxLayout" name="subscriptionLayout">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -355,34 +355,6 @@
          <property name="bottomMargin">
           <number>0</number>
          </property>
-         <item>
-          <widget class="QSubscriptionList" name="listWidget">
-           <property name="frameShape">
-            <enum>QFrame::Shape::NoFrame</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Shadow::Plain</enum>
-           </property>
-           <property name="lineWidth">
-            <number>0</number>
-           </property>
-           <property name="horizontalScrollBarPolicy">
-            <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-           </property>
-           <property name="sizeAdjustPolicy">
-            <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
-           </property>
-           <property name="resizeMode">
-            <enum>QListView::ResizeMode::Adjust</enum>
-           </property>
-           <property name="spacing">
-            <number>6</number>
-           </property>
-           <property name="viewMode">
-            <enum>QListView::ViewMode::ListMode</enum>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
       </item>
@@ -402,11 +374,6 @@
   </widget>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>QSubscriptionList</class>
-   <extends>QListWidget</extends>
-   <header>QSubscriptionList.hpp</header>
-  </customwidget>
   <customwidget>
    <class>constellation::gui::QLogLevelComboBox</class>
    <extends>QComboBox</extends>

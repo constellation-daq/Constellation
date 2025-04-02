@@ -33,7 +33,7 @@
 
 #include "QLogFilter.hpp"
 #include "QLogListener.hpp"
-#include "QSenderSubscriptions.hpp"
+#include "QSubscriptionList.hpp"
 #include "ui_Observatory.h"
 
 class LogStatusBar : public QWidget {
@@ -161,7 +161,7 @@ private slots:
 private:
     /** Subscription pool listening to new log messages */
     QLogListener log_listener_;
-    std::map<QString, std::shared_ptr<QSenderSubscriptions>> senders_;
+    QSubscriptionList* subscription_list_widget_;
 
     /** Sorting and filtering proxy for displaying log messages */
     QLogFilter log_filter_;

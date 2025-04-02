@@ -128,6 +128,9 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
 
+    subscription_list_widget_ = new QSubscriptionList(this);
+    subscriptionLayout->addWidget(subscription_list_widget_);
+
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
     // Connect signals:
@@ -146,13 +149,13 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
     connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
-        listWidget->setTopics(sender, topics);
+        subscription_list_widget_->setTopics(sender, topics.first());
     });
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
-        listWidget->addHost(host, log_listener_);
+        subscription_list_widget_->addHost(host, log_listener_);
     });
     connect(&log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) {
-        listWidget->removeHost(sender);
+        subscription_list_widget_->removeHost(sender);
     });
 
     // Start the log receiver pool
