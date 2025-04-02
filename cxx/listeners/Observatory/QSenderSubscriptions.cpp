@@ -19,6 +19,7 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/gui/QLogLevelComboBox.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
 using namespace constellation;
@@ -103,6 +104,11 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     topics_view_->setModel(topics_);
     topics_view_->setItemDelegateForColumn(1, &delegate_);
 
+    // Sender log level
+    sender_level_ = new QLogLevelComboBox(this);
+    sender_level_->setDescending(false);
+    sender_level_->addNeutralElement("- global -");
+
     // Container for animation
     container_ = new QWidget(this);
     QVBoxLayout* listLayout = new QVBoxLayout(container_);
@@ -117,10 +123,11 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     animation_->setEasingCurve(QEasingCurve::InOutQuad);
 
     // Layout
-    main_layout_ = new QVBoxLayout(this);
-    main_layout_->addWidget(label_);
-    main_layout_->addWidget(expand_button_);
-    main_layout_->addWidget(container_);
+    main_layout_ = new QGridLayout(this);
+    main_layout_->addWidget(label_, 0, 0, 1, 1);
+    main_layout_->addWidget(sender_level_, 0, 1, 1, 1);
+    main_layout_->addWidget(expand_button_, 1, 0, 1, 2);
+    main_layout_->addWidget(container_, 2, 0, 1, 2);
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
@@ -128,6 +135,16 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     connect(expand_button_, &QCollapseButton::clicked, this, &QSenderSubscriptions::toggleExpand);
+
+    // Connect the sender level to subscription:
+    connect(sender_level_, &QLogLevelComboBox::currentTextChanged, this, [&](const QString& text) {
+        const auto level = enum_cast<Level>(text.toStdString());
+        if(level.has_value()) {
+            sub_callback_(name_.toStdString(), "", level.value());
+        } else {
+            unsub_callback_(name_.toStdString(), "");
+        }
+    });
 
     // Connect item change to subscription:
     connect(topics_, &QStandardItemModel::itemChanged, this, [&](QStandardItem* item) {
@@ -195,12 +212,3 @@ void QSenderSubscriptions::updateExpansionHeight() {
 
     animation_->start();
 }
-
-// void QSenderSubscriptions::on_senderLevel_currentIndexChanged(int index) {
-// const auto level = enum_cast<Level>(ui_->senderLevel->itemText(index).toStdString());
-// if(level.has_value()) {
-// sub_callback_(name_.toStdString(), "", level.value());
-// } else {
-// unsub_callback_(name_.toStdString(), "");
-// }
-// }

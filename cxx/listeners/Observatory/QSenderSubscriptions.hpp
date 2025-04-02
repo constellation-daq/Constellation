@@ -15,6 +15,7 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QGridLayout>
 #include <QItemSelection>
 #include <QLabel>
 #include <QPropertyAnimation>
@@ -22,7 +23,6 @@
 #include <QStringList>
 #include <QTableView>
 #include <QToolButton>
-#include <QVBoxLayout>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -82,10 +82,11 @@ private:
 
     QLabel* label_;
     QCollapseButton* expand_button_;
+    constellation::gui::QLogLevelComboBox* sender_level_;
     QTableView* topics_view_;
     QStandardItemModel* topics_;
     QWidget* container_;
-    QVBoxLayout* main_layout_;
+    QGridLayout* main_layout_;
     QPropertyAnimation* animation_;
     bool m_isExpanded;
 
