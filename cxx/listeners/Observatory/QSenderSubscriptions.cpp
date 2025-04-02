@@ -58,14 +58,14 @@ void ComboBoxItemDelegate::setModelData(QWidget* editor, QAbstractItemModel* mod
     model->setData(index, box->currentText(), Qt::EditRole);
 }
 
-QCollapseButton::QCollapseButton(QWidget* parent) : QToolButton(parent) {
+QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolButton(parent) {
     setCheckable(true);
-    setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-size: 12px; font-weight: normal; }");
-
-    setIconSize(QSize(8, 8));
+    setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-weight: normal; }");
     setFont(QApplication::font());
     setArrowType(Qt::ArrowType::RightArrow);
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+
+    QToolButton::setText(" " + text);
 
     connect(this, &QToolButton::toggled, [&](bool checked) {
         setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
@@ -80,9 +80,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     : QWidget(parent), name_(name), sub_callback_(std::move(sub_callback)), unsub_callback_(std::move(unsub_callback)),
       delegate_(this), m_isExpanded(false) {
 
-    label_ = new QLabel(name_, this);
-    expand_button_ = new QCollapseButton(this);
-    expand_button_->setText("Expand");
+    expand_button_ = new QCollapseButton(name_, this);
     topics_view_ = new QTableView(this);
     topics_view_->setVisible(false);
 
@@ -124,9 +122,8 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
 
     // Layout
     main_layout_ = new QGridLayout(this);
-    main_layout_->addWidget(label_, 0, 0, 1, 1);
+    main_layout_->addWidget(expand_button_, 0, 0, 1, 1);
     main_layout_->addWidget(sender_level_, 0, 1, 1, 1);
-    main_layout_->addWidget(expand_button_, 1, 0, 1, 2);
     main_layout_->addWidget(container_, 2, 0, 1, 2);
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
@@ -204,10 +201,8 @@ void QSenderSubscriptions::updateExpansionHeight() {
 
         topics_view_->setVisible(true);
         animation_->setEndValue(expandedHeight);
-        expand_button_->setText("Collapse");
     } else {
         animation_->setEndValue(0);
-        expand_button_->setText("Expand");
     }
 
     animation_->start();

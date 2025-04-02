@@ -17,7 +17,6 @@
 #include <QComboBox>
 #include <QGridLayout>
 #include <QItemSelection>
-#include <QLabel>
 #include <QPropertyAnimation>
 #include <QStandardItemModel>
 #include <QStringList>
@@ -50,7 +49,7 @@ public:
 
 class QCollapseButton : public QToolButton {
 public:
-    QCollapseButton(QWidget* parent = nullptr);
+    QCollapseButton(const QString& text, QWidget* parent = nullptr);
     void setText(const QString& text) { QToolButton::setText(" " + text); }
 };
 
@@ -80,7 +79,6 @@ private:
 
     ComboBoxItemDelegate delegate_;
 
-    QLabel* label_;
     QCollapseButton* expand_button_;
     constellation::gui::QLogLevelComboBox* sender_level_;
     QTableView* topics_view_;
