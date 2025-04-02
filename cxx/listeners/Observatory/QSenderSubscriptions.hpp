@@ -15,56 +15,17 @@
 
 #include <QComboBox>
 #include <QItemSelection>
-#include <QPainter>
 #include <QStandardItemModel>
 #include <QStringList>
-#include <QStyledItemDelegate>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
+#include "constellation/gui/QLogLevelComboBox.hpp"
 
 // Expose Qt class auto-generated from the user interface XML:
 namespace Ui { // NOLINT(readability-identifier-naming)
     class QSenderSubscriptions;
 } // namespace Ui
-
-class QLogLevelDelegate : public QStyledItemDelegate {
-public:
-    QLogLevelDelegate() = default;
-
-private:
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-};
-
-class QLogLevelComboBox : public QComboBox {
-    Q_OBJECT
-
-public:
-    QLogLevelComboBox(QWidget* parent = nullptr);
-    virtual ~QLogLevelComboBox() = default;
-
-    // No copy constructor/assignment/move constructor/assignment
-    /// @cond doxygen_suppress
-    QLogLevelComboBox(const QLogLevelComboBox& other) = delete;
-    QLogLevelComboBox& operator=(const QLogLevelComboBox& other) = delete;
-    QLogLevelComboBox(QLogLevelComboBox&& other) noexcept = delete;
-    QLogLevelComboBox& operator=(QLogLevelComboBox&& other) = delete;
-    /// @endcond
-
-    void setDescending(bool descending);
-    void addNeutralElement(const std::string& neutral);
-
-    void setCurrentLevel(constellation::log::Level level);
-
-private:
-    void paintEvent(QPaintEvent* event) override;
-
-    void fill_items();
-
-    bool descending_ {false};
-    std::string neutral_;
-    QLogLevelDelegate delegate_;
-};
 
 class ComboBoxItemDelegate : public QStyledItemDelegate {
     Q_OBJECT

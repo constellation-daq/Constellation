@@ -85,7 +85,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QLogLevelComboBox" name="filterLevel">
+            <widget class="constellation::gui::QLogLevelComboBox" name="filterLevel">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                <horstretch>1</horstretch>
@@ -200,7 +200,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLogLevelComboBox" name="globalLevel">
+          <widget class="constellation::gui::QLogLevelComboBox" name="globalLevel">
            <property name="currentIndex">
             <number>-1</number>
            </property>
@@ -358,28 +358,28 @@
          <item>
           <widget class="QSubscriptionList" name="listWidget">
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Shape::NoFrame</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>0</number>
            </property>
            <property name="horizontalScrollBarPolicy">
-            <enum>Qt::ScrollBarAlwaysOff</enum>
+            <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
            </property>
            <property name="sizeAdjustPolicy">
-            <enum>QAbstractScrollArea::AdjustToContents</enum>
+            <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
            </property>
            <property name="resizeMode">
-            <enum>QListView::Adjust</enum>
+            <enum>QListView::ResizeMode::Adjust</enum>
            </property>
            <property name="spacing">
             <number>6</number>
            </property>
            <property name="viewMode">
-            <enum>QListView::ListMode</enum>
+            <enum>QListView::ViewMode::ListMode</enum>
            </property>
           </widget>
          </item>
@@ -403,14 +403,14 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QLogLevelComboBox</class>
-   <extends>QComboBox</extends>
-   <header>QSenderSubscriptions.hpp</header>
-  </customwidget>
-  <customwidget>
    <class>QSubscriptionList</class>
    <extends>QListWidget</extends>
    <header>QSubscriptionList.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>constellation::gui::QLogLevelComboBox</class>
+   <extends>QComboBox</extends>
+   <header>constellation/gui/QLogLevelComboBox.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

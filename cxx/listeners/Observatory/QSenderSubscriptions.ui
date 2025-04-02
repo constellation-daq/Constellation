@@ -46,7 +46,7 @@
     </widget>
    </item>
    <item row="0" column="1">
-    <widget class="QLogLevelComboBox" name="senderLevel">
+    <widget class="constellation::gui::QLogLevelComboBox" name="senderLevel">
      <property name="currentIndex">
       <number>0</number>
      </property>
@@ -140,9 +140,9 @@
    <header>QCollapseButton.hpp</header>
   </customwidget>
   <customwidget>
-   <class>QLogLevelComboBox</class>
+   <class>constellation::gui::QLogLevelComboBox</class>
    <extends>QComboBox</extends>
-   <header>QSenderSubscriptions.hpp</header>
+   <header>constellation/gui/QLogLevelComboBox.hpp</header>
   </customwidget>
  </customwidgets>
  <resources/>
