@@ -65,6 +65,9 @@ void QLogLevelComboBox::paintEvent(QPaintEvent* event) {
 QLogLevelComboBox::QLogLevelComboBox(QWidget* parent) : QComboBox(parent) {
     fill_items();
 
+    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    setFixedSize(100, 25);
+
     // Set item delegate:
     setItemDelegate(&delegate_);
 }
