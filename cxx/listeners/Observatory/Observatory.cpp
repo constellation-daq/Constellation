@@ -149,10 +149,11 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         listWidget->setTopics(sender, topics);
     });
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
-        listWidget->emplace(host, log_listener_);
+        listWidget->addHost(host, log_listener_);
     });
-    connect(
-        &log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) { listWidget->erase(sender); });
+    connect(&log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) {
+        listWidget->removeHost(sender);
+    });
 
     // Start the log receiver pool
     log_listener_.startPool();
