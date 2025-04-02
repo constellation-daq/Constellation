@@ -66,10 +66,10 @@ void QSubscriptionList::removeHost(const QString& name) {
     sort_items();
 }
 
-void QSubscriptionList::setTopics(const QString& itemName, const QString& listItem) {
+void QSubscriptionList::setTopics(const QString& itemName, const QStringList& topics) {
     for(auto* item : items_) {
         if(item->getName() == itemName) {
-            item->addListItem(listItem); // Now only QSubscriptionList can call this
+            item->setTopics(topics);
             return;
         }
     }

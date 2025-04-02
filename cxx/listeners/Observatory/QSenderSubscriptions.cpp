@@ -149,28 +149,29 @@ void QSenderSubscriptions::toggleExpand() {
     updateExpansionHeight();
 }
 
-void QSenderSubscriptions::addListItem(const QString& item) {
+void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
     // Remove old topics
-    // topics_.clear();
-    // topics_.setColumnCount(2);
+    topics_.clear();
 
     // Add new topics
-    // for(const auto& topic : topics) {
-    // Underlying QStandardItemModel takes ownership of QStandardItem instances
-    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-    // QList<QStandardItem*> row;
-    // row.append(new QStandardItem(topic));
-    // auto* item2 = new QStandardItem();
-    // row.append(item2);
-    // topics_.appendRow(row);
-    // ui_->topicsView->openPersistentEditor(item2->index());
-    // NOLINTEND(cppcoreguidelines-owning-memory)
-    // }
+    for(const auto& topic : topics) {
+        // Underlying QStandardItemModel takes ownership of QStandardItem instances
+        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
+        // QList<QStandardItem*> row;
+        // row.append(new QStandardItem(topic));
+        // auto* item2 = new QStandardItem();
+        // row.append(item2);
+        // topics_.appendRow(row);
+        // ui_->topicsView->openPersistentEditor(item2->index());
+        // NOLINTEND(cppcoreguidelines-owning-memory)
+        topics_.append(topic);
+    }
 
-    topics_.append(item);
+    // Set model to renewed list
     m_listModel->setStringList(topics_);
 
+    // Recalculate height if expanded
     if(m_isExpanded) {
         updateExpansionHeight();
     }

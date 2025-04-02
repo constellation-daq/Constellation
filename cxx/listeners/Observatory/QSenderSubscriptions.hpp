@@ -67,7 +67,7 @@ public:
 
     QString getName() const { return name_; }
     void toggleExpand();
-    void addListItem(const QString& item);
+    void setTopics(const QStringList& topics);
 
 signals:
     void expanded(QSenderSubscriptions* item); // Signal to notify expansion

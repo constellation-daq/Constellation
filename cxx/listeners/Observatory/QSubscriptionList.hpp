@@ -31,7 +31,7 @@ public:
     void addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems = {});
     void removeHost(const QString& name);
 
-    void setTopics(const QString& host, const QString& topics);
+    void setTopics(const QString& host, const QStringList& topics);
 
 private:
     void notifyItemExpanded(QSenderSubscriptions* expandedItem);

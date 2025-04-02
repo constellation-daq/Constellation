@@ -149,7 +149,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
     });
     connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
-        subscription_list_widget_->setTopics(sender, topics.first());
+        subscription_list_widget_->setTopics(sender, topics);
     });
     connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
         subscription_list_widget_->addHost(host, log_listener_);
