@@ -37,6 +37,12 @@ QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
     auto* box = new QLogLevelComboBox(parent);
     box->setDescending(false);
     box->addNeutralElement("- global -");
+
+    // Directly commit data to model when new item is selected - otherwise data is only committed when the editor loses focus
+    connect(box, &QComboBox::currentIndexChanged, this, [this, box, parent]() {
+        emit const_cast<ComboBoxItemDelegate*>(this)->commitData(box);
+    });
+
     return box;
 }
 
