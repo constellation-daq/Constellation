@@ -18,11 +18,12 @@ QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     scroll_area_->setWidgetResizable(true);
     scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll_area_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll_area_->setFrameShape(QFrame::NoFrame);
 
     scroll_widget_ = new QWidget();
     scroll_layout_ = new QVBoxLayout(scroll_widget_);
-    scroll_layout_->setContentsMargins(0, 0, 0, 0);
-    scroll_layout_->setSpacing(2);
+    scroll_layout_->setContentsMargins(6, 6, 6, 6);
+    scroll_layout_->setSpacing(6);
 
     scroll_widget_->setLayout(scroll_layout_);
     scroll_area_->setWidget(scroll_widget_);

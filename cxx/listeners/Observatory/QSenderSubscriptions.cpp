@@ -195,17 +195,14 @@ void QSenderSubscriptions::updateExpansionHeight(bool expand) {
     animation_->setStartValue(animation_->currentValue());
 
     if(expand) {
-        int rowCount = topics_->rowCount();
-        const int itemHeight = topics_view_->verticalHeader()->sectionSize(0);
-        // int itemHeight = 20;
-        int expandedHeight = rowCount * itemHeight + 10;
+        const int rows = topics_->rowCount();
+        const int item_height = topics_view_->verticalHeader()->sectionSize(0);
+        const int expandedHeight = rows * item_height;
+        topics_view_->setMinimumHeight(expandedHeight);
 
         topics_view_->setVisible(true);
-        topics_view_->setMinimumHeight(expandedHeight);
         animation_->setEndValue(expandedHeight);
     } else {
-        topics_view_->setVisible(false);
-        topics_view_->setMinimumHeight(0);
         animation_->setEndValue(0);
     }
 
