@@ -74,10 +74,10 @@ QCollapseButton::QCollapseButton(QWidget* parent) : QToolButton(parent) {
 QSenderSubscriptions::QSenderSubscriptions(const QString& name,
                                            std::function<void(const std::string&, const std::string&, Level)> sub_callback,
                                            std::function<void(const std::string&, const std::string&)> unsub_callback,
-                                           const QStringList& listItems,
+                                           const QStringList& topics,
                                            QWidget* parent)
     : QWidget(parent), name_(name), sub_callback_(std::move(sub_callback)), unsub_callback_(std::move(unsub_callback)),
-      delegate_(this), topics_(listItems), m_isExpanded(false) {
+      delegate_(this), m_isExpanded(false) {
 
     label_ = new QLabel(name_, this);
     expand_button_ = new QCollapseButton(this);
@@ -96,10 +96,11 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     topics_view_->horizontalHeader()->setStretchLastSection(true);
     topics_view_->verticalHeader()->setVisible(false);
 
-    // Set model
-    m_listModel = new QStringListModel(this);
-    m_listModel->setStringList(topics_);
-    topics_view_->setModel(m_listModel);
+    // Set model and add topics
+    topics_ = new QStandardItemModel(this);
+    setTopics(topics);
+
+    topics_view_->setModel(topics_);
     topics_view_->setItemDelegateForColumn(1, &delegate_);
 
     // Container for animation
@@ -152,24 +153,21 @@ void QSenderSubscriptions::toggleExpand() {
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
     // Remove old topics
-    topics_.clear();
+    topics_->clear();
+    topics_->setColumnCount(2);
 
     // Add new topics
     for(const auto& topic : topics) {
         // Underlying QStandardItemModel takes ownership of QStandardItem instances
         // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-        // QList<QStandardItem*> row;
-        // row.append(new QStandardItem(topic));
-        // auto* item2 = new QStandardItem();
-        // row.append(item2);
-        // topics_.appendRow(row);
-        // ui_->topicsView->openPersistentEditor(item2->index());
+        QList<QStandardItem*> row;
+        row.append(new QStandardItem(topic));
+        auto* item2 = new QStandardItem();
+        row.append(item2);
+        topics_->appendRow(row);
+        topics_view_->openPersistentEditor(item2->index());
         // NOLINTEND(cppcoreguidelines-owning-memory)
-        topics_.append(topic);
     }
-
-    // Set model to renewed list
-    m_listModel->setStringList(topics_);
 
     // Recalculate height if expanded
     if(m_isExpanded) {
@@ -182,7 +180,7 @@ void QSenderSubscriptions::updateExpansionHeight() {
     animation_->setStartValue(animation_->currentValue());
 
     if(m_isExpanded) {
-        int rowCount = topics_.size();
+        int rowCount = topics_->rowCount();
         const int itemHeight = topics_view_->verticalHeader()->sectionSize(0);
         // int itemHeight = 20;
         int expandedHeight = rowCount * itemHeight + 10;

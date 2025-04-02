@@ -18,8 +18,8 @@
 #include <QItemSelection>
 #include <QLabel>
 #include <QPropertyAnimation>
+#include <QStandardItemModel>
 #include <QStringList>
-#include <QStringListModel>
 #include <QTableView>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -62,7 +62,7 @@ public:
         const QString& name,
         std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
         std::function<void(const std::string&, const std::string&)> unsub_callback,
-        const QStringList& listItems = {},
+        const QStringList& topics = {},
         QWidget* parent = nullptr);
 
     QString getName() const { return name_; }
@@ -83,8 +83,7 @@ private:
     QLabel* label_;
     QCollapseButton* expand_button_;
     QTableView* topics_view_;
-    QStringListModel* m_listModel;
-    QStringList topics_;
+    QStandardItemModel* topics_;
     QWidget* container_;
     QVBoxLayout* main_layout_;
     QPropertyAnimation* animation_;
