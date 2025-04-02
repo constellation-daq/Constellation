@@ -31,18 +31,17 @@ public:
     void addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems = {});
     void removeHost(const QString& name);
 
-    // NEW: Function to add an item to an existing ItemWidget
     void setTopics(const QString& host, const QString& topics);
 
+private:
     void notifyItemExpanded(QSenderSubscriptions* expandedItem);
+    void sort_items();
 
 private:
-    QVBoxLayout* m_layout;
-    QScrollArea* m_scrollArea;
-    QWidget* m_scrollWidget;
-    QVBoxLayout* m_scrollLayout;
-    QList<QSenderSubscriptions*> m_items;
-    QSenderSubscriptions* m_currentExpandedItem;
-
-    void sort_items();
+    QVBoxLayout* layout_;
+    QScrollArea* scroll_area_;
+    QWidget* scroll_widget_;
+    QVBoxLayout* scroll_layout_;
+    QList<QSenderSubscriptions*> items_;
+    QSenderSubscriptions* expanded_item_ {nullptr};
 };

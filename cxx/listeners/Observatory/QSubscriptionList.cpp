@@ -9,26 +9,26 @@
 
 #include "QSubscriptionList.hpp"
 
-QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent), m_currentExpandedItem(nullptr) {
-    m_layout = new QVBoxLayout(this);
-    m_layout->setContentsMargins(0, 0, 0, 0);
-    m_layout->setSpacing(2);
+QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
+    layout_ = new QVBoxLayout(this);
+    layout_->setContentsMargins(0, 0, 0, 0);
+    layout_->setSpacing(2);
 
-    m_scrollArea = new QScrollArea(this);
-    m_scrollArea->setWidgetResizable(true);
-    m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    m_scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    scroll_area_ = new QScrollArea(this);
+    scroll_area_->setWidgetResizable(true);
+    scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll_area_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
-    m_scrollWidget = new QWidget();
-    m_scrollLayout = new QVBoxLayout(m_scrollWidget);
-    m_scrollLayout->setContentsMargins(0, 0, 0, 0);
-    m_scrollLayout->setSpacing(2);
+    scroll_widget_ = new QWidget();
+    scroll_layout_ = new QVBoxLayout(scroll_widget_);
+    scroll_layout_->setContentsMargins(0, 0, 0, 0);
+    scroll_layout_->setSpacing(2);
 
-    m_scrollWidget->setLayout(m_scrollLayout);
-    m_scrollArea->setWidget(m_scrollWidget);
+    scroll_widget_->setLayout(scroll_layout_);
+    scroll_area_->setWidget(scroll_widget_);
 
-    m_layout->addWidget(m_scrollArea);
-    setLayout(m_layout);
+    layout_->addWidget(scroll_area_);
+    setLayout(layout_);
 }
 
 void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems) {
@@ -46,19 +46,19 @@ void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener,
     // Connect the expanded signal from ItemWidget to notifyItemExpanded()
     connect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notifyItemExpanded);
 
-    m_items.append(item);
-    m_scrollLayout->addWidget(item);
+    items_.append(item);
+    scroll_layout_->addWidget(item);
     sort_items();
 }
 
 void QSubscriptionList::removeHost(const QString& name) {
-    for(auto* item : m_items) {
+    for(auto* item : items_) {
         if(item->getName() == name) {
             // Disconnect the expanded signal to avoid dangling pointers
             disconnect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notifyItemExpanded);
 
-            m_items.removeOne(item);
-            m_scrollLayout->removeWidget(item);
+            items_.removeOne(item);
+            scroll_layout_->removeWidget(item);
             delete item;
             break;
         }
@@ -67,7 +67,7 @@ void QSubscriptionList::removeHost(const QString& name) {
 }
 
 void QSubscriptionList::setTopics(const QString& itemName, const QString& listItem) {
-    for(auto* item : m_items) {
+    for(auto* item : items_) {
         if(item->getName() == itemName) {
             item->addListItem(listItem); // Now only QSubscriptionList can call this
             return;
@@ -76,19 +76,19 @@ void QSubscriptionList::setTopics(const QString& itemName, const QString& listIt
 }
 
 void QSubscriptionList::notifyItemExpanded(QSenderSubscriptions* expandedItem) {
-    if(m_currentExpandedItem && m_currentExpandedItem != expandedItem) {
-        m_currentExpandedItem->toggleExpand();
+    if(expanded_item_ && expanded_item_ != expandedItem) {
+        expanded_item_->toggleExpand();
     }
-    m_currentExpandedItem = expandedItem;
+    expanded_item_ = expandedItem;
 }
 
 void QSubscriptionList::sort_items() {
-    std::sort(m_items.begin(), m_items.end(), [](QSenderSubscriptions* a, QSenderSubscriptions* b) {
+    std::sort(items_.begin(), items_.end(), [](QSenderSubscriptions* a, QSenderSubscriptions* b) {
         return a->getName() < b->getName();
     });
 
-    for(auto* item : m_items) {
-        m_scrollLayout->removeWidget(item);
-        m_scrollLayout->addWidget(item);
+    for(auto* item : items_) {
+        scroll_layout_->removeWidget(item);
+        scroll_layout_->addWidget(item);
     }
 }
