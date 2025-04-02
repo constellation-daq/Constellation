@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <QComboBox>
 #include <QPainter>
 #include <QStyledItemDelegate>

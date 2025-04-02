@@ -20,7 +20,6 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
-#include "constellation/gui/qt_utils.hpp"
 
 using namespace constellation;
 using namespace constellation::gui;
@@ -73,13 +72,13 @@ QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolBu
     });
 }
 
-QSenderSubscriptions::QSenderSubscriptions(const QString& name,
+QSenderSubscriptions::QSenderSubscriptions(QString name,
                                            std::function<void(const std::string&, const std::string&, Level)> sub_callback,
                                            std::function<void(const std::string&, const std::string&)> unsub_callback,
                                            const QStringList& topics,
                                            QWidget* parent)
-    : QWidget(parent), name_(name), sub_callback_(std::move(sub_callback)), unsub_callback_(std::move(unsub_callback)),
-      delegate_(this) {
+    : QWidget(parent), name_(std::move(name)), sub_callback_(std::move(sub_callback)),
+      unsub_callback_(std::move(unsub_callback)), delegate_(this) {
 
     expand_button_ = new QCollapseButton(name_, this);
     topics_view_ = new QTableView(this);
@@ -137,7 +136,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
         // Emit the signal to notify that this item has expanded or collapsed
         emit expanded(this, expand);
-        updateExpansionHeight(expand);
+        update_height(expand);
     });
 
     // Connect the sender level to subscription:
@@ -165,7 +164,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
 void QSenderSubscriptions::collapse() {
     expand_button_->setChecked(false);
     expand_button_->setArrowType(Qt::ArrowType::RightArrow);
-    updateExpansionHeight(false);
+    update_height(false);
 }
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
@@ -189,11 +188,11 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
     // Recalculate height if expanded
     if(expand_button_->isChecked()) {
-        updateExpansionHeight(true);
+        update_height(true);
     }
 }
 
-void QSenderSubscriptions::updateExpansionHeight(bool expand) {
+void QSenderSubscriptions::update_height(bool expand) {
     // Use current animation value as start
     animation_->setStartValue(animation_->currentValue());
 

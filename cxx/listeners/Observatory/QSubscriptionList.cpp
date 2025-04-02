@@ -9,6 +9,14 @@
 
 #include "QSubscriptionList.hpp"
 
+#include <string>
+
+#include "constellation/core/log/Level.hpp"
+
+#include "QLogListener.hpp"
+
+using namespace constellation::log;
+
 QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     layout_ = new QVBoxLayout(this);
     layout_->setContentsMargins(0, 0, 0, 0);
@@ -36,7 +44,7 @@ void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener,
 
     auto* item = new QSenderSubscriptions(
         name,
-        [&](const std::string& host, const std::string& topic, constellation::log::Level level) {
+        [&](const std::string& host, const std::string& topic, Level level) {
             log_listener.subscribeExtaLogTopic(host, topic, level);
         },
         [&](const std::string& host, const std::string& topic) { log_listener.unsubscribeExtraLogTopic(host, topic); },
@@ -44,8 +52,8 @@ void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener,
         this);
     item->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-    // Connect the expanded signal from ItemWidget to notifyItemExpanded()
-    connect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notifyItemExpanded);
+    // Connect the expansion signal from sender subscription to notify_item_expanded
+    connect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
 
     items_.append(item);
     scroll_layout_->addWidget(item);
@@ -56,7 +64,7 @@ void QSubscriptionList::removeHost(const QString& name) {
     for(auto* item : items_) {
         if(item->getName() == name) {
             // Disconnect the expanded signal to avoid dangling pointers
-            disconnect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notifyItemExpanded);
+            disconnect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
 
             items_.removeOne(item);
             scroll_layout_->removeWidget(item);
@@ -67,18 +75,18 @@ void QSubscriptionList::removeHost(const QString& name) {
     sort_items();
 }
 
-void QSubscriptionList::setTopics(const QString& itemName, const QStringList& topics) {
+void QSubscriptionList::setTopics(const QString& host, const QStringList& topics) {
     for(auto* item : items_) {
-        if(item->getName() == itemName) {
+        if(item->getName() == host) {
             item->setTopics(topics);
             return;
         }
     }
 }
 
-void QSubscriptionList::notifyItemExpanded(QSenderSubscriptions* expandedItem, bool expanded) {
+void QSubscriptionList::notify_item_expanded(QSenderSubscriptions* expandedItem, bool expanded) {
     // If we have an expanded item and it's not the new one, collapse it
-    if(expanded_item_ && expanded_item_ != expandedItem) {
+    if(expanded_item_ != nullptr && expanded_item_ != expandedItem) {
         expanded_item_->collapse();
     }
 
@@ -87,9 +95,7 @@ void QSubscriptionList::notifyItemExpanded(QSenderSubscriptions* expandedItem, b
 }
 
 void QSubscriptionList::sort_items() {
-    std::sort(items_.begin(), items_.end(), [](QSenderSubscriptions* a, QSenderSubscriptions* b) {
-        return a->getName() < b->getName();
-    });
+    std::ranges::sort(items_, [](QSenderSubscriptions* a, QSenderSubscriptions* b) { return a->getName() < b->getName(); });
 
     // Remove all widgets from layout:
     QLayoutItem* child;

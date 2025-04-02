@@ -9,16 +9,10 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
-#include <string>
-
 #include <QList>
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include <QWidget>
-
-#include "constellation/core/log/Level.hpp"
 
 #include "QLogListener.hpp"
 #include "QSenderSubscriptions.hpp"
@@ -34,7 +28,7 @@ public:
     void setTopics(const QString& host, const QStringList& topics);
 
 private:
-    void notifyItemExpanded(QSenderSubscriptions* expandedItem, bool expanded);
+    void notify_item_expanded(QSenderSubscriptions* expandedItem, bool expanded);
     void sort_items();
 
 private:

@@ -10,7 +10,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <string>
 
 #include <QApplication>
@@ -58,7 +57,7 @@ class QSenderSubscriptions : public QWidget {
 
 public:
     explicit QSenderSubscriptions(
-        const QString& name,
+        QString name,
         std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
         std::function<void(const std::string&, const std::string&)> unsub_callback,
         const QStringList& topics = {},
@@ -87,5 +86,5 @@ private:
     QGridLayout* main_layout_;
     QPropertyAnimation* animation_;
 
-    void updateExpansionHeight(bool expand);
+    void update_height(bool expand);
 };

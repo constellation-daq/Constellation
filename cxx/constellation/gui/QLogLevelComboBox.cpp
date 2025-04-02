@@ -9,6 +9,8 @@
 
 #include "QLogLevelComboBox.hpp"
 
+#include <utility>
+
 #include <QPaintEvent>
 
 #include "constellation/core/log/Level.hpp"
