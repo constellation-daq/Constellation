@@ -87,8 +87,17 @@ void QSubscriptionList::sort_items() {
         return a->getName() < b->getName();
     });
 
+    // Remove all widgets from layout:
+    QLayoutItem* child;
+    while((child = scroll_layout_->takeAt(0)) != nullptr) {
+        scroll_layout_->removeWidget(child->widget());
+    }
+
+    // Re-add in correct order:
     for(auto* item : items_) {
-        scroll_layout_->removeWidget(item);
         scroll_layout_->addWidget(item);
     }
+
+    // Add stretch at the end
+    scroll_layout_->addStretch();
 }
