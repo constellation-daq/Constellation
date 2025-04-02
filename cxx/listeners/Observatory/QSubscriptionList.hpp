@@ -28,7 +28,7 @@ class QSubscriptionList : public QWidget {
 
 public:
     explicit QSubscriptionList(QWidget* parent = nullptr);
-    void addHost(const QString& name, const QStringList& listItems = {});
+    void addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems = {});
     void removeHost(const QString& name);
 
     // NEW: Function to add an item to an existing ItemWidget

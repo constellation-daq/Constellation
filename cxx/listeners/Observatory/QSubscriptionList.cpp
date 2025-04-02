@@ -31,8 +31,16 @@ QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent), m_curre
     setLayout(m_layout);
 }
 
-void QSubscriptionList::addHost(const QString& name, const QStringList& listItems) {
-    auto* item = new QSenderSubscriptions(name, listItems, this);
+void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems) {
+
+    auto* item = new QSenderSubscriptions(
+        name,
+        [&](const std::string& host, const std::string& topic, constellation::log::Level level) {
+            log_listener.subscribeExtaLogTopic(host, topic, level);
+        },
+        [&](const std::string& host, const std::string& topic) { log_listener.unsubscribeExtraLogTopic(host, topic); },
+        listItems,
+        this);
     item->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     // Connect the expanded signal from ItemWidget to notifyItemExpanded()
