@@ -84,23 +84,27 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     topics_view_ = new QTableView(this);
     topics_view_->setVisible(false);
 
-    // Disable scrollbars
-    topics_view_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    topics_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    topics_view_->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
-    topics_view_->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
-    topics_view_->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
-    topics_view_->setShowGrid(false);
-    topics_view_->horizontalHeader()->setVisible(false);
-    topics_view_->horizontalHeader()->setStretchLastSection(true);
-    topics_view_->verticalHeader()->setVisible(false);
-
     // Set model and add topics
     topics_ = new QStandardItemModel(this);
     setTopics(topics);
-
     topics_view_->setModel(topics_);
     topics_view_->setItemDelegateForColumn(1, &delegate_);
+
+    // Disable scrollbars
+    topics_view_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    topics_view_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    // topics_view_->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
+    topics_view_->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
+    topics_view_->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
+    topics_view_->setShowGrid(false);
+
+    topics_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    topics_view_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
+    topics_view_->horizontalHeader()->resizeSection(1, 100);
+    topics_view_->horizontalHeader()->setVisible(false);
+    topics_view_->verticalHeader()->setVisible(false);
+    topics_view_->setFrameShape(QFrame::NoFrame);
+    topics_view_->setStyleSheet("QTableView {background-color: transparent;}");
 
     // Sender log level
     sender_level_ = new QLogLevelComboBox(this);
@@ -111,7 +115,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     container_ = new QWidget(this);
     QVBoxLayout* listLayout = new QVBoxLayout(container_);
     listLayout->addWidget(topics_view_);
-    listLayout->setContentsMargins(0, 0, 0, 0);
+    listLayout->setContentsMargins(25, 4, 0, 0);
     container_->setLayout(listLayout);
     container_->setMaximumHeight(0);
 
@@ -129,7 +133,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
 
-    setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
         // Emit the signal to notify that this item has expanded or collapsed
