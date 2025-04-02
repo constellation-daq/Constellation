@@ -200,8 +200,11 @@ void QSenderSubscriptions::updateExpansionHeight() {
         int expandedHeight = rowCount * itemHeight + 10;
 
         topics_view_->setVisible(true);
+        topics_view_->setMinimumHeight(expandedHeight);
         animation_->setEndValue(expandedHeight);
     } else {
+        topics_view_->setVisible(false);
+        topics_view_->setMinimumHeight(0);
         animation_->setEndValue(0);
     }
 
