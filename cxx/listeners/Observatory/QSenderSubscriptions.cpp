@@ -64,6 +64,7 @@ QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolBu
     setFont(QApplication::font());
     setArrowType(Qt::ArrowType::RightArrow);
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
     QToolButton::setText(" " + text);
 
@@ -132,8 +133,6 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
-
-    setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
     connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
         // Emit the signal to notify that this item has expanded or collapsed
