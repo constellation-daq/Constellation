@@ -75,11 +75,14 @@ void QSubscriptionList::setTopics(const QString& itemName, const QStringList& to
     }
 }
 
-void QSubscriptionList::notifyItemExpanded(QSenderSubscriptions* expandedItem) {
+void QSubscriptionList::notifyItemExpanded(QSenderSubscriptions* expandedItem, bool expanded) {
+    // If we have an expanded item and it's not the new one, collapse it
     if(expanded_item_ && expanded_item_ != expandedItem) {
-        expanded_item_->toggleExpand();
+        expanded_item_->collapse();
     }
-    expanded_item_ = expandedItem;
+
+    // Only if the emitting item is expanded, store it:
+    expanded_item_ = (expanded ? expandedItem : nullptr);
 }
 
 void QSubscriptionList::sort_items() {

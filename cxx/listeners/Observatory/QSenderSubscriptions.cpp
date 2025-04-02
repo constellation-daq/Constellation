@@ -78,7 +78,7 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
                                            const QStringList& topics,
                                            QWidget* parent)
     : QWidget(parent), name_(name), sub_callback_(std::move(sub_callback)), unsub_callback_(std::move(unsub_callback)),
-      delegate_(this), m_isExpanded(false) {
+      delegate_(this) {
 
     expand_button_ = new QCollapseButton(name_, this);
     topics_view_ = new QTableView(this);
@@ -131,7 +131,11 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
 
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
-    connect(expand_button_, &QCollapseButton::clicked, this, &QSenderSubscriptions::toggleExpand);
+    connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
+        // Emit the signal to notify that this item has expanded or collapsed
+        emit expanded(this, expand);
+        updateExpansionHeight(expand);
+    });
 
     // Connect the sender level to subscription:
     connect(sender_level_, &QLogLevelComboBox::currentTextChanged, this, [&](const QString& text) {
@@ -155,13 +159,10 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     });
 }
 
-void QSenderSubscriptions::toggleExpand() {
-    if(!m_isExpanded) {
-        // Emit the signal to notify that this item has expanded
-        emit expanded(this);
-    }
-    m_isExpanded = !m_isExpanded;
-    updateExpansionHeight();
+void QSenderSubscriptions::collapse() {
+    expand_button_->setChecked(false);
+    expand_button_->setArrowType(Qt::ArrowType::RightArrow);
+    updateExpansionHeight(false);
 }
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
@@ -184,16 +185,16 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
     }
 
     // Recalculate height if expanded
-    if(m_isExpanded) {
-        updateExpansionHeight();
+    if(expand_button_->isChecked()) {
+        updateExpansionHeight(true);
     }
 }
 
-void QSenderSubscriptions::updateExpansionHeight() {
+void QSenderSubscriptions::updateExpansionHeight(bool expand) {
     // Use current animation value as start
     animation_->setStartValue(animation_->currentValue());
 
-    if(m_isExpanded) {
+    if(expand) {
         int rowCount = topics_->rowCount();
         const int itemHeight = topics_view_->verticalHeader()->sectionSize(0);
         // int itemHeight = 20;

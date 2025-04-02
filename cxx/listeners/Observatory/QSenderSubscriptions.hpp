@@ -65,11 +65,11 @@ public:
         QWidget* parent = nullptr);
 
     QString getName() const { return name_; }
-    void toggleExpand();
+    void collapse();
     void setTopics(const QStringList& topics);
 
 signals:
-    void expanded(QSenderSubscriptions* item); // Signal to notify expansion
+    void expanded(QSenderSubscriptions* item, bool expanded); // Signal to notify expansion
 
 private:
     QString name_;
@@ -86,7 +86,6 @@ private:
     QWidget* container_;
     QGridLayout* main_layout_;
     QPropertyAnimation* animation_;
-    bool m_isExpanded;
 
-    void updateExpansionHeight();
+    void updateExpansionHeight(bool expand);
 };

@@ -34,7 +34,7 @@ public:
     void setTopics(const QString& host, const QStringList& topics);
 
 private:
-    void notifyItemExpanded(QSenderSubscriptions* expandedItem);
+    void notifyItemExpanded(QSenderSubscriptions* expandedItem, bool expanded);
     void sort_items();
 
 private:
