@@ -13,19 +13,20 @@
 #include <memory>
 #include <string>
 
+#include <QApplication>
 #include <QComboBox>
 #include <QItemSelection>
-#include <QStandardItemModel>
+#include <QLabel>
+#include <QPropertyAnimation>
 #include <QStringList>
+#include <QStringListModel>
+#include <QTableView>
+#include <QToolButton>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
-
-// Expose Qt class auto-generated from the user interface XML:
-namespace Ui { // NOLINT(readability-identifier-naming)
-    class QSenderSubscriptions;
-} // namespace Ui
 
 class ComboBoxItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
@@ -47,37 +48,47 @@ public:
     void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
 };
 
+class QCollapseButton : public QToolButton {
+public:
+    QCollapseButton(QWidget* parent = nullptr);
+    void setText(const QString& text) { QToolButton::setText(" " + text); }
+};
+
 class QSenderSubscriptions : public QWidget {
     Q_OBJECT
 
 public:
-    QSenderSubscriptions(QWidget* parent,
-                         QString name,
-                         std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
-                         std::function<void(const std::string&, const std::string&)> unsub_callback);
+    explicit QSenderSubscriptions(
+        const QString& name,
+        std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback,
+        std::function<void(const std::string&, const std::string&)> unsub_callback,
+        const QStringList& listItems = {},
+        QWidget* parent = nullptr);
 
-    void setTopics(const QStringList& topics);
-
-    void updateListItemSize();
+    QString getName() const { return name_; }
+    void toggleExpand();
+    void addListItem(const QString& item);
 
 signals:
-    void sizeChanged();
-
-private slots:
-    /**
-     * @brief Private slot for changes of the sender log level setting
-     *
-     * @param index New index of the log level
-     */
-    void on_senderLevel_currentIndexChanged(int index);
+    void expanded(QSenderSubscriptions* item); // Signal to notify expansion
 
 private:
     QString name_;
-    std::shared_ptr<Ui::QSenderSubscriptions> ui_;
+
     std::function<void(const std::string&, const std::string&, constellation::log::Level)> sub_callback_;
     std::function<void(const std::string&, const std::string&)> unsub_callback_;
 
-    // Topics
     ComboBoxItemDelegate delegate_;
-    QStandardItemModel topics_;
+
+    QLabel* label_;
+    QCollapseButton* expand_button_;
+    QTableView* topics_view_;
+    QStringListModel* m_listModel;
+    QStringList topics_;
+    QWidget* container_;
+    QVBoxLayout* main_layout_;
+    QPropertyAnimation* animation_;
+    bool m_isExpanded;
+
+    void updateExpansionHeight();
 };

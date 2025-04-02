@@ -12,7 +12,7 @@ if get_option('build_gui') == 'none'
 endif
 
 qrc_files = qt.compile_resources(sources: 'Observatory.qrc')
-ui_files = qt.compile_ui(sources: ['Observatory.ui', 'QSenderSubscriptions.ui'])
+ui_files = qt.compile_ui(sources: ['Observatory.ui'])
 moc_files = qt.compile_moc(headers: ['QLogFilter.hpp', 'QLogListener.hpp', 'QSenderSubscriptions.hpp', 'QSubscriptionList.hpp', 'Observatory.hpp'])
 
 executable('Observatory',
