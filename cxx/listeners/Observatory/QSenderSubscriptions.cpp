@@ -130,15 +130,15 @@ QSenderSubscriptions::QSenderSubscriptions(const QString& name,
     connect(expand_button_, &QCollapseButton::clicked, this, &QSenderSubscriptions::toggleExpand);
 
     // Connect item change to subscription:
-    // connect(&topics_, &QStandardItemModel::itemChanged, this, [&](QStandardItem* item) {
-    // const auto topic = topics_.item(item->index().row())->text().toStdString();
-    // const auto level = enum_cast<Level>(item->text().toStdString());
-    // if(level.has_value()) {
-    // sub_callback_(name_.toStdString(), topic, level.value());
-    // } else {
-    // unsub_callback_(name_.toStdString(), topic);
-    // }
-    // });
+    connect(topics_, &QStandardItemModel::itemChanged, this, [&](QStandardItem* item) {
+        const auto topic = topics_->item(item->index().row())->text().toStdString();
+        const auto level = enum_cast<Level>(item->text().toStdString());
+        if(level.has_value()) {
+            sub_callback_(name_.toStdString(), topic, level.value());
+        } else {
+            unsub_callback_(name_.toStdString(), topic);
+        }
+    });
 }
 
 void QSenderSubscriptions::toggleExpand() {
