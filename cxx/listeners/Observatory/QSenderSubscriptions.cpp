@@ -175,6 +175,8 @@ void QSenderSubscriptions::collapse() {
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
+    // FIXME if we had a subscription, it is gone now.
+
     // Remove old topics
     topics_->clear();
     topics_->setColumnCount(2);
