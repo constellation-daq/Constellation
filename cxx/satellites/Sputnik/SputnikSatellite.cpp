@@ -19,15 +19,23 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/metrics/stat.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation::config;
 using namespace constellation::metrics;
+using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace std::chrono_literals;
 
 SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
     LOG(STATUS) << "Sputnik prototype satellite " << getCanonicalName() << " created";
+
+    register_command("get_channel_reading",
+                     "This example command reads the a device value from the channel number provided as argument. Since this"
+                     "will reset the corresponding channel, this can only be done before the run has started.",
+                     {State::NEW, State::INIT, State::ORBIT},
+                     std::function<double(int)>([&](int channel) -> double { return 13.8 * channel; }));
 }
 
 void SputnikSatellite::initializing(Configuration& config) {
@@ -37,7 +45,7 @@ void SputnikSatellite::initializing(Configuration& config) {
     register_timed_metric(
         "BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", std::chrono::milliseconds(interval), []() { return 42; });
 
-    register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total running time");
+    register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");
 }
 
 void SputnikSatellite::launching() {

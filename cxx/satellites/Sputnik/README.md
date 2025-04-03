@@ -50,5 +50,4 @@ command as well as all of its arguments, the return value and the allowed states
 
 | Command | Description | Arguments | Return Value | Allowed States |
 |---------|-------------|-----------|--------------|----------------|
-| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `INIT`, `ORBIT` |
-| `get_module_name` | Reads the name of the communication module | - | module name, `string` | all |
+| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `NEW`, `INIT`, `ORBIT` |
