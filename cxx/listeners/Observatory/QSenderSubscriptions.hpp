@@ -20,6 +20,7 @@
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTableView>
+#include <QToolButton>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
@@ -129,6 +130,7 @@ private:
 
     // UI elements
     constellation::gui::QCollapseButton* expand_button_;
+    QToolButton* reset_button_;
     QTableView* topics_view_;
     QStandardItemModel* topics_;
     QWidget* container_;

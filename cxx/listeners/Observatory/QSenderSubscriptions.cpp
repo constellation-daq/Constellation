@@ -85,8 +85,12 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
                                            QWidget* parent)
     : QWidget(parent), name_(std::move(name)), sub_callback_(std::move(sub_callback)),
       unsub_callback_(std::move(unsub_callback)), delegate_(this), sender_level_(new QLogLevelComboBox(this)),
-      expand_button_(new QCollapseButton(name_, this)), topics_view_(new QTableView(this)),
-      topics_(new QStandardItemModel(this)), container_(new QWidget(this)), main_layout_(new QGridLayout(this)) {
+      expand_button_(new QCollapseButton(name_, this)), reset_button_(new QToolButton(this)),
+      topics_view_(new QTableView(this)), topics_(new QStandardItemModel(this)), container_(new QWidget(this)),
+      main_layout_(new QGridLayout(this)) {
+
+    reset_button_->setIcon(QIcon(":action/reset"));
+    reset_button_->setStyleSheet("QToolButton { border-style: outset; border-width: 0px; }");
 
     topics_view_->setVisible(false);
 
@@ -128,8 +132,9 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
 
     // Layout
     main_layout_->addWidget(expand_button_, 0, 0, 1, 1);
-    main_layout_->addWidget(sender_level_, 0, 1, 1, 1);
-    main_layout_->addWidget(container_, 2, 0, 1, 2);
+    main_layout_->addWidget(reset_button_, 0, 1, 1, 1);
+    main_layout_->addWidget(sender_level_, 0, 2, 1, 1);
+    main_layout_->addWidget(container_, 2, 0, 1, 3);
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
@@ -138,6 +143,18 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
         // Emit the signal to notify that this item has expanded or collapsed
         emit expanded(this, expand);
         update_height(expand);
+    });
+
+    connect(reset_button_, &QCollapseButton::clicked, this, [&]() {
+        // Reset all log levels to neutral:
+        sender_level_->setNeutral();
+        for(int row = 0; row < topics_->rowCount(); ++row) {
+            const auto index = topics_->index(row, 1); // Column 1 holds QComboBox
+            topics_->setData(index, topics_->headerData(1, Qt::Horizontal, Qt::DisplayRole), Qt::EditRole);
+            // Close and reopen the editor to force an update
+            topics_view_->closePersistentEditor(index);
+            topics_view_->openPersistentEditor(index);
+        }
     });
 
     // Connect the sender level to subscription:

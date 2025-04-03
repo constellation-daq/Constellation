@@ -83,6 +83,12 @@ void QLogLevelComboBox::setCurrentLevel(constellation::log::Level level) {
     }
 }
 
+void QLogLevelComboBox::setNeutral() {
+    if(!neutral_.empty()) {
+        setCurrentIndex(0);
+    }
+}
+
 void QLogLevelComboBox::fill_items() {
     clear();
 
