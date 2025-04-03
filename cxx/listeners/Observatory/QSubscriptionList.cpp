@@ -97,7 +97,7 @@ void QSubscriptionList::notify_item_expanded(QSenderSubscriptions* expandedItem,
 }
 
 void QSubscriptionList::sort_items() {
-    std::ranges::sort(items_, [](QSenderSubscriptions* a, QSenderSubscriptions* b) { return a->getName() < b->getName(); });
+    std::ranges::sort(items_.begin(), items_.end(), {}, &QSenderSubscriptions::getName);
 
     // Remove all widgets from layout:
     QLayoutItem* child;

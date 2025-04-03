@@ -39,7 +39,7 @@ QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
     box->addNeutralElement("- global -");
 
     // Directly commit data to model when new item is selected - otherwise data is only committed when the editor loses focus
-    connect(box, &QComboBox::currentIndexChanged, this, [this, box, parent]() {
+    connect(box, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, box](int /* index */) {
         emit const_cast<ComboBoxItemDelegate*>(this)->commitData(box);
     });
 
