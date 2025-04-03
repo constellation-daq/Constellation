@@ -10,7 +10,9 @@
 #include "SputnikSatellite.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <cstdint>
+#include <functional>
 #include <stop_token>
 #include <string_view>
 #include <thread>
@@ -56,13 +58,13 @@ void SputnikSatellite::launching() {
 
 void SputnikSatellite::running(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        const auto time = (std::chrono::system_clock::now() - launch_time_).count() * 1e-9;
+        const auto time = static_cast<double>((std::chrono::system_clock::now() - launch_time_).count()) * 1e-9;
         // Let's calculate some temperature in space which depends on time (absorption from sun)
-        const auto temperature = std::sin(time / 50.) * 70. + 20.;
+        const auto temperature = (std::sin(time / 50.) * 70.) + 20.;
 
         STAT_T("TEMPERATURE", temperature, 3s);
         // Fan turns on above 36degC
-        STAT_T("FAN_RUNNING", (temperature > 36. ? true : false), 5s);
+        STAT_T("FAN_RUNNING", temperature > 36., 5s);
         STAT_T("TIME", time, 10s);
         std::this_thread::sleep_for(50ms);
     }
