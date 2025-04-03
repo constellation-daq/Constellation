@@ -128,7 +128,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
 
-    subscription_list_widget_ = new QSubscriptionList(this);
+    subscription_list_widget_ = new QSubscriptionList(subscriptionsIndividual);
     subscriptionLayout->addWidget(subscription_list_widget_);
 
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);

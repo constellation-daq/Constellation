@@ -18,26 +18,28 @@
 using namespace constellation::log;
 
 QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+
     layout_ = new QVBoxLayout(this);
     layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(2);
+    setLayout(layout_);
 
     scroll_area_ = new QScrollArea(this);
     scroll_area_->setWidgetResizable(true);
     scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll_area_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll_area_->setFrameShape(QFrame::NoFrame);
+    layout_->addWidget(scroll_area_);
 
     scroll_widget_ = new QWidget();
+    // FIXME deduce this width from parent widget - somehow that always returns 100px?
+    scroll_widget_->setFixedWidth(266);
+    scroll_area_->setWidget(scroll_widget_);
+
     scroll_layout_ = new QVBoxLayout(scroll_widget_);
     scroll_layout_->setContentsMargins(6, 6, 6, 6);
     scroll_layout_->setSpacing(6);
-
-    scroll_widget_->setLayout(scroll_layout_);
-    scroll_area_->setWidget(scroll_widget_);
-
-    layout_->addWidget(scroll_area_);
-    setLayout(layout_);
 }
 
 void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems) {

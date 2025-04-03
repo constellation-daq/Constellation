@@ -336,6 +336,12 @@
       </item>
       <item row="2" column="1">
        <widget class="QGroupBox" name="subscriptionsIndividual">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="title">
          <string>Individual Subscriptions</string>
         </property>
