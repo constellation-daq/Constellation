@@ -9,11 +9,14 @@
 
 #include "QSubscriptionList.hpp"
 
+#include <algorithm>
+#include <memory>
 #include <string>
 
 #include "constellation/core/log/Level.hpp"
 
 #include "QLogListener.hpp"
+#include "QSenderSubscriptions.hpp"
 
 using namespace constellation::log;
 
@@ -32,7 +35,7 @@ QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     scroll_area_->setFrameShape(QFrame::NoFrame);
     layout_->addWidget(scroll_area_);
 
-    scroll_widget_ = new QWidget();
+    scroll_widget_ = new QWidget(this);
     // FIXME deduce this width from parent widget - somehow that always returns 100px?
     scroll_widget_->setFixedWidth(266);
     scroll_area_->setWidget(scroll_widget_);
@@ -42,10 +45,10 @@ QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     scroll_layout_->setSpacing(6);
 }
 
-void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems) {
+void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener, const QStringList& listItems) {
 
-    auto* item = new QSenderSubscriptions(
-        name,
+    auto item = std::make_shared<QSenderSubscriptions>(
+        host,
         [&](const std::string& host, const std::string& topic, Level level) {
             log_listener.subscribeExtaLogTopic(host, topic, level);
         },
@@ -55,34 +58,36 @@ void QSubscriptionList::addHost(const QString& name, QLogListener& log_listener,
     item->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     // Connect the expansion signal from sender subscription to notify_item_expanded
-    connect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
+    connect(item.get(), &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
 
-    items_.append(item);
-    scroll_layout_->addWidget(item);
-    sort_items();
+    items_.emplace_back(item);
+    scroll_layout_->addWidget(item.get());
+
+    // Re-build layout
+    rebuild_layout();
 }
 
-void QSubscriptionList::removeHost(const QString& name) {
-    for(auto* item : items_) {
-        if(item->getName() == name) {
-            // Disconnect the expanded signal to avoid dangling pointers
-            disconnect(item, &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
-
-            items_.removeOne(item);
-            scroll_layout_->removeWidget(item);
-            delete item;
-            break;
-        }
+void QSubscriptionList::removeHost(const QString& host) {
+    auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
+    if(item == items_.end()) {
+        return;
     }
-    sort_items();
+
+    // Disconnect the expanded signal to avoid dangling pointers
+    disconnect(item->get(), &QSenderSubscriptions::expanded, this, &QSubscriptionList::notify_item_expanded);
+
+    // Remove from layout and delete
+    scroll_layout_->removeWidget(item->get());
+    items_.erase(item);
+
+    // Re-build layout
+    rebuild_layout();
 }
 
 void QSubscriptionList::setTopics(const QString& host, const QStringList& topics) {
-    for(auto* item : items_) {
-        if(item->getName() == host) {
-            item->setTopics(topics);
-            return;
-        }
+    auto item = std::ranges::find_if(items_, [host](const auto& it) { return it->getName() == host; });
+    if(item != items_.end()) {
+        (*item)->setTopics(topics);
     }
 }
 
@@ -96,19 +101,21 @@ void QSubscriptionList::notify_item_expanded(QSenderSubscriptions* expandedItem,
     expanded_item_ = (expanded ? expandedItem : nullptr);
 }
 
-void QSubscriptionList::sort_items() {
-    std::ranges::sort(items_.begin(), items_.end(), {}, &QSenderSubscriptions::getName);
+void QSubscriptionList::rebuild_layout() {
 
     // Remove all widgets from layout:
-    QLayoutItem* child;
+    QLayoutItem* child = nullptr;
     while((child = scroll_layout_->takeAt(0)) != nullptr) {
-        scroll_layout_->removeWidget(child->widget());
+        if(child->widget() != nullptr) {
+            scroll_layout_->removeWidget(child->widget());
+        }
     }
 
+    // Sort entries
+    std::ranges::sort(items_, [](const auto& a, const auto& b) { return a->getName() < b->getName(); });
+
     // Re-add in correct order:
-    for(auto* item : items_) {
-        scroll_layout_->addWidget(item);
-    }
+    std::ranges::for_each(items_, [&](const auto& it) { scroll_layout_->addWidget(it.get()); });
 
     // Add stretch at the end
     scroll_layout_->addStretch();

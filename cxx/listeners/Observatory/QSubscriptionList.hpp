@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include <QList>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -22,20 +25,21 @@ class QSubscriptionList : public QWidget {
 
 public:
     explicit QSubscriptionList(QWidget* parent = nullptr);
-    void addHost(const QString& name, QLogListener& log_listener, const QStringList& listItems = {});
-    void removeHost(const QString& name);
+    void addHost(const QString& host, QLogListener& log_listener, const QStringList& listItems = {});
+    void removeHost(const QString& host);
 
     void setTopics(const QString& host, const QStringList& topics);
 
 private:
     void notify_item_expanded(QSenderSubscriptions* expandedItem, bool expanded);
-    void sort_items();
+    void rebuild_layout();
 
 private:
     QVBoxLayout* layout_;
     QScrollArea* scroll_area_;
     QWidget* scroll_widget_;
     QVBoxLayout* scroll_layout_;
-    QList<QSenderSubscriptions*> items_;
+
+    std::vector<std::shared_ptr<QSenderSubscriptions>> items_;
     QSenderSubscriptions* expanded_item_ {nullptr};
 };
