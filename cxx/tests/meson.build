@@ -117,6 +117,7 @@ test_satellite_base = executable('test_satellite_base',
 )
 test('Satellite base functionality test', test_satellite_base,
   args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
 )
 
 test_satellite_fsm = executable('test_satellite_fsm',

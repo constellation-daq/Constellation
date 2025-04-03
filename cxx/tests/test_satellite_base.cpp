@@ -32,6 +32,7 @@
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
+#include "chirp_mock.hpp"
 #include "dummy_satellite.hpp"
 
 using namespace Catch::Matchers;
@@ -168,6 +169,29 @@ TEST_CASE("Hidden commands", "[satellite]") {
     auto recv_msg_get_services = sender.recv();
     REQUIRE(recv_msg_get_services.getVerb().first == CSCP1Message::Type::INVALID);
     REQUIRE_THAT(to_string(recv_msg_get_services.getVerb().second), Equals("No network discovery service available"));
+
+    satellite.exit();
+}
+
+TEST_CASE("Hidden commands for CHIRP services", "[satellite]") {
+    // Create CHIRP manager for monitoring service discovery
+    create_chirp_manager();
+
+    // Create and start satellite
+    DummySatellite satellite {};
+
+    // Create sender
+    CSCPSender sender {satellite.getCommandPort()};
+
+    // _get_services
+    sender.sendCommand("_get_services");
+    auto recv_msg_get_services = sender.recv();
+    REQUIRE(recv_msg_get_services.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_services.getVerb().second), Equals("2 services offered, list attached in payload"));
+
+    const auto get_services_dict = Dictionary::disassemble(recv_msg_get_services.getPayload());
+    REQUIRE(get_services_dict.contains("CONTROL"));
+    REQUIRE(get_services_dict.contains("HEARTBEAT"));
 
     satellite.exit();
 }
