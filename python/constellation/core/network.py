@@ -10,7 +10,7 @@ import ipaddress
 import platform
 import socket
 import struct
-from typing import List, Tuple
+from typing import Any
 
 import psutil
 
@@ -40,11 +40,21 @@ def get_broadcast_socket() -> socket.socket:
     return sock
 
 
-def decode_ancdata(ancdata: List[Tuple[int, int, bytes]], fallback: str) -> str:
+def recvmsg(socket: socket.socket, bufsize: int) -> tuple[bytes, list[tuple[int, int, bytes]], str]:
+    """Wrapper for socket.recvmsg which handles Windows support"""
+    buf: bytes
+    ancdata: list[tuple[int, int, bytes]] = []
+    from_address: Any
+    if platform.system() == "Linux":
+        buf, ancdata, _flags, from_address = socket.recvmsg(bufsize, ANC_BUF_SIZE)
+    else:
+        buf, from_address = socket.recvfrom(bufsize)
+    # Note: from_address is (address, port) i.e. (str, int)
+    return buf, ancdata, from_address[0]
+
+
+def decode_ancdata(ancdata: list[tuple[int, int, bytes]], fallback: str) -> str:
     """Decode ancillary message received via recvmsg and return destination ip."""
-    # IP_RECVORIGDSTADDR is only available on Linux
-    if platform.system() != "Linux":
-        return fallback
     # Decode IP_RECVORIGDSTADDR
     for cmsg_level, cmsg_type, cmsg_data in ancdata:
         # Handling IPv4
@@ -57,6 +67,7 @@ def decode_ancdata(ancdata: List[Tuple[int, int, bytes]], fallback: str) -> str:
 
             ip = socket.inet_ntop(family, cmsg_data[4:8])
             return ip
+    # Fallback if ancdata is empty (e.g. Windows)
     return fallback
 
 

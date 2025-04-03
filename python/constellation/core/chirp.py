@@ -10,7 +10,7 @@ from enum import Enum
 from hashlib import md5
 from uuid import UUID
 
-from .network import ANC_BUF_SIZE, decode_ancdata, get_broadcast, get_broadcast_socket
+from .network import decode_ancdata, get_broadcast, get_broadcast_socket, recvmsg
 
 CHIRP_PORT = 7123
 CHIRP_HEADER = "CHIRP\x01"
@@ -217,10 +217,7 @@ class CHIRPBeaconTransmitter:
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
         try:
-            buf, ancdata, flags, from_address = self._sock.recvmsg(
-                1024,
-                ANC_BUF_SIZE,
-            )
+            buf, ancdata, from_address = recvmsg(self._sock, 1024)
             self.busy = True
         except (BlockingIOError, TimeoutError):
             # no data waiting for us
@@ -242,7 +239,7 @@ class CHIRPBeaconTransmitter:
         if self._filter_group and self._group_uuid != msg.group_uuid:
             return None
 
-        msg.from_address = from_address[0]
+        msg.from_address = from_address
         msg.dest_address = decode_ancdata(ancdata, msg.from_address)
         return msg
 
