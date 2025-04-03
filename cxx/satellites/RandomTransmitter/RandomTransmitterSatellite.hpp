@@ -30,12 +30,15 @@ public:
     void stopping() final;
 
 private:
-    static std::uint8_t generate_random_seed();
+    static std::uint32_t generate_random_seed();
+    void running_rnggen(const std::stop_token& stop_token);
+    void running_pregen(const std::stop_token& stop_token);
 
 private:
+    bool pregen_ {};
+    std::uint32_t seed_ {};
     std::independent_bits_engine<std::default_random_engine, std::numeric_limits<std::uint8_t>::digits, std::uint8_t>
         byte_rng_;
-    std::uint8_t seed_ {};
     std::uint64_t frame_size_ {};
     std::uint32_t number_of_frames_ {};
     std::size_t hwm_reached_ {};
