@@ -123,12 +123,16 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
         // Handle subscriptions as well as notification subscriptions:
         if(body.starts_with("LOG/")) {
             handle_log_subscriptions(subscribe, body);
-        } else if(body.starts_with("LOG?") && subscribe) {
-            ManagerLocator::getSinkManager().sendLogNotification();
+        } else if(body.starts_with("LOG?")) {
+            if(subscribe) {
+                ManagerLocator::getSinkManager().sendLogNotification();
+            }
         } else if(body.starts_with("STAT/")) {
             handle_stat_subscriptions(subscribe, body);
-        } else if(body.starts_with("STAT?") && subscribe) {
-            ManagerLocator::getSinkManager().sendMetricNotification();
+        } else if(body.starts_with("STAT?")) {
+            if(subscribe) {
+                ManagerLocator::getSinkManager().sendMetricNotification();
+            }
         } else {
             LOG(*logger_, WARNING) << "Received " << (subscribe ? "" : "un") << "subscribe message with invalid topic "
                                    << body << ", ignoring";
