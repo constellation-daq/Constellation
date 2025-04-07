@@ -86,6 +86,8 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     : QWidget(parent), name_(std::move(name)), sub_callback_(std::move(sub_callback)),
       unsub_callback_(std::move(unsub_callback)), delegate_(this) {
 
+    // Qt takes care of cleanup since parent widgets are always specified:
+    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
     expand_button_ = new QCollapseButton(name_, this);
     topics_view_ = new QTableView(this);
     topics_view_->setVisible(false);
@@ -138,6 +140,7 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
+    // NOLINTEND(cppcoreguidelines-owning-memory)
 
     connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
         // Emit the signal to notify that this item has expanded or collapsed

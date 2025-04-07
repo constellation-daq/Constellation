@@ -23,6 +23,8 @@ using namespace constellation::log;
 QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
+    // Qt takes care of cleanup since parent widgets are always specified:
+    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
     layout_ = new QVBoxLayout(this);
     layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(2);
@@ -43,6 +45,7 @@ QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
     scroll_layout_ = new QVBoxLayout(scroll_widget_);
     scroll_layout_->setContentsMargins(6, 6, 6, 6);
     scroll_layout_->setSpacing(6);
+    // NOLINTEND(cppcoreguidelines-owning-memory)
 }
 
 void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener, const QStringList& listItems) {
