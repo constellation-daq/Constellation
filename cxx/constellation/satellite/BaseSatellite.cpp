@@ -15,6 +15,7 @@
 #include <exception>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <ranges>
 #include <stop_token>
@@ -480,6 +481,11 @@ std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
                         << config_.getDictionary(INTERNAL).to_string();
 
     return unused_kvps.size();
+}
+
+void BaseSatellite::set_user_status(std::string message) {
+    const std::lock_guard lock {user_status_mutex_};
+    user_status_ = std::move(message);
 }
 
 std::string BaseSatellite::get_user_status_or(std::string message) {

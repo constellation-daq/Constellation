@@ -199,6 +199,12 @@ namespace constellation::satellite {
          */
         std::string get_user_status_or(std::string message);
 
+        /**
+         * @brief Helper to set the user status
+         * @param message User status message
+         */
+        void set_user_status(std::string message);
+
     public:
         /// @cond doxygen_suppress
         virtual void initializing(config::Configuration& config) = 0;

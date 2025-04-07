@@ -159,7 +159,7 @@ namespace constellation::satellite {
          *
          * @param status Status message
          */
-        constexpr void submit_status(std::string status) { user_status_ = std::move(status); }
+        void submit_status(std::string status) { set_user_status(std::move(status)); }
 
         /**
          * @brief Register a metric which can be emitted manually
