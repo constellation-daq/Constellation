@@ -195,6 +195,7 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
             QList<QStandardItem*> row;
             row.append(new QStandardItem(topic));
             auto* item2 = new QStandardItem();
+            item2->setTextAlignment(Qt::AlignRight);
             row.append(item2);
             topics_->appendRow(row);
             topics_view_->openPersistentEditor(item2->index());
