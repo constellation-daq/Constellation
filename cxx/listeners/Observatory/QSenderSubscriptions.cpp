@@ -186,24 +186,34 @@ void QSenderSubscriptions::collapse() {
 
 void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
-    // FIXME if we had a subscription, it is gone now.
-
-    // Remove old topics
-    topics_->clear();
-    topics_->setColumnCount(2);
-
-    // Add new topics
+    // Loop over received topic list and add all new ones:
     for(const auto& topic : topics) {
-        // Underlying QStandardItemModel takes ownership of QStandardItem instances
-        // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-        QList<QStandardItem*> row;
-        row.append(new QStandardItem(topic));
-        auto* item2 = new QStandardItem();
-        row.append(item2);
-        topics_->appendRow(row);
-        topics_view_->openPersistentEditor(item2->index());
-        // NOLINTEND(cppcoreguidelines-owning-memory)
+
+        if(topics_->findItems(topic).empty()) {
+            // Underlying QStandardItemModel takes ownership of QStandardItem instances
+            // NOLINTBEGIN(cppcoreguidelines-owning-memory)
+            QList<QStandardItem*> row;
+            row.append(new QStandardItem(topic));
+            auto* item2 = new QStandardItem();
+            row.append(item2);
+            topics_->appendRow(row);
+            topics_view_->openPersistentEditor(item2->index());
+            // NOLINTEND(cppcoreguidelines-owning-memory)
+        }
     }
+
+    // Loop over existing topics and remove the ones not in the received list anymore
+    // Using reverse order to keep row indices valid
+    for(int row = topics_->rowCount() - 1; row >= 0; --row) {
+        const auto index = topics_->index(row, 0);
+        const auto topic = topics_->data(index).toString();
+        if(!topics.contains(topic)) {
+            topics_->removeRow(row);
+        }
+    }
+
+    // Sort the new list of topics:
+    topics_->sort(0);
 
     // Recalculate height if expanded
     if(expand_button_->isChecked()) {
