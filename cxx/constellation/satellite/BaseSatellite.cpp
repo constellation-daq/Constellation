@@ -513,10 +513,9 @@ std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& c
 
     // Store config after initializing
     const auto unused_kvps = store_config(std::move(config));
+    const auto status = user_status_.value_or("Satellite initialized") +
+                        (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully");
 
-    const auto status =
-        user_status_.value_or((unused_kvps > 0 ? "Satellite initialized, " + std::to_string(unused_kvps) + " unused keys"
-                                               : "Satellite initialized successfully"));
     user_status_.reset();
     return {status};
 }
@@ -554,10 +553,9 @@ std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configurat
 
     // Update stored config after reconfigure
     const auto unused_kvps = update_config(partial_config);
+    const auto status = user_status_.value_or("Satellite reconfigured") +
+                        (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully");
 
-    const auto status =
-        user_status_.value_or((unused_kvps > 0 ? "Satellite reconfigured, " + std::to_string(unused_kvps) + " unused keys"
-                                               : "Satellite reconfigured successfully"));
     user_status_.reset();
 
     return {status};
