@@ -20,6 +20,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
@@ -133,6 +134,13 @@ TEST_CASE("Standard commands", "[satellite]") {
     const auto config = Configuration(Dictionary::disassemble(recv_msg_get_config.getPayload()));
     REQUIRE(config.size() == 0);
     // TODO(stephan.lachnit): test with a non-empty configuration
+
+    // get_version
+    sender.sendCommand("get_version");
+    auto recv_msg_get_version = sender.recv();
+    REQUIRE(recv_msg_get_version.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_version.getVerb().second), Equals(CNSTLN_VERSION));
+    REQUIRE_FALSE(recv_msg_get_version.hasPayload());
 
     satellite.exit();
 }
