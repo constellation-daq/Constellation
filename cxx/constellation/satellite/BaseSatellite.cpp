@@ -482,6 +482,13 @@ std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
     return unused_kvps.size();
 }
 
+std::string BaseSatellite::get_user_status_or(std::string message) {
+    const std::lock_guard lock {user_status_mutex_};
+    const auto status = user_status_.value_or(std::move(message));
+    user_status_.reset();
+    return status;
+}
+
 void BaseSatellite::apply_internal_config(const Configuration& config) {
 
     if(config.has("_heartbeat_interval")) {
@@ -513,27 +520,21 @@ std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& c
 
     // Store config after initializing
     const auto unused_kvps = store_config(std::move(config));
-    const auto status = user_status_.value_or("Satellite initialized") +
-                        (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully");
 
-    user_status_.reset();
-    return {status};
+    return {get_user_status_or("Satellite initialized" +
+                               (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully"))};
 }
 
 std::optional<std::string> BaseSatellite::launching_wrapper() {
     launching();
 
-    const auto status = user_status_.value_or("Satellite launched successfully");
-    user_status_.reset();
-    return {status};
+    return {get_user_status_or("Satellite launched successfully")};
 }
 
 std::optional<std::string> BaseSatellite::landing_wrapper() {
     landing();
 
-    const auto status = user_status_.value_or("Satellite landed successfully");
-    user_status_.reset();
-    return {status};
+    return {get_user_status_or("Satellite landed successfully")};
 }
 
 std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
@@ -553,12 +554,9 @@ std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configurat
 
     // Update stored config after reconfigure
     const auto unused_kvps = update_config(partial_config);
-    const auto status = user_status_.value_or("Satellite reconfigured") +
-                        (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully");
 
-    user_status_.reset();
-
-    return {status};
+    return {get_user_status_or("Satellite reconfigured" +
+                               (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully"))};
 }
 
 std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_identifier) {
@@ -577,9 +575,7 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
 
-    const auto status = user_status_.value_or("Satellite started run " + run_identifier_ + " successfully");
-    user_status_.reset();
-    return {status};
+    return {get_user_status_or("Satellite started run " + run_identifier_ + " successfully")};
 }
 
 std::optional<std::string> BaseSatellite::stopping_wrapper() {
@@ -596,15 +592,14 @@ std::optional<std::string> BaseSatellite::stopping_wrapper() {
         transmitter_ptr->TransmitterSatellite::stopping_transmitter();
     }
 
-    const auto status = user_status_.value_or("Satellite stopped run successfully");
-    user_status_.reset();
-    return {status};
+    return {get_user_status_or("Satellite stopped run successfully")};
 }
 
 std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
     running(stop_token);
 
     // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
     user_status_.reset();
 
     return std::nullopt;
@@ -627,6 +622,7 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
     }
 
     // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
     user_status_.reset();
 
     // Do not provide status, the message comes from the `requestInterrupt()` function directly
@@ -643,6 +639,7 @@ std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_s
     failure(previous_state);
 
     // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
     user_status_.reset();
 
     // Do not provide status, the message comes from the exception which triggered the failure

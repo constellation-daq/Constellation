@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstddef>
+#include <mutex>
 #include <optional>
 #include <stop_token>
 #include <string>
@@ -191,6 +192,13 @@ namespace constellation::satellite {
          */
         std::size_t update_config(const config::Configuration& partial_config);
 
+        /**
+         * @brief Helper to obtain the current user-defined status or return an alternative default message
+         * @param message Default status message
+         * @return Status message
+         */
+        std::string get_user_status_or(std::string message);
+
     public:
         /// @cond doxygen_suppress
         virtual void initializing(config::Configuration& config) = 0;
@@ -229,9 +237,11 @@ namespace constellation::satellite {
         log::Logger cscp_logger_;
         std::jthread cscp_thread_;
         bool support_reconfigure_ {false};
-        std::optional<std::string> user_status_;
         config::Configuration config_;
         std::string run_identifier_;
+
+        std::optional<std::string> user_status_;
+        std::mutex user_status_mutex_;
 
         CommandRegistry user_commands_;
         heartbeat::HeartbeatManager heartbeat_manager_;
