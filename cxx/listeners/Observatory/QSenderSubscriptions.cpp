@@ -40,6 +40,7 @@ QWidget* ComboBoxItemDelegate::createEditor(QWidget* parent,
 
     // Directly commit data to model when new item is selected - otherwise data is only committed when the editor loses focus
     connect(box, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, box](int /* index */) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-const-cast)
         emit const_cast<ComboBoxItemDelegate*>(this)->commitData(box);
     });
 
@@ -78,22 +79,22 @@ QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolBu
     });
 }
 
+// Qt takes care of cleanup since parent widgets are always specified:
+// NOLINTBEGIN(cppcoreguidelines-owning-memory)
+
 QSenderSubscriptions::QSenderSubscriptions(QString name,
                                            std::function<void(const std::string&, const std::string&, Level)> sub_callback,
                                            std::function<void(const std::string&, const std::string&)> unsub_callback,
                                            const QStringList& topics,
                                            QWidget* parent)
     : QWidget(parent), name_(std::move(name)), sub_callback_(std::move(sub_callback)),
-      unsub_callback_(std::move(unsub_callback)), delegate_(this) {
+      unsub_callback_(std::move(unsub_callback)), delegate_(this), sender_level_(new QLogLevelComboBox(this)),
+      expand_button_(new QCollapseButton(name_, this)), topics_view_(new QTableView(this)),
+      topics_(new QStandardItemModel(this)), container_(new QWidget(this)), main_layout_(new QGridLayout(this)) {
 
-    // Qt takes care of cleanup since parent widgets are always specified:
-    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-    expand_button_ = new QCollapseButton(name_, this);
-    topics_view_ = new QTableView(this);
     topics_view_->setVisible(false);
 
     // Set model and add topics
-    topics_ = new QStandardItemModel(this);
     setTopics(topics);
     topics_view_->setModel(topics_);
     topics_view_->setItemDelegateForColumn(1, &delegate_);
@@ -115,13 +116,11 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     topics_view_->setStyleSheet("QTableView {background-color: transparent;}");
 
     // Sender log level
-    sender_level_ = new QLogLevelComboBox(this);
     sender_level_->setDescending(false);
     sender_level_->addNeutralElement("- global -");
 
     // Container for animation
-    container_ = new QWidget(this);
-    QVBoxLayout* listLayout = new QVBoxLayout(container_);
+    auto* listLayout = new QVBoxLayout(container_);
     listLayout->addWidget(topics_view_);
     listLayout->setContentsMargins(25, 4, 0, 0);
     container_->setLayout(listLayout);
@@ -133,14 +132,12 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     animation_->setEasingCurve(QEasingCurve::InOutQuad);
 
     // Layout
-    main_layout_ = new QGridLayout(this);
     main_layout_->addWidget(expand_button_, 0, 0, 1, 1);
     main_layout_->addWidget(sender_level_, 0, 1, 1, 1);
     main_layout_->addWidget(container_, 2, 0, 1, 2);
     main_layout_->setContentsMargins(0, 0, 0, 0);
     main_layout_->setSpacing(2);
     setLayout(main_layout_);
-    // NOLINTEND(cppcoreguidelines-owning-memory)
 
     connect(expand_button_, &QCollapseButton::toggled, this, [&](bool expand) {
         // Emit the signal to notify that this item has expanded or collapsed
@@ -169,6 +166,8 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
         }
     });
 }
+
+// NOLINTEND(cppcoreguidelines-owning-memory)
 
 void QSenderSubscriptions::collapse() {
     expand_button_->setChecked(false);

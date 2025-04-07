@@ -128,6 +128,8 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
 
+    // Qt UI has to be initialized before we can call this, and it takes ownership of the pointer
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-prefer-member-initializer)
     subscription_list_widget_ = new QSubscriptionList(subscriptionsIndividual);
     subscriptionLayout->addWidget(subscription_list_widget_);
 

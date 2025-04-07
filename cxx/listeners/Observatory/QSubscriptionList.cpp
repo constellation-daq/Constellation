@@ -20,35 +20,35 @@
 
 using namespace constellation::log;
 
-QSubscriptionList::QSubscriptionList(QWidget* parent) : QWidget(parent) {
+// Qt takes care of cleanup since parent widgets are always specified:
+// NOLINTBEGIN(cppcoreguidelines-owning-memory)
+
+QSubscriptionList::QSubscriptionList(QWidget* parent)
+    : QWidget(parent), layout_(new QVBoxLayout(this)), scroll_area_(new QScrollArea(this)),
+      scroll_widget_(new QWidget(this)), scroll_layout_(new QVBoxLayout(scroll_widget_)) {
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
-    // Qt takes care of cleanup since parent widgets are always specified:
-    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-    layout_ = new QVBoxLayout(this);
     layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(2);
     setLayout(layout_);
 
-    scroll_area_ = new QScrollArea(this);
     scroll_area_->setWidgetResizable(true);
     scroll_area_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     scroll_area_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
     scroll_area_->setFrameShape(QFrame::NoFrame);
     layout_->addWidget(scroll_area_);
 
-    scroll_widget_ = new QWidget(this);
     // FIXME deduce this width from parent widget - somehow that always returns 100px?
     scroll_widget_->setFixedWidth(266);
     scroll_area_->setWidget(scroll_widget_);
 
-    scroll_layout_ = new QVBoxLayout(scroll_widget_);
     scroll_layout_->setContentsMargins(6, 6, 6, 6);
     scroll_layout_->setSpacing(6);
-    // NOLINTEND(cppcoreguidelines-owning-memory)
 }
 
-void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener, const QStringList& listItems) {
+// NOLINTEND(cppcoreguidelines-owning-memory)
+
+void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener, const QStringList& topics) {
 
     auto item = std::make_shared<QSenderSubscriptions>(
         host,
@@ -56,7 +56,7 @@ void QSubscriptionList::addHost(const QString& host, QLogListener& log_listener,
             log_listener.subscribeExtaLogTopic(host, topic, level);
         },
         [&](const std::string& host, const std::string& topic) { log_listener.unsubscribeExtraLogTopic(host, topic); },
-        listItems,
+        topics,
         this);
     item->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
