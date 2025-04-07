@@ -64,6 +64,16 @@ void ComboBoxItemDelegate::setModelData(QWidget* editor, QAbstractItemModel* mod
     model->setData(index, box->currentText(), Qt::EditRole);
 }
 
+void ComboBoxItemDelegate::updateEditorGeometry(QWidget* editor,
+                                                const QStyleOptionViewItem& option,
+                                                const QModelIndex& /*index*/) const {
+    const int editor_width = editor->width();
+    auto aligned_rect = option.rect;
+    aligned_rect.setLeft(option.rect.right() - editor_width);
+    aligned_rect.setWidth(editor_width);
+    editor->setGeometry(aligned_rect);
+}
+
 QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolButton(parent) {
     setCheckable(true);
     setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-weight: normal; }");
@@ -106,10 +116,9 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     topics_view_->setEditTriggers(QAbstractItemView::EditTrigger::NoEditTriggers);
     topics_view_->setSelectionMode(QAbstractItemView::SelectionMode::NoSelection);
     topics_view_->setShowGrid(false);
+    topics_view_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-    topics_view_->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    topics_view_->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Fixed);
-    topics_view_->horizontalHeader()->resizeSection(1, 100);
+    topics_view_->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     topics_view_->horizontalHeader()->setVisible(false);
     topics_view_->verticalHeader()->setVisible(false);
     topics_view_->setFrameShape(QFrame::NoFrame);
