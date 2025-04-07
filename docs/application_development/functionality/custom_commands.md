@@ -171,6 +171,8 @@ command otherwise.
 
 In C++, the allowed states are provided as part of the command registration as described [above](#registering-the-command).
 
+Steady as well as transitional states can be listed. An empty list of states allows the command to be called in any state.
+
 :::
 :::{tab-item} Python
 :sync: python
@@ -181,7 +183,9 @@ In Python, this is handled by adding a method with the signature
 def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
 ```
 
-to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether it is allowed or not. An example is shown below, limiting the usage of the `get_channel_reading` command to the states `INIT` and `ORBIT`:
+to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether
+it is allowed or not. An example is shown below, limiting the usage of the `get_channel_reading` command to the states
+`INIT` and `ORBIT`:
 
 ```python
 def _get_channel_reading_is_allowed(self, request: CSCPMessage) -> bool:

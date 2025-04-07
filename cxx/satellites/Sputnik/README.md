@@ -41,6 +41,8 @@ The following metrics are distributed by this satellite and can be subscribed to
 | Metric | Description | Value Type | Metric Type | Interval |
 |--------|-------------|------------|-------------|----------|
 | `BEEP` | Sputnik beep signal | Integer | `LAST_VALUE` | configurable, default 3s |
+| `TEMPERATURE` | Temperature inside the spacecraft in degrees Celsius | Float | `LAST_VALUE` | 3s |
+| `FAN_RUNNING` | Boolean indicating if the internal fan is running | Bool | `LAST_VALUE` | 5s |
 | `TIME` | Time since launch in seconds | Float | `LAST_VALUE` | 10s |
 
 ## Custom Commands
@@ -50,5 +52,4 @@ command as well as all of its arguments, the return value and the allowed states
 
 | Command | Description | Arguments | Return Value | Allowed States |
 |---------|-------------|-----------|--------------|----------------|
-| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `INIT`, `ORBIT` |
-| `get_module_name` | Reads the name of the communication module | - | module name, `string` | all |
+| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `NEW`, `INIT`, `ORBIT` |
