@@ -173,6 +173,7 @@ class BaseSatelliteFrame:
         self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
         self.log.debug("Terminating ZMQ context.")
+        self._zmq_log_handler.close()
         self.context.term()
 
 
