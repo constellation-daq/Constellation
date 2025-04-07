@@ -10,6 +10,7 @@
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
@@ -21,9 +22,11 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -177,23 +180,36 @@ TEST_CASE("Hidden commands for CHIRP services", "[satellite]") {
     // Create CHIRP manager for monitoring service discovery
     create_chirp_manager();
 
-    // Create and start satellite
-    DummySatellite satellite {};
+    // Create and start satellites
+    DummySatellite satelliteA {"a"};
+    DummySatellite satelliteB {"b"};
+    satelliteB.mockChirpService(CHIRP::HEARTBEAT);
+    const auto satelliteB_md5 = MD5Hash(satelliteB.getCanonicalName()).to_string();
 
     // Create sender
-    CSCPSender sender {satellite.getCommandPort()};
+    CSCPSender sender {satelliteA.getCommandPort()};
 
     // _get_services
     sender.sendCommand("_get_services");
     auto recv_msg_get_services = sender.recv();
     REQUIRE(recv_msg_get_services.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_services.getVerb().second), Equals("2 services offered, list attached in payload"));
-
     const auto get_services_dict = Dictionary::disassemble(recv_msg_get_services.getPayload());
     REQUIRE(get_services_dict.contains("CONTROL"));
     REQUIRE(get_services_dict.contains("HEARTBEAT"));
 
-    satellite.exit();
+    // _get_remotes
+    sender.sendCommand("_get_remotes");
+    auto recv_msg_get_remotes = sender.recv();
+    REQUIRE(recv_msg_get_remotes.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_remotes.getVerb().second),
+                 Equals("1 remote services registered, list attached in payload"));
+    const auto get_remotes_dict = Dictionary::disassemble(recv_msg_get_remotes.getPayload());
+    REQUIRE(get_remotes_dict.at(satelliteB_md5).get<std::vector<std::string>>().size() == 1);
+    REQUIRE_THAT(get_remotes_dict.at(satelliteB_md5).get<std::vector<std::string>>().at(0), StartsWith("HEARTBEAT @"));
+
+    satelliteA.exit();
+    satelliteB.exit();
 }
 
 TEST_CASE("Satellite name", "[satellite]") {
