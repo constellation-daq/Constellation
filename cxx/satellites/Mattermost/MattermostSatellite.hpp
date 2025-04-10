@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief MattermostLogger satellite
+ * @brief Mattermost satellite
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -19,9 +19,9 @@
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
-class MattermostLoggerSatellite final : public constellation::satellite::Satellite, constellation::listener::LogListener {
+class MattermostSatellite final : public constellation::satellite::Satellite, constellation::listener::LogListener {
 public:
-    MattermostLoggerSatellite(std::string_view type, std::string_view name);
+    MattermostSatellite(std::string_view type, std::string_view name);
 
     void initializing(constellation::config::Configuration& config) final;
     void starting(std::string_view run_identifier) final;

@@ -1,7 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
-title: "MattermostLogger"
+title: "Mattermost"
 description: "Satellite sending log messages to Mattermost"
 category: "Monitoring"
 ---
@@ -14,11 +14,11 @@ prefixed with `@channel` to notify all users in the channel.
 
 ## Building
 
-The satellite requires [`cpr`](https://github.com/libcpr/cpr), which is downloaded on demand.
+The Mattermost requires [`cpr`](https://github.com/libcpr/cpr), which is downloaded on demand.
 The satellite is not build by default, building can be enabled via:
 
 ```sh
-meson configure build -Dsatellite_mattermost_logger=true
+meson configure build -Dsatellite_mattermost=true
 ```
 
 ## Parameters

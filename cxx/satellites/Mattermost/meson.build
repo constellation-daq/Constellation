@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-if not get_option('satellite_mattermost_logger')
+if not get_option('satellite_mattermost')
   subdir_done()
 endif
 
@@ -54,10 +54,10 @@ dependency('libcurl', default_options: [
 ])
 cpr_dep = dependency('cpr')
 
-satellite_type = 'MattermostLogger'
+satellite_type = 'Mattermost'
 
 satellite_sources = files(
-  'MattermostLoggerSatellite.cpp',
+  'MattermostSatellite.cpp',
 )
 
 satellite_dependencies = [listener_dep, cpr_dep]

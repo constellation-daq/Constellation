@@ -1,13 +1,13 @@
 /**
  * @file
- * @brief Implementation of the MattermostLogger satellite
+ * @brief Implementation of the Mattermost satellite
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include "MattermostLoggerSatellite.hpp"
+#include "MattermostSatellite.hpp"
 
 #include <chrono> // IWYU pragma: keep
 #include <string>
@@ -36,10 +36,10 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
-MattermostLoggerSatellite::MattermostLoggerSatellite(std::string_view type, std::string_view name)
+MattermostSatellite::MattermostSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), LogListener("MATTERMOST", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
 
-void MattermostLoggerSatellite::initializing(Configuration& config) {
+void MattermostSatellite::initializing(Configuration& config) {
     webhook_url_ = config.get<std::string>("webhook_url");
     send_message(getCanonicalName() + " connected as logger");
     LOG(STATUS) << "Connected to Mattermost";
@@ -56,23 +56,23 @@ void MattermostLoggerSatellite::initializing(Configuration& config) {
     startPool();
 }
 
-void MattermostLoggerSatellite::starting(std::string_view run_identifier) {
+void MattermostSatellite::starting(std::string_view run_identifier) {
     send_message("@channel Run " + std::string(run_identifier) + " started");
 }
 
-void MattermostLoggerSatellite::stopping() {
+void MattermostSatellite::stopping() {
     send_message("@channel Run " + std::string(getRunIdentifier()) + " stopped");
 }
 
-void MattermostLoggerSatellite::interrupting(CSCP::State previous_state) {
+void MattermostSatellite::interrupting(CSCP::State previous_state) {
     send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), IMPORTANT);
 }
 
-void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
+void MattermostSatellite::failure(CSCP::State /*previous_state*/) {
     stopPool();
 }
 
-void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
+void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
     // If enabled ignore log messages with topic FSM
     if(ignore_fsm_ && msg.getTopic() == "FSM") {
         return;
@@ -100,10 +100,10 @@ void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
     }
 }
 
-void MattermostLoggerSatellite::send_message(std::string&& text,
-                                             Priority priority,
-                                             std::string_view username,
-                                             std::string_view card) {
+void MattermostSatellite::send_message(std::string&& text,
+                                       Priority priority,
+                                       std::string_view username,
+                                       std::string_view card) {
     const auto response = cpr::Post(cpr::Url(webhook_url_),
                                     cpr::Header({{"Content-Type", "application/json"}}),
                                     cpr::Body({"{" + text_json(std::move(text)) + priority_json(priority) +
@@ -114,13 +114,13 @@ void MattermostLoggerSatellite::send_message(std::string&& text,
     }
 }
 
-std::string MattermostLoggerSatellite::text_json(std::string&& text) {
+std::string MattermostSatellite::text_json(std::string&& text) {
     constexpr const char* prefix = R"("text":")";
     constexpr const char* suffix = R"(")";
     return prefix + escape_quotes(std::move(text)) + suffix;
 }
 
-std::string MattermostLoggerSatellite::priority_json(Priority priority) {
+std::string MattermostSatellite::priority_json(Priority priority) {
     constexpr const char* prefix = R"(,"priority":{"priority":")";
     constexpr const char* suffix = R"("})";
     switch(priority) {
@@ -131,7 +131,7 @@ std::string MattermostLoggerSatellite::priority_json(Priority priority) {
     }
 }
 
-std::string MattermostLoggerSatellite::username_json(std::string_view username) {
+std::string MattermostSatellite::username_json(std::string_view username) {
     if(username.empty()) {
         return "";
     }
@@ -140,7 +140,7 @@ std::string MattermostLoggerSatellite::username_json(std::string_view username) 
     return prefix + escape_quotes(std::string(username)) + suffix;
 }
 
-std::string MattermostLoggerSatellite::card_json(std::string_view card) {
+std::string MattermostSatellite::card_json(std::string_view card) {
     if(card.empty()) {
         return "";
     }
@@ -149,7 +149,7 @@ std::string MattermostLoggerSatellite::card_json(std::string_view card) {
     return prefix + escape_quotes(std::string(card)) + suffix;
 }
 
-std::string MattermostLoggerSatellite::escape_quotes(std::string message) {
+std::string MattermostSatellite::escape_quotes(std::string message) {
     // Escape quotes to generate valid JSON
     std::string::size_type pos = 0;
     while((pos = message.find('"', pos)) != std::string::npos) {
