@@ -52,4 +52,5 @@ private:
 
 private:
     std::string webhook_url_;
+    bool ignore_fsm_ {};
 };

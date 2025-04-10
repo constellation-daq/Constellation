@@ -9,7 +9,7 @@ category: "Monitoring"
 ## Description
 
 This satellite listens to log messages sent by other satellites and sends them to a Mattermost channel. Additionally, log
-messages are sent when a run is started, stopped or interrupted. Log messages with a log level of warning or critical are
+messages are sent when a run is started, stopped or interrupted. Log messages with a log level of `WARNING` or `CRITICAL` are
 prefixed with `@channel` to notify all users in the channel.
 
 ## Building
@@ -27,3 +27,4 @@ meson configure build -Dsatellite_mattermost_logger=true
 |------------|-------------|------|---------------|
 | `webhook_url` | URL of the Mattermost webhook | string | - |
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
+| `ignore_fsm` | Ignore log messages with topic `FSM` | bool | `true` |

@@ -48,6 +48,9 @@ void MattermostLoggerSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(log_level);
     LOG(STATUS) << "Set log level to " << log_level;
 
+    ignore_fsm_ = config.get<bool>("ignore_fsm", true);
+    LOG_IF(INFO, ignore_fsm_) << "Ignore log messages with topic FSM";
+
     // Stop pool in case it was already started
     stopPool();
     startPool();
@@ -70,6 +73,10 @@ void MattermostLoggerSatellite::failure(CSCP::State /*previous_state*/) {
 }
 
 void MattermostLoggerSatellite::log_callback(CMDP1LogMessage msg) {
+    // If enabled ignore log messages with topic FSM
+    if(ignore_fsm_ && msg.getTopic() == "FSM") {
+        return;
+    }
     // If warning or critical, prefix channel notification and set message priority
     std::string text {};
     Priority priority {DEFAULT};
