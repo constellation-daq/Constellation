@@ -52,6 +52,8 @@ pip install ConstellationDAQ[visa]
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
 | `port` | Serial port to connect to | String | - |
+| `channel_names` | Names of the temperature channels used for the metrics | List of strings | see [metrics](#metrics) |
+| `sampling_interval` | Sampling interval in seconds | Float | `5.0` |
 
 ## Metrics
 
