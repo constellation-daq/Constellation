@@ -58,6 +58,7 @@ modules:
       - -Dlistener_observatory=true
       - -Dsatellite_dev_null_receiver=true
       - -Dsatellite_eudaq_native_writer=true
+      - -Dsatellite_mattermost=true
       - -Dsatellite_random_transmitter=true
       - -Dsatellite_sputnik=true
     sources:
