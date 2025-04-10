@@ -203,8 +203,9 @@ void FSM::requestFailure(std::string_view reason) {
     }
 
     // Trigger failure
-    LOG(logger_, CRITICAL) << "Failure during satellite operation: " << reason;
-    react(Transition::failure);
+    const auto failing = reactIfAllowed(Transition::failure);
+    LOG(logger_, failing ? CRITICAL : WARNING)
+        << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
