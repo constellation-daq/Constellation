@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <chrono> // IWYU pragma: keep
+#include <future>
 #include <string>
 #include <thread>
 #include <utility>
@@ -472,6 +473,48 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     REQUIRE(cb_count.load() == 4);
 
     fsm.unregisterStateCallback("test");
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM interrupt request", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Request interrupt from NEW -> nothing happens
+    fsm.requestInterrupt("test interrupt");
+    REQUIRE(fsm.getState() == State::NEW);
+
+    // Go to ORBIT
+    satellite.reactFSM(Transition::initialize, Configuration());
+    satellite.reactFSM(Transition::launch);
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Request interrupt from ORBIT -> go to SAFE
+    satellite.skipTransitional(true);
+    fsm.requestInterrupt("test interrupt");
+    REQUIRE(fsm.getState() == State::SAFE);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure request", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Go to initializing
+    satellite.reactFSM(Transition::initialize, Configuration(), false);
+    REQUIRE(fsm.getState() == State::initializing);
+
+    // Request failure from initializing -> go to ERROR
+    const auto failure_future = std::async(std::launch::async, [&]() { fsm.requestFailure("test failure"); });
+    satellite.progressFsm();
+    failure_future.wait();
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    // Request failure from ERROR -> nothing happens
+    fsm.requestFailure("second test failure");
+    REQUIRE(fsm.getState() == State::ERROR);
 
     satellite.exit();
 }

@@ -179,19 +179,37 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
 void FSM::requestInterrupt(std::string_view reason) {
     LOG(logger_, DEBUG) << "Attempting to interrupt...";
 
-    //  Wait until we are in a steady state
+    // Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
     // In a steady state, try to react to interrupt
     const auto interrupting = reactIfAllowed(Transition::interrupt);
 
-    LOG_IF(logger_, WARNING, interrupting) << "Interrupting satellite operation: " << reason;
+    if(interrupting) {
+        LOG(logger_, WARNING) << "Interrupting satellite operation: " << reason;
 
-    // We could be in interrupting, so wait for steady state
+        // We could be in interrupting, so wait for steady state
+        while(!is_steady(state_.load())) {
+            LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+        }
+    } else {
+        LOG(logger_, DEBUG) << "Interrupt in current state not allowed";
+    }
+}
+
+void FSM::requestFailure(std::string_view reason) {
+    LOG(logger_, DEBUG) << "Attempting to trigger failure...";
+
+    // Wait until we are in a steady state
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
+
+    // Trigger failure
+    const auto failing = reactIfAllowed(Transition::failure);
+    LOG(logger_, failing ? CRITICAL : WARNING)
+        << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
