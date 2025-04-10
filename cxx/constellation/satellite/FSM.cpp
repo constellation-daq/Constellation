@@ -186,11 +186,15 @@ void FSM::requestInterrupt(std::string_view reason) {
     // In a steady state, try to react to interrupt
     const auto interrupting = reactIfAllowed(Transition::interrupt);
 
-    LOG_IF(logger_, WARNING, interrupting) << "Interrupting satellite operation: " << reason;
+    if(interrupting) {
+        LOG(logger_, WARNING) << "Interrupting satellite operation: " << reason;
 
-    // We could be in interrupting, so wait for steady state
-    while(!is_steady(state_.load())) {
-        LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+        // We could be in interrupting, so wait for steady state
+        while(!is_steady(state_.load())) {
+            LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
+        }
+    } else {
+        LOG(logger_, DEBUG) << "Interrupt in current state not allowed";
     }
 }
 
