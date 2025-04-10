@@ -17,7 +17,7 @@ More details about the project can be found on the website at [constellation.pag
 [![License: EUPL 1.2](https://img.shields.io/badge/License-EUPL%201.2-blue.svg)](https://opensource.org/license/eupl-1-2/)
 [![REUSE Status](https://api.reuse.software/badge/gitlab.desy.de/constellation/constellation)](https://api.reuse.software/info/gitlab.desy.de/constellation/constellation)
 [![Coverage Report](https://gitlab.desy.de/constellation/constellation/badges/main/coverage.svg)](https://gitlab.desy.de/constellation/constellation/-/graphs/main/charts)
-[![Build Status](https://gitlab.desy.de/constellation/constellation/badges/main/pipeline.svg)](https://gitlab.desy.de/constellation/constellation/-/commits/main)
+[![Build Status](https://gitlab.desy.de/constellation/constellation/badges/main/pipeline.svg)](https://gitlab.desy.de/constellation/constellation/-/pipelines/charts)
 
 ## Licenses
 
