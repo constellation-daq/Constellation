@@ -8,7 +8,7 @@ category: "Monitoring"
 
 ## Description
 
-This satellite listens to metrics send by other satellites and writes to a InfluxDB time series database.
+This satellite listens to metrics sent by other satellites and writes to a InfluxDB time series database.
 Only metrics of type float, integer and boolean can be written to InfluxDB.
 
 ```{warning}
@@ -38,6 +38,11 @@ pip install ConstellationDAQ[influx]
 
 :::
 ::::
+
+```{note}
+The Influx satellite requires a working InfluxDB instance. A how-to guide on how to set up an InfluxDB instance is given in
+the [operator guide](../../operator_guide/howtos/setup_influxdb_grafana).
+```
 
 ## Parameters
 
