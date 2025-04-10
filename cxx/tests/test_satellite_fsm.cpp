@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <chrono> // IWYU pragma: keep
+#include <future>
 #include <string>
 #include <thread>
 #include <utility>
@@ -501,8 +502,14 @@ TEST_CASE("FSM failure request", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
-    // Request failure from NEW -> go to ERROR
-    fsm.requestFailure("test failure");
+    // Go to initializing
+    satellite.reactFSM(Transition::initialize, Configuration(), false);
+    REQUIRE(fsm.getState() == State::initializing);
+
+    // Request failure from initializing -> go to ERROR
+    const auto failure_future = std::async(std::launch::async, [&]() { fsm.requestFailure("test failure"); });
+    satellite.progressFsm();
+    failure_future.wait();
     REQUIRE(fsm.getState() == State::ERROR);
 
     // Request failure from ERROR -> nothing happens
