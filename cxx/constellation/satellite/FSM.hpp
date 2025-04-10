@@ -124,6 +124,15 @@ namespace constellation::satellite {
          */
         CNSTLN_API void requestInterrupt(std::string_view reason);
 
+        /**
+         * @brief Try to perform a failure as soon as possible
+         *
+         * This function waits for the next steady state and performs a failure if not in ERROR, otherwise nothing is done.
+         *
+         * @param reason Reason for the requested failure
+         *
+         * @warning This function is not thread safe, meaning that no other react command should be called during execution.
+         */
         CNSTLN_API void requestFailure(std::string_view reason);
 
         /**
