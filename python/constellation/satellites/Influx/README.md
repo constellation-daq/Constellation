@@ -8,7 +8,7 @@ category: "Monitoring"
 
 ## Description
 
-This satellite listens to metrics send by other satellites and writes to a InfluxDB time series database.
+This satellite listens to metrics sent by other satellites and writes to a InfluxDB time series database.
 Only metrics of type float, integer and boolean can be written to InfluxDB.
 
 ```{warning}
