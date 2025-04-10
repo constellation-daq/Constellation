@@ -476,4 +476,40 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     satellite.exit();
 }
 
+TEST_CASE("FSM interrupt request", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Request interrupt from NEW -> nothing happens
+    fsm.requestInterrupt("test interrupt");
+    REQUIRE(fsm.getState() == State::NEW);
+
+    // Go to ORBIT
+    satellite.reactFSM(Transition::initialize, Configuration());
+    satellite.reactFSM(Transition::launch);
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Request interrupt from ORBIT -> go to SAFE
+    satellite.skipTransitional(true);
+    fsm.requestInterrupt("test interrupt");
+    REQUIRE(fsm.getState() == State::SAFE);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure request", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Request failure from NEW -> go to ERROR
+    fsm.requestFailure("test failure");
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    // Request failure from ERROR -> nothing happens
+    fsm.requestFailure("second test failure");
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    satellite.exit();
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
