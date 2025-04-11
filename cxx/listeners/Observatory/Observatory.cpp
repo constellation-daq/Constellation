@@ -287,7 +287,30 @@ void Observatory::on_clearFilters_clicked() {
 }
 
 void Observatory::on_clearMessages_clicked() {
+    // Clear all messages
     log_listener_.clearMessages();
+
+    // Reset and add available senders from the connected ones and reset to all
+    filterSender->clear();
+    filterSender->addItem("- All -");
+    for(const auto& sender : log_listener_.getAvailableSenders()) {
+        filterSender->addItem(QString::fromStdString(sender));
+    }
+    log_filter_.setFilterSender("- All -");
+
+    // Reset and add available topics
+    QStringList topics;
+    for(const auto& [topic, desc] : log_listener_.getAvailableTopics()) {
+        topics.append(QString::fromStdString(topic));
+    }
+    topics.removeDuplicates();
+    topics.sort();
+
+    filterTopic->clear();
+    filterTopic->addItem("- All -");
+    filterTopic->addItems(topics);
+    log_filter_.setFilterTopic("- All -");
+
     status_bar_.resetMessageCounts();
 }
 
