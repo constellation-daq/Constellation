@@ -26,6 +26,10 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
 
+/**
+ * @class ComboBoxItemDelegate
+ * @brief Delegate to paint ComboBoxes as editors in a QTableView
+ */
 class ComboBoxItemDelegate : public QStyledItemDelegate {
     Q_OBJECT
 
@@ -39,14 +43,19 @@ public:
     ComboBoxItemDelegate& operator=(const ComboBoxItemDelegate& other) = delete;
     ComboBoxItemDelegate(ComboBoxItemDelegate&& other) noexcept = delete;
     ComboBoxItemDelegate& operator=(ComboBoxItemDelegate&& other) = delete;
-    /// @endcond
 
     QWidget* createEditor(QWidget* parent, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
     void setEditorData(QWidget* editor, const QModelIndex& index) const override;
     void setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const override;
     void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+
+    /// @endcond
 };
 
+/**
+ * @class QCollapseButton
+ * @brief Helper class to draw a small button with arrow and no border to collapse and expand UI elements
+ */
 class QCollapseButton : public QToolButton {
 public:
     QCollapseButton(const QString& text, QWidget* parent = nullptr);
