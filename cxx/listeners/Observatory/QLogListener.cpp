@@ -70,26 +70,16 @@ void QLogListener::add_message(CMDP1LogMessage&& msg) {
     emit newMessage(createIndex(pos, 0), level);
 }
 
-void QLogListener::host_connected(const DiscoveredService& service) {
-    LogListener::host_connected(service);
-
-    // Emit the signal with the current number of connections
-    emit connectionsChanged(countSockets());
-}
-
-void QLogListener::host_disconnected(const DiscoveredService& service) {
-    LogListener::host_disconnected(service);
-
-    // Emit the signal with the current number of connections
-    emit connectionsChanged(countSockets());
-}
-
 void QLogListener::sender_connected(std::string_view sender) {
-    emit newSender(QString::fromStdString(std::string(sender)));
+    // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
+    emit senderConnected(QString::fromStdString(std::string(sender)));
 }
 
 void QLogListener::sender_disconnected(std::string_view sender) {
-    emit disconnectedSender(QString::fromStdString(std::string(sender)));
+    // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
+    emit senderDisconnected(QString::fromStdString(std::string(sender)));
 }
 
 void QLogListener::topics_changed(std::string_view sender) {

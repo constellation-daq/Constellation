@@ -136,7 +136,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
     // Connect signals:
-    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) {
+    connect(&log_listener_, &QLogListener::senderConnected, this, [&](const QString& sender) {
         // Only add if not listed yet
         if(filterSender->findText(sender) < 0) {
             filterSender->addItem(sender);
@@ -153,10 +153,10 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
         subscription_list_widget_->setTopics(sender, topics);
     });
-    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& host) {
+    connect(&log_listener_, &QLogListener::senderConnected, this, [&](const QString& host) {
         subscription_list_widget_->addHost(host, log_listener_);
     });
-    connect(&log_listener_, &QLogListener::disconnectedSender, this, [&](const QString& sender) {
+    connect(&log_listener_, &QLogListener::senderDisconnected, this, [&](const QString& sender) {
         subscription_list_widget_->removeHost(sender);
     });
 

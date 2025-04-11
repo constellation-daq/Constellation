@@ -69,8 +69,17 @@ signals:
      */
     void connectionsChanged(std::size_t connections);
 
-    void senderConnected(const std::string& host);
-    void senderDisconnected(const std::string& host);
+    /**
+     * @brief Signal emitted when a new sender connects to the log listener
+     * @param host Canonical name of the newly connected sender
+     */
+    void senderConnected(const QString& host);
+
+    /**
+     * @brief Signal emitted when a sender disconnects from the log listener
+     * @param host Canonical name of the disconnected sender
+     */
+    void senderDisconnected(const QString& host);
 
     /**
      * @brief Signal emitted whenever a new message has been added
@@ -78,14 +87,6 @@ signals:
      * @param level The log level of the newly added message
      */
     void newMessage(QModelIndex index, constellation::log::Level level);
-
-    /**
-     * @brief Signal emitted whenever a message from a new sender has been received
-     * @param sender Canonical name of the sender
-     */
-    void newSender(QString sender);
-
-    void disconnectedSender(QString sender);
 
     void newGlobalTopics(QStringList topics);
     void newSenderTopics(QString sender, QStringList topics);
@@ -99,9 +100,6 @@ private:
      * @param msg Received log message
      */
     void add_message(constellation::message::CMDP1LogMessage&& msg);
-
-    void host_connected(const constellation::chirp::DiscoveredService& service) override;
-    void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
 
     void topics_changed(std::string_view sender) override;
     void sender_connected(std::string_view sender) override;
