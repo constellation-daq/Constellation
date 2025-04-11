@@ -125,7 +125,12 @@ class CaenHV(Satellite):
         """Power down but do not disconnect (e.g. keep monitoring)."""
         self._power_down()
         return "Interrupted and stopped HV."
+    
+    def do_landing(self) -> str:
+        """Power down but do not disconnect (e.g. keep monitoring)."""
+        self._power_down()
 
+        return "Interrupted and stopped HV."
     def fail_gracefully(self):
         """Kill HV and disconnect."""
         if getattr(self, "caen", None):
