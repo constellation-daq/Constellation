@@ -46,7 +46,7 @@ namespace constellation::gui {
         /// @endcond
 
         void setDescending(bool descending);
-        void addNeutralElement(const std::string& neutral);
+        void addNeutralElement(std::string neutral);
 
         void setCurrentLevel(constellation::log::Level level);
 

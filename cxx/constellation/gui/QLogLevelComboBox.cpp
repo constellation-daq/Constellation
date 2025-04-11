@@ -104,7 +104,7 @@ void QLogLevelComboBox::setDescending(bool descending) {
     fill_items();
 }
 
-void QLogLevelComboBox::addNeutralElement(const std::string& neutral) {
-    neutral_ = neutral;
+void QLogLevelComboBox::addNeutralElement(std::string neutral) {
+    neutral_ = std::move(neutral);
     fill_items();
 }
