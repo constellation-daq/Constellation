@@ -148,6 +148,13 @@ namespace constellation::listener {
         CNSTLN_API std::map<std::string, std::string> getAvailableTopics() const;
 
         /**
+         * @brief Obtain all available senders.
+         *
+         * @return Set with available senders
+         */
+        CNSTLN_API std::set<std::string> getAvailableSenders() const;
+
+        /**
          * @brief Check if a given topic is in the list of available topics
          *
          * @note the comparison here is case-sensitive.

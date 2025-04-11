@@ -153,6 +153,15 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics() const {
     return topics;
 }
 
+std::set<std::string> CMDPListener::getAvailableSenders() const {
+    const std::lock_guard topics_lock {available_topics_mutex_};
+
+    std::set<std::string> senders {};
+    std::ranges::for_each(available_topics_, [&](const auto& p) { senders.emplace(p.first); });
+
+    return senders;
+}
+
 bool CMDPListener::isTopicAvailable(std::string_view topic) const {
     const std::lock_guard topics_lock {available_topics_mutex_};
     return std::ranges::any_of(available_topics_, [&](const auto& s) { return s.second.find(topic) != s.second.cend(); });
