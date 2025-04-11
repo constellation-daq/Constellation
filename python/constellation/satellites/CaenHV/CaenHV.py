@@ -131,6 +131,7 @@ class CaenHV(Satellite):
         self._power_down()
 
         return "Interrupted and stopped HV."
+    
     def fail_gracefully(self):
         """Kill HV and disconnect."""
         if getattr(self, "caen", None):
