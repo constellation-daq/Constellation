@@ -88,7 +88,17 @@ signals:
      */
     void newMessage(QModelIndex index, constellation::log::Level level);
 
+    /**
+     * @brief Signal emitted whenever the overall list of available topics changed
+     * @param topics List of all available topics
+     */
     void newGlobalTopics(QStringList topics);
+
+    /**
+     * @brief Signal emitted whenever the list of available topics changed for a specific sender
+     * @param sender Canonical name of the sender
+     * @param topics List of available topics for this sender
+     */
     void newSenderTopics(QString sender, QStringList topics);
 
 private:
@@ -101,8 +111,22 @@ private:
      */
     void add_message(constellation::message::CMDP1LogMessage&& msg);
 
+    /**
+     * @brief Helper callback to emit topics signals
+     * @param sender Canonical name of the sender the topics have changed for
+     */
     void topics_changed(std::string_view sender) override;
+
+    /**
+     * @brief Helper callback to emit connected signals
+     * @param sender Canonical name of the sender that connected
+     */
     void sender_connected(std::string_view sender) override;
+
+    /**
+     * @brief Helper callback to emit disconnected signals
+     * @param sender Canonical name of the sender that disconnected
+     */
     void sender_disconnected(std::string_view sender) override;
 
 private:
