@@ -100,6 +100,20 @@ meson compile -C build
 
 This is already it!
 
+## Meson Configuration Options
+
+When configuring the build with `meson setup`, you can customize the build using various Meson options. Below are some options relevant to Constellation:
+
+- `-Dwith_qt=enabled|disabled|auto`: Controls whether Qt support is included. 
+  - `enabled`: Builds Constellation with Qt for GUI components and related satellite functionality (requires Qt >5 or newer).
+  - `disabled`: Excludes Qt support, useful for lightweight builds without GUI requirements.
+  - `auto`: Automatically detects Qt presence and includes it if available (default: `auto`).
+- `-Dbuildtype=debug|release|debugoptimized`: Specifies the build type.
+  - `debug`: Includes debugging symbols for development and testing.
+  - `release`: Optimizes for performance, excluding debug information.
+  - `debugoptimized`: Balances debugging support with optimizations (default: `debugoptimized`).
+- `-Dprefix=/path/to/install`: Sets the installation directory for `meson install` (default: `/usr/local` on most systems).
+
 ## Installing the C++ Version
 
 For some use-cases, like external satellites, Constellation needs to be installed explicitly system-wide after compilation.
