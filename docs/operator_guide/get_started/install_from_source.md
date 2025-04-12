@@ -20,6 +20,7 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
+- [Qt](https://www.qt.io/) >5 or newer (required for GUI components and certain satellite functionality)
 
 The prerequisites can be installed as follows:
 
@@ -30,6 +31,7 @@ Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages for GCC
 
 ```sh
 sudo apt install meson g++
+sudo apt install qt6-base-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -37,6 +39,7 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
+sudo apt install qt6-base-dev
 export CXX="g++-12"
 ```
 
@@ -47,6 +50,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
+sudo apt install qt6-base-dev
 export CXX="g++-13"
 ```
 
@@ -55,6 +59,7 @@ export CXX="g++-13"
 
 ```sh
 sudo dnf install meson clang
+sudo dnf install qt6-qtbase-devel
 export CXX=clang++
 ```
 
@@ -66,6 +71,7 @@ MacOS requires an installation of Meson and LLVM, e.g. via [Homebrew](https://br
 ```sh
 brew install meson
 brew install llvm
+brew install qt@6
 ```
 
 Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
@@ -80,7 +86,7 @@ export CXXFLAGS="-fexperimental-library -DASIO_HAS_SNPRINTF"
 :::
 :::{tab-item} Windows
 
-TODO
+For Qt, Install Qt 6.2 or newer using the official Qt installer from https:/www.qt.io/download. Follow the installer instructions for the Qt 6 base libraries.
 
 :::
 ::::
