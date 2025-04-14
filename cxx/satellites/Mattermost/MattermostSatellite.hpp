@@ -16,6 +16,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -52,5 +53,5 @@ private:
 
 private:
     std::string webhook_url_;
-    bool ignore_fsm_ {};
+    constellation::utils::string_hash_set ignore_topics_;
 };

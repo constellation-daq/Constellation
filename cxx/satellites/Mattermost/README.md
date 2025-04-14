@@ -27,4 +27,4 @@ meson configure build -Dsatellite_mattermost=true
 |------------|-------------|------|---------------|
 | `webhook_url` | URL of the Mattermost webhook | string | - |
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
-| `ignore_fsm` | Ignore log messages with topic `FSM` | bool | `true` |
+| `ignore_topics` | Ignore log messages with certain topics | list of strings | [`FSM`] |

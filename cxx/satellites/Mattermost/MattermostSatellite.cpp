@@ -22,6 +22,7 @@
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -48,8 +49,10 @@ void MattermostSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(log_level);
     LOG(STATUS) << "Set log level to " << log_level;
 
-    ignore_fsm_ = config.get<bool>("ignore_fsm", true);
-    LOG_IF(INFO, ignore_fsm_) << "Ignore log messages with topic FSM";
+    const auto ignore_topics_v = config.getArray<std::string>("ignore_topics", {"FSM"});
+    LOG_IF(INFO, !ignore_topics_v.empty()) << "Ignore log messages with topics " << range_to_string(ignore_topics_v);
+    ignore_topics_.clear();
+    ignore_topics_.insert(ignore_topics_v.begin(), ignore_topics_v.end());
 
     // Stop pool in case it was already started
     stopPool();
@@ -73,8 +76,8 @@ void MattermostSatellite::failure(CSCP::State /*previous_state*/) {
 }
 
 void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
-    // If enabled ignore log messages with topic FSM
-    if(ignore_fsm_ && msg.getTopic() == "FSM") {
+    // Skip if ignored topic
+    if(ignore_topics_.contains(msg.getTopic())) {
         return;
     }
     // If warning or critical, prefix channel notification and set message priority
