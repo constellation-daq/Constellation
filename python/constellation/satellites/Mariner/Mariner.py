@@ -83,7 +83,7 @@ class Mariner(Satellite):
             # Example work to be done while satellite is running
             ...
             time.sleep(self.device.sample_period)
-            self.log.status(f"New sample at {self.device.voltage} V")
+            self.log.info(f"New sample at {self.device.voltage} V")
         return "Finished acquisition."
 
     @cscp_requestable
