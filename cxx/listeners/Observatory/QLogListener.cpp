@@ -22,21 +22,17 @@
 #include <QStringList>
 #include <QVariant>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/gui/QLogMessage.hpp"
 #include "constellation/listener/LogListener.hpp"
 
 using namespace constellation::message;
-using namespace constellation::chirp;
 using namespace constellation::gui;
-using namespace constellation::log;
-using namespace constellation::pools;
-using namespace constellation::utils;
+using namespace constellation::listener;
 
 QLogListener::QLogListener(QObject* parent)
-    : QAbstractListModel(parent),
-      constellation::listener::LogListener("LOG", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {}
+    : QAbstractListModel(parent), LogListener("LOG", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {
+}
 
 void QLogListener::clearMessages() {
     message_count_.store(0);
