@@ -86,7 +86,7 @@ export CXXFLAGS="-fexperimental-library -DASIO_HAS_SNPRINTF"
 :::
 :::{tab-item} Windows
 
-For Qt, Install Qt 6.2 or newer using the official Qt installer from https://www.qt.io/download. Follow the installer instructions for the Qt 6 base libraries.
+For Qt, Install Qt 6.2 or newer using the official Qt installer from [here](https://www.qt.io/download). Follow the installer instructions for the Qt 6 base libraries.
 
 :::
 ::::
