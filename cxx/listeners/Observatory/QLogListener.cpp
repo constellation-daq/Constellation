@@ -32,6 +32,7 @@ using namespace constellation::chirp;
 using namespace constellation::gui;
 using namespace constellation::log;
 using namespace constellation::pools;
+using namespace constellation::utils;
 
 QLogListener::QLogListener(QObject* parent)
     : QAbstractListModel(parent),
@@ -69,25 +70,19 @@ void QLogListener::add_message(CMDP1LogMessage&& msg) {
     emit newMessage(createIndex(pos, 0), level);
 }
 
-void QLogListener::host_connected(const DiscoveredService& service) {
-    LogListener::host_connected(service);
-
-    // Emit the signal with the current number of connections
-    emit connectionsChanged(countSockets());
-}
-
-void QLogListener::host_disconnected(const DiscoveredService& service) {
-    LogListener::host_disconnected(service);
-
-    // Emit the signal with the current number of connections
-    emit connectionsChanged(countSockets());
-}
-
 void QLogListener::sender_connected(std::string_view sender) {
-    emit newSender(QString::fromStdString(std::string(sender)));
+    // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
+    emit senderConnected(QString::fromStdString(std::string(sender)));
 }
 
-void QLogListener::topics_changed(std::string_view /*sender*/) {
+void QLogListener::sender_disconnected(std::string_view sender) {
+    // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
+    emit senderDisconnected(QString::fromStdString(std::string(sender)));
+}
+
+void QLogListener::topics_changed(std::string_view sender) {
 
     QStringList all_topics;
 
@@ -98,10 +93,17 @@ void QLogListener::topics_changed(std::string_view /*sender*/) {
     all_topics.removeDuplicates();
     all_topics.sort();
 
-    // Emit signal for global topic list change:
-    emit newTopics(all_topics);
+    QStringList sender_topics;
+    for(const auto& [topic, desc] : getAvailableTopics(sender)) {
+        sender_topics.append(QString::fromStdString(topic));
+    }
+    sender_topics.removeDuplicates();
+    sender_topics.sort();
 
-    // emit newSenderTopics(QString::fromStdString(std::string(sender)), {});
+    // Emit signal for global topic list change:
+    emit newGlobalTopics(all_topics);
+
+    emit newSenderTopics(QString::fromStdString(std::string(sender)), sender_topics);
 }
 
 QVariant QLogListener::data(const QModelIndex& index, int role) const {

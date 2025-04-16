@@ -69,6 +69,18 @@ signals:
     void connectionsChanged(std::size_t connections);
 
     /**
+     * @brief Signal emitted when a new sender connects to the log listener
+     * @param host Canonical name of the newly connected sender
+     */
+    void senderConnected(const QString& host);
+
+    /**
+     * @brief Signal emitted when a sender disconnects from the log listener
+     * @param host Canonical name of the disconnected sender
+     */
+    void senderDisconnected(const QString& host);
+
+    /**
      * @brief Signal emitted whenever a new message has been added
      * @param index QModelIndex at which the message has been inserted
      * @param level The log level of the newly added message
@@ -76,18 +88,17 @@ signals:
     void newMessage(QModelIndex index, constellation::log::Level level);
 
     /**
-     * @brief Signal emitted whenever a message from a new sender has been received
-     * @param sender Canonical name of the sender
+     * @brief Signal emitted whenever the overall list of available topics changed
+     * @param topics List of all available topics
      */
-    void newSender(QString sender);
+    void newGlobalTopics(QStringList topics);
 
     /**
-     * @brief Signal emitted whenever a message with a new topic has been received
-     * @param topic Topic
+     * @brief Signal emitted whenever the list of available topics changed for a specific sender
+     * @param sender Canonical name of the sender
+     * @param topics List of available topics for this sender
      */
-    void newTopic(QString topic);
-
-    void newTopics(QStringList topics);
+    void newSenderTopics(QString sender, QStringList topics);
 
 private:
     /**
@@ -99,11 +110,23 @@ private:
      */
     void add_message(constellation::message::CMDP1LogMessage&& msg);
 
-    void host_connected(const constellation::chirp::DiscoveredService& service) override;
-    void host_disconnected(const constellation::chirp::DiscoveredService& service) override;
-
+    /**
+     * @brief Helper callback to emit topics signals
+     * @param sender Canonical name of the sender the topics have changed for
+     */
     void topics_changed(std::string_view sender) override;
+
+    /**
+     * @brief Helper callback to emit connected signals
+     * @param sender Canonical name of the sender that connected
+     */
     void sender_connected(std::string_view sender) override;
+
+    /**
+     * @brief Helper callback to emit disconnected signals
+     * @param sender Canonical name of the sender that disconnected
+     */
+    void sender_disconnected(std::string_view sender) override;
 
 private:
     /** Log messages & access mutex*/

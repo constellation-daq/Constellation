@@ -56,9 +56,8 @@ public:
      * @brief Set a new sender filter value
      *
      * @param sender Sender filter
-     * @return True if the filter was updated, false otherwise
      */
-    void setFilterSender(const std::string& sender);
+    void setFilterSender(std::string sender);
 
     /**
      * @brief Return the currently set sender filter
@@ -70,9 +69,8 @@ public:
      * @brief Set a new topic filter value
      *
      * @param topic Topic filter
-     * @return True if the filter was updated, false otherwise
      */
-    void setFilterTopic(const std::string& topic);
+    void setFilterTopic(std::string topic);
 
     /**
      * @brief Return the currently set topic filter

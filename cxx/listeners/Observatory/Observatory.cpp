@@ -50,6 +50,7 @@
 #include "constellation/gui/qt_utils.hpp"
 
 #include "QLogListener.hpp"
+#include "QSubscriptionList.hpp"
 
 using namespace constellation;
 using namespace constellation::chirp;
@@ -127,22 +128,36 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     qRegisterMetaType<QModelIndex>("QModelIndex");
     setupUi(this);
 
+    // Qt UI has to be initialized before we can call this, and it takes ownership of the pointer
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory,cppcoreguidelines-prefer-member-initializer)
+    subscription_list_widget_ = new QSubscriptionList(subscriptionsIndividual);
+    subscriptionLayout->addWidget(subscription_list_widget_);
+
     setWindowTitle("Constellation Observatory " CNSTLN_VERSION_FULL);
 
     // Connect signals:
-    connect(&log_listener_, &QLogListener::newSender, this, [&](const QString& sender) {
+    connect(&log_listener_, &QLogListener::senderConnected, this, [&](const QString& sender) {
         // Only add if not listed yet
         if(filterSender->findText(sender) < 0) {
             filterSender->addItem(sender);
         }
     });
-    connect(&log_listener_, &QLogListener::newTopics, this, [&](const QStringList& topics) {
+    connect(&log_listener_, &QLogListener::newGlobalTopics, this, [&](const QStringList& topics) {
         filterTopic->clear();
         filterTopic->addItem("- All -");
         filterTopic->addItems(topics);
     });
     connect(&log_listener_, &QLogListener::connectionsChanged, this, [&](std::size_t num) {
         labelNrSatellites->setText("<font color='gray'><b>" + QString::number(num) + "</b></font>");
+    });
+    connect(&log_listener_, &QLogListener::newSenderTopics, this, [&](const QString& sender, const QStringList& topics) {
+        subscription_list_widget_->setTopics(sender, topics);
+    });
+    connect(&log_listener_, &QLogListener::senderConnected, this, [&](const QString& host) {
+        subscription_list_widget_->addHost(host, log_listener_);
+    });
+    connect(&log_listener_, &QLogListener::senderDisconnected, this, [&](const QString& sender) {
+        subscription_list_widget_->removeHost(sender);
     });
 
     // Start the log receiver pool
@@ -162,6 +177,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     }
     // Enable uniform row height to allow for optimizations on Qt end:
     viewLog->setUniformRowHeights(true);
+    filterLevel->setDescending(true);
 
     // Restore window geometry:
     restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
@@ -197,7 +213,7 @@ Observatory::Observatory(std::string_view group_name) : logger_("UI") {
     const auto qslevel = gui_settings_.value("subscriptions/level").toString();
     const auto slevel = enum_cast<Level>(qslevel.toStdString());
     log_listener_.setGlobalLogLevel(slevel.value_or(Level::WARNING));
-    globalLevel->setCurrentIndex(std::to_underlying(slevel.value_or(Level::WARNING)));
+    globalLevel->setCurrentLevel(slevel.value_or(Level::WARNING));
 
     // Set up status bar:
     statusBar()->addPermanentWidget(&status_bar_);
@@ -237,7 +253,8 @@ void Observatory::on_filterLevel_currentIndexChanged(int index) {
 }
 
 void Observatory::on_globalLevel_currentIndexChanged(int index) {
-    log_listener_.setGlobalLogLevel(Level(index));
+    const auto level = enum_cast<Level>(globalLevel->itemText(index).toStdString());
+    log_listener_.setGlobalLogLevel(level.value_or(Level::WARNING));
 }
 
 void Observatory::on_filterSender_currentTextChanged(const QString& text) {
@@ -270,7 +287,30 @@ void Observatory::on_clearFilters_clicked() {
 }
 
 void Observatory::on_clearMessages_clicked() {
+    // Clear all messages
     log_listener_.clearMessages();
+
+    // Reset and add available senders from the connected ones and reset to all
+    filterSender->clear();
+    filterSender->addItem("- All -");
+    for(const auto& sender : log_listener_.getAvailableSenders()) {
+        filterSender->addItem(QString::fromStdString(sender));
+    }
+    log_filter_.setFilterSender("- All -");
+
+    // Reset and add available topics
+    QStringList topics;
+    for(const auto& [topic, desc] : log_listener_.getAvailableTopics()) {
+        topics.append(QString::fromStdString(topic));
+    }
+    topics.removeDuplicates();
+    topics.sort();
+
+    filterTopic->clear();
+    filterTopic->addItem("- All -");
+    filterTopic->addItems(topics);
+    log_filter_.setFilterTopic("- All -");
+
     status_bar_.resetMessageCounts();
 }
 
