@@ -10,6 +10,7 @@
 #include "QLogFilter.hpp"
 
 #include <string>
+#include <utility>
 
 #include <QModelIndex>
 #include <QObject>
@@ -50,15 +51,15 @@ void QLogFilter::setFilterLevel(Level level) {
     }
 }
 
-void QLogFilter::setFilterSender(const std::string& sender) {
+void QLogFilter::setFilterSender(std::string sender) {
     LOG(logger_, DEBUG) << "Updating filter sender to " << sender;
-    filter_sender_ = sender;
+    filter_sender_ = std::move(sender);
     invalidateFilter();
 }
 
-void QLogFilter::setFilterTopic(const std::string& topic) {
+void QLogFilter::setFilterTopic(std::string topic) {
     LOG(logger_, DEBUG) << "Updating filter topic to " << topic;
-    filter_topic_ = topic;
+    filter_topic_ = std::move(topic);
     invalidateFilter();
 }
 
