@@ -85,6 +85,7 @@ void FSM::set_status(std::string status) {
 
     // Store the status message and reset emission flag if new:
     if(status != status_) {
+        LOG(logger_, DEBUG) << "Setting new status: " << status;
         status_ = std::move(status);
         status_emitted_.store(false);
     }
