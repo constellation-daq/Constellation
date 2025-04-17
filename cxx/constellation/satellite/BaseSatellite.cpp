@@ -123,6 +123,9 @@ void BaseSatellite::terminate() {
 
     // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state:
     fsm_.requestInterrupt("Shutting down satellite");
+
+    // Terminate FSM
+    fsm_.terminate();
 }
 
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {

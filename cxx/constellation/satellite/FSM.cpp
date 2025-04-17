@@ -47,16 +47,7 @@ using namespace constellation::utils;
 using namespace std::string_literals;
 
 FSM::~FSM() {
-    run_thread_.request_stop();
-    if(run_thread_.joinable()) {
-        run_thread_.join();
-    }
-    if(transitional_thread_.joinable()) {
-        transitional_thread_.join();
-    }
-    if(failure_thread_.joinable()) {
-        failure_thread_.join();
-    }
+    terminate();
 }
 
 FSM::TransitionFunction FSM::find_transition_function(Transition transition) const {
@@ -239,6 +230,12 @@ void FSM::unregisterStateCallback(const std::string& identifier) {
     state_callbacks_.erase(identifier);
 }
 
+void FSM::terminate() {
+    stop_run_thread();
+    join_transitional_thread();
+    join_failure_thread();
+}
+
 void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
 
@@ -269,6 +266,13 @@ void FSM::stop_run_thread() {
     run_thread_.request_stop();
     if(run_thread_.joinable()) {
         run_thread_.join();
+    }
+}
+
+void FSM::join_transitional_thread() {
+    if(transitional_thread_.joinable()) {
+        LOG(logger_, DEBUG) << "Joining transitional function of satellite...";
+        transitional_thread_.join();
     }
 }
 
@@ -442,7 +446,9 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
 FSM::State FSM::failure(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
         // First stop RUN thread if in RUN
-        stop_run_thread();
+        if(previous_state == State::RUN) {
+            stop_run_thread();
+        }
 
         LOG(logger_, INFO) << "Calling failure function of satellite...";
         call_satellite_function(&BaseSatellite::failure_wrapper, Transition::failure, previous_state);

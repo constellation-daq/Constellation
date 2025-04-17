@@ -164,6 +164,11 @@ namespace constellation::satellite {
          */
         CNSTLN_API void unregisterStateCallback(const std::string& identifier);
 
+        /**
+         * @brief Terminate all FSM threads
+         */
+        CNSTLN_API void terminate();
+
     private:
         /**
          * @brief Find the transition function for a given transition in the current state
@@ -204,6 +209,11 @@ namespace constellation::satellite {
          * @brief Stop and join the run_thread
          */
         void stop_run_thread();
+
+        /**
+         * @brief Join the transitional_thread_
+         */
+        void join_transitional_thread();
 
         /**
          * @brief Join the failure_thread
