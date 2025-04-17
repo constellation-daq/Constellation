@@ -98,6 +98,28 @@ and the corresponding transition function `reconfiguring(const config::Configura
 The payload of this method is a partial configuration which contains only the keys to be changed. The satellite
 implementation should check for the validity of all keys and report in case invalid keys are found.
 
+## Setting Status Messages
+
+In addition to its state, each satellite also exposes a status message that provides additional human-readable information
+on how this state was reached.
+
+```{seealso}
+More information on the state and status message can be found in the
+[Operator Guide's section on satellites](https://constellation.pages.desy.de/operator_guide/concepts/satellite.html#state-and-status).
+```
+
+From C++, the status message can be configured from transitional states as follows:
+
+```cpp
+void ExampleSatellite::launching() {
+    submit_status("Successfully launched, 16 channels ramped up");
+}
+```
+
+This status will be adopted by the satellite at the end of the transitional state. It should be noted that, consequently, it
+is not possible to set multiple status messages during a single transitional state. Any further call to `submit_status(/*...*/)`
+will overwrite previously submitted status messages. For more fine-grained information, logging should be used.
+
 ## Error Handling
 
 Any error that prevents the satellite from functioning (or from functioning *properly*) should throw an exception to notify

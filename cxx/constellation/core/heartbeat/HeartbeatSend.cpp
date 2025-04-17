@@ -14,6 +14,7 @@
 #include <mutex>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -64,7 +65,11 @@ HeartbeatSend::~HeartbeatSend() {
     }
 }
 
-void HeartbeatSend::sendExtrasystole() {
+void HeartbeatSend::sendExtrasystole(std::string_view status) {
+    if(!status.empty()) {
+        const std::lock_guard lock {mutex_};
+        status_ = status;
+    }
     cv_.notify_one();
 }
 
@@ -79,7 +84,8 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
         try {
             // Publish CHP message with current state
-            CHP1Message(sender_, state_callback_(), interval_.load()).assemble().send(pub_socket_);
+            CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
+            status_.reset();
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }

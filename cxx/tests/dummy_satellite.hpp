@@ -109,6 +109,7 @@ public:
     void skipTransitional(bool skip) { skip_transitional_ = skip; }
 
     void exit() {
+        LOG(DEBUG) << "Exiting satellite";
         skip_transitional_ = true;
         SatelliteT::terminate();
         mocked_services_.clear();
@@ -156,6 +157,7 @@ protected:
             }
         }
         LOG(TRACE) << "Leaving transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
+        SatelliteT::submit_status("Finished with transitional state " + std::string(state));
     }
 
 private:

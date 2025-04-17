@@ -19,6 +19,7 @@
 #include <string_view>
 #include <thread>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <msgpack.hpp>
@@ -46,16 +47,7 @@ using namespace constellation::utils;
 using namespace std::string_literals;
 
 FSM::~FSM() {
-    run_thread_.request_stop();
-    if(run_thread_.joinable()) {
-        run_thread_.join();
-    }
-    if(transitional_thread_.joinable()) {
-        transitional_thread_.join();
-    }
-    if(failure_thread_.joinable()) {
-        failure_thread_.join();
-    }
+    terminate();
 }
 
 FSM::TransitionFunction FSM::find_transition_function(Transition transition) const {
@@ -74,6 +66,25 @@ void FSM::set_state(FSM::State new_state) {
     state_.store(new_state);
     last_changed_.store(std::chrono::system_clock::now());
     LOG(logger_, STATUS) << "New state: " << new_state;
+
+    // Pass state to callbacks
+    call_state_callbacks();
+}
+
+void FSM::set_status(std::string status) {
+    const std::lock_guard status_lock {status_mutex_};
+
+    // Store the status message and reset emission flag if new:
+    if(status != status_) {
+        LOG(logger_, DEBUG) << "Setting new status: " << status;
+        status_ = std::move(status);
+        status_emitted_.store(false);
+    }
+}
+
+std::string_view FSM::getStatus() const {
+    const std::lock_guard status_lock {status_mutex_};
+    return status_;
 }
 
 bool FSM::isAllowed(Transition transition) const {
@@ -95,9 +106,6 @@ void FSM::react(Transition transition, TransitionPayload payload) {
     // Execute transition function
     const auto new_state = (this->*transition_function)(std::move(payload));
     set_state(new_state);
-
-    // Pass state to callbacks
-    call_state_callbacks();
 }
 
 bool FSM::reactIfAllowed(Transition transition, TransitionPayload payload) {
@@ -169,9 +177,6 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     const auto new_state = (this->*transition_function)(std::move(fsm_payload));
     set_state(new_state);
 
-    // Pass state to callbacks
-    call_state_callbacks();
-
     // Return that command is being executed
     return {CSCP1Message::Type::SUCCESS, "Transition " + to_string(transition) + " is being initiated" + payload_note};
 }
@@ -183,11 +188,14 @@ void FSM::requestInterrupt(std::string_view reason) {
     while(!is_steady(state_.load())) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
-    // In a steady state, try to react to interrupt
-    const auto interrupting = reactIfAllowed(Transition::interrupt);
+
+    const auto msg = "Interrupting satellite operation: " + std::string(reason);
+
+    // In a steady state, try to react to interrupt and pass the reason as payload:
+    const auto interrupting = reactIfAllowed(Transition::interrupt, {msg});
 
     if(interrupting) {
-        LOG(logger_, WARNING) << "Interrupting satellite operation: " << reason;
+        LOG(logger_, WARNING) << msg;
 
         // We could be in interrupting, so wait for steady state
         while(!is_steady(state_.load())) {
@@ -212,7 +220,7 @@ void FSM::requestFailure(std::string_view reason) {
         << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
-void FSM::registerStateCallback(const std::string& identifier, std::function<void(State)> callback) {
+void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
     state_callbacks_.emplace(identifier, std::move(callback));
 }
@@ -222,14 +230,27 @@ void FSM::unregisterStateCallback(const std::string& identifier) {
     state_callbacks_.erase(identifier);
 }
 
+void FSM::terminate() {
+    stop_run_thread();
+    join_transitional_thread();
+    join_failure_thread();
+}
+
 void FSM::call_state_callbacks() {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+
+    // Fetch the status message unless emitted already
+    std::unique_lock status_lock {status_mutex_};
+    const auto status = (status_emitted_.load() ? "" : status_);
+    status_emitted_.store(true);
+    status_lock.unlock();
+
     std::vector<std::future<void>> futures {};
     futures.reserve(state_callbacks_.size());
     for(const auto& [id, callback] : state_callbacks_) {
         futures.emplace_back(std::async(std::launch::async, [&]() {
             try {
-                callback(state_.load());
+                callback(state_.load(), status);
             } catch(...) {
                 LOG(logger_, WARNING) << "State callback " << std::quoted(id) << " threw an exception";
             }
@@ -248,6 +269,13 @@ void FSM::stop_run_thread() {
     }
 }
 
+void FSM::join_transitional_thread() {
+    if(transitional_thread_.joinable()) {
+        LOG(logger_, DEBUG) << "Joining transitional function of satellite...";
+        transitional_thread_.join();
+    }
+}
+
 void FSM::join_failure_thread() {
     if(failure_thread_.joinable()) {
         LOG(logger_, DEBUG) << "Joining failure function of satellite...";
@@ -261,7 +289,12 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     std::string error_message {};
     try {
         // Call transition function of satellite
-        (satellite_->*func)(std::forward<Args>(args)...);
+        const auto status = (satellite_->*func)(std::forward<Args>(args)...);
+
+        if(status.has_value()) {
+            set_status(status.value());
+        }
+
         // Finish transition
         return success_transition;
     } catch(const std::exception& error) {
@@ -271,7 +304,7 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
     }
     // Something went wrong, log and go to error state
     LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-    satellite_->set_status("Critical failure during transition: " + error_message);
+    set_status("Critical failure during transition: " + error_message);
     return Transition::failure;
 }
 
@@ -385,7 +418,12 @@ FSM::State FSM::stopped(TransitionPayload /* payload */) {
     return State::ORBIT;
 }
 
-FSM::State FSM::interrupt(TransitionPayload /* payload */) {
+FSM::State FSM::interrupt(TransitionPayload payload) {
+    // Set status message with information from payload:
+    if(std::holds_alternative<std::string>(payload)) {
+        set_status(std::get<std::string>(std::move(payload)));
+    }
+
     auto call_wrapper = [this](State previous_state) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
@@ -408,7 +446,9 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
 FSM::State FSM::failure(TransitionPayload /* payload */) {
     auto call_wrapper = [this](State previous_state) {
         // First stop RUN thread if in RUN
-        stop_run_thread();
+        if(previous_state == State::RUN) {
+            stop_run_thread();
+        }
 
         LOG(logger_, INFO) << "Calling failure function of satellite...";
         call_satellite_function(&BaseSatellite::failure_wrapper, Transition::failure, previous_state);

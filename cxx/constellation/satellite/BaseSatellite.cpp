@@ -10,10 +10,12 @@
 #include "BaseSatellite.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <ranges>
 #include <stop_token>
@@ -97,7 +99,8 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     set_thread_name(cscp_thread_, "CSCP");
 
     // Register state callback for extrasystoles
-    fsm_.registerStateCallback("extrasystoles", [&](CSCP::State) { heartbeat_manager_.sendExtrasystole(); });
+    fsm_.registerStateCallback("extrasystoles",
+                               [&](CSCP::State, std::string_view status) { heartbeat_manager_.sendExtrasystole(status); });
 }
 
 std::string BaseSatellite::getCanonicalName() const {
@@ -120,6 +123,9 @@ void BaseSatellite::terminate() {
 
     // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state:
     fsm_.requestInterrupt("Shutting down satellite");
+
+    // Terminate FSM
+    fsm_.terminate();
 }
 
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
@@ -258,7 +264,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_status: {
-        return_verb = {CSCP1Message::Type::SUCCESS, status_};
+        return_verb = {CSCP1Message::Type::SUCCESS, std::string(fsm_.getStatus())};
         break;
     }
     case get_config: {
@@ -434,7 +440,7 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
     }
 }
 
-void BaseSatellite::store_config(Configuration&& config) {
+std::size_t BaseSatellite::store_config(Configuration&& config) {
     using enum Configuration::Group;
     using enum Configuration::Usage;
 
@@ -454,9 +460,11 @@ void BaseSatellite::store_config(Configuration&& config) {
     LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
     LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
                         << config_.getDictionary(INTERNAL).to_string();
+
+    return unused_kvps.size();
 }
 
-void BaseSatellite::update_config(const Configuration& partial_config) {
+std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
     using enum Configuration::Group;
     using enum Configuration::Usage;
 
@@ -474,6 +482,20 @@ void BaseSatellite::update_config(const Configuration& partial_config) {
     LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
     LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
                         << config_.getDictionary(INTERNAL).to_string();
+
+    return unused_kvps.size();
+}
+
+void BaseSatellite::set_user_status(std::string message) {
+    const std::lock_guard lock {user_status_mutex_};
+    user_status_ = std::move(message);
+}
+
+std::string BaseSatellite::get_user_status_or(std::string message) {
+    const std::lock_guard lock {user_status_mutex_};
+    const auto status = user_status_.value_or(std::move(message));
+    user_status_.reset();
+    return status;
 }
 
 void BaseSatellite::apply_internal_config(const Configuration& config) {
@@ -490,7 +512,7 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
     }
 }
 
-void BaseSatellite::initializing_wrapper(Configuration&& config) {
+std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& config) {
     apply_internal_config(config);
 
     initializing(config);
@@ -506,18 +528,25 @@ void BaseSatellite::initializing_wrapper(Configuration&& config) {
     }
 
     // Store config after initializing
-    store_config(std::move(config));
+    const auto unused_kvps = store_config(std::move(config));
+
+    return {get_user_status_or("Satellite initialized" +
+                               (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully"))};
 }
 
-void BaseSatellite::launching_wrapper() {
+std::optional<std::string> BaseSatellite::launching_wrapper() {
     launching();
+
+    return {get_user_status_or("Satellite launched successfully")};
 }
 
-void BaseSatellite::landing_wrapper() {
+std::optional<std::string> BaseSatellite::landing_wrapper() {
     landing();
+
+    return {get_user_status_or("Satellite landed successfully")};
 }
 
-void BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
+std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
     apply_internal_config(partial_config);
 
     reconfiguring(partial_config);
@@ -533,10 +562,13 @@ void BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
     }
 
     // Update stored config after reconfigure
-    update_config(partial_config);
+    const auto unused_kvps = update_config(partial_config);
+
+    return {get_user_status_or("Satellite reconfigured" +
+                               (unused_kvps > 0 ? " (" + to_string(unused_kvps) + " unused keys)" : "successfully"))};
 }
 
-void BaseSatellite::starting_wrapper(std::string run_identifier) {
+std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_identifier) {
     starting(run_identifier);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
@@ -551,9 +583,11 @@ void BaseSatellite::starting_wrapper(std::string run_identifier) {
 
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
+
+    return {get_user_status_or("Satellite started run " + run_identifier_ + " successfully")};
 }
 
-void BaseSatellite::stopping_wrapper() {
+std::optional<std::string> BaseSatellite::stopping_wrapper() {
     // stopping from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -566,13 +600,21 @@ void BaseSatellite::stopping_wrapper() {
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::stopping_transmitter();
     }
+
+    return {get_user_status_or("Satellite stopped run successfully")};
 }
 
-void BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
+std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token& stop_token) {
     running(stop_token);
+
+    // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
+    user_status_.reset();
+
+    return std::nullopt;
 }
 
-void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
     // Interrupting from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -587,9 +629,16 @@ void BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
         LOG(logger_, DEBUG) << "Interrupting: execute interrupting_transmitter";
         transmitter_ptr->TransmitterSatellite::interrupting_transmitter(previous_state);
     }
+
+    // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
+    user_status_.reset();
+
+    // Do not provide status, the message comes from the `requestInterrupt()` function directly
+    return std::nullopt;
 }
 
-void BaseSatellite::failure_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_state) {
     // failure from receiver needs to come first to stop BasePool thread
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -597,4 +646,11 @@ void BaseSatellite::failure_wrapper(CSCP::State previous_state) {
     }
 
     failure(previous_state);
+
+    // Reset user status
+    const std::lock_guard lock {user_status_mutex_};
+    user_status_.reset();
+
+    // Do not provide status, the message comes from the exception which triggered the failure
+    return std::nullopt;
 }

@@ -330,6 +330,9 @@ TEST_CASE("Transitions", "[satellite]") {
     REQUIRE(recv_msg_get_status.getVerb().first == CSCP1Message::Type::SUCCESS);
     REQUIRE_THAT(to_string(recv_msg_get_status.getVerb().second), Equals("INIT"));
 
+    // Check status
+    REQUIRE_THAT(to_string(satellite.getStatus()), Equals("Finished with transitional state initializing"));
+
     satellite.exit();
 }
 

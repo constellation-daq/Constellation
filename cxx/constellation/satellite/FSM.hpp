@@ -72,6 +72,11 @@ namespace constellation::satellite {
         State getState() const { return state_.load(); }
 
         /**
+         * @brief Returns the current status message of the FSM
+         */
+        CNSTLN_API std::string_view getStatus() const;
+
+        /**
          * @brief Return the timestamp of the last state change
          */
         std::chrono::system_clock::time_point getLastChanged() const { return last_changed_.load(); }
@@ -147,7 +152,8 @@ namespace constellation::satellite {
          * @param identifier Identifier string for this callback
          * @param callback Callback taking the new state as argument
          */
-        CNSTLN_API void registerStateCallback(const std::string& identifier, std::function<void(State)> callback);
+        CNSTLN_API void registerStateCallback(const std::string& identifier,
+                                              std::function<void(State, std::string_view)> callback);
 
         /**
          * @brief Unregistering a state callback
@@ -157,6 +163,11 @@ namespace constellation::satellite {
          * @param identifier Identifier string for this callback
          */
         CNSTLN_API void unregisterStateCallback(const std::string& identifier);
+
+        /**
+         * @brief Terminate all FSM threads
+         */
+        CNSTLN_API void terminate();
 
     private:
         /**
@@ -172,6 +183,11 @@ namespace constellation::satellite {
          * @brief Set a new state and update the last changed timepoint
          */
         void set_state(State new_state);
+
+        /**
+         * @brief Set a new status message
+         */
+        void set_status(std::string status);
 
         /**
          * @brief Call all state callbacks
@@ -193,6 +209,11 @@ namespace constellation::satellite {
          * @brief Stop and join the run_thread
          */
         void stop_run_thread();
+
+        /**
+         * @brief Join the transitional_thread_
+         */
+        void join_transitional_thread();
 
         /**
          * @brief Join the failure_thread
@@ -280,6 +301,10 @@ namespace constellation::satellite {
         std::atomic<State> state_ {State::NEW};
         std::atomic<std::chrono::system_clock::time_point> last_changed_;
 
+        mutable std::mutex status_mutex_;
+        std::string status_;
+        std::atomic<bool> status_emitted_;
+
         BaseSatellite* satellite_;
         log::Logger logger_;
         std::mutex transition_mutex_;
@@ -288,7 +313,7 @@ namespace constellation::satellite {
         std::thread failure_thread_;
 
         /** State update callback */
-        std::map<std::string, std::function<void(State)>> state_callbacks_;
+        std::map<std::string, std::function<void(State, std::string_view)>> state_callbacks_;
         std::mutex state_callbacks_mutex_;
     };
 
