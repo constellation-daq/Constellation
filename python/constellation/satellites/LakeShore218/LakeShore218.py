@@ -36,6 +36,10 @@ class LakeShore218(Satellite):
         channel_names = config.setdefault("channel_names", [f"TEMP_{n + 1}" for n in range(8)])
         sampling_interval = config.setdefault("sampling_interval", 5)
 
+        # Check that channel names are unique and eight in total
+        if len(set(channel_names)) != 8:
+            raise Exception("`channel_names` parameter requires eight unique names")
+
         # Open VISA device
         self.log.debug("Opening VISA device %s", visa_address)
         self._serial = self._rm.open_resource(  # type: ignore
