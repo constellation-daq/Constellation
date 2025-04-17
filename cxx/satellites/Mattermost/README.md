@@ -8,9 +8,11 @@ category: "Monitoring"
 
 ## Description
 
-This satellite listens to log messages sent by other satellites and sends them to a Mattermost channel. Additionally, log
-messages are sent when a run is started, stopped or interrupted. Log messages with a log level of `WARNING` or `CRITICAL` are
-prefixed with `@channel` to notify all users in the channel.
+This satellite listens to log messages sent by other satellites and sends them to a Mattermost channel. The name of the
+sender will be used as username in Mattermost. Log messages with a log level of `WARNING` are marked as `important` and log
+messages with a log level of `CRITICAL` are marked as urgent. In both cases the log messages are prefixed with `@channel` to
+notify all users in the channel. In addition to logging from other satellites, messages are sent when a run is started,
+stopped or interrupted.
 
 ## Building
 
