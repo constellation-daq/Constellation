@@ -156,6 +156,7 @@ protected:
             }
         }
         LOG(TRACE) << "Leaving transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
+        SatelliteT::submit_status("Finished with transitional state " + std::string(state));
     }
 
 private:
