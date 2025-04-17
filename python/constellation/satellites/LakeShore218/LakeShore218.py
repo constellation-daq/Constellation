@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 This module provides the class for the LakeShore218 satellite.
 """
 
+from functools import partial
 from threading import Lock
 from typing import Any
 
@@ -15,7 +16,6 @@ from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.cscp import CSCPMessage
-from constellation.core.monitoring import schedule_metric
 from constellation.core.satellite import Satellite
 
 
@@ -28,10 +28,20 @@ class LakeShore218(Satellite):
         super().__init__(*args, **kwargs)
 
     def do_initializing(self, config: Configuration) -> None:
+        # Get serial config
         port = config["port"]
         visa_address = f"ASRL{port}::INSTR"
-        self.log.debug("Opening VISA device %s", visa_address)
 
+        # Get metrics config
+        channel_names = config.setdefault("channel_names", [f"TEMP_{n + 1}" for n in range(8)])
+        sampling_interval = config.setdefault("sampling_interval", 5)
+
+        # Check that channel names are unique and eight in total
+        if len(set(channel_names)) != 8:
+            raise Exception("`channel_names` parameter requires eight unique names")
+
+        # Open VISA device
+        self.log.debug("Opening VISA device %s", visa_address)
         self._serial = self._rm.open_resource(  # type: ignore
             visa_address,
             baud_rate=9600,
@@ -41,6 +51,13 @@ class LakeShore218(Satellite):
             read_termination="\r\n",
             write_termination="\r\n",
         )
+
+        # Register metrics
+        self.reset_scheduled_metrics()
+        for n in range(8):
+            self.schedule_metric(
+                channel_names[n], "K", MetricsType.LAST_VALUE, sampling_interval, partial(self._get_temp, n + 1)
+            )
 
     def _get_temp(self, channel: int) -> float | None:
         # Check that _serial exists (required for metrics before INIT)
@@ -62,35 +79,3 @@ class LakeShore218(Satellite):
         temp = self._get_temp(channel)
         verb = f"{temp}K" if temp else "Disabled"
         return verb, temp, {}
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_1(self) -> Any:
-        return self._get_temp(1)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_2(self) -> Any:
-        return self._get_temp(2)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_3(self) -> Any:
-        return self._get_temp(3)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_4(self) -> Any:
-        return self._get_temp(4)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_5(self) -> Any:
-        return self._get_temp(5)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_6(self) -> Any:
-        return self._get_temp(6)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_7(self) -> Any:
-        return self._get_temp(7)
-
-    @schedule_metric("K", MetricsType.LAST_VALUE, 5)
-    def temp_8(self) -> Any:
-        return self._get_temp(8)
