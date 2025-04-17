@@ -21,7 +21,6 @@
 #include <QString>
 #include <QVariant>
 
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/gui/QLogMessage.hpp"
