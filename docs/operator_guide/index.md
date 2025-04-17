@@ -84,4 +84,5 @@ concepts/data
 :caption: How-To Guides
 
 howtos/setup_influxdb_grafana
+howtos/setup_mattermost_logger
 ```
