@@ -74,7 +74,7 @@ namespace constellation::satellite {
         /**
          * @brief Returns the current status message of the FSM
          */
-        std::string_view getStatus() const;
+        CNSTLN_API std::string_view getStatus() const;
 
         /**
          * @brief Return the timestamp of the last state change
