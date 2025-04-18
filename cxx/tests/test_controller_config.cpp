@@ -202,7 +202,7 @@ TEST_CASE("Direct cyclic dependency graph", "[controller]") {
     // No exception thrown
     REQUIRE_THROWS_MATCHES(config.validate(),
                            ConfigFileValidationError,
-                           Message("Error validating configuration file: Found cyclic dependency for transition starting"));
+                           Message("Error validating configuration file: Cyclic dependency for transition \"starting\""));
 }
 
 TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
@@ -224,6 +224,21 @@ TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
     // No exception thrown
     REQUIRE_THROWS_MATCHES(config.validate(),
                            ConfigFileValidationError,
-                           Message("Error validating configuration file: Found cyclic dependency for transition launching"));
+                           Message("Error validating configuration file: Cyclic dependency for transition \"launching\""));
 }
+
+TEST_CASE("Self-dependency", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict_sat_a;
+    dict_sat_a["_require_starting_after"] = "dummy.a";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+
+    // No exception thrown
+    REQUIRE_THROWS_MATCHES(config.validate(),
+                           ConfigFileValidationError,
+                           Message("Error validating configuration file: Cyclic dependency for transition \"starting\""));
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

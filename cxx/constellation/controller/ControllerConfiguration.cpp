@@ -319,7 +319,7 @@ void ControllerConfiguration::validate() const {
 
         if(check_transition_deadlock(transition)) {
             LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
-            throw ConfigFileValidationError("Found cyclic dependency for transition " + to_string(transition));
+            throw ConfigFileValidationError("Cyclic dependency for transition \"" + to_string(transition) + "\"");
         }
     }
     // No deadlock in any transition
