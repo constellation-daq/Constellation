@@ -4,7 +4,7 @@
 project('Constellation',
   version: '0.3',
   license: 'EUPL-1.2',
-  default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20'],
+  default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20', 'b_ndebug=if-release'],
 )
 
 # Version code name are taken from the IAU constellations sorted by solid angle
