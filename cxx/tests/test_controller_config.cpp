@@ -158,6 +158,8 @@ TEST_CASE("Convert to TOML", "[controller]") {
 
 TEST_CASE("Valid dependency graph", "[controller]") {
     ControllerConfiguration config;
+
+    // A depends on B
     Dictionary dict_sat_a;
     dict_sat_a["_require_starting_after"] = "dummy.b";
 
@@ -165,6 +167,21 @@ TEST_CASE("Valid dependency graph", "[controller]") {
     config.addSatelliteConfiguration("dummy.b", {});
     REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
     REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+
+    // No exception thrown
+    config.validate();
+
+    // A depends on B and C,
+    // C depends on B
+    dict_sat_a["_require_starting_after"] = std::vector<std::string> {"dummy.b", "dummy.c"};
+    Dictionary dict_sat_c;
+    dict_sat_c["_require_starting_after"] = "dummy.b";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    config.addSatelliteConfiguration("dummy.c", dict_sat_c);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.c"));
 
     // No exception thrown
     config.validate();

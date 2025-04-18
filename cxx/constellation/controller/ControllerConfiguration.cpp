@@ -288,9 +288,24 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
         // Get final assembled config and look for the key:
         const auto config = getSatelliteConfiguration(canonical_name);
         if(config.contains(key)) {
-            // Register dependency in graph, current satellite depends on config value satellite
-            transition_graph_[state][transform(config.at(key).get<std::string>(), ::tolower)].emplace(
-                transform(canonical_name, ::tolower));
+            auto register_dependency = [this, canonical_name, state](auto& dependent) {
+                // Register dependency in graph, current satellite depends on config value satellite
+                transition_graph_[state][transform(dependent, ::tolower)].emplace(transform(canonical_name, ::tolower));
+            };
+
+            try {
+                const auto dependents = config.at(key).get<std::vector<std::string>>();
+                LOG(config_parser_logger_, DEBUG)
+                    << "Registering dependency for transitional state " << std::quoted(to_string(state)) << " of "
+                    << canonical_name << " with dependents " << range_to_string(dependents);
+                std::ranges::for_each(dependents, register_dependency);
+            } catch(const std::bad_variant_access&) {
+                const auto dependent = config.at(key).get<std::string>();
+                LOG(config_parser_logger_, DEBUG)
+                    << "Registering dependency for transitional state " << std::quoted(to_string(state)) << " of "
+                    << canonical_name << " and dependent " << dependent;
+                register_dependency(dependent);
+            }
         }
     }
 }
