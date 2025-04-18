@@ -52,13 +52,32 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     buffer << file.rdbuf();
 
     parse_toml(buffer.view());
+
+    // Build the dependency graph from all satellite configurations
+    for(const auto& [name, cfg] : satellite_configs_) {
+        fill_dependency_graph(name);
+    }
+
+    // Validate the configuration
+    validate();
 }
 
 ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
     parse_toml(toml);
+
+    // Build the dependency graph from all satellite configurations
+    for(const auto& [name, cfg] : satellite_configs_) {
+        fill_dependency_graph(name);
+    }
+
+    // Validate the configuration
+    validate();
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
+
+    // Validate the configuration
+    validate();
 
     auto get_toml_array = [&](auto&& val) -> toml::array {
         toml::array arr;
@@ -355,6 +374,9 @@ void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonic
     } else {
         satellite_configs_.emplace(canonical_name_lc, std::move(config));
     }
+
+    // Add satellite to dependency graph:
+    fill_dependency_graph(canonical_name);
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
