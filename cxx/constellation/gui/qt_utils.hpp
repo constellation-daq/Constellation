@@ -19,6 +19,7 @@
 #include <QString>
 #include <QTimeZone>
 
+#include "constellation/build.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -30,6 +31,12 @@
 #endif
 
 namespace constellation::gui {
+
+    /**
+     * @brief Helper to initialize Qt resources for use in an application
+     * @warning This needs to be called before any resource such as icons or logos is used in the application
+     */
+    CNSTLN_API void initResources();
 
     /**
      * @brief Helper to obtain the state string with color and formatting

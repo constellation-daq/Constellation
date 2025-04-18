@@ -20,7 +20,8 @@ gui_src = files(
   'QResponseDialog.cpp',
   'QLogLevelComboBox.cpp',
   'QLogMessage.cpp',
-  'QLogMessageDialog.cpp'
+  'QLogMessageDialog.cpp',
+  'Resources.cpp',
 )
 
 gui_lib = library('ConstellationGUI',
