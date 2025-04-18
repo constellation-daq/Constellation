@@ -288,7 +288,8 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
         const auto config = getSatelliteConfiguration(canonical_name);
         if(config.contains(key)) {
             // Register dependency in graph, current satellite depends on config value satellite
-            transition_graph_[state][config.at(key).get<std::string>()].emplace_back(transform(canonical_name, ::tolower));
+            transition_graph_[state][transform(config.at(key).get<std::string>(), ::tolower)].emplace_back(
+                transform(canonical_name, ::tolower));
         }
     }
 }
@@ -326,6 +327,11 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
 
         // Satellite already processed
         if(visited.find(satellite) != visited.end()) {
+            return false;
+        }
+
+        // No transition registered for this satellite:
+        if(!transition_graph_.at(transition).contains(satellite)) {
             return false;
         }
 
