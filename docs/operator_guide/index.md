@@ -58,6 +58,7 @@ get_started/install_from_source
 
 tutorials/single_satellite
 tutorials/missioncontrol
+tutorials/observatory
 ```
 
 ```{raw} latex

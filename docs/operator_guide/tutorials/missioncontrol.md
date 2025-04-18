@@ -12,7 +12,7 @@ It is recommend to read through the tutorial on how to [start and control a sing
 MissionControl is started using the `MissionControl` command or by searching for it in the application overview if
 installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
 
-```{figure} missioncontrol_startup.png
+```{figure} qtgui_startup.png
 :scale: 50 %
 MissionControl startup window
 ```
@@ -21,7 +21,7 @@ MissionControl startup window
 Alternatively, MissionControl can be started with a group directly using the `-g GROUP` command line argument.
 ```
 
-The main window of Constellation can be divided into three parts:
+The main window of MissionControl can be divided into three parts:
 
 - Information about the entire Constellation on top
 - A section for controlling the entire Constellation
@@ -41,7 +41,7 @@ named `Receiver` are started.
 MissionControl main window with satellites in NEW state
 ```
 
-To initialize the satellites, the following configuration files is used:
+To initialize the satellites, the following configuration file is used:
 
 ```toml
 [satellites.Sputnik]
