@@ -40,6 +40,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
@@ -69,7 +70,7 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_received_.load(); });
 
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->sendRequest(CHIRP::DATA);
     }
@@ -232,7 +233,7 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
 
 void ReceiverSatellite::launching_receiver() {
     LOG(cdtp_logger_, DEBUG) << "Checking for discovered data service endpoints";
-    auto* chirp_manager = chirp::Manager::getDefaultInstance();
+    auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         // Get discovered DATA services
         const auto services = chirp_manager->getDiscoveredServices(CHIRP::DATA);
