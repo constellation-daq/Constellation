@@ -16,6 +16,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::controller {
@@ -102,6 +103,16 @@ namespace constellation::controller {
          */
         void parse_toml(std::string_view toml);
 
+        /**
+         * @brief Add satellite dependencies to the transition dependency graph
+         * @details This method looks for keys of the autonomous transition orchestration on the final assembled satellite
+         *          configuration and adds the respective dependencies to the graph for validation. All satellite names are
+         *          canonical names in lower case.
+         *
+         * @param canonical_name Canonical name of the satellite to be added to the dependency graph
+         */
+        void fill_dependency_graph(std::string_view canonical_name);
+
     private:
         /* Key-value pairs of the global satellite section */
         config::Dictionary global_config_;
@@ -116,6 +127,9 @@ namespace constellation::controller {
          *       satellites are allowed
          */
         utils::string_hash_map<config::Dictionary> satellite_configs_;
+
+        /* Satellite dependency graph for each transition type */
+        std::unordered_map<protocol::CSCP::State, utils::string_hash_map<std::vector<std::string>>> transition_graph_;
 
         /* Logger */
         log::Logger config_parser_logger_ {"CONF"};

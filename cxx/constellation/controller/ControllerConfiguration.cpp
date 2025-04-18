@@ -28,11 +28,13 @@
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::controller;
 using namespace constellation::config;
 using namespace constellation::log;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 
 ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& path) {
@@ -251,6 +253,24 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
 
     } else {
         LOG(config_parser_logger_, WARNING) << "Could not find base node for satellites";
+    }
+}
+
+void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_name) {
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = transform("_require_" + to_string(state) + "_after", ::tolower);
+
+        // Get final assembled config and look for the key:
+        const auto config = getSatelliteConfiguration(canonical_name);
+        if(config.contains(key)) {
+            // Register dependency in graph, current satellite depends on config value satellite
+            transition_graph_[state][config.at(key).get<std::string>()].emplace_back(transform(canonical_name, ::tolower));
+        }
     }
 }
 
