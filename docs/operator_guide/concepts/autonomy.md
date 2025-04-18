@@ -154,7 +154,8 @@ the EOR message of the former.
 
 Also mutual dependencies on the same state will lead to deadlocks.
 
-Some controllers might check for conflicts, but in general the configuration has to be tested with a running Constellation.
+Some controllers might check for conflicts by building a directed graph of the dependencies, but in general the
+configuration has to be tested with a running Constellation.
 ```
 
 There is no restriction to the number of conditions or the number of remote satellites to depend on. When depending on
