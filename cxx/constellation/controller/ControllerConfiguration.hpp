@@ -10,8 +10,10 @@
 #pragma once
 
 #include <filesystem>
+#include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
@@ -146,7 +148,7 @@ namespace constellation::controller {
         utils::string_hash_map<config::Dictionary> satellite_configs_;
 
         /* Satellite dependency graph for each transition type */
-        std::unordered_map<protocol::CSCP::State, utils::string_hash_map<std::vector<std::string>>> transition_graph_;
+        std::unordered_map<protocol::CSCP::State, utils::string_hash_map<std::set<std::string>>> transition_graph_;
 
         /* Logger */
         log::Logger config_parser_logger_ {"CONF"};

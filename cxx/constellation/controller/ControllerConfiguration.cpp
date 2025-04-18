@@ -18,6 +18,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -288,7 +289,7 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
         const auto config = getSatelliteConfiguration(canonical_name);
         if(config.contains(key)) {
             // Register dependency in graph, current satellite depends on config value satellite
-            transition_graph_[state][transform(config.at(key).get<std::string>(), ::tolower)].emplace_back(
+            transition_graph_[state][transform(config.at(key).get<std::string>(), ::tolower)].emplace(
                 transform(canonical_name, ::tolower));
         }
     }
@@ -319,7 +320,7 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     std::unordered_set<std::string> recursion_stack;
 
     // Recursive depth first search:
-    auto dfs = [&](const auto& self, const std::string& satellite) {
+    auto dfs = [&](const auto& self, const std::string& satellite) { // NOLINT(misc-no-recursion)
         // Cycle detected (deadlock)
         if(recursion_stack.find(satellite) != recursion_stack.end()) {
             return true;

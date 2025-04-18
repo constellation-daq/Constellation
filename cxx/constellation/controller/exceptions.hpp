@@ -88,7 +88,6 @@ namespace constellation::controller {
     public:
         /**
          * @brief Construct an error for a configuration file validation failure
-         * @param key The offending configuration key
          * @param error Error message
          */
         explicit ConfigFileValidationError(std::string_view error) {
