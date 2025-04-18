@@ -224,8 +224,7 @@ _require_starting_after = ["Sputnik.B"]
 ```
 
 The satellite will evaluate these conditions upon entering respective transitional states. If, in the above example, Satellite `Sputnik.A` receives the condition
-`_require_starting_after Sputnik.B` it will enter the `starting` transitional states but wait until it receives the state `RUN` for satellite `Sputnik.B` before
-progressing through its own `starting` state.
+`_require_starting_after Sputnik.B` it will enter the {bdg-secondary}`starting` transitional states but wait until it receives the state {bdg-secondary}`RUN` for satellite `Sputnik.B` before progressing through its own {bdg-secondary}`starting` state.
 
 This method allows satellites to asynchronously progress from steady state to steady state without the necessity of a controller supervising the order of action.
 

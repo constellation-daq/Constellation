@@ -72,9 +72,9 @@ The respective satellite will receive these as conditions from the controller vi
 `initialize` command and evaluate them upon entering transitional states.
 
 If, for example, Satellite `Sputnik.Second` receives the condition `_require_starting_after = "Sputnik.First"` it will enter
-the `starting` transitional states but wait until satellite `Sputnik.First` has successfully completed the transition, and
+the {bdg-secondary}`starting` transitional states but wait until satellite `Sputnik.First` has successfully completed the transition, and
 `Sputnik.Second` receives the state `RUN` from `Sputnik.First` via the
-[heartbeat protocol](../../framework_reference/protocols.md#autonomous-operation) before progressing through its own `starting` state. This can
+[heartbeat protocol](../../framework_reference/protocols.md#autonomous-operation) before progressing through its own {bdg-secondary}`starting` state. This can
 be visualized as follows:
 
 ```plantuml
@@ -139,7 +139,7 @@ condition to progress simultaneously once the condition is fulfilled, while a tr
 necessarily would progress sequentially.
 
 Conditions are available for all [regular transitional states](satellite.md#changing-states---transitions) of a satellite
-apart from `reconfiguring`, i.e.
+apart from {bdg-secondary}`reconfiguring`, i.e.
 
 * `_require_initializing_after`
 * `_require_launching_after`
@@ -170,8 +170,8 @@ states.
 Waiting for remote conditions to be satisfied can be interrupted by a number of things:
 
 * The remote satellite the condition depends on is not present or disappeared
-* The remote satellite the condition depends on returns an `ERROR` state
+* The remote satellite the condition depends on returns an {bdg-secondary}`ERROR` state
 * The waiting satellite runs into the timeout for conditional transitions. The timeout can be configured using the key
   `_conditional_transition_timeout` and defaults to 60 seconds.
 
-In all cases the waiting satellite aborts the pending action and transitions into its `ERROR` state.
+In all cases the waiting satellite aborts the pending action and transitions into its {bdg-secondary}`ERROR` state.
