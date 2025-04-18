@@ -12,7 +12,7 @@ It is recommend to read through the tutorial on how to [start and control a sing
 MissionControl is started using the `MissionControl` command or by searching for it in the application overview if
 installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
 
-```{figure} missioncontrol_startup.png
+```{figure} qtgui_startup.png
 :scale: 50 %
 MissionControl startup window
 ```
