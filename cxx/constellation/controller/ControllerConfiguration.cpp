@@ -274,6 +274,72 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
     }
 }
 
+void ControllerConfiguration::validate() const {
+
+    // Check each transition for possible cycles
+    for(const auto& transition_pair : transition_graph_) {
+        const auto transition = transition_pair.first;
+        LOG(config_parser_logger_, DEBUG) << "Checking for deadlock in transition: " << transition;
+
+        if(check_transition_deadlock(transition)) {
+            LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
+            throw ConfigFileValidationError("Found cyclic dependency for transition " + to_string(transition));
+        }
+    }
+    // No deadlock in any transition
+}
+
+bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) const {
+    // If no dependencies for this transition doesn't exist, there is no cycle:
+    if(!transition_graph_.contains(transition)) {
+        return false;
+    }
+
+    std::unordered_set<std::string> visited;
+    std::unordered_set<std::string> recursion_stack;
+
+    // Recursive depth first search:
+    auto dfs = [&](const auto& self, const std::string& satellite) {
+        // Cycle detected (deadlock)
+        if(recursion_stack.find(satellite) != recursion_stack.end()) {
+            return true;
+        }
+
+        // Satellite already processed
+        if(visited.find(satellite) != visited.end()) {
+            return false;
+        }
+
+        visited.insert(satellite);
+        recursion_stack.insert(satellite);
+
+        // Visit all dependent satellites
+        for(const auto& dependent : transition_graph_.at(transition).at(satellite)) {
+            if(self(self, dependent)) {
+                return true;
+            }
+        }
+
+        // Remove satellite from recursion stack
+        recursion_stack.erase(satellite);
+        return false;
+    };
+
+    // Traverse each satellite for the given transition
+    for(const auto& pair : transition_graph_.at(transition)) {
+        const std::string& satellite = pair.first;
+        if(visited.find(satellite) == visited.end()) {
+            if(dfs(dfs, satellite)) {
+                // Deadlock detected in this transition
+                return true;
+            }
+        }
+    }
+
+    // No deadlock detected in this transition
+    return false;
+}
+
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
     return satellite_configs_.contains(transform(canonical_name, ::tolower));
 }
