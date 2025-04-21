@@ -261,12 +261,13 @@ bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonic
 void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config) {
 
     // Check if already there
-    auto config_it = satellite_configs_.find(canonical_name);
+    const auto canonical_name_lc = transform(canonical_name, ::tolower);
+    auto config_it = satellite_configs_.find(canonical_name_lc);
     if(config_it != satellite_configs_.end()) {
         LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite configuration for " << canonical_name;
         config_it->second = std::move(config);
     } else {
-        satellite_configs_.emplace(canonical_name, std::move(config));
+        satellite_configs_.emplace(canonical_name_lc, std::move(config));
     }
 }
 
