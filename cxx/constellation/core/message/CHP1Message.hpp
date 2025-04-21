@@ -59,9 +59,11 @@ namespace constellation::message {
         /** Return the message flags */
         constexpr protocol::CHP::MessageFlags getFlags() const { return flags_; }
 
+        /** Return whether this message is an extraystole */
         constexpr bool isExtrasystole() const { return (flags_ & protocol::CHP::MessageFlags::IS_EXTRASYSTOLE) != 0U; }
 
-        constexpr bool isAutonomous() const { return (flags_ & protocol::CHP::MessageFlags::IS_AUTONOMOUS) != 0U; }
+        /** Return role of the sender */
+        constexpr protocol::CHP::Role getRole() const;
 
         /** Return optional status of the message */
         constexpr std::optional<std::string> getStatus() const { return status_; }

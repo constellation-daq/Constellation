@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 namespace constellation::protocol::CHP {
 
@@ -24,11 +25,21 @@ namespace constellation::protocol::CHP {
     enum MessageFlags : std::uint8_t {
         NONE = 0x00,
 
-        /* Indicate a extrasystole message */
-        IS_EXTRASYSTOLE = 0x01,
+        /** Indicating the role "dynamic" for this satellite */
+        ROLE_DYNAMIC = 0x01,
 
-        /* Indicate whether the current state has been reached autonomously or by CSCP command */
-        IS_AUTONOMOUS = 0x02,
+        /** Indicating the role "essential" for this satellite */
+        ROLE_ESSENTIAL = 0x02,
+
+        /* Indicate a extrasystole message */
+        IS_EXTRASYSTOLE = 0x80,
+    };
+
+    /** Convenience enum to access role flags */
+    enum class Role : std::uint8_t {
+        NONE = 0x00,
+        DYNAMIC = std::to_underlying(MessageFlags::ROLE_DYNAMIC),
+        ESSENTIAL = std::to_underlying(MessageFlags::ROLE_ESSENTIAL)
     };
 
     /** Minimal interval between heartbeat messages */

@@ -18,8 +18,9 @@ class CHPMessageFlags(IntFlag):
     """Defines the message flags of CHP messages."""
 
     NONE = 0x00
-    IS_EXTRASYSTOLE = 0x01
-    IS_AUTONOMOUS = 0x02
+    ROLE_DYNAMIC = 0x01
+    ROLE_ESSENTIAL = 0x02
+    IS_EXTRASYSTOLE = 0x80
 
 
 def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
