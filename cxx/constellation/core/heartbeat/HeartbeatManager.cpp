@@ -124,7 +124,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Check for ERROR and SAFE states:
     if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         remote_it->second.lives = 0;
-        if(interrupt_callback_) {
+       // Only trigger interrupt if demanded by the message flags:
+       if(interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT)) {
             LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
             interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
         }
@@ -137,7 +138,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 
     // Replenish lives unless we're in ERROR or SAFE state:
     if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-        remote_it->second.lives = protocol::CHP::Lives;
+        remote_it->second.lives = CHP::Lives;
     }
 }
 
@@ -164,7 +165,9 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 remote.last_checked = now;
                 LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
 
-                if(remote.lives == 0 && interrupt_callback_) {
+                // Only trigger interrupt if the role demands it
+                if(remote.lives == 0 && interrupt_callback_ &&
+                   role_requires(remote.role, CHP::MessageFlags::TRIGGER_INTERRUPT)) {
                     // This parrot is dead, it is no more
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
                     interrupt_callback_("No signs of life detected anymore from " + key);

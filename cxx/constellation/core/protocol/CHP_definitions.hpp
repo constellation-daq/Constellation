@@ -50,6 +50,8 @@ namespace constellation::protocol::CHP {
 
     /**
      * @brief Get flags for a given role
+     *
+     * @param role Role
      */
     constexpr MessageFlags flags_from_role(Role role) {
         if(role == Role::TRANSIENT) {
@@ -67,6 +69,8 @@ namespace constellation::protocol::CHP {
 
     /**
      * @brief Get role from given message flags
+     *
+     * @param flags Message flags
      */
     constexpr Role role_from_flags(MessageFlags flags) {
         if((flags & MessageFlags::MARK_DEGRADED) != 0U) {
@@ -79,6 +83,18 @@ namespace constellation::protocol::CHP {
             return Role::TRANSIENT;
         }
         return Role::NONE;
+    }
+
+    /**
+     * @brief Check if the given role requires the given message flag
+     *
+     * @param role Role
+     * @param flags Message flags
+     *
+     * @return True if role mandates the flag, false otherwise
+     */
+    constexpr bool role_requires(Role role, MessageFlags flags) {
+        return (flags_from_role(role) & flags) != 0U;
     }
 
     /** Minimal interval between heartbeat messages */

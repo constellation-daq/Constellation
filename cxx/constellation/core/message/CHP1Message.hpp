@@ -59,6 +59,9 @@ namespace constellation::message {
         /** Return the message flags */
         constexpr protocol::CHP::MessageFlags getFlags() const { return flags_; }
 
+        /** Check whether this message has a specific flag set */
+        constexpr bool hasFlag(protocol::CHP::MessageFlags flag) const { return (flags_ & flag) != 0U; }
+
         /** Return whether this message is an extraystole */
         constexpr bool isExtrasystole() const { return (flags_ & protocol::CHP::MessageFlags::IS_EXTRASYSTOLE) != 0U; }
 
