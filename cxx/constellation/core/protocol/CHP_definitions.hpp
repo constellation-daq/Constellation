@@ -14,9 +14,8 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <utility>
 
-#include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 
 namespace constellation::protocol::CHP {
 
