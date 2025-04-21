@@ -58,10 +58,11 @@ The first 1-OCTET integer variable SHALL contain the current state of the CHP se
 
 The second 1-OCTET integer variable SHALL hold the CHP message flags, which are defined as follows:
 
-* `%x01` for message flag `ROLE_DYNAMIC`: The sender announces its role as dynamic.
-* `%x02` for message flag `ROLE_ESSENTIAL`: The sender announces its role as essential.
+* `%x01` for message flag `DENY_DEPARTURE`: When this sender departs, an interrupt should be triggered.
+* `%x02` for message flag `TRIGGER_INTERRUPT`: Any issue encountered with this sender should trigger an interrupt.
+* `%x04` for message flag `MARK_DEGRADED`: Any issue encountered with this sender should mark data as degraded.
 * `%x80` for message flag `IS_EXTRASYSTOLE`: The currently processed CHP message is an extrasystole message.
-* The flags `%x04`, `%x08`, `%x10`, `%x20` and `%x40` are reserved.
+* The flags `%x08`, `%x10`, `%x20` and `%x40` are reserved.
 
 The 2-OCTET integer variable SHALL indicate the maximum time interval in units of milliseconds until the next heartbeat message is emitted by the sending CHP host.
 
