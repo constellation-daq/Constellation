@@ -52,7 +52,7 @@ dependency('libcurl', default_options: [
   'tftp=disabled',
   'warning_level=0',
 ])
-cpr_dep = dependency('cpr')
+cpr_dep = dependency('cpr', default_options: ['tests=disabled', 'warning_level=0'])
 
 satellite_type = 'Mattermost'
 
