@@ -5,11 +5,11 @@ SPDX-License-Identifier: EUPL-1.2
 
 import io
 import time
+from enum import IntFlag
 from typing import Tuple
 
 import msgpack  # type: ignore[import-untyped]
 import zmq
-from enum import IntFlag
 
 from .protocol import Protocol
 

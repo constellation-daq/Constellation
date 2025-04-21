@@ -70,8 +70,8 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
             static_cast<CSCP::State>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
         // Unpack message flags
-        const auto flags = static_cast<CHP::MessageFlags>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
-
+        const auto flags =
+            static_cast<CHP::MessageFlags>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
         // Unpack time interval
         const auto interval = static_cast<std::chrono::milliseconds>(

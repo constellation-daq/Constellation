@@ -11,7 +11,7 @@ from typing import Any
 
 import zmq
 
-from .chp import CHPTransmitter, CHPMessageFlags
+from .chp import CHPMessageFlags, CHPTransmitter
 from .fsm import SatelliteStateHandler
 
 
