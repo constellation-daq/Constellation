@@ -75,16 +75,6 @@ void HeartbeatSend::terminate() {
     }
 }
 
-void HeartbeatSend::setRole(CHP::Role role) {
-    if(role == CHP::Role::ESSENTIAL) {
-        default_flags_ = CHP::MessageFlags::ROLE_ESSENTIAL;
-    } else if(role == CHP::Role::DYNAMIC) {
-        default_flags_ = CHP::MessageFlags::ROLE_DYNAMIC;
-    } else {
-        default_flags_ = CHP::MessageFlags::NONE;
-    }
-}
-
 void HeartbeatSend::sendExtrasystole(std::string_view status) {
     if(!status.empty()) {
         const std::lock_guard lock {mutex_};

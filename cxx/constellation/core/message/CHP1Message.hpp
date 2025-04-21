@@ -63,7 +63,7 @@ namespace constellation::message {
         constexpr bool isExtrasystole() const { return (flags_ & protocol::CHP::MessageFlags::IS_EXTRASYSTOLE) != 0U; }
 
         /** Return role of the sender */
-        protocol::CHP::Role getRole() const;
+        constexpr protocol::CHP::Role getRole() const { return role_from_flags(flags_); }
 
         /** Return optional status of the message */
         constexpr std::optional<std::string> getStatus() const { return status_; }

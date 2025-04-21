@@ -77,7 +77,7 @@ namespace constellation::heartbeat {
          *
          * @param role Role this sender is inhabiting
          */
-        CNSTLN_API void setRole(protocol::CHP::Role role);
+        void setRole(protocol::CHP::Role role) { default_flags_ = protocol::CHP::flags_from_role(role); }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
@@ -136,7 +136,7 @@ namespace constellation::heartbeat {
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
         /** Default message flags, defined e.g. by the role of the sender */
-        protocol::CHP::MessageFlags default_flags_ {protocol::CHP::MessageFlags::ROLE_DYNAMIC};
+        protocol::CHP::MessageFlags default_flags_ {protocol::CHP::flags_from_role(protocol::CHP::Role::DYNAMIC)};
         /** Message flags for next message */
         std::atomic<protocol::CHP::MessageFlags> flags_ {default_flags_};
 
