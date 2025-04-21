@@ -171,10 +171,6 @@ build:alma9-cern:
     - .build-cpp
     - .cpp-hi-load
     - .alma9-cern
-  cache:
-    - <<: *meson-wrap-cache
-      policy: pull-push
-    - *ccache
   variables:
     BUILD_TYPE: "release"
     BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin -Dbuild_gui=qt5"
@@ -232,6 +228,10 @@ build:ubuntu-22.04:
     - .build-cpp
     - .cpp-hi-load
     - .ubuntu-22.04
+  cache:
+    - <<: *meson-wrap-cache
+      policy: pull-push
+    - *ccache
   variables:
     BUILD_TYPE: "debugoptimized"
     BUILD_OPTIONS: "-Dbuild_gui=qt5"
