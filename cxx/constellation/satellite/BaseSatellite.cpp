@@ -42,6 +42,7 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -514,6 +515,12 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
 
     if(config.has("_allow_departure")) {
         heartbeat_manager_.allowDeparture(config.get<bool>("_allow_departure"));
+    }
+
+    if(config.has("_role")) {
+        const auto role = config.get<CHP::Role>("_role");
+        LOG(logger_, INFO) << "Configuring role " << role;
+        heartbeat_manager_.setRole(role);
     }
 }
 

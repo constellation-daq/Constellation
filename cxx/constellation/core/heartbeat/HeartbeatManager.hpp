@@ -91,6 +91,13 @@ namespace constellation::heartbeat {
         std::optional<protocol::CSCP::State> getRemoteState(std::string_view remote);
 
         /**
+         * @brief Set the sender role
+         *
+         * @param role Role of the heartbeat sender
+         */
+        CNSTLN_API void setRole(protocol::CHP::Role role) { sender_.setRole(role); }
+
+        /**
          * @brief Update the maximum heartbeat interval to a new value
          *
          * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval

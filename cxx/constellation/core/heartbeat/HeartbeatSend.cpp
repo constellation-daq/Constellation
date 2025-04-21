@@ -75,6 +75,16 @@ void HeartbeatSend::terminate() {
     }
 }
 
+void HeartbeatSend::setRole(CHP::Role role) {
+    if(role == CHP::Role::ESSENTIAL) {
+        default_flags_ = CHP::MessageFlags::ROLE_ESSENTIAL;
+    } else if(role == CHP::Role::DYNAMIC) {
+        default_flags_ = CHP::MessageFlags::ROLE_DYNAMIC;
+    } else {
+        default_flags_ = CHP::MessageFlags::NONE;
+    }
+}
+
 void HeartbeatSend::sendExtrasystole(std::string_view status) {
     if(!status.empty()) {
         const std::lock_guard lock {mutex_};
@@ -116,7 +126,8 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             // Publish CHP message with current state and the updated interval
             CHP1Message(sender_, state_callback_(), interval_.load(), flags_.load(), status_).assemble().send(pub_socket_);
             status_.reset();
-            flags_ = CHP::MessageFlags::NONE;
+            // Reset to default flags
+            flags_ = default_flags_;
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }

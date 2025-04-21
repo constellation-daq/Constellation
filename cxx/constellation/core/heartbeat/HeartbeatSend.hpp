@@ -73,6 +73,13 @@ namespace constellation::heartbeat {
         constexpr networking::Port getPort() const { return port_; }
 
         /**
+         * @brief Set the role this sender is emitting
+         *
+         * @param role Role this sender is inhabiting
+         */
+        CNSTLN_API void setRole(protocol::CHP::Role role);
+
+        /**
          * @brief Update the maximum heartbeat interval to a new value
          *
          * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval
@@ -128,8 +135,10 @@ namespace constellation::heartbeat {
         std::atomic_size_t subscribers_;
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
+        /** Default message flags, defined e.g. by the role of the sender */
+        protocol::CHP::MessageFlags default_flags_ {protocol::CHP::MessageFlags::ROLE_DYNAMIC};
         /** Message flags for next message */
-        std::atomic<protocol::CHP::MessageFlags> flags_ {protocol::CHP::MessageFlags::NONE};
+        std::atomic<protocol::CHP::MessageFlags> flags_ {default_flags_};
 
         std::condition_variable cv_;
         std::mutex mutex_;
