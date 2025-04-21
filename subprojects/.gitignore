@@ -8,6 +8,7 @@
 /asio-*/
 /Catch2-*/
 /cppzmq-*/
+/fmt-*/
 /libzmq-*/
 /magic_enum-*/
 /msgpack-cxx-*/
