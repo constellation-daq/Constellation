@@ -513,10 +513,6 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
         heartbeat_manager_.setMaximumInterval(interval);
     }
 
-    if(config.has("_allow_departure")) {
-        heartbeat_manager_.allowDeparture(config.get<bool>("_allow_departure"));
-    }
-
     if(config.has("_role")) {
         const auto role = config.get<CHP::Role>("_role");
         LOG(logger_, INFO) << "Configuring role " << role;

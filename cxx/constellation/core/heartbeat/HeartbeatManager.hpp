@@ -104,17 +104,7 @@ namespace constellation::heartbeat {
          *
          * @param interval New maximum heartbeat interval
          */
-        void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
-
-        /**
-         * @brief Configure whether regular departures are allows.
-         * @details If set to true, departing satellites which send a proper DEPART CHIRP message are not considered
-         *          erroneous but are removed from the list of monitored heartbeats. If set to false, any missing heartbeat,
-         *          even after a regular departure, is considered erroneous and the interruption callback is activated
-         *
-         * @param allow Boolean flag whether regular departures are allowed or not
-         */
-        void allowDeparture(bool allow) { allow_departure_ = allow; }
+        CNSTLN_API void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound
@@ -176,9 +166,6 @@ namespace constellation::heartbeat {
         utils::string_hash_map<Remote> remotes_;
         std::mutex mutex_;
         std::condition_variable cv_;
-
-        /** Configuration */
-        bool allow_departure_ {true};
 
         log::Logger logger_;
 

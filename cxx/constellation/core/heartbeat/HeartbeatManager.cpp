@@ -79,9 +79,6 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
 }
 
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
-    if(!allow_departure_) {
-        return;
-    }
 
     LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
     const std::lock_guard lock {mutex_};
@@ -90,8 +87,16 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
     auto remote_it =
         std::ranges::find_if(remotes_, [&service](const auto& remote) { return MD5Hash(remote.first) == service.host_id; });
     if(remote_it != remotes_.end()) {
-        LOG(INFO) << remote_it->first << " departed orderly, removing heartbeat check";
-        remotes_.erase(remote_it);
+        // Check if per its role, this remote is allowed to depart:
+        if(role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
+            if(interrupt_callback_) {
+                LOG(logger_, DEBUG) << "Detected orderly departure of " << remote_it->first << ", interrupting";
+                interrupt_callback_(remote_it->first + " departs illicitly");
+            }
+        } else {
+            LOG(INFO) << remote_it->first << " departed orderly, removing heartbeat check";
+            remotes_.erase(remote_it);
+        }
     }
 }
 
