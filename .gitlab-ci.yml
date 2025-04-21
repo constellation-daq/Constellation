@@ -191,8 +191,7 @@ build:debian-clang-libcxx:
     - .debian-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false"
-    BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none"
     CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:debian-gcc:
@@ -220,8 +219,7 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
-    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini"
-    BUILD_SCRIPTS: "scripts/meson_disable_qt_components.sh"
+    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini -Dbuild_gui=none"
 
 build:ubuntu-22.04:
   extends:
