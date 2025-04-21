@@ -119,7 +119,7 @@ zmq::multipart_t CHP1Message::assemble() {
     return frames;
 }
 
-constexpr CHP::Role CHP1Message::getRole() const {
+CHP::Role CHP1Message::getRole() const {
     if((flags_ & CHP::MessageFlags::ROLE_ESSENTIAL) != 0U) {
         return CHP::Role::ESSENTIAL;
     } else if((flags_ & CHP::MessageFlags::ROLE_DYNAMIC) != 0U) {

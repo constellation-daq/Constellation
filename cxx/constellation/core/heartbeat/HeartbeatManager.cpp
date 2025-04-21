@@ -118,6 +118,9 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
         LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
     }
 
+    // Update the role with latest information:
+    remote_it->second.role = msg.getRole();
+
     // Check for ERROR and SAFE states:
     if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         remote_it->second.lives = 0;

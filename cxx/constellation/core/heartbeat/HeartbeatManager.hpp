@@ -157,7 +157,7 @@ namespace constellation::heartbeat {
          * @brief Struct holding all relevant information for a remote CHP host
          */
         struct Remote {
-            // TODO(simonspa) add importance here
+            protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {};
             std::chrono::system_clock::time_point last_heartbeat;
             protocol::CSCP::State last_state {};
