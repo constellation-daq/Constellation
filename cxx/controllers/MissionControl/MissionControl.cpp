@@ -658,6 +658,7 @@ namespace {
 
 int main(int argc, char** argv) {
     try {
+        constellation::gui::initResources();
         auto qapp = std::make_shared<QApplication>(argc, argv);
 
         try {
