@@ -3,23 +3,54 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+from __future__ import annotations
+
 import threading
 import time
 from datetime import datetime, timezone
+from enum import Enum, auto
 from typing import Any, Callable, Optional
 from uuid import UUID
 
 import zmq
 
 from .base import BaseSatelliteFrame
-from .chp import CHPDecodeMessage
+from .chp import CHPDecodeMessage, CHPMessageFlags
 from .fsm import SatelliteState
 
 
+class HeartbeatRole(Enum):
+    """Defines the role of the satellite."""
+
+    NONE = auto()
+    TRANSIENT = auto()
+    DYNAMIC = auto()
+    ESSENTIAL = auto()
+
+    @classmethod
+    def from_flags(cls, flags: CHPMessageFlags) -> HeartbeatRole:
+        if flags & CHPMessageFlags.MARK_DEGRADED:
+            if flags & CHPMessageFlags.TRIGGER_INTERRUPT:
+                if flags & CHPMessageFlags.DENY_DEPARTURE:
+                    return HeartbeatRole.ESSENTIAL
+                return HeartbeatRole.DYNAMIC
+            return HeartbeatRole.TRANSIENT
+        return HeartbeatRole.NONE
+
+
 class HeartbeatState:
-    def __init__(self, host: UUID, name: str, evt: threading.Event, lives: int, interval: int):
+    def __init__(
+        self,
+        host: UUID,
+        name: str,
+        evt: threading.Event,
+        lives: int,
+        interval: int,
+        role: HeartbeatRole = HeartbeatRole.DYNAMIC,
+    ):
         self.host = host
         self.name = name
+        self.role = role
         self.lives = lives
         self.interval = interval
         self.last_refresh = datetime.now(timezone.utc)
@@ -175,6 +206,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     hb.refresh(timestamp.to_datetime())
                     hb.state = SatelliteState(state)
                     hb.interval = interval
+                    hb.role = HeartbeatRole.from_flags(flags)
                     # refresh lives
                     if hb.lives != self.HB_INIT_LIVES:
                         self.log_chp.log(

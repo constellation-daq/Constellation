@@ -18,8 +18,9 @@ class CHPMessageFlags(IntFlag):
     """Defines the message flags of CHP messages."""
 
     NONE = 0x00
-    ROLE_DYNAMIC = 0x01
-    ROLE_ESSENTIAL = 0x02
+    DENY_DEPARTURE = 0x01
+    TRIGGER_INTERRUPT = 0x02
+    MARK_DEGRADED = 0x04
     IS_EXTRASYSTOLE = 0x80
 
 
