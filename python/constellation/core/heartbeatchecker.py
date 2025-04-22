@@ -38,6 +38,18 @@ class HeartbeatRole(Enum):
         return HeartbeatRole.NONE
 
 
+def role_requires(role: HeartbeatRole, flags: CHPMessageFlags) -> bool:
+    if role == HeartbeatRole.TRANSIENT:
+        return bool(flags & (CHPMessageFlags.MARK_DEGRADED))
+    if role == HeartbeatRole.DYNAMIC:
+        return bool(flags & (CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT))
+    if role == HeartbeatRole.ESSENTIAL:
+        return bool(
+            flags & (CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT | CHPMessageFlags.DENY_DEPARTURE)
+        )
+    return False
+
+
 class HeartbeatState:
     def __init__(
         self,
@@ -144,6 +156,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         name: str | None = None
         for socket, hb in self._states.items():
             if hb.host == host:
+                # TODO(simonspa) Add DENY_DEPARTURE check here and call _interrupting
                 s = socket
                 name = hb.name
                 break
@@ -217,11 +230,15 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             hb.interval,
                         )
                     hb.lives = self.HB_INIT_LIVES
-                    if hb.state in [
-                        SatelliteState.ERROR,
-                        SatelliteState.SAFE,
-                        SatelliteState.DEAD,
-                    ]:
+                    if (
+                        hb.state
+                        in [
+                            SatelliteState.ERROR,
+                            SatelliteState.SAFE,
+                            SatelliteState.DEAD,
+                        ]
+                        and flags & CHPMessageFlags.TRIGGER_INTERRUPT
+                    ):
                         # satellite in error state, interrupt
                         if not hb.failed.is_set():
                             self.log_chp.info(f"{hb.name} state causing interrupt callback to be called")
@@ -244,7 +261,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             hb.name,
                             hb.lives,
                         )
-                        if hb.lives <= 0:
+                        if hb.lives <= 0 and role_requires(hb.role, CHPMessageFlags.TRIGGER_INTERRUPT):
                             # no lives left, interrupt
                             if not hb.failed.is_set():
                                 self.log_chp.info(f"{hb.name} unresponsive causing interrupt callback to be called")
