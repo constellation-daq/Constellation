@@ -67,6 +67,12 @@ tomlplusplus_dep = dependency('tomlplusplus', default_options: ['default_library
 threads_dep = dependency('threads')
 dl_dep = dependency('dl', required: false)
 
+# Memory allocator
+jemalloc_dep = dependency('jemalloc', required: get_option('jemalloc'))
+if jemalloc_dep.found()
+  message('Using jemalloc as memory allocator')
+endif
+
 # Compilation arguments
 constellation_args = []
 if host_machine.system() == 'windows'
