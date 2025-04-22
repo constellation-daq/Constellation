@@ -25,7 +25,10 @@
 #include <spdlog/spdlog.h>
 
 #ifdef _WIN32
+// clang-format off
+#include <windows.h>
 #include <wincon.h>
+// clang-format on
 #endif
 
 #include "constellation/core/config/Dictionary.hpp"
