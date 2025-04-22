@@ -134,9 +134,6 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
     // Unpack type
     const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(frame.data()), frame.size(), offset);
 
-    // Create message to append data blocks
-    auto message = CDTP2Message(sender, type);
-
     // Unpack data blocks
     const auto msgpack_object = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
     if(msgpack_object->type != msgpack::type::ARRAY) [[unlikely]] {
@@ -144,6 +141,9 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
     }
     const auto msgpack_data_blocks_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
     const auto msgpack_data_blocks = std::span(msgpack_data_blocks_raw.ptr, msgpack_data_blocks_raw.size);
+
+    // Create message to append data blocks
+    auto message = CDTP2Message(sender, type, msgpack_data_blocks.size());
     for(const auto& msgpack_data_block : msgpack_data_blocks) {
         message.addDataBlock(msgpack_data_block.as<DataBlock>());
     }

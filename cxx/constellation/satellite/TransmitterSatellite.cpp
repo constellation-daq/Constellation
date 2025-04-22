@@ -284,6 +284,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
 
     current_payload_bytes_ = 0;
     std::vector<CDTP2Message::DataBlock> current_data_blocks {};
+    current_data_blocks.reserve(data_payload_threshold_);
 
     // Always run loop at least once in case of early stop NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while)
     do {
@@ -304,9 +305,8 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
             if(current_payload_bytes_ < data_payload_threshold_) {
                 continue;
             }
-        }
-        // Skip if nothing to send
-        if(current_data_blocks.empty()) [[unlikely]] {
+        } else if(current_data_blocks.empty()) [[unlikely]] {
+            // Skip if timeout or stopped request and also nothing to send
             continue;
         }
 
@@ -323,7 +323,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         ++messages_transmitted_;
 
         // Build message
-        auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA);
+        auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, current_data_blocks.size());
         for(auto& data_block : current_data_blocks) {
             message.addDataBlock(std::move(data_block));
         }
