@@ -90,7 +90,9 @@ More details on the Constellation finite state machine and its different states 
 MissionControl main window after first initialization
 ```
 
-The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its log messages either via the console output or a logging user interface:
+The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its status, which is shown
+in the "Last message" column of the satellites list, or its log messages either via the console output or a logging user
+interface:
 
 ```{error}
 Critical failure during transition: Key '_data_transmitters' does not exist
@@ -186,6 +188,17 @@ dictionary with the configuration. A satellite might also reply with a string, w
 Response window of the command
 ```
 
+## Inspecting Satellite Details
+
+To inspect details about a single satellite, for example its IP address, details can be shown by double-clicking on a
+satellite in the list. A new window opens which contains some information about its connection. It also contains a list of
+all available commands.
+
+```{figure} missioncontrol_satellite_details.png
+:scale: 33 %
+Window for connection details of a satellite
+```
+
 ## Deducing the Configuration of the Constellation
 
 Satellites are operating independently of any controller, and it is possible to start multiple controllers. This allows to
@@ -196,27 +209,28 @@ Constellation itself. This can be achieved by clicking the {bdg-primary}`Deduce`
 For the Constellation started and configured in this tutorial, this will store a configuration file with the following content:
 
 ```toml
-[satellites.Sputnik.One]
+[satellites.sputnik.one]
 interval = 2500
 
-[satellites.Sputnik.Two]
+[satellites.sputnik.two]
 interval = 3000
 
-[satellites.Sputnik.Three]
+[satellites.sputnik.three]
 interval = 3000
 
-[satellites.RandomTransmitter.Sender]
+[satellites.randomtransmitter.sender]
 _bor_timeout = 10
 _data_timeout = 10
 _eor_timeout = 10
 frame_size = 1024
 number_of_frames = 1
-seed = 77
+pregen = false
+seed = 3641936878
 
-[satellites.EudaqNativeWriter.Receiver]
+[satellites.eudaqnativewriter.receiver]
+_allow_overwriting = false
 _data_transmitters = [ 'RandomTransmitter.Sender' ]
 _eor_timeout = 10
-allow_overwriting = false
 flush_interval = 3
 output_directory = '/tmp/test'
 ```
