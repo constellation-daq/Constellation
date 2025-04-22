@@ -112,6 +112,7 @@ void BaseSatellite::join() {
         cscp_thread_.join();
     }
     fsm_.unregisterStateCallback("extrasystoles");
+    heartbeat_manager_.terminate();
     ManagerLocator::getMetricsManager().unregisterMetrics();
 }
 
@@ -121,7 +122,11 @@ void BaseSatellite::terminate() {
 
     // We cannot join the CSCP thread here since this method might be called from there and would result in a race condition
 
-    // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state:
+    // Stop heartbeat manager to prevent sending SAFE state from which satellite is terminated
+    fsm_.unregisterStateCallback("extrasystoles");
+    heartbeat_manager_.terminate();
+
+    // Tell the FSM to interrupt as soon as possible, which will go to SAFE in case of ORBIT or RUN state
     fsm_.requestInterrupt("Shutting down satellite");
 
     // Terminate FSM

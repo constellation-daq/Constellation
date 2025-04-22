@@ -57,7 +57,7 @@ namespace constellation::heartbeat {
                                     std::function<protocol::CSCP::State()> state_callback,
                                     std::function<void(std::string_view)> interrupt_callback);
 
-        /** Deconstruct the manager. This stops the watchdog thread */
+        /** Destructor which terminates the heartbeat manager */
         CNSTLN_API virtual ~HeartbeatManager();
 
         // No copy/move constructor/assignment
@@ -67,6 +67,13 @@ namespace constellation::heartbeat {
         HeartbeatManager(HeartbeatManager&& other) = delete;
         HeartbeatManager& operator=(HeartbeatManager&& other) = delete;
         /// @endcond
+
+        /**
+         * @brief Terminate the heartbeat manager
+         *
+         * This stops the heartbeat manager pool and watchdog thread and terminate the heartbeat sender.
+         */
+        CNSTLN_API void terminate();
 
         /**
          * @brief Send an extrasystole
@@ -138,6 +145,7 @@ namespace constellation::heartbeat {
          */
         void run(const std::stop_token& stop_token);
 
+    private:
         /** Sender service */
         HeartbeatSend sender_;
 
