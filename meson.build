@@ -2,14 +2,14 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('Constellation',
-  version: '0.3',
+  version: '0.4',
   license: 'EUPL-1.2',
   default_options: ['warning_level=3', 'werror=true', 'cpp_std=c++20', 'b_ndebug=if-release'],
 )
 
 # Version code name are taken from the IAU constellations sorted by solid angle
 # https://en.wikipedia.org/wiki/IAU_designated_constellations_by_area
-version_code_name = 'Sagitta'
+version_code_name = 'Circinus'
 
 # C++ implementation
 impl_cxx = add_languages('cpp', native: false, required: get_option('impl_cxx'))
