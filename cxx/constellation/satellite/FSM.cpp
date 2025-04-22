@@ -262,9 +262,10 @@ void FSM::call_state_callbacks() {
 }
 
 void FSM::stop_run_thread() {
-    LOG(logger_, DEBUG) << "Stopping running function of satellite...";
+    LOG(logger_, TRACE) << "Stopping running function of satellite...";
     run_thread_.request_stop();
     if(run_thread_.joinable()) {
+        LOG(logger_, DEBUG) << "Joining running function of satellite...";
         run_thread_.join();
     }
 }

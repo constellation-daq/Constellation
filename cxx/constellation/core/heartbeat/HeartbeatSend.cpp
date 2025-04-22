@@ -51,13 +51,15 @@ HeartbeatSend::HeartbeatSend(std::string sender,
 }
 
 HeartbeatSend::~HeartbeatSend() {
+    terminate();
+}
 
+void HeartbeatSend::terminate() {
     // Send CHIRP depart message
     auto* chirp_manager = ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
         chirp_manager->unregisterService(CHIRP::HEARTBEAT, port_);
     }
-
     // Stop sender thread
     sender_thread_.request_stop();
     if(sender_thread_.joinable()) {

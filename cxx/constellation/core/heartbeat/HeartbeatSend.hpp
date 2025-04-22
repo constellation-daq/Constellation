@@ -45,7 +45,7 @@ namespace constellation::heartbeat {
                                  std::function<protocol::CSCP::State()> state_callback,
                                  std::chrono::milliseconds interval);
 
-        /** Destructor which unregisters the CHIRP heartbeat service and stops the heartbeat thread */
+        /** Destructor which terminates the heartbeat sender */
         CNSTLN_API ~HeartbeatSend();
 
         // No copy/move constructor/assignment
@@ -55,6 +55,13 @@ namespace constellation::heartbeat {
         HeartbeatSend(HeartbeatSend&& other) = delete;
         HeartbeatSend& operator=(HeartbeatSend&& other) = delete;
         /// @endcond
+
+        /**
+         * @brief Terminate the heartbeat sender
+         *
+         * This unregisters the CHIRP heartbeat service and stops the heartbeat thread.
+         */
+        void terminate();
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound

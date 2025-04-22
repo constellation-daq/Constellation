@@ -48,12 +48,18 @@ HeartbeatManager::HeartbeatManager(std::string sender,
 }
 
 HeartbeatManager::~HeartbeatManager() {
-    stopPool();
+    terminate();
+}
 
+void HeartbeatManager::terminate() {
+    // Stop heartbeat manager pool and watchdog thread
+    stopPool();
     watchdog_thread_.request_stop();
     if(watchdog_thread_.joinable()) {
         watchdog_thread_.join();
     }
+    // Stop heartbeat sender thread and unregister CHIRP service
+    sender_.terminate();
 }
 
 void HeartbeatManager::sendExtrasystole(std::string_view status) {
