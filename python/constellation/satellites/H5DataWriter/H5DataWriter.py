@@ -129,7 +129,7 @@ class H5DataWriter(DataReceiver):
                 {type(exception)} {str(exception)}"
             ) from exception
         try:
-            h5file = h5py.File(directory / filename, "w")
+            h5file = h5py.File(directory / filename, "w", libver="v110")
         except Exception as exception:
             self.log.critical("Unable to open %s: %s", filename, str(exception))
             raise RuntimeError(
