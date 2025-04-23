@@ -109,3 +109,17 @@ available space falls below 3GB, when the message severity changes to `CRITICAL`
 More details about receiving telemetry information or log messages are provided in the respective sections on
 [telemetry](../concepts/telemetry.md) and [logging](../concepts/logging.md).
 ```
+
+## Data Licensing
+
+Constellation provides the possibility to store a data license identifier in the run metadata in order to explicitly
+define reuse policy and attribution requirements as suggested by the [FAIR principles](https://www.go-fair.org/fair-principles/).
+The data license can be configured for every transmitter satellite by adding the `_data_license` key to its configuration:
+
+```toml
+[satellites.MySatellite.Name]
+_data_license = "ODC-By-1.0"
+```
+
+If no such key is provided, the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/) is used as
+default license for the respective data set.

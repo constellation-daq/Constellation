@@ -132,6 +132,9 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     data_msg_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
+
+    data_license_ = config.get<std::string>("_data_license", "ODC-By-1.0");
+    LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
 }
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
@@ -146,6 +149,10 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     if(partial_config.has("_data_timeout")) {
         data_msg_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for DATA message: " << data_msg_timeout_;
+    }
+    if(partial_config.has("_data_license")) {
+        data_license_ = partial_config.get<std::string>("_data_license");
+        LOG(cdtp_logger_, INFO) << "Data license updated to " << data_license_;
     }
 }
 
@@ -164,6 +171,7 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     set_run_metadata_tag("version_full", "Constellation " CNSTLN_VERSION_FULL);
     set_run_metadata_tag("run_id", run_identifier);
     set_run_metadata_tag("time_start", std::chrono::system_clock::now());
+    set_run_metadata_tag("license", data_license_);
 
     // Create CDTP1 message for BOR
     CDTP1Message msg {{getCanonicalName(), seq_, CDTP1Message::Type::BOR, bor_tags_}, 1};
