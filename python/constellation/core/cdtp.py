@@ -54,7 +54,7 @@ class CDTPMessage:
 
     def __str__(self) -> str:
         """Pretty-print request."""
-        s = "Data message from {} received at {} of type {}, "
+        s = "Data message from {} of type {}, "
         s += "sequence number {} {} payload and meta {}."
         return s.format(
             self.name,
