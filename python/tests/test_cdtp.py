@@ -279,6 +279,7 @@ def test_receive_writing_package(
             fn = FILE_NAME.format(run_identifier=run_num)
             assert os.path.exists(os.path.join(tmpdir, fn))
             h5file = h5py.File(tmpdir / pathlib.Path(fn))
+            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 0
             assert "simple_sender" in h5file.keys()
             assert bor in h5file["simple_sender"].keys()
             assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
@@ -288,6 +289,81 @@ def test_receive_writing_package(
             assert (payload == h5file["simple_sender"][dat[0]]).all()
             # interpret the uint8 values again as uint16:
             assert (payload == np.array(h5file["simple_sender"][dat[1]]).view(np.uint16)).all()
+            assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
+            h5file.close()
+
+
+@pytest.mark.forked
+def test_receive_writing_swmr_mode(
+    receiver_satellite,
+    data_transmitter,
+    commander,
+):
+    """Test receiving and writing data, verify state machine of DataSender."""
+    service = DiscoveredService(
+        get_uuid("simple_sender"),
+        CHIRPServiceIdentifier.DATA,
+        "127.0.0.1",
+        port=DATA_PORT,
+    )
+
+    receiver = receiver_satellite
+    tx = data_transmitter
+    with TemporaryDirectory() as tmpdir:
+        commander.request_get_response("initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir, "swmr": True})
+        wait_for_state(receiver.fsm, "INIT", 1)
+        receiver._add_sender(service)
+        commander.request_get_response("launch")
+        wait_for_state(receiver.fsm, "ORBIT", 1)
+
+        payload = np.array(np.arange(1000), dtype=np.int16)
+        assert receiver.run_identifier == ""
+
+        for run_num in range(1, 4):
+            # Send new data to handle
+            tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
+            # send once as byte array with and once w/o dtype
+            tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
+            tx.send_data(payload.tobytes())
+            tx.send_data(payload.tobytes())
+            time.sleep(0.1)
+
+            # Running satellite
+            commander.request_get_response("start", str(run_num))
+            wait_for_state(receiver.fsm, "RUN", 1)
+            timeout = 0.5
+            while not receiver.active_satellites or timeout < 0:
+                time.sleep(0.05)
+                timeout -= 0.05
+            assert len(receiver.active_satellites) == 1, "No BOR received!"
+            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
+            commander.request_get_response("stop")
+            # send EORE
+            tx.send_end({"mock_end": f"whatanend{run_num}"})
+            wait_for_state(receiver.fsm, "ORBIT", 1)
+            assert receiver.run_identifier == str(run_num)
+
+            # Does file exist and has it been written to?
+            bor = "BOR"
+            eor = "EOR"
+
+            fn = FILE_NAME.format(run_identifier=run_num)
+            assert os.path.exists(os.path.join(tmpdir, fn))
+            h5file = h5py.File(tmpdir / pathlib.Path(fn))
+            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 1
+            assert "simple_sender" in h5file.keys()
+            assert bor in h5file["simple_sender"].keys()
+            assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
+            assert eor in h5file["simple_sender"].keys()
+            assert "whatanend" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
+            assert "data" in h5file["simple_sender"].keys(), "Data missing in file"
+            # interpret the uint8 values again as uint16 and compare first packet:
+            assert (payload == np.array(h5file["simple_sender"]["data"]).view(np.uint16)[: payload.shape[0]]).all()
+            # last (third) packet:
+            assert (
+                payload
+                == np.array(h5file["simple_sender"]["data"]).view(np.uint16)[payload.shape[0] * 2 : payload.shape[0] * 3]
+            ).all()
             assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
             h5file.close()
 
