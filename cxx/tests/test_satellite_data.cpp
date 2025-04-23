@@ -234,6 +234,7 @@ TEST_CASE("Successful run", "[satellite]") {
     auto config2_transmitter = Configuration();
     config2_transmitter.set("_bor_timeout", 1);
     config2_transmitter.set("_eor_timeout", 1);
+    config2_transmitter.set("_data_license", "PDDL-1.0");
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
 
@@ -274,6 +275,7 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::GOOD);
+    REQUIRE(eor.at("license").get<std::string>() == "PDDL-1.0");
 
     const auto& eor_tags = receiver.getEORTags("Dummy.t1");
     REQUIRE(eor_tags.at("buggy_events").get<int>() == 10);
