@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 import os
 import pathlib
+import random
 import threading
 import time
 from tempfile import TemporaryDirectory
@@ -316,16 +317,26 @@ def test_receive_writing_swmr_mode(
         commander.request_get_response("launch")
         wait_for_state(receiver.fsm, "ORBIT", 1)
 
-        payload = np.array(np.arange(1000), dtype=np.int16)
         assert receiver.run_identifier == ""
 
         for run_num in range(1, 4):
             # Send new data to handle
             tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
             # send once as byte array with and once w/o dtype
-            tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
-            tx.send_data(payload.tobytes())
-            tx.send_data(payload.tobytes())
+            payload_sizes = []
+            payloads = []
+            for p in range(10):
+                # send random-sized payloads
+                psize = int(random.random() * 100000)
+                payload = np.array(np.arange(psize), dtype=np.int16)
+                if p % 2 == 0:
+                    # send with meta info
+                    tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}", "moreinfo": "a very special payload"})
+                else:
+                    # send without meta info
+                    tx.send_data(payload.tobytes())
+                payload_sizes.append(psize)
+                payloads.append(payload)
             time.sleep(0.1)
 
             # Running satellite
@@ -357,13 +368,26 @@ def test_receive_writing_swmr_mode(
             assert eor in h5file["simple_sender"].keys()
             assert "whatanend" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
             assert "data" in h5file["simple_sender"].keys(), "Data missing in file"
-            # interpret the uint8 values again as uint16 and compare first packet:
-            assert (payload == np.array(h5file["simple_sender"]["data"]).view(np.uint16)[: payload.shape[0]]).all()
-            # last (third) packet:
-            assert (
-                payload
-                == np.array(h5file["simple_sender"]["data"]).view(np.uint16)[payload.shape[0] * 2 : payload.shape[0] * 3]
-            ).all()
+            # interpret the uint8 values again as int16 and compare packets:
+            for i, payload in enumerate(payloads):
+                idx = h5file["simple_sender"]["data_idx"][i]
+                if i > 0:
+                    prev = h5file["simple_sender"]["data_idx"][i - 1]
+                else:
+                    prev = 0
+                loaded = np.array(h5file["simple_sender"]["data"][prev:idx]).view(np.int16)
+                assert (payload == loaded).all(), "Could not reconstruct correct payload values"
+                # meta data
+                idx = h5file["simple_sender"]["meta_idx"][i]
+                if i > 0:
+                    prev = h5file["simple_sender"]["meta_idx"][i - 1]
+                else:
+                    prev = 0
+                loaded = str(h5file["simple_sender"]["meta"][prev:idx], encoding="utf-8")
+                if i % 2 == 0:
+                    assert "a very special payload" in loaded
+                else:
+                    assert loaded == "{}"
             assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
             h5file.close()
 
