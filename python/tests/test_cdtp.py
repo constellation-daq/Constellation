@@ -388,6 +388,11 @@ def test_receive_writing_swmr_mode(
                     assert "a very special payload" in loaded
                 else:
                     assert loaded == "{}"
+            # check that remainder of idx values is 0: (resized but unused)
+            i += 1
+            while i < h5file["simple_sender"]["data_idx"].shape[0]:
+                assert h5file["simple_sender"]["data_idx"][i] == 0
+                i += 1
             assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
             h5file.close()
 
