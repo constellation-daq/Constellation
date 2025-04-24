@@ -190,26 +190,34 @@ class H5DataWriter(DataReceiver):
         # check whether we need to resize
         new_idx = data_idx + payload.shape[0]
         if new_idx >= data_dset.shape[0]:
-            # extend dataset by at least 32k
-            data_dset.resize(data_dset.shape[0] + max(32000, payload.shape[0] * 100), axis=0)
+            # extend dataset by at least 32kB to avoid frequent resizes.
+            #
+            # NOTE
+            # this will likely affect performance to some extend. if effect is
+            # significant, this should be a configuration variable.
+            data_dset.resize(data_dset.shape[0] + max(32768, payload.shape[0] * 10), axis=0)
         # store data
         data_dset[data_idx:new_idx] = payload
         data_idx = new_idx
 
         if counts >= dataidx_dset.shape[0]:
-            dataidx_dset.resize(dataidx_dset.shape[0] + 1000, axis=0)
+            dataidx_dset.resize(dataidx_dset.shape[0] + 100, axis=0)
         dataidx_dset[counts] = data_idx
 
         meta = np.frombuffer(json.dumps(item.meta).encode("utf-8"), dtype=np.uint8)
         new_idx = meta_idx + meta.shape[0]
         if new_idx >= meta_dset.shape[0]:
-            # extend meta dataset by at least 5k
-            meta_dset.resize(meta_dset.shape[0] + max(5000, meta.shape[0] * 200), axis=0)
+            # extend meta dataset by at least 1kB to avoid frequent resizes
+            #
+            # NOTE
+            # this will likely affect performance to some extend. if effect is
+            # significant, this should be a configuration variable.
+            meta_dset.resize(meta_dset.shape[0] + max(1024, meta.shape[0] * 20), axis=0)
         meta_dset[meta_idx:new_idx] = meta
         meta_idx = new_idx
 
         if counts >= metaidx_dset.shape[0]:
-            metaidx_dset.resize(metaidx_dset.shape[0] + 1000, axis=0)
+            metaidx_dset.resize(metaidx_dset.shape[0] + 100, axis=0)
         metaidx_dset[counts] = meta_idx
 
         counts += 1

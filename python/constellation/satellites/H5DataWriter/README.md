@@ -81,7 +81,8 @@ This mode has the following benefits:
 
 However, it also has a couple of requirements and drawbacks of which the most important are:
 
-- no new objects (e.g. Groups, Datasets or Attributes) can be added to the file *after* SWMR mode has been enabled, and
+- no new objects (e.g. Groups, Datasets or Attributes) can be added to the file *after* SWMR mode has been enabled;
+- data must be appended, and to avoid frequent modification, the Dataset will be resized in larger steps, leading to slightly larger files; and  
 - a known issue with SWMR exists on Windows systems ([see corresponding issue](https://github.com/h5py/h5py/issues/2259)).
 
 When enabling SWMR, all objects in the file will already be created at the start
