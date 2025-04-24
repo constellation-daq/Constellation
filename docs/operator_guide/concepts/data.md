@@ -77,6 +77,7 @@ data recorded. Runs are marked with any of the following run condition flags:
 * `INCOMPLETE` (code: `0x02`): The receiver has noticed missing messages in the sequence
 * `INTERRUPTED` (code: `0x04`): The run has been interrupted by this sender because of a failure condition elsewhere in the Constellation
 * `ABORTED` (code: `0x08`): The run has been aborted by the sender and the EOR message has been appended by the receiver
+* `DEGRADED` (code: `0x10`): The run has been marked as degraded because not all satellites were present during the entire time of the run
 
 
 ## Receiving and Storing Data

@@ -29,6 +29,9 @@ namespace constellation::protocol::CDTP {
 
         /** The run has been aborted by the sender and the EOR message has been appended by the receiver */
         ABORTED = 0x08,
+
+        /** The run has been marked as degraded because not all satellites contributed over the entire time */
+        DEGRADED = 0x10,
     };
 
 } // namespace constellation::protocol::CDTP
