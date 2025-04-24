@@ -223,24 +223,25 @@ void TransmitterSatellite::send_eor() {
     eor_tags_ = {};
 }
 
-void TransmitterSatellite::stopping_transmitter() {
+CDTP::RunCondition TransmitterSatellite::append_run_conditions(CDTP::RunCondition conditions) const {
     if(mark_run_tainted_) {
-        set_run_metadata_tag("condition_code", CDTP::RunCondition::TAINTED);
-        set_run_metadata_tag("condition", enum_name(CDTP::RunCondition::TAINTED));
-    } else {
-        set_run_metadata_tag("condition_code", CDTP::RunCondition::GOOD);
-        set_run_metadata_tag("condition", enum_name(CDTP::RunCondition::GOOD));
+        conditions |= CDTP::RunCondition::TAINTED;
     }
+    // somehow get CDTP::RunCondition::DEGRADED via info from the heartbeat manager
+    return conditions;
+}
+
+void TransmitterSatellite::stopping_transmitter() {
+    const auto conditions = append_run_conditions(CDTP::RunCondition::GOOD);
+    set_run_metadata_tag("condition_code", conditions);
+    set_run_metadata_tag("condition", enum_name(conditions));
     send_eor();
 }
 
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
-        auto condition_code = CDTP::RunCondition::INTERRUPTED;
-        if(mark_run_tainted_) {
-            condition_code |= CDTP::RunCondition::TAINTED;
-        }
+        auto condition_code = append_run_conditions(CDTP::RunCondition::INTERRUPTED);
         set_run_metadata_tag("condition_code", condition_code);
         set_run_metadata_tag("condition", enum_name(condition_code));
         send_eor();
