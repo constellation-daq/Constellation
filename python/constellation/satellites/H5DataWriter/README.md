@@ -92,6 +92,10 @@ appended to the `data` Dataset instead of new Datasets being created for each
 individual package. See the example below for how to load data from files
 written in this way.
 
+The `H5DataWriter` sends out a Metric called `concurrent_reading_enabled`. Once this is `True`, a reader process can start processing the file.
+
+See below for an example on how to interpret the data structure. Examples on [how to implement a reader process can be found on the `h5py` homepage](https://docs.h5py.org/en/stable/swmr.html#examples).
+
 ## Example for loading data
 
 The following example shows how to load data stored in SWMR mode (see Configuration section above).

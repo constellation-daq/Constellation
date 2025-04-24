@@ -16,7 +16,9 @@ import numpy as np
 
 from constellation.core import __version__
 from constellation.core.cdtp import CDTPMessage
+from constellation.core.cmdp import MetricsType
 from constellation.core.datareceiver import DataReceiver
+from constellation.core.monitoring import schedule_metric
 
 
 class H5DataWriter(DataReceiver):
@@ -31,13 +33,19 @@ class H5DataWriter(DataReceiver):
         self.swmr_mode: bool = self.config.setdefault("allow_concurrent_reading", False)
         # book keeping for swmr file indices
         self._swmr_idx: dict[str, list[int]] = {}
+        self._swmr_mode_enabled: bool = False
         return "Configured all values"
 
     def do_run(self, run_identifier: str) -> str:
         """Handle the data enqueued by the ZMQ Poller."""
         self.last_flush = datetime.datetime.now()
         self._swmr_idx = {}
+        self._swmr_mode_enabled = False
         return super().do_run(run_identifier)
+
+    @schedule_metric("", MetricsType.LAST_VALUE, 1)
+    def concurrent_reading_enabled(self) -> bool:
+        return self._swmr_mode_enabled
 
     def _write_EOR(self, outfile: h5py.File, item: CDTPMessage) -> None:
         """Write EOR to file"""
@@ -97,6 +105,7 @@ class H5DataWriter(DataReceiver):
         if self.swmr_mode and len(self.active_satellites) == len(self._pull_interfaces):
             # all satellites have sent BOR
             outfile.swmr_mode = True
+            self._swmr_mode_enabled = True
             self.log.info("Enabled SWMR mode for file '%s'.", outfile.filename)
 
     def _write_data(self, outfile: h5py.File, item: CDTPMessage) -> None:
@@ -257,6 +266,7 @@ class H5DataWriter(DataReceiver):
     def _close_file(self, outfile: h5py.File) -> None:
         """Close the filehandler"""
         outfile.close()
+        self._swmr_mode_enabled = False
 
     def _add_metadata(self, outfile: h5py.File) -> None:
         """Add metadata such as version information to file."""

@@ -341,6 +341,7 @@ def test_receive_writing_swmr_mode(
                 payloads.append(payload)
             time.sleep(0.1)
 
+            assert receiver._swmr_mode_enabled is False
             # Running satellite
             commander.request_get_response("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
@@ -350,10 +351,12 @@ def test_receive_writing_swmr_mode(
                 timeout -= 0.05
             assert len(receiver.active_satellites) == 1, "No BOR received!"
             assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
+            assert receiver._swmr_mode_enabled is True
             commander.request_get_response("stop")
             # send EORE
             tx.send_end({"mock_end": f"whatanend{run_num}"})
             wait_for_state(receiver.fsm, "ORBIT", 1)
+            assert receiver._swmr_mode_enabled is False
             assert receiver.run_identifier == str(run_num)
 
             # Does file exist and has it been written to?
