@@ -28,7 +28,7 @@ class H5DataWriter(DataReceiver):
         # how often will the file be flushed? Negative values for 'at the end of
         # the run'
         self.flush_interval: float = self.config.setdefault("flush_interval", 10.0)
-        self.swmr_mode: bool = self.config.setdefault("swmr", False)
+        self.swmr_mode: bool = self.config.setdefault("allow_concurrent_reading", False)
         # book keeping for swmr file indices
         self._swmr_idx: dict[str, list[int]] = {}
         return "Configured all values"
