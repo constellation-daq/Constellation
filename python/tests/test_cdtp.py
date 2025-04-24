@@ -311,7 +311,9 @@ def test_receive_writing_swmr_mode(
     receiver = receiver_satellite
     tx = data_transmitter
     with TemporaryDirectory() as tmpdir:
-        commander.request_get_response("initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir, "swmr": True})
+        commander.request_get_response(
+            "initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir, "allow_concurrent_reading": True}
+        )
         wait_for_state(receiver.fsm, "INIT", 1)
         receiver._add_sender(service)
         commander.request_get_response("launch")
