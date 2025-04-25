@@ -192,7 +192,7 @@ class DataSender(Satellite):
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         return res
 
-    def do_run(self, payload: Any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """Perform the data acquisition and enqueue the results.
 
         This is only an abstract method. Inheriting classes must implement their
@@ -216,7 +216,7 @@ class DataSender(Satellite):
 class RandomDataSender(DataSender):
     """Constellation Satellite which pushes RANDOM data via ZMQ."""
 
-    def do_run(self, payload: Any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """Example implementation that generates random values."""
         samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
         fs = random.uniform(0, 3)
