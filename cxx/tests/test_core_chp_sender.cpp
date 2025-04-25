@@ -8,22 +8,20 @@
  */
 
 #include <chrono>
-#include <cstddef>
-#include <future>
-#include <string> // IWYU pragma: keep
-#include <vector>
+#include <mutex>
+#include <string>
+#include <utility>
 
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_range_equals.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/timers.hpp"
 
+#include "chirp_mock.hpp"
 #include "chp_mock.hpp"
 
 using namespace constellation::heartbeat;
@@ -34,13 +32,21 @@ using namespace std::chrono_literals;
 class CHPSender : public HeartbeatSend {
 public:
     CHPSender(std::string name, std::chrono::milliseconds interval)
-        : HeartbeatSend(std::move(name), [&]() { return getState(); }, interval) {}
+        : HeartbeatSend(
+              std::move(name),
+              [&]() {
+                  const std::lock_guard lock {mutex_};
+                  return state_;
+              },
+              interval) {}
 
-    CSCP::State getState() const { return state_; }
-
-    void setState(CSCP::State state) { state_ = state; }
+    void setState(CSCP::State state) {
+        const std::lock_guard lock {mutex_};
+        state_ = state;
+    }
 
 private:
+    std::mutex mutex_;
     CSCP::State state_ {CSCP::State::NEW};
 };
 
@@ -105,7 +111,7 @@ TEST_CASE("Send an extrasystole", "[chp][send]") {
     REQUIRE(extra_message->getSender() == "Sender");
     REQUIRE(extra_message->getState() == CSCP::State::RUN);
     REQUIRE(extra_message->getStatus().has_value());
-    REQUIRE(extra_message->getStatus().value() == "test");
+    REQUIRE(extra_message->getStatus().value() == "test"); // NOLINT(bugprone-unchecked-optional-access)
     REQUIRE(extra_message->getInterval() == interval);
 
     // Wait until heartbeat is received

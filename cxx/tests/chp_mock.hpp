@@ -6,22 +6,25 @@
 
 #pragma once
 
-#include <cstdint>
+#include <chrono>
 #include <deque>
 #include <memory>
+#include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
+#include "constellation/core/networking/Port.hpp"
+#include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 #include "chirp_mock.hpp"
@@ -44,7 +47,7 @@ public:
     void sendExtrasystole(constellation::protocol::CSCP::State state,
                           std::chrono::milliseconds interval,
                           std::optional<std::string> status = {}) {
-        auto msg = constellation::message::CHP1Message(name_, state, interval, status);
+        auto msg = constellation::message::CHP1Message(name_, state, interval, std::move(status));
         msg.assemble().send(pub_socket_);
     }
 
