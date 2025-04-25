@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 
 namespace constellation::protocol::CHP {
@@ -20,16 +21,18 @@ namespace constellation::protocol::CHP {
     static constexpr std::uint8_t Lives = 3;
 
     /**
-     * @brief Method to calculate current heartbeat interval based on the number of satellites and a maximum interval
+     * @brief Method to calculate the heartbeat interval based on the number of subscriber satellites and a maximum interval
      *
-     * @param sats Current number of subscriber satellites
+     * @param subscribers Current number of subscriber satellites
      * @param max Maximum allowed interval between heartbeats
      *
      * @return New heartbeat interval
      */
-    constexpr std::chrono::milliseconds calculate_interval(std::size_t sats, std::chrono::milliseconds max) {
+    constexpr std::chrono::milliseconds calculate_interval(std::size_t subscribers, std::chrono::milliseconds max) {
         using namespace std::chrono_literals;
-        return std::min(max, std::chrono::duration_cast<std::chrono::milliseconds>(max * std::pow(0.01 * sats, 2) + 500ms));
+        return std::min(max,
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
+                            max * std::pow(0.01 * static_cast<double>(subscribers), 2) + 500ms));
     }
 
 } // namespace constellation::protocol::CHP

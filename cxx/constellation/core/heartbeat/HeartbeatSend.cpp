@@ -10,6 +10,7 @@
 #include "HeartbeatSend.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <stop_token>
@@ -19,6 +20,7 @@
 #include <utility>
 
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
@@ -91,8 +93,8 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
         try {
             // Handle subscriptions to update subscriber count
-            bool received = false;
-            do {
+            bool received = true;
+            while(received) {
                 zmq::multipart_t recv_msg {};
                 received = recv_msg.recv(pub_socket_, static_cast<int>(zmq::send_flags::dontwait));
 
@@ -104,7 +106,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
                 // First byte \x01 is subscription, \0x00 is unsubscription
                 const auto subscribe = static_cast<bool>(*recv_msg.front().data<uint8_t>());
                 subscribers_ += (subscribe ? 1 : -1);
-            } while(received);
+            }
 
             // Update the interval based on the amount of subscribers:
             interval_ = CHP::calculate_interval(subscribers_, default_interval_);
