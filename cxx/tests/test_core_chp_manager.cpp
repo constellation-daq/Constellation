@@ -70,13 +70,22 @@ TEST_CASE("Check remote state", "[chp][send]") {
     REQUIRE_FALSE(manager.getRemoteState("sender").has_value());
 
     auto sender = CHPMockSender("sender");
-    sender.mockChirpService();
+    sender.mockChirpOffer();
+    std::this_thread::sleep_for(100ms);
+
     sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
     std::this_thread::sleep_for(100ms);
 
     // Remote is known
     REQUIRE(manager.getRemoteState("sender").has_value());
     REQUIRE(manager.getRemoteState("sender").value() == CSCP::State::ORBIT);
+
+    // Depart with the sender
+    sender.mockChirpDepart();
+    std::this_thread::sleep_for(100ms);
+
+    // Remote is not known:
+    REQUIRE_FALSE(manager.getRemoteState("sender").has_value());
 
     manager.terminate();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();

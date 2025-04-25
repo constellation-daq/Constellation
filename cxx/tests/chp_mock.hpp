@@ -51,7 +51,8 @@ public:
         msg.assemble().send(pub_socket_);
     }
 
-    void mockChirpService() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::MONITORING, port_); }
+    void mockChirpOffer() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::HEARTBEAT, port_); }
+    void mockChirpDepart() { mocked_service_.clear(); }
 
 private:
     std::string name_;
