@@ -71,7 +71,8 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
       cscp_logger_("CSCP"), heartbeat_manager_(
                                 getCanonicalName(),
                                 [&]() { return fsm_.getState(); },
-                                [&](std::string_view reason) { fsm_.requestInterrupt(reason); }) {
+                                [&](std::string_view reason) { fsm_.requestInterrupt(reason); },
+                                [&]() { run_degraded_ = true; }) {
 
     // Check name
     if(!CSCP::is_valid_satellite_name(to_string(name))) {
@@ -591,6 +592,9 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
 
     // Store run identifier
     run_identifier_ = std::move(run_identifier);
+
+    // Reset degradation marker:
+    run_degraded_ = false;
 
     return {get_user_status_or("Satellite started run " + run_identifier_ + " successfully")};
 }

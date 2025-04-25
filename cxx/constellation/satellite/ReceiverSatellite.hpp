@@ -97,7 +97,7 @@ namespace constellation::satellite {
          * @param path Output directory the file will be located in
          * @param file_name Name of the file
          * @param ext File extension of the file, will be only set if not empty
-         * @param binary Bollean flag whether the file should be opened in binary mode or not
+         * @param binary Boolean flag whether the file should be opened in binary mode or not
          *
          * @return Output file stream to the target file
          */

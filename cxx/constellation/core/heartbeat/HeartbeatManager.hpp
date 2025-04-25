@@ -52,10 +52,12 @@ namespace constellation::heartbeat {
          * @param state_callback Function that return the current state
          * @param interrupt_callback Interrupt callback which is invoked when a remote heartbeat sender reports an ERROR
          * state or stopped sending heartbeats
+         * @param degradation_callback Callback to mark a run as degraded when the constituents of the constellation changed
          */
         HeartbeatManager(std::string sender,
                          std::function<protocol::CSCP::State()> state_callback,
-                         std::function<void(std::string_view)> interrupt_callback);
+                         std::function<void(std::string_view)> interrupt_callback,
+                         std::function<void()> degradation_callback);
 
         /** Destructor which terminates the heartbeat manager */
         virtual ~HeartbeatManager();
@@ -148,6 +150,9 @@ namespace constellation::heartbeat {
 
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
         std::function<void(std::string_view)> interrupt_callback_;
+
+        /** Degradation callback to mark runs as degraded */
+        std::function<void()> degradation_callback_;
 
         /**
          * @struct Remote

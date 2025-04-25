@@ -227,6 +227,9 @@ CDTP::RunCondition TransmitterSatellite::append_run_conditions(CDTP::RunConditio
     if(mark_run_tainted_) {
         conditions |= CDTP::RunCondition::TAINTED;
     }
+    if(is_run_degraded()) {
+        conditions |= CDTP::RunCondition::DEGRADED;
+    }
     // somehow get CDTP::RunCondition::DEGRADED via info from the heartbeat manager
     return conditions;
 }

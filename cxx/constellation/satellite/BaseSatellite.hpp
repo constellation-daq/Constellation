@@ -232,6 +232,12 @@ namespace constellation::satellite {
     protected:
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
 
+        /**
+         * @brief Helper to check whether the current or past run has been marked as degraded
+         * @return True if the run has been marked as degraded, false otherwise
+         */
+        bool is_run_degraded() const { return run_degraded_.load(); }
+
     private:
         zmq::socket_t cscp_rep_socket_;
         networking::Port cscp_port_;
@@ -245,6 +251,7 @@ namespace constellation::satellite {
         bool support_reconfigure_ {false};
         config::Configuration config_;
         std::string run_identifier_;
+        std::atomic<bool> run_degraded_ {false};
 
         std::optional<std::string> user_status_;
         std::mutex user_status_mutex_;
