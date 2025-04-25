@@ -10,6 +10,7 @@
 #include "HeartbeatSend.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <mutex>
 #include <stop_token>
@@ -33,6 +34,7 @@ using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
@@ -91,6 +93,27 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             // Publish CHP message with current state
             CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
             status_.reset();
+
+            // Handle subscriptions to update subscriber count
+            bool received = false;
+            do {
+                zmq::multipart_t recv_msg {};
+                received = recv_msg.recv(pub_socket_, static_cast<int>(zmq::send_flags::dontwait));
+
+                // Break if timed out or wrong number of frames received
+                if(!received || recv_msg.size() != 1) {
+                    break;
+                }
+
+                // First byte \x01 is subscription, \0x00 is unsubscription
+                const auto subscribe = static_cast<bool>(*recv_msg.front().data<uint8_t>());
+                subscribers_ += (subscribe ? 1 : -1);
+            } while(received);
+
+            // Update the interval based on the amount of subscribers:
+            interval_ = std::min(default_interval_.load(),
+                                 std::chrono::duration_cast<std::chrono::milliseconds>(
+                                     default_interval_.load() * std::pow(0.01 * subscribers_, 2) + 500ms));
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }
