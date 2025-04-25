@@ -176,6 +176,7 @@ class Satellite(
         self.config = Configuration(config)
         # call device-specific user-routine
         try:
+            self._pre_initializing_hook(config)
             init_msg: str = self.do_initializing(self.config)
         except ConfigError as e:
             msg = "Caught exception during initialization: "
@@ -188,6 +189,16 @@ class Satellite(
             init_msg += " IGNORED parameters: "
             init_msg += ",".join(self.config.get_unused_keys())
         return init_msg
+
+    @debug_log
+    def _pre_initializing_hook(self, config: Configuration) -> None:
+        """Hook run before do_initializing() is called.
+
+        Allows inheriting (core) classes to perform actions immediately before
+        user code is executed.
+
+        """
+        pass
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str:
