@@ -130,7 +130,7 @@ namespace constellation::heartbeat {
          * @details Proper departure of satellites is considered different from the simple disappearance of a heartbeat
          * signal. Whether to not to take appropriate action can be configured.
          *
-         * @param service The remote service which has departed and send an appropriate CHIRP DEPART message
+         * @param service The remote service which has departed and sent an appropriate CHIRP DEPART message
          */
         void host_disconnected(const chirp::DiscoveredService& service) override;
 
@@ -147,6 +147,9 @@ namespace constellation::heartbeat {
     private:
         /** Sender service */
         HeartbeatSend sender_;
+
+        /** Function returning the current state */
+        std::function<protocol::CSCP::State()> state_callback_;
 
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
         std::function<void(std::string_view)> interrupt_callback_;
