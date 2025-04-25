@@ -86,14 +86,10 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
-        // Wait until condition variable is notified or timeout is reached
+        // Wait until condition variable is notified or timeout of current interval is reached
         cv_.wait_for(lock, interval_.load() / 2);
 
         try {
-            // Publish CHP message with current state
-            CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
-            status_.reset();
-
             // Handle subscriptions to update subscriber count
             bool received = false;
             do {
@@ -114,6 +110,10 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             interval_ = std::min(default_interval_.load(),
                                  std::chrono::duration_cast<std::chrono::milliseconds>(
                                      default_interval_.load() * std::pow(0.01 * subscribers_, 2) + 500ms));
+
+            // Publish CHP message with current state and the updated interval
+            CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
+            status_.reset();
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }
