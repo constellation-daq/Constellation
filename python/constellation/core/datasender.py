@@ -19,6 +19,7 @@ from .base import EPILOG
 from .broadcastmanager import CHIRPServiceIdentifier
 from .cdtp import CDTPMessageIdentifier, DataTransmitter
 from .configuration import Configuration
+from .error import debug_log, handle_error
 from .logging import setup_cli_logging
 from .satellite import Satellite, SatelliteArgumentParser
 
@@ -167,6 +168,8 @@ class DataSender(Satellite):
         self._data_timeout = self.config.setdefault("data_timeout", 10)
         self._eor_timeout = self.config.setdefault("eor_timeout", 10)
 
+    @handle_error
+    @debug_log
     def _wrap_launch(self, payload: Any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
 
@@ -192,6 +195,8 @@ class DataSender(Satellite):
         res: str = super()._wrap_launch(payload)
         return res
 
+    @handle_error
+    @debug_log
     def _wrap_land(self, payload: Any) -> str:
         """Wrapper for the 'landing' transitional state of the FSM.
 
@@ -233,6 +238,8 @@ class DataSender(Satellite):
         if not self._bor_sent.is_set():
             raise RuntimeError("Timeout reached when sending BOR. No DataReceiver available?")
 
+    @handle_error
+    @debug_log
     def _wrap_stop(self, payload: Any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
 
