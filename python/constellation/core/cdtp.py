@@ -176,8 +176,8 @@ class DataTransmitter:
         if not self._socket:
             return
         packer = msgpack.Packer()
-        # adjust sending timeout on socket for BOR
         self._socket.setsockopt(zmq.SNDTIMEO, self._eor_timeout)
+        # adjust sending timeout on socket for EOR
         self._dispatch(
             msgtype=CDTPMessageIdentifier.EOR,
             payload=packer.pack(payload),
