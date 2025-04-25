@@ -37,9 +37,12 @@ using namespace constellation::utils;
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
                              std::chrono::milliseconds interval)
-    : pub_socket_(*global_zmq_context(), zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)),
+    : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
       sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval),
       interval_(interval) {
+
+    // Enable XPub verbosity to receive all subscription and unsubscription messages:
+    pub_socket_.set(zmq::sockopt::xpub_verboser, true);
 
     // Announce service via CHIRP
     auto* chirp_manager = ManagerLocator::getCHIRPManager();
