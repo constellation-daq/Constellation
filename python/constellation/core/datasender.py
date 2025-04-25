@@ -18,6 +18,7 @@ import zmq
 from .base import EPILOG
 from .broadcastmanager import CHIRPServiceIdentifier
 from .cdtp import CDTPMessageIdentifier, DataTransmitter
+from .configuration import Configuration
 from .logging import setup_cli_logging
 from .satellite import Satellite, SatelliteArgumentParser
 
@@ -29,7 +30,9 @@ class PushThread(threading.Thread):
         self,
         name: str,
         stopevt: threading.Event,
+        borevt: threading.Event,
         socket: zmq.Socket,  # type: ignore[type-arg]
+        timeouts: list[int],
         queue: Queue,  # type: ignore[type-arg]
         *args: Any,
         **kwargs: Any,
@@ -39,7 +42,9 @@ class PushThread(threading.Thread):
         Arguments:
         - name       :: Name of the satellite.
         - stopevt    :: Event that if set lets the thread shut down.
-        - port       :: The port to bind to.
+        - borevt     :: Event that indicates when the BOR has been sent.
+        - socket     :: The ZMQ socket to use.
+        - timeouts   :: A list of timeout values for BOR, data, and EOR.
         - queue      :: The Queue to process payload and meta of data runs from.
         - context    :: ZMQ context to use (optional).
         """
@@ -47,12 +52,16 @@ class PushThread(threading.Thread):
         self.name = name
         self._logger = logging.getLogger(__name__)
         self.stopevt = stopevt
+        self.borevt = borevt
         self.queue = queue
         self._socket = socket
+        self._timeouts = timeouts
 
     def run(self) -> None:
         """Start sending data."""
         tm = DataTransmitter(self.name, self._socket)
+        tm.BOR_timeout, tm.data_timeout, tm.EOR_timeout = self._timeouts
+
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
@@ -60,6 +69,7 @@ class PushThread(threading.Thread):
                 # if we have data, send it
                 if meta == CDTPMessageIdentifier.BOR:
                     tm.send_start(payload=data["payload"], meta=data["meta"])
+                    self.borevt.set()
                 elif meta == CDTPMessageIdentifier.EOR:
                     tm.send_end(payload=data["payload"], meta=data["meta"])
                 else:
@@ -75,7 +85,15 @@ class PushThread(threading.Thread):
 
 
 class DataSender(Satellite):
-    """Constellation Satellite which pushes data via ZMQ."""
+    """Constellation Satellite which pushes data via ZMQ.
+
+    You can modify the timeouts for packets sent via ZMQ depending on the type of packet:
+    - bor_timeout (int) : timeout for beginning-of-run packets (in milliseconds).
+    - data_timeout (int) : timeout for data packets (in milliseconds).
+    - eor_timeout (int) : timeout for end-of-run packets (in milliseconds).
+
+    A value of -1 is interpreted as infinite.
+    """
 
     def __init__(self, *args: Any, data_port: int, **kwargs: Any):
         # initialize local attributes first:
@@ -86,6 +104,14 @@ class DataSender(Satellite):
         # via ZMQ socket
         self.data_queue: Queue = Queue()  # type: ignore[type-arg]
         self.data_port = data_port
+
+        self._stop_pusher: threading.Event | None = None
+        self._bor_sent: threading.Event | None = None
+        self._push_thread: threading.Thread | None = None
+
+        self._bor_timeout: int = 10
+        self._data_timeout: int = 10
+        self._eor_timeout: int = 10
 
         # initialize satellite
         super().__init__(*args, **kwargs)
@@ -130,6 +156,12 @@ class DataSender(Satellite):
         """Set optional playload for the beginning-of-run event (BOR)."""
         self._beg_of_run["payload"] = payload
 
+    def _pre_initializing_hook(self, config: Configuration) -> None:
+        """Configure values specific for all DataSender-type classes."""
+        self._bor_timeout = self.config.setdefault("bor_timeout", 10)
+        self._data_timeout = self.config.setdefault("data_timeout", 10)
+        self._eor_timeout = self.config.setdefault("eor_timeout", 10)
+
     def _wrap_launch(self, payload: Any) -> str:
         """Wrapper for the 'launching' transitional state of the FSM.
 
@@ -137,10 +169,13 @@ class DataSender(Satellite):
 
         """
         self._stop_pusher = threading.Event()
+        self._bor_sent = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
             stopevt=self._stop_pusher,
+            borevt=self._bor_sent,
             socket=self.socket,
+            timeouts=[self._bor_timeout, self._data_timeout, self._eor_timeout],
             queue=self.data_queue,
             daemon=True,  # terminate with the main thread
         )
@@ -156,6 +191,9 @@ class DataSender(Satellite):
         This method will stop the PushThread.
 
         """
+        # satisfy mypy and verify out setup:
+        if not self._stop_pusher or not self._push_thread:
+            raise RuntimeError("Data pusher thread not set up correctly")
         self._stop_pusher.set()
         try:
             self._push_thread.join(timeout=10)
@@ -164,21 +202,29 @@ class DataSender(Satellite):
         res: str = super()._wrap_land(payload)
         return res
 
-    def _wrap_start(self, run_identifier: str) -> str:
-        """Wrapper for the 'run' state of the FSM.
+    def _pre_run_hook(self, run_identifier: str) -> None:
+        """Hook run immediately before do_run() is called.
 
-        This method notifies the data queue of the beginning and end of the data run,
-        as well as performing basic satellite transitioning.
+        Configure and send the Beginning Of Run (BOR) message.
 
         """
-        # Beginning of run event. If nothing was provided by the user, use the
-        # configuration dictionary as a payload
+        # Beginning of run message. If nothing was provided by the user (yet),
+        # use the configuration dictionary as a payload
         if not self.BOR:
             self.BOR = self.config._config
         self.log_cdtp_s.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
-        res: str = super()._wrap_start(run_identifier)
-        return res
+        if self._bor_timeout < 0:
+            timeout = None
+        else:
+            # convert to seconds
+            timeout = self._bor_timeout / 1000
+        # satisfy mypy and verify out setup:
+        if not self._bor_sent:
+            raise RuntimeError("Data pusher events not set up correctly")
+        self._bor_sent.wait(timeout)
+        if not self._bor_sent.is_set():
+            raise RuntimeError("Timeout reached when sending BOR. No DataReceiver available?")
 
     def _wrap_stop(self, payload: Any) -> str:
         """Wrapper for the 'stopping' transitional state of the FSM.
