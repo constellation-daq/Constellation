@@ -255,8 +255,7 @@ class DataSender(Satellite):
         else:
             # convert to seconds
             timeout = self._eor_timeout / 1000
-        if not self._eor_sent:
-            raise RuntimeError("Data pusher events not set up correctly")
+        assert isinstance(self._eor_sent, threading.Event)
         self._eor_sent.wait(timeout)
         if not self._eor_sent.is_set():
             raise RuntimeError("Timeout reached when sending EOR. No DataReceiver available?")
