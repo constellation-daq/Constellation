@@ -31,6 +31,7 @@ class PushThread(threading.Thread):
         name: str,
         stopevt: threading.Event,
         borevt: threading.Event,
+        eorevt: threading.Event,
         socket: zmq.Socket,  # type: ignore[type-arg]
         timeouts: list[int],
         queue: Queue,  # type: ignore[type-arg]
@@ -43,6 +44,7 @@ class PushThread(threading.Thread):
         - name       :: Name of the satellite.
         - stopevt    :: Event that if set lets the thread shut down.
         - borevt     :: Event that indicates when the BOR has been sent.
+        - eorevt     :: Event that indicates when the EOR has been sent.
         - socket     :: The ZMQ socket to use.
         - timeouts   :: A list of timeout values for BOR, data, and EOR.
         - queue      :: The Queue to process payload and meta of data runs from.
@@ -53,6 +55,7 @@ class PushThread(threading.Thread):
         self._logger = logging.getLogger(__name__)
         self.stopevt = stopevt
         self.borevt = borevt
+        self.eorevt = eorevt
         self.queue = queue
         self._socket = socket
         self._timeouts = timeouts
@@ -72,6 +75,7 @@ class PushThread(threading.Thread):
                     self.borevt.set()
                 elif meta == CDTPMessageIdentifier.EOR:
                     tm.send_end(payload=data["payload"], meta=data["meta"])
+                    self.eorevt.set()
                 else:
                     tm.send_data(payload=data, meta=meta)
                 self._logger.debug(f"Sending packet number {tm.sequence_number}")
@@ -107,6 +111,7 @@ class DataSender(Satellite):
 
         self._stop_pusher: threading.Event | None = None
         self._bor_sent: threading.Event | None = None
+        self._eor_sent: threading.Event | None = None
         self._push_thread: threading.Thread | None = None
 
         self._bor_timeout: int = 10
@@ -170,10 +175,12 @@ class DataSender(Satellite):
         """
         self._stop_pusher = threading.Event()
         self._bor_sent = threading.Event()
+        self._eor_sent = threading.Event()
         self._push_thread = PushThread(
             name=self.name,
             stopevt=self._stop_pusher,
             borevt=self._bor_sent,
+            eorevt=self._eor_sent,
             socket=self.socket,
             timeouts=[self._bor_timeout, self._data_timeout, self._eor_timeout],
             queue=self.data_queue,
@@ -236,6 +243,16 @@ class DataSender(Satellite):
         res: str = super()._wrap_stop(payload)
         self.log_cdtp_s.debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
+        if self._eor_timeout < 0:
+            timeout = None
+        else:
+            # convert to seconds
+            timeout = self._eor_timeout / 1000
+        if not self._eor_sent:
+            raise RuntimeError("Data pusher events not set up correctly")
+        self._eor_sent.wait(timeout)
+        if not self._eor_sent.is_set():
+            raise RuntimeError("Timeout reached when sending EOR. No DataReceiver available?")
         return res
 
     def do_run(self, run_identifier: str) -> str:
