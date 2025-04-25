@@ -22,7 +22,12 @@ from constellation.core.monitoring import schedule_metric
 
 
 class H5DataWriter(DataReceiver):
-    """Satellite which receives data via ZMQ and writes to HDF5."""
+    """Satellite which receives data via ZMQ and writes to HDF5.
+
+    Supported configuration options:
+    - flush_interval (float): how often to write out the file (in seconds).
+    - allow_concurrent_reading (bool): whether or not to allow reading while writing (SWMR mode).
+    """
 
     def do_initializing(self, config: dict[str, Any]) -> str:
         """Initialize and configure the satellite."""
