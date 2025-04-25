@@ -82,6 +82,37 @@ class DataTransmitter:
         # TODO : refactorize into own class
         self._socket: zmq.Socket | None = socket  # type: ignore[type-arg]
         self.sequence_number: int = 0
+        # timeouts (in ms)
+        self._data_timeout: int = -1
+        self._bor_timeout: int = -1
+        self._eor_timeout: int = -1
+
+    @property
+    def EOR_timeout(self) -> int:
+        """The end-of-run sending timeout value (in ms)."""
+        return self._eor_timeout
+
+    @EOR_timeout.setter
+    def EOR_timeout(self, timeout: int) -> None:
+        self._eor_timeout = timeout
+
+    @property
+    def BOR_timeout(self) -> int:
+        """The beginning-of-run sending timeout value (in ms)."""
+        return self._bor_timeout
+
+    @BOR_timeout.setter
+    def BOR_timeout(self, timeout: int) -> None:
+        self._bor_timeout = timeout
+
+    @property
+    def data_timeout(self) -> int:
+        """The data sending timeout value (in ms)."""
+        return self._data_timeout
+
+    @data_timeout.setter
+    def data_timeout(self, timeout: int) -> None:
+        self._data_timeout = timeout
 
     def send_start(self, payload: Any, meta: dict[str, Any] | None = None, flags: int = 0) -> None:
         """
@@ -94,14 +125,20 @@ class DataTransmitter:
         flags: additional ZMQ socket flags to use during transmission.
 
         """
+        if not self._socket:
+            return
         self.sequence_number = 0
         packer = msgpack.Packer()
+        # adjust sending timeout on socket for BOR
+        self._socket.setsockopt(zmq.SNDTIMEO, self._bor_timeout)
         self._dispatch(
             msgtype=CDTPMessageIdentifier.BOR,
             payload=packer.pack(payload),
             meta=meta,
             flags=flags,
         )
+        # return to timeout for data sending
+        self._socket.setsockopt(zmq.SNDTIMEO, self._data_timeout)
 
     def send_data(self, payload: Any, meta: dict[str, Any] | None = None, flags: int = 0) -> None:
         """
@@ -136,13 +173,19 @@ class DataTransmitter:
         flags: additional ZMQ socket flags to use during transmission.
 
         """
+        if not self._socket:
+            return
         packer = msgpack.Packer()
+        # adjust sending timeout on socket for BOR
+        self._socket.setsockopt(zmq.SNDTIMEO, self._eor_timeout)
         self._dispatch(
             msgtype=CDTPMessageIdentifier.EOR,
             payload=packer.pack(payload),
             meta=meta,
             flags=flags,
         )
+        # return to timeout for data sending
+        self._socket.setsockopt(zmq.SNDTIMEO, self._data_timeout)
 
     def recv(self, flags: int = 0) -> CDTPMessage | None:
         """Receive a multi-part data transmission.
