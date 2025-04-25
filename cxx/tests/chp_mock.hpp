@@ -26,6 +26,37 @@
 
 #include "chirp_mock.hpp"
 
+class CHPMockSender {
+public:
+    CHPMockSender(std::string name)
+        : name_(std::move(name)), pub_socket_(*constellation::networking::global_zmq_context(), zmq::socket_type::pub),
+          port_(constellation::networking::bind_ephemeral_port(pub_socket_)) {}
+
+    constellation::networking::Port getPort() const { return port_; }
+
+    std::string_view getName() const { return name_; }
+
+    void sendHeartbeat(constellation::protocol::CSCP::State state, std::chrono::milliseconds interval) {
+        auto msg = constellation::message::CHP1Message(name_, state, interval);
+        msg.assemble().send(pub_socket_);
+    }
+
+    void sendExtrasystole(constellation::protocol::CSCP::State state,
+                          std::chrono::milliseconds interval,
+                          std::optional<std::string> status = {}) {
+        auto msg = constellation::message::CHP1Message(name_, state, interval, status);
+        msg.assemble().send(pub_socket_);
+    }
+
+    void mockChirpService() { mocked_service_.emplace_back(name_, constellation::protocol::CHIRP::MONITORING, port_); }
+
+private:
+    std::string name_;
+    zmq::socket_t pub_socket_;
+    constellation::networking::Port port_;
+    std::deque<MockedChirpService> mocked_service_;
+};
+
 class CHPMockReceiver
     : public constellation::pools::SubscriberPool<constellation::message::CHP1Message,
                                                   constellation::protocol::CHIRP::ServiceIdentifier::HEARTBEAT> {

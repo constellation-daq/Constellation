@@ -19,6 +19,7 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/timers.hpp"
