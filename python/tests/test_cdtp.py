@@ -375,7 +375,6 @@ def test_fail_sending_eor(commander, sender_satellite, data_receiver):
     time.sleep(1)
     for i in range(10):
         msg = rx.recv()
-        print(msg)
         assert msg.msgtype == CDTPMessageIdentifier.DAT
     # close connection
     #
