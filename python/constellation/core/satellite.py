@@ -295,11 +295,23 @@ class Satellite(
         self.run_identifier = run_identifier
         self.log_satellite.status(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
+        # allow inheriting classes to execute code just before do_run is called:
+        self._pre_run_hook(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
         # continue to execute DAQ in this thread
         res = self.do_run(run_identifier)
         return res
+
+    @debug_log
+    def _pre_run_hook(self, run_identifier: str) -> None:
+        """Hook run immediately before do_run() is called.
+
+        Intended for inheriting classes to inject code in between calls to
+        do_starting() and do_run().
+
+        """
+        pass
 
     @debug_log
     def do_starting(self, run_identifier: str) -> str:
