@@ -38,8 +38,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
                              std::chrono::milliseconds interval)
     : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
-      sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval),
-      interval_(interval) {
+      sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval), interval_(500ms) {
 
     // Enable XPub verbosity to receive all subscription and unsubscription messages:
     pub_socket_.set(zmq::sockopt::xpub_verboser, true);
