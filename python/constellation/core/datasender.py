@@ -52,19 +52,19 @@ class PushThread(threading.Thread):
 
     def run(self) -> None:
         """Start sending data."""
-        transmitter = DataTransmitter(self.name, self._socket)
+        tm = DataTransmitter(self.name, self._socket)
         while not self.stopevt.is_set():
             try:
                 # blocking call but with timeout to prevent deadlocks
-                payload, meta = self.queue.get(block=True, timeout=0.5)
+                data, meta = self.queue.get(block=True, timeout=0.5)
                 # if we have data, send it
                 if meta == CDTPMessageIdentifier.BOR:
-                    transmitter.send_start(payload=payload["payload"], meta=payload["meta"])
+                    tm.send_start(payload=data["payload"], meta=data["meta"])
                 elif meta == CDTPMessageIdentifier.EOR:
-                    transmitter.send_end(payload=payload["payload"], meta=payload["meta"])
+                    tm.send_end(payload=data["payload"], meta=data["meta"])
                 else:
-                    transmitter.send_data(payload=payload, meta=meta)
-                self._logger.debug(f"Sending packet number {transmitter.sequence_number}")
+                    tm.send_data(payload=data, meta=meta)
+                self._logger.debug(f"Sending packet number {tm.sequence_number}")
                 self.queue.task_done()
             except Empty:
                 # nothing to process
