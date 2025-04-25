@@ -10,7 +10,6 @@
 #include "HeartbeatSend.hpp"
 
 #include <chrono>
-#include <cmath>
 #include <functional>
 #include <mutex>
 #include <stop_token>
@@ -25,6 +24,7 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/thread.hpp"
@@ -107,9 +107,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             } while(received);
 
             // Update the interval based on the amount of subscribers:
-            interval_ = std::min(default_interval_.load(),
-                                 std::chrono::duration_cast<std::chrono::milliseconds>(
-                                     default_interval_.load() * std::pow(0.01 * subscribers_, 2) + 500ms));
+            interval_ = CHP::calculate_interval(subscribers_, default_interval_);
 
             // Publish CHP message with current state and the updated interval
             CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
