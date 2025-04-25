@@ -40,7 +40,7 @@ namespace constellation::heartbeat {
      * received heartbeats. It keeps track of received heartbeats from remote heartbeat senders, counts their lives and
      * takes action either upon missing heartbeats or a remote ERROR state of the FSM.
      */
-    class HeartbeatManager : public HeartbeatRecv {
+    class CNSTLN_API HeartbeatManager : public HeartbeatRecv {
     public:
         /**
          * @brief Construct a heartbeat manager
@@ -53,12 +53,12 @@ namespace constellation::heartbeat {
          * @param interrupt_callback Interrupt callback which is invoked when a remote heartbeat sender reports an ERROR
          * state or stopped sending heartbeats
          */
-        CNSTLN_API HeartbeatManager(std::string sender,
-                                    std::function<protocol::CSCP::State()> state_callback,
-                                    std::function<void(std::string_view)> interrupt_callback);
+        HeartbeatManager(std::string sender,
+                         std::function<protocol::CSCP::State()> state_callback,
+                         std::function<void(std::string_view)> interrupt_callback);
 
         /** Destructor which terminates the heartbeat manager */
-        CNSTLN_API virtual ~HeartbeatManager();
+        virtual ~HeartbeatManager();
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -73,14 +73,14 @@ namespace constellation::heartbeat {
          *
          * This stops the heartbeat manager pool and watchdog thread and terminate the heartbeat sender.
          */
-        CNSTLN_API void terminate();
+        void terminate();
 
         /**
          * @brief Send an extrasystole
          *
          * @param status Latest status message of the satellite
          */
-        CNSTLN_API void sendExtrasystole(std::string_view status);
+        void sendExtrasystole(std::string_view status);
 
         /**
          * @brief Obtain the current state registered from a given remote
@@ -88,7 +88,7 @@ namespace constellation::heartbeat {
          * @param remote Canonical name of the remote in question
          * @return Currently registered state of the remote if remote is present, empty optional otherwise
          */
-        CNSTLN_API std::optional<protocol::CSCP::State> getRemoteState(std::string_view remote);
+        std::optional<protocol::CSCP::State> getRemoteState(std::string_view remote);
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
@@ -97,7 +97,7 @@ namespace constellation::heartbeat {
          *
          * @param interval New maximum heartbeat interval
          */
-        CNSTLN_API void updateInterval(std::chrono::milliseconds interval) { sender_.updateInterval(interval); }
+        void updateInterval(std::chrono::milliseconds interval) { sender_.updateInterval(interval); }
 
         /**
          * @brief Configure whether regular departures are allows.
@@ -107,7 +107,7 @@ namespace constellation::heartbeat {
          *
          * @param allow Boolean flag whether regular departures are allowed or not
          */
-        CNSTLN_API void allowDeparture(bool allow) { allow_departure_ = allow; }
+        void allowDeparture(bool allow) { allow_departure_ = allow; }
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound
