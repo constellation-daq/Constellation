@@ -48,6 +48,15 @@ test('Core CHP sender test', test_core_chp_sender,
   is_parallel: false,
 )
 
+test_core_chp_manager = executable('test_core_chp_manager',
+  sources: 'test_core_chp_manager.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core CHP manager test', test_core_chp_manager,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
+
 test_core_logging = executable('test_core_logging',
   sources: 'test_core_logging.cpp',
   dependencies: [core_dep, catch2_dep],
