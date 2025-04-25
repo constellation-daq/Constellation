@@ -39,6 +39,15 @@ test('Core CHIRP message test', test_core_chirp_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
+test_core_chp_sender = executable('test_core_chp_sender',
+  sources: 'test_core_chp_sender.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core CHP sender test', test_core_chp_sender,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
+
 test_core_logging = executable('test_core_logging',
   sources: 'test_core_logging.cpp',
   dependencies: [core_dep, catch2_dep],
