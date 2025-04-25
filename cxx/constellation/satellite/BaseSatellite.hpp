@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <mutex>
 #include <optional>
