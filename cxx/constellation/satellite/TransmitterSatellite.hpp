@@ -11,15 +11,15 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
-#include <deque>
-#include <mutex>
+#include <memory>
 #include <stop_token>
 #include <string_view>
 #include <thread>
+#include <utility>
 
+#include <atomic_queue/atomic_queue.h>
 #include <zmq.hpp>
 
 #include "constellation/build.hpp"
@@ -55,14 +55,14 @@ namespace constellation::satellite {
          *
          * @param data_block Data block to send
          */
-        void sendDataBlock(message::CDTP2Message::DataBlock&& data_block);
+        void sendDataBlock(message::CDTP2Message::DataBlock&& data_block) { data_block_queue_.push(std::move(data_block)); }
 
         /**
          * @brief Check if sending is data rate limited
          *
          * @return True if sending data is currently limited, false otherwise
          */
-        bool checkDataRateLimited() const;
+        bool checkDataRateLimited() const { return data_block_queue_.was_full(); }
 
         /**
          * @brief Mark this run data as tainted
@@ -199,6 +199,13 @@ namespace constellation::satellite {
         protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
 
         /**
+         * @brief Stop sending thread
+         *
+         * @note Requires running function to be already stopped such that no new data blocks are queued.
+         */
+        void stop_sending_loop();
+
+        /**
          * @brief Sending loop sending data blocks from the queue
          *
          * @param stop_token Stop token
@@ -215,11 +222,14 @@ namespace constellation::satellite {
         std::chrono::seconds data_msg_timeout_ {};
         std::size_t data_payload_threshold_ {};
 
+        // Atomic Queue Type: Maximize Throughput, Enable total order, disable Single-Producer-Single-Consumer
+        using AtomicQueueT = atomic_queue::AtomicQueueB2<message::CDTP2Message::DataBlock,
+                                                         std::allocator<message::CDTP2Message::DataBlock>,
+                                                         true,
+                                                         true,
+                                                         false>;
+        AtomicQueueT data_block_queue_;
         std::uint64_t seq_ {};
-        std::mutex data_block_queue_mutex_;
-        std::deque<message::CDTP2Message::DataBlock> data_block_queue_;
-        std::atomic_size_t current_payload_bytes_;
-        std::condition_variable data_block_queue_cv_;
         std::jthread sending_thread_;
 
         config::Dictionary bor_tags_;

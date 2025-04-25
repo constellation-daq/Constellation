@@ -164,6 +164,11 @@ namespace constellation::message {
         CNSTLN_API std::size_t countPayloadBytes() const;
 
         /**
+         * @brief Clear data blocks attached to message
+         */
+        void clearBlocks() { data_blocks_.clear(); }
+
+        /**
          * @brief Assemble full message for ZeroMQ
          *
          * @return ZeroMQ multipart message

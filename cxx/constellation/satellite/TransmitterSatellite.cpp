@@ -10,17 +10,15 @@
 #include "TransmitterSatellite.hpp"
 
 #include <chrono>
-#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <mutex>
 #include <numeric>
 #include <stop_token>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
-#include <vector>
 
 #include <zmq.hpp>
 
@@ -37,6 +35,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation::config;
@@ -49,9 +48,11 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
+constexpr std::size_t buffer_size = 16777216; // TODO configurable
+
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
-      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA") {
+      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_block_queue_(buffer_size) {
 
     register_timed_metric("BYTES_TRANSMITTED",
                           "B",
@@ -109,17 +110,6 @@ void TransmitterSatellite::set_send_timeout(std::chrono::milliseconds timeout) {
 CDTP2Message::DataBlock TransmitterSatellite::newDataBlock(std::size_t frames) {
     // Increase sequence counter and return new message
     return {++seq_, {}, frames};
-}
-
-void TransmitterSatellite::sendDataBlock(CDTP2Message::DataBlock&& data_block) {
-    std::unique_lock data_block_queue_lock {data_block_queue_mutex_};
-    data_block_queue_.emplace_back(std::move(data_block));
-    data_block_queue_lock.unlock();
-    data_block_queue_cv_.notify_one();
-}
-
-bool TransmitterSatellite::checkDataRateLimited() const {
-    return current_payload_bytes_.load() > 2 * data_payload_threshold_;
 }
 
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
@@ -235,11 +225,8 @@ CDTP::RunCondition TransmitterSatellite::append_run_conditions(CDTP::RunConditio
 }
 
 void TransmitterSatellite::stopping_transmitter() {
-    // Join sending thread
-    sending_thread_.request_stop();
-    if(sending_thread_.joinable()) {
-        sending_thread_.join();
-    }
+    // Stop sending thread
+    stop_sending_loop();
     // Send EOR
     const auto condition_code = append_run_conditions(CDTP::RunCondition::GOOD);
     set_run_metadata_tag("condition_code", condition_code);
@@ -248,11 +235,8 @@ void TransmitterSatellite::stopping_transmitter() {
 }
 
 void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) {
-    // Join sending thread
-    sending_thread_.request_stop();
-    if(sending_thread_.joinable()) {
-        sending_thread_.join();
-    }
+    // Stop sending thread
+    stop_sending_loop();
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
         const auto condition_code = append_run_conditions(CDTP::RunCondition::INTERRUPTED);
@@ -263,11 +247,8 @@ void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) 
 }
 
 void TransmitterSatellite::failure_transmitter(CSCP::State previous_state) {
-    // Join sending thread
-    sending_thread_.request_stop();
-    if(sending_thread_.joinable()) {
-        sending_thread_.join();
-    }
+    // Stop sending thread
+    stop_sending_loop();
     // If previous state was running, attempt to send an EOR
     if(previous_state == CSCP::State::RUN) {
         markRunTainted();
@@ -278,43 +259,63 @@ void TransmitterSatellite::failure_transmitter(CSCP::State previous_state) {
     }
 }
 
+void TransmitterSatellite::stop_sending_loop() {
+    // Wait until data block queue is empty if sending thread still running
+    while(sending_thread_.joinable() && !data_block_queue_.was_empty()) {
+        std::this_thread::yield();
+    }
+    // Stop sending thread and join
+    sending_thread_.request_stop();
+    if(sending_thread_.joinable()) {
+        sending_thread_.join();
+    }
+    // Clear the queue (in case sending thread failed before the queue was empty)
+    while(!data_block_queue_.was_empty()) {
+        data_block_queue_.pop();
+    }
+}
+
 void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
-    // Notify condition variable when stop is requested
-    const std::stop_callback stop_callback {stop_token, [&]() { data_block_queue_cv_.notify_all(); }};
+    TimeoutTimer send_timer {100ms};
+    std::size_t current_payload_bytes = 0;
 
-    current_payload_bytes_ = 0;
-    std::vector<CDTP2Message::DataBlock> current_data_blocks {};
-    current_data_blocks.reserve(data_payload_threshold_);
+    // Preallocate message
+    auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, buffer_size);
 
-    // Always run loop at least once in case of early stop NOLINTNEXTLINE(cppcoreguidelines-avoid-do-while)
-    do {
-        // Wait until new message is queued or some time has passed
-        std::unique_lock data_block_queue_lock {data_block_queue_mutex_};
-        const auto cv_status = data_block_queue_cv_.wait_for(data_block_queue_lock, 100ms);
+    // Note: stop_sending_loop ensure that queue is empty before stop_request is called
+    while(!stop_token.stop_requested()) {
+        // Try popping an element from the queue
+        CDTP2Message::DataBlock data_block;
+        const auto popped = data_block_queue_.try_pop(data_block);
 
-        // Pop all message from queue
-        while(!data_block_queue_.empty()) {
-            current_payload_bytes_ += data_block_queue_.front().countPayloadBytes();
-            current_data_blocks.emplace_back(std::move(data_block_queue_.front()));
-            data_block_queue_.pop_front();
-        }
-        data_block_queue_lock.unlock();
+        // If popped handle block, otherwise check for timeout
+        if(popped) {
+            current_payload_bytes += data_block.countPayloadBytes();
+            message.addDataBlock(std::move(data_block));
 
-        // If message was queued and stop not requested, check if data threshold is met
-        if(cv_status == std::cv_status::no_timeout && !stop_token.stop_requested()) [[likely]] {
-            if(current_payload_bytes_ < data_payload_threshold_) {
+            // If threshold not reached, continue
+            if(current_payload_bytes < data_payload_threshold_) {
                 continue;
             }
-        } else if(current_data_blocks.empty()) [[unlikely]] {
-            // Skip if timeout or stopped request and also nothing to send
-            continue;
+        } else {
+            // Skip send timeout is not reached yet
+            if(!send_timer.timeoutReached()) {
+                std::this_thread::yield();
+                continue;
+            }
+            // Skip if nothing to send even after timeout was reached
+            if(current_payload_bytes == 0) {
+                send_timer.reset();
+                continue;
+            }
         }
 
         // Log and update telemetry
+        const auto& current_data_blocks = message.getDataBlocks();
         LOG(cdtp_logger_, TRACE) << "Sending data blocks from " << current_data_blocks.front().getSequenceNumber() << " to "
-                                 << current_data_blocks.back().getSequenceNumber() << " (" << current_payload_bytes_
+                                 << current_data_blocks.back().getSequenceNumber() << " (" << current_payload_bytes
                                  << " bytes)";
-        bytes_transmitted_ += current_payload_bytes_;
+        bytes_transmitted_ += current_payload_bytes;
         frames_transmitted_ += std::transform_reduce(
             current_data_blocks.begin(), current_data_blocks.end(), 0UL, std::plus(), [](const auto& data_block) {
                 return data_block.getFrames().size();
@@ -322,23 +323,21 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         data_blocks_transmitted_ += current_data_blocks.size();
         ++messages_transmitted_;
 
-        // Build message
-        auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, current_data_blocks.size());
-        for(auto& data_block : current_data_blocks) {
-            message.addDataBlock(std::move(data_block));
-        }
-
         // Send message
         try {
-            message.assemble().send(cdtp_push_socket_, static_cast<int>(zmq::send_flags::dontwait));
+            const auto sent = message.assemble().send(cdtp_push_socket_);
+            if(!sent) [[unlikely]] {
+                getFSM().requestFailure("Failed to send message: data timeout reached");
+                return;
+            }
         } catch(const zmq::error_t& error) {
             getFSM().requestFailure("Failed to send message: "s + error.what());
-            break;
+            return;
         }
 
-        // Reset message counters
-        current_data_blocks.clear();
-        current_payload_bytes_ = 0;
-
-    } while(!stop_token.stop_requested());
+        // Reset timer and counter, clear blocks
+        send_timer.reset();
+        current_payload_bytes = 0;
+        message.clearBlocks();
+    }
 }
