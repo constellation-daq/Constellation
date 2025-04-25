@@ -105,7 +105,12 @@ namespace constellation::heartbeat {
         std::string sender_;
         /** Function returning the current state */
         std::function<protocol::CSCP::State()> state_callback_;
+
         /** Maximum heartbeat broadcasting interval */
+        std::atomic<std::chrono::milliseconds> default_interval_;
+        /** Current number of subscribers */
+        std::atomic<std::size_t> subscribers_;
+        /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 
         std::condition_variable cv_;
