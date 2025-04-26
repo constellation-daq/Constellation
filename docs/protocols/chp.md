@@ -75,3 +75,20 @@ The time intervals for publishing heartbeat messages by CHP sending hosts, calle
 The maximum time interval expected for receiving the next heartbeat messages from a given CHP sending host SHALL be taken from the heart rate value of the last received heartbeat or extrasystole message and SHALL be adjusted with every received message.
 
 The initial value of the lives counter SHOULD be 3.
+
+### Congestion Control
+
+A sending CHP host MAY adjust the time interval automatically as a function of the number of active subscribers in order to keep the number of heartbeat messages
+sent per unit time low. Without automatic adjustment the number of messages in the network scales as $N(N-1)$ where $N$ is the number of CHP hosts.
+
+It is RECOMMENDED to use a scaling similar to
+
+```{math}
+\Delta t = \min \left(\Delta t_{max}, 0.5s + (N/100)^2 \cdot \Delta t_{max} \right)
+```
+
+where $\Delta t$ is the time interval to be used by the sender and $\Delta t_{max}$ the maximum allowed heartbeat time interval.
+It is recommended to use a maximum time interval of 60s, the maximum time interval MAY be adapted according the expected number of CHP hosts.
+
+If congestion control is implemented, the implementation MUST ensure to first distribute a heartbeat message with the updated interval before switching to the
+interval to avoid detecting missing heartbeats on CHP receiving hosts.
