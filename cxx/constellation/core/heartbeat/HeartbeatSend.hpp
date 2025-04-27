@@ -73,12 +73,17 @@ namespace constellation::heartbeat {
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
-         *
          * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval
          *
          * @param interval New maximum heartbeat interval
          */
-        void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
+        void setMaximumInterval(std::chrono::milliseconds interval) { default_interval_ = interval; }
+
+        /**
+         * @brief Obtain the currently used heartbeat interval
+         * @return Current heartbeat interval
+         */
+        std::chrono::milliseconds getCurrentInterval() const { return interval_; }
 
         /**
          * @brief Send an extrasystole

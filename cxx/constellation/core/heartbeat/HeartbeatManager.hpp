@@ -97,7 +97,7 @@ namespace constellation::heartbeat {
          *
          * @param interval New maximum heartbeat interval
          */
-        void updateInterval(std::chrono::milliseconds interval) { sender_.updateInterval(interval); }
+        void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
 
         /**
          * @brief Configure whether regular departures are allows.
