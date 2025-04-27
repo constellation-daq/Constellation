@@ -9,9 +9,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <mutex>
 #include <string>
-#include <utility>
 
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -30,17 +28,6 @@ using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-class CHPSender : public HeartbeatSend {
-public:
-    CHPSender(std::string name, std::chrono::milliseconds interval)
-        : HeartbeatSend(std::move(name), [&]() { return state_.load(); }, interval) {}
-
-    void setState(CSCP::State state) { state_ = state; }
-
-private:
-    std::atomic<CSCP::State> state_ {CSCP::State::NEW};
-};
-
 TEST_CASE("Send a heartbeat", "[chp][send]") {
     create_chirp_manager();
 
@@ -49,7 +36,7 @@ TEST_CASE("Send a heartbeat", "[chp][send]") {
 
     auto timer = StopwatchTimer();
     const auto interval = std::chrono::milliseconds(300);
-    auto sender = CHPSender("Sender", interval);
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, interval);
 
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
@@ -85,14 +72,15 @@ TEST_CASE("Send an extrasystole", "[chp][send]") {
     receiver.startPool();
 
     const auto interval = std::chrono::milliseconds(300);
-    auto sender = CHPSender("Sender", interval);
+    std::atomic<CSCP::State> state {CSCP::State::NEW};
+    auto sender = HeartbeatSend("Sender", [&]() { return state.load(); }, interval);
 
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
     receiver.waitSubscription();
 
     // Set state and send extrasystole
-    sender.setState(CSCP::State::RUN);
+    state = CSCP::State::RUN;
     sender.sendExtrasystole("test");
 
     // Wait until heartbeat is received
@@ -128,7 +116,7 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     receiver.startPool();
 
     auto timer = StopwatchTimer();
-    auto sender = CHPSender("Sender", std::chrono::milliseconds(200));
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, std::chrono::milliseconds(200));
 
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());

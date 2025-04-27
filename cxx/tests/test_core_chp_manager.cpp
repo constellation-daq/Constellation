@@ -38,14 +38,12 @@ public:
     CHPManager(std::string name)
         : HeartbeatManager(
               std::move(name),
-              [&]() { return state_.load(); },
+              [&]() { return CSCP::State::NEW; },
               [&](std::string_view status) {
                   const std::lock_guard lock {mutex_};
                   interrupt_message_ = std::string(status);
                   interrupt_received_.store(true);
               }) {}
-
-    void setState(CSCP::State state) { state_ = state; }
 
     void waitInterrupt() {
         while(!interrupt_received_.load()) {
@@ -60,7 +58,6 @@ public:
     }
 
 private:
-    std::atomic<CSCP::State> state_ {CSCP::State::NEW};
     std::atomic_bool interrupt_received_ {false};
     std::mutex mutex_;
     std::string interrupt_message_;
