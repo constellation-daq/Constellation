@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <string>
@@ -32,22 +33,12 @@ using namespace std::chrono_literals;
 class CHPSender : public HeartbeatSend {
 public:
     CHPSender(std::string name, std::chrono::milliseconds interval)
-        : HeartbeatSend(
-              std::move(name),
-              [&]() {
-                  const std::lock_guard lock {mutex_};
-                  return state_;
-              },
-              interval) {}
+        : HeartbeatSend(std::move(name), [&]() { return state_.load(); }, interval) {}
 
-    void setState(CSCP::State state) {
-        const std::lock_guard lock {mutex_};
-        state_ = state;
-    }
+    void setState(CSCP::State state) { state_ = state; }
 
 private:
-    std::mutex mutex_;
-    CSCP::State state_ {CSCP::State::NEW};
+    std::atomic<CSCP::State> state_ {CSCP::State::NEW};
 };
 
 TEST_CASE("Send a heartbeat", "[chp][send]") {
@@ -82,8 +73,9 @@ TEST_CASE("Send a heartbeat", "[chp][send]") {
     REQUIRE_FALSE(last_message->getStatus().has_value());
     REQUIRE(last_message->getInterval() == interval);
 
-    receiver.stopPool();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    sender.terminate();
+    receiver.stopPool();
 }
 
 TEST_CASE("Send an extrasystole", "[chp][send]") {
@@ -124,8 +116,9 @@ TEST_CASE("Send an extrasystole", "[chp][send]") {
     REQUIRE_FALSE(next_message->getStatus().has_value());
     REQUIRE(next_message->getInterval() == interval);
 
-    receiver.stopPool();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    sender.terminate();
+    receiver.stopPool();
 }
 
 TEST_CASE("Change heartbeat interval", "[chp][send]") {
@@ -168,6 +161,7 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     REQUIRE(duration > std::chrono::milliseconds(200));
     REQUIRE(duration < std::chrono::milliseconds(600));
 
-    receiver.stopPool();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    sender.terminate();
+    receiver.stopPool();
 }

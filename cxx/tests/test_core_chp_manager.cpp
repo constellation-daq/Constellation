@@ -38,20 +38,14 @@ public:
     CHPManager(std::string name)
         : HeartbeatManager(
               std::move(name),
-              [&]() {
-                  const std::lock_guard lock {mutex_};
-                  return state_;
-              },
+              [&]() { return state_.load(); },
               [&](std::string_view status) {
                   const std::lock_guard lock {mutex_};
                   interrupt_message_ = std::string(status);
                   interrupt_received_.store(true);
               }) {}
 
-    void setState(CSCP::State state) {
-        const std::lock_guard lock {mutex_};
-        state_ = state;
-    }
+    void setState(CSCP::State state) { state_ = state; }
 
     void waitInterrupt() {
         while(!interrupt_received_.load()) {
@@ -66,9 +60,9 @@ public:
     }
 
 private:
-    std::mutex mutex_;
-    CSCP::State state_ {CSCP::State::NEW};
+    std::atomic<CSCP::State> state_ {CSCP::State::NEW};
     std::atomic_bool interrupt_received_ {false};
+    std::mutex mutex_;
     std::string interrupt_message_;
 };
 
@@ -98,8 +92,8 @@ TEST_CASE("Check remote state", "[chp][send]") {
     // Remote is not known:
     REQUIRE_FALSE(manager.getRemoteState("sender").has_value());
 
-    manager.terminate();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    manager.terminate();
 }
 
 TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
@@ -127,8 +121,8 @@ TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
     manager.waitInterrupt();
     REQUIRE_THAT(manager.getInterruptMessage(), Equals("sender reports state SAFE"));
 
-    manager.terminate();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    manager.terminate();
 }
 
 TEST_CASE("Receive interrupt from heartbeat timeout", "[chp][send]") {
@@ -146,6 +140,6 @@ TEST_CASE("Receive interrupt from heartbeat timeout", "[chp][send]") {
     manager.waitInterrupt();
     REQUIRE_THAT(manager.getInterruptMessage(), Equals("No signs of life detected anymore from sender"));
 
-    manager.terminate();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    manager.terminate();
 }
