@@ -7,9 +7,11 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <string>
+#include <vector>
 
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -116,7 +118,7 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     receiver.startPool();
 
     auto timer = StopwatchTimer();
-    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, std::chrono::milliseconds(200));
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, std::chrono::milliseconds(100));
 
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
@@ -131,10 +133,10 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     timer.stop();
 
     // The delay should have been less than the configured interval:
-    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration()) < std::chrono::milliseconds(200));
+    REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration()) < std::chrono::milliseconds(100));
 
     // Change interval:
-    sender.updateInterval(std::chrono::milliseconds(600));
+    sender.setMaximumInterval(std::chrono::milliseconds(500));
 
     // Wait for first message
     receiver.waitNextMessage();
@@ -146,10 +148,34 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
 
     // The delay should have been less than the new but more than the previous interval:
     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration());
-    REQUIRE(duration > std::chrono::milliseconds(200));
-    REQUIRE(duration < std::chrono::milliseconds(600));
+    REQUIRE(duration > std::chrono::milliseconds(100));
+    REQUIRE(duration < std::chrono::milliseconds(500));
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     sender.terminate();
     receiver.stopPool();
+}
+
+TEST_CASE("Heartbeat congestion control", "[chp][send]") {
+    create_chirp_manager();
+
+    std::vector<CHPMockReceiver> receivers(2);
+    std::ranges::for_each(receivers, [&](auto& recv) { recv.startPool(); });
+
+    const auto interval = std::chrono::milliseconds(60000);
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, interval);
+
+    // Current heartbeat interval should be minimum
+    REQUIRE(sender.getCurrentInterval() == 500ms);
+
+    // Mock service and wait until subscribed
+    const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
+    std::ranges::for_each(receivers, [&](auto& recv) { recv.waitSubscription(); });
+
+    // Current heartbeat interval should be larger than minimum
+    REQUIRE(sender.getCurrentInterval() == 554ms);
+
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    sender.terminate();
+    std::ranges::for_each(receivers, [&](auto& recv) { recv.stopPool(); });
 }
