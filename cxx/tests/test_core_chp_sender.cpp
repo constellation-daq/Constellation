@@ -7,11 +7,9 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <string>
-#include <vector>
 
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -159,23 +157,34 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
 TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     create_chirp_manager();
 
-    std::vector<CHPMockReceiver> receivers(2);
-    std::ranges::for_each(receivers, [&](auto& recv) { recv.startPool(); });
+    auto receiver = CHPMockReceiver();
+    receiver.startPool();
 
-    const auto interval = std::chrono::milliseconds(60000);
-    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, interval);
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, 60000ms);
 
-    // Current heartbeat interval should be minimum
+    // Current heartbeat interval is minimum
     REQUIRE(sender.getCurrentInterval() == 500ms);
 
     // Mock service and wait until subscribed
     const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
-    std::ranges::for_each(receivers, [&](auto& recv) { recv.waitSubscription(); });
+    receiver.waitSubscription();
 
-    // Current heartbeat interval should be larger than minimum
-    REQUIRE(sender.getCurrentInterval() == 554ms);
+    // Wait for next message
+    receiver.waitNextMessage();
+
+    // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getCurrentInterval() == 506ms);
+
+    // Heartbeat interval changes when changing the maximum interval
+    sender.setMaximumInterval(100000ms);
+
+    // Wait for next message
+    receiver.waitNextMessage();
+
+    // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getCurrentInterval() == 510ms);
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     sender.terminate();
-    std::ranges::for_each(receivers, [&](auto& recv) { recv.stopPool(); });
+    receiver.stopPool();
 }
