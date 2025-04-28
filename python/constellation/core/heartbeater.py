@@ -27,8 +27,8 @@ class HeartbeatSender(SatelliteStateHandler):
 
         super().__init__(name=name, interface=interface, **kwargs)
         self.default_period = 60000
-        self.heartbeat_period = 500
-        self.subscribers = 0
+        self._heartbeat_period = 500
+        self._subscribers = 0
 
         self.log_chp_s = self.get_logger("CHP")
 
@@ -59,23 +59,23 @@ class HeartbeatSender(SatelliteStateHandler):
         # assert for mypy static type analysis
         assert isinstance(self._com_thread_evt, threading.Event), "Thread Event not set up correctly"
         while not self._com_thread_evt.is_set():
-            if ((datetime.now() - last).total_seconds() > self.heartbeat_period / 1000) or self.fsm.transitioned:
+            if ((datetime.now() - last).total_seconds() > self._heartbeat_period / 1000) or self.fsm.transitioned:
                 # Update number of subscribers and the associated heartbeat period
-                self.subscribers += self._hb_tm.parse_subscriptions()
-                self.heartbeat_period = min(
-                    self.default_period, int(self.default_period * pow(0.01 * self.subscribers, 2)) + 500
+                self._subscribers += self._hb_tm.parse_subscriptions()
+                self._heartbeat_period = min(
+                    self.default_period, int(self.default_period * pow(0.01 * self._subscribers, 2)) + 500
                 )
                 self.log_chp_s.trace(
                     "Sending heartbeat, current period "
-                    + str(self.heartbeat_period)
+                    + str(self._heartbeat_period)
                     + "ms with "
-                    + str(self.subscribers)
+                    + str(self._subscribers)
                     + " subscribers"
                 )
 
                 last = datetime.now()
                 state = self.fsm.current_state_value
-                self._hb_tm.send(state.value, int(self.heartbeat_period * 1.1))
+                self._hb_tm.send(state.value, int(self._heartbeat_period * 1.1))
                 self.fsm.transitioned = False
             else:
                 time.sleep(0.1)
