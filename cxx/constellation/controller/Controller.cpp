@@ -435,7 +435,8 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(std::string verb, c
 }
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb,
-                                                             const std::map<std::string, CommandPayload>& payloads) {
+                                                             const std::map<std::string, CommandPayload>& payloads,
+                                                             bool include_missing) {
 
     std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
@@ -443,6 +444,11 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
     const std::lock_guard connection_lock {connection_mutex_};
 
     for(auto& [name, sat] : connections_) {
+        // If satellites without payload should not be included, skip:
+        if(!include_missing && !payloads.contains(name)) {
+            continue;
+        }
+
         // Start command sending and store future:
         futures.emplace(name, std::async(std::launch::async, [&]() {
                             // Prepare message:
