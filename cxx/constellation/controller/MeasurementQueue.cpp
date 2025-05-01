@@ -17,16 +17,24 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/timers.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;
 using namespace constellation::protocol;
+using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 MeasurementQueue::~MeasurementQueue() {
     // Interrupt the queue if one was running:
     interrupt();
+
+    // Join the queue thread:
+    if(queue_thread_.joinable()) {
+        queue_thread_.join();
+    }
 }
 
 void MeasurementQueue::append(Measurement measurement) {
@@ -39,17 +47,17 @@ void MeasurementQueue::append(Measurement measurement) {
 void MeasurementQueue::start() {
     LOG(logger_, DEBUG) << "Requested starting of queue";
 
-    // We only start when we are in orbit
-    if(!controller_.isInState(CSCP::State::ORBIT)) {
-        // throw QueueError("Controller not in correct state");
-        LOG(logger_, WARNING) << "Not in correct state, controller reports " << controller_.getLowestState();
-        return;
-    }
-
     // Already running?
     if(queue_running_) {
         // throw QueueError("Queue already running");
         LOG(logger_, WARNING) << "Queue already running";
+        return;
+    }
+
+    // We only start when we are in orbit
+    if(!controller_.isInState(CSCP::State::ORBIT)) {
+        // throw QueueError("Controller not in correct state");
+        LOG(logger_, WARNING) << "Not in correct state, controller reports " << controller_.getLowestState();
         return;
     }
 
@@ -67,21 +75,19 @@ void MeasurementQueue::start() {
 void MeasurementQueue::halt() {
     LOG(logger_, DEBUG) << "Requested halting of queue";
 
-    if(!queue_thread_.joinable()) {
+    if(!queue_running_) {
         LOG(logger_, DEBUG) << "No queue running";
         return;
     }
 
     // Stop sender thread
     queue_thread_.request_stop();
-    queue_thread_.join();
 }
 
 void MeasurementQueue::interrupt() {
     LOG(logger_, DEBUG) << "Requested interruption of queue";
 
-    // FIXME check if running?
-    if(!queue_thread_.joinable()) {
+    if(!queue_running_) {
         LOG(logger_, DEBUG) << "No queue running";
         return;
     }
@@ -89,21 +95,25 @@ void MeasurementQueue::interrupt() {
     // Request a stop to be sure we're not starting a new measurement just now:
     queue_thread_.request_stop();
 
-    // Send a stop to the controller if the current state is not already ORBIT
-    controller_.sendCommands("stop");
-
-    // Join the queue thread:
-    queue_thread_.join();
+    // Set the queue to stopped to interrupt current measurement
+    queue_running_ = false;
 }
 
 void MeasurementQueue::await_state(CSCP::State state) const {
+    auto timer = TimeoutTimer(transition_timeout_);
+    timer.reset();
+
     while(!controller_.isInState(state)) {
+        if(timer.timeoutReached()) {
+            throw QueueError("Timeout out waiting for global state " + to_string(state));
+        }
+
         std::this_thread::sleep_for(100ms);
     }
 }
 
-bool MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
-    return std::ranges::all_of(replies.cbegin(), replies.cend(), [&](const auto& reply) {
+void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
+    const auto success = std::ranges::all_of(replies.cbegin(), replies.cend(), [&](const auto& reply) {
         const auto verb = reply.second.getVerb();
         const auto success = (verb.first == CSCP1Message::Type::SUCCESS);
         if(!success) {
@@ -111,6 +121,10 @@ bool MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
         }
         return success;
     });
+
+    if(!success) {
+        throw QueueError("Unexpected reply from satellite");
+    }
 }
 
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
@@ -132,9 +146,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Update constellation - satellites without payload will not receive the command
             LOG(logger_, INFO) << "Reconfiguring satellites";
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
-            if(!check_replies(reply_reconf)) {
-                throw QueueError("Unexpected reply from satellite");
-            }
+            check_replies(reply_reconf);
 
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
@@ -143,29 +155,31 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             LOG(logger_, INFO) << "Starting satellites";
             const auto reply_start =
                 controller_.sendCommands("start", run_identifier_prefix_ + std::to_string(run_sequence));
-            if(!check_replies(reply_start)) {
-                throw QueueError("Unexpected reply from satellite");
-            }
+            check_replies(reply_start);
 
             // Wait for RUN state across all
             await_state(CSCP::State::RUN);
 
             // Wait for condition to be come true
-            std::this_thread::sleep_for(5s);
+            auto timer = TimeoutTimer(5s);
+            timer.reset();
+            while(queue_running_ && !timer.timeoutReached()) {
+                std::this_thread::sleep_for(100ms);
+            }
 
             // Stop the constellation
             LOG(logger_, INFO) << "Stopping satellites";
             const auto reply_stop = controller_.sendCommands("stop");
-            if(!check_replies(reply_stop)) {
-                throw QueueError("Unexpected reply from satellite");
-            }
+            check_replies(reply_stop);
 
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
 
             // Successfully concluded this measurement, pop it:
-            measurements_.pop();
-            run_sequence++;
+            if(queue_running_) {
+                measurements_.pop();
+                run_sequence++;
+            }
         }
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();

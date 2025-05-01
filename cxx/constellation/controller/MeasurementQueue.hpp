@@ -87,13 +87,14 @@ namespace constellation::controller {
 
         void await_state(protocol::CSCP::State state) const;
 
-        bool check_replies(const std::map<std::string, message::CSCP1Message>& replies) const;
+        void check_replies(const std::map<std::string, message::CSCP1Message>& replies) const;
 
     private:
         /** Logger to use */
         log::Logger logger_;
 
         std::string run_identifier_prefix_ {"queue_run_"};
+        std::chrono::seconds transition_timeout_ {60};
 
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
