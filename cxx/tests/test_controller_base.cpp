@@ -49,6 +49,22 @@ namespace std {
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
+TEST_CASE("Controller without connections", "[controller]") {
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // No connections at present:
+    REQUIRE(controller.getConnectionCount() == 0);
+
+    // The controller is in state NEW;
+    REQUIRE(controller.isInState(CSCP::State::NEW));
+    REQUIRE_FALSE(controller.isInState(CSCP::State::ORBIT));
+
+    // Stop controller
+    controller.stop();
+}
+
 TEST_CASE("Satellite connecting", "[controller]") {
     // Create CHIRP manager for control service discovery
     create_chirp_manager();

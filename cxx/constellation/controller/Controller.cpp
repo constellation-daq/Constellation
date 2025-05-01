@@ -307,6 +307,11 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
 bool Controller::isInState(CSCP::State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
+    // Without connections, the state is NEW
+    if(connections_.empty() && state != CSCP::State::NEW) {
+        return false;
+    }
+
     return std::ranges::all_of(
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
 }
