@@ -34,8 +34,12 @@ namespace constellation::controller {
          * @brief Construct a measurement queue
          *
          * @param controller Reference to the controller object to be used
+         * @param prefix Prefix for the run identifier
+         * @param timeout Transition timeout after which the queue will be interrupted if the target state was not reached
          */
-        MeasurementQueue(Controller& controller) : logger_("QUEUE"), controller_(controller) {};
+        MeasurementQueue(Controller& controller, std::string prefix, std::chrono::seconds timeout = std::chrono::seconds(60))
+            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), transition_timeout_(timeout),
+              controller_(controller) {};
 
         /**
          * @brief Destruct the measurement queue
@@ -119,8 +123,8 @@ namespace constellation::controller {
         /** Logger to use */
         log::Logger logger_;
 
-        std::string run_identifier_prefix_ {"queue_run_"};
-        std::chrono::seconds transition_timeout_ {60};
+        std::string run_identifier_prefix_;
+        std::chrono::seconds transition_timeout_;
 
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
