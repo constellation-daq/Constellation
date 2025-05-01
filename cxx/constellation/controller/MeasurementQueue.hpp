@@ -125,6 +125,9 @@ namespace constellation::controller {
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
         std::mutex measurement_mutex_;
+        std::atomic<std::size_t> run_sequence_ {0};
+        /** Interrupt counter to append to run identifier for re-tries */
+        std::atomic<std::size_t> interrupt_counter_ {0};
 
         /** Number of queue elements at the start of the measurements */
         std::size_t size_at_start_;

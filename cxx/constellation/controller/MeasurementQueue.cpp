@@ -97,6 +97,7 @@ void MeasurementQueue::interrupt() {
 
     // Set the queue to stopped to interrupt current measurement
     queue_running_ = false;
+    interrupt_counter_++;
 }
 
 void MeasurementQueue::await_state(CSCP::State state) const {
@@ -132,7 +133,6 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         std::unique_lock measurement_lock {measurement_mutex_};
 
         LOG(logger_, STATUS) << "Started measurement queue";
-        std::size_t run_sequence = 0;
         queue_running_ = true;
 
         // Loop until either a stop is requested or we run out of measurements:
@@ -156,8 +156,11 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
             // Start the measurement for all satellites
             LOG(logger_, INFO) << "Starting satellites";
-            const auto reply_start =
-                controller_.sendCommands("start", run_identifier_prefix_ + std::to_string(run_sequence));
+            auto run_identifier = run_identifier_prefix_ + std::to_string(run_sequence_);
+            if(interrupt_counter_ > 0) {
+                run_identifier += "_retry_" + std::to_string(interrupt_counter_);
+            }
+            const auto reply_start = controller_.sendCommands("start", run_identifier);
             check_replies(reply_start);
 
             // Wait for RUN state across all
@@ -178,11 +181,12 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
 
-            // Successfully concluded this measurement, pop it:
             measurement_lock.lock();
+            // Successfully concluded this measurement, pop it - skip if interrupted
             if(queue_running_) {
                 measurements_.pop();
-                run_sequence++;
+                run_sequence_++;
+                interrupt_counter_ = 0;
             }
         }
     } catch(const std::exception& error) {
