@@ -10,15 +10,20 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
+#include <cstddef>
 #include <map>
 #include <mutex>
 #include <queue>
+#include <stop_token>
+#include <thread>
+#include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::controller {
 
@@ -81,7 +86,9 @@ namespace constellation::controller {
          *
          * @return Progress of the queue
          */
-        double progress() { return static_cast<double>(size_at_start_ - measurements_.size()) / size_at_start_; }
+        double progress() {
+            return static_cast<double>(size_at_start_ - measurements_.size()) / static_cast<double>(size_at_start_);
+        }
 
         /**
          * @brief Start the measurement queue
@@ -134,7 +141,7 @@ namespace constellation::controller {
         std::atomic<std::size_t> interrupt_counter_ {0};
 
         /** Number of queue elements at the start of the measurements */
-        std::size_t size_at_start_;
+        std::size_t size_at_start_ {0};
 
         /** Controller to use for the measurements */
         Controller& controller_;
