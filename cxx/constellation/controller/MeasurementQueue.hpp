@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <map>
 #include <queue>
 
@@ -105,6 +106,7 @@ namespace constellation::controller {
 
         /** Queue thread */
         std::jthread queue_thread_;
+        std::atomic_bool queue_running_ {false};
     };
 
 } // namespace constellation::controller
