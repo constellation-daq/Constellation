@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <mutex>
 #include <thread>
 
 #include "constellation/controller/exceptions.hpp"
@@ -38,8 +39,7 @@ MeasurementQueue::~MeasurementQueue() {
 }
 
 void MeasurementQueue::append(Measurement measurement) {
-    // FIXME lock queue
-
+    const std::lock_guard measurement_lock {measurement_mutex_};
     measurements_.push(std::move(measurement));
     size_at_start_++;
 }
@@ -67,7 +67,7 @@ void MeasurementQueue::start() {
         queue_thread_.join();
     }
 
-    // FIXME lock queue
+    const std::lock_guard measurement_lock {measurement_mutex_};
     size_at_start_ = measurements_.size();
     queue_thread_ = std::jthread(std::bind_front(&MeasurementQueue::queue_loop, this));
 }
@@ -129,7 +129,8 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
 
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
     try {
-        // FIXME lock queue
+        std::unique_lock measurement_lock {measurement_mutex_};
+
         LOG(logger_, STATUS) << "Started measurement queue";
         std::size_t run_sequence = 0;
         queue_running_ = true;
@@ -138,10 +139,12 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         while(!stop_token.stop_requested() && !measurements_.empty()) {
             // Start a new measurement:
             const auto measurement = measurements_.front();
+            measurement_lock.unlock();
             LOG(logger_, STATUS) << "Starting new measurement from queue, " << measurement.size()
                                  << " satellite configurations";
 
-            // FIXME ensure state ORBIT
+            // Wait for ORBIT state across all
+            await_state(CSCP::State::ORBIT);
 
             // Update constellation - satellites without payload will not receive the command
             LOG(logger_, INFO) << "Reconfiguring satellites";
@@ -176,6 +179,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             await_state(CSCP::State::ORBIT);
 
             // Successfully concluded this measurement, pop it:
+            measurement_lock.lock();
             if(queue_running_) {
                 measurements_.pop();
                 run_sequence++;

@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <map>
+#include <mutex>
 #include <queue>
 
 #include "constellation/build.hpp"
@@ -49,10 +50,23 @@ namespace constellation::controller {
         MeasurementQueue& operator=(MeasurementQueue&& other) = delete;
         /// @endcond
 
+        /**
+         * @brief Append a new measurement
+         *
+         * @param measurement Measurement to be added to the queue
+         */
         void append(Measurement measurement);
 
-        bool running() const { return queue_thread_.joinable(); }
+        /**
+         * @brief Helper to check if the queue is running
+         * @return True if running, false otherwise
+         */
+        bool running() const { return queue_running_.load(); }
 
+        /**
+         * @brief Get number of remaining measurements
+         * @return Remaining measurement queue length
+         */
         std::size_t size() { return measurements_.size(); }
 
         /**
@@ -83,10 +97,22 @@ namespace constellation::controller {
         void interrupt();
 
     private:
+        /** Queue loop, iterates over all measurements */
         void queue_loop(const std::stop_token& stop_token);
 
+        /**
+         * @brief Helper to wait for a global state in the constellation. Times out after the configured transition_timeout_
+         *
+         * @param state State to wait for
+         */
         void await_state(protocol::CSCP::State state) const;
 
+        /**
+         * @brief Checks all satellite replies for success verbs.
+         * @throws If a satellite did not respond with success
+         *
+         * @param replies Map of replies from the satellites
+         */
         void check_replies(const std::map<std::string, message::CSCP1Message>& replies) const;
 
     private:
@@ -98,6 +124,7 @@ namespace constellation::controller {
 
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
+        std::mutex measurement_mutex_;
 
         /** Number of queue elements at the start of the measurements */
         std::size_t size_at_start_;
