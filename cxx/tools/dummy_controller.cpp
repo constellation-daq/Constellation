@@ -60,6 +60,7 @@ namespace {
 
         LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
         Controller controller {name};
+        controller.start();
 
         while(true) {
             // Flush logger before printing to cout
@@ -106,6 +107,8 @@ namespace {
                 }
             }
         }
+
+        controller.stop();
     }
 } // namespace
 
