@@ -71,4 +71,20 @@ namespace constellation::controller {
             error_message_ += error;
         }
     };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error from a measurement queue
+     */
+    class CNSTLN_API QueueError : public ControllerError {
+    public:
+        /**
+         * @brief Construct an error for a measurement queue
+         * @param error Error message from the queue
+         */
+        explicit QueueError(std::string_view error) {
+            error_message_ = "Measurement queue error: ";
+            error_message_ += error;
+        }
+    };
 } // namespace constellation::controller

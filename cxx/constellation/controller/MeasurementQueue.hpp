@@ -9,11 +9,13 @@
 
 #pragma once
 
+#include <map>
 #include <queue>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/log/Logger.hpp"
 
 namespace constellation::controller {
 
@@ -22,12 +24,15 @@ namespace constellation::controller {
      */
     class CNSTLN_API MeasurementQueue {
     public:
-        using Measurement = std::map<std::string, constellation::config::Dictionary>;
+        /** Measurement is a map with satellite canonical names as keys and configuration dictionaries as values */
+        using Measurement = std::map<std::string, Controller::CommandPayload>;
 
         /**
          * @brief Construct a measurement queue
+         *
+         * @param controller Reference to the controller object to be used
          */
-        MeasurementQueue(Controller& controller) : controller_(controller) {};
+        MeasurementQueue(Controller& controller) : logger_("QUEUE"), controller_(controller) {};
 
         /**
          * @brief Destruct the measurement queue
@@ -42,9 +47,9 @@ namespace constellation::controller {
         MeasurementQueue& operator=(MeasurementQueue&& other) = delete;
         /// @endcond
 
-        void appendMeasurement(Measurement measurement) { measurements_.push(std::move(measurement)); }
+        void append(Measurement measurement);
 
-        Measurement currentMeasurement() { return measurements_.front(); }
+        bool running() const { return queue_thread_.joinable(); }
 
         std::size_t size() { return measurements_.size(); }
 
@@ -58,13 +63,30 @@ namespace constellation::controller {
          */
         double progress() { return static_cast<double>(size_at_start_ - measurements_.size()) / size_at_start_; }
 
+        /**
+         * @brief Start the measurement queue
+         *
+         * @note Requires the constellation to be in global state ORBIT
+         */
         void start();
 
+        /**
+         * @brief Halt the measurement queue after the current measurement has concluded
+         */
         void halt();
 
+        /**
+         * @brief Interrupt the current measurement and halt the queue
+         */
         void interrupt();
 
     private:
+        void queue_loop(const std::stop_token& stop_token);
+
+    private:
+        /** Logger to use */
+        log::Logger logger_;
+
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
 
@@ -73,6 +95,9 @@ namespace constellation::controller {
 
         /** Controller to use for the measurements */
         Controller& controller_;
+
+        /** Queue thread */
+        std::jthread queue_thread_;
     };
 
 } // namespace constellation::controller
