@@ -9,15 +9,20 @@
 
 #include "MeasurementQueue.hpp"
 
+#include <algorithm>
+#include <chrono>
 #include <thread>
 
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::message;
 using namespace constellation::protocol;
+using namespace std::chrono_literals;
 
 MeasurementQueue::~MeasurementQueue() {
     // Interrupt the queue if one was running:
@@ -85,9 +90,23 @@ void MeasurementQueue::interrupt() {
     queue_thread_.join();
 }
 
+void MeasurementQueue::await_state(CSCP::State) const {}
+
+bool MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
+    return std::ranges::all_of(replies.cbegin(), replies.cend(), [&](const auto& reply) {
+        const auto verb = reply.second.getVerb();
+        const auto success = (verb.first == CSCP1Message::Type::SUCCESS);
+        if(!success) {
+            LOG(logger_, WARNING) << "Satellite " << reply.first << " replied with " << verb.first << ": " << verb.second;
+        }
+        return success;
+    });
+}
+
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
     // FIXME lock queue
     LOG(logger_, STATUS) << "Started measurement queue";
+    std::size_t run_sequence = 0;
 
     // Loop until either a stop is requested or we run out of measurements:
     while(!stop_token.stop_requested() && !measurements_.empty()) {
@@ -100,22 +119,24 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         // Update constellation - satellites without payload will not receive the command
         LOG(logger_, INFO) << "Reconfiguring satellites";
         const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
-
-        // Check all responses, abort if something is fishy
+        check_replies(reply_reconf);
 
         // Wait for ORBIT state across all
 
         // Start the measurement for all satellites
         LOG(logger_, INFO) << "Starting satellites";
-        const auto reply_start = controller_.sendCommands("start");
+        const auto reply_start = controller_.sendCommands("start", run_identifier_prefix_ + std::to_string(run_sequence));
+        check_replies(reply_start);
 
         // Wait for RUN state across all
 
         // Wait for condition to be come true
+        std::this_thread::sleep_for(5s);
 
         // Stop the constellation
         LOG(logger_, INFO) << "Stopping satellites";
         const auto reply_stop = controller_.sendCommands("stop");
+        check_replies(reply_stop);
 
         // Wait for ORBIT state across all
 

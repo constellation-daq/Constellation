@@ -16,6 +16,7 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
+#include "constellation/core/message/CSCP1Message.hpp"
 
 namespace constellation::controller {
 
@@ -83,9 +84,15 @@ namespace constellation::controller {
     private:
         void queue_loop(const std::stop_token& stop_token);
 
+        void await_state(protocol::CSCP::State state) const;
+
+        bool check_replies(const std::map<std::string, message::CSCP1Message>& replies) const;
+
     private:
         /** Logger to use */
         log::Logger logger_;
+
+        std::string run_identifier_prefix_ {"queue_run_"};
 
         /** Queue of measurements */
         std::queue<Measurement> measurements_;
