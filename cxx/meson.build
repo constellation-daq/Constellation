@@ -14,6 +14,9 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1', '-DASIO_HAS_SNPRINTF=1'],
 )
 
+# atomic_queue
+atomic_queue_dep = dependency('atomic_queue', default_options: ['tests=false'])
+
 # ZeroMQ with draft API
 libzmq_sys_has_draft_api_poller = false
 # Check system libzmq (we cannot use dependency since we would have to overwrite it)

@@ -7,6 +7,7 @@
 # Framework dependencies
 /argparse-*/
 /asio-*/
+/atomic_queue-*/
 /Catch2-*/
 /cppzmq-*/
 /fmt-*/
