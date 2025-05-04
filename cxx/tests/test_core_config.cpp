@@ -178,10 +178,9 @@ TEST_CASE("Handle monostate", "[core][core::config]") {
     REQUIRE(config.get<std::monostate>("monostate") == std::monostate {});
     REQUIRE(config.get<std::vector<double>>("monostate").empty());
 
-    REQUIRE_THROWS_AS(config.get<double>("monostate"), InvalidTypeError);
     REQUIRE_THROWS_MATCHES(config.get<double>("monostate"),
                            InvalidTypeError,
-                           Message("Could not convert value of type 'std::monostate' to type 'double' for key 'monostate'"));
+                           Message("Could not convert value of type `std::monostate` to type `double` for key `monostate`"));
 
     REQUIRE(config.getText("monostate") == "NIL");
 }
@@ -206,10 +205,10 @@ TEST_CASE("Set & Get Path Values", "[core][core::config]") {
     REQUIRE_THROWS_AS(config.getPathWithExtension("path", "ini", true), InvalidValueError);
 
     // Read path with check for existence
-    REQUIRE_THROWS_AS(config.getPath("path", true), InvalidValueError);
-    REQUIRE_THROWS_MATCHES(config.getPath("path", true),
-                           InvalidValueError,
-                           Message("Value /tmp/somefile.txt of key 'path' is not valid: path /tmp/somefile.txt not found"));
+    REQUIRE_THROWS_MATCHES(
+        config.getPath("path", true),
+        InvalidValueError,
+        Message("Value `/tmp/somefile.txt` of key `path` is not valid: path /tmp/somefile.txt not found"));
 
     // Read relative path
     auto relpath = config.getPath("relpath");
@@ -220,10 +219,11 @@ TEST_CASE("Set & Get Path Values", "[core][core::config]") {
             std::vector<std::filesystem::path>({"/tmp/somefile.txt", "/tmp/someotherfile.txt"}));
 
     // Read path array with check for existence
-    REQUIRE_THROWS_MATCHES(config.getPathArray("patharray", true),
-                           InvalidValueError,
-                           Message("Value [/tmp/somefile.txt, /tmp/someotherfile.txt] of key 'patharray' is not valid: path "
-                                   "/tmp/somefile.txt not found"));
+    REQUIRE_THROWS_MATCHES(
+        config.getPathArray("patharray", true),
+        InvalidValueError,
+        Message("Value `[/tmp/somefile.txt, /tmp/someotherfile.txt]` of key `patharray` is not valid: path "
+                "/tmp/somefile.txt not found"));
 
     // Attempt to read value that is not a string:
     REQUIRE_THROWS_AS(config.getPathArray("tisnotapatharray"), InvalidTypeError);
@@ -315,7 +315,6 @@ TEST_CASE("Count Key Appearances", "[core][core::config]") {
     REQUIRE(config.count({"bool", "notbool"}) == 1);
     REQUIRE(config.count({"bool", "int64"}) == 2);
 
-    REQUIRE_THROWS_AS(config.count({}), std::invalid_argument);
     REQUIRE_THROWS_MATCHES(config.count({}), std::invalid_argument, Message("list of keys cannot be empty"));
 }
 
@@ -444,19 +443,16 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
     Configuration config {};
 
     // Check for invalid key to be detected
-    REQUIRE_THROWS_AS(config.get<bool>("invalidkey"), MissingKeyError);
-    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key 'invalidkey' does not exist"));
+    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
 
     // Check for invalid key to be detected when querying text representation
-    REQUIRE_THROWS_AS(config.getText("invalidkey"), MissingKeyError);
-    REQUIRE_THROWS_MATCHES(config.getText("invalidkey"), MissingKeyError, Message("Key 'invalidkey' does not exist"));
+    REQUIRE_THROWS_MATCHES(config.getText("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
 
     // Check for invalid type conversion
     config.set("key", true);
-    REQUIRE_THROWS_AS(config.get<double>("key"), InvalidTypeError);
     REQUIRE_THROWS_MATCHES(config.get<double>("key"),
                            InvalidTypeError,
-                           Message("Could not convert value of type 'bool' to type 'double' for key 'key'"));
+                           Message("Could not convert value of type `bool` to type `double` for key `key`"));
 
     // Check for invalid enum value conversion:
     enum MyEnum : std::uint8_t {
@@ -464,10 +460,9 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
         TWO,
     };
     config.set("myenum", "THREE");
-    REQUIRE_THROWS_AS(config.get<MyEnum>("myenum"), InvalidValueError);
     REQUIRE_THROWS_MATCHES(config.get<MyEnum>("myenum"),
                            InvalidValueError,
-                           Message("Value THREE of key 'myenum' is not valid: possible values are ONE, TWO"));
+                           Message("Value `THREE` of key `myenum` is not valid: possible values are ONE, TWO"));
 
     // Check for setting of invalid types
     REQUIRE_THROWS_AS(config.set("key", std::array<int, 5> {1, 2, 3, 4, 5}), InvalidTypeError);
@@ -486,7 +481,7 @@ TEST_CASE("Value Overflow & Invalid Conversions", "[core][core::config]") {
     config.set<std::string>("key1", "C");
     REQUIRE_THROWS_MATCHES(config.get<Enum>("key1"),
                            InvalidValueError,
-                           Message("Value C of key 'key1' is not valid: possible values are A, B"));
+                           Message("Value `C` of key `key1` is not valid: possible values are A, B"));
 }
 
 TEST_CASE("Update Configuration", "[core][core::config]") {
