@@ -128,11 +128,20 @@ void MeasurementQueue::await_state(CSCP::State state) const {
     }
 }
 
-void MeasurementQueue::await_condition(Condition /*condition*/) const {
-    auto timer = TimeoutTimer(5s);
-    timer.reset();
-    while(queue_running_ && !timer.timeoutReached()) {
-        std::this_thread::sleep_for(100ms);
+void MeasurementQueue::await_condition(Condition condition) const {
+    if(std::holds_alternative<std::chrono::seconds>(condition)) {
+        // Timed condition, start timer and wait for timeout
+        const auto duration = std::get<std::chrono::seconds>(condition);
+        LOG(logger_, DEBUG) << "Starting condition timer with " << duration;
+        auto timer = TimeoutTimer(duration);
+        timer.reset();
+        while(queue_running_ && !timer.timeoutReached()) {
+            std::this_thread::sleep_for(100ms);
+        }
+    } else if(std::holds_alternative<std::tuple<std::string, std::string, config::Value>>(condition)) {
+        const auto [remote, metric, value] = std::get<std::tuple<std::string, std::string, config::Value>>(condition);
+        LOG(logger_, DEBUG) << "Running until " << remote << " reports " << metric << " >= " << value.str();
+        // FIXME StatListener to subscribe to metric, wait for value
     }
 }
 

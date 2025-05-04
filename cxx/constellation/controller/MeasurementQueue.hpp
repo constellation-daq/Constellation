@@ -18,10 +18,13 @@
 #include <queue>
 #include <stop_token>
 #include <thread>
+#include <tuple>
 #include <utility>
+#include <variant>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -36,11 +39,13 @@ namespace constellation::controller {
         /** Measurement is a map with satellite canonical names as keys and configuration dictionaries as values */
         using Measurement = std::map<std::string, Controller::CommandPayload>;
 
-        enum class Condition : std::uint8_t {
-            TIMED,
-            METRIC,
-            AUTONOMOUS,
-        };
+        /**
+         * We have
+         * * timed measurement: provide a duration in seconds
+         * * metrics-based measurement: provide remote, metric name and metric value
+         * (* autonomous: provide remote to check for stopped)
+         */
+        using Condition = std::variant<std::chrono::seconds, std::tuple<std::string, std::string, config::Value>>;
 
         /**
          * @brief Construct a measurement queue
