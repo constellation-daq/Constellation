@@ -11,17 +11,14 @@
 
 #include <functional>
 #include <iomanip>
-#include <map>
-#include <optional>
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <vector>
 
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/utils/std_future.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/listener/StatListener.hpp"
 
 #include "CMDPListener.hpp"
@@ -68,19 +65,19 @@ std::set<std::string> StatListener::getMetricSubscriptions() {
     return metric_subscriptions;
 }
 
-void StatListener::subscribeExtaMetric(const std::string& host, const std::string& metric) {
+void StatListener::subscribeMetric(const std::string& host, const std::string& metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << std::quoted(metric) << " for host "
                                         << host;
     CMDPListener::subscribeExtraTopic(host, "STAT/" + metric);
 }
 
-void StatListener::unsubscribeExtraMetric(const std::string& host, const std::string& metric) {
+void StatListener::unsubscribeMetric(const std::string& host, const std::string& metric) {
     LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << std::quoted(metric) << " for host "
                                         << host;
     CMDPListener::unsubscribeExtraTopic(host, "STAT/" + metric);
 }
 
-std::set<std::string> StatListener::getExtraMetricSubscriptions(const std::string& host) {
+std::set<std::string> StatListener::getMetricSubscriptions(const std::string& host) {
     std::set<std::string> metric_subscriptions {};
     for(const std::string_view topic : CMDPListener::getExtraTopicSubscriptions(host)) {
         metric_subscriptions.emplace(demangle_topic(topic));

@@ -9,16 +9,12 @@
 
 #pragma once
 
-#include <atomic>
 #include <functional>
-#include <map>
+#include <set>
 #include <string>
 #include <string_view>
-#include <utility>
-#include <vector>
 
 #include "constellation/build.hpp"
-#include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/listener/CMDPListener.hpp"
 
@@ -35,7 +31,7 @@ namespace constellation::listener {
         CNSTLN_API StatListener(std::string_view log_topic, std::function<void(message::CMDP1StatMessage&&)> callback);
 
         /**
-         * @brief Subscribe to a specific metric
+         * @brief Subscribe to a specific metric from all connected hosts
          *
          * This subscribes to `STAT/<metric>`
          *
@@ -44,7 +40,7 @@ namespace constellation::listener {
         CNSTLN_API void subscribeMetric(const std::string& metric);
 
         /**
-         * @brief Unsubscribe from a specific metric
+         * @brief Unsubscribe from a specific metric from all connected hosts
          *
          * @param metric Telemetry topic to unsubscribe from
          */
@@ -65,7 +61,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host
          * @param metric Telemetry topic to subscribe to
          */
-        CNSTLN_API void subscribeExtaMetric(const std::string& host, const std::string& metric);
+        CNSTLN_API void subscribeMetric(const std::string& host, const std::string& metric);
 
         /**
          * @brief Unsubscribe from an extra telemetry topic for a specific host
@@ -73,14 +69,14 @@ namespace constellation::listener {
          * @param host Canonical name of the host
          * @param metric Telemetry topic to subscribe to
          */
-        CNSTLN_API void unsubscribeExtraMetric(const std::string& host, const std::string& metric);
+        CNSTLN_API void unsubscribeMetric(const std::string& host, const std::string& metric);
 
         /**
          * @brief Get subscribed extra metrics for a specific host
          *
          * @return Set with telemetry topics
          */
-        CNSTLN_API std::set<std::string> getExtraMetricSubscriptions(const std::string& host);
+        CNSTLN_API std::set<std::string> getMetricSubscriptions(const std::string& host);
 
     private:
         CNSTLN_LOCAL static std::string_view demangle_topic(std::string_view topic);
