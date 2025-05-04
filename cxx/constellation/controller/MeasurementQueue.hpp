@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <stop_token>
 #include <thread>
@@ -35,16 +36,26 @@ namespace constellation::controller {
         /** Measurement is a map with satellite canonical names as keys and configuration dictionaries as values */
         using Measurement = std::map<std::string, Controller::CommandPayload>;
 
+        enum class Condition : std::uint8_t {
+            TIMED,
+            METRIC,
+            AUTONOMOUS,
+        };
+
         /**
          * @brief Construct a measurement queue
          *
          * @param controller Reference to the controller object to be used
          * @param prefix Prefix for the run identifier
+         * @param condition Condition for run stop in case no per-measurement condition is defined
          * @param timeout Transition timeout after which the queue will be interrupted if the target state was not reached
          */
-        MeasurementQueue(Controller& controller, std::string prefix, std::chrono::seconds timeout = std::chrono::seconds(60))
-            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), transition_timeout_(timeout),
-              controller_(controller) {};
+        MeasurementQueue(Controller& controller,
+                         std::string prefix,
+                         Condition condition,
+                         std::chrono::seconds timeout = std::chrono::seconds(60))
+            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(condition),
+              transition_timeout_(timeout), controller_(controller) {};
 
         /**
          * @brief Destruct the measurement queue
@@ -64,7 +75,7 @@ namespace constellation::controller {
          *
          * @param measurement Measurement to be added to the queue
          */
-        void append(Measurement measurement);
+        void append(Measurement measurement, std::optional<Condition> condition = {});
 
         /**
          * @brief Helper to check if the queue is running
@@ -119,6 +130,13 @@ namespace constellation::controller {
         void await_state(protocol::CSCP::State state) const;
 
         /**
+         * @brief Helper to wait for condition of the measurement to become true
+         *
+         * @param condition Condition to wait for
+         */
+        void await_condition(Condition condition) const;
+
+        /**
          * @brief Checks all satellite replies for success verbs.
          * @throws If a satellite did not respond with success
          *
@@ -131,10 +149,11 @@ namespace constellation::controller {
         log::Logger logger_;
 
         std::string run_identifier_prefix_;
+        Condition default_condition_;
         std::chrono::seconds transition_timeout_;
 
         /** Queue of measurements */
-        std::queue<Measurement> measurements_;
+        std::queue<std::pair<Measurement, std::optional<Condition>>> measurements_;
         std::mutex measurement_mutex_;
         std::atomic<std::size_t> run_sequence_ {0};
         /** Interrupt counter to append to run identifier for re-tries */

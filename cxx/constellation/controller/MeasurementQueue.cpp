@@ -15,6 +15,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -44,9 +45,9 @@ MeasurementQueue::~MeasurementQueue() {
     }
 }
 
-void MeasurementQueue::append(Measurement measurement) {
+void MeasurementQueue::append(Measurement measurement, std::optional<Condition> condition) {
     const std::lock_guard measurement_lock {measurement_mutex_};
-    measurements_.push(std::move(measurement));
+    measurements_.emplace(std::move(measurement), condition);
     size_at_start_++;
 }
 
@@ -119,6 +120,14 @@ void MeasurementQueue::await_state(CSCP::State state) const {
     }
 }
 
+void MeasurementQueue::await_condition(Condition /*condition*/) const {
+    auto timer = TimeoutTimer(5s);
+    timer.reset();
+    while(queue_running_ && !timer.timeoutReached()) {
+        std::this_thread::sleep_for(100ms);
+    }
+}
+
 void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
     const auto success = std::ranges::all_of(replies.cbegin(), replies.cend(), [&](const auto& reply) {
         const auto verb = reply.second.getVerb();
@@ -144,7 +153,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
             // Start a new measurement:
-            const auto measurement = measurements_.front();
+            const auto [measurement, condition] = measurements_.front();
             measurement_lock.unlock();
             LOG(logger_, STATUS) << "Starting new measurement from queue, " << measurement.size()
                                  << " satellite configurations";
@@ -173,11 +182,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             await_state(CSCP::State::RUN);
 
             // Wait for condition to be come true
-            auto timer = TimeoutTimer(5s);
-            timer.reset();
-            while(queue_running_ && !timer.timeoutReached()) {
-                std::this_thread::sleep_for(100ms);
-            }
+            await_condition(condition.value_or(default_condition_));
 
             // Stop the constellation
             LOG(logger_, INFO) << "Stopping satellites";
