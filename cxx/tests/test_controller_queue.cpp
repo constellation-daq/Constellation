@@ -5,26 +5,20 @@
  */
 
 #include <chrono>
-#include <cstddef>
-#include <cstdint>
 #include <map>
 #include <string>
 #include <thread>
-#include <tuple>
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/MeasurementQueue.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/FSM.hpp"
 
@@ -32,7 +26,6 @@
 #include "dummy_controller.hpp"
 #include "dummy_satellite.hpp"
 
-using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;

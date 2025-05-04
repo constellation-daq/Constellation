@@ -19,9 +19,12 @@
 #include <stop_token>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <utility>
+#include <variant>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -47,7 +50,7 @@ MeasurementQueue::~MeasurementQueue() {
 
 void MeasurementQueue::append(Measurement measurement, std::optional<Condition> condition) {
     const std::lock_guard measurement_lock {measurement_mutex_};
-    measurements_.emplace(std::move(measurement), condition);
+    measurements_.emplace(std::move(measurement), std::move(condition));
     measurements_size_++;
 }
 
@@ -55,7 +58,7 @@ double MeasurementQueue::progress() const {
     if(measurements_size_ == 0 && run_sequence_ == 0) {
         return 0.;
     }
-    return 1. - static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_);
+    return 1. - (static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_));
 }
 
 void MeasurementQueue::start() {

@@ -60,7 +60,7 @@ namespace constellation::controller {
                          std::string prefix,
                          Condition condition,
                          std::chrono::seconds timeout = std::chrono::seconds(60))
-            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(condition),
+            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
               transition_timeout_(timeout), controller_(controller) {};
 
         /**
@@ -80,6 +80,8 @@ namespace constellation::controller {
          * @brief Append a new measurement
          *
          * @param measurement Measurement to be added to the queue
+         * @param condition Optional condition for this specific measurement. If not provided, the queue's default condition
+         *                  is used.
          */
         void append(Measurement measurement, std::optional<Condition> condition = {});
 
