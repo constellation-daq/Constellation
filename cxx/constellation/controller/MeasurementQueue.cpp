@@ -52,6 +52,9 @@ void MeasurementQueue::append(Measurement measurement, std::optional<Condition> 
 }
 
 double MeasurementQueue::progress() const {
+    if(measurements_size_ == 0 && run_sequence_ == 0) {
+        return 0.;
+    }
     return 1. - static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_);
 }
 

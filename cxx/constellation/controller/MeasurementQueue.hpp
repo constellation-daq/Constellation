@@ -17,6 +17,7 @@
 #include <optional>
 #include <queue>
 #include <stop_token>
+#include <string>
 #include <thread>
 #include <tuple>
 #include <utility>
