@@ -194,3 +194,12 @@ test('Listener LogListener test', test_listener_log,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   is_parallel: false,
 )
+
+test_listener_stat = executable('test_listener_stat',
+  sources: 'test_listener_stat.cpp',
+  dependencies: [core_dep, listener_dep, cppzmq_dep, catch2_dep],
+)
+test('Listener StatListener test', test_listener_stat,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
