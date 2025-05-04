@@ -549,6 +549,11 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
                 if(transform(remote, ::tolower) == transform(getCanonicalName(), ::tolower)) {
                     throw InvalidValueError(config, key, "Satellite cannot depend on itself");
                 }
+
+                if(!CSCP::is_valid_canonical_name(remote)) {
+                    throw InvalidValueError(config, key, "Not a valid canonical name");
+                }
+
                 fsm_.registerRemoteCondition(remote, state);
             };
 
