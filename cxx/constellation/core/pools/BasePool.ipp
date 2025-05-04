@@ -11,6 +11,7 @@
 
 #include "BasePool.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <algorithm>
 #include <any>
 #include <exception>
 #include <functional>
@@ -113,32 +114,11 @@ namespace constellation::pools {
             zmq::socket_t socket {*networking::global_zmq_context(), SOCKET_TYPE};
             socket.connect(service.to_uri());
 
-            /**
-             * This lambda is passed to the ZMQ active_poller_t to be called when a socket has a incoming message
-             * pending. Since this is set per-socket, we can pass a reference to the currently registered socket to the
-             * lambda and then directly access the socket, read the ZMQ message and pass it to the message callback.
-             */
-            const zmq::active_poller_t::handler_type handler = [this, sock = zmq::socket_ref(socket)](zmq::event_flags ef) {
-                // Check if flags indicate the correct ZMQ event (pollin, incoming message):
-                if((ef & zmq::event_flags::pollin) != zmq::event_flags::none) {
-                    zmq::multipart_t zmq_msg {};
-                    auto received = zmq_msg.recv(sock);
-                    if(received) {
-                        try {
-                            message_callback_(MESSAGE::disassemble(zmq_msg));
-                        } catch(const message::MessageDecodingError& error) {
-                            LOG(pool_logger_, WARNING) << error.what();
-                        } catch(const message::IncorrectMessageType& error) {
-                            LOG(pool_logger_, WARNING) << error.what();
-                        }
-                    }
-                }
-            };
-
             // Register the socket with the poller
-            poller_.add(socket, zmq::event_flags::pollin, handler);
+            poller_.add(socket, zmq::event_flags::pollin);
             sockets_.emplace(service, std::move(socket));
             socket_count_.store(sockets_.size());
+            poller_events_.resize(sockets_.size());
             LOG(pool_logger_, DEBUG) << "Connected to " << service.to_uri();
 
             // Call connected callback
@@ -175,6 +155,7 @@ namespace constellation::pools {
         }
         sockets_.clear();
         socket_count_.store(sockets_.size());
+        poller_events_.resize(sockets_.size());
 
         // Call disconnected callback for every host
         sockets_lock.unlock();
@@ -205,6 +186,7 @@ namespace constellation::pools {
 
             sockets_.erase(socket_it);
             socket_count_.store(sockets_.size());
+            poller_events_.resize(sockets_.size());
             LOG(pool_logger_, DEBUG) << "Disconnected from " << service.to_uri();
 
             // Call disconnected callback
@@ -272,24 +254,41 @@ namespace constellation::pools {
             while(!stop_token.stop_requested()) {
                 using namespace std::chrono_literals;
 
-                // FIXME something here gets optimized away which leads to a deadlock. Adding even a 1ns wait fixes it:
-                std::this_thread::sleep_for(1ns);
-
                 // The poller doesn't work if no socket registered
                 if(socket_count_.load() == 0) {
+                    poller_event_count_.store(0);
                     std::this_thread::sleep_for(50ms);
                     continue;
                 }
 
-                const std::lock_guard lock {sockets_mutex_};
+                // The poller returns immediately when a socket received something, but will time out after the set period
+                std::unique_lock lock {sockets_mutex_};
+                const auto poller_event_count = poller_.wait_all(poller_events_, 1ms);
+                lock.unlock();
+                poller_event_count_.store(poller_event_count);
 
-                try {
-                    // The poller returns immediately when a socket received something, but will time out after the set
-                    // period:
-                    poller_events_.store(poller_.wait(50ms));
-                } catch(const zmq::error_t& error) {
-                    throw networking::NetworkError(error.what());
+                // If no events, wait here instead of in wait_all to avoid holding the lock
+                if(poller_event_count == 0) {
+                    std::this_thread::sleep_for(50ms);
+                    continue;
                 }
+
+                // Handle messages
+                std::for_each(poller_events_.begin(),
+                              poller_events_.begin() + static_cast<ptrdiff_t>(poller_event_count),
+                              [this](auto& event) {
+                                  zmq::multipart_t zmq_msg {};
+                                  const auto received = zmq_msg.recv(event.socket);
+                                  if(received) [[likely]] {
+                                      try {
+                                          message_callback_(MESSAGE::disassemble(zmq_msg));
+                                      } catch(const message::MessageDecodingError& error) {
+                                          LOG(pool_logger_, WARNING) << error.what();
+                                      } catch(const message::IncorrectMessageType& error) {
+                                          LOG(pool_logger_, WARNING) << error.what();
+                                      }
+                                  }
+                              });
             }
         } catch(const std::exception& error) {
             LOG(pool_logger_, CRITICAL) << "Caught exception in pool thread: " << error.what();
