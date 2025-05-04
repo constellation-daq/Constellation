@@ -251,6 +251,8 @@ namespace constellation::pools {
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::loop(const std::stop_token& stop_token) {
         try {
+            std::vector<zmq::multipart_t> polled_messages {};
+
             while(!stop_token.stop_requested()) {
                 using namespace std::chrono_literals;
 
@@ -261,34 +263,45 @@ namespace constellation::pools {
                     continue;
                 }
 
-                // The poller returns immediately when a socket received something, but will time out after the set period
                 std::unique_lock lock {sockets_mutex_};
+
+                // The poller returns immediately when a socket received something, but will time out after the set period
                 const auto poller_event_count = poller_.wait_all(poller_events_, 1ms);
-                lock.unlock();
                 poller_event_count_.store(poller_event_count);
 
                 // If no events, wait here instead of in wait_all to avoid holding the lock
                 if(poller_event_count == 0) {
+                    lock.unlock();
                     std::this_thread::sleep_for(50ms);
                     continue;
                 }
 
-                // Handle messages
+                // Receive messages from socket
                 std::for_each(poller_events_.begin(),
                               poller_events_.begin() + static_cast<ptrdiff_t>(poller_event_count),
-                              [this](auto& event) {
+                              [&polled_messages](auto& event) {
+                                  // Receive multipart message
                                   zmq::multipart_t zmq_msg {};
                                   const auto received = zmq_msg.recv(event.socket);
                                   if(received) [[likely]] {
-                                      try {
-                                          message_callback_(MESSAGE::disassemble(zmq_msg));
-                                      } catch(const message::MessageDecodingError& error) {
-                                          LOG(pool_logger_, WARNING) << error.what();
-                                      } catch(const message::IncorrectMessageType& error) {
-                                          LOG(pool_logger_, WARNING) << error.what();
-                                      }
+                                      polled_messages.emplace_back(std::move(zmq_msg));
                                   }
                               });
+
+                // We don't need access to the sockets anymore, release lock
+                lock.unlock();
+
+                // Call callbacks for the polled messages
+                std::ranges::for_each(polled_messages, [this](auto& zmq_msg) {
+                    try {
+                        message_callback_(MESSAGE::disassemble(zmq_msg));
+                    } catch(const message::MessageDecodingError& error) {
+                        LOG(pool_logger_, WARNING) << error.what();
+                    } catch(const message::IncorrectMessageType& error) {
+                        LOG(pool_logger_, WARNING) << error.what();
+                    }
+                });
+                polled_messages.clear();
             }
         } catch(const std::exception& error) {
             LOG(pool_logger_, CRITICAL) << "Caught exception in pool thread: " << error.what();
