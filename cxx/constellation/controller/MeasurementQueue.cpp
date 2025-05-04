@@ -107,6 +107,10 @@ void MeasurementQueue::interrupt() {
     interrupt_counter_++;
 }
 
+void MeasurementQueue::queue_started() {};
+void MeasurementQueue::queue_stopped() {};
+void MeasurementQueue::queue_failed() {};
+
 void MeasurementQueue::await_state(CSCP::State state) const {
     auto timer = TimeoutTimer(transition_timeout_);
     timer.reset();
@@ -149,6 +153,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         LOG(logger_, STATUS) << "Started measurement queue";
         queue_running_ = true;
+        queue_started();
 
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
@@ -202,10 +207,13 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         }
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();
+        queue_failed();
     } catch(...) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread";
+        queue_failed();
     }
 
     LOG(logger_, STATUS) << "Queue ended";
     queue_running_ = false;
+    queue_stopped();
 }

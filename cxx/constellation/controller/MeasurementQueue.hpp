@@ -118,6 +118,22 @@ namespace constellation::controller {
          */
         void interrupt();
 
+    protected:
+        /**
+         * @brief Method called whenever a the queue started processing measurements
+         */
+        virtual void queue_started();
+
+        /**
+         * @brief Method called whenever a the queue stopped processing measurements
+         */
+        virtual void queue_stopped();
+
+        /**
+         * @brief Method called whenever a the queue failed or was interrupted
+         */
+        virtual void queue_failed();
+
     private:
         /** Queue loop, iterates over all measurements */
         void queue_loop(const std::stop_token& stop_token);
