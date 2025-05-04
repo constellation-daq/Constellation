@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/controller/MeasurementQueue.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 class DummyController : public constellation::controller::Controller {
@@ -70,4 +71,72 @@ private:
     std::atomic_size_t propagate_total_ {0};
     std::atomic_size_t propagate_position_ {0};
     std::atomic<constellation::controller::Controller::UpdateType> propagate_update_;
+};
+
+class DummyQueue : public constellation::controller::MeasurementQueue {
+public:
+    DummyQueue(DummyController& controller,
+               std::string prefix,
+               Condition condition,
+               std::chrono::seconds timeout = std::chrono::seconds(60))
+        : MeasurementQueue(controller, std::move(prefix), std::move(condition), timeout) {}
+
+    void queue_started() final { started_ = true; }
+
+    void queue_stopped() final { stopped_ = true; }
+
+    void queue_failed() final { failed_ = true; }
+
+    void progress_updated(double progress) final {
+        progress_updated_ = true;
+        progress_ = progress;
+    }
+
+    void waitStarted() {
+        using namespace std::chrono_literals;
+
+        // Wait for callback to trigger
+        while(!started_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        started_.store(false);
+    }
+
+    void waitStopped() {
+        using namespace std::chrono_literals;
+
+        // Wait for callback to trigger
+        while(!stopped_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        stopped_.store(false);
+    }
+
+    void waitFailed() {
+        using namespace std::chrono_literals;
+
+        // Wait for callback to trigger
+        while(!failed_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        failed_.store(false);
+    }
+
+    double waitProgress() {
+        using namespace std::chrono_literals;
+
+        // Wait for callback to trigger
+        while(!progress_updated_.load()) {
+            std::this_thread::sleep_for(50ms);
+        }
+        progress_updated_.store(false);
+        return progress_.load();
+    }
+
+private:
+    std::atomic_bool started_ {false};
+    std::atomic_bool stopped_ {false};
+    std::atomic_bool failed_ {false};
+    std::atomic_bool progress_updated_ {false};
+    std::atomic<double> progress_;
 };
