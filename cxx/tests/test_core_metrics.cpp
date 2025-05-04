@@ -53,6 +53,11 @@ public:
         // Metric manager updates subscriptions every 100ms, wait until processed time
         std::this_thread::sleep_for(150ms);
     }
+    void resetLastMessage() {
+        const std::lock_guard last_message_lock {last_message_mutex_};
+        last_message_.reset();
+        last_message_updated_.store(false);
+    }
     void waitNextMessage() {
         while(!last_message_updated_.load()) {
             std::this_thread::sleep_for(50ms);
@@ -151,11 +156,13 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_manager.registerMetric("STAT_T", "counts", MetricType::LAST_VALUE, "description");
 
     // Trigger metric with macro
+    metrics_receiver.resetLastMessage();
     STAT("STAT", 1);
     metrics_receiver.waitNextMessage();
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<int>() == 1);
 
     // Trigger metric with condition
+    metrics_receiver.resetLastMessage();
     STAT_IF("STAT_IF", 2, true);
     STAT_IF("STAT_IF", 3, false);
     metrics_receiver.waitNextMessage();
@@ -199,7 +206,6 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
     metrics_manager.registerTimedMetric("TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, []() { return 3.14; });
 
     // Receive metric
-    std::this_thread::sleep_for(50ms);
     metrics_receiver.waitNextMessage();
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == 3.14);
 
@@ -223,13 +229,13 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register timed metric
-    std::atomic_bool nullopt = false;
+    bool nullopt = false;
     std::mutex value_mutex;
     double value = std::numbers::phi;
     metrics_manager.registerTimedMetric(
         "TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, [&]() -> std::optional<double> {
             const std::lock_guard value_lock {value_mutex};
-            return nullopt.load() ? std::nullopt : std::optional(value);
+            return nullopt ? std::nullopt : std::optional(value);
         });
 
     // Receive metric, first time triggered immediately
@@ -237,24 +243,26 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
 
     // Disable sending and adjust value
-    nullopt.store(true);
     {
         const std::lock_guard value_lock {value_mutex};
+        nullopt = true;
         value = std::numbers::e;
     }
 
     // Ensure last received message is still at phi
-    std::this_thread::sleep_for(100ms);
+    metrics_receiver.resetLastMessage();
+    metrics_receiver.waitNextMessage();
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
 
     // Adjust value and enable sending again
     {
         const std::lock_guard value_lock {value_mutex};
         value = std::numbers::pi;
+        nullopt = false;
     }
-    nullopt.store(false);
 
     // Check value now at pi
+    metrics_receiver.resetLastMessage();
     metrics_receiver.waitNextMessage();
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::pi);
 
