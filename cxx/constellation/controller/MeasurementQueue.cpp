@@ -48,7 +48,11 @@ MeasurementQueue::~MeasurementQueue() {
 void MeasurementQueue::append(Measurement measurement, std::optional<Condition> condition) {
     const std::lock_guard measurement_lock {measurement_mutex_};
     measurements_.emplace(std::move(measurement), condition);
-    size_at_start_++;
+    measurements_size_++;
+}
+
+double MeasurementQueue::progress() const {
+    return 1. - static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_);
 }
 
 void MeasurementQueue::start() {
@@ -75,7 +79,6 @@ void MeasurementQueue::start() {
     }
 
     const std::lock_guard measurement_lock {measurement_mutex_};
-    size_at_start_ = measurements_.size();
     queue_thread_ = std::jthread(std::bind_front(&MeasurementQueue::queue_loop, this));
 }
 
@@ -110,6 +113,7 @@ void MeasurementQueue::interrupt() {
 void MeasurementQueue::queue_started() {};
 void MeasurementQueue::queue_stopped() {};
 void MeasurementQueue::queue_failed() {};
+void MeasurementQueue::progress_updated(double /*progress*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
     auto timer = TimeoutTimer(transition_timeout_);
@@ -201,9 +205,13 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Successfully concluded this measurement, pop it - skip if interrupted
             if(queue_running_) {
                 measurements_.pop();
+                measurements_size_--;
                 run_sequence_++;
                 interrupt_counter_ = 0;
             }
+
+            // Report updated progress
+            progress_updated(progress());
         }
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();

@@ -47,7 +47,7 @@ namespace constellation::controller {
          *
          * @param controller Reference to the controller object to be used
          * @param prefix Prefix for the run identifier
-         * @param condition Condition for run stop in case no per-measurement condition is defined
+         * @param condition Stopping condition for run stop in case no per-measurement condition is defined
          * @param timeout Transition timeout after which the queue will be interrupted if the target state was not reached
          */
         MeasurementQueue(Controller& controller,
@@ -87,19 +87,18 @@ namespace constellation::controller {
          * @brief Get number of remaining measurements
          * @return Remaining measurement queue length
          */
-        std::size_t size() { return measurements_.size(); }
+        std::size_t size() { return measurements_size_.load(); }
 
         /**
          * @brief Current progress of the measurement queue
-         * @details Returns the fraction of measurements successfully performed over the total number of measurements. Since
-         * measurements are popped from the queue once they have been done, this uses a separate counter for the total
-         * number of measurements to be performed.
          *
-         * @return Progress of the queue
+         * @details Returns the fraction of measurements successfully performed over the total number of measurements. Since
+         * measurements are popped from the queue once they have been done, this uses the run sequence counter to account for
+         * the number of measurements already performed.
+         *
+         * @return Progress of the queue, value as 0 < progress < 1
          */
-        double progress() {
-            return static_cast<double>(size_at_start_ - measurements_.size()) / static_cast<double>(size_at_start_);
-        }
+        double progress() const;
 
         /**
          * @brief Start the measurement queue
@@ -133,6 +132,13 @@ namespace constellation::controller {
          * @brief Method called whenever a the queue failed or was interrupted
          */
         virtual void queue_failed();
+
+        /**
+         * @brief Method called whenever the progress of the queue was updated
+         *
+         * @param progress Current measurement progress of the queue, value as 0 < progress < 1
+         */
+        virtual void progress_updated(double progress);
 
     private:
         /** Queue loop, iterates over all measurements */
@@ -171,12 +177,11 @@ namespace constellation::controller {
         /** Queue of measurements */
         std::queue<std::pair<Measurement, std::optional<Condition>>> measurements_;
         std::mutex measurement_mutex_;
+        std::atomic<std::size_t> measurements_size_ {0};
         std::atomic<std::size_t> run_sequence_ {0};
+
         /** Interrupt counter to append to run identifier for re-tries */
         std::atomic<std::size_t> interrupt_counter_ {0};
-
-        /** Number of queue elements at the start of the measurements */
-        std::size_t size_at_start_ {0};
 
         /** Controller to use for the measurements */
         Controller& controller_;
