@@ -60,6 +60,10 @@ void StatListener::unsubscribeMetric(const std::string& metric) {
 std::set<std::string> StatListener::getMetricSubscriptions() {
     std::set<std::string> metric_subscriptions {};
     for(const std::string_view topic : CMDPListener::getTopicSubscriptions()) {
+        // Ignore notification
+        if(topic == "STAT?") {
+            continue;
+        }
         metric_subscriptions.emplace(demangle_topic(topic));
     }
     return metric_subscriptions;
@@ -80,6 +84,10 @@ void StatListener::unsubscribeMetric(const std::string& host, const std::string&
 std::set<std::string> StatListener::getMetricSubscriptions(const std::string& host) {
     std::set<std::string> metric_subscriptions {};
     for(const std::string_view topic : CMDPListener::getExtraTopicSubscriptions(host)) {
+        // Ignore notification
+        if(topic == "STAT?") {
+            continue;
+        }
         metric_subscriptions.emplace(demangle_topic(topic));
     }
     return metric_subscriptions;
