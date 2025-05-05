@@ -9,7 +9,7 @@ import datetime
 import json
 import os
 import pathlib
-from typing import Any
+from typing import Any, Tuple
 
 import h5py  # type: ignore[import-untyped]
 import numpy as np
@@ -17,8 +17,10 @@ import numpy as np
 from constellation.core import __version__
 from constellation.core.cdtp import CDTPMessage
 from constellation.core.cmdp import MetricsType
+from constellation.core.commandmanager import cscp_requestable
 from constellation.core.datareceiver import DataReceiver
 from constellation.core.monitoring import schedule_metric
+from constellation.core.scp import CSCPMessage
 
 
 class H5DataWriter(DataReceiver):
@@ -51,6 +53,15 @@ class H5DataWriter(DataReceiver):
     @schedule_metric("", MetricsType.LAST_VALUE, 1)
     def concurrent_reading_enabled(self) -> bool:
         return self._swmr_mode_enabled
+
+    @cscp_requestable
+    def get_concurrent_reading_status(
+        self,
+        _request: CSCPMessage,
+    ) -> Tuple[str, None, None]:
+        if self._swmr_mode_enabled:
+            return "enabled", None, None
+        return "not (yet) enabled", None, None
 
     def _write_EOR(self, outfile: h5py.File, item: CDTPMessage) -> None:
         """Write EOR to file"""
