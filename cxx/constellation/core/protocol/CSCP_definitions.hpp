@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 #include <regex>
 #include <string>
@@ -128,6 +129,21 @@ namespace constellation::protocol::CSCP {
      */
     inline bool is_valid_satellite_name(const std::string& satellite_name) {
         return std::regex_match(satellite_name, std::regex("^\\w+$"));
+    }
+
+    /**
+     * @brief Checks if a canonical name is valid
+     *
+     * A canonical name consists of two parts, separated by a period. Both parts may contain alphanumeric characters and
+     * underscores and may not be empty.
+     */
+    inline bool is_valid_canonical_name(const std::string& canonical_name) {
+        if(std::ranges::count(canonical_name, '.') != 1) {
+            return false;
+        }
+
+        const auto s = canonical_name.find('.');
+        return is_valid_satellite_name(canonical_name.substr(0, s)) && is_valid_satellite_name(canonical_name.substr(s + 1));
     }
 
     /**

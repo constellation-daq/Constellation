@@ -27,6 +27,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
@@ -202,6 +203,11 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
 
     data_transmitters_ = config.getArray<std::string>("_data_transmitters");
+    std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
+        if(!CSCP::is_valid_canonical_name(sat)) {
+            throw InvalidValueError(config, "_data_transmitters", "`" + sat + "` is not a valid canonical name");
+        }
+    });
     reset_data_transmitter_states();
     LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
 
@@ -218,6 +224,11 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
     if(partial_config.has("_data_transmitters")) {
         // BasePool disconnect all sockets when stopped, so this is safe to do
         data_transmitters_ = partial_config.getArray<std::string>("_data_transmitters");
+        std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
+            if(!CSCP::is_valid_canonical_name(sat)) {
+                throw InvalidValueError(partial_config, "_data_transmitters", "`" + sat + "` is not a valid canonical name");
+            }
+        });
         reset_data_transmitter_states();
         LOG(cdtp_logger_, INFO) << "Reconfigured to receive data from " << range_to_string(data_transmitters_);
     }
