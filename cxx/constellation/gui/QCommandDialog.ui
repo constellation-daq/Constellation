@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+   <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -23,13 +23,6 @@
    <property name="sizeConstraint">
     <enum>QLayout::SetFixedSize</enum>
    </property>
-   <item row="2" column="0" colspan="2">
-    <widget class="QCheckBox" name="checkBox">
-     <property name="text">
-      <string>Parameters</string>
-     </property>
-    </widget>
-   </item>
    <item row="4" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
@@ -281,8 +274,36 @@
      </layout>
     </widget>
    </item>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Satellite</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QLabel" name="satelliteName">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>1</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item row="0" column="1">
     <widget class="QGroupBox" name="commandBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>3</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>Command</string>
      </property>
@@ -312,28 +333,6 @@
      </layout>
     </widget>
    </item>
-   <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox">
-     <property name="title">
-      <string>Satellite</string>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QLabel" name="satelliteName">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>1</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="1" column="0" colspan="2">
     <widget class="QTextEdit" name="commandDescription">
      <property name="enabled">
@@ -344,20 +343,32 @@
      </property>
     </widget>
    </item>
+   <item row="2" column="0">
+    <widget class="constellation::gui::QCollapseButton" name="toolButton">
+     <property name="text">
+      <string>...</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>constellation::gui::QCollapseButton</class>
+   <extends>QToolButton</extends>
+   <header location="global">constellation/gui/QCollapseButton.hpp</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>commandLineEdit</tabstop>
-  <tabstop>checkBox</tabstop>
+  <tabstop>toolButton</tabstop>
   <tabstop>comboBoxType</tabstop>
   <tabstop>doubleSpinBox</tabstop>
   <tabstop>btnAddParameter</tabstop>
   <tabstop>btnClearParams</tabstop>
-  <tabstop>commandDescription</tabstop>
-  <tabstop>tableView</tabstop>
-  <tabstop>intSpinBox</tabstop>
   <tabstop>lineEditParam</tabstop>
   <tabstop>checkBoxParam</tabstop>
+  <tabstop>intSpinBox</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -406,22 +417,6 @@
     <hint type="destinationlabel">
      <x>271</x>
      <y>189</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>parameterBox</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>271</x>
-     <y>181</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>271</x>
-     <y>281</y>
     </hint>
    </hints>
   </connection>
