@@ -712,6 +712,7 @@ def main(args: Any = None) -> None:
             return []
 
     ipython_cfg = Config()
+    ipython_cfg.InteractiveShell.enable_tip = False
     ipython_cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt
     # Now create an instance of the embeddable shell. The first argument is a
     # string with options exactly as you would type them if you were starting
