@@ -321,6 +321,10 @@ def test_receive_writing_swmr_mode(
 
         assert receiver.run_identifier == ""
 
+        # check swmr status via cscp
+        msg = commander.request_get_response("get_concurrent_reading_status")
+        assert msg.msg.lower().startswith("not")
+
         for run_num in range(1, 4):
             # Send new data to handle
             tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
@@ -352,6 +356,10 @@ def test_receive_writing_swmr_mode(
             assert len(receiver.active_satellites) == 1, "No BOR received!"
             assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
             assert receiver._swmr_mode_enabled is True
+            # check swmr status via cscp
+            msg = commander.request_get_response("get_concurrent_reading_status")
+            assert msg.msg.lower().startswith("enabled")
+            # stop
             commander.request_get_response("stop")
             # send EORE
             tx.send_end({"mock_end": f"whatanend{run_num}"})
