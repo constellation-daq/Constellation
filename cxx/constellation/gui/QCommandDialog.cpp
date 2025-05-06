@@ -72,6 +72,8 @@ QCommandDialog::QCommandDialog(QWidget* parent,
         ui_->commandLineEdit->setReadOnly(true);
         ui_->commandLineEdit->setFocusPolicy(Qt::FocusPolicy::NoFocus);
         ui_->commandLineEdit->setProperty("clearButtonEnabled", false);
+    } else {
+        ui_->commandLineEdit->setFocus(Qt::PopupFocusReason);
     }
     if(!description.empty()) {
         ui_->commandDescription->setText(QString::fromStdString(description));
