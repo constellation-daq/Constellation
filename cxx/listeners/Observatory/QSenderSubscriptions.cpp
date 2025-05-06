@@ -74,21 +74,6 @@ void ComboBoxItemDelegate::updateEditorGeometry(QWidget* editor,
     editor->setGeometry(aligned_rect);
 }
 
-QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolButton(parent) {
-    setCheckable(true);
-    setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-weight: normal; }");
-    setFont(QApplication::font());
-    setArrowType(Qt::ArrowType::RightArrow);
-    setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
-
-    QToolButton::setText(" " + text);
-
-    connect(this, &QToolButton::toggled, [&](bool checked) {
-        setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
-    });
-}
-
 // Qt takes care of cleanup since parent widgets are always specified:
 // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 

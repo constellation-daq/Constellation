@@ -14,6 +14,7 @@ moc_files = qt.compile_moc(headers: ['QController.hpp', 'QConnectionDialog.hpp',
 qrc_files = qt.compile_resources(sources: 'Constellation.qrc')
 
 gui_src = files(
+  'QCollapseButton.cpp',
   'QController.cpp',
   'QConnectionDialog.cpp',
   'QCommandDialog.cpp',
@@ -49,6 +50,7 @@ pkg.generate(gui_lib,
 
 install_headers(
   'qt_utils.hpp',
+  'QCollapseButton.hpp',
   'QController.hpp',
   'QConnectionDialog.hpp',
   'QCommandDialog.hpp',
