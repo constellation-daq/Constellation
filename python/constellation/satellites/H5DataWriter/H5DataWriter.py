@@ -18,9 +18,9 @@ from constellation.core import __version__
 from constellation.core.cdtp import CDTPMessage
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
+from constellation.core.cscp import CSCPMessage
 from constellation.core.datareceiver import DataReceiver
 from constellation.core.monitoring import schedule_metric
-from constellation.core.scp import CSCPMessage
 
 
 class H5DataWriter(DataReceiver):
