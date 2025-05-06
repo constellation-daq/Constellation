@@ -80,7 +80,9 @@ namespace constellation::pools {
         void stopPool();
 
         /**
-         * @brief Return number of events returned by `poller_.wait()`
+         * @brief Return the number of events returned by `poller_.wait()`
+         *
+         * This corresponds to the current number of sockets with at least one message
          */
         std::size_t pollerEvents() { return poller_event_count_.load(); }
 
