@@ -136,9 +136,9 @@ state machine can be found in the [concepts chapter on satellites](../concepts/s
 
 ### Loading a Configuration File
 
-Constellation configuration files are TOML files with the configuration key-value pairs for all satellites. The individual
-satellite configurations are sent to their satellites together with the `initialize` command as dictionary. Their basic
-structure and syntax is the following:
+Constellation configuration files are [TOML](https://toml.io/) files with the configuration key-value pairs for all
+satellites. The individual satellite configurations are sent to their satellites together with the `initialize` command as
+dictionary. Their basic structure and syntax is the following:
 
 ```toml
 [satellites]
