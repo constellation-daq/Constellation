@@ -23,6 +23,7 @@ namespace constellation::gui {
      */
     class CNSTLN_API QCollapseButton : public QToolButton {
     public:
+        QCollapseButton(QWidget* parent = nullptr);
         QCollapseButton(const QString& text, QWidget* parent = nullptr);
         void setText(const QString& text) { QToolButton::setText(" " + text); }
     };

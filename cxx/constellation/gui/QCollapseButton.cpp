@@ -16,7 +16,7 @@
 
 using namespace constellation::gui;
 
-QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolButton(parent) {
+QCollapseButton::QCollapseButton(QWidget* parent) : QToolButton(parent) {
     setCheckable(true);
     setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-weight: normal; }");
     setFont(QApplication::font());
@@ -24,9 +24,11 @@ QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolBu
     setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
 
-    QToolButton::setText(" " + text);
-
     connect(this, &QToolButton::toggled, [&](bool checked) {
         setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
     });
+}
+
+QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QCollapseButton(parent) {
+    QToolButton::setText(" " + text);
 }
