@@ -19,6 +19,7 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/gui/QCollapseButton.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
 
 using namespace constellation;
