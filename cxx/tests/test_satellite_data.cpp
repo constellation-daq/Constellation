@@ -158,6 +158,27 @@ TEST_CASE("Receiver / No transmitters configured", "[satellite]") {
     receiver.exit();
 }
 
+TEST_CASE("Receiver / Invalid transmitter name", "[satellite]") {
+    auto receiver = Receiver();
+    // Additional dot
+    auto config1 = Configuration();
+    config1.setArray<std::string>("_data_transmitters", {"satellites.Dummy.t1"});
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config1));
+    REQUIRE(receiver.getState() == FSM::State::ERROR);
+    // Missing dot
+    auto config2 = Configuration();
+    config2.setArray<std::string>("_data_transmitters", {"t1"});
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config2));
+    REQUIRE(receiver.getState() == FSM::State::ERROR);
+    // Invalid symbol
+    auto config3 = Configuration();
+    config3.setArray<std::string>("_data_transmitters", {"Dummy.t-1"});
+    receiver.reactFSM(FSM::Transition::initialize, std::move(config3));
+    REQUIRE(receiver.getState() == FSM::State::ERROR);
+
+    receiver.exit();
+}
+
 TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     auto transmitter = Transmitter();
     auto config = Configuration();
@@ -166,7 +187,7 @@ TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config));
     transmitter.reactFSM(FSM::Transition::launch);
     transmitter.reactFSM(FSM::Transition::start, "test");
-    // Require that transmitter went to error state
+    // Require that transmitter went to error state due to BOR timeout
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
 
     transmitter.exit();
