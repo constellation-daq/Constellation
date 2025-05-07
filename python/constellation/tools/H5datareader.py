@@ -4,9 +4,11 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+import json
 from pathlib import Path
 
 import h5py
+import numpy as np
 
 
 class H5DataReader:
@@ -15,6 +17,7 @@ class H5DataReader:
     def __init__(self, file_name) -> None:
         self.file_name = file_name
         self.file = self._open_file(file_name)
+        self.swmr_mode = False
 
     def __enter__(self):
         self.file = self._open_file(self.file_name)
@@ -40,6 +43,59 @@ class H5DataReader:
     def close(self):
         """Close H5-file."""
         self.file.close()
+
+    def get_swmr_mode(self):
+        """Fetch the swmr status of the file"""
+        try:
+            self.swmr_mode = self.file["H5DataWriter.DataWriter"]["swmr_mode"][()]
+        except KeyError:
+            self.swmr_mode = False
+        return self.swmr_mode
+
+    def read_chunks_swmr(self, group: str):
+        """Read the file in chunks in swmr mode"""
+
+        class MyChunkIteratorSWMR:
+            def __init__(self, h5file, group):
+                self.file = h5file
+                self.group = group
+                self.prev_idx = 0
+                self.i = 0
+                self._setup_dtype()
+
+            def _setup_dtype(self):
+                meta_idx = self.file[self.group]["meta_idx"]
+                if meta_idx[0] == 0:
+                    self.dtype = "int16"
+                else:
+                    meta_bytes = self.file[self.group]["meta"][0 : meta_idx[0]]
+                    meta_str = meta_bytes.tobytes().decode("utf-8")
+                    m = json.loads(meta_str)
+                    self.dtype = m.get("dtype", "int16")
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                self.file[self.group]["data_idx"].id.refresh()
+                data_idx = self.file[self.group]["data_idx"]
+                self.file[self.group]["data"].id.refresh()
+                data = self.file[self.group]["data"]
+
+                if self.i >= len(data_idx):
+                    raise StopIteration
+
+                idx = data_idx[self.i]
+
+                if idx == 0:
+                    raise StopIteration
+
+                chunk = [np.array(data[self.prev_idx : idx]).view(self.dtype)]
+                self.prev_idx = idx
+                self.i += 1
+                return chunk
+
+        return MyChunkIteratorSWMR(self.file, group)
 
     def read_chunks(self, group: str, datasets: list, chunk_length: int):
         """Read the file in chunks of length chunk_length"""
@@ -70,6 +126,8 @@ class H5DataReader:
 
     def get_EOR_payload(self, group):
         """Fetch the payload of the EOR for the group"""
+        if self.swmr_mode:
+            self.file[group]["EOR"].id.refresh()
         return self.file[group]["EOR"]
 
     def get_BOR_payload(self, group):
