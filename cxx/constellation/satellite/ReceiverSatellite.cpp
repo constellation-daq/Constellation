@@ -203,8 +203,8 @@ bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) 
 }
 
 void ReceiverSatellite::initializing_receiver(Configuration& config) {
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
-    LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
+    allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
+    LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
 
     data_transmitters_ = config.getArray<std::string>("_data_transmitters", {});
     if(data_transmitters_.empty()) {
@@ -219,8 +219,8 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     }
     reset_data_transmitter_states();
 
-    allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
-    LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
+    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
+    LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
@@ -229,13 +229,13 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
         LOG(cdtp_logger_, DEBUG) << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
     }
 
+    if(partial_config.has("_data_transmitters")) {
+        throw InvalidKeyError("_data_transmitters", "Reconfiguration of data transmitters not possible");
+    }
+
     if(partial_config.has("_eor_timeout")) {
         data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
-    }
-
-    if(partial_config.has("_data_transmitters")) {
-        throw InvalidKeyError("_data_transmitters", "Reconfiguration of data transmitters not possible");
     }
 }
 
