@@ -20,6 +20,7 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
+- [Qt](https://www.qt.io/) 5 or 6 (required for GUI components)
 
 The prerequisites can be installed as follows:
 
@@ -30,6 +31,7 @@ Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages for GCC
 
 ```sh
 sudo apt install meson g++
+sudo apt install qt6-base-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -37,6 +39,7 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
+sudo apt install qtbase5-dev
 export CXX="g++-12"
 ```
 
@@ -47,6 +50,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
+sudo apt install qtbase5-dev
 export CXX="g++-13"
 ```
 
@@ -55,6 +59,7 @@ export CXX="g++-13"
 
 ```sh
 sudo dnf install meson clang
+sudo dnf install qt6-qtbase-devel
 export CXX=clang++
 ```
 
@@ -66,6 +71,7 @@ MacOS requires an installation of Meson and LLVM, e.g. via [Homebrew](https://br
 ```sh
 brew install meson
 brew install llvm
+brew install qt@6
 ```
 
 Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
@@ -93,6 +99,88 @@ meson compile -C build
 ```
 
 This is already it!
+
+## Meson Configuration Options
+
+This section describes the configuration options specific to Constellation, their purposes, and how to use them.
+
+# Build Options
+
+buildtype
+
+**Purpose**:
+Specify the build type to use.
+
+**Values**:
+- ``plain``
+- ``debug``
+- ``debugoptimized``
+- ``release``
+- ``minsize``
+- ``custom``
+
+**Default**: ``debug``
+
+**Usage**:
+Set to control the balance between debugging and performance.
+
+```
+meson setup build -Dbuildtype=release         # Build with full optimization
+meson setup build -Dbuildtype=debugoptimized  # Debugging with optimization
+```
+
+build_gui
+
+**Purpose**:
+Build Qt graphical UI's, and selecting the relevant Qt version.
+
+**Values**:
+- ``none`` (no GUI)
+- ``qt5`` (use qt5)
+- ``qt6`` (use qt6)
+
+**Default**: ``qt6``
+
+**Usage**:
+set to enable/disable GUI builds or choose qt version.
+
+```
+meson setup build -Dbuild_gui=none  # Disable GUI's
+meson setup build -Dbuild_gui=qt5   # Use qt5
+```
+
+cxx_tests
+
+**Purpose**:
+Control whether C++ tests are built or not (requires catch2).
+
+**values**:
+- ``enabled``   (always build)
+- ``disabled``  (never build)
+- ``auto``      (build if dependencies are met)
+
+**Default**: ``auto``
+
+**Usage**:
+Set to enabled for testing, disabled to skip tests, or maybe auto for building only if dependencies are met.
+
+```
+meson setup build -Dcxx_tests=disabled  # Skip C++ tests
+```
+
+cxx_tools
+
+**Purpose**:
+Enables/Disables building C++ tools.
+
+**Values**:
+- ``true``  (build)
+- ``false`` (don't build)
+
+**Default**: ``true``
+
+**Usage**:
+Set to true for including the tools otherwise to false for excluding them.
 
 ## Installing the C++ Version
 
