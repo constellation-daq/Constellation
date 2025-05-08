@@ -16,7 +16,6 @@
 #include <filesystem>
 #include <fstream>
 #include <mutex>
-#include <optional>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -260,7 +259,7 @@ namespace constellation::satellite {
         log::Logger cdtp_logger_;
         std::chrono::seconds data_eor_timeout_ {};
         bool allow_overwriting_ {};
-        std::optional<std::vector<std::string>> data_transmitters_;
+        std::vector<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
         std::atomic_size_t bytes_received_;

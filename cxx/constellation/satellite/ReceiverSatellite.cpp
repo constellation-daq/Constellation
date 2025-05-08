@@ -194,8 +194,8 @@ void ReceiverSatellite::running(const std::stop_token& stop_token) {
 }
 
 bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) {
-    if(data_transmitters_.has_value()) {
-        return std::ranges::any_of(data_transmitters_.value(),
+    if(!data_transmitters_.empty()) {
+        return std::ranges::any_of(data_transmitters_,
                                    [=](const auto& data_tramsitter) { return service.host_id == MD5Hash(data_tramsitter); });
     }
     // If not set accept all incoming connections
@@ -206,17 +206,16 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
 
-    if(config.has("_data_transmitters")) {
-        data_transmitters_ = config.getArray<std::string>("_data_transmitters");
-        std::ranges::for_each(data_transmitters_.value(), [&](const auto& sat) {
+    data_transmitters_ = config.getArray<std::string>("_data_transmitters", {});
+    if(data_transmitters_.empty()) {
+        LOG(cdtp_logger_, INFO) << "Initialized to receive data from all transmitters";
+    } else {
+        std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
             if(!CSCP::is_valid_canonical_name(sat)) {
                 throw InvalidValueError(config, "_data_transmitters", "`" + sat + "` is not a valid canonical name");
             }
         });
-        LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_.value());
-    } else {
-        data_transmitters_ = std::nullopt;
-        LOG(cdtp_logger_, INFO) << "Initialized to receive data from all transmitters";
+        LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
     }
     reset_data_transmitter_states();
 
@@ -359,10 +358,8 @@ void ReceiverSatellite::failure_receiver() {
 void ReceiverSatellite::reset_data_transmitter_states() {
     const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
     data_transmitter_states_.clear();
-    if(data_transmitters_.has_value()) {
-        for(const auto& data_transmitter : data_transmitters_.value()) {
-            data_transmitter_states_.emplace(data_transmitter, TransmitterStateSeq(TransmitterState::NOT_CONNECTED, 0, 0));
-        }
+    for(const auto& data_transmitter : data_transmitters_) {
+        data_transmitter_states_.emplace(data_transmitter, TransmitterStateSeq(TransmitterState::NOT_CONNECTED, 0, 0));
     }
 }
 
