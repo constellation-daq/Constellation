@@ -120,8 +120,8 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
 
-    data_payload_threshold_ = config.get<std::size_t>("_payload_threshold", 32000);
-    LOG(cdtp_logger_, DEBUG) << "Payload threshold for sending off data messages: " << data_payload_threshold_ << " bytes";
+    data_payload_threshold_ = config.get<std::size_t>("_payload_threshold", 128);
+    LOG(cdtp_logger_, DEBUG) << "Payload threshold for sending off data messages: " << data_payload_threshold_ << "kiB";
     data_queue_size_ = config.get<unsigned>("_queue_size", ATOMIC_QUEUE_DEFAULT_SIZE);
     data_block_queue_ = AtomicQueueT(data_queue_size_);
     LOG(cdtp_logger_, DEBUG) << "Queue size for data blocks: " << data_queue_size_;
@@ -145,7 +145,7 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     }
     if(partial_config.has("_payload_threshold")) {
         data_payload_threshold_ = partial_config.get<std::size_t>("_payload_threshold");
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured payload threshold: " << data_payload_threshold_ << " bytes";
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured payload threshold: " << data_payload_threshold_ << "kiB";
     }
     if(partial_config.has("_queue_size")) {
         data_queue_size_ = partial_config.get<unsigned>("_queue_size");
@@ -289,8 +289,11 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     TimeoutTimer send_timer {100ms};
     std::size_t current_payload_bytes = 0;
 
-    // Preallocate message
-    const auto max_data_blocks = (data_payload_threshold_ / 8) + 1;
+    // Convert data payload threshold from kiB to bytes
+    const auto data_payload_threshold_b = data_payload_threshold_ * 1024;
+
+    // Preallocate message (assume worst case 8B scenario)
+    const auto max_data_blocks = (data_payload_threshold_b / 8) + 1;
     auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_blocks);
 
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
@@ -305,7 +308,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
             message.addDataBlock(std::move(data_block));
 
             // If threshold not reached, continue
-            if(current_payload_bytes < data_payload_threshold_) {
+            if(current_payload_bytes < data_payload_threshold_b) {
                 continue;
             }
         } else {
