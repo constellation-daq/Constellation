@@ -48,11 +48,12 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
 
-constexpr std::size_t buffer_size = 16777216; // TODO configurable
+constexpr unsigned ATOMIC_QUEUE_DEFAULT_SIZE = 32768;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
-      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_block_queue_(buffer_size) {
+      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_queue_size_(ATOMIC_QUEUE_DEFAULT_SIZE),
+      data_block_queue_(data_queue_size_) {
 
     register_timed_metric("BYTES_TRANSMITTED",
                           "B",
@@ -118,8 +119,12 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     data_msg_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
+
     data_payload_threshold_ = config.get<std::size_t>("_payload_threshold", 32000);
     LOG(cdtp_logger_, DEBUG) << "Payload threshold for sending off data messages: " << data_payload_threshold_ << " bytes";
+    data_queue_size_ = config.get<unsigned>("_queue_size", ATOMIC_QUEUE_DEFAULT_SIZE);
+    data_block_queue_ = AtomicQueueT(data_queue_size_);
+    LOG(cdtp_logger_, DEBUG) << "Queue size for data blocks: " << data_queue_size_;
 
     data_license_ = config.get<std::string>("_data_license", "ODC-By-1.0");
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
@@ -141,6 +146,11 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     if(partial_config.has("_payload_threshold")) {
         data_payload_threshold_ = partial_config.get<std::size_t>("_payload_threshold");
         LOG(cdtp_logger_, DEBUG) << "Reconfigured payload threshold: " << data_payload_threshold_ << " bytes";
+    }
+    if(partial_config.has("_queue_size")) {
+        data_queue_size_ = partial_config.get<unsigned>("_queue_size");
+        data_block_queue_ = AtomicQueueT(data_queue_size_);
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured queue size for data blocks: " << data_queue_size_;
     }
     if(partial_config.has("_data_license")) {
         data_license_ = partial_config.get<std::string>("_data_license");
@@ -280,7 +290,8 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     std::size_t current_payload_bytes = 0;
 
     // Preallocate message
-    auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, buffer_size);
+    const auto max_data_blocks = (data_payload_threshold_ / 8) + 1;
+    auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_blocks);
 
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
     while(!stop_token.stop_requested()) {

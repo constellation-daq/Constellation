@@ -7,4 +7,5 @@
 | `_eor_timeout` | Unsigned integer |  Timeout in seconds to send the EOR message. The satellite will attempt for this interval to send the message and goes into `ERROR` state if it fails to do so. | 10 |
 | `_data_timeout` | Unsigned integer | Timeout in seconds to send the data message. The satellite will attempt for this interval to send the message and goes into `ERROR` state if it fails to do so. | 10 |
 | `_payload_threshold` | Unsigned integer | Threshold for sending data messages in bytes. The satellite will only send queued data blocks after the combined payload size of the data blocks has reached this threshold. | 32000 |
+| `_queue_size` | Unsigned integer | Size of the queue for the data blocks. Small values might lead to performance issues, large values lead to larger memory usage. | 32768 |
 | `_data_license` | String | License this data is recorded under. Defaults to the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/). This information will be added to the run metadata. | `ODC-By-1.0` |

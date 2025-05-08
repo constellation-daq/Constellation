@@ -221,6 +221,7 @@ namespace constellation::satellite {
         std::chrono::seconds data_eor_timeout_ {};
         std::chrono::seconds data_msg_timeout_ {};
         std::size_t data_payload_threshold_ {};
+        unsigned data_queue_size_ {};
 
         // Atomic Queue Type: Maximize Throughput, Enable total order, disable Single-Producer-Single-Consumer
         using AtomicQueueT = atomic_queue::AtomicQueueB2<message::CDTP2Message::DataBlock,
