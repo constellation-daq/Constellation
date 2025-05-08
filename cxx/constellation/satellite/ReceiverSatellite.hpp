@@ -165,8 +165,9 @@ namespace constellation::satellite {
          * @brief Initialize receiver components of satellite
          *
          * Reads the following config parameters:
-         * * `_eor_timeout`
+         * * `_allow_overwriting`
          * * `_data_transmitters`
+         * * `_eor_timeout`
          *
          * @param config Configuration of the satellite
          */
@@ -176,8 +177,8 @@ namespace constellation::satellite {
          * @brief Reconfigure receiver components of satellite
          *
          * Supports reconfiguring of the following config parameters:
+         * * `_allow_overwriting`
          * * `_eor_timeout`
-         * * `_data_transmitters`
          *
          * @param partial_config Changes to the configuration of the satellite
          */
