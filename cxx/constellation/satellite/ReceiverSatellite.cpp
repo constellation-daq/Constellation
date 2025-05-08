@@ -224,6 +224,11 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
+    if(partial_config.has("_allow_overwriting")) {
+        allow_overwriting_ = partial_config.get<bool>("_allow_overwriting");
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
+    }
+
     if(partial_config.has("_eor_timeout")) {
         data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
         LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;

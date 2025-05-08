@@ -152,6 +152,7 @@ TEST_CASE("Receiver / Reconfigure transmitters", "[satellite]") {
     auto receiver = Receiver();
     auto config = Configuration();
     config.set("_eor_timeout", 1);
+    config.set("_allow_overwriting", true);
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
     receiver.reactFSM(FSM::Transition::launch);
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
@@ -261,6 +262,7 @@ TEST_CASE("Successful run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::launch);
 
     auto config2_receiver = Configuration();
+    config2_receiver.set("_allow_overwriting", true);
     config2_receiver.set("_eor_timeout", 1);
     auto config2_transmitter = Configuration();
     config2_transmitter.set("_bor_timeout", 1);
