@@ -46,13 +46,6 @@ flags or event configurations:
   Constellation message header, the value will be translated to nanoseconds and stored as EUDAQ event timestamp. If the tag
   is not set, `0` will be set as timestamp. This prompts analysis software to use the trigger number instead.
 
-```{note}
-It should be noted that this satellite requires the sending satellites to receive data from to be configured via the
-`_data_transmitters` parameter, just as any Constellation receiver satellite deriving from the
-[`ReceiverSatellite`](../framework_reference/cxx/satellite/satellite.md#receiversatellite-configuration-parameters)
-class.
-```
-
 Messages from all sending satellites are written into the output file sequentially in the order in which they arrive.
 Output files are stored under the path provided via the `output_path` parameter and are named `data_<run_identifier>.raw`
 where `<run_identifier>` is the identifier of the corresponding run.

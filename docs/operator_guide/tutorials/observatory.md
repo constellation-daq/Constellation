@@ -52,6 +52,7 @@ unused_parameter = 1
 [satellites.RandomTransmitter.Sender]
 
 [satellites.EudaqNativeWriter.Receiver]
+_data_transmitters = ["satellites.RandomTransmitter.Sender"]
 output_directory = "/tmp/test"
 ```
 

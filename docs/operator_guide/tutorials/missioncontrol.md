@@ -60,6 +60,7 @@ interval = 2500
 [satellites.RandomTransmitter.Sender]
 
 [satellites.EudaqNativeWriter.Receiver]
+_data_transmitters = ["Sender"]
 output_directory = "/tmp/test"
 ```
 
@@ -100,11 +101,11 @@ in the "Last message" column of the satellites list, or its log messages either 
 interface:
 
 ```{error}
-Critical failure during transition: Key '_data_transmitters' does not exist
+Critical failure during transition: Value `[Sender]` of key `_data_transmitters` is not valid: `Sender` is not a valid canonical name
 ```
 
-The `_data_transmitters` configuration parameter is mandatory information and contains the canonical name of all satellites from which
-the receiver should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
+The `_data_transmitters` configuration parameter should contain the canonical names of all satellites from which the receiver
+should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
 `RandomTransmitter.Sender`. In order to correct this and allow a successful initialization, the file should be adapted as follows:
 
 ```toml

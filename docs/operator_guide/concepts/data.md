@@ -82,8 +82,8 @@ data recorded. Runs are marked with any of the following run condition flags:
 ## Receiving and Storing Data
 
 Receiver satellites accept data form one or more satellites within the same Constellation. In order to assign transmitter
-satellites to a specific receiver, the receiver requires the `_data_transmitters` parameter which holds a list of all
-canonical names of transmitters it should connect to.
+satellites to a specific receiver, the receiver can be given the `_data_transmitters` parameter which holds a list of all
+canonical names of transmitters it should connect to. If not given, receiver satellites connect to all transmitters.
 
 Usually, receiver satellites will take great care that the data are stored properly, e.g. by testing access to the storage
 location, and by checking sufficient available disk space. They also emit telemetry data on the remaining disk space at the
