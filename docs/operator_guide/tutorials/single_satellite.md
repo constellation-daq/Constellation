@@ -21,6 +21,11 @@ arguments:
 SatelliteSputnik -n One -g edda
 ```
 
+```{note}
+When a satellite is started this way, it runs in the foreground until it is terminated. This means that any other satellites
+or commands need to be a run in a new terminal.
+```
+
 ## Controlling the Satellite
 
 A controller running in the same Constellation group is needed in order to control the satellite started in the first part
