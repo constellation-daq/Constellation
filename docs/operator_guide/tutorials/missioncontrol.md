@@ -37,6 +37,11 @@ In order to control satellites, some satellites need to be started as part of th
 three `Sputnik` satellites named `One`, `Two` and `Three`, a `RandomTransmitter` named `Sender` and a `EudaqNativeWriter`
 named `Receiver` are started.
 
+```{note}
+MissionControl does not start satellites. The five satellites required for this tutorial need to be started in a terminal as
+shown in the [tutorial for a single satellite](single_satellite.md).
+```
+
 ```{figure} missioncontrol_new.png
 MissionControl main window with satellites in NEW state
 ```
@@ -63,9 +68,9 @@ Make sure to create the output directory for the `EudaqNativeWriter`.
 ```
 
 The configuration file can be selected with the {bdg-primary}`Select` button. Then, the satellites can be initialized using
-the {bdg-primary}`Initialize` button. Once the button is clicking, a warning will appear that `Sputnik.Three` is not
-mentioned explicitly in the configuration - this is a measure to prevent typing errors in configuration files. However in
-this case, the initialization can be continued by clicking {bdg-primary}`Ok`.
+the {bdg-primary}`Initialize` button. Once the button is clicked, a warning will appear that `Sputnik.Three` is not mentioned
+explicitly in the configuration - this is a measure to prevent typing errors in configuration files. However in this case,
+the initialization can be continued by clicking {bdg-primary}`Ok`.
 
 ```{hint}
 Any satellites not explicitly mentioned will still be initialized. The configuration is generated from the global
