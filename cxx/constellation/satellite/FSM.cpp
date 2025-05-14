@@ -15,6 +15,7 @@
 #include <future>
 #include <iomanip>
 #include <mutex>
+#include <stop_token>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -292,6 +293,7 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
         // Call transition function of satellite
         const auto status = (satellite_->*func)(std::forward<Args>(args)...);
 
+        // Set status if returned
         if(status.has_value()) {
             set_status(status.value());
         }
@@ -304,8 +306,8 @@ FSM::Transition FSM::call_satellite_function(Func func, Transition success_trans
         error_message = "<unknown exception>";
     }
     // Something went wrong, log and go to error state
-    LOG(satellite_->logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-    set_status("Critical failure during transition: " + error_message);
+    LOG(satellite_->logger_, CRITICAL) << "Critical failure: " << error_message;
+    set_status("Critical failure: " + error_message);
     return Transition::failure;
 }
 
@@ -396,8 +398,14 @@ FSM::State FSM::start(TransitionPayload payload) {
 }
 
 FSM::State FSM::started(TransitionPayload /* payload */) {
-    // Start running thread async
-    auto call_wrapper = std::bind_front(&BaseSatellite::running_wrapper, satellite_);
+    auto call_wrapper = [this](const std::stop_token& stop_token) {
+        LOG(logger_, INFO) << "Calling running function of satellite...";
+        const auto transition = call_satellite_function(&BaseSatellite::running_wrapper, Transition::stop, stop_token);
+        // If failure, execute transition (do not execute stop though to stay in RUN state)
+        if(transition == Transition::failure) {
+            react(Transition::failure);
+        }
+    };
     launch_assign_thread(run_thread_, call_wrapper);
     return State::RUN;
 }
