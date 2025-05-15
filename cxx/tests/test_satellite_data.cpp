@@ -223,12 +223,18 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     // Stop the receiver to avoid receiving data
     receiver.reactFSM(FSM::Transition::stop);
 
+    // Check that receiver went to ERROR due to missing EOR
+    REQUIRE(receiver.getState() == FSM::State::ERROR);
+    const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
+    receiver.exit();
+
     // Attempt to send a data frame and catch its failure
     REQUIRE_THROWS_MATCHES(transmitter.sendData(std::vector<int>({1, 2, 3, 4})),
                            SendTimeoutError,
                            Message("Failed sending data message after 1s"));
 
-    receiver.exit();
     transmitter.exit();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
@@ -396,7 +402,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
-    // Allow receiver to progress through transitional state autonomously:
+    // Allow to progress through transitional state autonomously
+    transmitter.skipTransitional(true);
     receiver.skipTransitional(true);
 
     // Interrupt the run:
