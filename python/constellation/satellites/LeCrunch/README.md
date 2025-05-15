@@ -1,0 +1,31 @@
+---
+# SPDX-FileCopyrightText: 2025 Laurent Forthomme, DESY and the Constellation authors
+# SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
+title: "LeCrunch"
+description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch library"
+---
+
+## Description
+
+This satellite uses the [LeCrunch3](https://github.com/nminafra/LeCrunch3) library by [Nicola Minafra](https://github.com/nminafra),
+based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch the waveforms from a LeCroy Waverunner scope.
+Using a TCP connection to the scope's Waverunner software, it provides a simplified method to start a single- or sequenced-waveforms acquisition
+and transmits it _via_ the [CDTP](https://constellation.pages.desy.de/protocols/cdtp.html) to Constellation receivers.
+
+## Requirements
+
+The LeCrunch satellite requires the `[LeCrunch]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
+or using the meson dependencies resolution.
+
+## Supported devices
+
+The device to be controlled by this satellite can be accessed via the `ip_address` and `port` configuration parameters.
+
+## Parameters
+
+| Parameter | Description | Type | Default Value |
+|-----------|-------------|------|---------------|
+| `ip_address` | Scope IP address | String | - |
+| `port` | TCP port to connect to | Integer | 1861 |
+| `timeout` | Timeout before giving up on frames retrieval | Float | 5s |
+| `nsequence` | Number of triggers to combine in a readout in sequence mode | Integer | 1 |
