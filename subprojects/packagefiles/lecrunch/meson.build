@@ -6,17 +6,17 @@ project('lecrunch',
   ],
 )
 
-pymod = import('python')
-python = pymod.find_installation('python',
+python = import('python').find_installation(
   modules: ['array', 'numpy', 're', 'socket', 'struct'],
 )
-python.dependency()
+impl_py = python.found()
+if impl_py
+  lecrunch_src = files('LeCrunch3.py')
+  python.install_sources(lecrunch_src,
+    subdir: 'LeCrunch3',
+  )
 
-lecrunch_src = files('LeCrunch3.py')
-python.install_sources(lecrunch_src,
-  subdir: 'LeCrunch3',
-)
-
-lecrunch_dep = declare_dependency(
-  sources: lecrunch_src,
-)
+  lecrunch_dep = declare_dependency(
+    sources: lecrunch_src,
+  )
+endif

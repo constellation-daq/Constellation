@@ -5,13 +5,13 @@ SPDX-License-Identifier: EUPL-1.2
 Provides the entry point for the LeCroy/LeCrunch satellite
 """
 
+from typing import Any
+
 from constellation.core.base import EPILOG
-from constellation.core.logging import setup_cli_logging
 from constellation.core.datasender import DataSenderArgumentParser
+from constellation.core.logging import setup_cli_logging
 
 from .LeCrunchSatellite import LeCrunchSatellite
-
-from typing import Any
 
 
 def main(args: Any = None) -> None:
@@ -31,4 +31,3 @@ def main(args: Any = None) -> None:
 
 if __name__ == "__main__":
     main()
-
