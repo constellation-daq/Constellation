@@ -29,3 +29,23 @@ The device to be controlled by this satellite can be accessed via the `ip_addres
 | `port` | TCP port to connect to | Integer | 1861 |
 | `timeout` | Timeout before giving up on frames retrieval | Float | 5s |
 | `nsequence` | Number of triggers to combine in a readout in sequence mode | Integer | 1 |
+
+## Output data format
+
+Data are packed as follows, using double precision floats for each word:
+
+| Group | Word | Description |
+|-------|------|-------------|
+| Global header | Trigger times | Absolute timing of each trigger in the sequence |
+|| Number of samples | Number of samples in all triggers in all sequences (run-level) |
+| Channel header | Trigger offsets | Channel-level timing offset (with respect to the absolute timing in the global header) of each individual trigger in the sequence |
+|| Wave array | Number of samples * number of triggers/sequence double precision floats providing the sample amplitude (in V) for the given time slice |
+
+Additionally, a beginning-of-run event is generated with the following attributes:
+
+| Parameter | Description | Type |
+|-----------|-------------|------|
+| `trigger_delay` | Absolute timing for the first trigger | String |
+| `sampling_period` | Sampling period (in s) | Float |
+| `channels` | Comma-separated list of channels enabled in readout | [Integers] |
+| `num_sequences` | Number of triggers combined in a readout in sequence mode | Integer |
