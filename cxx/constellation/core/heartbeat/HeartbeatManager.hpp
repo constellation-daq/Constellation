@@ -124,7 +124,7 @@ namespace constellation::heartbeat {
          *
          * @param msg Received CHP message from remote service
          * */
-        void process_heartbeat(const message::CHP1Message& msg);
+        CNSTLN_LOCAL void process_heartbeat(const message::CHP1Message& msg);
 
         /**
          * @brief Helper to process satellite departure
@@ -143,7 +143,7 @@ namespace constellation::heartbeat {
          *
          * @param stop_token Stop token to interrupt the thread
          */
-        void run(const std::stop_token& stop_token);
+        CNSTLN_LOCAL void run(const std::stop_token& stop_token);
 
     private:
         /** Sender service */
