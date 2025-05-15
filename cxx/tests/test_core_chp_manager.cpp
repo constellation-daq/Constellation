@@ -47,7 +47,7 @@ public:
 
     void waitInterrupt() {
         while(!interrupt_received_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         interrupt_received_.store(false);
     }
@@ -73,21 +73,25 @@ TEST_CASE("Check remote state", "[chp][send]") {
 
     auto sender = CHPMockSender("sender");
     sender.mockChirpOffer();
-    std::this_thread::sleep_for(100ms);
 
-    sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
-    std::this_thread::sleep_for(100ms);
+    while(!manager.getRemoteState(sender.getName()).has_value()) {
+        sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Remote is known
-    REQUIRE(manager.getRemoteState("sender").has_value());
-    REQUIRE(manager.getRemoteState("sender").value() == CSCP::State::ORBIT); // NOLINT(bugprone-unchecked-optional-access)
+    REQUIRE(manager.getRemoteState(sender.getName()).has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE(manager.getRemoteState(sender.getName()).value() == CSCP::State::ORBIT);
 
     // Depart with the sender
     sender.mockChirpDepart();
-    std::this_thread::sleep_for(100ms);
+    while(manager.getRemoteState(sender.getName()).has_value()) {
+        std::this_thread::yield();
+    }
 
     // Remote is not known:
-    REQUIRE_FALSE(manager.getRemoteState("sender").has_value());
+    REQUIRE_FALSE(manager.getRemoteState(sender.getName()).has_value());
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     manager.terminate();
@@ -99,7 +103,11 @@ TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
     auto manager = CHPManager("mgr");
     auto sender = CHPMockSender("sender");
     sender.mockChirpOffer();
-    std::this_thread::sleep_for(100ms);
+
+    while(!manager.getRemoteState(sender.getName()).has_value()) {
+        sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Send heartbeat with ERROR state
     sender.sendHeartbeat(CSCP::State::ERROR, std::chrono::milliseconds(100000));
@@ -128,7 +136,10 @@ TEST_CASE("Receive interrupt from heartbeat timeout", "[chp][send]") {
     auto manager = CHPManager("mgr");
     auto sender = CHPMockSender("sender");
     sender.mockChirpOffer();
-    std::this_thread::sleep_for(100ms);
+    while(!manager.getRemoteState(sender.getName()).has_value()) {
+        sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
+        std::this_thread::sleep_for(50ms);
+    }
 
     // Send heartbeat with NEW state to register the remote
     sender.sendHeartbeat(CSCP::State::NEW, std::chrono::milliseconds(100));

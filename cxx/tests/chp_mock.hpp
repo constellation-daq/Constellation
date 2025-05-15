@@ -76,15 +76,13 @@ public:
 
     void waitSubscription() {
         while(!subscribed_.load()) {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         subscribed_.store(false);
     }
     void waitNextMessage() {
         while(!last_message_updated_.load()) {
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         last_message_updated_.store(false);
     }
