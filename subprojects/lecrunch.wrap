@@ -1,0 +1,10 @@
+[wrap-file]
+directory = LeCrunch3-main
+source_url = https://github.com/nminafra/LeCrunch3/archive/refs/heads/main.tar.gz
+source_filename = LeCrunch3-main.tar.gz
+source_hash = 97c299e21426652b1302a54d14fe382b025d3863ed7cb93df842887e0e241953
+patch_directory = lecrunch
+wrapdb_version = 3
+
+[provide]
+lecrunch = lecrunch_dep
