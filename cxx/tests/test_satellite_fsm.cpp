@@ -81,7 +81,7 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     satellite.exit();
 }
 
-TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
+TEST_CASE("FSM failure in transitional state", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
@@ -98,15 +98,49 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     REQUIRE_FALSE(fsm.isAllowed(Transition::failure));
     REQUIRE_FALSE(fsm.reactIfAllowed(Transition::failure));
 
-    // Reset
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure in RUN", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
     fsm.react(Transition::initialize, Configuration());
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::INIT);
-
-    // Interrupt in RUN state
     fsm.react(Transition::launch);
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Start and set to throw
+    fsm.react(Transition::start, "run_0");
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::RUN);
+    satellite.setThrowRunning();
+
+    // Wait for failure
+    while(fsm.getState() == State::RUN) {
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM interrupt in RUN", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
+    fsm.react(Transition::initialize, Configuration());
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
+    fsm.react(Transition::launch);
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Interrupt in RUN state
     fsm.react(Transition::start, "run_0");
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::RUN);
@@ -466,11 +500,17 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
 
     // Initialize, callbacks for initializing and INIT
     satellite.reactFSM(Transition::initialize, Configuration());
+
+    // Give some time to sync atomic, then check
+    std::this_thread::sleep_for(10ms);
     REQUIRE(cb_count.load() == 2);
 
     // Launch, throw in callback, callbacks for launching and ORBIT
     throw_cb = true;
     satellite.reactFSM(Transition::launch);
+
+    // Give some time to sync atomic, then check
+    std::this_thread::sleep_for(10ms);
     REQUIRE(cb_count.load() == 4);
 
     fsm.unregisterStateCallback("test");
