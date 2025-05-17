@@ -34,8 +34,9 @@ using namespace constellation::message;
 using namespace constellation::utils;
 
 LogListener::LogListener(std::string_view log_topic, std::function<void(CMDP1LogMessage&&)> callback)
-    : CMDPListener(log_topic,
-                   [callback = std::move(callback)](CMDP1Message&& msg) { callback(CMDP1LogMessage(std::move(msg))); }),
+    : CMDPListener(
+          log_topic,
+          [callback = std::move(callback)](CMDP1Message&& msg) mutable { callback(CMDP1LogMessage(std::move(msg))); }),
       global_log_level_(Level::OFF) {
     // Subscribe to notifications:
     CMDPListener::subscribeTopic("LOG?");
