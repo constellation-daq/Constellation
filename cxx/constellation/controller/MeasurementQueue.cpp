@@ -49,6 +49,11 @@ MeasurementQueue::~MeasurementQueue() {
 }
 
 void MeasurementQueue::append(Measurement measurement, std::optional<Condition> condition) {
+    // Check that satellite names are valid canonical names:
+    if(!std::ranges::all_of(measurement, [](const auto& elem) { return CSCP::is_valid_canonical_name(elem.first); })) {
+        throw QueueError("Measurements contain invalid canonical name");
+    }
+
     const std::lock_guard measurement_lock {measurement_mutex_};
     measurements_.emplace(std::move(measurement), std::move(condition));
     measurements_size_++;
