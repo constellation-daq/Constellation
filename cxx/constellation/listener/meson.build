@@ -12,15 +12,22 @@ listener_lib = library('ConstellationListener',
   include_directories: constellation_inc,
   dependencies: [core_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
   install_rpath: constellation_rpath,
 )
 
 listener_dep = declare_dependency(
   link_with: listener_lib,
+  compile_args: constellation_args,
   include_directories: constellation_inc,
   dependencies: [core_dep],
+)
+
+pkg.generate(listener_lib,
+  description: 'Constellation listener library',
+  extra_cflags: constellation_args,
+  libraries: [core_dep],
 )
 
 install_headers(
