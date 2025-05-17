@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <any>
+#include <cstddef>
 #include <exception>
 #include <functional>
 #include <mutex>
@@ -278,7 +279,7 @@ namespace constellation::pools {
 
                 // Receive messages from socket
                 std::for_each(poller_events_.begin(),
-                              poller_events_.begin() + static_cast<ptrdiff_t>(poller_event_count),
+                              poller_events_.begin() + static_cast<std::ptrdiff_t>(poller_event_count),
                               [&polled_messages](auto& event) {
                                   // Receive multipart message
                                   zmq::multipart_t zmq_msg {};
