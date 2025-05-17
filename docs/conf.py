@@ -145,7 +145,6 @@ myst_heading_anchors = 4
 myst_fence_as_directive = ["plantuml"]
 myst_enable_extensions = ["colon_fence"]
 myst_update_mathjax = False
-myst_enable_extensions = ["dollarmath"]
 
 # Suppress header warnings from MyST - we check them with markdownlint but cannot disable them in MyST on a per-file level
 suppress_warnings = ["myst.header"]
