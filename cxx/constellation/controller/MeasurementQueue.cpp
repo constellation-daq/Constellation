@@ -26,17 +26,27 @@
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
+#include "constellation/listener/StatListener.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
+using namespace constellation::listener;
 using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
+
+MeasurementQueue::MeasurementQueue(Controller& controller,
+                                   std::string prefix,
+                                   Condition condition,
+                                   std::chrono::seconds timeout)
+    : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
+      transition_timeout_(timeout), controller_(controller) {};
 
 MeasurementQueue::~MeasurementQueue() {
     // Interrupt the queue if one was running:
@@ -152,7 +162,39 @@ void MeasurementQueue::await_condition(Condition condition) const {
     } else if(std::holds_alternative<std::tuple<std::string, std::string, config::Value>>(condition)) {
         const auto [remote, metric, value] = std::get<std::tuple<std::string, std::string, config::Value>>(condition);
         LOG(logger_, DEBUG) << "Running until " << remote << " reports " << metric << " >= " << value.str();
-        // FIXME StatListener to subscribe to metric, wait for value
+
+        std::atomic<bool> condition_satisfied {false};
+        auto stat_listener = StatListener("QUEUE", [&](message::CMDP1StatMessage&& msg) {
+            // FIXME case-insensitive
+            if(msg.getHeader().getSender() != remote) {
+                return;
+            }
+
+            const auto metric_value = msg.getMetric();
+            if(metric_value.getMetric()->name() != metric) {
+                return;
+            }
+
+            if(metric_value.getValue() < value) {
+                return;
+            }
+
+            condition_satisfied = true;
+        });
+
+        // Start the telemetry receiver pool
+        stat_listener.startPool();
+
+        // Subscribe to topic:
+        stat_listener.subscribeMetric(remote, metric);
+
+        // Wait for condition to be met:
+        while(queue_running_ && !condition_satisfied) {
+            std::this_thread::sleep_for(100ms);
+        }
+
+        stat_listener.unsubscribeMetric(remote, metric);
+        stat_listener.stopPool();
     }
 }
 
@@ -166,6 +208,7 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
         return success;
     });
 
+    // FIXME too harsh?
     if(!success) {
         throw QueueError("Unexpected reply from satellite");
     }

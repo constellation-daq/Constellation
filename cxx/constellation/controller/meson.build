@@ -10,7 +10,7 @@ controller_src = files(
 controller_lib = library('ConstellationController',
   sources: controller_src,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep, msgpack_cxx_dep, tomlplusplus_dep],
+  dependencies: [core_dep, cppzmq_dep, msgpack_cxx_dep, tomlplusplus_dep, listener_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
@@ -21,13 +21,13 @@ controller_dep = declare_dependency(
   link_with: controller_lib,
   compile_args: constellation_args,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep],
+  dependencies: [core_dep, cppzmq_dep, listener_dep],
 )
 
 pkg.generate(controller_lib,
   description: 'Constellation controller library',
   extra_cflags: constellation_args,
-  libraries: [core_dep, cppzmq_dep],
+  libraries: [core_dep, cppzmq_dep, listener_dep],
 )
 
 install_headers(

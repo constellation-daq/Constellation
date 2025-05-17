@@ -59,10 +59,7 @@ namespace constellation::controller {
         MeasurementQueue(Controller& controller,
                          std::string prefix,
                          Condition condition,
-                         std::chrono::seconds timeout = std::chrono::seconds(60))
-            : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
-              transition_timeout_(timeout), controller_(controller) {};
-
+                         std::chrono::seconds timeout = std::chrono::seconds(60));
         /**
          * @brief Destruct the measurement queue
          */
