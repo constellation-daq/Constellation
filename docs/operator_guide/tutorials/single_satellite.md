@@ -37,19 +37,19 @@ The Python implementation of Constellation provides a powerful command line inte
 This can be installed with the `cli` component:
 
 ::::{tab-set}
-:::{tab-item} Source
-:sync: source
-
-```sh
-pip install --no-build-isolation -e .[cli]
-```
-
-:::
 :::{tab-item} PyPI
 :sync: pypi
 
 ```sh
 pip install ConstellationDAQ[cli]
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e .[cli]
 ```
 
 :::
