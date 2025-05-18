@@ -90,7 +90,7 @@ TEST_CASE("FSM failure in transitional state", "[satellite][satellite::fsm]") {
     REQUIRE(fsm.getState() == State::initializing);
     satellite.setThrowTransitional();
     while(fsm.getState() == State::initializing) {
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::yield();
     }
     REQUIRE(fsm.getState() == State::ERROR);
 
@@ -121,7 +121,7 @@ TEST_CASE("FSM failure in RUN", "[satellite][satellite::fsm]") {
 
     // Wait for failure
     while(fsm.getState() == State::RUN) {
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::yield();
     }
     REQUIRE(fsm.getState() == State::ERROR);
 
@@ -492,7 +492,7 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     std::atomic_int cb_count = 0;
     fsm.registerStateCallback("test", [&](State state, std::string_view status) {
         const auto local_count = ++cb_count;
-        LOG(DEBUG) << "State callback with state " << state << ", status " << status << ", count " << local_count;
+        LOG(DEBUG) << "State callback with state " << state << ", status `" << status << "`, count " << local_count;
         if(throw_cb) {
             throw Exception("Throwing in state callback as requested");
         }
@@ -501,16 +501,20 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
     // Initialize, callbacks for initializing and INIT
     satellite.reactFSM(Transition::initialize, Configuration());
 
-    // Give some time to sync atomic, then check
-    std::this_thread::sleep_for(10ms);
+    // Callbacks for initializing and INIT, but since only called after state changed wait for count
+    while(cb_count.load() < 2) {
+        std::this_thread::yield();
+    }
     REQUIRE(cb_count.load() == 2);
 
-    // Launch, throw in callback, callbacks for launching and ORBIT
+    // Launch and throw in callback
     throw_cb = true;
     satellite.reactFSM(Transition::launch);
 
-    // Give some time to sync atomic, then check
-    std::this_thread::sleep_for(10ms);
+    // Callbacks for launching and ORBIT, but since only called after state changed wait for count
+    while(cb_count.load() < 4) {
+        std::this_thread::yield();
+    }
     REQUIRE(cb_count.load() == 4);
 
     fsm.unregisterStateCallback("test");
