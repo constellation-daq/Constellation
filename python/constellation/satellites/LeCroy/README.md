@@ -10,11 +10,11 @@ description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch lib
 This satellite uses the [LeCrunch3](https://github.com/nminafra/LeCrunch3) library by [Nicola Minafra](https://github.com/nminafra),
 based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch each channel waveform from a LeCroy `Waverunner` scope.
 Using a TCP connection to the scope's `Waverunner` software, it provides a simplified method to start a single- or sequenced-waveform acquisition
-and transmits it _via_ the [CDTP](https://constellation.pages.desy.de/protocols/cdtp.html) to Constellation receivers.
+and transmits it through the [CDTP](https://constellation.pages.desy.de/protocols/cdtp.html) to Constellation receivers.
 
 ## Requirements
 
-The LeCroy satellite requires the `[LeCrunch3]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
+This satellite requires the `[LeCrunch3]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
 or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/):
 
 ::::{tab-set}
@@ -28,7 +28,12 @@ pip install LeCrunch3
 
 ## Supported devices
 
+This satellite is compatible with a broad class of Teledyne-LeCroy devices, and was successfuly tested with a `Waverunner 8104`.
 The device to be controlled by this satellite can be accessed via the `ip_address` and `port` configuration parameters.
+By default the port is set to 1861 by the embedded acquisition software.
+
+To set up the TCP transfer, run the "Utilities Setup" from the "Utilities" menu, switch to the "Remote" tab and enable the "TCPIP (VICP)" option.
+The IP address to use in this satellite will be provided beside the selection box.
 
 ## Parameters
 
