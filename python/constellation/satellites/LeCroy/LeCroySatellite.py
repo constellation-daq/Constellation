@@ -17,7 +17,7 @@ from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
 
 
-class LeCrunchSatellite(DataSender):
+class LeCroySatellite(DataSender):
     _scope = None
     _settings = None
     _channels = None

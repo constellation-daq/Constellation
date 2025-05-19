@@ -11,7 +11,7 @@ from constellation.core.base import EPILOG
 from constellation.core.datasender import DataSenderArgumentParser
 from constellation.core.logging import setup_cli_logging
 
-from .LeCrunchSatellite import LeCrunchSatellite
+from .LeCroySatellite import LeCroySatellite
 
 
 def main(args: Any = None) -> None:
@@ -25,7 +25,7 @@ def main(args: Any = None) -> None:
     setup_cli_logging(args.pop("log_level"))
 
     # Start satellite with remaining args
-    s = LeCrunchSatellite(**args)
+    s = LeCroySatellite(**args)
     s.run_satellite()
 
 

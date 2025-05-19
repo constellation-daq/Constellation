@@ -50,7 +50,7 @@ SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.__main__:main"
 SatelliteInflux = "constellation.satellites.Influx.__main__:main"
 SatelliteKeithley = "constellation.satellites.Keithley.__main__:main"
 SatelliteLakeShore218 = "constellation.satellites.LakeShore218.__main__:main"
-SatelliteLeCrunch = "constellation.satellites.LeCrunch.__main__:main"
+SatelliteLeCroy = "constellation.satellites.LeCroy.__main__:main"
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
 
 [project.urls]
@@ -94,7 +94,7 @@ caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py"]
 influx = ["influxdb-client"]
 keithley = ["pyserial"]
-lecrunch = ["lecrunch3", "numpy"]
+lecroy = ["lecrunch3", "numpy"]
 visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 
 [tool.meson-python.args]

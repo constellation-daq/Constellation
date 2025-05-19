@@ -1,7 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2025 Laurent Forthomme, DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
-title: "LeCrunch"
+title: "LeCroy"
 description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch library"
 ---
 
@@ -14,8 +14,17 @@ and transmits it _via_ the [CDTP](https://constellation.pages.desy.de/protocols/
 
 ## Requirements
 
-The LeCrunch satellite requires the `[LeCrunch]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
-or using the meson dependencies resolution.
+The LeCroy satellite requires the `[LeCrunch3]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
+or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/):
+
+::::{tab-set}
+:::{tab-item} PyPI
+:sync: pypi
+
+```sh
+pip install LeCrunch3
+```
+
 
 ## Supported devices
 
