@@ -15,7 +15,7 @@ and transmits it through the [CDTP](https://constellation.pages.desy.de/protocol
 ## Requirements
 
 This satellite requires the `[LeCrunch3]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
-or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/):
+or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/).
 
 ::::{tab-set}
 :::{tab-item} PyPI
@@ -24,6 +24,17 @@ or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/):
 ```sh
 pip install ConstellationDAQ[lecroy]
 ```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e .[lecroy]
+```
+
+:::
+::::
 
 
 ## Supported devices
