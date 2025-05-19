@@ -8,7 +8,7 @@ description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch lib
 ## Description
 
 This satellite uses the [LeCrunch3](https://github.com/nminafra/LeCrunch3) library by [Nicola Minafra](https://github.com/nminafra),
-based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch each channel waveform from a LeCroy `Waverunner` scope.
+based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch each channel waveform from a `LeCroy Waverunner` series scope.
 Using a TCP connection to the scope's `Waverunner` software, it provides a simplified method to start a single- or sequenced-waveform acquisition
 and transmits it through the [CDTP](https://constellation.pages.desy.de/protocols/cdtp.html) to Constellation receivers.
 
@@ -28,7 +28,7 @@ pip install LeCrunch3
 
 ## Supported devices
 
-This satellite is compatible with a broad class of Teledyne-LeCroy devices, and was successfuly tested with a `Waverunner 8104`.
+This satellite is compatible with a broad class of `Teledyne-LeCroy` devices, and was successfully tested with a `Waverunner 8104`.
 The device to be controlled by this satellite can be accessed via the `ip_address` and `port` configuration parameters.
 By default the port is set to 1861 by the embedded acquisition software.
 
