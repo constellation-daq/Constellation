@@ -8,14 +8,13 @@ Constellation interface
 
 from typing import Any
 
+import LeCrunch3
 import numpy as np
 import socket
 import struct
 
 from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
-
-from LeCrunch3 import LeCrunch3
 
 
 class LeCrunchSatellite(DataSender):
