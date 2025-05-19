@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "LeCroy"
 description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch library"
+category: "Data Sender"
 ---
 
 ## Description
@@ -22,7 +23,7 @@ or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/):
 :sync: pypi
 
 ```sh
-pip install LeCrunch3
+pip install ConstellationDAQ[lecroy]
 ```
 
 
