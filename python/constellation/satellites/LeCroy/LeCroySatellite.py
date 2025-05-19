@@ -12,6 +12,7 @@ from typing import Any
 
 import LeCrunch3
 import numpy as np
+
 from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
 

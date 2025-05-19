@@ -8,8 +8,8 @@ description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch lib
 ## Description
 
 This satellite uses the [LeCrunch3](https://github.com/nminafra/LeCrunch3) library by [Nicola Minafra](https://github.com/nminafra),
-based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch the waveforms from a LeCroy Waverunner scope.
-Using a TCP connection to the scope's Waverunner software, it provides a simplified method to start a single- or sequenced-waveforms acquisition
+based on [LeCrunch2](https://github.com/BenLand100/LeCrunch2) and LeCrunch, to control and fetch each channel waveform from a LeCroy `Waverunner` scope.
+Using a TCP connection to the scope's `Waverunner` software, it provides a simplified method to start a single- or sequenced-waveform acquisition
 and transmits it _via_ the [CDTP](https://constellation.pages.desy.de/protocols/cdtp.html) to Constellation receivers.
 
 ## Requirements
