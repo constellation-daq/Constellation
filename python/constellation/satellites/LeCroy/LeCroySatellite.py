@@ -36,8 +36,7 @@ class LeCroySatellite(DataSender):
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
             self._scope.clear()
         except ConnectionRefusedError as e:
-            self.log.error(f"Connection refused to {ip_address}:{port} -> {str(e)}")
-            return ""
+            raise RuntimeError(f"Connection refused to {ip_address}:{port} -> {str(e)}")
 
         if self._num_sequences > 0:
             self._scope.set_sequence_mode(self._num_sequences)
@@ -57,7 +56,7 @@ class LeCroySatellite(DataSender):
             sequence_count = int(self._settings["SEQUENCE"].split(b",")[1])
             self.log.info(f"Configured scope with sequence count = {sequence_count}")
             if self._num_sequences != sequence_count:  # sanity check
-                self.log.error(
+                raise RuntimeError(
                     "Could not configure sequence mode properly: "
                     + f"num_sequences={self._num_sequences} != sequences_count={sequence_count}"
                 )
