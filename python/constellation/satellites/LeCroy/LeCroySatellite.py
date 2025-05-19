@@ -6,13 +6,12 @@ Provides the satellite implementation for the LeCroy/LeCrunch
 Constellation interface
 """
 
+import socket
+import struct
 from typing import Any
 
 import LeCrunch3
 import numpy as np
-import socket
-import struct
-
 from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
 
