@@ -20,16 +20,18 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
+- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components)
 
 The prerequisites can be installed as follows:
 
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
 
-Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages for GCC and Meson can be used:
+Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages can be used:
 
 ```sh
 sudo apt install meson g++
+sudo apt install qt6-base-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -37,7 +39,12 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
+sudo apt install qtbase5-dev
 export CXX="g++-12"
+```
+
+```{note}
+Since Ubuntu 22.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
 ```
 
 Ubuntu 20.04 requires newer versions of GCC and Meson than available from the standard package repositories. They are available in official PPAs:
@@ -47,33 +54,55 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
+sudo apt install qtbase5-dev
 export CXX="g++-13"
+```
+
+```{note}
+Since Ubuntu 20.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```
+
+```{warning}
+Ubuntu 20.04 is not officially supported.
 ```
 
 :::
 :::{tab-item} ALMA/Fedora
 
+For Fedora the official packages can be used:
+
 ```sh
-sudo dnf install meson clang
-export CXX=clang++
+sudo dnf install meson gcc-c++
+sudo dnf install qt6-qtbase-devel
+```
+
+ALMA9 requires a newer version of GCC than installed by default. New versions of GCC are available from the standard package
+repositories and can be enabled in a terminal session with the `scl` command:
+
+```sh
+sudo dnf install meson gcc-toolset-14
+sudo dnf install qt5-qtbase-devel
+scl enable gcc-toolset-14 bash
+```
+
+```{note}
+Since ALMA9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
 ```
 
 :::
-:::{tab-item} MacOS 14
+:::{tab-item} MacOS
 
 MacOS requires an installation of Meson and LLVM, e.g. via [Homebrew](https://brew.sh/):
 
 ```sh
-brew install meson
-brew install llvm
+brew install meson llvm
+brew install qt@6
 ```
 
-Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
-
 ``` sh
-export CXX="${HOMEBREW_PREFIX}/opt/llvm/bin/clang++"
-export CC="${HOMEBREW_PREFIX}/opt/llvm/bin/clang"
-export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
+export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
+export CC="$(brew --prefix)/opt/llvm/bin/clang"
+export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -Wl,-rpath,$(brew --prefix)/opt/llvm/lib/c++"
 ```
 
 :::
@@ -104,6 +133,39 @@ meson install -C build
 
 For details on installing Constellation for external satellites, see
 [Building External Satellites](../../application_development/howtos/external_satellite.md).
+
+## Build Options
+
+Build options can be set during the setup via
+
+```sh
+meson setup build -Doption=value
+```
+
+or after the setup via
+
+```sh
+meson configure build -Doption=value
+```
+
+Relevant build options are:
+
+- `buildtype`: \
+  Build type for the C++ version. \
+  Possible values are `debug`, `debugoptimized` and `release`. \
+  Defaults to `debug`.
+- `build_gui`: \
+  Which Qt version to use for the Graphical User Interface (GUI) library. \
+  Possible values are `none` (disables all GUI components), `qt5` and `qt6`. \
+  Defaults to `qt6`.
+- `cxx_tests`: \
+  Whether or not to build the C++ tests. \
+  Possible values are `auto`, `enabled` and `disabled`. \
+  Defaults to `auto`.
+- `cxx_tools`: \
+  Whether or not to build a set of C++ debugging tools. \
+  Possible values are `true` and `false`. \
+  Defaults to `true`.
 
 :::::
 :::::{tab-item} Python
