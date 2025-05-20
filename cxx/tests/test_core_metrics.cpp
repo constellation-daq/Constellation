@@ -47,7 +47,7 @@ public:
           topic_(std::move(topic)) {}
     void waitSubscription() {
         while(!subscribed_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         subscribed_.store(false);
         // Metric manager updates subscriptions every 100ms, wait until processed time
@@ -60,7 +60,7 @@ public:
     }
     void waitNextMessage() {
         while(!last_message_updated_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         last_message_updated_.store(false);
     }
