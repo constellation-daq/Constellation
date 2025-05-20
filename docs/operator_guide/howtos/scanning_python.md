@@ -6,7 +6,7 @@ parameters. The following is an example script to take measurements for differen
 
 First, the Constellation is initialized and launched, then a parameter scan is started using the
 {bdg-secondary}`reconfiguring` state transition described
-[in the satellite section](../concepts/satellite.md#changing-states-transitions).
+[in the satellite section](../concepts/satellite.md#changing-states---transitions).
 
 ```python
 import time
