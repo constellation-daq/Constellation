@@ -140,7 +140,7 @@ More details on controlling single satellites are provided later in this tutoria
 
 ## Recording Data
 
-The next step is to start recording data. In order to do this, the satellites first need to launched to the {bdg-secondary}`ORBIT`
+The next step is to start recording data. In order to do this, the satellites first need to be launched to the {bdg-secondary}`ORBIT`
 state. In this state, the configuration send during the initialization is fully applied such that the satellites are ready
 for immediate data taking. The satellites can be launched by clicking the {bdg-primary}`Launch` button.
 
