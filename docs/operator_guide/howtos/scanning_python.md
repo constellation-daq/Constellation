@@ -1,8 +1,28 @@
 # Parameter Scans with Python
 
-The Python Controller of Constellation is a fully-features IPython console.
-Consequently, the full Python syntax can be used to automate data acquisition and more complex tasks such as scanning
-parameters. The following is an example script to take measurements for different values of a parameter.
+The Python Controller of Constellation is a fully-features IPython console. It can be installed with the `cli` component:
+
+::::{tab-set}
+:::{tab-item} PyPI
+:sync: pypi
+
+```sh
+pip install ConstellationDAQ[cli]
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e .[cli]
+```
+
+:::
+::::
+
+Consequently, the full Python syntax can be used to automate data acquisition and more complex tasks such as scanning parameters.
+The following is an example script to take measurements for different values of a parameter.
 
 First, the Constellation is initialized and launched, then a parameter scan is started using the
 {bdg-secondary}`reconfiguring` state transition described
