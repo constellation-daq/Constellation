@@ -99,12 +99,10 @@ brew install meson llvm
 brew install qt@6
 ```
 
-Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
-
 ``` sh
-export CXX="${HOMEBREW_PREFIX}/opt/llvm/bin/clang++"
-export CC="${HOMEBREW_PREFIX}/opt/llvm/bin/clang"
-export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
+export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
+export CC="$(brew --prefix)/opt/llvm/bin/clang"
+export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -Wl,-rpath,$(brew --prefix)/opt/llvm/lib/c++"
 ```
 
 :::
