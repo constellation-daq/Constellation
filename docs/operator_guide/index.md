@@ -86,4 +86,5 @@ concepts/data
 
 howtos/setup_influxdb_grafana
 howtos/setup_mattermost_logger
+howtos/scanning_python
 ```
