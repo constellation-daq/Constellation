@@ -121,7 +121,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Add newly discovered remote:
     if(remote_it == remotes_.end()) {
         LOG(logger_, DEBUG) << "Adding " << msg.getSender() << " after receiving first heartbeat";
-        auto [it, inserted] = remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));
+        auto [it, inserted] =
+            remotes_.emplace(msg.getSender(), Remote(msg.getRole(), msg.getInterval(), now, msg.getState(), now));
         remote_it = it;
     }
 
@@ -137,8 +138,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Check for ERROR and SAFE states:
     if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         remote_it->second.lives = 0;
-       // Only trigger interrupt if demanded by the message flags:
-       if(interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT)) {
+        // Only trigger interrupt if demanded by the message flags:
+        if(interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT)) {
             LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
             interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
         }
