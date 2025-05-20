@@ -37,3 +37,35 @@ for ivl in range(0, 100, 10):
         constellation.stop()
         ctrl.await_state(SatelliteState.ORBIT)
 ```
+
+It is also possible to create a standalone script which can be run without the IPython console:
+
+```python
+import time
+
+from constellation.core.configuration import load_config
+from constellation.core.controller import BaseController
+from constellation.core.logging import setup_cli_logging
+
+# Settings
+config_file_path = "/path/to/config.toml"
+group_name = "edda"
+n_satellites = 1
+
+# Setup logging
+setup_cli_logging("info")
+
+# Create controller
+ctrl = BaseController(group=group_name, name="PythonCtrl", interface="*")
+constellation = ctrl.constellation
+
+# Load configuration
+cfg = load_config(config_file_path)
+
+# Wait until all satellites are connected
+while len(constellation.satellites) < n_satellites:
+    print("Waiting for satellites...")
+    time.sleep(0.5)
+
+# Initialize and reconfigure loop goes here as above
+```
