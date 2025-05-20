@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -24,8 +23,7 @@
 #include <asio/ip/address_v4.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/BroadcastRecv.hpp"
-#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/MulticastHandler.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
@@ -109,24 +107,19 @@ namespace constellation::chirp {
     class Manager {
     public:
         /**
-         * @param brd_address Broadcast address for outgoing broadcast messages
-         * @param any_address Any address for incoming broadcast messages
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
          */
-        CNSTLN_API Manager(const std::optional<asio::ip::address_v4>& brd_address,
-                           const asio::ip::address_v4& any_address,
-                           std::string_view group_name,
-                           std::string_view host_name);
+        CNSTLN_API Manager(std::string_view group_name, std::string_view host_name);
 
         /**
-         * @param brd_ip Broadcast IP for outgoing broadcast messages
-         * @param any_ip Any IP for incoming broadcast messages
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
+         * @param interface_address Interface address to use
          */
-        CNSTLN_API
-        Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name);
+        CNSTLN_API Manager(std::string_view group_name,
+                           std::string_view host_name,
+                           const asio::ip::address_v4& interface_address);
 
         CNSTLN_API virtual ~Manager();
 
@@ -274,6 +267,15 @@ namespace constellation::chirp {
 
     private:
         /**
+         * @param group_name Group name of the group to join
+         * @param host_name Host name for outgoing messages
+         * @param interface_addresses Set of interface addresses to use
+         */
+        Manager(std::string_view group_name,
+                std::string_view host_name,
+                const std::set<asio::ip::address_v4>& interface_addresses);
+
+        /**
          * Send a CHIRP broadcast
          *
          * @param type CHIRP broadcast message type
@@ -287,19 +289,21 @@ namespace constellation::chirp {
         void call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status);
 
         /**
-         * Main loop listening and responding to incoming CHIRP broadcasts
-         *
-         * The run loop responds to incoming CHIRP broadcasts with REQUEST type by sending CHIRP broadcasts with OFFER type
-         * for all registered services. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list
-         * of discovered services and calls the corresponding discovery callbacks.
+         * Responds to incoming CHIRP message with REQUEST type by sending CHIRP messages with OFFER type for all registered
+         * services. It also tracks incoming CHIRP messages with OFFER and DEPART type to form the list of discovered
+         * services and calls the corresponding discovery callbacks.
+         */
+        void handle_incoming_message(message::CHIRPMessage chirp_msg, const asio::ip::address_v4& address);
+
+        /**
+         * Main loop listening and handling incoming CHIRP messages
          *
          * @param stop_token Token to stop loop via `std::jthread`
          */
         void main_loop(const std::stop_token& stop_token);
 
     private:
-        BroadcastRecv receiver_;
-        std::unique_ptr<BroadcastSend> sender_;
+        std::unique_ptr<MulticastHandler> multicast_handler_;
 
         message::MD5Hash group_id_;
         message::MD5Hash host_id_;

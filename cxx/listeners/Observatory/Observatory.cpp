@@ -326,8 +326,8 @@ namespace {
         // Console log level (-l)
         parser.add_argument("-l", "--level").help("log level").default_value("INFO");
 
-        // Broadcast address (--brd)
-        parser.add_argument("--brd").help("broadcast address");
+        // Interface address (--if)
+        parser.add_argument("--if").help("interface address");
 
         // Any address (--any)
         std::string default_any_addr {};
@@ -397,26 +397,18 @@ int main(int argc, char** argv) {
         }
         ManagerLocator::getSinkManager().setConsoleLevels(default_level.value());
 
-        // Check broadcast and any address
-        std::optional<asio::ip::address_v4> brd_addr {};
+        // Check interface address
+        std::optional<asio::ip::address_v4> if_addr {};
         try {
-            const auto brd_string = parser.present("brd");
-            if(brd_string.has_value()) {
-                brd_addr = asio::ip::make_address_v4(brd_string.value());
+            const auto if_string = parser.present("if");
+            if(if_string.has_value()) {
+                if_addr = asio::ip::make_address_v4(if_string.value());
             }
         } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid broadcast address \"" << get_arg(parser, "brd") << "\"";
+            LOG(logger, CRITICAL) << "Invalid interface address \"" << get_arg(parser, "if") << "\"";
             return 1;
         } catch(const std::exception&) {
             std::unreachable();
-        }
-
-        asio::ip::address_v4 any_addr {};
-        try {
-            any_addr = asio::ip::make_address_v4(get_arg(parser, "any"));
-        } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid any address " << std::quoted(get_arg(parser, "any"));
-            return 1;
         }
 
         // Check satellite name
@@ -443,7 +435,11 @@ int main(int argc, char** argv) {
         // Create CHIRP manager and set as default
         std::unique_ptr<chirp::Manager> chirp_manager {};
         try {
-            chirp_manager = std::make_unique<chirp::Manager>(brd_addr, any_addr, group_name, logger_name);
+            if(if_addr.has_value()) {
+                chirp_manager = std::make_unique<chirp::Manager>(group_name, logger_name, if_addr.value());
+            } else {
+                chirp_manager = std::make_unique<chirp::Manager>(group_name, logger_name);
+            }
             chirp_manager->start();
             ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
         } catch(const std::exception& error) {

@@ -2,8 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
-  'chirp/BroadcastRecv.cpp',
-  'chirp/BroadcastSend.cpp',
+  'chirp/MulticastHandler.cpp',
   'chirp/Manager.cpp',
   'config/Configuration.cpp',
   'config/Dictionary.cpp',
@@ -67,8 +66,7 @@ pkg.generate(core_lib,
 )
 
 install_headers(
-  'chirp/BroadcastRecv.hpp',
-  'chirp/BroadcastSend.hpp',
+  'chirp/MulticastHandler.hpp',
   'chirp/Manager.hpp',
   subdir: 'constellation/core/chirp',
 )
