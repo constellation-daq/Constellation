@@ -43,6 +43,10 @@ public:
                   const std::lock_guard lock {mutex_};
                   interrupt_message_ = std::string(status);
                   interrupt_received_.store(true);
+              },
+              [&]() {
+                  const std::lock_guard lock {mutex_};
+                  degraded_received_.store(true);
               }) {}
 
     void waitInterrupt() {
@@ -52,12 +56,20 @@ public:
         interrupt_received_.store(false);
     }
 
+    void waitDegraded() {
+        while(!degraded_received_.load()) {
+            std::this_thread::yield();
+        }
+        degraded_received_.store(false);
+    }
+
     std::string getInterruptMessage() {
         const std::lock_guard lock {mutex_};
         return interrupt_message_;
     }
 
 private:
+    std::atomic_bool degraded_received_ {false};
     std::atomic_bool interrupt_received_ {false};
     std::mutex mutex_;
     std::string interrupt_message_;
