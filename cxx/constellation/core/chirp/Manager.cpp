@@ -113,7 +113,7 @@ Manager::Manager(std::string_view group_name,
 }
 
 Manager::Manager(std::string_view group_name, std::string_view host_name)
-    : Manager(group_name, host_name, get_broadcast_addresses()) {}
+    : Manager(group_name, host_name, get_interface_addresses()) {}
 
 Manager::Manager(std::string_view group_name, std::string_view host_name, const asio::ip::address_v4& interface_address)
     : Manager(group_name, host_name, std::set({interface_address})) {}
