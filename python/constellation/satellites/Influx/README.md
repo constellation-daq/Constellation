@@ -25,7 +25,7 @@ The Influx satellite requires the `[influx]` component, which can be installed w
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[influx]
+pip install "ConstellationDAQ[influx]"
 ```
 
 :::
@@ -33,7 +33,7 @@ pip install ConstellationDAQ[influx]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[influx]
+pip install --no-build-isolation -e ".[influx]"
 ```
 
 :::

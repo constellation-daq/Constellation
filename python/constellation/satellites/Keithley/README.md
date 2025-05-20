@@ -30,7 +30,7 @@ The Keithley satellite requires the `[keithley]` component, which can be install
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[keithley]
+pip install "ConstellationDAQ[keithley]"
 ```
 
 :::
@@ -38,7 +38,7 @@ pip install ConstellationDAQ[keithley]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[keithley]
+pip install --no-build-isolation -e ".[keithley]"
 ```
 
 :::

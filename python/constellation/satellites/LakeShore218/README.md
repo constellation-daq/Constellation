@@ -33,7 +33,7 @@ The Keithley satellite requires the `[visa]` component, which can be installed w
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[visa]
+pip install "ConstellationDAQ[visa]"
 ```
 
 :::
@@ -41,7 +41,7 @@ pip install ConstellationDAQ[visa]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[visa]
+pip install --no-build-isolation -e ".[visa]"
 ```
 
 :::

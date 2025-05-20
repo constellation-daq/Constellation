@@ -18,7 +18,7 @@ The CaenHV satellite requires the `[caenhv]` component, which can be installed w
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[caenhv]
+pip install "ConstellationDAQ[caenhv]"
 ```
 
 :::
@@ -26,7 +26,7 @@ pip install ConstellationDAQ[caenhv]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[caenhv]
+pip install --no-build-isolation -e ".[caenhv]"
 ```
 
 :::

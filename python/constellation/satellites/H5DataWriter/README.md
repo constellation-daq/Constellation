@@ -19,7 +19,7 @@ The H5DataWriter satellite requires the `[hdf5]` component, which can be install
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[hdf5]
+pip install "ConstellationDAQ[hdf5]"
 ```
 
 :::
@@ -27,7 +27,7 @@ pip install ConstellationDAQ[hdf5]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[hdf5]
+pip install --no-build-isolation -e ".[hdf5]"
 ```
 
 :::
