@@ -10,7 +10,7 @@ To install optional components of the framework, you can install those by adding
 A recommended installation includes the `cli` and `influx` components:
 
 ```sh
-pip install ConstellationDAQ[cli,influx]
+pip install "ConstellationDAQ[cli,influx]"
 ```
 
 ```{note}

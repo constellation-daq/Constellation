@@ -41,7 +41,7 @@ This can be installed with the `cli` component:
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[cli]
+pip install "ConstellationDAQ[cli]"
 ```
 
 :::
@@ -49,7 +49,7 @@ pip install ConstellationDAQ[cli]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[cli]
+pip install --no-build-isolation -e ".[cli]"
 ```
 
 :::

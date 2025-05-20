@@ -7,7 +7,7 @@ The Python Controller of Constellation is a fully-features IPython console. It c
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[cli]
+pip install "ConstellationDAQ[cli]"
 ```
 
 :::
@@ -15,7 +15,7 @@ pip install ConstellationDAQ[cli]
 :sync: source
 
 ```sh
-pip install --no-build-isolation -e .[cli]
+pip install --no-build-isolation -e ".[cli]"
 ```
 
 :::

@@ -222,7 +222,7 @@ To install optional components of the framework, you can install those by replac
 A recommended installation includes the `cli` and `influx` components:
 
 ```sh
-pip install --no-build-isolation --editable .[cli,influx]
+pip install --no-build-isolation --editable ".[cli,influx]"
 ```
 
 :::::
