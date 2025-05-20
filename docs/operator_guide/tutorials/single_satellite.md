@@ -136,7 +136,10 @@ edda > constellation.get_state()
                         "last_changed_iso": '2024-12-12T13:18:18.794958+00:00'})}
 ```
 
-Similarly, all satellite states can be called. A full list of available commands, along with a description of the finite
+Here, the response of the satellites contain a message (`msg`) with the human-readable state name, a payload with the state
+code and metadata with key-value pairs such as the time when the state changed last (`last_changed`).
+
+Similarly, all satellite transitions can be called. A full list of available commands, along with a description of the finite
 state machine can be found in the [concepts chapter on satellites](../concepts/satellite.md).
 
 ### Loading a Configuration File
