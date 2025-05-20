@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <chrono> // IWYU pragma: keep
 #include <map>
 #include <mutex>
 #include <string>
@@ -41,9 +40,11 @@ using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
-using namespace std::chrono_literals;
 
 class Receiver : public DummySatelliteNR<ReceiverSatellite> {
+public:
+    Receiver(std::string_view name = "r1") : DummySatelliteNR<ReceiverSatellite>(name) {}
+
 protected:
     void receive_bor(const CDTP1Message::Header& header, Configuration config) override {
         const auto sender = to_string(header.getSender());
@@ -74,21 +75,21 @@ protected:
 public:
     void awaitBOR() {
         while(!bor_received_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         bor_received_.store(false);
     }
 
     void awaitData() {
         while(!data_received_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         data_received_.store(false);
     }
 
     void awaitEOR() {
         while(!eor_received_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         eor_received_.store(false);
     }
@@ -223,12 +224,18 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     // Stop the receiver to avoid receiving data
     receiver.reactFSM(FSM::Transition::stop);
 
+    // Check that receiver went to ERROR due to missing EOR
+    REQUIRE(receiver.getState() == FSM::State::ERROR);
+    const auto& eor = receiver.getEOR("Dummy.t1");
+    REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
+    receiver.exit();
+
     // Attempt to send a data frame and catch its failure
     REQUIRE_THROWS_MATCHES(transmitter.sendData(std::vector<int>({1, 2, 3, 4})),
                            SendTimeoutError,
                            Message("Failed sending data message after 1s"));
 
-    receiver.exit();
     transmitter.exit();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
@@ -396,7 +403,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     receiver.awaitBOR();
     REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
 
-    // Allow receiver to progress through transitional state autonomously:
+    // Allow to progress through transitional state autonomously
+    transmitter.skipTransitional(true);
     receiver.skipTransitional(true);
 
     // Interrupt the run:
@@ -458,7 +466,12 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
 
-    // Ensure all satellite are in safe mode
+    // Wait until receiver has handled interrupting
+    while(receiver.getState() == FSM::State::interrupting) {
+        std::this_thread::yield();
+    }
+
+    // Ensure receiver is in safe mode
     REQUIRE(receiver.getState() == FSM::State::SAFE);
     REQUIRE(transmitter.getState() == FSM::State::ERROR);
 

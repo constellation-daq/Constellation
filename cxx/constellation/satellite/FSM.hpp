@@ -197,13 +197,13 @@ namespace constellation::satellite {
         /**
          * @brief Call a satellite function
          *
+         * Calls the wrapper function of the BaseSatellite and sets the status depending on the return value.
+         *
          * @param func Function to be called
-         * @param success_transition Transition to be performed once the function successfully returned
          * @param args Function arguments
-         * @return Transition after function call, either success transition or failure
+         * @return True if the function returned without any issue, false if there was an exception
          */
-        template <typename Func, typename... Args>
-        Transition call_satellite_function(Func func, Transition success_transition, Args&&... args);
+        template <typename Func, typename... Args> bool call_satellite_function(Func func, Args&&... args);
 
         /**
          * @brief Stop and join the run_thread
