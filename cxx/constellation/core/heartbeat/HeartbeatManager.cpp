@@ -102,35 +102,38 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const std::lock_guard lock {mutex_};
 
     // Update or add the remote:
-    const auto remote_it = remotes_.find(msg.getSender());
-    if(remote_it != remotes_.end()) {
+    auto remote_it = remotes_.find(msg.getSender());
 
-        const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
-        if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
-            LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
+    // Add newly discovered remote:
+    if(remote_it == remotes_.end()) {
+        LOG(logger_, DEBUG) << "Adding " << msg.getSender() << " after receiving first heartbeat";
+        auto [it, inserted] = remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));
+        remote_it = it;
+    }
+
+    // Check for time deviation
+    const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
+    if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
+        LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
+    }
+
+    // Check for ERROR and SAFE states:
+    if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
+        remote_it->second.lives = 0;
+        if(interrupt_callback_) {
+            LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
+            interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
         }
+    }
 
-        // Take immediate action on remote state changes:
-        // Check for ERROR and SAFE states:
-        if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
-            remote_it->second.lives = 0;
-            if(interrupt_callback_) {
-                LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
-                interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
-            }
-        }
+    // Update remote
+    remote_it->second.interval = msg.getInterval();
+    remote_it->second.last_heartbeat = now;
+    remote_it->second.last_state = msg.getState();
 
-        remote_it->second.interval = msg.getInterval();
-        remote_it->second.last_heartbeat = now;
-        remote_it->second.last_state = msg.getState();
-
-        // Replenish lives unless we're in ERROR or SAFE state:
-        if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-            remote_it->second.lives = protocol::CHP::Lives;
-        }
-    } else {
-        // Add newly discovered remote:
-        remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));
+    // Replenish lives unless we're in ERROR or SAFE state:
+    if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
+        remote_it->second.lives = protocol::CHP::Lives;
     }
 }
 

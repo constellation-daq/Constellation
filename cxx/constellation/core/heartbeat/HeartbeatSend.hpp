@@ -61,7 +61,7 @@ namespace constellation::heartbeat {
          *
          * This unregisters the CHIRP heartbeat service and stops the heartbeat thread.
          */
-        void terminate();
+        CNSTLN_API void terminate();
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound
