@@ -67,7 +67,7 @@ Ubuntu 20.04 is not officially supported.
 ```
 
 :::
-:::{tab-item} ALMA/Fedora
+:::{tab-item} Fedora
 
 For Fedora the official packages can be used:
 
@@ -76,17 +76,31 @@ sudo dnf install meson gcc-c++
 sudo dnf install qt6-qtbase-devel
 ```
 
-ALMA9 requires a newer version of GCC than installed by default. New versions of GCC are available from the standard package
-repositories and can be enabled in a terminal session with the `scl` command:
+:::
+:::{tab-item} Alma
+
+AlmaLinux 9 requires the CRB repository for Meson, which can be enabled via:
+
+```sh
+sudo dnf install epel-release
+sudo crb enable
+```
+
+AlmaLinux 9 also requires a newer version of GCC than available by default:
 
 ```sh
 sudo dnf install meson gcc-toolset-14
 sudo dnf install qt5-qtbase-devel
+```
+
+To use the latest GCC a terminal session has to be started with the `scl` command:
+
+```sh
 scl enable gcc-toolset-14 bash
 ```
 
 ```{note}
-Since ALMA9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+Since AlmaLinux 9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
 ```
 
 :::
