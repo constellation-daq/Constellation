@@ -182,18 +182,15 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             self.log_chirp.warning("Serviceid %s does not have a registered callback", serviceid)
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None, dest_addr: str = "") -> None:
+    def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None) -> None:
         """Broadcast all registered services matching `serviceid`.
 
         Specify None for all registered services.
-
-        If a destination address `dest_addr` is provided, broadcast only to that network address.
-
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self.log_chirp.debug("Broadcasting service OFFER on '%s':%s for %s", dest_addr, port, sid)
-                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port, dest_addr)
+                self.log_chirp.debug("Broadcasting service OFFER: %s for %s", port, sid)
+                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
@@ -270,22 +267,17 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
                 continue
 
             self.log_chirp.trace(
-                "Received CHIRP %s for %s on interface '%s' from '%s'",
+                "Received CHIRP %s for %s from '%s'",
                 msg.msgtype.name,
                 msg.serviceid.name,
                 msg.from_address,
-                msg.dest_address,
             )
 
             # Check Message Type
             if msg.msgtype == CHIRPMessageType.REQUEST:
                 # wait a short moment to spread out responses somewhat
                 time.sleep(random.random() / 5.0)
-                self.broadcast_offers(
-                    serviceid=msg.serviceid,
-                    # only answer to address we received the msg on
-                    dest_addr=msg.dest_address,
-                )
+                self.broadcast_offers(serviceid=msg.serviceid)
                 continue
 
             if msg.msgtype == CHIRPMessageType.OFFER:

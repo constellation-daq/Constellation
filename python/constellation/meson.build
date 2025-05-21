@@ -21,6 +21,7 @@ core_files = files(
   'core/heartbeater.py',
   'core/logging.py',
   'core/monitoring.py',
+  'core/multicast.py',
   'core/network.py',
   'core/protocol.py',
   'core/py.typed',

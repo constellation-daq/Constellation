@@ -10,9 +10,11 @@ from enum import Enum
 from hashlib import md5
 from uuid import UUID
 
-from .network import decode_ancdata, get_broadcast, get_broadcast_socket, recvmsg
+from .multicast import MulticastSocket
+from .network import get_interface_addresses
 
 CHIRP_PORT = 7123
+CHIRP_MULTICAST_ADDRESS = "239.192.7.123"
 CHIRP_HEADER = "CHIRP\x01"
 
 
@@ -90,7 +92,6 @@ class CHIRPMessage:
         self.serviceid = serviceid
         self.port = port
         self.from_address: str = ""
-        self.dest_address: str = ""
 
     def pack(self) -> bytes:
         """Serialize message to raw bytes."""
@@ -151,30 +152,8 @@ class CHIRPBeaconTransmitter:
         # whether or not to filter broadcasts on group
         self._filter_group = True
 
-        # whether or not there are incoming packets
-        self.busy = False
-
-        # Create UPP broadcasting socket
-        #
-        # NOTE: Socket options are often OS-specific; the ones below were chosen
-        # for supporting Linux-based systems.
-        #
-        self._sock = get_broadcast_socket()
-        # blocking (i.e. with a timeout for recv calls)
-        self._sock.setblocking(True)
-        self._sock.settimeout(0.05)
-        # determine to what address(es) to send broadcasts to
-        self._broadcast_addrs = list(get_broadcast(interface))
-        # bind to specified interface(s) to listen to incoming broadcast.
-        # NOTE: only support for IPv4 is implemented
-        if interface == "*":
-            # INADDR_ANY for IPv4
-            interface = ""
-        else:
-            # use broadcast address instead
-            interface = self._broadcast_addrs[0]
-        # one socket for listening
-        self._sock.bind((interface, CHIRP_PORT))
+        # Create multicast socket
+        self._socket = MulticastSocket(get_interface_addresses(interface), CHIRP_MULTICAST_ADDRESS, CHIRP_PORT)
 
     @property
     def host(self) -> UUID:
@@ -201,35 +180,23 @@ class CHIRPBeaconTransmitter:
         serviceid: CHIRPServiceIdentifier,
         msgtype: CHIRPMessageType,
         port: int = 0,
-        dest_address: str = "",
     ) -> None:
         """Broadcast a given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
-        self.busy = True
-        if not dest_address:
-            # send to all
-            for bcast in self._broadcast_addrs:
-                self._sock.sendto(msg.pack(), (bcast, CHIRP_PORT))
-        else:
-            self._sock.sendto(msg.pack(), (dest_address, CHIRP_PORT))
-        self.busy = False
+        self._socket.sendMessage(msg.pack())
 
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
-        try:
-            buf, ancdata, from_address = recvmsg(self._sock, 1024)
-            self.busy = True
-        except (BlockingIOError, TimeoutError):
-            # no data waiting for us
-            self.busy = False
+        multicast_message = self._socket.recvMessage()
+        if multicast_message is None:
             return None
 
         # Unpack msg
         msg = CHIRPMessage()
         try:
-            msg.unpack(buf)
+            msg.unpack(multicast_message.content)
         except Exception as e:
-            raise RuntimeError(f"Received malformed message by host {from_address}: {e}") from e
+            raise RuntimeError(f"Received malformed message by host {multicast_message.address}: {e}") from e
 
         # ignore msg from this (our) host
         if self._host_uuid == msg.host_uuid:
@@ -239,10 +206,9 @@ class CHIRPBeaconTransmitter:
         if self._filter_group and self._group_uuid != msg.group_uuid:
             return None
 
-        msg.from_address = from_address
-        msg.dest_address = decode_ancdata(ancdata, msg.from_address)
+        msg.from_address = multicast_message.address
         return msg
 
     def close(self) -> None:
         """Close the socket."""
-        self._sock.close()
+        self._socket.close()
