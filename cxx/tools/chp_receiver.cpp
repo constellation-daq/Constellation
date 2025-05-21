@@ -56,7 +56,7 @@ namespace {
         }
         std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
 
-        auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, "chp_receiver");
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, "chp_receiver");
         chirp_manager->start();
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 

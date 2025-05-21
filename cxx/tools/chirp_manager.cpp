@@ -74,12 +74,11 @@ namespace {
 
     void cli_loop(std::span<char*> args) {
         // Get constellation group, name, brd address, and any address via cmdline
-        std::cout << "Usage: chirp_manager CONSTELLATION_GROUP NAME BRD_ADDR ANY_ADDR\n" << std::flush;
+        std::cout << "Usage: chirp_manager CONSTELLATION_GROUP NAME INTERFACE\n" << std::flush;
 
         auto group = "constellation"s;
         auto name = "chirp_manager"s;
-        auto brd_address = asio::ip::address_v4::broadcast();
-        auto any_address = asio::ip::address_v4::any();
+        std::optional<asio::ip::address_v4> if_addr {};
         if(args.size() >= 2) {
             group = args[1];
         }
@@ -89,18 +88,10 @@ namespace {
         }
         if(args.size() >= 4) {
             try {
-                brd_address = asio::ip::make_address_v4(args[3]);
+                if_addr = asio::ip::make_address_v4(args[3]);
             } catch(const asio::system_error& error) {
-                std::cerr << "Unable to use specified broadcast address " << std::quoted(args[3])
+                std::cerr << "Unable to use specified interface address " << std::quoted(args[3])
                           << ", using default instead\n"
-                          << std::flush;
-            }
-        }
-        if(args.size() >= 5) {
-            try {
-                any_address = asio::ip::make_address_v4(args[4]);
-            } catch(const asio::system_error& error) {
-                std::cerr << "Unable to use specified any address " << std::quoted(args[4]) << ", using default instead\n"
                           << std::flush;
             }
         }
@@ -108,7 +99,7 @@ namespace {
         // Turn off console logging
         ManagerLocator::getSinkManager().setConsoleLevels(OFF);
 
-        Manager manager {brd_address, any_address, group, name};
+        auto manager = (if_addr.has_value() ? Manager(group, name, if_addr.value()) : Manager(group, name));
 
         std::cout << "Commands: "
                   << "\n list_registered_services"
