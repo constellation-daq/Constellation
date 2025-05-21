@@ -338,18 +338,18 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
                     // Fail if the satellite to which this condition applies is not present in the constellation
                     if(!remote_state.has_value()) {
                         error_message = "Dependent remote satellite " + condition.remote + " not present";
-                        LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                        set_status("Critical failure during transition: " + error_message);
-                        return Transition::failure;
+                        LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                        set_status("Critical failure: " + error_message);
+                        return false;
                     }
 
                     // Check if state is ERROR:
                     if(remote_state.value() == State::ERROR) {
                         error_message = "Dependent remote satellite " + condition.remote + " reports state " +
                                         to_string(remote_state.value());
-                        LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                        set_status("Critical failure during transition: " + error_message);
-                        return Transition::failure;
+                        LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                        set_status("Critical failure: " + error_message);
+                        return false;
                     }
 
                     // Check if condition is fulfilled:
@@ -377,9 +377,9 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
             // If timeout reached, throw
             if(timer.timeoutReached()) {
                 error_message = "Could not satisfy remote conditions within timeout";
-                LOG(logger_, CRITICAL) << "Critical failure during transition: " << error_message;
-                set_status("Critical failure during transition: " + error_message);
-                return Transition::failure;
+                LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                set_status("Critical failure: " + error_message);
+                return false;
             }
 
             // Wait a bit before checking again
