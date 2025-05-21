@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Multicast sender
+ * @brief Multicast socket
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <optional>
 #include <set>
 #include <span>
 #include <vector>
@@ -32,7 +33,7 @@ namespace constellation::chirp {
     };
 
     /** Multicast handler for multicast message */
-    class MulticastHandler {
+    class MulticastSocket {
     public:
         /**
          * Construct multicast handler
@@ -41,16 +42,9 @@ namespace constellation::chirp {
          * @param multicast_address Multicast address
          * @param multicast_port Multicast port
          */
-        CNSTLN_API MulticastHandler(const std::set<asio::ip::address_v4>& interface_addresses,
-                                    const asio::ip::address_v4& multicast_address,
-                                    asio::ip::port_type multicast_port);
-
-        /**
-         * Send multicast message to all interfaces
-         *
-         * @param message Message in bytes
-         */
-        CNSTLN_API void sendMessage(std::span<const std::byte> message);
+        CNSTLN_API MulticastSocket(std::set<asio::ip::address_v4> interface_addresses,
+                                   const asio::ip::address_v4& multicast_address,
+                                   asio::ip::port_type multicast_port);
 
         /**
          * Send multicast message to one interface
@@ -61,16 +55,25 @@ namespace constellation::chirp {
         CNSTLN_API void sendMessage(std::span<const std::byte> message, const asio::ip::address_v4& interface_address);
 
         /**
-         * Receive multicast messages within a timeout
+         * Send multicast message to all interfaces
+         *
+         * @param message Message in bytes
+         */
+        CNSTLN_API void sendMessage(std::span<const std::byte> message);
+
+        /**
+         * Receive multicast message within a timeout
          *
          * @param timeout Duration for which to block function call
-         * @return Vector with received messages (might be empty)
+         * @return Multicast message if received
          */
-        CNSTLN_API std::vector<MulticastMessage> recvMessage(std::chrono::steady_clock::duration timeout);
+        CNSTLN_API std::optional<MulticastMessage> recvMessage(std::chrono::steady_clock::duration timeout);
 
     private:
         asio::io_context io_context_;
+        asio::ip::udp::socket socket_;
+        std::set<asio::ip::address_v4> interface_addresses_;
         asio::ip::udp::endpoint multicast_endpoint_;
-        std::vector<asio::ip::udp::socket> sockets_;
     };
+
 } // namespace constellation::chirp

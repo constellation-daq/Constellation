@@ -19,6 +19,7 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -29,7 +30,7 @@
 
 #include <asio/ip/address_v4.hpp>
 
-#include "constellation/core/chirp/MulticastHandler.hpp"
+#include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -109,14 +110,14 @@ Manager::Manager(std::string_view group_name,
                                            [](const auto& interface_address) { return interface_address.to_string(); });
 
     const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
-    multicast_handler_ = std::make_unique<MulticastHandler>(interface_addresses, multicast_adddress, PORT);
+    multicast_socket_ = std::make_unique<MulticastSocket>(interface_addresses, multicast_adddress, PORT);
 }
 
 Manager::Manager(std::string_view group_name, std::string_view host_name)
     : Manager(group_name, host_name, get_interface_addresses()) {}
 
 Manager::Manager(std::string_view group_name, std::string_view host_name, const asio::ip::address_v4& interface_address)
-    : Manager(group_name, host_name, std::set({interface_address})) {}
+    : Manager(group_name, host_name, std::set({asio::ip::address_v4::loopback(), interface_address})) {}
 
 Manager::~Manager() {
     // First stop Run function
@@ -249,10 +250,14 @@ void Manager::sendRequest(ServiceIdentifier service) {
     send_message(REQUEST, {service, 0});
 }
 
-void Manager::send_message(MessageType type, RegisteredService service) {
+void Manager::send_message(MessageType type, RegisteredService service, std::optional<asio::ip::address_v4> address) {
     LOG(logger_, DEBUG) << "Sending " << type << " for " << service.identifier << " service on port " << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    multicast_handler_->sendMessage(asm_msg);
+    if(address.has_value()) {
+        multicast_socket_->sendMessage(asm_msg, address.value());
+    } else {
+        multicast_socket_->sendMessage(asm_msg);
+    }
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
@@ -298,7 +303,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
         // Replay OFFERs for registered services with same service identifier
         for(const auto& service : registered_services_) {
             if(service.identifier == service_id) {
-                send_message(OFFER, service); // TODO: interface
+                send_message(OFFER, service, address);
             }
         }
         break;
@@ -339,10 +344,10 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
 
 void Manager::main_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-
-        const auto raw_msgs = multicast_handler_->recvMessage(50ms);
-
-        for(const auto& raw_msg : raw_msgs) {
+        // Receive CHIRP message and handle it
+        const auto raw_msg_opt = multicast_socket_->recvMessage(50ms);
+        if(raw_msg_opt.has_value()) {
+            const auto& raw_msg = raw_msg_opt.value();
             try {
                 handle_incoming_message(CHIRPMessage::disassemble(raw_msg.content), raw_msg.address);
             } catch(const MessageDecodingError& error) {

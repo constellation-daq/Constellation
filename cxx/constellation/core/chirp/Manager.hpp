@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -23,7 +24,7 @@
 #include <asio/ip/address_v4.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/chirp/MulticastHandler.hpp"
+#include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
@@ -280,8 +281,11 @@ namespace constellation::chirp {
          *
          * @param type CHIRP broadcast message type
          * @param service Service with identifier and port
+         * @param address Optional address determining the interface to use
          */
-        void send_message(protocol::CHIRP::MessageType type, RegisteredService service);
+        void send_message(protocol::CHIRP::MessageType type,
+                          RegisteredService service,
+                          std::optional<asio::ip::address_v4> address = {});
 
         /**
          * Call all discover callbacks
@@ -303,7 +307,7 @@ namespace constellation::chirp {
         void main_loop(const std::stop_token& stop_token);
 
     private:
-        std::unique_ptr<MulticastHandler> multicast_handler_;
+        std::unique_ptr<MulticastSocket> multicast_socket_;
 
         message::MD5Hash group_id_;
         message::MD5Hash host_id_;

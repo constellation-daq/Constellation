@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 core_src = files(
-  'chirp/MulticastHandler.cpp',
+  'chirp/MulticastSocket.cpp',
   'chirp/Manager.cpp',
   'config/Configuration.cpp',
   'config/Dictionary.cpp',
@@ -66,7 +66,7 @@ pkg.generate(core_lib,
 )
 
 install_headers(
-  'chirp/MulticastHandler.hpp',
+  'chirp/MulticastSocket.hpp',
   'chirp/Manager.hpp',
   subdir: 'constellation/core/chirp',
 )
