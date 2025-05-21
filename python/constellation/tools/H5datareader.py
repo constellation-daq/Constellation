@@ -52,7 +52,7 @@ class H5DataReader:
             self.swmr_mode = False
         return self.swmr_mode
 
-    def read_chunks_swmr(self, group: str):
+    def read_chunks_swmr(self, group: str, chunk_length: int):
         """Read the file in chunks in swmr mode"""
 
         class MyChunkIteratorSWMR:
@@ -84,15 +84,22 @@ class H5DataReader:
 
                 if self.i >= len(data_idx):
                     raise StopIteration
+                idx = 0
+                tmp_chunk_length = chunk_length
+                while idx == 0 and tmp_chunk_length > 0:
+                    if self.i + tmp_chunk_length >= len(data_idx):
+                        tmp_chunk_length = tmp_chunk_length - 1
+                        continue
+                    idx = data_idx[self.i + tmp_chunk_length]
+                    if idx == 0:
+                        tmp_chunk_length = tmp_chunk_length - 1
 
-                idx = data_idx[self.i]
-
-                if idx == 0:
+                if tmp_chunk_length == 0:
                     raise StopIteration
-
-                chunk = [np.array(data[self.prev_idx : idx]).view(self.dtype)]
-                self.prev_idx = idx
-                self.i += 1
+                chunk = []
+                for j in range(self.i, self.i + tmp_chunk_length + 1):
+                    chunk.append(np.array(data[data_idx[j - 1] : data_idx[j]]).view(self.dtype))
+                self.i = self.i + tmp_chunk_length + 1
                 return chunk
 
         return MyChunkIteratorSWMR(self.file, group)
