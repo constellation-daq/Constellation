@@ -42,17 +42,9 @@ namespace constellation::chirp {
          * @param multicast_address Multicast address
          * @param multicast_port Multicast port
          */
-        CNSTLN_API MulticastSocket(std::set<asio::ip::address_v4> interface_addresses,
+        CNSTLN_API MulticastSocket(const std::set<asio::ip::address_v4>& interface_addresses,
                                    const asio::ip::address_v4& multicast_address,
                                    asio::ip::port_type multicast_port);
-
-        /**
-         * Send multicast message to one interface
-         *
-         * @param message Message in bytes
-         * @param interface_address Address of interface for which to send message
-         */
-        CNSTLN_API void sendMessage(std::span<const std::byte> message, const asio::ip::address_v4& interface_address);
 
         /**
          * Send multicast message to all interfaces
@@ -71,8 +63,8 @@ namespace constellation::chirp {
 
     private:
         asio::io_context io_context_;
-        asio::ip::udp::socket socket_;
-        std::set<asio::ip::address_v4> interface_addresses_;
+        asio::ip::udp::socket recv_socket_;
+        std::vector<asio::ip::udp::socket> send_sockets_;
         asio::ip::udp::endpoint multicast_endpoint_;
     };
 

@@ -250,14 +250,10 @@ void Manager::sendRequest(ServiceIdentifier service) {
     send_message(REQUEST, {service, 0});
 }
 
-void Manager::send_message(MessageType type, RegisteredService service, std::optional<asio::ip::address_v4> address) {
+void Manager::send_message(MessageType type, RegisteredService service) {
     LOG(logger_, DEBUG) << "Sending " << type << " for " << service.identifier << " service on port " << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    if(address.has_value()) {
-        multicast_socket_->sendMessage(asm_msg, address.value());
-    } else {
-        multicast_socket_->sendMessage(asm_msg);
-    }
+    multicast_socket_->sendMessage(asm_msg);
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
@@ -303,7 +299,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
         // Replay OFFERs for registered services with same service identifier
         for(const auto& service : registered_services_) {
             if(service.identifier == service_id) {
-                send_message(OFFER, service, address);
+                send_message(OFFER, service);
             }
         }
         break;

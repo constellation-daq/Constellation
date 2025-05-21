@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
-#include <optional>
 #include <set>
 #include <stop_token>
 #include <string>
@@ -281,11 +280,8 @@ namespace constellation::chirp {
          *
          * @param type CHIRP broadcast message type
          * @param service Service with identifier and port
-         * @param address Optional address determining the interface to use
          */
-        void send_message(protocol::CHIRP::MessageType type,
-                          RegisteredService service,
-                          std::optional<asio::ip::address_v4> address = {});
+        void send_message(protocol::CHIRP::MessageType type, RegisteredService service);
 
         /**
          * Call all discover callbacks
