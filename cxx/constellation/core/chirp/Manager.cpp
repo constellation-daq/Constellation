@@ -105,9 +105,9 @@ Manager::Manager(std::string_view group_name,
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 
-    LOG(logger_, TRACE) << "Using interface addresses "
-                        << range_to_string(interface_addresses,
-                                           [](const auto& interface_address) { return interface_address.to_string(); });
+    LOG(logger_, INFO) << "Using interface addresses "
+                       << range_to_string(interface_addresses,
+                                          [](const auto& interface_address) { return interface_address.to_string(); });
 
     const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
     multicast_socket_ = std::make_unique<MulticastSocket>(interface_addresses, multicast_adddress, PORT);
