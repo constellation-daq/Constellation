@@ -15,8 +15,10 @@
 #include <tuple>
 #include <utility>
 
-#include "constellation/core/chirp/BroadcastSend.hpp"
+#include <asio/ip/address_v4.hpp>
+
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/Port.hpp"
@@ -30,7 +32,8 @@ inline constellation::chirp::Manager* create_chirp_manager() {
     static std::once_flag manager_flag {};
     std::call_once(manager_flag, [&] {
         LOG(STATUS) << "Creating chirp manager";
-        auto manager = std::make_unique<constellation::chirp::Manager>("0.0.0.0", "0.0.0.0", "edda", "chirp_manager");
+        auto manager =
+            std::make_unique<constellation::chirp::Manager>("edda", "chirp_manager", asio::ip::make_address_v4("127.0.0.1"));
         manager->start();
         constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
@@ -44,10 +47,12 @@ inline void chirp_mock_service(std::string_view name,
     // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
     using namespace constellation::chirp;
     using namespace constellation::protocol::CHIRP;
-    BroadcastSend chirp_sender {"0.0.0.0", PORT};
+    const auto interface_address = asio::ip::make_address_v4("127.0.0.1");
+    const auto multicast_address = asio::ip::address_v4(MULTICAST_ADDRESS);
+    MulticastSocket chirp_sender {{interface_address}, multicast_address, PORT};
     const auto msgtype = offer ? MessageType::OFFER : MessageType::DEPART;
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
-    chirp_sender.sendBroadcast(chirp_msg.assemble());
+    chirp_sender.sendMessage(chirp_msg.assemble());
     // Wait until broadcast is received
     auto* manager = constellation::utils::ManagerLocator::getCHIRPManager();
     while(std::ranges::count(manager->getDiscoveredServices(),
