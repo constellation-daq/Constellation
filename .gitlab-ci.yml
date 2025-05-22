@@ -73,6 +73,8 @@ variables:
 
 .alma9-gcc14:
   image: gitlab.desy.de:5555/constellation/build-images/alma9-gcc14:latest
+  before_script:
+    - source /opt/rh/gcc-toolset-14/enable
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
