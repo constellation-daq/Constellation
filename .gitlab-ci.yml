@@ -71,8 +71,10 @@ variables:
   tags:
     - hi-load
 
-.alma9-cern:
-  image: gitlab.desy.de:5555/constellation/build-images/alma9-cern:latest
+.alma9-gcc14:
+  image: gitlab.desy.de:5555/constellation/build-images/alma9-gcc14:latest
+  before_script:
+    - source /opt/rh/gcc-toolset-14/enable
 
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
@@ -166,11 +168,11 @@ variables:
     - python3 -m build
   <<: *python-rules
 
-build:alma9-cern:
+build:alma9-gcc14:
   extends:
     - .build-cpp
     - .cpp-hi-load
-    - .alma9-cern
+    - .alma9-gcc14
   variables:
     BUILD_TYPE: "release"
     BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin -Dbuild_gui=qt5"
@@ -286,12 +288,12 @@ build:python-3.13:
       junit: junit.xml
   <<: *python-rules
 
-test:alma9-cern:
+test:alma9-gcc14:
   extends:
     - .test-cpp
-    - .alma9-cern
+    - .alma9-gcc14
   needs:
-    - job: build:alma9-cern
+    - job: build:alma9-gcc14
       artifacts: true
 
 test:debian-clang:
