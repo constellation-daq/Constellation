@@ -81,6 +81,7 @@ SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OF
 
     // Init thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
+    thread_pool_ = spdlog::thread_pool();
 
     // Concole sink, log level always TRACE since only accessed via ProxySink
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -164,7 +165,7 @@ std::shared_ptr<spdlog::async_logger> SinkManager::create_logger(std::string_vie
     auto logger = std::make_shared<spdlog::async_logger>(
         transform(topic, ::toupper),
         spdlog::sinks_init_list({std::move(console_proxy_sink), std::move(cmdp_proxy_sink)}),
-        spdlog::thread_pool(),
+        thread_pool_,
         spdlog::async_overflow_policy::overrun_oldest);
 
     // Acquire lock for loggers_ and add to new logger
