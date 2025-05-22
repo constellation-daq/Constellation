@@ -106,17 +106,25 @@ Since AlmaLinux 9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see 
 :::
 :::{tab-item} MacOS
 
-MacOS requires an installation of Meson and LLVM, e.g. via [Homebrew](https://brew.sh/):
+Building on MacOS requires the installation of the XCode Command Line Tools via:
 
 ```sh
-brew install meson llvm
+xcode-select --install
+```
+
+Additionally, the compiler toolchain from [Homebrew](https://brew.sh/) is required:
+
+```sh
+brew install meson llvm lld
 brew install qt@6
 ```
 
 ``` sh
 export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
+export CXX_LD="lld"
 export CC="$(brew --prefix)/opt/llvm/bin/clang"
-export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -Wl,-rpath,$(brew --prefix)/opt/llvm/lib/c++"
+export CC_LD="lld"
+export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/lib/unwind -lunwind"
 ```
 
 :::
