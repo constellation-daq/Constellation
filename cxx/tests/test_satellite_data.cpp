@@ -148,12 +148,17 @@ public:
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-TEST_CASE("Receiver / No transmitters configured", "[satellite]") {
+TEST_CASE("Receiver / Reconfigure transmitters", "[satellite]") {
     auto receiver = Receiver();
     auto config = Configuration();
     config.set("_eor_timeout", 1);
+    config.set("_allow_overwriting", true);
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
-    // Require receiver in error state because _data_transmitters missing
+    receiver.reactFSM(FSM::Transition::launch);
+    REQUIRE(receiver.getState() == FSM::State::ORBIT);
+    auto config2 = Configuration();
+    config2.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
 
     receiver.exit();
@@ -204,7 +209,7 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
     auto receiver = Receiver();
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
 
     auto config_transmitter = Configuration();
     config_transmitter.set("_data_timeout", 1);
@@ -219,14 +224,14 @@ TEST_CASE("Transmitter / DATA timeout", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 10);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 10);
 
     // Stop the receiver to avoid receiving data
     receiver.reactFSM(FSM::Transition::stop);
 
     // Check that receiver went to ERROR due to missing EOR
     REQUIRE(receiver.getState() == FSM::State::ERROR);
-    const auto& eor = receiver.getEOR("Dummy.t1");
+    const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
     receiver.exit();
@@ -249,7 +254,7 @@ TEST_CASE("Successful run", "[satellite]") {
     transmitter.mockChirpService(CHIRP::DATA);
 
     auto config_receiver = Configuration();
-    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, Configuration());
@@ -257,11 +262,12 @@ TEST_CASE("Successful run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::launch);
 
     auto config2_receiver = Configuration();
+    config2_receiver.set("_allow_overwriting", true);
     config2_receiver.set("_eor_timeout", 1);
-    config2_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1", "Dummy.t2"});
     auto config2_transmitter = Configuration();
     config2_transmitter.set("_bor_timeout", 1);
     config2_transmitter.set("_eor_timeout", 1);
+    config2_transmitter.set("_data_timeout", 1);
     config2_transmitter.set("_data_license", "PDDL-1.0");
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
@@ -274,9 +280,9 @@ TEST_CASE("Successful run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
-    const auto& bor_tags = receiver.getBORTags("Dummy.t1");
+    const auto& bor_tags = receiver.getBORTags(transmitter.getCanonicalName());
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
     // Send a data frame
@@ -284,7 +290,7 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(sent);
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_msg = receiver.getLastData("Dummy.t1");
+    const auto& data_msg = receiver.getLastData(transmitter.getCanonicalName());
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
 
@@ -297,7 +303,7 @@ TEST_CASE("Successful run", "[satellite]") {
     receiver.progressFsm();
     // Wait until EOR is handled
     receiver.awaitEOR();
-    const auto& eor = receiver.getEOR("Dummy.t1");
+    const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("version").get<std::string>() == CNSTLN_VERSION);
     REQUIRE(eor.at("version_full").get<std::string>() == "Constellation " CNSTLN_VERSION_FULL);
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
@@ -305,7 +311,7 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::GOOD);
     REQUIRE(eor.at("license").get<std::string>() == "PDDL-1.0");
 
-    const auto& eor_tags = receiver.getEORTags("Dummy.t1");
+    const auto& eor_tags = receiver.getEORTags(transmitter.getCanonicalName());
     REQUIRE(eor_tags.at("buggy_events").get<int>() == 10);
 
     // Ensure all satellite are happy
@@ -327,7 +333,6 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
 
     auto config_transmitter = Configuration();
     config_transmitter.set("_bor_timeout", 1);
@@ -342,14 +347,14 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
     // Send a data frame
     const auto sent = transmitter.trySendData(std::vector<int>({1, 2, 3, 4}));
     REQUIRE(sent);
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_msg = receiver.getLastData("Dummy.t1");
+    const auto& data_msg = receiver.getLastData(transmitter.getCanonicalName());
     REQUIRE(data_msg.countPayloadFrames() == 1);
     REQUIRE(data_msg.getHeader().getTag<int>("test") == 1);
 
@@ -361,7 +366,7 @@ TEST_CASE("Tainted run", "[satellite]") {
     transmitter.reactFSM(FSM::Transition::stop);
     // Wait until EOR is handled
     receiver.progressFsm();
-    const auto& eor = receiver.getEOR("Dummy.t1");
+    const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "TAINTED");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::TAINTED);
@@ -386,7 +391,7 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
 
     auto config_transmitter = Configuration();
     config_transmitter.set("_bor_timeout", 1);
@@ -401,24 +406,32 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
     // Allow to progress through transitional state autonomously
     transmitter.skipTransitional(true);
     receiver.skipTransitional(true);
 
-    // Interrupt the run:
+    // Interrupt the run
+    transmitter.markRunTainted();
     transmitter.reactFSM(FSM::Transition::interrupt);
 
     // Wait until EOR is handled
     receiver.awaitEOR();
-    const auto& eor = receiver.getEOR("Dummy.t1");
+    const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
-    REQUIRE(eor.at("condition").get<std::string>() == "INTERRUPTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::INTERRUPTED);
+    REQUIRE(eor.at("condition").get<std::string>() == "TAINTED|INTERRUPTED");
+    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() ==
+            (CDTP::RunCondition::TAINTED | CDTP::RunCondition::INTERRUPTED));
 
-    // Ensure all satellite are in safe mode
+    // Ensure all satellites are in safe mode
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
+    auto receiver_state = receiver.getState();
+    while(receiver_state == FSM::State::RUN || receiver_state == FSM::State::interrupting) {
+        std::this_thread::yield();
+        receiver_state = receiver.getState();
+    }
+    REQUIRE(receiver_state == FSM::State::SAFE);
 
     receiver.exit();
     transmitter.exit();
@@ -436,7 +449,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     auto config_receiver = Configuration();
     config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
 
     auto config_transmitter = Configuration();
     config_transmitter.set("_bor_timeout", 1);
@@ -451,7 +464,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR("Dummy.t1").get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
     // Allow receiver to progress through transitional state autonomously:
     receiver.skipTransitional(true);
@@ -461,7 +474,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     // Wait until EOR is handled
     receiver.awaitEOR();
-    const auto& eor = receiver.getEOR("Dummy.t1");
+    const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
