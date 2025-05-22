@@ -47,7 +47,7 @@ public:
           topic_(std::move(topic)) {}
     void waitSubscription() {
         while(!subscribed_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         subscribed_.store(false);
         // Metric manager updates subscriptions every 100ms, wait until processed time
@@ -60,7 +60,7 @@ public:
     }
     void waitNextMessage() {
         while(!last_message_updated_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         last_message_updated_.store(false);
     }
@@ -250,8 +250,7 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     }
 
     // Ensure last received message is still at phi
-    metrics_receiver.resetLastMessage();
-    metrics_receiver.waitNextMessage();
+    std::this_thread::sleep_for(50ms);
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
 
     // Adjust value and enable sending again
