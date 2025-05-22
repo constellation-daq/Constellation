@@ -424,10 +424,14 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() ==
             (CDTP::RunCondition::TAINTED | CDTP::RunCondition::INTERRUPTED));
 
-    // Ensure all transmitter is in safe mode and receiver is in interrupting or SAFE
+    // Ensure all satellites are in safe mode
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
-    const auto receiver_state = receiver.getState();
-    REQUIRE((receiver_state == FSM::State::interrupting || receiver_state == FSM::State::SAFE));
+    auto receiver_state = receiver.getState();
+    while(receiver_state == FSM::State::RUN || receiver_state == FSM::State::interrupting) {
+        std::this_thread::yield();
+        receiver_state = receiver.getState();
+    }
+    REQUIRE(receiver_state == FSM::State::SAFE);
 
     receiver.exit();
     transmitter.exit();
