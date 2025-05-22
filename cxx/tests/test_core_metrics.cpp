@@ -250,8 +250,7 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     }
 
     // Ensure last received message is still at phi
-    metrics_receiver.resetLastMessage();
-    metrics_receiver.waitNextMessage();
+    std::this_thread::sleep_for(50ms);
     REQUIRE(metrics_receiver.getLastMessage()->getMetric().getValue().get<double>() == std::numbers::phi);
 
     // Adjust value and enable sending again
