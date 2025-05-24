@@ -182,6 +182,10 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     // Now test that we can filter a service category
     REQUIRE(manager2.getDiscoveredServices(HEARTBEAT).size() == 1);
     // Test that we can forget services
+    manager2.forgetDiscoveredService(HEARTBEAT, manager1.getHostID());
+    REQUIRE(manager2.getDiscoveredServices().size() == 1);
+    manager2.forgetDiscoveredServices(MD5Hash("Some-nonexistent-host-id"));
+    manager2.forgetDiscoveredServices(manager1.getHostID());
     manager2.forgetDiscoveredServices();
     REQUIRE(manager2.getDiscoveredServices().empty());
 
