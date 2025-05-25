@@ -149,6 +149,9 @@ class CommandTransmitter:
             msg.msg_verb = CSCPMessageVerb(msg.msg_verb)
         except ValueError:
             raise RuntimeError(f"Received invalid request with msg verb: {msg.msg_verb}")
+        # Convert commands to lower case to be case-insensitive:
+        if msg.msg_verb == CSCPMessageVerb.REQUEST:
+            msg.msg = msg.msg.lower()
         try:
             unpacker = msgpack.Unpacker()
             unpacker.feed(cmdmsg[2])
