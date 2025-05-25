@@ -4,6 +4,8 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import re
+import time
+from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
 from enum import Enum
@@ -47,6 +49,10 @@ class SatelliteState(Enum):
     interrupting = 0x0E
     # state if shutdown
     DEAD = 0xFF
+
+    def transitions_to(self, state: Enum) -> bool:
+        # Target steady state indicated by the lower four bits
+        return bool(((self.value & 0x0F) << 4) == state.value)
 
 
 class SatelliteFSM(StateMachine):
@@ -150,6 +156,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # instantiate state machine
         self.fsm = SatelliteFSM()
 
+        # transition conditions
+        self.conditions: dict[SatelliteState, list[str]] = defaultdict(list)
+
         # (transitional) state executor and event
         self._state_thread_evt: Event | None = None
         self._state_thread_exc: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=1)
@@ -169,6 +178,27 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         if not isinstance(request.payload, dict):
             # missing payload
             raise TypeError("Payload must be a dictionary with configuration values")
+
+        # Clear conditions
+        self.conditions = defaultdict(list)
+
+        # Read transition conditions from config
+        for transition in [
+            SatelliteState.initializing,
+            SatelliteState.launching,
+            SatelliteState.landing,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+        ]:
+            key = f"_require_{transition.name}_after"
+            if key in request.payload.keys():
+                value = request.payload[key]
+                if isinstance(value, list):
+                    self.conditions[transition] = value
+                else:
+                    self.conditions[transition].append(value)
+                self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
+
         return self._transition("initialize", request.payload, thread=False)
 
     @debug_log
@@ -277,6 +307,63 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         """
         return self._transition("failure", request.payload, thread=False)
 
+    @handle_error
+    def _satisfy_remote_conditions(self) -> bool:
+        """Check for defined remote conditions to be met"""
+
+        self.log_fsm.debug("Awaiting remote conditions for state transition %s", self.fsm.current_state)
+
+        # Check for conditions
+        if self.fsm.current_state.value not in self.conditions.keys():
+            self.log_fsm.trace("No condition configured for state transition %s", self.fsm.current_state)
+            return True
+
+        timeout = 60
+        timeout_start = time.time()
+
+        # Wait for remote states to match condition:
+        while True:
+
+            satisfied = True
+            for name in self.conditions[self.fsm.current_state.value]:
+                # Check that remote is registered
+                if name not in self.heartbeat_states:
+                    error_message = f"Dependent remote satellite {name} not present"
+                    self.fsm.status = error_message
+                    raise RuntimeError(error_message)
+                    return False
+
+                # Check if state is ERROR
+                if self.heartbeat_states[name] == SatelliteState.ERROR:
+                    error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name]}"
+                    self.fsm.status = error_message
+                    raise RuntimeError(error_message)
+                    return False
+
+                # Check if condition is fulfilled:
+                if not self.fsm.current_state.value.transitions_to(self.heartbeat_states[name]):
+                    msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name]}"
+                    self.log_fsm.debug(msg)
+                    self.fsm.status = msg
+                    satisfied = False
+                    break
+
+            # If all conditions are satisfied, continue:
+            if satisfied:
+                self.log_fsm.debug("Satisfied with all remote conditions, continuing")
+                break
+
+            # If timeout reached, throw
+            if time.time() > timeout_start + timeout:
+                error_message = "Could not satisfy remote conditions within timeout"
+                self.fsm.status = error_message
+                raise RuntimeError(error_message)
+                return False
+
+            time.sleep(0.1)
+
+        return True
+
     def _transition(self, target: str, payload: Any, thread: bool) -> tuple[str, Any, dict[str, Any]]:
         """Prepare and enqeue a transition task.
 
@@ -295,6 +382,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # call FSM transition, will throw exception if not allowed
         self.log_fsm.debug("State transition %s requested", target)
         getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
+
         self.log_fsm.status("State transition %s initiated.", target)
         transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
@@ -309,6 +397,11 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     def _start_transition(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition and advance FSM for transitional states."""
+
+        # Check for remote conditions being met:
+        if not self._satisfy_remote_conditions():
+            return
+
         res = fcn(payload)
         if not res:
             res = "Transition completed!"
@@ -327,6 +420,11 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     def _start_transition_thread(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition thread with the given fcn and arguments."""
+
+        # Check for remote conditions being met:
+        if not self._satisfy_remote_conditions():
+            return
+
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
         # add a callback triggered when transition is complete
