@@ -13,8 +13,7 @@ from pycaenhv import CaenHVModule  # type: ignore[import-untyped]
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.fsm import SatelliteState
-from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
 from constellation.core.satellite import Satellite
 
 from .lib_caen_ndt1470 import CaenNDT1470Manager

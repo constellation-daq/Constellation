@@ -20,10 +20,9 @@ from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration, make_lowercase
 from .error import debug_log, handle_error
-from .fsm import SatelliteState
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
-from .message.cscp1 import CSCP1Message
+from .message.cscp1 import CSCP1Message, SatelliteState
 from .monitoring import MonitoringSender
 
 

@@ -20,8 +20,7 @@ from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
 from .cmdp import MetricsType
 from .commandmanager import cscp_requestable
-from .fsm import SatelliteState
-from .message.cscp1 import CSCP1Message
+from .message.cscp1 import CSCP1Message, SatelliteState
 from .satellite import Satellite
 
 

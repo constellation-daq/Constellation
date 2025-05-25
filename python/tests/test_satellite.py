@@ -15,8 +15,7 @@ from constellation.core.broadcastmanager import DiscoveredService, chirp_callbac
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.chp import CHPRole
 from constellation.core.cscp import CommandTransmitter
-from constellation.core.fsm import SatelliteState
-from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 

@@ -8,7 +8,6 @@ import time
 from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
-from enum import Enum
 from threading import Event
 from typing import Any, Callable
 
@@ -19,40 +18,7 @@ from statemachine.states import States
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
 from .error import debug_log, handle_error
-from .message.cscp1 import CSCP1Message
-
-
-class SatelliteState(Enum):
-    """Available states to cycle through."""
-
-    # Idle state without any configuration
-    NEW = 0x10
-    # Initialized state with configuration but not (fully) applied
-    INIT = 0x20
-    # Prepared state where configuration is applied
-    ORBIT = 0x30
-    # Running state where DAQ is running
-    RUN = 0x40
-    # Safe fallback state if error is discovered during run
-    SAFE = 0xE0
-    # Error state if something went wrong
-    ERROR = 0xF0
-    #
-    #  TRANSITIONAL STATES
-    #
-    initializing = 0x12
-    launching = 0x23
-    landing = 0x32
-    reconfiguring = 0x33
-    starting = 0x34
-    stopping = 0x43
-    interrupting = 0x0E
-    # state if shutdown
-    DEAD = 0xFF
-
-    def transitions_to(self, state: Enum) -> bool:
-        # Target steady state indicated by the lower four bits
-        return bool(((self.value & 0x0F) << 4) == state.value)
+from .message.cscp1 import CSCP1Message, SatelliteState
 
 
 class SatelliteFSM(StateMachine):

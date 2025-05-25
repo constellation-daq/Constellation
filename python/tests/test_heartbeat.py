@@ -10,7 +10,7 @@ import pytest
 from conftest import mock_packet_queue_recv, mock_packet_queue_sender, mocket
 
 from constellation.core.chirp import get_uuid
-from constellation.core.fsm import SatelliteState
+from constellation.core.cscp import SatelliteState
 from constellation.core.heartbeater import HeartbeatSender
 from constellation.core.network import get_loopback_interface_name
 
