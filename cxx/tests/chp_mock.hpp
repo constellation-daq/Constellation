@@ -25,6 +25,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 #include "chirp_mock.hpp"
