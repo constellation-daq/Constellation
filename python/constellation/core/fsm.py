@@ -19,6 +19,7 @@ from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
 from .error import debug_log, handle_error
 from .message.cscp1 import CSCP1Message, SatelliteState
+from .heartbeatchecker import HeartbeatChecker
 
 
 class SatelliteFSM(StateMachine):
@@ -118,7 +119,7 @@ class SatelliteFSM(StateMachine):
         dot.write_png(filename)
 
 
-class SatelliteStateHandler(BaseSatelliteFrame):
+class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
