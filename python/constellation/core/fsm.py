@@ -303,14 +303,14 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 # Check that remote is registered
                 if name not in self.heartbeat_states:
                     error_message = f"Dependent remote satellite {name} not present"
-                    self.fsm.set_status(error_message)
+                    self.fsm.status = error_message
                     raise RuntimeError(error_message)
                     return False
 
                 # Check if state is ERROR
                 if self.heartbeat_states[name] == SatelliteState.ERROR:
                     error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name]}"
-                    self.fsm.set_status(error_message)
+                    self.fsm.status = error_message
                     raise RuntimeError(error_message)
                     return False
 
@@ -330,7 +330,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             # If timeout reached, throw
             if time.time() > timeout_start + timeout:
                 error_message = "Could not satisfy remote conditions within timeout"
-                self.fsm.set_status(error_message)
+                self.fsm.status = error_message
                 raise RuntimeError(error_message)
                 return False
 
@@ -389,7 +389,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
-                self.fsm.set_status(res)
+                self.fsm.status = res
 
     @debug_log
     def _start_transition_thread(self, fcn: Callable[[Any], str], payload: Any) -> None:
@@ -433,7 +433,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             if self.fsm.current_state_value != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
-                self.fsm.set_status(res)
+                self.fsm.status = res
 
     @cscp_requestable
     def get_state(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
