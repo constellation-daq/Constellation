@@ -21,6 +21,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/heartbeat/HeartbeatManager.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 
@@ -122,17 +123,17 @@ TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
     }
 
     // Send heartbeat with ERROR state
-    sender.sendHeartbeat(CSCP::State::ERROR, std::chrono::milliseconds(100000));
+    sender.sendHeartbeat(CSCP::State::ERROR, std::chrono::milliseconds(100000), CHP::flags_from_role(CHP::Role::DYNAMIC));
 
     // Wait for interrupt
     manager.waitInterrupt();
     REQUIRE_THAT(manager.getInterruptMessage(), Equals("sender reports state ERROR"));
 
     // Clear remote error state by sending heartbeat with regular state:
-    sender.sendHeartbeat(CSCP::State::INIT, std::chrono::milliseconds(100000));
+    sender.sendHeartbeat(CSCP::State::INIT, std::chrono::milliseconds(100000), CHP::flags_from_role(CHP::Role::DYNAMIC));
 
     // Send heartbeat with SAFE state
-    sender.sendHeartbeat(CSCP::State::SAFE, std::chrono::milliseconds(100000));
+    sender.sendHeartbeat(CSCP::State::SAFE, std::chrono::milliseconds(100000), CHP::flags_from_role(CHP::Role::DYNAMIC));
 
     // Wait for interrupt
     manager.waitInterrupt();
@@ -148,13 +149,12 @@ TEST_CASE("Receive interrupt from heartbeat timeout", "[chp][send]") {
     auto manager = CHPManager("mgr");
     auto sender = CHPMockSender("sender");
     sender.mockChirpOffer();
-    while(!manager.getRemoteState(sender.getName()).has_value()) {
-        sender.sendHeartbeat(CSCP::State::ORBIT, std::chrono::milliseconds(100000));
-        std::this_thread::sleep_for(50ms);
-    }
 
     // Send heartbeat with NEW state to register the remote
-    sender.sendHeartbeat(CSCP::State::NEW, std::chrono::milliseconds(100));
+    while(!manager.getRemoteState(sender.getName()).has_value()) {
+        std::this_thread::sleep_for(50ms);
+        sender.sendHeartbeat(CSCP::State::NEW, std::chrono::milliseconds(100), CHP::flags_from_role(CHP::Role::DYNAMIC));
+    }
 
     // Wait for interrupt
     manager.waitInterrupt();
