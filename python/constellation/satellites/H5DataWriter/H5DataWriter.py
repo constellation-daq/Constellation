@@ -21,6 +21,7 @@ from constellation.core.commandmanager import cscp_requestable
 from constellation.core.cscp import CSCPMessage
 from constellation.core.datareceiver import DataReceiver
 from constellation.core.monitoring import schedule_metric
+from constellation.core.fsm import SatelliteState
 
 
 class H5DataWriter(DataReceiver):
@@ -52,6 +53,14 @@ class H5DataWriter(DataReceiver):
 
     @schedule_metric("", MetricsType.LAST_VALUE, 1)
     def concurrent_reading_enabled(self) -> bool:
+        if self.fsm.current_state_value in [
+            SatelliteState.NEW,
+            SatelliteState.ERROR,
+            SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
+        ]:
+            return None
         return self._swmr_mode_enabled
 
     @cscp_requestable
