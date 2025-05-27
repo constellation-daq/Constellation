@@ -61,6 +61,8 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
       BasePool("CDTP", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
       cdtp_logger_("CDTP") {
 
+    register_metric("OUTPUT_FILE", "", MetricType::LAST_VALUE, "Current output file path. Updated when changed.");
+
     register_timed_metric("BYTES_RECEIVED",
                           "B",
                           MetricType::LAST_VALUE,
@@ -144,6 +146,7 @@ std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path&
                                                     bool binary) {
     // Validate and build absolute path:
     const auto file = validate_output_file(path, file_name, ext);
+    STAT("OUTPUT_FILE", file.string());
 
     // Open file stream and return
     auto stream = std::ofstream(file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out);
