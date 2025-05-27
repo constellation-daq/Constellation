@@ -10,6 +10,7 @@
 #pragma once
 
 #include <any>
+#include <compare>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -39,7 +40,7 @@ namespace constellation::chirp {
         /** Port of the offered service */
         networking::Port port;
 
-        CNSTLN_API bool operator<(const RegisteredService& other) const;
+        CNSTLN_API std::strong_ordering operator<=>(const RegisteredService& other) const;
     };
 
     /** A service discovered by the `Manager` */
@@ -59,7 +60,7 @@ namespace constellation::chirp {
         /** Convert service information to a URI */
         CNSTLN_API std::string to_uri() const;
 
-        CNSTLN_API bool operator<(const DiscoveredService& other) const;
+        CNSTLN_API std::strong_ordering operator<=>(const DiscoveredService& other) const;
     };
 
     /** Status of a service for callbacks from the `Manager` */
@@ -100,7 +101,7 @@ namespace constellation::chirp {
          */
         std::any user_data;
 
-        CNSTLN_API bool operator<(const DiscoverCallbackEntry& other) const;
+        CNSTLN_API std::strong_ordering operator<=>(const DiscoverCallbackEntry& other) const;
     };
 
     /** Manager for CHIRP broadcasting and receiving */

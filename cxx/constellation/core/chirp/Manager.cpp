@@ -48,54 +48,37 @@ using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-bool RegisteredService::operator<(const RegisteredService& other) const {
-    // Sort first by service id
-    auto ord_id = std::to_underlying(identifier) <=> std::to_underlying(other.identifier);
-    if(std::is_lt(ord_id)) {
-        return true;
-    }
-    if(std::is_gt(ord_id)) {
-        return false;
-    }
-    // Then by port
-    return port < other.port;
+std::strong_ordering RegisteredService::operator<=>(const RegisteredService& other) const {
+    // Sort only by service id, we do not allow the same service on a different port
+    return std::to_underlying(identifier) <=> std::to_underlying(other.identifier);
 }
 
 std::string DiscoveredService::to_uri() const {
     return ::to_uri(address, port);
 }
 
-bool DiscoveredService::operator<(const DiscoveredService& other) const {
-    // Ignore IP when sorting, we only care about the host
-    auto ord_host_id = host_id <=> other.host_id;
-    if(std::is_lt(ord_host_id)) {
-        return true;
+std::strong_ordering DiscoveredService::operator<=>(const DiscoveredService& other) const {
+    // Ignore IP when sorting, we only care about the host id
+    const auto ord_host_id = host_id <=> other.host_id;
+    // If equal, sort only by service id, we do not allow the same service on a different port
+    if(std::is_eq(ord_host_id)) {
+        return std::to_underlying(identifier) <=> std::to_underlying(other.identifier);
     }
-    if(std::is_gt(ord_host_id)) {
-        return false;
-    }
-    // Same as RegisteredService::operator<
-    auto ord_id = std::to_underlying(identifier) <=> std::to_underlying(other.identifier);
-    if(std::is_lt(ord_id)) {
-        return true;
-    }
-    if(std::is_gt(ord_id)) {
-        return false;
-    }
-    return port < other.port;
+    // If host id not equal, sort by host id
+    return ord_host_id;
 }
 
-bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const {
-    // First sort after callback address NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-    auto ord_callback = reinterpret_cast<std::uintptr_t>(callback) <=> reinterpret_cast<std::uintptr_t>(other.callback);
-    if(std::is_lt(ord_callback)) {
-        return true;
+std::strong_ordering DiscoverCallbackEntry::operator<=>(const DiscoverCallbackEntry& other) const {
+    // First sort after callback address
+    const auto ord_callback =
+        reinterpret_cast<std::uintptr_t>(callback) <=>    // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+        reinterpret_cast<std::uintptr_t>(other.callback); // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+    // If equal, sort by service id to listen to
+    if(std::is_eq(ord_callback)) {
+        return std::to_underlying(service_id) <=> std::to_underlying(other.service_id);
     }
-    if(std::is_gt(ord_callback)) {
-        return false;
-    }
-    // Then after service identifier to listen to
-    return std::to_underlying(service_id) < std::to_underlying(other.service_id);
+    // If callback address not equal, sort by callback address
+    return ord_callback;
 }
 
 Manager::Manager(std::string_view group_name,
@@ -306,7 +289,26 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
     }
     case OFFER: {
         std::unique_lock discovered_services_lock {discovered_services_mutex_};
-        if(!discovered_services_.contains(discovered_service)) {
+        auto discovered_service_it = discovered_services_.find(discovered_service);
+        if(discovered_service_it != discovered_services_.end()) {
+            // Check if new port if service already discovered
+            if(discovered_service_it->port != discovered_service.port) {
+                // Assume old host is dead
+                LOG(logger_, DEBUG) << discovered_service.host_id.to_string() << " has new port " << discovered_service.port
+                                    << " for " << discovered_service.identifier
+                                    << " service, assuming service has been replaced";
+
+                // Forget any discovered services of host
+                discovered_services_lock.unlock();
+                forgetDiscoveredServices(discovered_service.host_id);
+
+                // Insert new service
+                discovered_services_lock.lock();
+                discovered_services_.insert(discovered_service);
+                discovered_services_lock.unlock();
+                call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
+            }
+        } else {
             discovered_services_.insert(discovered_service);
 
             // Unlock discovered_services_lock for user callback
