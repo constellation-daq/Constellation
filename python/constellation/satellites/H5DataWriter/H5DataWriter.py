@@ -51,7 +51,7 @@ class H5DataWriter(DataReceiver):
         self._swmr_mode_enabled = False
         return super().do_run(run_identifier)
 
-    @schedule_metric("", MetricsType.LAST_VALUE, 1)
+    @schedule_metric("bool", MetricsType.LAST_VALUE, 1)
     def concurrent_reading_enabled(self) -> bool:
         if self.fsm.current_state_value in [
             SatelliteState.NEW,
