@@ -25,7 +25,7 @@ A CHIRP host represents a source or a target for messaging. Hosts usually map to
 
 ### Host Discovery and Service Announcement
 
-CHIRP uses UDP IPv4 beacon broadcasts to discover hosts. Each CHIRP host SHALL listen to the CHIRP discovery service which is UDP port 7123. Each CHIRP host SHALL broadcast, upon creation, on UDP port 7123 a beacon that identifies itself to any listening hosts on the network. A separate CHIRP beacon SHALL be broadcast for every service the host advertises.
+CHIRP uses UDP IPv4 multicasts to discover hosts. Each CHIRP host SHALL listen to the CHIRP discovery service which is UDP port 7123 with multicast address `239.192.7.123`. Each CHIRP host upon creation SHALL send a beacon on UDP port 7123 to the multicast address `239.192.7.123` that identifies itself to any listening hosts on the network. A separate CHIRP beacon SHALL be sent for every service the host advertises.
 
 The CHIRP beacon consists of one 42-octet UDP message with this format:
 
@@ -50,7 +50,7 @@ When a CHIRP host receives a beacon of type ‘OFFER’ from a host with the sam
 When a CHIRP host sends a beacon with type ‘REQUEST’, the port number SHOULD be zero.
 
 When a CHIRP host receives a beacon with type ‘REQUEST’ from any host with the same sender group, and it offers the requested service, it SHALL ignore the port number of the received beacon and it MUST respond with a CHIRP beacon of type ‘OFFER’ for the requested service, providing the port number for this service.
-The CHIRP host MAY respond directly to the remote IP address the beacon of type ‘REQUEST’ was received from instead of broadcasting the response.
+The CHIRP host MAY respond directly to the remote IP address the beacon of type ‘REQUEST’ was received from instead of sending a message to the multicast address.
 
 When a CHIRP host receives a beacon of type ‘DEPART‘ from a known host with the same sender group, with a non-zero port number, it SHALL disconnect from the service offered by this peer on the provided port number. A host SHALL discard beacons of type ‘DEPART‘ from unknown hosts.
 

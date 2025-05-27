@@ -4,6 +4,7 @@ extrasystole
 extrasystoles
 destructor
 multicast
+multicasts
 subfolder
 namespace
 namespaces
