@@ -9,16 +9,16 @@
 
 #include "FlightRecorderSatellite.hpp"
 
+#include <format>
 #include <string_view>
 
 #include <spdlog/details/log_msg.h>
 #include <spdlog/logger.h>
-#include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/log/SinkManager.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 #include "spdlog/sinks/rotating_file_sink.h"
@@ -28,6 +28,7 @@ using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::satellite;
+using namespace constellation::utils;
 
 FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), LogListener("LOGRECV", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {}
@@ -49,12 +50,8 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         throw SatelliteError(ex.what());
     }
 
-    auto formatter = std::make_unique<spdlog::pattern_formatter>();
-    formatter->add_flag<SinkManager::ConstellationLevelFormatter>('l', false);
-    formatter->add_flag<SinkManager::ConstellationLevelFormatter>('L', true);
-    formatter->add_flag<SinkManager::ConstellationTopicFormatter>('n');
-    formatter->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %n %v");
-    file_logger_->set_formatter(std::move(formatter));
+    // Set pattern containing only the timestamp and the message
+    file_logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
     // Start the log receiver pool
     startPool();
@@ -65,10 +62,15 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
 }
 
 void FlightRecorderSatellite::add_message(CMDP1LogMessage&& msg) {
-    const auto header = msg.getHeader();
-    // FIXME I need to get the sender name into the log message - so probably I need to inherit from the logger classes,
-    // build the spdlog::msg myself and the call log_it_
-    if(file_logger_) {
-        file_logger_->log(header.getTime(), {}, to_spdlog_level(msg.getLogLevel()), msg.getLogMessage());
+    if(file_logger_ == nullptr) {
+        return;
     }
+
+    const auto header = msg.getHeader();
+    file_logger_->log(
+        header.getTime(),
+        {},
+        to_spdlog_level(msg.getLogLevel()),
+        std::format(
+            "[{}] [{}] [{}] {}", header.getSender(), to_string(msg.getLogLevel()), msg.getLogTopic(), msg.getLogMessage()));
 }
