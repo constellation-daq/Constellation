@@ -47,7 +47,9 @@ setup_cli_logging("TRACE")
 
 
 class mock_socket(MagicMock):
-    """Mock socket.socket."""
+    """Mock socket.socket.
+
+    Used in tests involving CHIRP."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -114,7 +116,9 @@ def mock_chirp_transmitter():
 
 
 class mocket(MagicMock):
-    """Mock ZMQ socket for a receiver."""
+    """Mock ZMQ socket for a receiver or receiver.
+
+    Select which is the case by setting the endpoint attribute."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
