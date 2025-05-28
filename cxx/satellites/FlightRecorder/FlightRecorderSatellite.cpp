@@ -88,9 +88,11 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             break;
         }
         case LogMethod::DAILY: {
-            // FIXME time to be configured
-            // const auto time = config.get<size_t>("rotate_files");
-            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_.string(), 14, 55);
+            const auto minutes =
+                std::chrono::duration_cast<std::chrono::minutes>(
+                    config.get<std::chrono::system_clock::time_point>("daily_switching_time").time_since_epoch())
+                    .count();
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_.string(), (minutes / 60) % 24, minutes % 60);
             break;
         }
         case LogMethod::RUN: {

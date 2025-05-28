@@ -34,6 +34,7 @@ The following parameters are read and interpreted by this satellite. Parameters 
 | `flush_period` | Integer | Period in seconds after which log messages are regularly flushed to storage | `10` |
 | `rotate_max_files` | Integer | Maximum number of files to be user for rotating. Only used for `method = "ROTATE"` | `10` |
 | `rotate_filesize` | Integer | Maximum file size Mb after which the log is rotated. Only used for `method = "ROTATE"` | `100` |
+| `daily_switching_time` | Time point | Point in time at which the log file should be switched. Only used for `method = "DAILY"` | - |
 
 ### Configuration Example
 
