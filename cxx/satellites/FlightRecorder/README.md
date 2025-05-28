@@ -7,19 +7,33 @@ subtitle: "Satellite to record log messages from a Constellation"
 
 ## Description
 
-This satellite
+This satellite subscribes to Constellation log messages of a configurable level, receives them and records them to storage.
+Several storage options are available and can be selected via the `method` configuration parameter:
 
-- configure global log level to listen to
-- configure per-satellite log level or topic to listen to
-- provide file pattern to be used
-- handover to new log file happens with `starting`
+* `FILE` represents the simplest storage, all logs are recorded into a single file provided via the `file_path` parameter.
+* `ROTATE` allows to use multiple, rotating log files. Every time the current log file reaches the size configured via the
+  `rotate_filesize` parameter, a new file is started. After the maximum number of files set by `rotate_max_files` is reached,
+  the oldest log file is overwritten. This can be useful to keep only a certain amount of history present.
+* `DAILY` will create a new log file every 24h at the time defined with the `daily_switch` parameter. This method is
+  particularly useful for very long-running Constellations which require preservation of the log history.
+* `RUN` will switch to a new log file whenever a new run is started, i.e. when this satellite received the `start` command.
+  This can be especially helpful when many runs are recorded and an easy assignment of logs is required.
 
- FILE,   // Simple log file
-        ROTATE, // Multiple log files, rotate logging by file size
-        DAILY,  // Create a new log file daily at provided time
-        RUN,    // Create a new log file whenever a new run is started
+The global log level to which the FlightRecorder subscribes for all satellites in the Constellation can be configured using
+the `global_recording_level`.
 
-flushing after period or when run stopped or interrupted
+```{caution}
+This level should be selected carefully. Only log messages with an active subscription are transmitted over the network and
+subscribing to low levels such as `DEBUG`  or `TRACE` might lead to significant network traffic and sizeable log files being
+written to storage.
+```
+
+Log messages are cached and flushed to storage asynchronously. The cache is flushed in regular intervals set by
+`flush_period` as well as at each run stop or interruption of operation.
+
+```{note}
+It should be noted that the `flush_period` setting also applied to the console output of the FlightRecorder satellite itself.
+```
 
 ## Parameters
 
