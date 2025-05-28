@@ -110,7 +110,7 @@ SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<char*> args) 
     const auto group = get("group");
 
     // Get satellite type
-    const auto type = type_.value_or(get("type"));
+    const auto type = type_.has_value() ? type_.value() : get("type");
 
     // Get satellite name
     const auto name = get("name");
