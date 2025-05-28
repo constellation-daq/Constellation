@@ -7,15 +7,19 @@ subtitle: "Satellite to record log messages from a Constellation"
 
 ## Description
 
+This satellite
+
 - configure global log level to listen to
 - configure per-satellite log level or topic to listen to
 - provide file pattern to be used
 - handover to new log file happens with `starting`
 
+ FILE,   // Simple log file
+        ROTATE, // Multiple log files, rotate logging by file size
+        DAILY,  // Create a new log file daily at provided time
+        RUN,    // Create a new log file whenever a new run is started
 
-## Building
-
-The Flight Recorder satellite has no external dependencies and is build by default.
+flushing after period or when run stopped or interrupted
 
 ## Parameters
 
@@ -23,37 +27,31 @@ The following parameters are read and interpreted by this satellite. Parameters 
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `my_param` | Unsigned integer | Number of channels to be used | `1024` |
-| `other_param` | String | Name of the communication module | `"antenna"` |
+| `method` | String | Method to be used for logging. Valid values are `FILE`, `ROTATE`, `DAILY` and `RUN` | `FILE` |
+| `file_path` | String | Path to the target log file | - |
+| `allow_overwriting` | Boolean | Flag to allow or deny overwriting of existing log files | `false` |
+| `global_recording_level` | String | Global log level to be recorded by this satellite | `WARNING` |
+| `flush_period` | Integer | Period in seconds after which log messages are regularly flushed to storage | `10` |
+| `rotate_max_files` | Integer | Maximum number of files to be user for rotating. Only used for `method = "ROTATE"` | `10` |
+| `rotate_filesize` | Integer | Maximum file size Mb after which the log is rotated. Only used for `method = "ROTATE"` | `100` |
 
 ### Configuration Example
 
 An example configuration for this satellite which could be dropped into a Constellation configuration as a starting point
 
 ```ini
-[Sputnik.1]
-my_param = 7
-other_param = "antenna"
+[FlightRecorder.RunLogger]
+method = "RUN"
+allow_overwriting = true
+file_path = "/data/logs/logfile.txt"
 ```
-
-## Custom Commands
-
-This section describes all custom commands the satellite exposes to the command interface. The description should contain the name and the description of the
-command as well as all of its arguments, the return value and the allowed states:
-
-
-| Command | Description | Arguments | Return Value | Allowed States |
-|---------|-------------|-----------|--------------|----------------|
-| `get_channel_reading` | This command returns the reading from the given channel number | channel number, `int` | channel reading, `double` | `INIT`, `ORBIT` |
-| `get_module_name` | Reads the name of the communication module | - | module name, `string` | all |
-
 
 ## Metrics
 
-The following metrics are distributed by this satellite and can be subscribed to. Timed metrics provide an interval in units of time, triggered metrics in number of calls.
+The following metrics are distributed by this satellite and can be subscribed to.
 
 | Metric | Description | Interval | Type |
 |--------|-------------|----------|------|
-| `STAT/CPULOAD` | Current CPU load of the satellite host machine | 3s | AVERAGE |
-| `STAT/TEMP` | Highest reported system temperature of the satellite | 5s | AVERAGE |
-| `STAT/EVENTS` | Currently processed event number | 100 | LAST_VALUE |
+| `MSG_TOTAL` | Total number messages received and logged since satellite startup | 3s | `LAST_VALUE` |
+| `MSG_WARN` | Number of warning messages received and logged since satellite startup | 3s | `LAST_VALUE` |
+| `MSG_RUN` | Total number messages received and logged since the last run start | 3s | `LAST_VALUE` |

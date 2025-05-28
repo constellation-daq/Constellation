@@ -82,8 +82,8 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             break;
         }
         case LogMethod::ROTATE: {
-            const auto max_files = config.get<std::size_t>("rotate_files");
-            const auto max_size = config.get<std::size_t>("rotate_filesize", 10) * 1048576; // in bytes
+            const auto max_files = config.get<std::size_t>("rotate_max_files", 10);
+            const auto max_size = config.get<std::size_t>("rotate_filesize", 100) * 1048576; // in bytes
             sink_ = spdlog::rotating_logger_mt(getCanonicalName(), path_.string(), max_size, max_files);
             break;
         }
@@ -100,7 +100,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         default: std::unreachable();
         }
 
-        spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 1)));
+        spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 10)));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }
