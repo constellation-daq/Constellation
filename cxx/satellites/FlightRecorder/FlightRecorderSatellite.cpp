@@ -10,6 +10,7 @@
 #include "FlightRecorderSatellite.hpp"
 
 #include <format>
+#include <fstream>
 #include <string_view>
 
 #include <spdlog/logger.h>
@@ -41,11 +42,11 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         sink_.reset();
     }
 
+    method_ = config.get<LogMethod>("method");
+    allow_overwriting_ = config.get<bool>("allow_overwriting", false);
     path_ = validate_file_path(config.getPath("file_path"));
-    allow_overwriting_ = config.get<bool>("allow_overwriting");
 
     try {
-        method_ = config.get<LogMethod>("method");
         switch(method_) {
         case LogMethod::FILE: {
             sink_ = spdlog::basic_logger_mt(getCanonicalName(), path_);
@@ -74,6 +75,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }
+    LOG(INFO) << "Start logging to log file " << path_;
 
     // Set pattern containing only the timestamp and the message
     sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
@@ -102,6 +104,12 @@ std::filesystem::path FlightRecorderSatellite::validate_file_path(std::filesyste
         throw SatelliteError("Requested output file " + file_path.string() + " is a directory");
     }
 
+    // Open the file to check if it can be accessed
+    const auto file_stream = std::ofstream(file_path);
+    if(!file_stream.good()) {
+        throw SatelliteError("File " + file_path.string() + " not accessible");
+    }
+
     // Convert to an absolute path
     return std::filesystem::canonical(file_path);
 }
@@ -111,12 +119,15 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     if(method_ == LogMethod::RUN) {
         try {
             // Append run identifier to the end of the file name while keeping the extension:
-            path_ = validate_file_path(path_.parent_path() / (path_.stem().string() + "_" + std::string(run_identifier) +
-                                                              path_.extension().string()));
-            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path_);
+            const auto path =
+                validate_file_path(path_.parent_path() /
+                                   (path_.stem().string() + "_" + std::string(run_identifier) + path_.extension().string()));
+            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path);
+            sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
         } catch(const spdlog::spdlog_ex& ex) {
             throw SatelliteError(ex.what());
         }
+        LOG(INFO) << "Switched to new log file " << path_;
     }
 
     // Reset run message count
