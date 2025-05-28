@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <atomic>
+#include <cstdint>
 #include <string_view>
 
 #include "constellation/core/log/Level.hpp"
@@ -18,14 +20,24 @@
 
 class FlightRecorderSatellite final : public constellation::satellite::Satellite,
                                       public constellation::listener::LogListener {
+private:
+    enum class LogMethod {
+        FILE,
+        ROTATE,
+        DAILY,
+    };
+
 public:
     FlightRecorderSatellite(std::string_view type, std::string_view name);
 
     void initializing(constellation::config::Configuration& config) final;
+    void starting(std::string_view run_identifier) final;
 
 private:
     void add_message(constellation::message::CMDP1LogMessage&& msg);
 
 private:
-    std::shared_ptr<spdlog::logger> file_logger_;
+    std::shared_ptr<spdlog::logger> sink_;
+    std::atomic<std::size_t> msg_logged_total_ {0};
+    std::atomic<std::size_t> msg_logged_run_ {0};
 };

@@ -23,10 +23,10 @@
 
 #include "spdlog/sinks/rotating_file_sink.h"
 
-using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
@@ -61,16 +61,26 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(global_level);
 }
 
+void FlightRecorderSatellite::starting(std::string_view /*run_identifier*/) {
+    // Reset run message count
+    msg_logged_run_ = 0;
+}
+
 void FlightRecorderSatellite::add_message(CMDP1LogMessage&& msg) {
-    if(file_logger_ == nullptr) {
+    if(sink_ == nullptr) {
         return;
     }
 
     const auto header = msg.getHeader();
-    file_logger_->log(
+    sink_->log(
         header.getTime(),
         {},
         to_spdlog_level(msg.getLogLevel()),
         std::format(
             "[{}] [{}] [{}] {}", header.getSender(), to_string(msg.getLogLevel()), msg.getLogTopic(), msg.getLogMessage()));
+
+    msg_logged_total_++;
+    if(getState() == CSCP::State::RUN) {
+        msg_logged_run_++;
+    }
 }
