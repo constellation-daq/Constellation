@@ -22,8 +22,11 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 
+#include "chirp_mock.hpp"
+
 using namespace Catch::Matchers;
 using namespace constellation::chirp;
+using namespace constellation::networking;
 using namespace constellation::protocol::CHIRP;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -32,8 +35,8 @@ using namespace std::string_literals;
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
 TEST_CASE("Send and receive multicasts containing a string", "[chirp]") {
-    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
-    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket sender {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&MulticastSocket::recvMessage, &receiver, 10ms);
@@ -48,8 +51,8 @@ TEST_CASE("Send and receive multicasts containing a string", "[chirp]") {
 }
 
 TEST_CASE("Send and receive multicasts containing binary content", "[chirp]") {
-    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
-    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket sender {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&MulticastSocket::recvMessage, &receiver, 10ms);
@@ -64,8 +67,8 @@ TEST_CASE("Send and receive multicasts containing binary content", "[chirp]") {
 }
 
 TEST_CASE("Get IP address of multicasts from localhost", "[chirp]") {
-    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
-    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket sender {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Start receiving new message
     auto msg_future = std::async(&MulticastSocket::recvMessage, &receiver, 10ms);
@@ -80,8 +83,8 @@ TEST_CASE("Get IP address of multicasts from localhost", "[chirp]") {
 }
 
 TEST_CASE("Send and receive multicasts asynchronously", "[chirp]") {
-    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
-    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket sender {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Try receiving new message
     auto msg_opt_future = std::async(&MulticastSocket::recvMessage, &receiver, 10ms);
@@ -101,7 +104,7 @@ TEST_CASE("Send and receive multicasts asynchronously", "[chirp]") {
 }
 
 TEST_CASE("Get timeout on asynchronous multicast receive", "[chirp]") {
-    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
+    MulticastSocket receiver {get_loopback_if(), asio::ip::address_v4(MULTICAST_ADDRESS), 49152};
 
     // Try receiving new message
     auto msg_opt = receiver.recvMessage(10ms);
