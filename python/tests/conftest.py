@@ -116,7 +116,7 @@ def mock_chirp_transmitter():
 
 
 class mocket(MagicMock):
-    """Mock ZMQ socket for a receiver or receiver.
+    """Mock ZMQ socket for a sender or receiver.
 
     Select which is the case by setting the endpoint attribute."""
 
