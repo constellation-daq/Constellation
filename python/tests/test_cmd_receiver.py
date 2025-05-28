@@ -8,71 +8,22 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import zmq
+from conftest import mocket, send_port
 
 from constellation.core.commandmanager import CommandReceiver, cscp_requestable
 from constellation.core.cscp import CommandTransmitter, CSCPMessageVerb
 
-mock_packet_queue_recv = []
-mock_packet_queue_sender = []
-
-
-# SIDE EFFECTS RECEIVER
-def mock_sock_send_recv(data, flags):
-    """Append buf to queue."""
-    mock_packet_queue_sender.append(data)
-
-
-def mock_sock_recv_multipart_recv(flags):
-    """Pop entry from queue."""
-    if not mock_packet_queue_recv:
-        raise zmq.ZMQError("Resource temporarily unavailable")
-    # "pop all"
-    r, mock_packet_queue_recv[:] = mock_packet_queue_recv[:], []
-    return r
-
-
-# SIDE EFFECTS SENDER
-def mock_sock_send_sender(data, flags):
-    """Append buf to queue."""
-    mock_packet_queue_recv.append(data)
-
-
-def mock_sock_recv_multipart_sender(flags):
-    """Pop entry from queue."""
-    if not mock_packet_queue_sender:
-        raise zmq.ZMQError("Resource temporarily unavailable")
-    # "pop all"
-    r, mock_packet_queue_sender[:] = mock_packet_queue_sender[:], []
-    return r
-
-
-# FIXTURES
-@pytest.fixture
-def mock_socket_recv():
-    mock = MagicMock()
-    mock = mock.return_value
-    mock.send = MagicMock(side_effect=mock_sock_send_recv)
-    mock.recv_multipart = MagicMock(side_effect=mock_sock_recv_multipart_recv)
-    yield mock
+CMD_PORT = send_port
 
 
 @pytest.fixture
-def mock_socket_sender():
-    mock = MagicMock()
-    mock = mock.return_value
-    mock.send = MagicMock(side_effect=mock_sock_send_sender)
-    mock.recv_multipart = MagicMock(side_effect=mock_sock_recv_multipart_sender)
-    yield mock
+def mock_cmdreceiver(mock_chirp_transmitter):
 
+    def mocket_factory(*args, **kwargs):
+        m = mocket()
+        m.endpoint = 0
+        return m
 
-@pytest.fixture
-def mock_transmitter(mock_socket_sender):
-    t = CommandTransmitter("mock_sender", mock_socket_sender)
-    yield t
-
-
-@pytest.fixture
-def mock_cmdreceiver(mock_socket_recv):
     class MockCommandReceiver(CommandReceiver):
         @cscp_requestable
         def get_state(self, msg):
@@ -94,21 +45,21 @@ def mock_cmdreceiver(mock_socket_recv):
 
     with patch("constellation.core.commandmanager.zmq.Context") as mock:
         mock_context = MagicMock()
-        mock_context.socket.return_value = mock_socket_recv
+        mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        cr = MockCommandReceiver("mock_satellite", cmd_port=1111, interface="127.0.0.1")
+        cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface="127.0.0.1")
         cr._add_com_thread()
         cr._start_com_threads()
         # give the thread a chance to start
-        time.sleep(0.5)
+        time.sleep(0.1)
         yield cr
 
 
 @pytest.mark.forked
-def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
+def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
     """Test self-concistency between two transmitters (sender/receiver)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
-    receiver = CommandTransmitter("mock_receiver", mock_socket_recv)
+    receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
     # send a request
     sender.send_request("make", "sandwich")
     req = receiver.get_message()
@@ -121,10 +72,10 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_recv):
 
 
 @pytest.mark.forked
-def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_recv):
+def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_receiver):
     """Test that commands are received case insensitive (i.e. lower)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
-    receiver = CommandTransmitter("mock_receiver", mock_socket_recv)
+    receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
     # send a request
     sender.send_request("MAKE", "Sandwich")
     req = receiver.get_message()
@@ -132,45 +83,43 @@ def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_recv):
     assert req.payload == "Sandwich"
 
 
-@pytest.mark.skip(reason="TODO: borked due to receiving CMDP messages")
 @pytest.mark.forked
-def test_command_receiver(mock_cmdreceiver, mock_transmitter):
+def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     """Test sending cmds and retrieving answers."""
     # cmd w/o '_is_allowed' method: always allowed
-    mock_transmitter.send_request("get_state")
+    mock_cmd_transmitter.send_request("get_state")
     # give the thread a chance to receive the message
-    time.sleep(0.2)
-    rep = mock_transmitter.get_message()
+    time.sleep(0.1)
+    rep = mock_cmd_transmitter.get_message()
     assert rep.msg_verb == CSCPMessageVerb.SUCCESS
     assert rep.payload == "good"
 
     # cmd w/ '_is_allowed' method: always returns True
-    mock_transmitter.send_request("fcnallowed")
+    mock_cmd_transmitter.send_request("fcnallowed")
     # give the thread a chance to receive the message
-    time.sleep(0.2)
-    rep = mock_transmitter.get_message()
+    time.sleep(0.1)
+    rep = mock_cmd_transmitter.get_message()
     assert rep.msg_verb == CSCPMessageVerb.SUCCESS
     assert rep.payload == "allowed passed"
 
     # cmd w/ '_is_allowed' method: always returns False
-    mock_transmitter.send_request("fcnnotallowed")
+    mock_cmd_transmitter.send_request("fcnnotallowed")
     # give the thread a chance to receive the message
-    time.sleep(0.2)
-    rep = mock_transmitter.get_message()
+    time.sleep(0.1)
+    rep = mock_cmd_transmitter.get_message()
     assert rep.msg_verb == CSCPMessageVerb.INVALID
     assert not rep.payload
 
 
-@pytest.mark.skip(reason="TODO: borked due to receiving CMDP messages")
 @pytest.mark.forked
-def test_thread_shutdown(mock_cmdreceiver, mock_transmitter):
+def test_thread_shutdown(mock_cmdreceiver, mock_cmd_transmitter):
     """Test that receiver thread shuts down properly"""
     # shut down the thread
     mock_cmdreceiver._stop_com_threads()
     # send a request
-    mock_transmitter.send_request("get_state")
+    mock_cmd_transmitter.send_request("get_state")
     time.sleep(0.2)
-    rep = mock_transmitter.get_message()
+    rep = mock_cmd_transmitter.get_message(zmq.NOBLOCK)
     # reply should be missing
     assert not rep
     assert not mock_cmdreceiver._com_thread_evt
