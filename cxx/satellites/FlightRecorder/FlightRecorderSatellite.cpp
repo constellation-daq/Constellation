@@ -10,6 +10,7 @@
 #include "FlightRecorderSatellite.hpp"
 
 #include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <string_view>
@@ -18,7 +19,7 @@
 #ifdef __cpp_lib_format
 #include <format>
 #else
-#include <stringstream>
+#include <sstream>
 #endif
 
 #include <spdlog/logger.h>
@@ -97,7 +98,8 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
                 std::chrono::duration_cast<std::chrono::minutes>(
                     config.get<std::chrono::system_clock::time_point>("daily_switching_time").time_since_epoch())
                     .count();
-            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_.string(), (minutes / 60) % 24, minutes % 60);
+            sink_ = spdlog::daily_logger_mt(
+                getCanonicalName(), path_.string(), static_cast<int>(minutes / 60UL) % 24, static_cast<int>(minutes % 60UL));
             break;
         }
         case LogMethod::RUN: {
@@ -107,7 +109,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         default: std::unreachable();
         }
 
-        spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 10)));
+        spdlog::flush_every(std::chrono::seconds(config.get<std::size_t>("flush_period", 10)));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }
@@ -184,6 +186,7 @@ void FlightRecorderSatellite::stopping() {
     }
 }
 
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     if(sink_ == nullptr) {
         return;
@@ -192,17 +195,17 @@ void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     const auto& header = msg.getHeader();
 
 #ifdef __cpp_lib_format
-    auto log_msg = std::format(
+    const auto log_msg = std::format(
         "[{}] [{}] [{}] {}", header.getSender(), to_string(msg.getLogLevel()), msg.getLogTopic(), msg.getLogMessage());
 #else
     std::ostringstream oss;
     oss << "[" << header.getSender() << "] [" << to_string(msg.getLogLevel()) << "] [" << msg.getLogTopic() << "] "
         << msg.getLogMessage();
-    auto log_msg = oss.str();
+    const auto log_msg = oss.str();
 #endif
 
     // Sink the message
-    sink_->log(header.getTime(), {}, to_spdlog_level(msg.getLogLevel()), std::move(log_msg));
+    sink_->log(header.getTime(), {}, to_spdlog_level(msg.getLogLevel()), log_msg);
 
     // Update statistics
     msg_logged_total_++;

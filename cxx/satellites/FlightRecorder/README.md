@@ -2,7 +2,8 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Flight Recorder"
-subtitle: "Satellite to record log messages from a Constellation"
+description: "Satellite to record log messages from a Constellation"
+category: "Monitoring"
 ---
 
 ## Description
@@ -24,7 +25,7 @@ the `global_recording_level`.
 
 ```{caution}
 This level should be selected carefully. Only log messages with an active subscription are transmitted over the network and
-subscribing to low levels such as `DEBUG`  or `TRACE` might lead to significant network traffic and sizeable log files being
+subscribing to low levels such as `DEBUG`  or `TRACE` might lead to significant network traffic and sizable log files being
 written to storage.
 ```
 
