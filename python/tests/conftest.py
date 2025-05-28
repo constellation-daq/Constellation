@@ -9,7 +9,7 @@ import random
 import threading
 import time
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import zmq
@@ -46,8 +46,10 @@ CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac
 setup_cli_logging("TRACE")
 
 
-class mock_socket(MagicMock):
-    """Mock socket.socket."""
+class mock_socket:
+    """Mock socket.socket.
+
+    Used in tests involving CHIRP."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -59,6 +61,18 @@ class mock_socket(MagicMock):
     def sendto(self, buf, addr):
         """Append buf to queue."""
         mock_chirp_packet_queue.append(buf)
+
+    def setblocking(self, *args, **kwargs):
+        """ignored"""
+        pass
+
+    def settimeout(self, *args, **kwargs):
+        """ignored"""
+        pass
+
+    def bind(self, *args, **kwargs):
+        """ignored"""
+        pass
 
     def recvfrom(self, bufsize):
         """Get next entry from queue."""
@@ -113,8 +127,10 @@ def mock_chirp_transmitter():
         yield t
 
 
-class mocket(MagicMock):
-    """Mock ZMQ socket for a receiver."""
+class mocket:
+    """Mock ZMQ socket for a sender or receiver.
+
+    Select which is the case by setting the endpoint attribute."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -148,6 +164,12 @@ class mocket(MagicMock):
 
     def send_string(self, payload, flags=None):
         self.send(payload.encode(), flags=flags)
+
+    def send_multipart(self, msg_parts, flags=None):
+        print(f"mock sending {msg_parts} on port {self.port}")
+        for idx, msg in enumerate(msg_parts):
+            flag = zmq.SNDMORE if idx < len(msg_parts) - 1 else None
+            self.send(msg, flag)
 
     def recv_multipart(self, flags=None):
         """Pop entry from queue."""
@@ -208,11 +230,13 @@ class mocket(MagicMock):
     def has_no_data(self):
         return self.port not in self._get_queue(False) or not self._get_queue(False)[self.port]
 
+    def setsockopt_string(self, *args, **kwargs):
+        pass
+
 
 @pytest.fixture
 def mock_socket_sender():
     mock = mocket()
-    mock.return_value = mock
     mock.endpoint = 1
     mock.port = send_port
     yield mock
@@ -221,7 +245,6 @@ def mock_socket_sender():
 @pytest.fixture
 def mock_socket_receiver():
     mock = mocket()
-    mock.return_value = mock
     mock.endpoint = 0
     mock.port = send_port
     yield mock
@@ -268,10 +291,10 @@ def mock_heartbeat_checker():
 
     with patch("constellation.core.heartbeatchecker.zmq.Context") as mock:
         with patch("constellation.core.heartbeatchecker.zmq.Poller") as mock_p:
-            mock_context = MagicMock()
+            mock_context = Mock()
             mock_context.socket = mocket_factory
             mock.return_value = mock_context
-            mock_poller = MagicMock()
+            mock_poller = Mock()
             mock_poller.poll.side_effect = poll
             mock_p.return_value = mock_poller
             hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
@@ -291,7 +314,7 @@ def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
         return m
 
     with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
+        mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
         s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
@@ -312,7 +335,7 @@ def mock_controller(mock_chirp_transmitter, mock_heartbeat_checker):
         return m
 
     with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
+        mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
         c = BaseController(name="mock_controller", group="mockstellation", interface="127.0.0.1")
@@ -353,7 +376,7 @@ def mock_example_satellite(mock_chirp_transmitter):
             return "finished with mock initialization"
 
     with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
+        mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
         s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
