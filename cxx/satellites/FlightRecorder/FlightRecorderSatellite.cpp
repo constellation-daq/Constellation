@@ -36,9 +36,8 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
 
     const auto path = config.getPath("file_path");
 
-    const auto rotate = config.has("rotate_files");
     try {
-        if(rotate) {
+        if(config.has("rotate_files")) {
             const auto max_files = config.get<size_t>("rotate_files");
             const auto max_size = config.get<size_t>("rotate_filesize", 10) * 1048576; // in bytes
             file_logger_ = spdlog::rotating_logger_mt("file_logger", path, max_size, max_files);
@@ -50,13 +49,18 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         throw SatelliteError(ex.what());
     }
 
+    // set custom pattern - add custom flags for sender!
+    file_logger_->set_pattern("[%Y-%m-%d %T.%e] [%g/%!] [%l] %v");
+
     // subscribe for all endpoints to global topic:
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
 }
 
 void FlightRecorderSatellite::add_message(CMDP1LogMessage&& msg) {
+    const auto header = msg.getHeader();
+    const auto loc = spdlog::source_loc(std::string(header.getSender()).c_str(), 0, std::string(msg.getLogTopic()).c_str());
     if(file_logger_) {
-        file_logger_->info(msg.getLogMessage());
+        file_logger_->log(header.getTime(), loc, to_spdlog_level(msg.getLogLevel()), msg.getLogMessage());
     }
 }
