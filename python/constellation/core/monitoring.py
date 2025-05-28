@@ -264,7 +264,6 @@ class StatListener(CHIRPBroadcaster):
                         binmsg = socket.recv_multipart()
                         metric = decode_metric("", binmsg[0].decode("utf-8"), binmsg)
                         self.metric_callback(metric)
-                    continue
             # If no sockets are connected, the poller returns immediately -> sleep to prevent hot loop
             time.sleep(250e-3)
 
