@@ -20,8 +20,8 @@ from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.cscp import CSCPMessage
 from constellation.core.datareceiver import DataReceiver
-from constellation.core.monitoring import schedule_metric
 from constellation.core.fsm import SatelliteState
+from constellation.core.monitoring import schedule_metric
 
 
 class H5DataWriter(DataReceiver):
