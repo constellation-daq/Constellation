@@ -70,5 +70,6 @@ private:
     bool allow_overwriting_ {false};
     std::shared_ptr<spdlog::logger> sink_;
     std::atomic<std::size_t> msg_logged_total_ {0};
+    std::atomic<std::size_t> msg_logged_warning_ {0};
     std::atomic<std::size_t> msg_logged_run_ {0};
 };

@@ -25,6 +25,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
@@ -34,12 +35,34 @@
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), LogListener("LOGRECV", [this](auto&& arg) { log_message(std::forward<decltype(arg)>(arg)); }) {}
+    : Satellite(type, name), LogListener("LOGRECV", [this](auto&& arg) { log_message(std::forward<decltype(arg)>(arg)); }) {
+
+    register_timed_metric("MSG_TOTAL",
+                          "",
+                          MetricType::LAST_VALUE,
+                          "Total number messages received and logged since satellite startup",
+                          3s,
+                          [this]() { return msg_logged_total_.load(); });
+    register_timed_metric("MSG_WARN",
+                          "",
+                          MetricType::LAST_VALUE,
+                          "Number of warning messages received and logged since satellite startup",
+                          3s,
+                          [this]() { return msg_logged_warning_.load(); });
+    register_timed_metric("MSG_RUN",
+                          "",
+                          MetricType::LAST_VALUE,
+                          "Total number messages received and logged since the last run start",
+                          3s,
+                          [this]() { return msg_logged_run_.load(); });
+}
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
 
@@ -156,5 +179,8 @@ void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     msg_logged_total_++;
     if(getState() == CSCP::State::RUN) {
         msg_logged_run_++;
+    }
+    if(msg.getLogLevel() == Level::WARNING) {
+        msg_logged_warning_++;
     }
 }
