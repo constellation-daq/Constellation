@@ -43,9 +43,9 @@ namespace constellation::log {
      * This class manager the console and CMDP sinks and can creates new spdlog loggers.
      */
     class SinkManager {
-    public:
+    private:
         // Formatter for the log level (overwrites spdlog defaults)
-        class CNSTLN_API ConstellationLevelFormatter : public spdlog::custom_flag_formatter {
+        class ConstellationLevelFormatter : public spdlog::custom_flag_formatter {
         public:
             ConstellationLevelFormatter(bool format_short);
             void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
@@ -56,7 +56,7 @@ namespace constellation::log {
         };
 
         // Formatter for the topic (adds brackets except for the default logger)
-        class CNSTLN_API ConstellationTopicFormatter : public spdlog::custom_flag_formatter {
+        class ConstellationTopicFormatter : public spdlog::custom_flag_formatter {
         public:
             void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
             std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
