@@ -14,8 +14,8 @@ ui_files = qt.compile_ui(sources: 'MissionControl.ui')
 moc_files = qt.compile_moc(headers: 'MissionControl.hpp')
 
 executable('MissionControl',
-  sources: ['MissionControl.cpp', ui_files, moc_files],
-  dependencies: [core_dep, controller_dep, gui_dep, exec_dep, argparse_dep, qt_dep],
+  sources: ['main.cpp', 'MissionControl.cpp', ui_files, moc_files],
+  dependencies: [core_dep, controller_dep, gui_dep, exec_dep, argparse_dep, asio_dep, qt_dep],
   install: true,
   install_rpath: constellation_rpath,
 )
