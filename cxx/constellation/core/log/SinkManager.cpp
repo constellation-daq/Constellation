@@ -79,11 +79,11 @@ SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OF
     // Disable global spdlog registration of loggers
     spdlog::set_automatic_registration(false);
 
-    // Init thread pool with 1k queue size on 1 thread
+    // Initialize thread pool with 1k queue size on 1 thread
     spdlog::init_thread_pool(1000, 1);
     thread_pool_ = spdlog::thread_pool();
 
-    // Concole sink, log level always TRACE since only accessed via ProxySink
+    // Console sink, log level always TRACE since only accessed via ProxySink
     console_sink_ = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
     console_sink_->set_level(to_spdlog_level(TRACE));
 
