@@ -178,7 +178,6 @@ def test_sending_package(
     mock_data_receiver,
 ):
     mock = mocket()
-    mock.return_value = mock
     mock.endpoint = 0
     mock.port = CMD_PORT
 
