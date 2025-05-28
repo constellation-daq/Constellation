@@ -19,6 +19,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/heartbeat/HeartbeatSend.hpp"
 #include "constellation/core/log/Level.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
@@ -27,6 +28,7 @@ using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -53,7 +55,7 @@ namespace {
 
         ManagerLocator::getSinkManager().setConsoleLevels(WARNING);
 
-        auto chirp_manager = std::make_unique<chirp::Manager>(group, name);
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, name, get_interfaces());
         chirp_manager->start();
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 

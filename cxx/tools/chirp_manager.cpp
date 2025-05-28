@@ -25,10 +25,12 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation::chirp;
 using namespace constellation::log;
@@ -76,9 +78,9 @@ namespace {
         // Get constellation group, name, brd address, and any address via cmdline
         std::cout << "Usage: chirp_manager CONSTELLATION_GROUP NAME INTERFACE\n" << std::flush;
 
-        auto group = "constellation"s;
+        auto group = "edda"s;
         auto name = "chirp_manager"s;
-        std::optional<asio::ip::address_v4> if_addr {};
+        auto interfaces = get_interfaces();
         if(args.size() >= 2) {
             group = args[1];
         }
@@ -87,19 +89,16 @@ namespace {
             name = args[2];
         }
         if(args.size() >= 4) {
-            try {
-                if_addr = asio::ip::make_address_v4(args[3]);
-            } catch(const asio::system_error& error) {
-                std::cerr << "Unable to use specified interface address " << std::quoted(args[3])
-                          << ", using default instead\n"
-                          << std::flush;
-            }
+            interfaces = get_interfaces({{args[3]}});
         }
+        std::cout << "Using interfaces " << range_to_string(interfaces, [](const auto& interface) { return interface.name; })
+                  << "\n"
+                  << std::flush;
 
         // Turn off console logging
         ManagerLocator::getSinkManager().setConsoleLevels(OFF);
 
-        auto manager = (if_addr.has_value() ? Manager(group, name, if_addr.value()) : Manager(group, name));
+        auto manager = Manager(group, name, interfaces);
 
         std::cout << "Commands: "
                   << "\n list_registered_services"
