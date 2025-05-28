@@ -264,16 +264,15 @@ class StatListener(CHIRPBroadcaster):
                         binmsg = socket.recv_multipart()
                         metric = decode_metric("", binmsg[0].decode("utf-8"), binmsg)
                         self.metric_callback(metric)
-                    continue
             # If no sockets are connected, the poller returns immediately -> sleep to prevent hot loop
-            time.sleep(250e-3)
+            time.sleep(0.250)
 
     def _metrics_listening_shutdown(self) -> None:
         with self._metric_poller_lock:
             for _uuid, socket in self._metric_sockets.items():
                 self._metric_poller.unregister(socket)
                 socket.close()
-        self._metric_sockets = {}
+            self._metric_sockets = {}
 
     def reentry(self) -> None:
         self._metrics_listening_shutdown()
