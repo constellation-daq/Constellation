@@ -176,6 +176,7 @@ class Satellite(
         self.config = Configuration(config)
         # call device-specific user-routine
         try:
+            self._pre_initializing_hook(config)
             init_msg: str = self.do_initializing(self.config)
             if self.config.has_unused_values():
                 for key in self.config.get_unused_keys():
@@ -188,6 +189,16 @@ class Satellite(
             self.log_satellite.error(msg)
             raise RuntimeError(msg) from e
         return init_msg
+
+    @debug_log
+    def _pre_initializing_hook(self, config: Configuration) -> None:
+        """Hook run before do_initializing() is called.
+
+        Allows inheriting (core) classes to perform actions immediately before
+        user code is executed.
+
+        """
+        pass
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str:
@@ -295,11 +306,23 @@ class Satellite(
         self.run_identifier = run_identifier
         self.log_satellite.status(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
+        # allow inheriting classes to execute code just before do_run is called:
+        self._pre_run_hook(run_identifier)
         # complete transitional state
         self.fsm.complete(res)
         # continue to execute DAQ in this thread
         res = self.do_run(run_identifier)
         return res
+
+    @debug_log
+    def _pre_run_hook(self, run_identifier: str) -> None:
+        """Hook run immediately before do_run() is called.
+
+        Intended for inheriting classes to inject code in between calls to
+        do_starting() and do_run().
+
+        """
+        pass
 
     @debug_log
     def do_starting(self, run_identifier: str) -> str:
