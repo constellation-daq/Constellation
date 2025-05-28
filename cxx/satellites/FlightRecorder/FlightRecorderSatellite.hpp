@@ -18,6 +18,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
@@ -44,6 +45,8 @@ public:
 
     void initializing(constellation::config::Configuration& config) final;
     void starting(std::string_view run_identifier) final;
+    void stopping() final;
+    void interrupting(constellation::protocol::CSCP::State previous_state) final;
 
 private:
     /**

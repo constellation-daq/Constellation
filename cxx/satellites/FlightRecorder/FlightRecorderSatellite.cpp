@@ -163,6 +163,20 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     msg_logged_run_ = 0;
 }
 
+void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
+    // Force a flush at interruption:
+    if(sink_ != nullptr) {
+        sink_->flush();
+    }
+}
+
+void FlightRecorderSatellite::stopping() {
+    // Force a flush at run stop:
+    if(sink_ != nullptr) {
+        sink_->flush();
+    }
+}
+
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     if(sink_ == nullptr) {
         return;
