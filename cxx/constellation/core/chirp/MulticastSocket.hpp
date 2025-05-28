@@ -12,7 +12,6 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
-#include <set>
 #include <span>
 #include <vector>
 
@@ -20,6 +19,7 @@
 #include <asio/ip/udp.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 
 namespace constellation::chirp {
 
@@ -38,11 +38,11 @@ namespace constellation::chirp {
         /**
          * Construct multicast handler
          *
-         * @param interface_addresses Set of interface addresses for outgoing messages
+         * @param interfaces List of interfaces for outgoing messages
          * @param multicast_address Multicast address
          * @param multicast_port Multicast port
          */
-        CNSTLN_API MulticastSocket(const std::set<asio::ip::address_v4>& interface_addresses,
+        CNSTLN_API MulticastSocket(const std::vector<networking::Interface>& interfaces,
                                    const asio::ip::address_v4& multicast_address,
                                    asio::ip::port_type multicast_port);
 

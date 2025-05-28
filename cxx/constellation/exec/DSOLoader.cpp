@@ -23,7 +23,6 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/exceptions.hpp"
 #include "constellation/satellite/Satellite.hpp"
@@ -33,7 +32,7 @@ using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::filesystem::path& hint) {
+DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& hint) {
     // Possible paths:
     // - custom executable: hint
     // - in build folder: builddir/cxx/satellites/libXYZ.suffix
@@ -41,7 +40,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     // - in installed environment: prefix/libdir/ConstellationSatellites/libXYZ.suffix
     // - in portable installed environment: current directory
     const auto dso_file_name = to_dso_file_name(dso_name);
-    LOG(logger, TRACE) << "Searching paths for library with name " << std::quoted(dso_file_name);
+    LOG(TRACE) << "Searching paths for library with name " << std::quoted(dso_file_name);
 
     // List containing paths of possible DSOs (ordered after priority)
     auto possible_paths = std::vector<std::filesystem::path>();
@@ -52,7 +51,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
         if(std::filesystem::is_regular_file(abs_path)) {
             // Check that file name matches (case-insensitive)
             if(transform(abs_path.filename().string(), ::tolower) == transform(dso_file_name, ::tolower)) {
-                LOG(logger, TRACE) << "Adding " << std::quoted(abs_path.string()) << " to library lookup";
+                LOG(TRACE) << "Adding " << std::quoted(abs_path.string()) << " to library lookup";
                 possible_paths.emplace_back(abs_path);
             }
         }
@@ -60,7 +59,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
 
     auto add_path = [&](const std::filesystem::path& path) {
         const auto abs_path = std::filesystem::absolute(path);
-        LOG(logger, TRACE) << "Adding library search path " << std::quoted(path.string());
+        LOG(TRACE) << "Adding library search path " << std::quoted(path.string());
         // For directories, recursively iterate and add paths
         if(std::filesystem::is_directory(abs_path)) {
             for(const auto& entry :
@@ -117,7 +116,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, Logger& logger, const std::fil
     }
 #endif
 
-    LOG(logger, DEBUG) << "Loaded shared library " << library_path.filename();
+    LOG(DEBUG) << "Loaded shared library " << library_path.filename();
 }
 
 DSOLoader::~DSOLoader() {

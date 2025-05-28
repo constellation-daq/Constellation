@@ -13,7 +13,6 @@
 #include <string>
 
 #include "constellation/build.hpp"
-#include "constellation/core/log/Logger.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 namespace constellation::exec {
@@ -22,10 +21,9 @@ namespace constellation::exec {
         /**
          * @brief Create a class to load a shared library
          * @param dso_name Name of the DSO without prefix or file extension
-         * @param logger Logger to log DSO path on success
          * @param hint Hint to path of the DSO
          */
-        CNSTLN_API DSOLoader(const std::string& dso_name, log::Logger& logger, const std::filesystem::path& hint = {});
+        CNSTLN_API DSOLoader(const std::string& dso_name, const std::filesystem::path& hint = {});
 
         CNSTLN_API virtual ~DSOLoader();
 

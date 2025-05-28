@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include <set>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include <asio/ip/address_v4.hpp>
 
@@ -21,11 +21,29 @@
 namespace constellation::networking {
 
     /**
-     * @brief Get all interface addresses
-     *
-     * @return Set with all interface addresses
+     * @brief Interface containing its name and address
      */
-    CNSTLN_API std::set<asio::ip::address_v4> get_interface_addresses();
+    struct Interface {
+        /** Interface name */
+        std::string name;
+
+        /** Interface address */
+        asio::ip::address_v4 address;
+    };
+
+    /**
+     * @brief Get all interfaces
+     *
+     * @return List with all interfaces
+     */
+    CNSTLN_API std::vector<Interface> get_interfaces();
+
+    /**
+     * @brief Get interfaces matching a list of interface names
+     *
+     * @return List of interfaces with matching names
+     */
+    CNSTLN_API std::vector<Interface> get_interfaces(std::vector<std::string> interface_names);
 
     /**
      * @brief Build a URI from an IP address and a port

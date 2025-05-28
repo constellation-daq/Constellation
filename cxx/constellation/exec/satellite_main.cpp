@@ -12,5 +12,5 @@
 using namespace constellation::exec;
 
 int main(int argc, char* argv[]) {
-    return satellite_main(argc, argv, "satellite");
+    return satellite_main(argc, argv, "Satellite");
 }
