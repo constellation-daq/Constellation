@@ -11,10 +11,15 @@
 
 #include <chrono>
 #include <filesystem>
-#include <format>
 #include <fstream>
 #include <string_view>
 #include <utility>
+
+#ifdef __cpp_lib_format
+#include <format>
+#else
+#include <stringstream>
+#endif
 
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
@@ -185,13 +190,21 @@ void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
     }
 
     const auto& header = msg.getHeader();
-    sink_->log(
-        header.getTime(),
-        {},
-        to_spdlog_level(msg.getLogLevel()),
-        std::format(
-            "[{}] [{}] [{}] {}", header.getSender(), to_string(msg.getLogLevel()), msg.getLogTopic(), msg.getLogMessage()));
 
+#ifdef __cpp_lib_format
+    auto log_msg = std::format(
+        "[{}] [{}] [{}] {}", header.getSender(), to_string(msg.getLogLevel()), msg.getLogTopic(), msg.getLogMessage());
+#else
+    std::ostringstream oss;
+    oss << "[" << header.getSender() << "] [" << to_string(msg.getLogLevel()) << "] [" << msg.getLogTopic() << "] "
+        << msg.getLogMessage();
+    auto log_msg = oss.str();
+#endif
+
+    // Sink the message
+    sink_->log(header.getTime(), {}, to_spdlog_level(msg.getLogLevel()), std::move(log_msg));
+
+    // Update statistics
     msg_logged_total_++;
     if(getState() == CSCP::State::RUN) {
         msg_logged_run_++;
