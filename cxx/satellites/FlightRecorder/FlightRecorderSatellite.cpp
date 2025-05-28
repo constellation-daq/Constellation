@@ -12,15 +12,16 @@
 #include <format>
 #include <string_view>
 
-#include <spdlog/details/log_msg.h>
 #include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
+#include "spdlog/sinks/daily_file_sink.h"
 #include "spdlog/sinks/rotating_file_sink.h"
 
 using namespace constellation::config;
@@ -35,23 +36,34 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
 
+    // Reset potentially existing sink
+    if(sink_ != nullptr) {
+        sink_.reset();
+    }
+
     const auto path = config.getPath("file_path");
+    const auto method = config.get<LogMethod>("method");
 
     try {
-        if(config.has("rotate_files")) {
+        if(method == LogMethod::FILE) {
+            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path);
+        } else if(method == LogMethod::ROTATE) {
             const auto max_files = config.get<size_t>("rotate_files");
             const auto max_size = config.get<size_t>("rotate_filesize", 10) * 1048576; // in bytes
-            file_logger_ = spdlog::rotating_logger_mt(getCanonicalName(), path, max_size, max_files);
-        } else {
-            file_logger_ = spdlog::basic_logger_mt(getCanonicalName(), path);
+            sink_ = spdlog::rotating_logger_mt(getCanonicalName(), path, max_size, max_files);
+        } else if(method == LogMethod::DAILY) {
+            // FIXME time to be configured
+            // const auto time = config.get<size_t>("rotate_files");
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path, 14, 55);
         }
+
         spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 1)));
     } catch(const spdlog::spdlog_ex& ex) {
         throw SatelliteError(ex.what());
     }
 
     // Set pattern containing only the timestamp and the message
-    file_logger_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
+    sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
     // Start the log receiver pool
     startPool();
