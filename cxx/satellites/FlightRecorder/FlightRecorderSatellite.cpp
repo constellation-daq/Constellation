@@ -41,20 +41,33 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
         sink_.reset();
     }
 
-    const auto path = config.getPath("file_path");
-    const auto method = config.get<LogMethod>("method");
+    path_ = validate_file_path(config.getPath("file_path"));
+    allow_overwriting_ = config.get<bool>("allow_overwriting");
 
     try {
-        if(method == LogMethod::FILE) {
-            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path);
-        } else if(method == LogMethod::ROTATE) {
+        method_ = config.get<LogMethod>("method");
+        switch(method_) {
+        case LogMethod::FILE: {
+            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path_);
+            break;
+        }
+        case LogMethod::ROTATE: {
             const auto max_files = config.get<size_t>("rotate_files");
             const auto max_size = config.get<size_t>("rotate_filesize", 10) * 1048576; // in bytes
-            sink_ = spdlog::rotating_logger_mt(getCanonicalName(), path, max_size, max_files);
-        } else if(method == LogMethod::DAILY) {
+            sink_ = spdlog::rotating_logger_mt(getCanonicalName(), path_, max_size, max_files);
+            break;
+        }
+        case LogMethod::DAILY: {
             // FIXME time to be configured
             // const auto time = config.get<size_t>("rotate_files");
-            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path, 14, 55);
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_, 14, 55);
+            break;
+        }
+        case LogMethod::RUN: {
+            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path_);
+            break;
+        }
+        default: std::unreachable();
         }
 
         spdlog::flush_every(std::chrono::seconds(config.get<size_t>("flush_period", 1)));
@@ -73,7 +86,39 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     setGlobalLogLevel(global_level);
 }
 
-void FlightRecorderSatellite::starting(std::string_view /*run_identifier*/) {
+std::filesystem::path FlightRecorderSatellite::validate_file_path(std::filesystem::path file_path) const {
+
+    // Create all required main directories and possible sub-directories from the filename
+    std::filesystem::create_directories(file_path.parent_path());
+
+    // Check if file exists
+    if(std::filesystem::is_regular_file(file_path)) {
+        if(!allow_overwriting_) {
+            throw SatelliteError("Overwriting of existing file " + file_path.string() + " denied");
+        }
+        LOG(WARNING) << "File " << file_path << " exists and will be overwritten";
+        std::filesystem::remove(file_path);
+    } else if(std::filesystem::is_directory(file_path)) {
+        throw SatelliteError("Requested output file " + file_path.string() + " is a directory");
+    }
+
+    // Convert to an absolute path
+    return std::filesystem::canonical(file_path);
+}
+
+void FlightRecorderSatellite::starting(std::string_view run_identifier) {
+    // For method RUN set a new log file:
+    if(method_ == LogMethod::RUN) {
+        try {
+            // Append run identifier to the end of the file name while keeping the extension:
+            path_ = validate_file_path(path_.parent_path() / (path_.stem().string() + "_" + std::string(run_identifier) +
+                                                              path_.extension().string()));
+            sink_ = spdlog::basic_logger_mt(getCanonicalName(), path_);
+        } catch(const spdlog::spdlog_ex& ex) {
+            throw SatelliteError(ex.what());
+        }
+    }
+
     // Reset run message count
     msg_logged_run_ = 0;
 }

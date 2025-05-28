@@ -11,6 +11,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <filesystem>
 #include <string_view>
 
 #include "constellation/core/log/Level.hpp"
@@ -21,10 +22,15 @@
 class FlightRecorderSatellite final : public constellation::satellite::Satellite,
                                       public constellation::listener::LogListener {
 private:
+    /**
+     * @class LogMethod
+     * @brief Different logging methods offered by the satellite
+     */
     enum class LogMethod {
-        FILE,
-        ROTATE,
-        DAILY,
+        FILE,   // Simple log file
+        ROTATE, // Multiple log files, rotate logging by file size
+        DAILY,  // Create a new log file daily at provided time
+        RUN,    // Create a new log file whenever a new run is started
     };
 
 public:
@@ -35,8 +41,12 @@ public:
 
 private:
     void add_message(constellation::message::CMDP1LogMessage&& msg);
+    std::filesystem::path validate_file_path(std::filesystem::path file_path) const;
 
 private:
+    LogMethod method_;
+    std::filesystem::path path_;
+    bool allow_overwriting_;
     std::shared_ptr<spdlog::logger> sink_;
     std::atomic<std::size_t> msg_logged_total_ {0};
     std::atomic<std::size_t> msg_logged_run_ {0};
