@@ -42,6 +42,15 @@ private:
 
 public:
     FlightRecorderSatellite(std::string_view type, std::string_view name);
+    ~FlightRecorderSatellite();
+
+    /// @cond doxygen_suppress
+    // No copy/move constructor/assignment
+    FlightRecorderSatellite(const FlightRecorderSatellite& other) = delete;
+    FlightRecorderSatellite& operator=(const FlightRecorderSatellite& other) = delete;
+    FlightRecorderSatellite(FlightRecorderSatellite&& other) = delete;
+    FlightRecorderSatellite& operator=(FlightRecorderSatellite&& other) = delete;
+    /// @endcond
 
     void initializing(constellation::config::Configuration& config) final;
     void starting(std::string_view run_identifier) final;
