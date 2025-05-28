@@ -376,6 +376,12 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             return prefix + "All " + res[0]
         return prefix + ", ".join(res)
 
+    def await_state(self, target: SatelliteState) -> None:
+        """Blocks until the desired global SatelliteState of the controller satellites is reached."""
+        self.log.info("Awaiting global state " + str(target))
+        while not all([state == target for state in self.states.values()]):
+            time.sleep(0.5)
+
     @property
     def constellation(self) -> SatelliteArray:
         """Returns the currently active SatelliteArray of controlled Satellites."""
@@ -706,6 +712,7 @@ def main(args: Any = None) -> None:
             return []
 
     ipython_cfg = Config()
+    ipython_cfg.InteractiveShell.enable_tip = False
     ipython_cfg.TerminalInteractiveShell.prompts_class = ControllerPrompt
     # Now create an instance of the embeddable shell. The first argument is a
     # string with options exactly as you would type them if you were starting

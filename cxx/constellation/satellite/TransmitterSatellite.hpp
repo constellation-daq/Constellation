@@ -154,6 +154,7 @@ namespace constellation::satellite {
          * * `_bor_timeout`
          * * `_eor_timeout
          * * `_data_timeout`
+         * * `_data_license`
          *
          * @param config Configuration of the satellite
          */
@@ -166,6 +167,7 @@ namespace constellation::satellite {
          * * `_bor_timeout`
          * * `_eor_timeout`
          * * `_data_timeout`
+         * * `_data_license`
          *
          * @param partial_config Changes to the configuration of the satellite
          */
@@ -232,6 +234,7 @@ namespace constellation::satellite {
         config::Dictionary bor_tags_;
         config::Dictionary eor_tags_;
         config::Dictionary run_metadata_;
+        std::string data_license_;
         bool mark_run_tainted_ {false};
         std::atomic_size_t bytes_transmitted_;
         std::atomic_size_t frames_transmitted_;

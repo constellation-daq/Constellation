@@ -14,8 +14,10 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <thread>
 
 #include <zmq.hpp>
@@ -43,7 +45,7 @@ namespace constellation::heartbeat {
                                  std::function<protocol::CSCP::State()> state_callback,
                                  std::chrono::milliseconds interval);
 
-        /** Destructor which unregisters the CHIRP heartbeat service and stops the heartbeat thread */
+        /** Destructor which terminates the heartbeat sender */
         CNSTLN_API ~HeartbeatSend();
 
         // No copy/move constructor/assignment
@@ -53,6 +55,13 @@ namespace constellation::heartbeat {
         HeartbeatSend(HeartbeatSend&& other) = delete;
         HeartbeatSend& operator=(HeartbeatSend&& other) = delete;
         /// @endcond
+
+        /**
+         * @brief Terminate the heartbeat sender
+         *
+         * This unregisters the CHIRP heartbeat service and stops the heartbeat thread.
+         */
+        CNSTLN_API void terminate();
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound
@@ -72,8 +81,10 @@ namespace constellation::heartbeat {
 
         /**
          * @brief Send an extrasystole
+         *
+         * @param status message to be attached
          */
-        CNSTLN_API void sendExtrasystole();
+        CNSTLN_API void sendExtrasystole(std::string_view status);
 
     private:
         /**
@@ -100,6 +111,8 @@ namespace constellation::heartbeat {
         std::condition_variable cv_;
         std::mutex mutex_;
         std::jthread sender_thread_;
+
+        std::optional<std::string> status_;
     };
 
 } // namespace constellation::heartbeat

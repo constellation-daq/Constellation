@@ -42,7 +42,7 @@ namespace constellation::metrics {
                                              std::chrono::steady_clock::duration interval,
                                              C value_callback) {
         std::function<std::optional<config::Value>()> value_callback_cast =
-            [name, value_callback = std::move(value_callback)]() -> std::optional<config::Value> {
+            [name, value_callback = std::move(value_callback)]() mutable -> std::optional<config::Value> {
             using R = std::invoke_result_t<C>;
             try {
                 // If optional, wrap the value to std::optional<config::Value>

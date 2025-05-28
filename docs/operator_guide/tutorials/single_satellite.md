@@ -21,6 +21,11 @@ arguments:
 SatelliteSputnik -n One -g edda
 ```
 
+```{note}
+When a satellite is started this way, it runs in the foreground until it is terminated. This means that any other satellites
+or commands need to be a run in a new terminal.
+```
+
 ## Controlling the Satellite
 
 A controller running in the same Constellation group is needed in order to control the satellite started in the first part
@@ -32,19 +37,19 @@ The Python implementation of Constellation provides a powerful command line inte
 This can be installed with the `cli` component:
 
 ::::{tab-set}
-:::{tab-item} Source
-:sync: source
-
-```sh
-pip install --no-build-isolation -e .[cli]
-```
-
-:::
 :::{tab-item} PyPI
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[cli]
+pip install "ConstellationDAQ[cli]"
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e ".[cli]"
 ```
 
 :::
@@ -131,14 +136,17 @@ edda > constellation.get_state()
                         "last_changed_iso": '2024-12-12T13:18:18.794958+00:00'})}
 ```
 
-Similarly, all satellite states can be called. A full list of available commands, along with a description of the finite
+Here, the response of the satellites contain a message (`msg`) with the human-readable state name, a payload with the state
+code and metadata with key-value pairs such as the time when the state changed last (`last_changed`).
+
+Similarly, all satellite transitions can be called. A full list of available commands, along with a description of the finite
 state machine can be found in the [concepts chapter on satellites](../concepts/satellite.md).
 
 ### Loading a Configuration File
 
-Constellation configuration files are TOML files with the configuration key-value pairs for all satellites. The individual
-satellite configurations are sent to their satellites together with the `initialize` command as dictionary. Their basic
-structure and syntax is the following:
+Constellation configuration files are [TOML](https://toml.io/) files with the configuration key-value pairs for all
+satellites. The individual satellite configurations are sent to their satellites together with the `initialize` command as
+dictionary. Their basic structure and syntax is the following:
 
 ```toml
 [satellites]

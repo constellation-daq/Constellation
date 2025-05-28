@@ -19,6 +19,7 @@
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/gui/QCollapseButton.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
 
 using namespace constellation;
@@ -72,21 +73,6 @@ void ComboBoxItemDelegate::updateEditorGeometry(QWidget* editor,
     aligned_rect.setLeft(option.rect.right() - editor_width);
     aligned_rect.setWidth(editor_width);
     editor->setGeometry(aligned_rect);
-}
-
-QCollapseButton::QCollapseButton(const QString& text, QWidget* parent) : QToolButton(parent) {
-    setCheckable(true);
-    setStyleSheet("QToolButton { border-style: outset; border-width: 0px; font-weight: normal; }");
-    setFont(QApplication::font());
-    setArrowType(Qt::ArrowType::RightArrow);
-    setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Maximum);
-
-    QToolButton::setText(" " + text);
-
-    connect(this, &QToolButton::toggled, [&](bool checked) {
-        setArrowType(checked ? Qt::ArrowType::DownArrow : Qt::ArrowType::RightArrow);
-    });
 }
 
 // Qt takes care of cleanup since parent widgets are always specified:

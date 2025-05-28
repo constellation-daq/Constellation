@@ -148,9 +148,10 @@ class CommandTransmitter:
         try:
             msg.msg_verb = CSCPMessageVerb(msg.msg_verb)
         except ValueError:
-            raise RuntimeError(f"Received invalid request with msg verb: {msg.msg_verb}")
-        # convert to lower case:
-        msg.msg = msg.msg.lower()
+            raise RuntimeError(f"Received CSCP message with invalid verb: {msg.msg_verb}")
+        # Convert commands to lower case to be case-insensitive:
+        if msg.msg_verb == CSCPMessageVerb.REQUEST:
+            msg.msg = msg.msg.lower()
         try:
             unpacker = msgpack.Unpacker()
             unpacker.feed(cmdmsg[2])

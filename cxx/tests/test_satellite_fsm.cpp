@@ -8,6 +8,7 @@
 #include <chrono> // IWYU pragma: keep
 #include <future>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -80,7 +81,7 @@ TEST_CASE("Regular FSM operation", "[satellite][satellite::fsm]") {
     satellite.exit();
 }
 
-TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
+TEST_CASE("FSM failure in transitional state", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
@@ -89,7 +90,7 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     REQUIRE(fsm.getState() == State::initializing);
     satellite.setThrowTransitional();
     while(fsm.getState() == State::initializing) {
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::yield();
     }
     REQUIRE(fsm.getState() == State::ERROR);
 
@@ -97,15 +98,49 @@ TEST_CASE("FSM interrupts and failures", "[satellite][satellite::fsm]") {
     REQUIRE_FALSE(fsm.isAllowed(Transition::failure));
     REQUIRE_FALSE(fsm.reactIfAllowed(Transition::failure));
 
-    // Reset
+    satellite.exit();
+}
+
+TEST_CASE("FSM failure in RUN", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
     fsm.react(Transition::initialize, Configuration());
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::INIT);
-
-    // Interrupt in RUN state
     fsm.react(Transition::launch);
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Start and set to throw
+    fsm.react(Transition::start, "run_0");
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::RUN);
+    satellite.setThrowRunning();
+
+    // Wait for failure
+    while(fsm.getState() == State::RUN) {
+        std::this_thread::yield();
+    }
+    REQUIRE(fsm.getState() == State::ERROR);
+
+    satellite.exit();
+}
+
+TEST_CASE("FSM interrupt in RUN", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialize and launch
+    fsm.react(Transition::initialize, Configuration());
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
+    fsm.react(Transition::launch);
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::ORBIT);
+
+    // Interrupt in RUN state
     fsm.react(Transition::start, "run_0");
     satellite.progressFsm();
     REQUIRE(fsm.getState() == State::RUN);
@@ -455,9 +490,9 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
 
     std::atomic_bool throw_cb = false;
     std::atomic_int cb_count = 0;
-    fsm.registerStateCallback("test", [&](State state) {
+    fsm.registerStateCallback("test", [&](State state, std::string_view status) {
         const auto local_count = ++cb_count;
-        LOG(DEBUG) << "State callback with state " << state << ", count " << local_count;
+        LOG(DEBUG) << "State callback with state " << state << ", status `" << status << "`, count " << local_count;
         if(throw_cb) {
             throw Exception("Throwing in state callback as requested");
         }
@@ -465,11 +500,21 @@ TEST_CASE("FSM callbacks", "[satellite][satellite::fsm]") {
 
     // Initialize, callbacks for initializing and INIT
     satellite.reactFSM(Transition::initialize, Configuration());
+
+    // Callbacks for initializing and INIT, but since only called after state changed wait for count
+    while(cb_count.load() < 2) {
+        std::this_thread::yield();
+    }
     REQUIRE(cb_count.load() == 2);
 
-    // Launch, throw in callback, callbacks for launching and ORBIT
+    // Launch and throw in callback
     throw_cb = true;
     satellite.reactFSM(Transition::launch);
+
+    // Callbacks for launching and ORBIT, but since only called after state changed wait for count
+    while(cb_count.load() < 4) {
+        std::this_thread::yield();
+    }
     REQUIRE(cb_count.load() == 4);
 
     fsm.unregisterStateCallback("test");

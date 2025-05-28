@@ -64,6 +64,15 @@ def mock_data_receiver(mock_socket_receiver: mocket):
 
 
 @pytest.fixture
+def data_receiver():
+    ctx = zmq.Context()
+    socket = ctx.socket(zmq.PULL)
+    socket.connect(f"tcp://127.0.0.1:{DATA_PORT}")
+    r = DataTransmitter("simple_receiver", socket)
+    yield r
+
+
+@pytest.fixture
 def mock_sender_satellite(mock_chirp_transmitter):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
@@ -73,10 +82,19 @@ def mock_sender_satellite(mock_chirp_transmitter):
         return m
 
     class MockSenderSatellite(DataSender):
+        def do_initializing(self, config):
+            self.BOR = {"status": "set at initialization"}
+            return "done"
+
+        def do_starting(self, payload: any):
+            self.BOR = "set in do_starting()"
+            return "done"
+
         def do_run(self, payload: any):
             self.payload_id = 0
             while self.payload_id < 10:
-                self.data_queue.put((f"mock payload {self.payload_id}", {}))
+                payload = f"mock payload {self.payload_id}".encode("utf-8")
+                self.data_queue.put((payload, {}))
                 self.payload_id += 1
                 time.sleep(0.02)
             return "Send finished"
@@ -117,6 +135,38 @@ def receiver_satellite():
         group="mockstellation",
         cmd_port=CMD_PORT,
         mon_port=MON_PORT,
+        hb_port=33333,
+        interface="127.0.0.1",
+    )
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.2)
+    yield s
+
+
+@pytest.fixture
+def sender_satellite():
+    """A sender Satellite."""
+
+    class MockSenderSatellite(DataSender):
+        def do_run(self, payload: any):
+            self.payload_id = 0
+            while self.payload_id < 10 and not self._state_thread_evt.is_set():
+                payload = f"mock payload {self.payload_id}".encode("utf-8")
+                self.data_queue.put((payload, {}))
+                self.payload_id += 1
+                time.sleep(0.02)
+            while not self._state_thread_evt.is_set():
+                time.sleep(0.02)
+            return "Send finished"
+
+    s = MockSenderSatellite(
+        name="mock_sender",
+        group="mockstellation",
+        cmd_port=CMD_PORT,
+        mon_port=MON_PORT,
+        data_port=DATA_PORT,
         hb_port=33333,
         interface="127.0.0.1",
     )
@@ -187,8 +237,10 @@ def test_sending_package(
     transmitter = mock_sender_satellite
     rx = mock_data_receiver
 
+    assert not transmitter.BOR
     commander.send_request("initialize", {"mock key": "mock argument string"})
     wait_for_state(transmitter.fsm, "INIT")
+    assert transmitter.BOR == {"status": "set at initialization"}
     commander.send_request("launch")
     wait_for_state(transmitter.fsm, "ORBIT")
     commander.send_request("start", "100102")
@@ -200,11 +252,11 @@ def test_sending_package(
         msg = rx.recv()
         if BOR:
             assert msg.msgtype == CDTPMessageIdentifier.BOR
-            assert msg.payload != f"mock payload {idx}"
+            assert msg.payload == "set in do_starting()"
             BOR = False
         else:
             assert msg.msgtype == CDTPMessageIdentifier.DAT
-            assert msg.payload == f"mock payload {idx - 1}"
+            assert msg.payload.decode("utf-8") == f"mock payload {idx - 1}"
             # assert msg.sequence_number == idx, "Sequence number not expected order"
             # assert msg.name == "mock sender"
 
@@ -408,6 +460,51 @@ def test_receive_writing_swmr_mode(
                 i += 1
             assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
             h5file.close()
+
+
+@pytest.mark.forked
+def test_fail_sending_bor(commander, sender_satellite):
+    """Test a run failing due to missing data receiver."""
+    sender = sender_satellite
+    # set timeout value for BOR to 1s
+    commander.request_get_response("initialize", {"bor_timeout": 1000})
+    wait_for_state(sender.fsm, "INIT", 1)
+    commander.request_get_response("launch")
+    wait_for_state(sender.fsm, "ORBIT", 1)
+    commander.request_get_response("start", "no_receiver_run")
+    # no receiver present, sending BOR should fail
+    wait_for_state(sender.fsm, "ERROR", 2)
+
+
+@pytest.mark.forked
+def test_fail_sending_eor(commander, sender_satellite, data_receiver):
+    """Test a run failing due to missing data receiver at EOR."""
+    sender = sender_satellite
+    rx = data_receiver
+    # set timeout value for BOR to 1s
+    commander.request_get_response("initialize", {"eor_timeout": 1000})
+    wait_for_state(sender.fsm, "INIT", 1)
+    commander.request_get_response("launch")
+    wait_for_state(sender.fsm, "ORBIT", 1)
+    commander.request_get_response("start", "no_receiver_at_end_of_run")
+    msg = rx.recv()
+    assert msg.msgtype == CDTPMessageIdentifier.BOR
+    wait_for_state(sender.fsm, "RUN", 1)
+    time.sleep(1)
+    for i in range(10):
+        msg = rx.recv()
+        assert msg.msgtype == CDTPMessageIdentifier.DAT
+    # close connection
+    #
+    # NOTE this will make sends fail with "zmq.error.Again: Resource temporarily
+    # unavailable", NOT a timeout. As pytest does not support our exception
+    # hooks, the pusher thread dies silently and the timeout waiting for the EOR
+    # event will kick in.
+    rx._socket.close()
+    time.sleep(0.2)
+    commander.request_get_response("stop")
+    # no receiver active, sending EOR should fail
+    wait_for_state(sender.fsm, "ERROR", 2)
 
 
 @pytest.mark.forked

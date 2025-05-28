@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: CC0-1.0
 
 option('impl_cxx', type: 'feature', value: 'enabled', description: 'Build C++ implementation')
-option('impl_py', type: 'feature', value: 'auto', description: 'Build Python implementation')
+option('impl_py', type: 'feature', value: 'disabled', description: 'Build Python implementation')
 
 option('cxx_tools', type: 'boolean', value: true, description: 'Build C++ tools')
 option('cxx_tests', type: 'feature', value: 'auto', description: 'Build C++ tests')
+
+option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc memory allocator')
 
 # GUI framework version
 option('build_gui', type: 'combo', choices: ['none', 'qt5', 'qt6'], value: 'qt6', description: 'Build Qt graphical UIs')
@@ -19,5 +21,6 @@ option('listener_observatory', type: 'boolean', value: true, description: 'Build
 # Satellites
 option('satellite_dev_null_receiver', type: 'boolean', value: false, description: 'Build DevNullReceiver satellite')
 option('satellite_eudaq_native_writer', type: 'boolean', value: true, description: 'Build EudaqNativeWriter satellite')
+option('satellite_mattermost', type: 'boolean', value: false, description: 'Build Mattermost satellite')
 option('satellite_random_transmitter', type: 'boolean', value: false, description: 'Build RandomTransmitter satellite')
 option('satellite_sputnik', type: 'boolean', value: true, description: 'Build Sputnik satellite')

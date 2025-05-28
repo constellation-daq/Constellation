@@ -19,9 +19,9 @@
 #include <stop_token>
 #include <string_view>
 #include <thread>
+#include <vector>
 
 #include <zmq.hpp>
-#include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Logger.hpp"
@@ -80,9 +80,11 @@ namespace constellation::pools {
         void stopPool();
 
         /**
-         * @brief Return number of events returned by `poller_.wait()`
+         * @brief Return the number of events returned by `poller_.wait()`
+         *
+         * This corresponds to the current number of sockets with at least one message
          */
-        std::size_t pollerEvents() { return poller_events_.load(); }
+        std::size_t pollerEvents() { return poller_event_count_.load(); }
 
         /**
          * @brief Return the number of currently connected sockets
@@ -166,8 +168,9 @@ namespace constellation::pools {
         void disconnect_all();
 
     private:
-        zmq::active_poller_t poller_;
-        std::atomic_size_t poller_events_;
+        zmq::poller_t<> poller_;
+        std::atomic_size_t poller_event_count_;
+        std::vector<zmq::poller_t<>::event_type> poller_events_;
 
         std::function<void(MESSAGE&&)> message_callback_;
 

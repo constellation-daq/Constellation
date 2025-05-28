@@ -55,6 +55,9 @@ QCommandDialog::QCommandDialog(QWidget* parent,
     ui_->satelliteName->setText("<font color='gray'><b>" + QString::fromStdString(satellite) + "</b></font>");
     ui_->commandDescription->setVisible(false);
 
+    ui_->toolButton->setText("Parameters");
+    connect(ui_->toolButton, &QCollapseButton::toggled, this, [&](bool expand) { ui_->parameterBox->setVisible(expand); });
+
     ui_->parameterBox->hide();
     ui_->tableView->setModel(&parameters_);
 
@@ -72,6 +75,8 @@ QCommandDialog::QCommandDialog(QWidget* parent,
         ui_->commandLineEdit->setReadOnly(true);
         ui_->commandLineEdit->setFocusPolicy(Qt::FocusPolicy::NoFocus);
         ui_->commandLineEdit->setProperty("clearButtonEnabled", false);
+    } else {
+        ui_->commandLineEdit->setFocus(Qt::PopupFocusReason);
     }
     if(!description.empty()) {
         ui_->commandDescription->setText(QString::fromStdString(description));

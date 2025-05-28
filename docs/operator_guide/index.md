@@ -58,6 +58,7 @@ get_started/install_from_source
 
 tutorials/single_satellite
 tutorials/missioncontrol
+tutorials/observatory
 ```
 
 ```{raw} latex
@@ -84,4 +85,6 @@ concepts/data
 :caption: How-To Guides
 
 howtos/setup_influxdb_grafana
+howtos/setup_mattermost_logger
+howtos/scanning_python
 ```

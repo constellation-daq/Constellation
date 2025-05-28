@@ -17,8 +17,10 @@
 
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 
 using namespace Catch::Matchers;
+using namespace constellation::config;
 using namespace constellation::controller;
 
 namespace {
@@ -98,4 +100,15 @@ TEST_CASE("No global section", "[controller]") {
     REQUIRE(global_config.empty());
 }
 
+TEST_CASE("Adding satellite configuration", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict;
+    dict["key"] = 13;
+
+    config.addSatelliteConfiguration("Dummy.Added", dict);
+    REQUIRE(config.hasSatelliteConfiguration("Dummy.Added"));
+
+    const auto satellite_config = config.getSatelliteConfiguration("Dummy.Added");
+    REQUIRE(satellite_config.at("key").get<int>() == 13);
+}
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

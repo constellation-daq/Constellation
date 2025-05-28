@@ -29,7 +29,7 @@ def test_satellite_access_via_array(mock_controller, mock_satellite):
         time.sleep(0.05)
         timeout -= 0.05
     res = mock_controller.constellation.Satellite.mock_satellite.get_state()
-    assert res.msg == "new"
+    assert res.msg == "NEW"
 
 
 @pytest.mark.forked

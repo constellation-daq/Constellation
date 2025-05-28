@@ -20,10 +20,10 @@
 #include <QStandardItemModel>
 #include <QStringList>
 #include <QTableView>
-#include <QToolButton>
 #include <QWidget>
 
 #include "constellation/core/log/Level.hpp"
+#include "constellation/gui/QCollapseButton.hpp"
 #include "constellation/gui/QLogLevelComboBox.hpp"
 
 /**
@@ -50,16 +50,6 @@ public:
     void updateEditorGeometry(QWidget* editor, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
     /// @endcond
-};
-
-/**
- * @class QCollapseButton
- * @brief Helper class to draw a small button with arrow and no border to collapse and expand UI elements
- */
-class QCollapseButton : public QToolButton {
-public:
-    QCollapseButton(const QString& text, QWidget* parent = nullptr);
-    void setText(const QString& text) { QToolButton::setText(" " + text); }
 };
 
 /**
@@ -138,7 +128,7 @@ private:
     constellation::gui::QLogLevelComboBox* sender_level_;
 
     // UI elements
-    QCollapseButton* expand_button_;
+    constellation::gui::QCollapseButton* expand_button_;
     QTableView* topics_view_;
     QStandardItemModel* topics_;
     QWidget* container_;

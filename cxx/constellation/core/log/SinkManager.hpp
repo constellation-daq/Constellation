@@ -20,6 +20,7 @@
 #include <spdlog/async_logger.h>
 #include <spdlog/common.h>
 #include <spdlog/details/log_msg.h>
+#include <spdlog/details/thread_pool.h>
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
@@ -161,6 +162,7 @@ namespace constellation::log {
         void calculate_log_level(std::shared_ptr<spdlog::async_logger>& logger);
 
     private:
+        std::shared_ptr<spdlog::details::thread_pool> thread_pool_;
         std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> console_sink_;
         std::shared_ptr<CMDPSink> cmdp_sink_;
 

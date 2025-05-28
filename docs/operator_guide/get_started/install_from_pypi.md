@@ -6,11 +6,15 @@ Constellation is available on [PyPI](https://pypi.org/project/ConstellationDAQ/)
 pip install ConstellationDAQ
 ```
 
+```{note}
+Constellation requires Python 3.11 or newer.
+```
+
 To install optional components of the framework, you can install those by adding them in squared brackets.
 A recommended installation includes the `cli` and `influx` components:
 
 ```sh
-pip install ConstellationDAQ[cli,influx]
+pip install "ConstellationDAQ[cli,influx]"
 ```
 
 ```{note}

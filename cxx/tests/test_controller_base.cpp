@@ -334,7 +334,6 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     REQUIRE(msgs_rply.at("Dummy.b").getVerb().first == CSCP1Message::Type::INVALID);
 
     // Check that state is mixed:
-    controller.waitReachedState(CSCP::State::NEW, false);
     REQUIRE(controller.getLowestState() == CSCP::State::NEW);
     REQUIRE_FALSE(controller.isInGlobalState());
 

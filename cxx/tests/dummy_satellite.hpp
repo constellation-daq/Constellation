@@ -8,7 +8,6 @@
 
 #include <array>
 #include <atomic>
-#include <chrono>
 #include <concepts>
 #include <deque>
 #include <stop_token>
@@ -63,7 +62,7 @@ public:
         progress_fsm_ = true;
         // wait for state change
         while(old_state == SatelliteT::getState()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::yield();
         }
         progress_fsm_ = false;
         LOG(DEBUG) << "Progressed FSM, new state " << SatelliteT::getState() << " (" << SatelliteT::getCanonicalName()
@@ -109,6 +108,7 @@ public:
     void skipTransitional(bool skip) { skip_transitional_ = skip; }
 
     void exit() {
+        LOG(DEBUG) << "Exiting satellite";
         skip_transitional_ = true;
         SatelliteT::terminate();
         mocked_services_.clear();
@@ -154,8 +154,10 @@ protected:
                 throw_transitional_ = false;
                 throw constellation::utils::Exception("Throwing in transitional state as requested");
             }
+            std::this_thread::yield();
         }
         LOG(TRACE) << "Leaving transitional state " << state << " (" << SatelliteT::getCanonicalName() << ")";
+        SatelliteT::submit_status("Finished with transitional state " + std::string(state));
     }
 
 private:
@@ -182,6 +184,20 @@ public:
 
     void running(const std::stop_token& stop_token) override {
         SatelliteT::running(stop_token);
-        DummySatelliteNR<SatelliteT>::transitional_state("running");
+        LOG(TRACE) << "Entering running function (" << SatelliteT::getCanonicalName() << ")";
+        while(!stop_token.stop_requested()) {
+            if(throw_running_) {
+                throw_running_ = false;
+                throw constellation::utils::Exception("Throwing in running as requested");
+            }
+            std::this_thread::yield();
+        }
+        LOG(TRACE) << "Leaving running function (" << SatelliteT::getCanonicalName() << ")";
+        SatelliteT::submit_status("Finished with running function");
     }
+
+    void setThrowRunning() { throw_running_ = true; }
+
+private:
+    std::atomic_bool throw_running_ {false};
 };

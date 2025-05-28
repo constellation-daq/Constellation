@@ -58,7 +58,7 @@ namespace constellation::satellite {
             type,
             std::move(description),
             interval,
-            [this, allowed_states = std::move(allowed_states), value_callback = std::move(value_callback)]() {
+            [this, allowed_states = std::move(allowed_states), value_callback = std::move(value_callback)]() mutable {
                 std::optional<std::invoke_result_t<C>> retval = std::nullopt;
                 if(allowed_states.contains(getState())) {
                     retval = value_callback();

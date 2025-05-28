@@ -26,19 +26,19 @@ A restart is required for the changes to be effective.
 The Keithley satellite requires the `[keithley]` component, which can be installed with:
 
 ::::{tab-set}
-:::{tab-item} Source
-:sync: source
-
-```sh
-pip install --no-build-isolation -e .[keithley]
-```
-
-:::
 :::{tab-item} PyPI
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[keithley]
+pip install "ConstellationDAQ[keithley]"
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e ".[keithley]"
 ```
 
 :::

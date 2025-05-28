@@ -27,6 +27,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
@@ -193,33 +194,48 @@ void ReceiverSatellite::running(const std::stop_token& stop_token) {
 }
 
 bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) {
-    return std::ranges::any_of(data_transmitters_,
-                               [=](const auto& data_tramsitter) { return service.host_id == MD5Hash(data_tramsitter); });
+    if(!data_transmitters_.empty()) {
+        return std::ranges::any_of(data_transmitters_,
+                                   [=](const auto& data_tramsitter) { return service.host_id == MD5Hash(data_tramsitter); });
+    }
+    // If not set accept all incoming connections
+    return true;
 }
 
 void ReceiverSatellite::initializing_receiver(Configuration& config) {
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
-    LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
-
-    data_transmitters_ = config.getArray<std::string>("_data_transmitters");
-    reset_data_transmitter_states();
-    LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
-
     allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
     LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
+
+    data_transmitters_ = config.getArray<std::string>("_data_transmitters", {});
+    if(data_transmitters_.empty()) {
+        LOG(cdtp_logger_, INFO) << "Initialized to receive data from all transmitters";
+    } else {
+        std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
+            if(!CSCP::is_valid_canonical_name(sat)) {
+                throw InvalidValueError(config, "_data_transmitters", "`" + sat + "` is not a valid canonical name");
+            }
+        });
+        LOG(cdtp_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
+    }
+    reset_data_transmitter_states();
+
+    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
+    LOG(cdtp_logger_, DEBUG) << "Timeout for EOR message " << data_eor_timeout_;
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
-    if(partial_config.has("_eor_timeout")) {
-        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
+    if(partial_config.has("_allow_overwriting")) {
+        allow_overwriting_ = partial_config.get<bool>("_allow_overwriting");
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
     }
 
     if(partial_config.has("_data_transmitters")) {
-        // BasePool disconnect all sockets when stopped, so this is safe to do
-        data_transmitters_ = partial_config.getArray<std::string>("_data_transmitters");
-        reset_data_transmitter_states();
-        LOG(cdtp_logger_, INFO) << "Reconfigured to receive data from " << range_to_string(data_transmitters_);
+        throw InvalidKeyError("_data_transmitters", "Reconfiguration of data transmitters not possible");
+    }
+
+    if(partial_config.has("_eor_timeout")) {
+        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
     }
 }
 
@@ -377,24 +393,34 @@ void ReceiverSatellite::handle_cdtp_message(CDTP1Message&& message) {
 }
 
 void ReceiverSatellite::handle_bor_message(CDTP1Message bor_message) {
+    const auto sender = bor_message.getHeader().getSender();
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
-    auto data_transmitter_it = data_transmitter_states_.find(bor_message.getHeader().getSender());
+    auto data_transmitter_it = data_transmitter_states_.find(sender);
     // Check that transmitter is not connected yet
-    if(data_transmitter_it->second.state != TransmitterState::NOT_CONNECTED) [[unlikely]] {
-        throw InvalidCDTPMessageType(CDTP1Message::Type::BOR, "already received BOR");
+    if(data_transmitter_it != data_transmitter_states_.cend()) {
+        // If stored states, check that not connected yet
+        if(data_transmitter_it->second.state != TransmitterState::NOT_CONNECTED) [[unlikely]] {
+            throw InvalidCDTPMessageType(CDTP1Message::Type::BOR, "already received BOR " + std::string(sender));
+        }
+        data_transmitter_it->second.state = TransmitterState::BOR_RECEIVED;
+    } else {
+        // Otherwise, emplace
+        data_transmitter_states_.emplace(sender, TransmitterState::BOR_RECEIVED);
     }
-    data_transmitter_it->second.state = TransmitterState::BOR_RECEIVED;
     data_transmitter_states_lock.unlock();
 
+    LOG(cdtp_logger_, INFO) << "Received BOR from " << sender;
     receive_bor(bor_message.getHeader(), {Dictionary::disassemble(bor_message.getPayload().at(0)), true});
 }
 
 void ReceiverSatellite::handle_data_message(CDTP1Message data_message) {
+    const auto sender = data_message.getHeader().getSender();
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
-    const auto data_transmitter_it = data_transmitter_states_.find(data_message.getHeader().getSender());
+    const auto data_transmitter_it = data_transmitter_states_.find(sender);
     // Check that BOR was received
-    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
-        throw InvalidCDTPMessageType(CDTP1Message::Type::DATA, "did not receive BOR");
+    if(data_transmitter_it == data_transmitter_states_.cend() ||
+       data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
+        throw InvalidCDTPMessageType(CDTP1Message::Type::DATA, "did not receive BOR from " + std::string(sender));
     }
     // Store sequence number and missed messages
     data_transmitter_it->second.missed += data_message.getHeader().getSequenceNumber() - 1 - data_transmitter_it->second.seq;
@@ -405,11 +431,13 @@ void ReceiverSatellite::handle_data_message(CDTP1Message data_message) {
 }
 
 void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
+    const auto sender = eor_message.getHeader().getSender();
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
-    auto data_transmitter_it = data_transmitter_states_.find(eor_message.getHeader().getSender());
+    auto data_transmitter_it = data_transmitter_states_.find(sender);
     // Check that BOR was received
-    if(data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
-        throw InvalidCDTPMessageType(CDTP1Message::Type::EOR, "did not receive BOR");
+    if(data_transmitter_it == data_transmitter_states_.cend() ||
+       data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
+        throw InvalidCDTPMessageType(CDTP1Message::Type::EOR, "did not receive BOR from " + std::string(sender));
     }
     auto metadata = Dictionary::disassemble(eor_message.getPayload().at(0));
 
@@ -431,5 +459,6 @@ void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
     data_transmitter_it->second.state = TransmitterState::EOR_RECEIVED;
     data_transmitter_states_lock.unlock();
 
+    LOG(cdtp_logger_, INFO) << "Received EOR from " << sender;
     receive_eor(eor_message.getHeader(), std::move(metadata));
 }

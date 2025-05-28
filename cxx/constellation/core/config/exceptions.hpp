@@ -33,7 +33,23 @@ namespace constellation::config {
          * @brief Construct an error for a missing key
          * @param key Name of the missing key
          */
-        MissingKeyError(const std::string& key) { error_message_ = "Key '" + key + "' does not exist"; }
+        MissingKeyError(std::string_view key);
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Indicates an error with the presence of a key
+     *
+     * Should be raised if the configuration contains a key which should not be present.
+     */
+    class CNSTLN_API InvalidKeyError : public ConfigurationError {
+    public:
+        /**
+         * @brief Construct an error for an invalid key
+         * @param key Name of the problematic key
+         * @param reason Reason why the key is invalid (empty if no explicit reason)
+         */
+        InvalidKeyError(std::string_view key, std::string_view reason = "");
     };
 
     /**
@@ -49,20 +65,7 @@ namespace constellation::config {
          * @param type Type the value should have been converted to
          * @param reason Reason why the conversion failed
          */
-        InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type, std::string_view reason = "") {
-            // FIXME wording
-            error_message_ = "Could not convert value of type '";
-            error_message_ += vtype;
-            error_message_ += "' to type '";
-            error_message_ += type;
-            error_message_ += "' for key '";
-            error_message_ += key;
-            error_message_ += "'";
-            if(!reason.empty()) {
-                error_message_ += ": ";
-                error_message_ += reason;
-            }
-        }
+        InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type, std::string_view reason = "");
     };
 
     // Forward declaration of Configuration class
@@ -83,7 +86,7 @@ namespace constellation::config {
          * @param key Name of the problematic key
          * @param reason Reason why the value is invalid (empty if no explicit reason)
          */
-        InvalidValueError(const Configuration& config, const std::string& key, const std::string& reason = "");
+        InvalidValueError(const Configuration& config, const std::string& key, std::string_view reason = "");
 
         /**
          * @brief Construct an error for an invalid value
@@ -91,7 +94,7 @@ namespace constellation::config {
          * @param key Name of the problematic key
          * @param reason Reason why the value is invalid (empty if no explicit reason)
          */
-        InvalidValueError(const std::string& value, const std::string& key, const std::string& reason = "");
+        InvalidValueError(const std::string& value, const std::string& key, std::string_view reason = "");
     };
 
     /**
@@ -111,7 +114,7 @@ namespace constellation::config {
          */
         InvalidCombinationError(const Configuration& config,
                                 std::initializer_list<std::string> keys,
-                                const std::string& reason = "");
+                                std::string_view reason = "");
     };
 
 } // namespace constellation::config

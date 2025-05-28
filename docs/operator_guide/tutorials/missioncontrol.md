@@ -12,7 +12,7 @@ It is recommend to read through the tutorial on how to [start and control a sing
 MissionControl is started using the `MissionControl` command or by searching for it in the application overview if
 installed system-wide. On startup, the group name of the Constellation which should be controlled needs to be provided.
 
-```{figure} missioncontrol_startup.png
+```{figure} qtgui_startup.png
 :scale: 50 %
 MissionControl startup window
 ```
@@ -21,7 +21,7 @@ MissionControl startup window
 Alternatively, MissionControl can be started with a group directly using the `-g GROUP` command line argument.
 ```
 
-The main window of Constellation can be divided into three parts:
+The main window of MissionControl can be divided into three parts:
 
 - Information about the entire Constellation on top
 - A section for controlling the entire Constellation
@@ -37,11 +37,16 @@ In order to control satellites, some satellites need to be started as part of th
 three `Sputnik` satellites named `One`, `Two` and `Three`, a `RandomTransmitter` named `Sender` and a `EudaqNativeWriter`
 named `Receiver` are started.
 
+```{note}
+MissionControl does not start satellites. The five satellites required for this tutorial need to be started in a terminal as
+shown in the [tutorial for a single satellite](single_satellite.md).
+```
+
 ```{figure} missioncontrol_new.png
 MissionControl main window with satellites in NEW state
 ```
 
-To initialize the satellites, the following configuration files is used:
+To initialize the satellites, the following configuration file is used:
 
 ```toml
 [satellites.Sputnik]
@@ -55,6 +60,7 @@ interval = 2500
 [satellites.RandomTransmitter.Sender]
 
 [satellites.EudaqNativeWriter.Receiver]
+_data_transmitters = ["Sender"]
 output_directory = "/tmp/test"
 ```
 
@@ -63,9 +69,9 @@ Make sure to create the output directory for the `EudaqNativeWriter`.
 ```
 
 The configuration file can be selected with the {bdg-primary}`Select` button. Then, the satellites can be initialized using
-the {bdg-primary}`Initialize` button. Once the button is clicking, a warning will appear that `Sputnik.Three` is not
-mentioned explicitly in the configuration - this is a measure to prevent typing errors in configuration files. However in
-this case, the initialization can be continued by clicking {bdg-primary}`Ok`.
+the {bdg-primary}`Initialize` button. Once the button is clicked, a warning will appear that `Sputnik.Three` is not mentioned
+explicitly in the configuration - this is a measure to prevent typing errors in configuration files. However in this case,
+the initialization can be continued by clicking {bdg-primary}`Ok`.
 
 ```{hint}
 Any satellites not explicitly mentioned will still be initialized. The configuration is generated from the global
@@ -90,14 +96,16 @@ More details on the Constellation finite state machine and its different states 
 MissionControl main window after first initialization
 ```
 
-The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its log messages either via the console output or a logging user interface:
+The reason why the initialization of the `EudaqNativeWriter` failed becomes clear after checking its status, which is shown
+in the "Last message" column of the satellites list, or its log messages either via the console output or a logging user
+interface:
 
 ```{error}
-Critical failure during transition: Key '_data_transmitters' does not exist
+Critical failure during transition: Value `[Sender]` of key `_data_transmitters` is not valid: `Sender` is not a valid canonical name
 ```
 
-The `_data_transmitters` configuration parameter is mandatory information and contains the canonical name of all satellites from which
-the receiver should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
+The `_data_transmitters` configuration parameter should contain the canonical names of all satellites from which the receiver
+should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
 `RandomTransmitter.Sender`. In order to correct this and allow a successful initialization, the file should be adapted as follows:
 
 ```toml
@@ -133,7 +141,7 @@ More details on controlling single satellites are provided later in this tutoria
 
 ## Recording Data
 
-The next step is to start recording data. In order to do this, the satellites first need to launched to the {bdg-secondary}`ORBIT`
+The next step is to start recording data. In order to do this, the satellites first need to be launched to the {bdg-secondary}`ORBIT`
 state. In this state, the configuration send during the initialization is fully applied such that the satellites are ready
 for immediate data taking. The satellites can be launched by clicking the {bdg-primary}`Launch` button.
 
@@ -186,6 +194,17 @@ dictionary with the configuration. A satellite might also reply with a string, w
 Response window of the command
 ```
 
+## Inspecting Satellite Details
+
+To inspect details about a single satellite, for example its IP address, details can be shown by double-clicking on a
+satellite in the list. A new window opens which contains some information about its connection. It also contains a list of
+all available commands.
+
+```{figure} missioncontrol_satellite_details.png
+:scale: 33 %
+Window for connection details of a satellite
+```
+
 ## Deducing the Configuration of the Constellation
 
 Satellites are operating independently of any controller, and it is possible to start multiple controllers. This allows to
@@ -196,27 +215,28 @@ Constellation itself. This can be achieved by clicking the {bdg-primary}`Deduce`
 For the Constellation started and configured in this tutorial, this will store a configuration file with the following content:
 
 ```toml
-[satellites.Sputnik.One]
+[satellites.sputnik.one]
 interval = 2500
 
-[satellites.Sputnik.Two]
+[satellites.sputnik.two]
 interval = 3000
 
-[satellites.Sputnik.Three]
+[satellites.sputnik.three]
 interval = 3000
 
-[satellites.RandomTransmitter.Sender]
+[satellites.randomtransmitter.sender]
 _bor_timeout = 10
 _data_timeout = 10
 _eor_timeout = 10
 frame_size = 1024
 number_of_frames = 1
-seed = 77
+pregen = false
+seed = 3641936878
 
-[satellites.EudaqNativeWriter.Receiver]
+[satellites.eudaqnativewriter.receiver]
+_allow_overwriting = false
 _data_transmitters = [ 'RandomTransmitter.Sender' ]
 _eor_timeout = 10
-allow_overwriting = false
 flush_interval = 3
 output_directory = '/tmp/test'
 ```

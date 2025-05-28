@@ -15,3 +15,5 @@ IPython
 pxar
 pxarCore
 DTB
+Mattermost
+XCode

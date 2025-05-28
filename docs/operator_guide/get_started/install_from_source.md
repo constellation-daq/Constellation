@@ -20,16 +20,18 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
+- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components)
 
 The prerequisites can be installed as follows:
 
 ::::{tab-set}
 :::{tab-item} Debian/Ubuntu
 
-Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages for GCC and Meson can be used:
+Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages can be used:
 
 ```sh
 sudo apt install meson g++
+sudo apt install qt6-base-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -37,7 +39,12 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
+sudo apt install qtbase5-dev
 export CXX="g++-12"
+```
+
+```{note}
+Since Ubuntu 22.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
 ```
 
 Ubuntu 20.04 requires newer versions of GCC and Meson than available from the standard package repositories. They are available in official PPAs:
@@ -47,34 +54,77 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
+sudo apt install qtbase5-dev
 export CXX="g++-13"
 ```
 
-:::
-:::{tab-item} ALMA/Fedora
+```{note}
+Since Ubuntu 20.04 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```
 
-```sh
-sudo dnf install meson clang
-export CXX=clang++
+```{warning}
+Ubuntu 20.04 is not officially supported.
 ```
 
 :::
-:::{tab-item} MacOS 14
+:::{tab-item} Fedora
 
-MacOS requires an installation of Meson and LLVM, e.g. via [Homebrew](https://brew.sh/):
+For Fedora the official packages can be used:
 
 ```sh
-brew install meson
-brew install llvm
+sudo dnf install meson gcc-c++
+sudo dnf install qt6-qtbase-devel
 ```
 
-Assuming `${HOMEBREW_PREFIX}` is set (likely `/opt/homebrew`, can otherwise be found by typing e.g. `which meson`):
+:::
+:::{tab-item} Alma
+
+AlmaLinux 9 requires the CRB repository for Meson, which can be enabled via:
+
+```sh
+sudo dnf install epel-release
+sudo crb enable
+```
+
+AlmaLinux 9 also requires a newer version of GCC than available by default:
+
+```sh
+sudo dnf install meson gcc-toolset-14
+sudo dnf install qt5-qtbase-devel
+```
+
+To use the latest GCC a terminal session has to be started with the `scl` command:
+
+```sh
+scl enable gcc-toolset-14 bash
+```
+
+```{note}
+Since AlmaLinux 9 does not offer Qt6, `build_gui` needs to be set to `qt5` (see also [Build Options](#build-options)).
+```
+
+:::
+:::{tab-item} MacOS
+
+Building on MacOS requires the installation of the XCode Command Line Tools via:
+
+```sh
+xcode-select --install
+```
+
+Additionally, the compiler toolchain from [Homebrew](https://brew.sh/) is required:
+
+```sh
+brew install meson llvm lld
+brew install qt@6
+```
 
 ``` sh
-export CXX="${HOMEBREW_PREFIX}/opt/llvm/bin/clang++"
-export CC="${HOMEBREW_PREFIX}/opt/llvm/bin/clang"
-export LDFLAGS="-L${HOMEBREW_PREFIX}/opt/llvm/lib/c++ -Wl,-rpath,${HOMEBREW_PREFIX}/opt/llvm/lib/c++"
-export CXXFLAGS="-fexperimental-library -DASIO_HAS_SNPRINTF"
+export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
+export CXX_LD="lld"
+export CC="$(brew --prefix)/opt/llvm/bin/clang"
+export CC_LD="lld"
+export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/lib/unwind -lunwind"
 ```
 
 :::
@@ -88,7 +138,7 @@ TODO
 ## Building the C++ Version
 
 ```sh
-meson setup build -Dbuildtype=debugoptimized
+meson setup build -Dbuildtype=debugoptimized -Dwerror=false
 meson compile -C build
 ```
 
@@ -105,6 +155,39 @@ meson install -C build
 
 For details on installing Constellation for external satellites, see
 [Building External Satellites](../../application_development/howtos/external_satellite.md).
+
+## Build Options
+
+Build options can be set during the setup via
+
+```sh
+meson setup build -Doption=value
+```
+
+or after the setup via
+
+```sh
+meson configure build -Doption=value
+```
+
+Relevant build options are:
+
+- `buildtype`: \
+  Build type for the C++ version. \
+  Possible values are `debug`, `debugoptimized` and `release`. \
+  Defaults to `debug`.
+- `build_gui`: \
+  Which Qt version to use for the Graphical User Interface (GUI) library. \
+  Possible values are `none` (disables all GUI components), `qt5` and `qt6`. \
+  Defaults to `qt6`.
+- `cxx_tests`: \
+  Whether or not to build the C++ tests. \
+  Possible values are `auto`, `enabled` and `disabled`. \
+  Defaults to `auto`.
+- `cxx_tools`: \
+  Whether or not to build a set of C++ debugging tools. \
+  Possible values are `true` and `false`. \
+  Defaults to `true`.
 
 :::::
 :::::{tab-item} Python
@@ -161,7 +244,7 @@ To install optional components of the framework, you can install those by replac
 A recommended installation includes the `cli` and `influx` components:
 
 ```sh
-pip install --no-build-isolation --editable .[cli,influx]
+pip install --no-build-isolation --editable ".[cli,influx]"
 ```
 
 :::::

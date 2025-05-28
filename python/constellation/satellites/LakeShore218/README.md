@@ -29,19 +29,19 @@ to be a [null modem](https://en.wikipedia.org/wiki/Null_modem), where the TX and
 The Keithley satellite requires the `[visa]` component, which can be installed with:
 
 ::::{tab-set}
-:::{tab-item} Source
-:sync: source
-
-```sh
-pip install --no-build-isolation -e .[visa]
-```
-
-:::
 :::{tab-item} PyPI
 :sync: pypi
 
 ```sh
-pip install ConstellationDAQ[visa]
+pip install "ConstellationDAQ[visa]"
+```
+
+:::
+:::{tab-item} Source
+:sync: source
+
+```sh
+pip install --no-build-isolation -e ".[visa]"
 ```
 
 :::
@@ -52,6 +52,8 @@ pip install ConstellationDAQ[visa]
 | Parameter | Description | Type | Default Value |
 |-----------|-------------|------|---------------|
 | `port` | Serial port to connect to | String | - |
+| `channel_names` | Names of the temperature channels used for the metrics | List of strings | see [metrics](#metrics) |
+| `sampling_interval` | Sampling interval in seconds | Float | `5.0` |
 
 ## Metrics
 
