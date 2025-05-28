@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 import os
 import pathlib
+import random
 import threading
 import time
 from tempfile import TemporaryDirectory
@@ -331,6 +332,7 @@ def test_receive_writing_package(
             fn = FILE_NAME.format(run_identifier=run_num)
             assert os.path.exists(os.path.join(tmpdir, fn))
             h5file = h5py.File(tmpdir / pathlib.Path(fn))
+            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 0
             assert "simple_sender" in h5file.keys()
             assert bor in h5file["simple_sender"].keys()
             assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
@@ -340,6 +342,122 @@ def test_receive_writing_package(
             assert (payload == h5file["simple_sender"][dat[0]]).all()
             # interpret the uint8 values again as uint16:
             assert (payload == np.array(h5file["simple_sender"][dat[1]]).view(np.uint16)).all()
+            assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
+            h5file.close()
+
+
+@pytest.mark.forked
+def test_receive_writing_swmr_mode(
+    receiver_satellite,
+    data_transmitter,
+    commander,
+):
+    """Test receiving and writing data, verify state machine of DataSender."""
+    service = DiscoveredService(
+        get_uuid("simple_sender"),
+        CHIRPServiceIdentifier.DATA,
+        "127.0.0.1",
+        port=DATA_PORT,
+    )
+
+    receiver = receiver_satellite
+    tx = data_transmitter
+    with TemporaryDirectory() as tmpdir:
+        commander.request_get_response(
+            "initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir, "allow_concurrent_reading": True}
+        )
+        wait_for_state(receiver.fsm, "INIT", 1)
+        receiver._add_sender(service)
+        commander.request_get_response("launch")
+        wait_for_state(receiver.fsm, "ORBIT", 1)
+
+        assert receiver.run_identifier == ""
+
+        # check swmr status via cscp
+        msg = commander.request_get_response("get_concurrent_reading_status")
+        assert msg.msg.lower().startswith("not")
+
+        for run_num in range(1, 4):
+            # Send new data to handle
+            tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
+            # send once as byte array with and once w/o dtype
+            payload_sizes = []
+            payloads = []
+            for p in range(10):
+                # send random-sized payloads
+                psize = int(random.random() * 100000)
+                payload = np.array(np.arange(psize), dtype=np.int16)
+                if p % 2 == 0:
+                    # send with meta info
+                    tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}", "moreinfo": "a very special payload"})
+                else:
+                    # send without meta info
+                    tx.send_data(payload.tobytes())
+                payload_sizes.append(psize)
+                payloads.append(payload)
+            time.sleep(0.1)
+
+            assert receiver._swmr_mode_enabled is False
+            # Running satellite
+            commander.request_get_response("start", str(run_num))
+            wait_for_state(receiver.fsm, "RUN", 1)
+            timeout = 0.5
+            while not receiver.active_satellites or timeout < 0:
+                time.sleep(0.05)
+                timeout -= 0.05
+            assert len(receiver.active_satellites) == 1, "No BOR received!"
+            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
+            assert receiver._swmr_mode_enabled is True
+            # check swmr status via cscp
+            msg = commander.request_get_response("get_concurrent_reading_status")
+            assert msg.msg.lower().startswith("enabled")
+            # stop
+            commander.request_get_response("stop")
+            # send EORE
+            tx.send_end({"mock_end": f"whatanend{run_num}"})
+            wait_for_state(receiver.fsm, "ORBIT", 1)
+            assert receiver._swmr_mode_enabled is False
+            assert receiver.run_identifier == str(run_num)
+
+            # Does file exist and has it been written to?
+            bor = "BOR"
+            eor = "EOR"
+
+            fn = FILE_NAME.format(run_identifier=run_num)
+            assert os.path.exists(os.path.join(tmpdir, fn))
+            h5file = h5py.File(tmpdir / pathlib.Path(fn))
+            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 1
+            assert "simple_sender" in h5file.keys()
+            assert bor in h5file["simple_sender"].keys()
+            assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
+            assert eor in h5file["simple_sender"].keys()
+            assert "whatanend" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
+            assert "data" in h5file["simple_sender"].keys(), "Data missing in file"
+            # interpret the uint8 values again as int16 and compare packets:
+            for i, payload in enumerate(payloads):
+                idx = h5file["simple_sender"]["data_idx"][i]
+                if i > 0:
+                    prev = h5file["simple_sender"]["data_idx"][i - 1]
+                else:
+                    prev = 0
+                loaded = np.array(h5file["simple_sender"]["data"][prev:idx]).view(np.int16)
+                assert (payload == loaded).all(), "Could not reconstruct correct payload values"
+                # meta data
+                idx = h5file["simple_sender"]["meta_idx"][i]
+                if i > 0:
+                    prev = h5file["simple_sender"]["meta_idx"][i - 1]
+                else:
+                    prev = 0
+                loaded = str(h5file["simple_sender"]["meta"][prev:idx], encoding="utf-8")
+                if i % 2 == 0:
+                    assert "a very special payload" in loaded
+                else:
+                    assert loaded == "{}"
+            # check that remainder of idx values is 0: (resized but unused)
+            i += 1
+            while i < h5file["simple_sender"]["data_idx"].shape[0]:
+                assert h5file["simple_sender"]["data_idx"][i] == 0
+                i += 1
             assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
             h5file.close()
 

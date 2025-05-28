@@ -146,7 +146,7 @@ class DataReceiver(Satellite):
                         else:
                             self._write_data(outfile, item)
                     except Exception as e:
-                        self.log_cdtp_r.critical("Could not write message '%s' to file: %s", item, repr(e))
+                        self.log_cdtp_r.critical("Could not write message '%s' to file: %s", str(item), repr(e))
                         raise RuntimeError(f"Could not write message '{item}' to file") from e
                     if (datetime.datetime.now() - last_msg).total_seconds() > 2.0:
                         if self._state_thread_evt.is_set():
