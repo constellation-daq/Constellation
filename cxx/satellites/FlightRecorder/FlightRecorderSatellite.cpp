@@ -22,17 +22,18 @@
 #include <sstream>
 #endif
 
-#include <spdlog/logger.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/spdlog.h>
 
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/listener/LogListener.hpp"
 #include "constellation/satellite/exceptions.hpp"
@@ -158,10 +159,10 @@ std::filesystem::path FlightRecorderSatellite::validate_file_path(const std::fil
 }
 
 void FlightRecorderSatellite::starting(std::string_view run_identifier) {
-    // For method RUN set a new log file:
+    // For method RUN set a new log file
     if(method_ == LogMethod::RUN) {
         try {
-            // Append run identifier to the end of the file name while keeping the extension:
+            // Append run identifier to the end of the file name while keeping the extension
             const auto path =
                 validate_file_path(path_.parent_path() /
                                    (path_.stem().string() + "_" + std::string(run_identifier) + path_.extension().string()));
@@ -178,14 +179,14 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
 }
 
 void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
-    // Force a flush at interruption:
+    // Force a flush at interruption
     if(sink_ != nullptr) {
         sink_->flush();
     }
 }
 
 void FlightRecorderSatellite::stopping() {
-    // Force a flush at run stop:
+    // Force a flush at run stop
     if(sink_ != nullptr) {
         sink_->flush();
     }

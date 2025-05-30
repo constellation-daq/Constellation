@@ -1,5 +1,5 @@
 ---
-# SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Flight Recorder"
 description: "Satellite to record log messages from a Constellation"
@@ -55,7 +55,7 @@ The following parameters are read and interpreted by this satellite. Parameters 
 
 An example configuration for this satellite which could be dropped into a Constellation configuration as a starting point
 
-```ini
+```toml
 [FlightRecorder.RunLogger]
 method = "RUN"
 allow_overwriting = true
@@ -63,8 +63,6 @@ file_path = "/data/logs/logfile.txt"
 ```
 
 ## Metrics
-
-The following metrics are distributed by this satellite and can be subscribed to.
 
 | Metric | Description | Interval | Type |
 |--------|-------------|----------|------|

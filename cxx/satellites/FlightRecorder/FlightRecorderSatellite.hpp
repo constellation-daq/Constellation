@@ -16,6 +16,8 @@
 #include <memory>
 #include <string_view>
 
+#include <spdlog/logger.h>
+
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
