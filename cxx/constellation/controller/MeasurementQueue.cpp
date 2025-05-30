@@ -23,6 +23,7 @@
 #include <utility>
 #include <variant>
 
+#include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
@@ -167,13 +168,14 @@ void MeasurementQueue::await_condition(Condition condition) const {
         LOG(logger_, DEBUG) << "Running until " << remote << " reports " << metric << " >= " << value.str();
 
         std::atomic<bool> condition_satisfied {false};
+        // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
         auto stat_listener = StatListener("QUEUE", [&](message::CMDP1StatMessage&& msg) {
             // FIXME case-insensitive
             if(msg.getHeader().getSender() != remote) {
                 return;
             }
 
-            const auto metric_value = msg.getMetric();
+            const auto& metric_value = msg.getMetric();
             if(metric_value.getMetric()->name() != metric) {
                 return;
             }
