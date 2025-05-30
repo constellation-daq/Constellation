@@ -316,6 +316,19 @@ bool Controller::isInState(CSCP::State state) const {
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
 }
 
+bool Controller::hasAnyErrorState() const {
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    // Without connection, there is no error state
+    if(connections_.empty()) {
+        return false;
+    }
+
+    return std::ranges::any_of(connections_.cbegin(), connections_.cend(), [](const auto& conn) {
+        return conn.second.state == CSCP::State::ERROR || conn.second.state == CSCP::State::SAFE;
+    });
+}
+
 bool Controller::isInGlobalState() const {
     const std::lock_guard connection_lock {connection_mutex_};
 
