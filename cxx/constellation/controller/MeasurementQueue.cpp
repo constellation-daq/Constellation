@@ -157,6 +157,9 @@ void MeasurementQueue::await_condition(Condition condition) const {
         auto timer = TimeoutTimer(duration);
         timer.reset();
         while(queue_running_ && !timer.timeoutReached()) {
+            if(controller_.hasAnyErrorState()) {
+                throw QueueError("Aborting queue processing, detected issue");
+            }
             std::this_thread::sleep_for(100ms);
         }
     } else if(std::holds_alternative<std::tuple<std::string, std::string, config::Value>>(condition)) {
@@ -190,6 +193,9 @@ void MeasurementQueue::await_condition(Condition condition) const {
 
         // Wait for condition to be met:
         while(queue_running_ && !condition_satisfied) {
+            if(controller_.hasAnyErrorState()) {
+                throw QueueError("Aborting queue processing, detected issue");
+            }
             std::this_thread::sleep_for(100ms);
         }
 
