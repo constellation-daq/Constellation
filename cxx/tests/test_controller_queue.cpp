@@ -69,6 +69,7 @@ TEST_CASE("Run Queue", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
+    satellite.skipTransitional(true);
     satellite.mockChirpService(CHIRP::CONTROL);
     satellite.mockChirpService(CHIRP::HEARTBEAT);
 
@@ -84,7 +85,7 @@ TEST_CASE("Run Queue", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue
-    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"b", Dictionary {}}});
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
     queue.append(measurement);
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
@@ -92,12 +93,10 @@ TEST_CASE("Run Queue", "[controller]") {
 
     // Start the queue and stop it directly, should end after current measurement
     queue.start();
-    satellite.progressFsm();
 
     queue.waitStarted();
     REQUIRE(queue.running());
     queue.halt();
-    satellite.progressFsm();
 
     queue.waitStopped();
     REQUIRE(queue.size() == 1);
@@ -124,6 +123,7 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
+    satellite.skipTransitional(true);
     satellite.mockChirpService(CHIRP::CONTROL);
     satellite.mockChirpService(CHIRP::HEARTBEAT);
 
@@ -139,7 +139,7 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue, overwriting default length
-    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"b", Dictionary {}}});
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
     queue.append(measurement, {std::chrono::seconds(1)});
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
@@ -148,14 +148,12 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     // Start the queue and stop it directly, time should be below default duration of run
     auto timer = StopwatchTimer();
     queue.start();
-    satellite.progressFsm();
 
     queue.waitStarted();
     timer.start();
 
     REQUIRE(queue.running());
     queue.halt();
-    satellite.progressFsm();
 
     queue.waitStopped();
     timer.stop();
@@ -183,6 +181,7 @@ TEST_CASE("Interrupt Queue", "[controller]") {
 
     // Create and start satellite
     DummySatellite satellite {"a"};
+    satellite.skipTransitional(true);
     satellite.mockChirpService(CHIRP::CONTROL);
     satellite.mockChirpService(CHIRP::HEARTBEAT);
 
@@ -198,38 +197,35 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue
-    queue.append({{"b", Dictionary {}}});
+    queue.append({{"Dummy.b", Dictionary {}}});
     REQUIRE(queue.size() == 1);
     REQUIRE_FALSE(queue.running());
 
     // Start the queue and interrupt it directly
     queue.start();
-    satellite.progressFsm();
 
     queue.waitStarted();
     REQUIRE(queue.running());
     queue.interrupt();
-    satellite.progressFsm();
     queue.waitStopped();
 
     // Queue size after interrupting is still 1
     REQUIRE(queue.size() == 1);
     REQUIRE(queue.progress() == 0.);
     REQUIRE_FALSE(queue.running());
+    REQUIRE(controller.getRunIdentifier() == "queue_run_0");
 
     // Restart the queue
     queue.start();
-    satellite.progressFsm();
-
     queue.waitStarted();
     REQUIRE(queue.running());
-    controller.waitReachedState(CSCP::State::stopping, true);
-    satellite.progressFsm();
 
+    // Wait until the queue successfully finished
     queue.waitStopped();
     REQUIRE(queue.size() == 0);
     REQUIRE(queue.progress() == 1.);
     REQUIRE_FALSE(queue.running());
+    REQUIRE(controller.getRunIdentifier() == "queue_run_0_retry_1");
 
     // Stop controller and exit satellites
     controller.stop();

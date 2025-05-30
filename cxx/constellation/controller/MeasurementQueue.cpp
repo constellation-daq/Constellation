@@ -10,6 +10,7 @@
 #include "MeasurementQueue.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <exception>
 #include <functional>
@@ -25,6 +26,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
@@ -62,7 +64,7 @@ MeasurementQueue::~MeasurementQueue() {
 void MeasurementQueue::append(Measurement measurement, std::optional<Condition> condition) {
     // Check that satellite names are valid canonical names:
     if(!std::ranges::all_of(measurement, [](const auto& elem) { return CSCP::is_valid_canonical_name(elem.first); })) {
-        throw QueueError("Measurements contain invalid canonical name");
+        throw QueueError("Measurement contains invalid canonical name");
     }
 
     const std::lock_guard measurement_lock {measurement_mutex_};
@@ -211,8 +213,11 @@ void MeasurementQueue::await_condition(Condition condition) const {
 
                 // After timeout, break if the metric has not been registered:
                 if(metric_timer.timeoutReached() && !metric_seen) {
-                    throw QueueError("Requested condition metric " + metric +
-                                     " was not registered and never received from satellite " + remote);
+                    std::string msg = "Requested condition metric ";
+                    msg += metric;
+                    msg += " was not registered and never received from satellite ";
+                    msg += remote;
+                    throw QueueError(std::move(msg));
                 }
             }
 
