@@ -41,12 +41,22 @@ namespace constellation::controller {
         using Measurement = std::map<std::string, Controller::CommandPayload>;
 
         /**
+         * Condition configuration for a metric, consisting of
+         * * Name of the remote satellite
+         * * Name of the metric
+         * * Target value
+         * * Comparison operator
+         */
+        using MetricCondition =
+            std::tuple<std::string, std::string, config::Value, std::function<bool(config::Value, config::Value)>>;
+
+        /**
          * We have
          * * timed measurement: provide a duration in seconds
          * * metrics-based measurement: provide remote, metric name and metric value
          * (* autonomous: provide remote to check for stopped)
          */
-        using Condition = std::variant<std::chrono::seconds, std::tuple<std::string, std::string, config::Value>>;
+        using Condition = std::variant<std::chrono::seconds, MetricCondition>;
 
         /**
          * @brief Construct a measurement queue

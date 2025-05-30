@@ -162,8 +162,8 @@ void MeasurementQueue::await_condition(Condition condition) const {
             }
             std::this_thread::sleep_for(100ms);
         }
-    } else if(std::holds_alternative<std::tuple<std::string, std::string, config::Value>>(condition)) {
-        const auto [remote, metric, value] = std::get<std::tuple<std::string, std::string, config::Value>>(condition);
+    } else if(std::holds_alternative<MetricCondition>(condition)) {
+        const auto [remote, metric, value, comp] = std::get<MetricCondition>(condition);
         LOG(logger_, DEBUG) << "Running until " << remote << " reports " << metric << " >= " << value.str();
 
         std::atomic<bool> condition_satisfied {false};
@@ -178,7 +178,7 @@ void MeasurementQueue::await_condition(Condition condition) const {
                 return;
             }
 
-            if(metric_value.getValue() < value) {
+            if(!comp(metric_value.getValue(), value)) {
                 return;
             }
 
