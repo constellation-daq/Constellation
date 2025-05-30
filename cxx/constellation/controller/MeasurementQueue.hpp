@@ -188,6 +188,7 @@ namespace constellation::controller {
         std::string run_identifier_prefix_;
         Condition default_condition_;
         std::chrono::seconds transition_timeout_;
+        std::chrono::seconds metric_reception_timeout_;
 
         /** Queue of measurements */
         std::queue<std::pair<Measurement, std::optional<Condition>>> measurements_;

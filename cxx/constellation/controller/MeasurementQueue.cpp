@@ -46,7 +46,7 @@ MeasurementQueue::MeasurementQueue(Controller& controller,
                                    Condition condition,
                                    std::chrono::seconds timeout)
     : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
-      transition_timeout_(timeout), controller_(controller) {};
+      transition_timeout_(timeout), metric_reception_timeout_(60s), controller_(controller) {};
 
 MeasurementQueue::~MeasurementQueue() {
     // Interrupt the queue if one was running:
@@ -191,11 +191,29 @@ void MeasurementQueue::await_condition(Condition condition) const {
         // Subscribe to topic:
         stat_listener.subscribeMetric(remote, metric);
 
+        // Timeout for metric to have been registered:
+        auto metric_timer = TimeoutTimer(metric_reception_timeout_);
+        metric_timer.reset();
+        bool metric_seen = false;
+
         // Wait for condition to be met:
         while(queue_running_ && !condition_satisfied) {
+            // Check for error states in the constellation
             if(controller_.hasAnyErrorState()) {
                 throw QueueError("Aborting queue processing, detected issue");
             }
+
+            if(!metric_seen) {
+                const auto topics = stat_listener.getAvailableTopics(remote);
+                metric_seen = topics.contains(metric);
+
+                // After timeout, break if the metric has not been registered:
+                if(metric_timer.timeoutReached() && !metric_seen) {
+                    throw QueueError("Requested condition metric " + metric +
+                                     " was not registered and never received from satellite " + remote);
+                }
+            }
+
             std::this_thread::sleep_for(100ms);
         }
 
