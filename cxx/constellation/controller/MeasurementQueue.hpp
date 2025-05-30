@@ -171,6 +171,16 @@ namespace constellation::controller {
          */
         void check_replies(const std::map<std::string, message::CSCP1Message>& replies) const;
 
+        /**
+         * @brief Cache the original values of configuration parameters before performing a reconfiguration
+         * @details Before each measurement, this method reads the configuration of the affected satellites, checks if the
+         *          measurement key is present there and stores this value to reset it later. If the key is not present in
+         *          the satellite configuration, or if the key has already been read previously, no value is cached.
+         *
+         * \param measurement Current measurement
+         */
+        void cache_original_values(const Measurement& measurement);
+
     private:
         /** Logger to use */
         log::Logger logger_;
@@ -184,6 +194,9 @@ namespace constellation::controller {
         std::mutex measurement_mutex_;
         std::atomic<std::size_t> measurements_size_ {0};
         std::atomic<std::size_t> run_sequence_ {0};
+
+        /** Original parameters to be reset after the queue */
+        Measurement original_values_;
 
         /** Interrupt counter to append to run identifier for re-tries */
         std::atomic<std::size_t> interrupt_counter_ {0};

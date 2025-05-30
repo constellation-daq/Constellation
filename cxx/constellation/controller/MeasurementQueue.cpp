@@ -220,6 +220,31 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
     }
 }
 
+void MeasurementQueue::cache_original_values(const Measurement& measurement) {
+    // Loop over all satellites in this measurement:
+    for(const auto& [satellite, cmd_payload] : measurement) {
+        // Fetch configuration from this satellite:
+        const auto& msg = controller_.sendCommand(satellite, "get_config");
+        if(msg.getVerb().first != CSCP1Message::Type::SUCCESS) {
+            return;
+        }
+
+        const auto config = Dictionary::disassemble(msg.getPayload());
+
+        // Check if the measurement keys are available in the config:
+        for(const auto& [key, value] : std::get<Dictionary>(cmd_payload)) {
+            // Check that the key exists in the current config:
+            if(!config.contains(key)) {
+                continue;
+            }
+
+            // Insert the key if it has not been registered yet:
+            const auto& [it, inserted] = std::get<Dictionary>(original_values_[satellite]).try_emplace(key, config.at(key));
+            LOG_IF(INFO, inserted) << "Cached original value of key " << key << " from satellite " << satellite;
+        }
+    }
+}
+
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
     try {
         std::unique_lock measurement_lock {measurement_mutex_};
@@ -238,6 +263,9 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
+
+            // Cache current value of the measurement keys:
+            cache_original_values(measurement);
 
             // Update constellation - satellites without payload will not receive the command
             LOG(logger_, INFO) << "Reconfiguring satellites";
@@ -282,6 +310,16 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Report updated progress
             progress_updated(progress());
         }
+
+        // Reset the original values collected during the measurement:
+        LOG(logger_, INFO) << "Resetting parameters to pre-scan values";
+        const auto reply_reset = controller_.sendCommands("reconfigure", original_values_, false);
+        check_replies(reply_reset);
+        original_values_.clear();
+
+        // Wait for ORBIT state across all
+        await_state(CSCP::State::ORBIT);
+
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();
         queue_failed();
