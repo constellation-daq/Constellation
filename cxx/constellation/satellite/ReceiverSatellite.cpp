@@ -137,6 +137,9 @@ std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesys
         throw SatelliteError(msg);
     }
 
+    // Send metric with new output file path
+    STAT("OUTPUT_FILE", file.string());
+
     return file;
 }
 
@@ -146,7 +149,6 @@ std::ofstream ReceiverSatellite::create_output_file(const std::filesystem::path&
                                                     bool binary) {
     // Validate and build absolute path:
     const auto file = validate_output_file(path, file_name, ext);
-    STAT("OUTPUT_FILE", file.string());
 
     // Open file stream and return
     auto stream = std::ofstream(file, binary ? std::ios_base::out | std::ios_base::binary : std::ios_base::out);
