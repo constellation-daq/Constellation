@@ -56,14 +56,14 @@ def setup_cli_logging(level: str) -> None:
 
     Defines the following log levels:
 
-    - logging.NOTSET : 0
-    - logging.TRACE : 5
-    - logging.DEBUG : 10
-    - logging.INFO : 20
-    - logging.WARNING : 30
-    - logging.STATUS : 35
-    - logging.ERROR : mapped to CRITICAL
-    - logging.CRITICAL : 50
+    - `logging.NOTSET` : 0
+    - `logging.TRACE` : 5
+    - `logging.DEBUG` : 10
+    - `logging.INFO` : 20
+    - `logging.WARNING` : 30
+    - `logging.STATUS` : 35
+    - `logging.ERROR` : mapped to CRITICAL
+    - `logging.CRITICAL` : 50
     """
     # Set default logger class
     logging.setLoggerClass(ConstellationLogger)

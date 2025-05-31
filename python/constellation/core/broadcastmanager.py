@@ -183,11 +183,11 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
 
     def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None, dest_addr: str = "") -> None:
-        """Broadcast all registered services matching serviceid.
+        """Broadcast all registered services matching `serviceid`.
 
         Specify None for all registered services.
 
-        If a destination address dest_addr is provided, broadcast only to that network address.
+        If a destination address `dest_addr` is provided, broadcast only to that network address.
 
         """
         for port, sid in self._registered_services.items():

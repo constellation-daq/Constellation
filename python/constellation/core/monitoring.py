@@ -92,7 +92,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
         The callable needs to return a value [any] and a unit [str] and take no
         arguments. If you have a callable that requires arguments, consider
-        using functools.partial to fill in the necessary information at
+        using `functools.partial` to fill in the necessary information at
         scheduling time.
 
         """

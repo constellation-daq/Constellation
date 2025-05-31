@@ -19,7 +19,7 @@ class CSCPMessageVerb(Enum):
     """Defines the message types of the CSCP.
 
     Part of the Constellation Satellite Control Protocol, see
-    docs/protocols/cscp.md for details.
+    `docs/protocols/cscp.md` for details.
 
     """
 
@@ -127,7 +127,7 @@ class CommandTransmitter:
     def get_message(self, flags: int = 0) -> CSCPMessage | None:
         """Retrieve and return a CSCPMessage.
 
-        Returns None if no request is waiting and flags==zmq.NOBLOCK.
+        Returns None if no request is waiting and `flags==zmq.NOBLOCK`.
 
         Raises RuntimeError if message verb is malformed.
 

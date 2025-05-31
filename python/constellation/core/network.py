@@ -41,7 +41,7 @@ def get_broadcast_socket() -> socket.socket:
 
 
 def recvmsg(socket: socket.socket, bufsize: int) -> tuple[bytes, list[tuple[int, int, bytes]], str]:
-    """Wrapper for socket.recvmsg which handles Windows support"""
+    """Wrapper for `socket.recvmsg` which handles Windows support"""
     buf: bytes
     ancdata: list[tuple[int, int, bytes]] = []
     from_address: Any
@@ -54,7 +54,7 @@ def recvmsg(socket: socket.socket, bufsize: int) -> tuple[bytes, list[tuple[int,
 
 
 def decode_ancdata(ancdata: list[tuple[int, int, bytes]], fallback: str) -> str:
-    """Decode ancillary message received via recvmsg and return destination ip."""
+    """Decode ancillary message received via :func:`recvmsg` and return destination IP."""
     # Decode IP_RECVORIGDSTADDR
     for cmsg_level, cmsg_type, cmsg_data in ancdata:
         # Handling IPv4
@@ -90,7 +90,7 @@ def get_netmask(if_name: str) -> str | None:
 
 
 def get_broadcast(interface: str) -> set[str]:
-    """Determine broadcast(s) for interface(s) based on IPv4 ip address and netmask."""
+    """Determine broadcast(s) for interface(s) based on IPv4 address and netmask."""
     broadcasts = []
     for intf in socket.if_nameindex():
         if_name = intf[1]
@@ -108,11 +108,11 @@ def get_broadcast(interface: str) -> set[str]:
 def validate_interface(interface: str) -> str:
     """Validate that the provided interface exists.
 
-    interface :: IPv4 ip address or name of an existing network interface.
+    interface :: IPv4 address or name of an existing network interface.
 
-    Returns IPv4 ip address of interface or '*' for any/all interfaces.
+    Returns IPv4 address of interface or '*' for any/all interfaces.
 
-    Raises ValueError if the interface/ip does not exist.
+    Raises ValueError if the interface/IP does not exist.
     """
     # if using any/all interfaces:
     if interface == "*":
@@ -124,9 +124,7 @@ def validate_interface(interface: str) -> str:
         if if_name == interface or if_addr == interface:
             if if_addr:
                 return if_addr
-    raise argparse.ArgumentTypeError(
-        f"'{interface}' is neither an network interface name nor an interface's IPv4 ip address."
-    )
+    raise argparse.ArgumentTypeError(f"'{interface}' is neither an network interface name nor an interface's IPv4 address.")
 
 
 def get_interfaces() -> list[str]:
