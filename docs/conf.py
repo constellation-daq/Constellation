@@ -31,14 +31,13 @@ extensions = [
     "ablog",
     "myst_parser",
     "breathe",
-    "sphinx.ext.autodoc",
-    "sphinxcontrib.apidoc",
     "sphinxcontrib.plantuml",
     "sphinxcontrib.spelling",
     "sphinx_design",
     "sphinx_favicon",
     "sphinx_copybutton",
     "sphinx.ext.imgconverter",
+    "autoapi.extension",
 ]
 
 # general settings
@@ -219,12 +218,7 @@ blog_post_pattern = ["news/*.md", "news/*.rst"]
 post_date_format = "%Y-%m-%d"
 blog_feed_fulltext = True
 
-# apidoc settings
-apidoc_module_dir = (repodir / "python" / "constellation").as_posix()
-apidoc_excluded_paths = [(repodir / "python" / "constellation" / "satellites").as_posix()]
-apidoc_output_dir = (docsdir / "framework_reference" / "python").as_posix()
-apidoc_module_first = True
-apidoc_separate_modules = True
-apidoc_toc_file = False
-apidoc_extra_args = ["--implicit-namespaces"]
-autodoc_mock_imports = ["statemachine"]
+# autoapi settings
+autoapi_dirs = ["../python/constellation/core"]
+autoapi_add_toctree_entry = False
+autoapi_root = "framework_reference/python"
