@@ -1,4 +1,4 @@
-core.chp module
+CHP Module
 ===============
 
 .. automodule:: core.chp

@@ -1,4 +1,4 @@
-core.broadcastmanager module
+BroadcastManager Module
 ============================
 
 .. automodule:: core.broadcastmanager

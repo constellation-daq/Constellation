@@ -1,4 +1,4 @@
-core.commandmanager module
+CommandManager Module
 ==========================
 
 .. automodule:: core.commandmanager

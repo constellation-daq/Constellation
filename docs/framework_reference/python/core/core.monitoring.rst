@@ -1,4 +1,4 @@
-core.monitoring module
+Monitoring Module
 ======================
 
 .. automodule:: core.monitoring

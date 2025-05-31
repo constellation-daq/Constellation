@@ -1,4 +1,4 @@
-core.configuration module
+Configuration Module
 =========================
 
 .. automodule:: core.configuration

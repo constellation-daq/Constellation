@@ -1,4 +1,4 @@
-core.controller module
+Controller Module
 ======================
 
 .. automodule:: core.controller

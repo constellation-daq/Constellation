@@ -1,4 +1,4 @@
-core.satellite module
+Satellite Module
 =====================
 
 .. automodule:: core.satellite

@@ -1,4 +1,4 @@
-core.error module
+Error Module
 =================
 
 .. automodule:: core.error

@@ -1,4 +1,4 @@
-core.fsm module
+FSM Module
 ===============
 
 .. automodule:: core.fsm

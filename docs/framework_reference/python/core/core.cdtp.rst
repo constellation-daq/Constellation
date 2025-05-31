@@ -1,4 +1,4 @@
-core.cdtp module
+CDTP Module
 ================
 
 .. automodule:: core.cdtp

@@ -1,4 +1,4 @@
-core.cscp module
+CSCP Module
 ================
 
 .. automodule:: core.cscp

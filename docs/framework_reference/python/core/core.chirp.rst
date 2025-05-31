@@ -1,4 +1,4 @@
-core.chirp module
+CHIRP Module
 =================
 
 .. automodule:: core.chirp

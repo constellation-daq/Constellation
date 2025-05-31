@@ -1,4 +1,4 @@
-core.heartbeater module
+Heartbeater Module
 =======================
 
 .. automodule:: core.heartbeater

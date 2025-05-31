@@ -1,4 +1,4 @@
-core.datasender module
+DataSender Module
 ======================
 
 .. automodule:: core.datasender

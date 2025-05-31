@@ -1,4 +1,4 @@
-core.logging module
+Logging Module
 ===================
 
 .. automodule:: core.logging

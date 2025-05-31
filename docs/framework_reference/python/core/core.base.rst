@@ -1,4 +1,4 @@
-core.base module
+Base Module
 ================
 
 .. automodule:: core.base

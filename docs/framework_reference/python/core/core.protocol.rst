@@ -1,4 +1,4 @@
-core.protocol module
+Protocol Module
 ====================
 
 .. automodule:: core.protocol

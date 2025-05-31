@@ -1,4 +1,4 @@
-core.datareceiver module
+DataReceiver Module
 ========================
 
 .. automodule:: core.datareceiver

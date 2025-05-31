@@ -1,4 +1,4 @@
-core.cmdp module
+CMDP Module
 ================
 
 .. automodule:: core.cmdp

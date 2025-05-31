@@ -1,4 +1,4 @@
-core.network module
+Network Module
 ===================
 
 .. automodule:: core.network

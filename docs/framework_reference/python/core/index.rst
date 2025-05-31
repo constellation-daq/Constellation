@@ -1,4 +1,4 @@
-core package
+Core Library
 ============
 
 Submodules
