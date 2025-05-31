@@ -81,8 +81,6 @@ docs = [
     "sphinxcontrib-plantuml",
     "sphinxcontrib-spelling",
     "sphinx_design",
-    "autoapi",
-    "sphinx-autoapi",
     "sphinx-favicon",
     "sphinx-copybutton",
     "PyYAML",

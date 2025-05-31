@@ -2,7 +2,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import json
+import os
 import pathlib
+import sys
 
 import copy_satellite_docs
 import latex_helpers
@@ -17,6 +19,9 @@ logger = sphinx.util.logging.getLogger(__name__)
 # set directories
 docsdir = pathlib.Path(__file__).resolve().parent
 repodir = docsdir.parent
+
+# add python module path to sys path for autodoc
+sys.path.insert(0, os.path.abspath("../python/constellation"))
 
 # metadata
 project = "Constellation"
@@ -37,7 +42,8 @@ extensions = [
     "sphinx_favicon",
     "sphinx_copybutton",
     "sphinx.ext.imgconverter",
-    "autoapi.extension",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.intersphinx",
 ]
 
 # general settings
@@ -218,7 +224,15 @@ blog_post_pattern = ["news/*.md", "news/*.rst"]
 post_date_format = "%Y-%m-%d"
 blog_feed_fulltext = True
 
-# autoapi settings
-autoapi_dirs = ["../python/constellation/core"]
-autoapi_add_toctree_entry = False
-autoapi_root = "framework_reference/python"
+# autodoc settings
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "private-members": False,
+    "show-inheritance": True,
+}
+
+# link external documentation
+intersphinx_mapping = {
+    "statemachine": ("https://python-statemachine.readthedocs.io/en/latest/", None),
+}
