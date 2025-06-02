@@ -111,6 +111,9 @@ profile = "black"
 line_length = 125
 skip_gitignore = true
 
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+
 [tool.coverage.run]
 source = ["constellation"]
 
