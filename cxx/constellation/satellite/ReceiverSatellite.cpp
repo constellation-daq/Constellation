@@ -61,6 +61,8 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
       BasePool("CDTP", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
       cdtp_logger_("CDTP") {
 
+    register_metric("OUTPUT_FILE", "", MetricType::LAST_VALUE, "Current output file path. Updated when changed.");
+
     register_timed_metric("BYTES_RECEIVED",
                           "B",
                           MetricType::LAST_VALUE,
@@ -134,6 +136,9 @@ std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesys
         const auto msg = std::string("Issue with output path: ") + e.what();
         throw SatelliteError(msg);
     }
+
+    // Send metric with new output file path
+    STAT("OUTPUT_FILE", file.string());
 
     return file;
 }
