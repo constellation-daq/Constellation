@@ -35,6 +35,7 @@ libzmq_sp_default_options = [
   'openpgm=disabled',
   'norm=disabled',
   'warning_level=0',
+  'default_library=static',
 ]
 cppzmq_sp_default_options = [
   'examples=false',
@@ -58,7 +59,7 @@ magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 'tests=disabled'])
 
 # spdlog
-spdlog_dep = dependency('spdlog', default_options: ['tests=disabled'])
+spdlog_dep = dependency('spdlog', default_options: ['tests=disabled', 'default_library=static'])
 
 # TOML++
 tomlplusplus_dep = dependency('tomlplusplus', default_options: ['default_library=static'])
