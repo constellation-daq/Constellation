@@ -80,11 +80,8 @@ FlightRecorderSatellite::~FlightRecorderSatellite() {
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
-
     // Reset potentially existing sink
-    if(sink_ != nullptr) {
-        sink_.reset();
-    }
+    sink_.reset();
 
     method_ = config.get<LogMethod>("method");
     allow_overwriting_ = config.get<bool>("allow_overwriting", false);
@@ -180,16 +177,12 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
 
 void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
     // Force a flush at interruption
-    if(sink_ != nullptr) {
-        sink_->flush();
-    }
+    sink_->flush();
 }
 
 void FlightRecorderSatellite::stopping() {
     // Force a flush at run stop
-    if(sink_ != nullptr) {
-        sink_->flush();
-    }
+    sink_->flush();
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
