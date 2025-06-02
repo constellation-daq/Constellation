@@ -18,3 +18,9 @@ meson configure build -Dsatellite_dev_null_receiver=true
 ## Parameters
 
 None
+
+## Custom Commands
+
+| Command | Description | Arguments | Return Value | Allowed States |
+|---------|-------------|-----------|--------------|----------------|
+| `get_data_rate` | Get data rate during the last run in Gbps | - | data rate, `double` | `ORBIT` |
