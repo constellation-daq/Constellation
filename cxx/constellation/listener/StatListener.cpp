@@ -19,9 +19,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/utils/std_future.hpp"
-#include "constellation/listener/StatListener.hpp"
-
-#include "CMDPListener.hpp"
+#include "constellation/listener/CMDPListener.hpp"
 
 using namespace constellation::listener;
 using namespace constellation::message;
