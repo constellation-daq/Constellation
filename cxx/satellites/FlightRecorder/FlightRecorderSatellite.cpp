@@ -69,14 +69,6 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
                           "Total number messages received and logged since the last run start",
                           3s,
                           [this]() { return msg_logged_run_.load(); });
-
-    // Start the log receiver pool
-    startPool();
-}
-
-FlightRecorderSatellite::~FlightRecorderSatellite() {
-    // Stop log pool
-    stopPool();
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
@@ -124,7 +116,10 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set pattern containing only the timestamp and the message
     sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
-    // Subscribe for all endpoints to global topic:
+    // Start the log receiver pool
+    startPool();
+
+    // subscribe for all endpoints to global topic:
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
 }
