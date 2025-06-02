@@ -14,8 +14,7 @@ and transmits it through the [CDTP](https://constellation.pages.desy.de/protocol
 
 ## Requirements
 
-This satellite requires the `[LeCrunch3]` Python module, which can either be installed [from sources](https://github.com/nminafra/LeCrunch3)
-or using [the version packaged on Pypi](https://pypi.org/project/LeCrunch3/).
+This satellite requires the `[lecroy]` component, which can be installed with:
 
 ::::{tab-set}
 :::{tab-item} PyPI
