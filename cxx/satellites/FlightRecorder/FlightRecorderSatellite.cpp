@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <string_view>
 #include <utility>
 
@@ -43,7 +44,7 @@ using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
-using namespace constellation::protocol;
+using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -69,6 +70,11 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
                           "Total number messages received and logged since the last run start",
                           3s,
                           [this]() { return msg_logged_run_.load(); });
+
+    register_command("flush",
+                     "Flush log sink",
+                     {State::INIT, State::ORBIT, State::RUN, State::SAFE},
+                     std::function<void(void)>([&]() { sink_->flush(); }));
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
@@ -183,12 +189,12 @@ void FlightRecorderSatellite::stopping() {
     sink_->flush();
 }
 
-void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
+void FlightRecorderSatellite::interrupting(State /*previous_state*/) {
     // Force a flush at interruption
     sink_->flush();
 }
 
-void FlightRecorderSatellite::failure(CSCP::State /*previous_state*/) {
+void FlightRecorderSatellite::failure(State /*previous_state*/) {
     try {
         if(sink_ != nullptr) {
             sink_->flush();
@@ -218,7 +224,7 @@ void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
 
     // Update statistics
     msg_logged_total_++;
-    if(getState() == CSCP::State::RUN) {
+    if(getState() == State::RUN) {
         msg_logged_run_++;
     }
     if(msg.getLogLevel() == Level::WARNING) {

@@ -69,3 +69,9 @@ file_path = "/data/logs/logfile.txt"
 | `MSG_TOTAL` | Total number messages received and logged since satellite startup | 3s | `LAST_VALUE` |
 | `MSG_WARN` | Number of warning messages received and logged since satellite startup | 3s | `LAST_VALUE` |
 | `MSG_RUN` | Total number messages received and logged since the last run start | 3s | `LAST_VALUE` |
+
+## Custom Commands
+
+| Command | Description | Arguments | Return Value | Allowed States |
+|---------|-------------|-----------|--------------|----------------|
+| `flush` | Flush log sink | - | - | `INIT`, `ORBIT`, `RUN`, `SAFE` |
