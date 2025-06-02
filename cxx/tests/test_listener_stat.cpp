@@ -93,7 +93,7 @@ TEST_CASE("Per-host metric topic subscriptions", "[listener]") {
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
-TEST_CASE("No empty metric subscription", "[listener]") {
+TEST_CASE("Empty metric subscription", "[listener]") {
     // Create CHIRP manager for monitoring service discovery
     create_chirp_manager();
 
@@ -111,11 +111,11 @@ TEST_CASE("No empty metric subscription", "[listener]") {
     // Subscribe to empty topic
     listener.subscribeMetric("");
 
-    // Check that no subscription message is received
-    REQUIRE_FALSE(sender.canRecv());
+    // Check that subscription message for any topic is received
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "STAT/"));
 
     // Check that subscription is not stored
-    REQUIRE_THAT(listener.getMetricSubscriptions(), RangeEquals(std::set<std::string>({})));
+    REQUIRE_THAT(listener.getMetricSubscriptions(), RangeEquals(std::set<std::string>({""})));
 
     listener.unsubscribeMetric("");
     listener.stopPool();

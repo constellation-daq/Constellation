@@ -37,20 +37,11 @@ std::string_view StatListener::demangle_topic(std::string_view topic) {
 }
 
 void StatListener::subscribeMetric(const std::string& metric) {
-    // Empty topic not allowed
-    if(metric.empty()) [[unlikely]] {
-        LOG(BasePoolT::pool_logger_, WARNING) << "Ignoring subscription to empty telemetry topic";
-        return;
-    }
     LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << std::quoted(metric);
     CMDPListener::subscribeTopic("STAT/" + metric);
 }
 
 void StatListener::unsubscribeMetric(const std::string& metric) {
-    if(metric.empty()) [[unlikely]] {
-        LOG(BasePoolT::pool_logger_, WARNING) << "Ignoring unsubscription from empty telemetry topic";
-        return;
-    }
     LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << std::quoted(metric);
     CMDPListener::unsubscribeTopic("STAT/" + metric);
 }
