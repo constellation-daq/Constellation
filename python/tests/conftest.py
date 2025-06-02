@@ -233,6 +233,9 @@ class mocket:
     def setsockopt_string(self, *args, **kwargs):
         pass
 
+    def setsockopt(self, *args, **kwargs):
+        pass
+
 
 @pytest.fixture
 def mock_socket_sender():
