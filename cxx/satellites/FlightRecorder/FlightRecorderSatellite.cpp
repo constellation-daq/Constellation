@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <string_view>
 #include <utility>
 
@@ -43,7 +44,7 @@ using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::metrics;
-using namespace constellation::protocol;
+using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -70,16 +71,16 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
                           3s,
                           [this]() { return msg_logged_run_.load(); });
 
-    // Start the log receiver pool
-    startPool();
-}
-
-FlightRecorderSatellite::~FlightRecorderSatellite() {
-    // Stop log pool
-    stopPool();
+    register_command("flush",
+                     "Flush log sink",
+                     {State::INIT, State::ORBIT, State::RUN, State::SAFE},
+                     std::function<void(void)>([&]() { sink_->flush(); }));
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
+    // Stop pool in case it was already started
+    stopPool();
+
     // Reset potentially existing sink
     sink_.reset();
 
@@ -124,7 +125,10 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Set pattern containing only the timestamp and the message
     sink_->set_pattern("[%Y-%m-%d %H:%M:%S.%e] %v");
 
-    // Subscribe for all endpoints to global topic:
+    // Start the log receiver pool
+    startPool();
+
+    // Subscribe for all endpoints to global topic
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
 }
@@ -155,6 +159,11 @@ std::filesystem::path FlightRecorderSatellite::validate_file_path(const std::fil
     return std::filesystem::canonical(file_path);
 }
 
+void FlightRecorderSatellite::landing() {
+    // Force a flush when landing
+    sink_->flush();
+}
+
 void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     // For method RUN set a new log file
     if(method_ == LogMethod::RUN) {
@@ -175,22 +184,29 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     msg_logged_run_ = 0;
 }
 
-void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
-    // Force a flush at interruption
-    sink_->flush();
-}
-
 void FlightRecorderSatellite::stopping() {
     // Force a flush at run stop
     sink_->flush();
 }
 
+void FlightRecorderSatellite::interrupting(State /*previous_state*/) {
+    // Force a flush at interruption
+    sink_->flush();
+}
+
+void FlightRecorderSatellite::failure(State /*previous_state*/) {
+    try {
+        if(sink_ != nullptr) {
+            sink_->flush();
+        }
+    } catch(...) {
+        LOG(CRITICAL) << "Failed to flush logs";
+    }
+    stopPool();
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
-    if(sink_ == nullptr) {
-        return;
-    }
-
     const auto& header = msg.getHeader();
 
 #ifdef __cpp_lib_format
@@ -208,7 +224,7 @@ void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
 
     // Update statistics
     msg_logged_total_++;
-    if(getState() == CSCP::State::RUN) {
+    if(getState() == State::RUN) {
         msg_logged_run_++;
     }
     if(msg.getLogLevel() == Level::WARNING) {
