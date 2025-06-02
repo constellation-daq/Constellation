@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
@@ -33,4 +34,5 @@ protected:
 
 private:
     constellation::utils::StopwatchTimer timer_;
+    std::atomic<double> data_rate_;
 };
