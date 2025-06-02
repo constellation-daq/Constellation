@@ -35,7 +35,6 @@ class LeCroySatellite(DataSender):
         ip_address = configuration["ip_address"]
         port = configuration.setdefault("port", 1861)
         timeout = configuration.setdefault("timeout", 5.0)
-        self._num_sequences = configuration.setdefault("nsequence", 1)
 
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
@@ -43,12 +42,10 @@ class LeCroySatellite(DataSender):
         except ConnectionRefusedError as e:
             raise RuntimeError(f"Connection refused to {ip_address}:{port} -> {str(e)}")
 
-        if self._num_sequences > 0:
-            self._scope.set_sequence_mode(self._num_sequences)
-            self._sequence_mode = True
+        self._configure_sequences(configuration.setdefault("nsequence", 1))
 
+        # channels trigger levels and offsets are not expected to change on reconfiguration
         self._channels = self._scope.get_channels()
-        self._settings = self._scope.get_settings()
         channel_offsets = {}
         channel_trigger_levels = {}
         for key, value in self._settings.items():
@@ -57,25 +54,18 @@ class LeCroySatellite(DataSender):
             elif ":TRIG_LEVEL" in key:
                 channel_trigger_levels[key.split(":")[0].replace("C", "")] = float(value.split(b" ")[1])
 
-        if b"ON" in self._settings["SEQUENCE"]:  # waveforms sequencing enabled
-            sequence_count = int(self._settings["SEQUENCE"].split(b",")[1])
-            self.log.info(f"Configured scope with sequence count = {sequence_count}")
-            if self._num_sequences != sequence_count:  # sanity check
-                raise RuntimeError(
-                    "Could not configure sequence mode properly: "
-                    + f"num_sequences={self._num_sequences} != sequences_count={sequence_count}"
-                )
-        if self._num_sequences != 1:
-            self.log.info(f"Using sequence mode with {self._num_sequences} traces per acquisition")
-
         self.BOR["trigger_delay"] = float(self._settings["TRIG_DELAY"].split(b" ")[1])
         self.BOR["sampling_period"] = float(self._settings["TIME_DIV"].split(b" ")[1])
         self.BOR["channels"] = ",".join([str(c) for c in self._channels])
-        self.BOR["num_sequences"] = self._num_sequences
-
-        self.log.debug("Scope settings: {}".format(self._settings))
 
         return f"Connected to scope at {ip_address}"
+
+    def do_reconfigure(self, configuration: Configuration) -> str:
+        if not self._scope:
+            return "Failed to reconfigure. Scope is not connected."
+        self._scope.clear()
+        self._configure_sequences(configuration.setdefault("nsequence", 1))
+        return "Successfully reconfigured scope"
 
     def do_run(self, payload: Any) -> str:
         num_sequences_acquired = 0
@@ -111,10 +101,31 @@ class LeCroySatellite(DataSender):
     def num_triggers(self, request: CSCPMessage) -> [str, int, dict[str, Any]]:
         if self.fsm.current_state_value == SatelliteState.RUN:
             return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
-        return 'Not running', None, {}
+        return "Not running", None, {}
 
     @schedule_metric("", MetricsType.LAST_VALUE, 10)
     def NTRIGGERS(self) -> int | None:
         if self.fsm.current_state_value == SatelliteState.RUN:
             return self._num_triggers_acquired
         return None
+
+    def _configure_sequences(self, num_sequences: int):
+        self._num_sequences = num_sequences
+        self._sequence_mode = self._num_sequences > 0
+        if self._sequence_mode:
+            self._scope.set_sequence_mode(self._num_sequences)
+        self._settings = self._scope.get_settings()
+        self.log.debug("Scope settings: {}".format(self._settings))
+        if b"ON" in self._settings["SEQUENCE"]:  # waveforms sequencing enabled
+            sequence_count = int(self._settings["SEQUENCE"].split(b",")[1])
+            self.log.info(f"Configured scope with sequence count = {sequence_count}")
+            if self._num_sequences != sequence_count:  # sanity check
+                raise RuntimeError(
+                    "Could not configure sequence mode properly: "
+                    + f"num_sequences={self._num_sequences} != sequences_count={sequence_count}"
+                )
+        if self._num_sequences != 1:
+            self.log.info(f"Using sequence mode with {self._num_sequences} traces per acquisition")
+
+        # update the beginning-of-run event
+        self.BOR["num_sequences"] = self._num_sequences
