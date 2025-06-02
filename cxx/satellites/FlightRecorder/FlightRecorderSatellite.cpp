@@ -72,6 +72,9 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
+    // Stop pool in case it was already started
+    stopPool();
+
     // Reset potentially existing sink
     sink_.reset();
 
@@ -119,7 +122,7 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
     // Start the log receiver pool
     startPool();
 
-    // subscribe for all endpoints to global topic:
+    // Subscribe for all endpoints to global topic
     const auto global_level = config.get<Level>("global_recording_level", WARNING);
     setGlobalLogLevel(global_level);
 }
@@ -170,22 +173,29 @@ void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     msg_logged_run_ = 0;
 }
 
-void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
-    // Force a flush at interruption
-    sink_->flush();
-}
-
 void FlightRecorderSatellite::stopping() {
     // Force a flush at run stop
     sink_->flush();
 }
 
+void FlightRecorderSatellite::interrupting(CSCP::State /*previous_state*/) {
+    // Force a flush at interruption
+    sink_->flush();
+}
+
+void FlightRecorderSatellite::failure(CSCP::State /*previous_state*/) {
+    try {
+        if(sink_ != nullptr) {
+            sink_->flush();
+        }
+    } catch(...) {
+        LOG(CRITICAL) << "Failed to flush logs";
+    }
+    stopPool();
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void FlightRecorderSatellite::log_message(CMDP1LogMessage&& msg) {
-    if(sink_ == nullptr) {
-        return;
-    }
-
     const auto& header = msg.getHeader();
 
 #ifdef __cpp_lib_format

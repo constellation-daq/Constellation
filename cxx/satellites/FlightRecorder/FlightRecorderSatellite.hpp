@@ -49,6 +49,7 @@ public:
     void starting(std::string_view run_identifier) final;
     void stopping() final;
     void interrupting(constellation::protocol::CSCP::State previous_state) final;
+    void failure(constellation::protocol::CSCP::State previous_state) final;
 
 private:
     /**
