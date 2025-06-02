@@ -18,7 +18,7 @@ class CDTPMessageIdentifier(Enum):
     """Defines the message types of the CDTP.
 
     Part of the Constellation Satellite Data Protocol, see
-    docs/protocols/cdtp.md for details.
+    `docs/protocols/cdtp.md` for details.
 
     """
 

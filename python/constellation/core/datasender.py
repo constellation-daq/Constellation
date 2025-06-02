@@ -93,9 +93,9 @@ class DataSender(Satellite):
     """Constellation Satellite which pushes data via ZMQ.
 
     You can modify the timeouts for packets sent via ZMQ depending on the type of packet:
-    - bor_timeout (int) : timeout for beginning-of-run packets (in milliseconds).
-    - data_timeout (int) : timeout for data packets (in milliseconds).
-    - eor_timeout (int) : timeout for end-of-run packets (in milliseconds).
+    - `bor_timeout` (int) : timeout for beginning-of-run packets (in milliseconds).
+    - `data_timeout` (int) : timeout for data packets (in milliseconds).
+    - `eor_timeout` (int) : timeout for end-of-run packets (in milliseconds).
 
     A value of -1 is interpreted as infinite.
     """
@@ -144,22 +144,22 @@ class DataSender(Satellite):
 
     @property
     def EOR(self) -> Any:
-        """Get optional playload for the end-of-run event (EOR)."""
+        """Get optional payload for the end-of-run event (EOR)."""
         return self._end_of_run["payload"]
 
     @EOR.setter
     def EOR(self, payload: Any) -> None:
-        """Set optional playload for the end-of-run event (EOR)."""
+        """Set optional payload for the end-of-run event (EOR)."""
         self._end_of_run["payload"] = payload
 
     @property
     def BOR(self) -> Any:
-        """Get optional playload for the beginning-of-run event (BOR)."""
+        """Get optional payload for the beginning-of-run event (BOR)."""
         return self._beg_of_run["payload"]
 
     @BOR.setter
     def BOR(self, payload: Any) -> None:
-        """Set optional playload for the beginning-of-run event (BOR)."""
+        """Set optional payload for the beginning-of-run event (BOR)."""
         self._beg_of_run["payload"] = payload
 
     def _pre_initializing_hook(self, config: Configuration) -> None:

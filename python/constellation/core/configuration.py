@@ -39,7 +39,7 @@ class Configuration:
 
     def setdefault(self, key: str, default: typing.Any = None) -> Any:
         """
-        Return value from requested key in config with default value if specified.
+        Return value from requested key in configuration with default value if specified.
         Mark key as requested in configuration.
         """
         self._requested_keys.add(key)
@@ -57,7 +57,7 @@ class Configuration:
             raise ConfigError(e) from e
 
     def get_keys(self) -> list[str]:
-        """Return list of keys in config."""
+        """Return list of keys in configuration."""
         return list(self._config.keys())
 
     def get_json(self) -> str:
@@ -106,7 +106,7 @@ def flatten_config(
     sat_class: str,
     sat_name: str | None = None,
 ) -> dict[str, Any]:
-    """Get configuration of satellite. Specify category to only get part of config."""
+    """Get configuration of satellite. Specify category to only get part of configuration."""
 
     res = {}
 

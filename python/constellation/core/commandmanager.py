@@ -59,7 +59,7 @@ class CommandReceiver(BaseSatelliteFrame):
     Commands will call specific methods of the inheriting class which should
     have the following signature:
 
-    def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):
+    `def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):`
 
     The expected return values are:
     - reply message (string)
@@ -71,7 +71,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
     If a method
 
-    def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
+    `def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:`
 
     exists, it will be called first to determine whether the command is
     currently allowed or not.
@@ -192,7 +192,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
         No payload argument.
 
-        This will include all methods with the @cscp_requestable decorator. The
+        This will include all methods with the `@cscp_requestable` decorator. The
         doc string of the function will be used to derive the summary and
         payload argument description for each command by using the first and the
         second line of the doc string, respectively (not counting empty lines).

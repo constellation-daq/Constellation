@@ -16,9 +16,12 @@ ramped
 reconfiguring
 uncrewed
 IPv
+Heartbeater
 heartbeating
 scriptable
 Subclassed
+Subclasses
+subclasses
 demangle
 Demangle
 demangled
@@ -60,4 +63,11 @@ webhook
 webhooks
 integrations
 toolchain
+Args
+mixin
+Submodules
+netmask
+Poller
+unhandled
+nowait
 Gbps

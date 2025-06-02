@@ -132,7 +132,7 @@ class SatelliteFSM(StateMachine):
         self.last_changed = datetime.now(timezone.utc)
 
     def write_diagram(self, filename: str) -> None:
-        """Create a png with the FSM schematic."""
+        """Create a PNG with the FSM schematic."""
         from statemachine.contrib.diagram import DotGraphMachine
 
         graph = DotGraphMachine(self)

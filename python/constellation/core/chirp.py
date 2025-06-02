@@ -52,7 +52,7 @@ class CHIRPServiceIdentifier(Enum):
 class CHIRPMessageType(Enum):
     """Identifies the type of message sent or received via the CHIRP protocol.
 
-    See docs/protocols/chirp.md for details.
+    See `docs/protocols/chirp.md` for details.
 
     REQUEST: A message with REQUEST type indicates that CHIRP hosts should reply
     with an OFFER
@@ -134,7 +134,7 @@ class CHIRPMessage:
 class CHIRPBeaconTransmitter:
     """Class for broadcasting CHRIP messages.
 
-    See docs/protocols/chirp.md for details.
+    See `docs/protocols/chirp.md` for details.
 
     """
 

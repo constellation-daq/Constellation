@@ -102,7 +102,7 @@ class Satellite(
     def run_satellite(self) -> None:
         """Main Satellite event loop with task handler-routine.
 
-        This routine sequenctially executes tasks queued by the CommandReceiver
+        This routine sequentially executes tasks queued by the CommandReceiver
         or the CHIRPBroadcaster. These tasks come in the form of callbacks to
         e.g. state transitions.
 
@@ -134,7 +134,7 @@ class Satellite(
             time.sleep(0.01)
 
     def reentry(self) -> None:
-        """Orderly shutdown and destroy the Satellelite."""
+        """Orderly shutdown and destroy the Satellite."""
         # can only exit from certain state, go into ERROR if not the case
         self.log_satellite.info("Satellite on reentry course for self-destruction.")
         if self.fsm.current_state_value not in [
