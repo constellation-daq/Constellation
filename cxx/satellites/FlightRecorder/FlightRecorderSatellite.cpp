@@ -153,6 +153,11 @@ std::filesystem::path FlightRecorderSatellite::validate_file_path(const std::fil
     return std::filesystem::canonical(file_path);
 }
 
+void FlightRecorderSatellite::landing() {
+    // Force a flush when landing
+    sink_->flush();
+}
+
 void FlightRecorderSatellite::starting(std::string_view run_identifier) {
     // For method RUN set a new log file
     if(method_ == LogMethod::RUN) {

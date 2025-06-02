@@ -46,6 +46,7 @@ public:
     FlightRecorderSatellite(std::string_view type, std::string_view name);
 
     void initializing(constellation::config::Configuration& config) final;
+    void landing() final;
     void starting(std::string_view run_identifier) final;
     void stopping() final;
     void interrupting(constellation::protocol::CSCP::State previous_state) final;
