@@ -13,16 +13,21 @@ from typing import Any
 import LeCrunch3
 import numpy as np
 
+from constellation.core.cmdp import MetricsType
+from constellation.core.commandmanager import CSCPMessage, cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
+from constellation.core.fsm import SatelliteState
+from constellation.core.monitoring import schedule_metric
 
 
 class LeCroySatellite(DataSender):
     _scope = None
     _settings = None
     _channels = None
-    _num_sequences = 1
-    _sequence_mode = False
+    _sequence_mode: bool = False
+    _num_sequences: int = 1
+    _num_triggers_acquired: int = 0
 
     def do_initializing(self, configuration: Configuration) -> str:
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
@@ -74,7 +79,7 @@ class LeCroySatellite(DataSender):
 
     def do_run(self, payload: Any) -> str:
         num_sequences_acquired = 0
-        num_events_acquired = 0
+        self._num_triggers_acquired = 0
         while not self._state_thread_evt.is_set():
             try:
                 self._scope.trigger()
@@ -96,8 +101,20 @@ class LeCroySatellite(DataSender):
                 self.log.error(str(e))
                 self._scope.clear()
                 continue
-            num_events_acquired += self._num_sequences
+            self._num_triggers_acquired += self._num_sequences
             num_sequences_acquired += 1
-            self.log.info(f"Fetched event {num_events_acquired}/sequence {num_sequences_acquired}")
+            self.log.info(f"Fetched event {self._num_triggers_acquired}/sequence {num_sequences_acquired}")
 
         return "Finished acquisition"
+
+    @cscp_requestable
+    def num_triggers(self, request: CSCPMessage) -> [str, int, dict[str, Any]]:
+        if self.fsm.current_state_value == SatelliteState.RUN:
+            return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
+        return 'Not running', None, {}
+
+    @schedule_metric("", MetricsType.LAST_VALUE, 10)
+    def NTRIGGERS(self) -> int | None:
+        if self.fsm.current_state_value == SatelliteState.RUN:
+            return self._num_triggers_acquired
+        return None
