@@ -15,21 +15,19 @@
 #include <exception>
 #include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
-#include <optional>
 #include <stop_token>
 #include <string>
 #include <thread>
 #include <tuple>
 #include <utility>
-#include <variant>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/controller/MeasurementCondition.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"

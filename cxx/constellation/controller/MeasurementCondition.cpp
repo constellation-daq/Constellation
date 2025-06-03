@@ -9,27 +9,20 @@
 
 #include "MeasurementCondition.hpp"
 
-#include <algorithm>
 #include <atomic>
 #include <chrono>
-#include <exception>
 #include <functional>
 #include <map>
-#include <mutex>
-#include <optional>
-#include <stop_token>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <utility>
-#include <variant>
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/utils/string.hpp"
+#include "constellation/core/log/Logger.hpp"
+#include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/listener/StatListener.hpp"
 
@@ -59,7 +52,7 @@ MetricCondition::MetricCondition(std::string remote,
                                  std::string metric,
                                  config::Value target,
                                  std::function<bool(config::Value, config::Value)> comparator)
-    : remote_(std::move(remote)), metric_(std::move(metric)), target_(target), comparator_(comparator),
+    : remote_(std::move(remote)), metric_(std::move(metric)), target_(std::move(target)), comparator_(std::move(comparator)),
       metric_reception_timeout_(std::chrono::seconds(60)) {};
 
 void MetricCondition::await(std::atomic_bool& running, Controller& controller, Logger& logger) const {
@@ -67,7 +60,7 @@ void MetricCondition::await(std::atomic_bool& running, Controller& controller, L
 
     std::atomic<bool> condition_satisfied {false};
     // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-    auto stat_listener = StatListener("QUEUE", [&](message::CMDP1StatMessage&& msg) {
+    auto stat_listener = StatListener("QUEUE", [&](CMDP1StatMessage&& msg) {
         // FIXME case-insensitive
         if(msg.getHeader().getSender() != remote_) {
             return;

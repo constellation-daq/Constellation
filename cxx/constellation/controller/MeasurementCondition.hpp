@@ -11,15 +11,8 @@
 
 #include <atomic>
 #include <chrono>
-#include <cstddef>
 #include <functional>
-#include <map>
-#include <mutex>
-#include <optional>
-#include <queue>
-#include <stop_token>
 #include <string>
-#include <tuple>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
@@ -44,6 +37,14 @@ namespace constellation::controller {
         virtual void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const = 0;
 
         virtual ~MeasurementCondition() = default;
+
+        /// @cond doxygen_suppress
+        // No copy/move constructor/assignment
+        MeasurementCondition(const MeasurementCondition& other) = delete;
+        MeasurementCondition& operator=(const MeasurementCondition& other) = delete;
+        MeasurementCondition(MeasurementCondition&& other) = delete;
+        MeasurementCondition& operator=(MeasurementCondition&& other) = delete;
+        /// @endcond
 
     protected:
         MeasurementCondition() = default;

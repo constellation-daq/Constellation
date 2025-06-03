@@ -12,22 +12,18 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
-#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
-#include <optional>
 #include <queue>
 #include <stop_token>
 #include <string>
 #include <thread>
-#include <tuple>
 #include <utility>
-#include <variant>
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/MeasurementCondition.hpp"
-#include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
