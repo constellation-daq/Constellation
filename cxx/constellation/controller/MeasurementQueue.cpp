@@ -254,14 +254,18 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
 void MeasurementQueue::cache_original_values(Measurement& measurement) {
     // Loop over all satellites in this measurement:
     for(auto& [satellite, cmd_payload] : measurement) {
+        LOG(logger_, DEBUG) << "Caching original values for satellite " << satellite;
+        if(!original_values_.contains(satellite)) {
+            original_values_[satellite] = config::Dictionary {};
+        }
         auto& value_cache = std::get<Dictionary>(original_values_[satellite]);
 
         // Fetch configuration from this satellite:
         const auto& msg = controller_.sendCommand(satellite, "get_config");
         if(msg.getVerb().first != CSCP1Message::Type::SUCCESS) {
+            LOG(logger_, DEBUG) << "Could not obtain configuration from satellite " << satellite;
             return;
         }
-
         const auto config = Dictionary::disassemble(msg.getPayload());
 
         // Check if the measurement keys are available in the config:
@@ -274,7 +278,8 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
 
             // Insert the key if it has not been registered yet, use the original value obtained from the configuration:
             const auto& [it, inserted] = value_cache.try_emplace(key, config.at(key));
-            LOG_IF(INFO, inserted) << "Cached original value of key " << key << " from satellite " << satellite;
+            LOG_IF(logger_, INFO, inserted)
+                << "Cached original value `" << key << " = " << config.at(key).str() << "` from satellite " << satellite;
         }
 
         // Add all original values which are not part of the measurement anymore and drop them from the cache
@@ -286,7 +291,7 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
             // Insert the key if it has not been registered yet:
             const auto& [it, inserted] = measurement_dict.try_emplace(key, value);
             if(inserted) {
-                LOG(INFO) << "Resetting original value of key " << key << " from satellite " << satellite;
+                LOG(logger_, INFO) << "Resetting original value of key " << key << " from satellite " << satellite;
                 value_cache.erase(key);
             }
         }
