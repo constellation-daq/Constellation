@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import IntEnum
 from io import BytesIO
-from typing import Any
+from typing import Any, Optional
 
 import msgpack  # type: ignore[import-untyped]
 
@@ -44,11 +44,13 @@ class CSCP1Message:
         # Previously received message is invalid
         ERROR = 0x6
 
-    def __init__(self, sender: str, verb: tuple[Type, str], time: datetime = datetime.now(), tags: dict[str, Any] = {}):
+    def __init__(
+        self, sender: str, verb: tuple[Type, str], time: datetime = datetime.now(), tags: Optional[dict[str, Any]] = None
+    ):
         self._protocol = Protocol.CSCP1
         self._sender = sender
         self._time = time
-        self._tags = tags
+        self._tags = tags if tags is not None else {}
         self._verb = verb
         self._payload = None
 

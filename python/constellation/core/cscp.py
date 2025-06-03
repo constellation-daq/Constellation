@@ -62,7 +62,7 @@ class CommandTransmitter:
     def _dispatch(
         self, verb: tuple[CSCP1Message.Type, str], payload: Any = None, tags: Optional[dict[str, Any]] = None, flags: int = 0
     ) -> None:
-        message = CSCP1Message(self._name, verb, tags=tags if tags is not None else {})
+        message = CSCP1Message(self._name, verb, tags=tags)
         if payload is not None:
             message.payload = payload
         message.assemble().send(self._socket, flags)
