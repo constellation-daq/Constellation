@@ -2,7 +2,7 @@
 SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
-Provides message class for CSCP
+Provides message class for CSCP1
 """
 
 from __future__ import annotations
@@ -26,23 +26,31 @@ from .multipart import MultipartMessage
 
 
 class CSCP1Message:
+    """Message class for CSCP1"""
+
     class Type(IntEnum):
         """Enum describing the type of CSCP1 message"""
 
-        # Request with a command
         REQUEST = 0x0
-        # Command is being executed
+        """Request with a command"""
+
         SUCCESS = 0x1
-        # Command is valid but not implemented
+        """Command is being executed"""
+
         NOTIMPLEMENTED = 0x2
-        # Command is valid but mandatory payload information is missing or incorrectly formatted
+        """Command is valid but not implemented"""
+
         INCOMPLETE = 0x3
-        # Command is invalid for the current state
+        """Command is valid but mandatory payload information is missing or incorrectly formatted"""
+
         INVALID = 0x4
-        # Command is entirely unknown
+        """Command is invalid for the current state"""
+
         UNKNOWN = 0x5
-        # Previously received message is invalid
+        """Command is entirely unknown"""
+
         ERROR = 0x6
+        """Previously received message is invalid"""
 
     def __init__(
         self, sender: str, verb: tuple[Type, str], time: Optional[datetime] = None, tags: Optional[dict[str, Any]] = None
