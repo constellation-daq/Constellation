@@ -52,9 +52,6 @@ class CSCP1Message:
         self._verb = verb
         self._payload = None
 
-    def addPayload(self, payload: Any) -> None:
-        self._payload = payload
-
     @property
     def sender(self) -> str:
         return self._sender
@@ -82,6 +79,10 @@ class CSCP1Message:
     @property
     def payload(self) -> Any:
         return self._payload
+
+    @payload.setter
+    def payload(self, payload: Any) -> None:
+        self._payload = payload
 
     def assemble(self) -> MultipartMessage:
         streams = []
@@ -138,7 +139,7 @@ class CSCP1Message:
         # Assemble and return message
         msg = CSCP1Message(sender, (verb_type, verb_msg), time, tags)
         if payload is not None:
-            msg.addPayload(payload)
+            msg.payload = payload
         return msg
 
     def __str__(self) -> str:

@@ -64,7 +64,7 @@ class CommandTransmitter:
     ) -> None:
         message = CSCP1Message(self._name, verb, tags=tags if tags is not None else {})
         if payload is not None:
-            message.addPayload(payload)
+            message.payload = payload
         message.assemble().send(self._socket, flags)
 
     def close(self) -> None:
