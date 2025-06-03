@@ -11,7 +11,7 @@ import pytest
 from conftest import mocket, wait_for_state
 
 from constellation.core.configuration import Configuration
-from constellation.core.cscp import CSCPMessageVerb
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.satellites.Mariner.Mariner import Mariner as MarinerDef
 
 
@@ -75,8 +75,9 @@ def test_mariner_fsm_transition(mock_cmd_transmitter, mariner_satellite):
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
-        assert "transitioning" in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in req.verb_msg.lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
 
         wait_for_state(mariner_satellite.fsm, state, 4.0)
@@ -84,8 +85,9 @@ def test_mariner_fsm_transition(mock_cmd_transmitter, mariner_satellite):
         sender.send_request("get_state")
         time.sleep(0.2)
         req = sender.get_message()
-        assert state.lower() in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert state.lower() in req.verb_msg.lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
 @pytest.mark.forked
@@ -96,8 +98,9 @@ def test_mariner_cfg_missing_items(mock_cmd_transmitter, mariner_satellite):
     sender.send_request("initialize", payload)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "transitioning" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "transitioning" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # wait for state transition
 
     wait_for_state(mariner_satellite.fsm, "ERROR", 4.0)
@@ -111,8 +114,9 @@ def test_mariner_command(mock_cmd_transmitter, mariner_satellite):
     sender.send_request("get_attitude", None)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "not ready" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "not ready" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     assert not req.payload
 
     payload = {"voltage": 1000, "current": 3, "sample_period": 1}
@@ -122,6 +126,7 @@ def test_mariner_command(mock_cmd_transmitter, mariner_satellite):
     sender.send_request("get_attitude", None)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "locked and ready" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "locked and ready" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     assert isinstance(req.payload, int)

@@ -9,6 +9,7 @@ import random
 import threading
 import time
 from tempfile import TemporaryDirectory
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import h5py
@@ -86,11 +87,11 @@ def mock_sender_satellite(mock_chirp_transmitter):
             self.BOR = {"status": "set at initialization"}
             return "done"
 
-        def do_starting(self, payload: any):
+        def do_starting(self, payload: Any):
             self.BOR = "set in do_starting()"
             return "done"
 
-        def do_run(self, payload: any):
+        def do_run(self, payload: Any):
             self.payload_id = 0
             while self.payload_id < 10:
                 payload = f"mock payload {self.payload_id}".encode("utf-8")
@@ -124,7 +125,7 @@ def receiver_satellite():
     """A receiver Satellite."""
 
     class MockReceiverSatellite(H5DataWriter):
-        def do_initializing(self, config: dict[str]) -> str:
+        def do_initializing(self, config: dict[str, Any]) -> str:
             res = super().do_initializing(config)
             # configure monitoring with higher frequency
             self._configure_monitoring(0.1)
@@ -186,6 +187,7 @@ def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_recei
     payload = "mock payload"
     sender.send_start(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.BOR
 
@@ -193,6 +195,7 @@ def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_recei
     payload = ["mock payload", "more mock data"]
     sender.send_data(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.DAT
 
@@ -200,6 +203,7 @@ def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_recei
     payload = np.arange(0, 1000).tobytes()
     sender.send_data(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.DAT
 
@@ -207,18 +211,21 @@ def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_recei
     payload = [np.arange(0, 1000).tobytes(), np.arange(10000, 20000).tobytes()]
     sender.send_data(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.DAT
 
     payload = None
     sender.send_data(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.DAT
 
     payload = {"mock": True}
     sender.send_end(payload)
     msg = rx.recv()
+    assert msg is not None
     assert msg.payload == payload
     assert msg.msgtype == CDTPMessageIdentifier.EOR
 
@@ -374,7 +381,7 @@ def test_receive_writing_swmr_mode(
 
         # check swmr status via cscp
         msg = commander.request_get_response("get_concurrent_reading_status")
-        assert msg.msg.lower().startswith("not")
+        assert msg.verb_msg.lower().startswith("not")
 
         for run_num in range(1, 4):
             # Send new data to handle
@@ -409,7 +416,7 @@ def test_receive_writing_swmr_mode(
             assert receiver._swmr_mode_enabled is True
             # check swmr status via cscp
             msg = commander.request_get_response("get_concurrent_reading_status")
-            assert msg.msg.lower().startswith("enabled")
+            assert msg.verb_msg.lower().startswith("enabled")
             # stop
             commander.request_get_response("stop")
             # send EORE

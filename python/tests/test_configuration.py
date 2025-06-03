@@ -8,7 +8,7 @@ import time
 import pytest
 
 from constellation.core.configuration import flatten_config
-from constellation.core.cscp import CSCPMessageVerb
+from constellation.core.message.cscp1 import CSCP1Message
 
 
 @pytest.mark.forked
@@ -32,8 +32,9 @@ def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
     sender.send_request("initialize", config._config)
     time.sleep(0.1)
     req = sender.get_message()
-    assert "transitioning" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "transitioning" in str(req.verb_msg).lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     assert "mode" in satellite.config._config, "Default value added by Satellite not found"
     satellite.config._config.pop("mode")
     assert satellite.config._config == config._config
