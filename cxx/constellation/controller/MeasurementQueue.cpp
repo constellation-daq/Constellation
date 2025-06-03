@@ -69,6 +69,9 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     const std::lock_guard measurement_lock {measurement_mutex_};
     measurements_.emplace(std::move(measurement), std::move(condition));
     measurements_size_++;
+
+    // Report updated progress
+    progress_updated(progress());
 }
 
 double MeasurementQueue::progress() const {
@@ -238,6 +241,12 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
             // Update constellation - satellites without payload will not receive the command
             LOG(logger_, INFO) << "Reconfiguring satellites";
+            for(const auto& [sat, cfg] : measurement) {
+                LOG(logger_, DEBUG) << "Parameters for " << sat << ":";
+                for(const auto& [k, v] : std::get<Dictionary>(cfg)) {
+                    LOG(logger_, DEBUG) << "\t" << k << " = " << v.str();
+                }
+            }
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
 
