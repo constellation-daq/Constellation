@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <thread>
 #include <tuple>

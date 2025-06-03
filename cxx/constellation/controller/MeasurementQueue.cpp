@@ -17,6 +17,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <stop_token>
 #include <string>
 #include <thread>
