@@ -16,12 +16,7 @@ import msgpack  # type: ignore[import-untyped]
 
 from ..protocol import Protocol
 from .exceptions import InvalidProtocolError, MessageDecodingError, UnexpectedProtocolError
-from .msgpack_helpers import (
-    convert_from_msgpack_timestamp,
-    convert_to_msgpack_timestamp,
-    msgpack_unpack_to,
-    msgpack_unpack_to_int_enum,
-)
+from .msgpack_helpers import msgpack_unpack_to, msgpack_unpack_to_int_enum
 from .multipart import MultipartMessage
 
 
@@ -57,7 +52,7 @@ class CSCP1Message:
     ):
         self._protocol = Protocol.CSCP1
         self._sender = sender
-        self._time = time if time is not None else datetime.now()
+        self._time = time if time is not None else datetime.now().astimezone()
         self._tags = tags if tags is not None else {}
         self._verb = verb
         self._payload = None
@@ -96,14 +91,14 @@ class CSCP1Message:
 
     def assemble(self) -> MultipartMessage:
         streams = []
-        packer = msgpack.Packer()
+        packer = msgpack.Packer(datetime=True)
 
         # Pack header
         header_stream = BytesIO()
         header_stream.write(packer.pack(self._protocol.value))
         header_stream.write(packer.pack(self._sender))
-        header_stream.write(packer.pack(msgpack.Timestamp.from_datetime(self._time)))
-        header_stream.write(packer.pack(convert_to_msgpack_timestamp(self._tags)))
+        header_stream.write(packer.pack(self._time))
+        header_stream.write(packer.pack(self._tags))
         streams.append(header_stream)
         # Pack verb
         verb_stream = BytesIO()
@@ -120,7 +115,7 @@ class CSCP1Message:
 
     @staticmethod
     def disassemble(frames: list[bytes]) -> CSCP1Message:
-        unpacker = msgpack.Unpacker()
+        unpacker = msgpack.Unpacker(timestamp=3)
         if len(frames) not in [2, 3]:
             raise MessageDecodingError(f"Expected 2 or 3 frames, got {len(frames)}")
 
@@ -134,8 +129,8 @@ class CSCP1Message:
         if protocol is not Protocol.CSCP1:
             raise UnexpectedProtocolError(protocol, Protocol.CSCP1)
         sender = msgpack_unpack_to(unpacker, str)
-        time = msgpack_unpack_to(unpacker, msgpack.Timestamp).to_datetime()
-        tags = convert_from_msgpack_timestamp(msgpack_unpack_to(unpacker, dict))
+        time = msgpack_unpack_to(unpacker, datetime)
+        tags = msgpack_unpack_to(unpacker, dict)
         # Unpack verb
         unpacker.feed(frames[1])
         verb_type = msgpack_unpack_to_int_enum(unpacker, CSCP1Message.Type)

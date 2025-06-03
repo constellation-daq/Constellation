@@ -4,6 +4,7 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import time
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -72,6 +73,20 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
     assert isinstance(req, CSCP1Message)
     assert req.verb_msg == "no"
     assert "make your" in req.payload
+
+
+@pytest.mark.forked
+def test_cmdtransmitter_timestamp(mock_socket_sender, mock_socket_receiver):
+    """Test that commands are received case insensitive (i.e. lower)."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
+    # send a request with timestamp
+    timestamp = datetime.now().astimezone()
+    sender.send_request("test", tags={"timestamp": timestamp})
+    req = receiver.get_message()
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "test"
+    assert req.tags["timestamp"] == timestamp
 
 
 @pytest.mark.forked
