@@ -111,7 +111,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self,
         name: str,
         group: str,
-        interface: str,
+        interface: list[str],
         mon_port: int | None = None,
         **kwds: Any,
     ):

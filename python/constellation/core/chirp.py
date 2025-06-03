@@ -143,7 +143,7 @@ class CHIRPBeaconTransmitter:
         self,
         name: str,
         group: str,
-        interface: str,
+        interface: list[str],
     ) -> None:
         """Initialize attributes and open broadcast socket."""
         self._host_uuid = get_uuid(name)
@@ -152,8 +152,11 @@ class CHIRPBeaconTransmitter:
         # whether or not to filter broadcasts on group
         self._filter_group = True
 
+        # Gather interface addresses
+        interface_addresses = get_interface_addresses(interface)
+
         # Create multicast socket
-        self._socket = MulticastSocket(get_interface_addresses(interface), CHIRP_MULTICAST_ADDRESS, CHIRP_PORT)
+        self._socket = MulticastSocket(interface_addresses, CHIRP_MULTICAST_ADDRESS, CHIRP_PORT)
 
     @property
     def host(self) -> UUID:

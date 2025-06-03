@@ -191,13 +191,13 @@ class ZeroMQSocketLogListener(QueueListener):
 class StatListener(CHIRPBroadcaster):
     """Simple listener class to receive metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: str, mon_port: int | None = None, **kwds: Any):
+    def __init__(self, name: str, group: str, interface: list[str], mon_port: int | None = None, **kwds: Any):
         """Initialize values.
 
         Arguments:
         - name ::  name of this Monitor
         - group ::  group of controller
-        - interface :: the interface to connect to
+        - interface :: the interfaces to connect to
         """
         super().__init__(name=name, group=group, interface=interface, mon_port=mon_port, **kwds)
 
@@ -360,7 +360,7 @@ class MonitoringListener(StatListener):
 
 
 class FileMonitoringListener(MonitoringListener):
-    def __init__(self, name: str, group: str, interface: str, output_path: str):
+    def __init__(self, name: str, group: str, interface: list[str], output_path: str):
         self.output_path = pathlib.Path(output_path)
         try:
             os.makedirs(self.output_path)
@@ -405,8 +405,8 @@ def main(args: Any = None) -> None:
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
-    # set up logging
-    setup_cli_logging(args.pop("log_level"))
+    # Set up logging
+    setup_cli_logging(args.pop("level"))
 
     mon: MonitoringListener
 

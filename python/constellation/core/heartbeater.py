@@ -22,11 +22,10 @@ class HeartbeatSender(SatelliteStateHandler):
         self,
         name: str,
         hb_port: int,
-        interface: str,
         **kwargs: Any,
     ) -> None:
 
-        super().__init__(name=name, interface=interface, **kwargs)
+        super().__init__(name=name, **kwargs)
         self.default_period = 30000
         self.minimum_period = 500
         self._heartbeat_period = 500
@@ -41,9 +40,9 @@ class HeartbeatSender(SatelliteStateHandler):
         socket.setsockopt(zmq.XPUB_VERBOSER, True)
 
         if not hb_port:
-            self.hb_port = socket.bind_to_random_port(f"tcp://{interface}")
+            self.hb_port = socket.bind_to_random_port("tcp://*")
         else:
-            socket.bind(f"tcp://{interface}:{hb_port}")
+            socket.bind(f"tcp://*:{hb_port}")
             self.hb_port = hb_port
 
         self.log_chp_s.info(f"Setting up heartbeater on port {self.hb_port}")

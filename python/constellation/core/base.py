@@ -20,7 +20,7 @@ import zmq
 from . import __version__, __version_code_name__
 from .cmdp import CMDPTransmitter
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler
-from .network import get_interface_addresses_args, validate_interface
+from .network import get_interface_names, validate_interface
 
 
 @atexit.register
@@ -37,9 +37,10 @@ class ConstellationArgumentParser(ArgumentParser):
         super().__init__(*args, **kwargs)
         # generic arguments
         self.add_argument(
+            "--level",
             "-l",
-            "--log-level",
-            default="info",
+            choices=["TRACE", "DEBUG", "INFO", "WARNING", "STATUS", "CRITICAL"],
+            default="INFO",
             help="The maximum level of log messages to print to the console.",
         )
         self.add_argument("--version", action="version", version=f"Constellation v{__version__} ({__version_code_name__})")
@@ -66,12 +67,12 @@ class ConstellationArgumentParser(ArgumentParser):
         self.network = self.add_argument_group("Network configuration")
         self.network.add_argument(
             "--interface",
+            "-i",
             type=validate_interface,
-            choices=get_interface_addresses_args(),
-            default="*",
-            help="The network interface (i.e. IP address) to bind to. "
-            "Use '*' to bind to alla available interfaces "
-            "(default: %(default)s).",
+            choices=get_interface_names(),
+            action="append",
+            default=get_interface_names(),
+            help="The network interfaces to announce this satellite to. (default: %(default)s).",
         )
 
 
@@ -87,7 +88,7 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name: str, interface: str, mon_port: int | None = None, **_kwds: Any):
+    def __init__(self, name: str, mon_port: int | None = None, **_kwds: Any):
         # type name == python class name
         self.type = type(self).__name__
         # Check if provided name is valid:
@@ -96,13 +97,12 @@ class BaseSatelliteFrame:
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"
         self.context = zmq.Context()
-        self.interface = interface
 
         cmdp_socket = self.context.socket(zmq.PUB)
         if not mon_port:
-            self.mon_port = cmdp_socket.bind_to_random_port(f"tcp://{interface}")
+            self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
         else:
-            cmdp_socket.bind(f"tcp://{interface}:{mon_port}")
+            cmdp_socket.bind(f"tcp://*:{mon_port}")
             self.mon_port = mon_port
         self._cmdp_transmitter = CMDPTransmitter(self.name, cmdp_socket)
         self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)

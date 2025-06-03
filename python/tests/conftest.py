@@ -300,7 +300,7 @@ def mock_heartbeat_poller():
 @pytest.fixture
 def mock_heartbeat_checker(mock_heartbeat_poller):
     """Create a mock HeartbeatChecker instance."""
-    hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
+    hbc = HeartbeatChecker("mock_hbchecker")
     hbc._add_com_thread()
     hbc._start_com_threads()
     # give the threads a chance to start
