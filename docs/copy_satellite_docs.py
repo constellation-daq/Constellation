@@ -143,7 +143,10 @@ def append_parent_classes(language: str, parent_classes: list[str]) -> str:
     Append parent classes to the README.md file based on the parent class.
     """
     # List of classes whose content should be appended in order
-    if any(class_name in ["ReceiverSatellite", "TransmitterSatellite"] for class_name in parent_classes):
+    if any(
+        class_name in ["ReceiverSatellite", "TransmitterSatellite", "DataReceiver", "DataSender"]
+        for class_name in parent_classes
+    ):
         parent_classes.append("Satellite")
 
     append = ""
