@@ -78,7 +78,7 @@ class DummyQueue : public constellation::controller::MeasurementQueue {
 public:
     DummyQueue(DummyController& controller,
                std::string prefix,
-               Condition condition,
+               std::shared_ptr<Condition> condition,
                std::chrono::seconds timeout = std::chrono::seconds(60))
         : MeasurementQueue(controller, std::move(prefix), std::move(condition), timeout) {}
 

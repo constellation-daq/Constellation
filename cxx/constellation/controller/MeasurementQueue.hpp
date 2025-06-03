@@ -42,22 +42,73 @@ namespace constellation::controller {
         using Measurement = std::map<std::string, Controller::CommandPayload>;
 
         /**
-         * Condition configuration for a metric, consisting of
-         * * Name of the remote satellite
-         * * Name of the metric
-         * * Target value
-         * * Comparison operator
+         * @brief Base class for measurement conditions
          */
-        using MetricCondition =
-            std::tuple<std::string, std::string, config::Value, std::function<bool(config::Value, config::Value)>>;
+        class Condition {
+        public:
+            /**
+             * @brief Method waiting for the condition to become true, blocking call
+             * @details This is the purely virtual interface method to be implemented by condition classes
+             *
+             * @param running Reference to the running state of the measurement queue
+             * @param controller Reference to the controller used by the measurement queue
+             * @param logger Reference to the logger used by the measurement queue
+             */
+            virtual void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const = 0;
+
+        protected:
+            Condition() = default;
+        };
 
         /**
-         * We have
-         * * timed measurement: provide a duration in seconds
-         * * metrics-based measurement: provide remote, metric name and metric value
-         * (* autonomous: provide remote to check for stopped)
+         * @brief Class implementing a timer-based measurement condition
          */
-        using Condition = std::variant<std::chrono::seconds, MetricCondition>;
+        class TimerCondition : public Condition {
+        public:
+            /**
+             * @brief Constructor for a timer-based condition
+             * @details: This condition will wait until the configured duration has passed
+             *
+             * @param duration Duration of this measurement
+             */
+            TimerCondition(std::chrono::seconds duration) : duration_(duration) {};
+
+            void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
+
+        private:
+            std::chrono::seconds duration_;
+        };
+
+        /**
+         * @brief Class implementing a telemetry-based measurement condition
+         */
+        class MetricCondition : public Condition {
+        public:
+            /**
+             * @brief Constructor for a metric-based measurement condition
+             * @details This condition will subscribe to the provided metric with the configured remote satellite and waits
+             *          until the received value matches the target value and condition.
+             *
+             * @param remote Remote satellite to subscribe to
+             * @param metric Metric to subscribe to from remote satellite
+             * @param target Target value of the metric
+             * @param comparator Comparison function the received metric value and the target value should satisfy
+
+             */
+            MetricCondition(std::string remote,
+                            std::string metric,
+                            config::Value target,
+                            std::function<bool(config::Value, config::Value)> comparator);
+
+            void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
+
+        private:
+            std::string remote_;
+            std::string metric_;
+            config::Value target_;
+            std::function<bool(config::Value, config::Value)> comparator_;
+            std::chrono::seconds metric_reception_timeout_;
+        };
 
         /**
          * @brief Construct a measurement queue
@@ -69,7 +120,7 @@ namespace constellation::controller {
          */
         MeasurementQueue(Controller& controller,
                          std::string prefix,
-                         Condition condition,
+                         std::shared_ptr<Condition> condition,
                          std::chrono::seconds timeout = std::chrono::seconds(60));
         /**
          * @brief Destruct the measurement queue
@@ -91,7 +142,7 @@ namespace constellation::controller {
          * @param condition Optional condition for this specific measurement. If not provided, the queue's default condition
          *                  is used.
          */
-        void append(Measurement measurement, std::optional<Condition> condition = {});
+        void append(Measurement measurement, std::shared_ptr<Condition> condition = nullptr);
 
         /**
          * @brief Helper to check if the queue is running
@@ -168,13 +219,6 @@ namespace constellation::controller {
         void await_state(protocol::CSCP::State state) const;
 
         /**
-         * @brief Helper to wait for condition of the measurement to become true
-         *
-         * @param condition Condition to wait for
-         */
-        void await_condition(Condition condition) const;
-
-        /**
          * @brief Checks all satellite replies for success verbs.
          * @throws If a satellite did not respond with success
          *
@@ -197,12 +241,11 @@ namespace constellation::controller {
         log::Logger logger_;
 
         std::string run_identifier_prefix_;
-        Condition default_condition_;
+        std::shared_ptr<Condition> default_condition_;
         std::chrono::seconds transition_timeout_;
-        std::chrono::seconds metric_reception_timeout_;
 
         /** Queue of measurements */
-        std::queue<std::pair<Measurement, std::optional<Condition>>> measurements_;
+        std::queue<std::pair<Measurement, std::shared_ptr<Condition>>> measurements_;
         std::mutex measurement_mutex_;
         std::atomic<std::size_t> measurements_size_ {0};
         std::atomic<std::size_t> run_sequence_ {0};

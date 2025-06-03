@@ -42,7 +42,8 @@ TEST_CASE("Empty Queue", "[controller]") {
     DummyController controller {"ctrl"};
     controller.start();
 
-    DummyQueue queue(controller, "queue_run_", {std::chrono::seconds(5)});
+    const auto condition = std::make_shared<MeasurementQueue::TimerCondition>(std::chrono::seconds(5));
+    DummyQueue queue(controller, "queue_run_", condition);
 
     REQUIRE_FALSE(queue.running());
     REQUIRE(queue.size() == 0);
@@ -65,7 +66,8 @@ TEST_CASE("Run Queue", "[controller]") {
     DummyController controller {"ctrl"};
     controller.start();
 
-    DummyQueue queue(controller, "queue_run_", {std::chrono::seconds(1)});
+    const auto condition = std::make_shared<MeasurementQueue::TimerCondition>(std::chrono::seconds(1));
+    DummyQueue queue(controller, "queue_run_", condition);
 
     // Create and start satellite
     DummySatellite satellite {"a"};
@@ -119,7 +121,8 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     controller.start();
 
     // Very long default duration
-    DummyQueue queue(controller, "queue_run_", {std::chrono::seconds(10)});
+    const auto condition = std::make_shared<MeasurementQueue::TimerCondition>(std::chrono::seconds(10));
+    DummyQueue queue(controller, "queue_run_", condition);
 
     // Create and start satellite
     DummySatellite satellite {"a"};
@@ -139,8 +142,9 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue, overwriting default length
+    const auto measurement_condition = std::make_shared<MeasurementQueue::TimerCondition>(std::chrono::seconds(1));
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
-    queue.append(measurement, {std::chrono::seconds(1)});
+    queue.append(measurement, measurement_condition);
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
@@ -177,7 +181,8 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     DummyController controller {"ctrl"};
     controller.start();
 
-    DummyQueue queue(controller, "queue_run_", {std::chrono::seconds(1)});
+    const auto condition = std::make_shared<MeasurementQueue::TimerCondition>(std::chrono::seconds(1));
+    DummyQueue queue(controller, "queue_run_", condition);
 
     // Create and start satellite
     DummySatellite satellite {"a"};
