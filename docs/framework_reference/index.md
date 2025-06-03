@@ -56,7 +56,7 @@ cxx/listener/index
 :caption: Python Developer API
 :maxdepth: 3
 
-python/core/index
+python/core/core
 ```
 
 ```{raw} latex
