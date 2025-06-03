@@ -22,7 +22,7 @@ def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, int
     unpacker = msgpack.Unpacker()
     unpacker.feed(msg[0])
     protocol = unpacker.unpack()
-    if not protocol == Protocol.CHP.value:
+    if not protocol == Protocol.CHP1.value:
         raise RuntimeError(f"Received message with malformed CHP header: {protocol}!")
 
     name = unpacker.unpack()
@@ -49,7 +49,7 @@ class CHPTransmitter:
         """Send state and interval via CHP."""
         stream = io.BytesIO()
         packer = msgpack.Packer()
-        stream.write(packer.pack(Protocol.CHP))
+        stream.write(packer.pack(Protocol.CHP1))
         stream.write(packer.pack(self.name))
         stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
         stream.write(packer.pack(state))

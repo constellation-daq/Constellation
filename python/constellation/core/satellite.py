@@ -18,11 +18,11 @@ from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callbac
 from .chirp import CHIRPServiceIdentifier
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration, make_lowercase
-from .cscp import CSCPMessage
 from .error import debug_log, handle_error
 from .fsm import SatelliteState
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
+from .message.cscp1 import CSCP1Message
 from .monitoring import MonitoringSender
 
 
@@ -449,7 +449,7 @@ class Satellite(
     # -------------------------- #
 
     @cscp_requestable
-    def get_version(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_version(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get Constellation version.
 
         No payload argument.
@@ -461,7 +461,7 @@ class Satellite(
         return __version__, None, {}
 
     @cscp_requestable
-    def get_run_id(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_run_id(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get current/last known run identifier.
 
         No payload argument.
@@ -470,7 +470,7 @@ class Satellite(
         return self.run_identifier, None, {}
 
     @cscp_requestable
-    def get_config(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_config(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get current satellite configuration.
 
         No payload argument.

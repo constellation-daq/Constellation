@@ -17,8 +17,8 @@ from statemachine.states import States
 
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
-from .cscp import CSCPMessage
 from .error import debug_log, handle_error
+from .message.cscp1 import CSCP1Message
 
 
 class SatelliteState(Enum):
@@ -158,7 +158,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def initialize(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def initialize(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate 'initialize' state transition via a CSCP request.
 
         Takes dictionary with configuration values as argument.
@@ -174,7 +174,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def launch(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def launch(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate launch state transition via a CSCP request.
 
         No payload argument.
@@ -187,7 +187,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def land(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def land(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate landing state transition via a CSCP request.
 
         No payload argument.
@@ -200,7 +200,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def start(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def start(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate start state transition via a CSCP request.
 
         Payload: run identifier [str].
@@ -219,7 +219,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def stop(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def stop(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate stop state transition via a CSCP request.
 
         No payload argument.
@@ -236,7 +236,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def reconfigure(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def reconfigure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate reconfigure state transition via a CSCP request.
 
         Takes dictionary with configuration values as argument.
@@ -254,7 +254,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def _interrupt(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def _interrupt(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate interrupt state transition via a CSCP request.
 
         No payload argument.
@@ -267,7 +267,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
     @debug_log
     @cscp_requestable
-    def _failure(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def _failure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Enter error state transition via a CSCP request.
 
         No payload argument.
@@ -365,7 +365,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
                 self.fsm.status = res
 
     @cscp_requestable
-    def get_state(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_state(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return the current state of the Satellite.
 
         No payload argument.
@@ -380,7 +380,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         return self.fsm.current_state_value.name, payload, meta
 
     @cscp_requestable
-    def get_status(self, _request: CSCPMessage | None = None) -> tuple[str, Any, dict[str, Any]]:
+    def get_status(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Get a string describing the current status of the Satellite.
 
         No payload argument.

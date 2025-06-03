@@ -59,7 +59,7 @@ In Python, commands are registered by placing the `@cscp_requestable` decorator 
 The method needs to have a specific signature:
 
 ```python
-def COMMAND(self, request: cscp.CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+def COMMAND(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
 ```
 
 The expected return values are:
@@ -68,13 +68,13 @@ The expected return values are:
 - payload (any)
 - map (dictionary) (e.g. for meta information)
 
-Adding a custom command thus also requires `from constellation.core.cscp import CSCPMessage`.
+Adding a custom command thus also requires `from constellation.core.message.cscp1 import CSCP1Message`.
 
 In this example, the command `get_channel_reading(channel: int)` is added to a satellite:
 
 ```python
 @cscp_requestable
-def get_channel_reading(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+def get_channel_reading(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
     """Read the value of the channel given by the first supplied argument."""
     paramList = request.payload
     channel = paramList[0]
@@ -142,7 +142,7 @@ command registry instead takes this information directly from the function decla
 :::{tab-item} Python
 :sync: python
 
-It should be noted that the parameters are given to the command as a list which is the `payload` of the `CSCPMessage` in the
+It should be noted that the parameters are given to the command as a list which is the `payload` of the `CSCP1Message` in the
 custom command. Individual arguments need to be accessed via their list index.
 
 :::
@@ -180,7 +180,7 @@ Steady as well as transitional states can be listed. An empty list of states all
 In Python, this is handled by adding a method with the signature
 
 ```python
-def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:
+def _COMMAND_is_allowed(self, request: CSCP1Message) -> bool:
 ```
 
 to the satellite. If this exists, it will be called before the method of the custom command is called, to determine whether
@@ -188,7 +188,7 @@ it is allowed or not. An example is shown below, limiting the usage of the `get_
 `INIT` and `ORBIT`:
 
 ```python
-def _get_channel_reading_is_allowed(self, request: CSCPMessage) -> bool:
+def _get_channel_reading_is_allowed(self, request: CSCP1Message) -> bool:
     """Allow in the states INIT and ORBIT, but not during RUN"""
     return self.fsm.current_state.id in ["INIT", "ORBIT"]
 ```

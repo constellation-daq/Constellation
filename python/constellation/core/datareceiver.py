@@ -20,8 +20,8 @@ from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
 from .cmdp import MetricsType
 from .commandmanager import cscp_requestable
-from .cscp import CSCPMessage
 from .fsm import SatelliteState
+from .message.cscp1 import CSCP1Message
 from .satellite import Satellite
 
 
@@ -202,7 +202,7 @@ class DataReceiver(Satellite):
         return "Finished cleanup."
 
     @cscp_requestable
-    def get_data_sources(self, _request: CSCPMessage | None = None) -> Tuple[str, list[str], None]:
+    def get_data_sources(self, _request: CSCP1Message | None = None) -> Tuple[str, list[str], None]:
         """Get list of connected data sources.
 
         No payload argument.

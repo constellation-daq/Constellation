@@ -11,9 +11,10 @@ from typing import Any
 from pycaenhv import CaenHVModule  # type: ignore[import-untyped]
 
 from constellation.core.cmdp import MetricsType
-from constellation.core.commandmanager import CSCPMessage, cscp_requestable
+from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.fsm import SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.satellite import Satellite
 
 from .lib_caen_ndt1470 import CaenNDT1470Manager
@@ -164,7 +165,7 @@ class CaenHV(Satellite):
         return ", ".join(status)
 
     @cscp_requestable
-    def get_parameter(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def get_parameter(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Return the value of a parameter.
 
         Payload: dictionary with 'board', 'channel' and 'parameter' keys
@@ -177,11 +178,11 @@ class CaenHV(Satellite):
         val = self.get_channel_value(board, chno, par)
         return val, None, {}
 
-    def _get_parameter_is_allowed(self, request: CSCPMessage) -> bool:
+    def _get_parameter_is_allowed(self, request: CSCP1Message) -> bool:
         return self._ready()
 
     @cscp_requestable
-    def get_hv_status(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def get_hv_status(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Return the collected state of all channels.
 
         Payload: None.
@@ -205,11 +206,11 @@ class CaenHV(Satellite):
             msg = "{npowered} powered, additional bits set in: " + ", ".join(errors)
         return msg, res, {}
 
-    def _get_status_is_allowed(self, request: CSCPMessage) -> bool:
+    def _get_status_is_allowed(self, request: CSCP1Message) -> bool:
         return self._ready()
 
     @cscp_requestable
-    def get_hw_config(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def get_hw_config(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Read and return the current hardware configuration.
 
         Payload: None
@@ -232,7 +233,7 @@ class CaenHV(Satellite):
         return f"Read {len(res)} parameters", res, {}
 
     @cscp_requestable
-    def about(self, _request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def about(self, _request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Get info about the Satellite"""
         # TODO extend with info on connected crate (FW release, etc)
         res = f"{__name__} "

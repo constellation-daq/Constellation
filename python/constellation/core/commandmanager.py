@@ -15,7 +15,8 @@ import zmq
 from statemachine.exceptions import TransitionNotAllowed
 
 from .base import BaseSatelliteFrame
-from .cscp import CommandTransmitter, CSCPMessage, CSCPMessageVerb
+from .cscp import CommandTransmitter
+from .message.cscp1 import CSCP1Message
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -59,7 +60,7 @@ class CommandReceiver(BaseSatelliteFrame):
     Commands will call specific methods of the inheriting class which should
     have the following signature:
 
-    `def COMMAND(self, request: cscp.CSCPMessage) -> (str, any, dict):`
+    `def COMMAND(self, request: CSCP1Message) -> (str, any, dict):`
 
     The expected return values are:
     - reply message (string)
@@ -71,7 +72,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
     If a method
 
-    `def _COMMAND_is_allowed(self, request: cscp.CSCPMessage) -> bool:`
+    `def _COMMAND_is_allowed(self, request: CSCP1Message) -> bool:`
 
     exists, it will be called first to determine whether the command is
     currently allowed or not.
@@ -120,74 +121,75 @@ class CommandReceiver(BaseSatelliteFrame):
                 time.sleep(0.025)
                 continue
             # check that it is actually a REQUEST
-            if req.msg_verb != CSCPMessageVerb.REQUEST:
-                self.log_cscp.error(f"Received malformed request with msg verb: {req.msg_verb}")
+            if req.verb_type != CSCP1Message.Type.REQUEST:
+                self.log_cscp.error(f"Received malformed request with msg verb: {req.verb}")
                 self._cmd_tm.send_reply(
-                    f"Received malformed request with msg verb: {req.msg_verb}",
-                    CSCPMessageVerb.INVALID,
+                    f"Received malformed request with msg verb: {req.verb}",
+                    CSCP1Message.Type.INVALID,
                 )
                 continue
 
             # find a matching callback
-            if req.msg not in self._cmds:
-                self.log_cscp.error("Unknown command: %s", req)
-                self._cmd_tm.send_reply(f"Unknown command: {req.msg}", CSCPMessageVerb.UNKNOWN)
+            command = req.verb_msg.lower()
+            if command not in self._cmds:
+                self.log_cscp.error("Unknown command: %s", command)
+                self._cmd_tm.send_reply(f"Unknown command: {command}", CSCP1Message.Type.UNKNOWN)
                 continue
             # test whether callback is allowed by calling the
             # method "_COMMAND_is_allowed" (if exists).
             try:
-                is_allowed = getattr(self, f"_{req.msg}_is_allowed")(req)
+                is_allowed = getattr(self, f"_{command}_is_allowed")(req)
                 if not is_allowed:
                     self.log_cscp.error("Command not allowed: %s", req)
                     self._cmd_tm.send_reply(
                         "Command not allowed (in current state)",
-                        CSCPMessageVerb.INVALID,
+                        CSCP1Message.Type.INVALID,
                     )
                     continue
             except AttributeError:
                 pass
             # perform the actual callback
             try:
-                self.log_cscp.debug("Calling command %s with argument %s", req.msg, req)
-                res, payload, meta = getattr(self, req.msg)(req)
+                self.log_cscp.debug("Calling command %s with argument %s", command, req)
+                res, payload, tags = getattr(self, command)(req)
             except (AttributeError, NotImplementedError) as e:
                 self.log_cscp.error("Command failed with %s: %s", e, req)
                 self._cmd_tm.send_reply(
                     f"WrongImplementation: {repr(e)}",
-                    CSCPMessageVerb.NOTIMPLEMENTED,
+                    CSCP1Message.Type.NOTIMPLEMENTED,
                     repr(e),
                 )
                 continue
             except TransitionNotAllowed as e:
-                self.log_cscp.error("Transition '%s' not allowed: %s", req.msg, e)
-                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCPMessageVerb.INVALID, repr(e))
+                self.log_cscp.error("Transition `%s` not allowed: %s", command, e)
+                self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, repr(e))
                 continue
             except (TypeError, ValueError) as e:
-                self.log_cscp.error("Command '%s' received wrong argument: %s", req.msg, repr(e))
-                self._cmd_tm.send_reply(f"Wrong argument: {repr(e)}", CSCPMessageVerb.INCOMPLETE, repr(e))
+                self.log_cscp.error("Command `%s` received wrong argument: %s", command, repr(e))
+                self._cmd_tm.send_reply(f"Wrong argument: {repr(e)}", CSCP1Message.Type.INCOMPLETE, repr(e))
                 continue
             except Exception as e:
-                self.log_cscp.error("Command '%s' failed: %s", req.msg, repr(e))
-                self._cmd_tm.send_reply(f"Exception: {repr(e)}", CSCPMessageVerb.INVALID, repr(e))
+                self.log_cscp.error("Command `%s` failed: %s", command, repr(e))
+                self._cmd_tm.send_reply(f"Exception: {repr(e)}", CSCP1Message.Type.INVALID, repr(e))
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if res is None:
-                self.log_cscp.error("Command returned nothing: %s", req)
-                self._cmd_tm.send_reply("Command returned nothing", CSCPMessageVerb.INCOMPLETE)
+                self.log_cscp.error("Command `%s` returned nothing: %s", command, req)
+                self._cmd_tm.send_reply("Command returned nothing", CSCP1Message.Type.INCOMPLETE)
                 continue
             # finally, assemble a proper response!
-            self.log_cscp.debug("Command succeeded with '%s': %s", res, req)
+            self.log_cscp.debug("Command `%s` succeeded with `%s`: %s", command, res, req)
             try:
-                self._cmd_tm.send_reply(res, CSCPMessageVerb.SUCCESS, payload, meta)
+                self._cmd_tm.send_reply(res, CSCP1Message.Type.SUCCESS, payload, tags)
             except TypeError as e:
-                self.log_cscp.exception("Sending response '%s' failed: %s", res, e)
-                self._cmd_tm.send_reply(str(e), CSCPMessageVerb.ERROR, None, None)
+                self.log_cscp.exception("Sending response `%s` failed: %s", res, e)
+                self._cmd_tm.send_reply(str(e), CSCP1Message.Type.ERROR, None)
         self.log_cscp.info("CommandReceiver thread shutting down.")
         # shutdown
-        self._cmd_tm.socket.close()
+        self._cmd_tm.close()
 
     @cscp_requestable
-    def get_commands(self, _request: CSCPMessage | None = None) -> Tuple[str, dict[str, str], None]:
+    def get_commands(self, _request: CSCP1Message | None = None) -> Tuple[str, dict[str, str], None]:
         """Return all commands supported by the Satellite.
 
         No payload argument.
@@ -205,7 +207,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(public_cmds)} commands known", public_cmds, None
 
     @cscp_requestable
-    def _get_commands(self, _request: CSCPMessage | None = None) -> Tuple[str, dict[str, str], None]:
+    def _get_commands(self, _request: CSCP1Message | None = None) -> Tuple[str, dict[str, str], None]:
         """Return all hidden commands supported by the Satellite.
 
         No payload argument.
@@ -223,7 +225,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(hidden_cmds)} commands known", hidden_cmds, None
 
     @cscp_requestable
-    def get_name(self, _request: CSCPMessage) -> Tuple[str, None, None]:
+    def get_name(self, _request: CSCP1Message) -> Tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
@@ -232,7 +234,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return self.name, None, None
 
     @cscp_requestable
-    def shutdown(self, _request: CSCPMessage) -> Tuple[str, None, None]:
+    def shutdown(self, _request: CSCP1Message) -> Tuple[str, None, None]:
         """Queue the Satellite's reentry.
 
         No payload argument.

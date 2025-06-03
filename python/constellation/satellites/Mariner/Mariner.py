@@ -12,8 +12,8 @@ from typing import Any
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.cscp import CSCPMessage
 from constellation.core.fsm import SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 from constellation.core.satellite import Satellite
 
@@ -87,7 +87,7 @@ class Mariner(Satellite):
         return "Finished acquisition."
 
     @cscp_requestable
-    def get_attitude(self, request: CSCPMessage) -> tuple[str, Any, dict[str, Any]]:
+    def get_attitude(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Determine and return the space craft's attitude.
 
         This is an example for a command that can be triggered from a Controller

@@ -113,7 +113,7 @@ class BaseSatelliteFrame:
         # CSCP or offers via CHIRP. This makes sure that these can be performed
         # thread-safe from the main thread of the Satellite. A 'task' consists
         # of a tuple consisting of a callback method and an object passed as
-        # argument (DiscoveredService and CSCPMessage for CHIRP and CSCP,
+        # argument (DiscoveredService and CSCP1Message for CHIRP and CSCP,
         # respectively).
         self.task_queue: Queue = Queue()  # type: ignore[type-arg]
 

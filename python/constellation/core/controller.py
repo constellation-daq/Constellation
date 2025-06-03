@@ -452,7 +452,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
                 pass
 
             # get canonical name
-            cls, name = msg.from_host.split(".", maxsplit=1)
+            cls, name = msg.sender.split(".", maxsplit=1)
             sat = self._constellation._add_satellite(name, cls, msg.payload, hidden_cmds)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
@@ -492,7 +492,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         )
         try:
             ct = self._transmitters[uuid]
-            ct.socket.close()
+            ct.close()
             self._transmitters.pop(uuid)
             self._uuid_lookup.pop(uuid)
         except KeyError:
@@ -534,11 +534,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             sat_response = SatelliteResponse()
             ret_msg = None
             try:
-                ret_msg = self._transmitters[target._uuid].request_get_response(
-                    command=cmd,
-                    payload=p,
-                    meta=None,
-                )
+                ret_msg = self._transmitters[target._uuid].request_get_response(command=cmd, payload=p)
             except KeyError:
                 self.log.error(
                     "Command %s failed for %s (%s.%s): No transmitter available",
@@ -563,16 +559,16 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             if ret_msg:
                 self.log.debug(
                     "%s responded: %s",
-                    ret_msg.from_host,
-                    ret_msg.msg,
+                    ret_msg.sender,
+                    ret_msg.verb,
                 )
-                if ret_msg.header_meta:
-                    self.log.debug("    header: %s", ret_msg.header_meta)
+                if ret_msg.tags:
+                    self.log.debug("    header: %s", ret_msg.tags)
                 if ret_msg.payload:
                     self.log.debug("    payload: %s", ret_msg.payload)
-                sat_response.msg = ret_msg.msg
+                sat_response.msg = ret_msg.verb_msg
                 sat_response.payload = ret_msg.payload
-                sat_response.meta = ret_msg.header_meta
+                sat_response.meta = ret_msg.tags
             if sat:
                 # simplify return value for single satellite
                 return sat_response
@@ -617,7 +613,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             self._task_handler_event.set()
         try:
             for _name, cmd_tm in self._transmitters.items():
-                cmd_tm.socket.close()
+                cmd_tm.close()
         except Exception:
             # ignore errors; this avoids spurious error messages if e.g. the
             # initialization of the class fails
