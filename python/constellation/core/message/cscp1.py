@@ -45,11 +45,11 @@ class CSCP1Message:
         ERROR = 0x6
 
     def __init__(
-        self, sender: str, verb: tuple[Type, str], time: datetime = datetime.now(), tags: Optional[dict[str, Any]] = None
+        self, sender: str, verb: tuple[Type, str], time: Optional[datetime] = None, tags: Optional[dict[str, Any]] = None
     ):
         self._protocol = Protocol.CSCP1
         self._sender = sender
-        self._time = time
+        self._time = time if time is not None else datetime.now()
         self._tags = tags if tags is not None else {}
         self._verb = verb
         self._payload = None
