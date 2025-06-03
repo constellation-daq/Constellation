@@ -14,6 +14,7 @@ The following authors, in alphabetical order, have developed or contributed to C
 
 * Lene Kristian Bryngemark, Lunds universitet, [ext-lene_kristian.bryngemark](https://gitlab.desy.de/ext-lene_kristian.bryngemark)
 * Joel Ekström, Prevas AB, [joel.ekstroem](https://gitlab.desy.de/joel.ekstroem)
+* Laurent Forthomme, AGH University of Kraków, [ext-laurent.forthomme](https://gitlab.desy.de/ext-laurent.forthomme)
 * Lennart Huth, Deutsches Elektronen-Synchrotron DESY, [lennart.huth](https://gitlab.desy.de/lennart.huth)
 * Linus Ros, Prevas AB, [linus.ros](https://gitlab.desy.de/linus.ros)
 * Aditya Saroha, SJC Institute of Technology, [ext-adityasaroha456](https://gitlab.desy.de/ext-adityasaroha456)
