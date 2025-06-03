@@ -34,102 +34,18 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
-#include "constellation/listener/StatListener.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
-using namespace constellation::listener;
 using namespace constellation::log;
 using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-void MeasurementQueue::TimerCondition::await(std::atomic_bool& running, Controller& controller, Logger& logger) const {
-    // Timed condition, start timer and wait for timeout
-    LOG(logger, DEBUG) << "Starting condition timer with " << duration_;
-    auto timer = TimeoutTimer(duration_);
-    timer.reset();
-    while(running && !timer.timeoutReached()) {
-        if(controller.hasAnyErrorState()) {
-            throw QueueError("Aborting queue processing, detected issue");
-        }
-        std::this_thread::sleep_for(100ms);
-    }
-}
-
-MeasurementQueue::MetricCondition::MetricCondition(std::string remote,
-                                                   std::string metric,
-                                                   config::Value target,
-                                                   std::function<bool(config::Value, config::Value)> comparator)
-    : remote_(std::move(remote)), metric_(std::move(metric)), target_(target), comparator_(comparator),
-      metric_reception_timeout_(std::chrono::seconds(60)) {};
-
-void MeasurementQueue::MetricCondition::await(std::atomic_bool& running, Controller& controller, Logger& logger) const {
-    LOG(logger, DEBUG) << "Running until " << remote_ << " reports " << metric_ << " >= " << target_.str();
-
-    std::atomic<bool> condition_satisfied {false};
-    // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-    auto stat_listener = StatListener("QUEUE", [&](message::CMDP1StatMessage&& msg) {
-        // FIXME case-insensitive
-        if(msg.getHeader().getSender() != remote_) {
-            return;
-        }
-
-        const auto& metric_value = msg.getMetric();
-        if(metric_value.getMetric()->name() != metric_) {
-            return;
-        }
-
-        if(!comparator_(metric_value.getValue(), target_)) {
-            return;
-        }
-
-        condition_satisfied = true;
-    });
-
-    // Start the telemetry receiver pool
-    stat_listener.startPool();
-
-    // Subscribe to topic:
-    stat_listener.subscribeMetric(remote_, metric_);
-
-    // Timeout for metric to have been registered:
-    auto metric_timer = TimeoutTimer(metric_reception_timeout_);
-    metric_timer.reset();
-    bool metric_seen = false;
-
-    // Wait for condition to be met:
-    while(running && !condition_satisfied) {
-        // Check for error states in the constellation
-        if(controller.hasAnyErrorState()) {
-            throw QueueError("Aborting queue processing, detected issue");
-        }
-
-        if(!metric_seen) {
-            const auto topics = stat_listener.getAvailableTopics(remote_);
-            metric_seen = topics.contains(metric_);
-
-            // After timeout, break if the metric has not been registered:
-            if(metric_timer.timeoutReached() && !metric_seen) {
-                std::string msg = "Requested condition metric ";
-                msg += metric_;
-                msg += " was not registered and never received from satellite ";
-                msg += remote_;
-                throw QueueError(std::move(msg));
-            }
-        }
-
-        std::this_thread::sleep_for(100ms);
-    }
-
-    stat_listener.unsubscribeMetric(remote_, metric_);
-    stat_listener.stopPool();
-}
-
 MeasurementQueue::MeasurementQueue(Controller& controller,
                                    std::string prefix,
-                                   std::shared_ptr<Condition> condition,
+                                   std::shared_ptr<MeasurementCondition> condition,
                                    std::chrono::seconds timeout)
     : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
       transition_timeout_(timeout), controller_(controller) {};
@@ -144,7 +60,7 @@ MeasurementQueue::~MeasurementQueue() {
     }
 }
 
-void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Condition> condition) {
+void MeasurementQueue::append(Measurement measurement, std::shared_ptr<MeasurementCondition> condition) {
     // Check that satellite names are valid canonical names:
     if(!std::ranges::all_of(measurement, [](const auto& elem) { return CSCP::is_valid_canonical_name(elem.first); })) {
         throw QueueError("Measurement contains invalid canonical name");

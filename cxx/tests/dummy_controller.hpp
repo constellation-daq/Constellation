@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/controller/MeasurementCondition.hpp"
 #include "constellation/controller/MeasurementQueue.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
@@ -78,7 +79,7 @@ class DummyQueue : public constellation::controller::MeasurementQueue {
 public:
     DummyQueue(DummyController& controller,
                std::string prefix,
-               std::shared_ptr<Condition> condition,
+               std::shared_ptr<constellation::controller::MeasurementCondition> condition,
                std::chrono::seconds timeout = std::chrono::seconds(60))
         : MeasurementQueue(controller, std::move(prefix), std::move(condition), timeout) {}
 

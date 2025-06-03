@@ -4,6 +4,7 @@
 controller_src = files(
   'Controller.cpp',
   'ControllerConfiguration.cpp',
+  'MeasurementCondition.cpp',
   'MeasurementQueue.cpp',
 )
 
@@ -33,6 +34,7 @@ pkg.generate(controller_lib,
 install_headers(
   'Controller.hpp',
   'ControllerConfiguration.hpp',
+  'MeasurementCondition.hpp',
   'MeasurementQueue.hpp',
   'exceptions.hpp',
   subdir: 'constellation/controller',
