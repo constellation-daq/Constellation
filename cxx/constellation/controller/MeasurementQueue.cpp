@@ -251,9 +251,11 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
     }
 }
 
-void MeasurementQueue::cache_original_values(const Measurement& measurement) {
+void MeasurementQueue::cache_original_values(Measurement& measurement) {
     // Loop over all satellites in this measurement:
-    for(const auto& [satellite, cmd_payload] : measurement) {
+    for(auto& [satellite, cmd_payload] : measurement) {
+        auto& value_cache = std::get<Dictionary>(original_values_[satellite]);
+
         // Fetch configuration from this satellite:
         const auto& msg = controller_.sendCommand(satellite, "get_config");
         if(msg.getVerb().first != CSCP1Message::Type::SUCCESS) {
@@ -263,15 +265,30 @@ void MeasurementQueue::cache_original_values(const Measurement& measurement) {
         const auto config = Dictionary::disassemble(msg.getPayload());
 
         // Check if the measurement keys are available in the config:
-        for(const auto& [key, value] : std::get<Dictionary>(cmd_payload)) {
-            // Check that the key exists in the current config:
+        auto& measurement_dict = std::get<Dictionary>(cmd_payload);
+        for(const auto& [key, value] : measurement_dict) {
+            // Check that the key exists in the current configuration:
             if(!config.contains(key)) {
                 continue;
             }
 
-            // Insert the key if it has not been registered yet:
-            const auto& [it, inserted] = std::get<Dictionary>(original_values_[satellite]).try_emplace(key, config.at(key));
+            // Insert the key if it has not been registered yet, use the original value obtained from the configuration:
+            const auto& [it, inserted] = value_cache.try_emplace(key, config.at(key));
             LOG_IF(INFO, inserted) << "Cached original value of key " << key << " from satellite " << satellite;
+        }
+
+        // Add all original values which are not part of the measurement anymore and drop them from the cache
+        for(const auto& [key, value] : value_cache) {
+            if(measurement_dict.contains(key)) {
+                continue;
+            }
+
+            // Insert the key if it has not been registered yet:
+            const auto& [it, inserted] = measurement_dict.try_emplace(key, value);
+            if(inserted) {
+                LOG(INFO) << "Resetting original value of key " << key << " from satellite " << satellite;
+                value_cache.erase(key);
+            }
         }
     }
 }
@@ -287,7 +304,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
             // Start a new measurement:
-            const auto [measurement, condition] = measurements_.front();
+            auto [measurement, condition] = measurements_.front();
             measurement_lock.unlock();
             LOG(logger_, STATUS) << "Starting new measurement from queue, " << measurement.size()
                                  << " satellite configurations";
@@ -295,7 +312,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
 
-            // Cache current value of the measurement keys:
+            // Cache current value of the measurement keys and add original value resets:
             cache_original_values(measurement);
 
             // Update constellation - satellites without payload will not receive the command

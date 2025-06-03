@@ -35,6 +35,20 @@ namespace constellation::controller {
 
     /** Measurement queue class which allows to queue and fetch measurement configurations which can be used to reconfigure
      * a constellation
+     *
+     * The measurement queue holds a reference to the currently used controller of the constellation and can take over when
+     * the global state is ORBIT, i.e. all satellites have been initialized and launched, It will only take care of
+     * reconfiguring, starting and stopping, and will leave the constellation in the ORBIT state when finishing.
+     *
+     * Each measurement consists of a set parameters for any number of satellites. The original values of the measurement
+     * parameters are read from the satellites using the `get_config` command before each measurement and are cached in the
+     * queue. WHenever a parameter does not appear in the measurement anymore, it is reset to the original value the next
+     * time a reconfiguration is performed.
+     *
+     * For example, a queue that first scans the parameter `a` with values from `1 - 2` and the parameter `b` from `5 - 7`
+     * will first read the parameter `a` from the satellite configuration, then set `a = 1` and `a = 2` in the subsequent
+     * measurement. The next measurement will set `b = 5`, but parameter `a` does not appear anymore and is reset to its
+     * original value read from the satellite.
      */
     class CNSTLN_API MeasurementQueue {
     public:
@@ -232,9 +246,12 @@ namespace constellation::controller {
          *          measurement key is present there and stores this value to reset it later. If the key is not present in
          *          the satellite configuration, or if the key has already been read previously, no value is cached.
          *
+         *          The actual measurement dictionary is amended with keys from the original values cache whenever this value
+         *          does not appear anymore.
+         *
          * \param measurement Current measurement
          */
-        void cache_original_values(const Measurement& measurement);
+        void cache_original_values(Measurement& measurement);
 
     private:
         /** Logger to use */
