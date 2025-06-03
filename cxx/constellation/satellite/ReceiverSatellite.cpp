@@ -211,7 +211,7 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
     LOG(cdtp_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
 
-    data_transmitters_ = config.getArray<std::string>("_data_transmitters", {});
+    data_transmitters_ = config.getSet<std::string>("_data_transmitters", {});
     if(data_transmitters_.empty()) {
         LOG(cdtp_logger_, INFO) << "Initialized to receive data from all transmitters";
     } else {

@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <initializer_list>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -179,6 +180,32 @@ namespace constellation::config {
         template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def);
 
         /**
+         * @brief Get values for a key containing a set
+         * @param key Key to get values of
+         * @return Set of values in the requested template parameter
+         *
+         * @note Keys are handled case-insensitively
+         *
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
+         */
+        template <typename T> std::set<T> getSet(const std::string& key) const;
+
+        /**
+         * @brief Get values for a key containing a set or default set if it does not exists
+         * @param key Key to get values of
+         * @param def Default value set to set if key is not defined
+         * @return Set of values in the requested template parameter or the default set if the key does not exist
+         *
+         * @note Keys are handled case-insensitively
+         *
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
+         */
+        template <typename T> std::set<T> getSet(const std::string& key, const std::set<T>& def);
+
+        /**
          * @brief Get literal value of a key as string
          * @param key Key to get values of
          * @return Literal value of the key
@@ -236,15 +263,27 @@ namespace constellation::config {
         template <typename T> void set(const std::string& key, const T& val, bool mark_used = false);
 
         /**
-         * @brief Set list of values for a key in a given type
+         * @brief Set array of values for a key in a given type
          * @param key Key to set values of
-         * @param val List of values to assign to the key
+         * @param val Array of values to assign to the key
          * @param mark_used Flag whether key should be marked as "used" directly
          *
          * @note Keys are handled case-insensitively and stored in lower case.
          */
         template <typename T> void setArray(const std::string& key, const std::vector<T>& val, bool mark_used = false) {
             set<std::vector<T>>(key, val, mark_used);
+        }
+
+        /**
+         * @brief Set list of values for a key in a given type
+         * @param key Key to set values of
+         * @param val Set of values to assign to the key
+         * @param mark_used Flag whether key should be marked as "used" directly
+         *
+         * @note Keys are handled case-insensitively and stored in lower case.
+         */
+        template <typename T> void setSet(const std::string& key, const std::set<T>& val, bool mark_used = false) {
+            set<std::vector<T>>(key, {val.begin(), val.end()}, mark_used);
         }
 
         /**

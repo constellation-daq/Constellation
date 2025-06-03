@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <limits>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -168,6 +169,51 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
             std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
 
     REQUIRE(config.getArray<double>("empty").empty());
+}
+
+TEST_CASE("Set & Get Set Values", "[core][core::config]") {
+    Configuration config {};
+
+    config.setSet<bool>("bool", {true, false, false});
+    config.setSet<std::int64_t>("int64", {63, 62, 61, 61});
+    config.setSet<std::size_t>("size", {1, 2, 3, 3});
+    config.setSet<std::uint64_t>("uint64", {64, 65, 66, 66});
+    config.setSet<std::uint8_t>("uint8", {8, 7, 6, 6});
+
+    config.setSet<double>("double", {1.3, 3.1, 3.1});
+    config.setSet<float>("float", {3.14F, 1.43F, 1.43F});
+
+    config.setSet<char>("binary", {0x1, 0x2, 0x3, 0x3});
+    config.setSet<std::string>("string", {"a", "b", "c", "c"});
+
+    enum MyEnum : std::uint8_t {
+        ONE,
+        TWO,
+    };
+    config.setSet<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO, MyEnum::TWO});
+
+    const auto tp1 = std::chrono::system_clock::now();
+    const auto tp2 = tp1 + std::chrono::seconds(1);
+    config.setSet<std::chrono::system_clock::time_point>("time", {tp1, tp1, tp2});
+
+    // Empty vector:
+    config.setSet<double>("empty", {});
+
+    // Read values back
+    REQUIRE(config.getSet<bool>("bool") == std::set<bool>({true, false}));
+    REQUIRE(config.getSet<std::int64_t>("int64") == std::set<std::int64_t>({63, 62, 61}));
+    REQUIRE(config.getSet<size_t>("size") == std::set<size_t>({1, 2, 3}));
+    REQUIRE(config.getSet<std::uint64_t>("uint64") == std::set<std::uint64_t>({64, 65, 66}));
+    REQUIRE(config.getSet<std::uint8_t>("uint8") == std::set<std::uint8_t>({8, 7, 6}));
+
+    REQUIRE(config.getSet<double>("double") == std::set<double>({1.3, 3.1}));
+    REQUIRE(config.getSet<float>("float") == std::set<float>({3.14F, 1.43F}));
+    REQUIRE(config.getSet<char>("binary") == std::set<char>({0x1, 0x2, 0x3}));
+    REQUIRE(config.getSet<std::string>("string") == std::set<std::string>({"a", "b", "c"}));
+    REQUIRE(config.getSet<std::chrono::system_clock::time_point>("time") ==
+            std::set<std::chrono::system_clock::time_point>({tp1, tp2}));
+
+    REQUIRE(config.getSet<double>("empty").empty());
 }
 
 TEST_CASE("Handle monostate", "[core][core::config]") {

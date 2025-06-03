@@ -11,6 +11,7 @@
 
 #include "Configuration.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
@@ -50,6 +51,16 @@ namespace constellation::config {
 
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) {
         return get<std::vector<T>>(key, def);
+    }
+
+    template <typename T> std::set<T> Configuration::getSet(const std::string& key) const {
+        const auto vec = get<std::vector<T>>(key);
+        return {vec.begin(), vec.end()};
+    }
+
+    template <typename T> std::set<T> Configuration::getSet(const std::string& key, const std::set<T>& def) {
+        const auto vec = get<std::vector<T>>(key, {def.begin(), def.end()});
+        return {vec.begin(), vec.end()};
     }
 
     template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
