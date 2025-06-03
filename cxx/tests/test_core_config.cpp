@@ -174,26 +174,27 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
 TEST_CASE("Set & Get Set Values", "[core][core::config]") {
     Configuration config {};
 
-    config.setSet<bool>("bool", {true, false});
-    config.setSet<std::int64_t>("int64", {63, 62, 61});
-    config.setSet<std::size_t>("size", {1, 2, 3});
-    config.setSet<std::uint64_t>("uint64", {64, 65, 66});
-    config.setSet<std::uint8_t>("uint8", {8, 7, 6});
+    config.setSet<bool>("bool", {true, false, false});
+    config.setSet<std::int64_t>("int64", {63, 62, 61, 61});
+    config.setSet<std::size_t>("size", {1, 2, 3, 3});
+    config.setSet<std::uint64_t>("uint64", {64, 65, 66, 66});
+    config.setSet<std::uint8_t>("uint8", {8, 7, 6, 6});
 
-    config.setSet<double>("double", {1.3, 3.1});
-    config.setSet<float>("float", {3.14F, 1.43F});
+    config.setSet<double>("double", {1.3, 3.1, 3.1});
+    config.setSet<float>("float", {3.14F, 1.43F, 1.43F});
 
-    config.setSet<char>("binary", {0x1, 0x2, 0x3});
-    config.setSet<std::string>("string", {"a", "b", "c"});
+    config.setSet<char>("binary", {0x1, 0x2, 0x3, 0x3});
+    config.setSet<std::string>("string", {"a", "b", "c", "c"});
 
     enum MyEnum : std::uint8_t {
         ONE,
         TWO,
     };
-    config.setSet<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
+    config.setSet<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO, MyEnum::TWO});
 
-    auto tp = std::chrono::system_clock::now();
-    config.setSet<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
+    const auto tp1 = std::chrono::system_clock::now();
+    const auto tp2 = tp1 + std::chrono::seconds(1);
+    config.setSet<std::chrono::system_clock::time_point>("time", {tp1, tp1, tp2});
 
     // Empty vector:
     config.setSet<double>("empty", {});
@@ -210,7 +211,7 @@ TEST_CASE("Set & Get Set Values", "[core][core::config]") {
     REQUIRE(config.getSet<char>("binary") == std::set<char>({0x1, 0x2, 0x3}));
     REQUIRE(config.getSet<std::string>("string") == std::set<std::string>({"a", "b", "c"}));
     REQUIRE(config.getSet<std::chrono::system_clock::time_point>("time") ==
-            std::set<std::chrono::system_clock::time_point>({tp, tp, tp}));
+            std::set<std::chrono::system_clock::time_point>({tp1, tp2}));
 
     REQUIRE(config.getSet<double>("empty").empty());
 }
