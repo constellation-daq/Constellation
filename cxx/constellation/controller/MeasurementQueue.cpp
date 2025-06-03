@@ -74,6 +74,29 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     progress_updated(progress());
 }
 
+void MeasurementQueue::clear() {
+    const std::lock_guard measurement_lock {measurement_mutex_};
+
+    if(measurements_.empty()) {
+        return;
+    }
+
+    // Get current measurement
+    const auto current_measurement = measurements_.front();
+
+    // Clear queue
+    std::queue<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>>().swap(measurements_);
+
+    // If running, emplace back current measurement:
+    if(queue_running_) {
+        measurements_.push(current_measurement);
+    }
+
+    // Update progress and report:
+    measurements_size_ = measurements_.size();
+    progress_updated(progress());
+}
+
 double MeasurementQueue::progress() const {
     if(measurements_size_ == 0 && run_sequence_ == 0) {
         return 0.;

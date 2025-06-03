@@ -91,6 +91,13 @@ namespace constellation::controller {
         void append(Measurement measurement, std::shared_ptr<MeasurementCondition> condition = nullptr);
 
         /**
+         * @brief Clear all measurements
+         * @details If the queue is not running, this will clear all measurements. If the queue is currently running, it will
+         *          clear all but the current measurement
+         */
+        void clear();
+
+        /**
          * @brief Helper to check if the queue is running
          * @return True if running, false otherwise
          */
