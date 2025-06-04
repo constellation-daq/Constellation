@@ -4,6 +4,7 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import time
+from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -11,7 +12,8 @@ import zmq
 from conftest import mocket, send_port
 
 from constellation.core.commandmanager import CommandReceiver, cscp_requestable
-from constellation.core.cscp import CommandTransmitter, CSCPMessageVerb
+from constellation.core.cscp import CommandTransmitter
+from constellation.core.message.cscp1 import CSCP1Message
 
 CMD_PORT = send_port
 
@@ -63,24 +65,39 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
     # send a request
     sender.send_request("make", "sandwich")
     req = receiver.get_message()
-    assert req.msg == "make"
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "make"
     assert req.payload == "sandwich"
-    receiver.send_reply("no", CSCPMessageVerb.INVALID, "make your own sandwich")
+    receiver.send_reply("no", CSCP1Message.Type.INVALID, "make your own sandwich")
     req = sender.get_message()
-    assert req.msg == "no"
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "no"
     assert "make your" in req.payload
 
 
 @pytest.mark.forked
-def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_socket_receiver):
+def test_cmdtransmitter_timestamp(mock_socket_sender, mock_socket_receiver):
     """Test that commands are received case insensitive (i.e. lower)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
     receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
-    # send a request
-    sender.send_request("MAKE", "Sandwich")
+    # send a request with timestamp
+    timestamp = datetime.now().astimezone()
+    sender.send_request("test", tags={"timestamp": timestamp})
     req = receiver.get_message()
-    assert req.msg == "make"
-    assert req.payload == "Sandwich"
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "test"
+    assert req.tags["timestamp"] == timestamp
+
+
+@pytest.mark.forked
+def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_cmdreceiver):
+    """Test that commands are received case insensitive (i.e. lower)."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    # send a request
+    rep = sender.request_get_response("gEt_NaMe")
+    assert isinstance(rep, CSCP1Message)
+    assert rep.verb_type == CSCP1Message.Type.SUCCESS
+    assert rep.verb_msg == "MockCommandReceiver.mock_satellite"
 
 
 @pytest.mark.forked
@@ -91,7 +108,8 @@ def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     # give the thread a chance to receive the message
     time.sleep(0.1)
     rep = mock_cmd_transmitter.get_message()
-    assert rep.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(rep, CSCP1Message)
+    assert rep.verb_type == CSCP1Message.Type.SUCCESS
     assert rep.payload == "good"
 
     # cmd w/ '_is_allowed' method: always returns True
@@ -99,7 +117,8 @@ def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     # give the thread a chance to receive the message
     time.sleep(0.1)
     rep = mock_cmd_transmitter.get_message()
-    assert rep.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(rep, CSCP1Message)
+    assert rep.verb_type == CSCP1Message.Type.SUCCESS
     assert rep.payload == "allowed passed"
 
     # cmd w/ '_is_allowed' method: always returns False
@@ -107,7 +126,8 @@ def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     # give the thread a chance to receive the message
     time.sleep(0.1)
     rep = mock_cmd_transmitter.get_message()
-    assert rep.msg_verb == CSCPMessageVerb.INVALID
+    assert isinstance(rep, CSCP1Message)
+    assert rep.verb_type == CSCP1Message.Type.INVALID
     assert not rep.payload
 
 
@@ -126,7 +146,7 @@ def test_thread_shutdown(mock_cmdreceiver, mock_cmd_transmitter):
 
 
 @pytest.mark.forked
-def test_cmd_unique_commands(mock_cmdreceiver):
+def test_cmd_unique_commands():
     """Test that commands from different classes do not mix."""
 
     class MockOtherCommandReceiver(CommandReceiver):

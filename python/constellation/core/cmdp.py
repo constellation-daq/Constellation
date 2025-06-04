@@ -62,7 +62,7 @@ class Metric:
 def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
     """Receive a Constellation log message."""
     # Read header
-    header = MessageHeader(name, Protocol.CMDP).decode(msg[1])
+    header = MessageHeader(name, Protocol.CMDP1).decode(msg[1])
     # assert to help mypy determine len of tuple returned
     assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
     sender, time, record = header
@@ -84,7 +84,7 @@ def decode_metric(name: str, topic: str, msg: list[Any]) -> Metric:
     """Receive a Constellation STATS message and return a Metric."""
     name = topic.split("/")[1]
     # Read header
-    header = MessageHeader(name, Protocol.CMDP).decode(msg[1])
+    header = MessageHeader(name, Protocol.CMDP1).decode(msg[1])
     # assert to help mypy determine len of tuple returned
     assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
     sender, time, record = header
@@ -108,7 +108,7 @@ class CMDPTransmitter:
     def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
         """Initialize transmitter."""
         self.name = name
-        self.msgheader = MessageHeader(name, Protocol.CMDP)
+        self.msgheader = MessageHeader(name, Protocol.CMDP1)
         self._socket = socket
         self._lock = Lock()
 

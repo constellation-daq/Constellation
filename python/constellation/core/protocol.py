@@ -15,10 +15,10 @@ import zmq
 
 
 class Protocol(StrEnum):
-    CDTP = "CDTP\x01"
-    CSCP = "CSCP\x01"
-    CMDP = "CMDP\x01"
-    CHP = "CHP\x01"
+    CDTP1 = "CDTP\x01"
+    CSCP1 = "CSCP\x01"
+    CMDP1 = "CMDP\x01"
+    CHP1 = "CHP\x01"
 
 
 class MessageHeader:
@@ -59,7 +59,7 @@ class MessageHeader:
         if not protocol == self.protocol.value:
             raise RuntimeError(f"Received message with malformed {self.protocol.name} header: {bytes(header)!r}!")
         host = unpacker.unpack()
-        if protocol == Protocol.CDTP:
+        if protocol == Protocol.CDTP1:
             msgtype = unpacker.unpack()
             seqno = unpacker.unpack()
             meta = unpacker.unpack()
@@ -81,7 +81,7 @@ class MessageHeader:
         packer = msgpack.Packer()
         stream.write(packer.pack(self.protocol.value))
         stream.write(packer.pack(self.name))
-        if self.protocol != Protocol.CDTP:
+        if self.protocol != Protocol.CDTP1:
             stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
         else:
             stream.write(packer.pack(kwargs["msgtype"]))

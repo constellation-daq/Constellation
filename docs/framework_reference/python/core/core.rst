@@ -1,6 +1,14 @@
 Core Library
 ============
 
+Module contents
+---------------
+
+.. automodule:: core
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 Submodules
 ----------
 
@@ -24,15 +32,8 @@ Submodules
    core.heartbeatchecker
    core.heartbeater
    core.logging
+   core.message
    core.monitoring
    core.network
    core.protocol
    core.satellite
-
-Module contents
----------------
-
-.. automodule:: core
-   :members:
-   :undoc-members:
-   :show-inheritance:

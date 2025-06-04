@@ -77,7 +77,7 @@ class DataTransmitter:
         name: the name to use in the message header.
         """
         self.name: str = name
-        self.msgheader: MessageHeader = MessageHeader(name, Protocol.CDTP)
+        self.msgheader: MessageHeader = MessageHeader(name, Protocol.CDTP1)
         # if no socket: might just use the transmitter for decoding
         # TODO : refactorize into own class
         self._socket: zmq.Socket | None = socket  # type: ignore[type-arg]

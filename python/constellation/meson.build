@@ -27,6 +27,14 @@ core_files = files(
   'core/satellite.py',
 )
 
+core_message_files = files(
+  'core/message/__init__.py',
+  'core/message/cscp1.py',
+  'core/message/exceptions.py',
+  'core/message/msgpack_helpers.py',
+  'core/message/multipart.py',
+)
+
 satellites_files = files(
   'satellites/__init__.py',
 )
@@ -38,6 +46,9 @@ tools_files = files(
 
 py.install_sources(core_files,
   subdir: 'constellation/core')
+
+py.install_sources(core_message_files,
+  subdir: 'constellation/core/message')
 
 py.install_sources(satellites_files,
   subdir: 'constellation/satellites')

@@ -25,9 +25,7 @@ from constellation.core.controller import BaseController
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
 from constellation.core.logging import setup_cli_logging
-from constellation.core.monitoring import (
-    FileMonitoringListener,
-)
+from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.satellite import Satellite
 
 # chirp

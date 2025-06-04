@@ -18,9 +18,9 @@ from constellation.core import __version__
 from constellation.core.cdtp import CDTPMessage
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
-from constellation.core.cscp import CSCPMessage
 from constellation.core.datareceiver import DataReceiver
 from constellation.core.fsm import SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 
 
@@ -66,7 +66,7 @@ class H5DataWriter(DataReceiver):
     @cscp_requestable
     def get_concurrent_reading_status(
         self,
-        _request: CSCPMessage,
+        _request: CSCP1Message,
     ) -> Tuple[str, None, None]:
         if self._swmr_mode_enabled:
             return "enabled", None, None

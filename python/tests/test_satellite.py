@@ -10,16 +10,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import mocket, wait_for_state
 
-from constellation.core.broadcastmanager import (
-    DiscoveredService,
-    chirp_callback,
-)
-from constellation.core.chirp import (
-    CHIRPMessageType,
-    CHIRPServiceIdentifier,
-)
-from constellation.core.cscp import CommandTransmitter, CSCPMessageVerb
+from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
+from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.cscp import CommandTransmitter
 from constellation.core.fsm import SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.satellite import Satellite
 
 
@@ -104,8 +99,9 @@ def test_satellite_unknown_cmd_recv(mock_socket_sender, mock_satellite):
     sender.send_request("make", "sandwich")
     time.sleep(0.2)
     req = sender.get_message()
-    assert "unknown" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.UNKNOWN
+    assert isinstance(req, CSCP1Message)
+    assert "unknown" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.UNKNOWN
 
 
 @pytest.mark.forked
@@ -116,20 +112,23 @@ def test_satellite_wrong_type_payload(mock_socket_sender, mock_satellite):
     sender.send_request("start", 12233.0)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "wrong argument" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.INCOMPLETE
+    assert isinstance(req, CSCP1Message)
+    assert "wrong argument" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
     # send a request with wrong type payload
     sender.send_request("initialize", 12233.0)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "wrong argument" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.INCOMPLETE
+    assert isinstance(req, CSCP1Message)
+    assert "wrong argument" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
     # send a request with wrong type payload
     sender.send_request("initialize", None)
     time.sleep(0.2)
     req = sender.get_message()
-    assert "wrong argument" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.INCOMPLETE
+    assert isinstance(req, CSCP1Message)
+    assert "wrong argument" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.INCOMPLETE
 
 
 @pytest.mark.forked
@@ -140,20 +139,23 @@ def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     sender.send_request("get_state")
     time.sleep(0.2)
     req = sender.get_message()
-    assert "new" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "NEW"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # transition
     sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.2)
     req = sender.get_message()
-    assert "transitioning" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "transitioning"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # check state
     sender.send_request("get_state")
     time.sleep(0.2)
     req = sender.get_message()
-    assert "init" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "INIT"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
 @pytest.mark.forked
@@ -165,22 +167,25 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
     sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
-    assert "transitioning" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "transitioning"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # check state
     sender.send_request("get_state")
     time.sleep(0.1)
     req = sender.get_message()
-    assert "initializing" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "initializing"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     satellite.ready()
     # check state again
     time.sleep(0.1)
     sender.send_request("get_state")
     time.sleep(0.1)
     req = sender.get_message()
-    assert req.msg.lower() == "init"
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_msg == "INIT"
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
 @pytest.mark.forked
@@ -191,29 +196,34 @@ def test_satellite_fsm_cannot_change_transitional(mock_cmd_transmitter, mock_dev
     sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
-    assert "transitioning" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "transitioning" in str(req.verb_msg).lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # check state
     sender.send_request("get_state")
     time.sleep(0.1)
     req = sender.get_message()
-    assert "initializing" in req.msg.lower()
-    assert req.msg_verb == CSCPMessageVerb.SUCCESS
+    assert isinstance(req, CSCP1Message)
+    assert "initializing" in str(req.verb_msg).lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
     # send a request to init again
     sender.send_request("initialize", {"mock key": "mock argument string"})
     time.sleep(0.1)
     req = sender.get_message()
-    assert req.msg_verb == CSCPMessageVerb.INVALID
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.INVALID
     # send a request to finish translational state
     sender.send_request("initialized")  # not a command
     time.sleep(0.2)
     req = sender.get_message()
-    assert req.msg_verb == CSCPMessageVerb.UNKNOWN
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.UNKNOWN
     # send a request to move to next state before we are ready
     sender.send_request("launch")  # not allowed
     time.sleep(0.2)
     req = sender.get_message()
-    assert req.msg_verb == CSCPMessageVerb.INVALID
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.INVALID
 
 
 @pytest.mark.forked
@@ -251,8 +261,9 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
-        assert "transitioning" in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
 
         wait_for_state(mock_satellite.fsm, state, 4.0)
@@ -260,8 +271,9 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         sender.send_request("get_state")
         time.sleep(0.2)
         req = sender.get_message()
-        assert state.lower() in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert state.lower() in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
 @pytest.mark.forked
@@ -288,8 +300,9 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
-        assert "transitioning" in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
 
         wait_for_state(mock_satellite.fsm, state, 4.0)
@@ -299,10 +312,11 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         sender.send_request("get_state")
         time.sleep(0.2)
         req = sender.get_message()
-        assert state.lower() in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
-        assert req.header_meta["last_changed"].to_datetime() == last_changed
-        assert req.header_meta["last_changed_iso"] == last_changed.isoformat()
+        assert isinstance(req, CSCP1Message)
+        assert state.lower() in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
+        assert req.tags["last_changed"] == last_changed
+        assert req.tags["last_changed_iso"] == last_changed.isoformat()
         assert req.payload == getattr(SatelliteState, state).value
 
 
@@ -330,14 +344,15 @@ def test_satellite_run_id_cmd(mock_cmd_transmitter, mock_satellite):
             # send a dict, why not?
             payload = {"mock key": "mock argument string"}
         req = sender.request_get_response(cmd, payload)
-        assert "transitioning" in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
         wait_for_state(mock_satellite.fsm, state, 4.0)
         # check run id
         assert mock_satellite.run_identifier == run_id
         req = sender.request_get_response("get_run_id")
-        assert req.msg == run_id
+        assert req.verb_msg == run_id
 
 
 @pytest.mark.forked
@@ -360,8 +375,9 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
         sender.send_request(cmd, payload)
         time.sleep(0.2)
         req = sender.get_message()
-        assert "transitioning" in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition; should fail for RUN
         if state == "RUN":
             state = "ERROR"
@@ -370,5 +386,6 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
         sender.send_request("get_state")
         time.sleep(0.2)
         req = sender.get_message()
-        assert state.lower() in req.msg.lower()
-        assert req.msg_verb == CSCPMessageVerb.SUCCESS
+        assert isinstance(req, CSCP1Message)
+        assert state.lower() in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS

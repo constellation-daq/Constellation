@@ -20,6 +20,10 @@ clean:
 doxygen:
 	doxygen
 
+.PHONY: apidoc
+apidoc:
+	@$(PYTHON) -m sphinx.ext.apidoc -e -T $(O) -o $(SOURCEDIR)/framework_reference/python/core $(PYTHONPATH)/constellation
+
 .PHONY: livethml
 livehtml:
 	@$(PYTHON) -m sphinx_autobuild --ignore $(SOURCEDIR)/satellites $(SOURCEDIR) $(BUILDDIR) $(SPHINXOPTS) $(O)
