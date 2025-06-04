@@ -16,12 +16,12 @@ import numpy as np
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.datasender import DataSender
 from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
 from constellation.core.monitoring import schedule_metric
+from constellation.core.transmitter_satellite import TransmitterSatellite
 
 
-class LeCroySatellite(DataSender):
+class LeCroySatellite(TransmitterSatellite):
     _scope = None
     _settings = None
     _channels = None
@@ -53,9 +53,9 @@ class LeCroySatellite(DataSender):
             elif ":TRIG_LEVEL" in key:
                 channel_trigger_levels[key.split(":")[0].replace("C", "")] = float(value.split(b" ")[1])
 
-        self.BOR["trigger_delay"] = float(self._settings["TRIG_DELAY"].split(b" ")[1])
-        self.BOR["sampling_period"] = float(self._settings["TIME_DIV"].split(b" ")[1])
-        self.BOR["channels"] = ",".join([str(c) for c in self._channels])
+        self.bor["trigger_delay"] = float(self._settings["TRIG_DELAY"].split(b" ")[1])
+        self.bor["sampling_period"] = float(self._settings["TIME_DIV"].split(b" ")[1])
+        self.bor["channels"] = ",".join([str(c) for c in self._channels])
 
         return f"Connected to scope at {ip_address}"
 
@@ -73,6 +73,7 @@ class LeCroySatellite(DataSender):
             try:
                 self._scope.trigger()
                 first_channel = True
+                event_payload = np.array([])
                 for channel in self._channels:
                     wave_desc, trg_times, trg_offsets, wave_array = self._scope.get_waveform_all(channel)
                     if first_channel:
@@ -85,7 +86,9 @@ class LeCroySatellite(DataSender):
                     )  # already transform to V
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
-                self.data_queue.put((event_payload.tobytes(), {"dtype": f"{event_payload.dtype}"}))
+                data_block = self.new_data_block({"dtype": f"{event_payload.dtype}"})
+                data_block.add_frame(event_payload.tobytes())
+                self.send_data_block(data_block)
             except TimeoutError:
                 self.log.warning("Timeout encountered while retrieving the sequence.")
                 continue
@@ -97,7 +100,7 @@ class LeCroySatellite(DataSender):
             num_sequences_acquired += 1
             self.log.info(f"Fetched event {self._num_triggers_acquired}/sequence {num_sequences_acquired}")
 
-        self.EOR["current_time"] = datetime.datetime.now().timestamp()
+        self.eor["current_time"] = datetime.datetime.now().timestamp()
         return "Finished acquisition"
 
     def do_stopping(self) -> str:
@@ -136,4 +139,4 @@ class LeCroySatellite(DataSender):
             self.log.info(f"Using sequence mode with {self._num_sequences} traces per acquisition")
 
         # update the beginning-of-run event
-        self.BOR["num_sequences"] = self._num_sequences
+        self.bor["num_sequences"] = self._num_sequences
