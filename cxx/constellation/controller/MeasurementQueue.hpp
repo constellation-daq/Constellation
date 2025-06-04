@@ -199,15 +199,16 @@ namespace constellation::controller {
 
     protected:
         /** Queue of measurements */
+        // NOLINTNEXTLINE(*-non-private-member-variables-in-classes)
         std::deque<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>> measurements_;
-        mutable std::mutex measurement_mutex_;
+        mutable std::mutex measurement_mutex_;                    // NOLINT(*-non-private-member-variables-in-classes)
+        std::shared_ptr<MeasurementCondition> default_condition_; // NOLINT(*-non-private-member-variables-in-classes)
 
     private:
         /** Logger to use */
         log::Logger logger_;
 
         std::string run_identifier_prefix_;
-        std::shared_ptr<MeasurementCondition> default_condition_;
         std::chrono::seconds transition_timeout_;
 
         std::atomic<std::size_t> measurements_size_ {0};

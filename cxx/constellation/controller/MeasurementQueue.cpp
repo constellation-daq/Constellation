@@ -43,7 +43,7 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 MeasurementQueue::MeasurementQueue(Controller& controller, std::chrono::seconds timeout)
-    : logger_("QUEUE"), run_identifier_prefix_("queue_run_"), default_condition_(std::make_shared<TimerCondition>(60min)),
+    : default_condition_(std::make_shared<TimerCondition>(60min)), logger_("QUEUE"), run_identifier_prefix_("queue_run_"),
       transition_timeout_(timeout), controller_(controller) {};
 
 MeasurementQueue::~MeasurementQueue() {
