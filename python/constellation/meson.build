@@ -13,7 +13,6 @@ core_files = files(
   'core/cdtp.py',
   'core/controller.py',
   'core/configuration.py',
-  'core/datareceiver.py',
   'core/error.py',
   'core/fsm.py',
   'core/heartbeatchecker.py',
@@ -24,6 +23,7 @@ core_files = files(
   'core/network.py',
   'core/protocol.py',
   'core/py.typed',
+  'core/receiver_satellite.py',
   'core/satellite.py',
   'core/transmitter_satellite.py',
 )

@@ -10,12 +10,17 @@ from __future__ import annotations
 import queue
 import threading
 import time
+from collections import Counter
+from collections.abc import Callable
 from enum import IntEnum, auto
 from typing import Any
+from uuid import UUID
 
 import zmq
 
 from .base import ConstellationLogger
+from .chirp import get_uuid
+from .chirpmanager import DiscoveredService
 from .message.cdtp2 import CDTP2BORMessage, CDTP2EORMessage, CDTP2Message, DataBlock
 
 
@@ -231,3 +236,257 @@ class DataTransmitter:
         if self._push_thread is not None:
             if self._push_thread.exc is not None:
                 raise self._push_thread.exc
+
+
+class RecvTimeoutError(RuntimeError):
+    def __init__(self, what: str, timeout: int):
+        super().__init__(f"Failed receiving {what} after {timeout}s")
+
+
+class InvalidCDTPMessageType(RuntimeError):
+    def __init__(self, type: CDTP2Message.Type, reason: str):
+        super().__init__(f"Error handling CDTP message with type {type.name}: {reason}")
+
+
+class PullThread(threading.Thread):
+    """Receiving thread for CDTP"""
+
+    def __init__(self, drc: DataReceiver) -> None:
+        super().__init__()
+        self._drc = drc
+        self.exc: BaseException | None = None
+
+    def run(self) -> None:
+        try:
+            while not self._drc._stopevt.is_set():
+                sockets_ready = dict(self._drc._poller.poll(timeout=50))
+                self._drc._poller_events = len(sockets_ready)
+                for socket in sockets_ready.keys():
+                    frames = socket.recv_multipart()
+                    msg = CDTP2Message.disassemble(frames)
+                    self._drc._handle_cdtp_message(msg)
+        except BaseException as e:
+            self.exc = e
+
+
+class DataReceiver:
+    """Base class for receiving CDTP messages via ZMQ."""
+
+    def __init__(
+        self,
+        context: zmq.Context,  # type: ignore[type-arg]
+        logger: ConstellationLogger,
+        receive_bor_cb: Callable[[str, dict[str, Any], dict[str, Any]], None],
+        receive_data_cb: Callable[[str, DataBlock], None],
+        receive_eor_cb: Callable[[str, dict[str, Any], dict[str, Any]], None],
+        data_transmitters: set[str] | None,
+    ):
+        self._context = context
+        self.log_cdtp = logger
+        self._receive_bor = receive_bor_cb
+        self._receive_data = receive_data_cb
+        self._receive_eor = receive_eor_cb
+        self._poller = zmq.Poller()
+        self._poller_events = 0
+        self._sockets: dict[UUID, zmq.Socket] = {}  # type: ignore[type-arg]
+
+        self._data_transmitters = data_transmitters
+        self._data_transmitter_states = dict[str, TransmitterState]()
+        self._bytes_received = 0
+
+        self._eor_timeout = 10
+
+        self._stopevt = threading.Event()
+        self._pull_thread: PullThread | None = None
+        self._running = False
+
+    @property
+    def bytes_received(self) -> int:
+        return self._bytes_received
+
+    @property
+    def running(self) -> bool:
+        return self._running
+
+    @property
+    def eor_timeout(self) -> int:
+        """The EOR receiving timeout value (in s)."""
+        return self._eor_timeout
+
+    @eor_timeout.setter
+    def eor_timeout(self, timeout: int) -> None:
+        self._eor_timeout = timeout
+
+    def start_receiving(self) -> None:
+        # Reset stop event, data transmitter states and bytes received
+        self._stopevt.clear()
+        self._reset_data_transmitter_states()
+        self._bytes_received = 0
+        # Start receiving thread
+        self.log_cdtp.debug("Starting pull thread")
+        self._pull_thread = PullThread(self)
+        self._pull_thread.start()
+        self._running = True
+
+    def stop_receiving(self) -> None:
+        if self._pull_thread is not None:
+            # Wait until no more events returned by poller
+            while self._poller_events > 0 and self._pull_thread.is_alive():
+                self.log_cdtp.trace("Poller still returned events, waiting before checking for EOR arrivals")
+                time.sleep(0.1)
+            # Now start EOR timer
+            time_stopped = time.time()
+            self.log_cdtp.debug("Starting timeout for EOR arrivals (%ss)", self._eor_timeout)
+            # Warn about transmitters that never sent a BOR message
+            data_transmitters_not_connected = {
+                key: value for key, value in self._data_transmitter_states.items() if value == TransmitterState.NOT_CONNECTED
+            }
+            if len(data_transmitters_not_connected) > 0:
+                self.log_cdtp.warning("BOR message never send from %s", data_transmitters_not_connected.keys())
+            # Loop until all data transmitters that sent a BOR also sent an EOR
+            while True:
+                # Check if EOR messages are missing
+                missing_eors = Counter(self._data_transmitter_states.values())[TransmitterState.BOR_RECEIVED]
+                if missing_eors == 0:
+                    break
+                # If timeout reached, throw
+                if time.time() - time_stopped > self._eor_timeout:
+                    # Stop thread
+                    self._stop_pull_thread()
+                    # Filter for data transmitters that did not send an EOR
+                    data_transmitters_no_eor = [
+                        key for key, value in self._data_transmitter_states.items() if value == TransmitterState.BOR_RECEIVED
+                    ]
+                    self.log_cdtp.warning(
+                        "Not all EOR messages received, emitting substitute EOR messages for %s",
+                        list(data_transmitters_no_eor.keys()),
+                    )
+                    # Create substitute EORs
+                    pass  # TODO
+                    # Raise ReceiveTimeoutError so that we can catch this scenario in interrupting
+                    raise RecvTimeoutError(f"EOR messages from {list(data_transmitters_no_eor.keys())}", self._eor_timeout)
+                # Sleep a bit to avoid hot-loop
+                time.sleep(0.05)
+
+            self.log_cdtp.debug("All EOR messages received")
+
+            # Stop and join thread
+            self._stop_pull_thread()
+
+    def check_exception(self) -> None:
+        if self._pull_thread is not None:
+            if self._pull_thread.exc is not None:
+                # Reset sockets
+                self._reset_sockets()
+                # Then raise
+                raise self._pull_thread.exc
+
+    def _stop_pull_thread(self) -> None:
+        if self._pull_thread is not None:
+            self.log_cdtp.debug("Joining pull thread")
+            self._stopevt.set()
+            self._pull_thread.join()
+            self._reset_sockets()
+            self._running = False
+
+    def add_sender(self, service: DiscoveredService) -> None:
+        # Check that pull thread is running
+        if self._pull_thread is None or not self._pull_thread.is_alive():
+            return
+        # If data transmitters exists skip if not contained in set
+        if self._data_transmitters is not None:
+            if service.host_uuid not in [get_uuid(name) for name in self._data_transmitters]:
+                return
+        self._add_socket(service.host_uuid, service.address, service.port)
+
+    def remove_sender(self, service: DiscoveredService) -> None:
+        # Check that pull thread is running
+        if self._pull_thread is None or not self._pull_thread.is_alive():
+            return
+        # Remove if in set
+        if service.host_uuid in self._sockets:
+            self._remove_socket(service.host_uuid)
+
+    def _add_socket(self, uuid: UUID, address: str, port: int) -> None:
+        socket = self._context.socket(zmq.PULL)
+        socket.connect(f"tcp://{address}:{port}")
+        self._sockets[uuid] = socket
+        self._poller.register(socket, zmq.POLLIN)
+
+    def _remove_socket(self, uuid: UUID) -> None:
+        socket = self._sockets.pop(uuid)
+        self._poller.unregister(socket)
+        socket.close()
+
+    def _reset_sockets(self) -> None:
+        for socket in self._sockets.values():
+            self._poller.unregister(socket)
+            socket.close()
+        self._sockets.clear()
+
+    def _reset_data_transmitter_states(self) -> None:
+        self._data_transmitter_states.clear()
+        if self._data_transmitters is not None:
+            for data_transmitter in self._data_transmitters:
+                self._data_transmitter_states[data_transmitter] = TransmitterState.NOT_CONNECTED
+
+    def _handle_cdtp_message(self, msg: CDTP2Message) -> None:
+        if msg.type == CDTP2Message.Type.DATA:
+            self._bytes_received += msg.count_payload_bytes()
+            self._handle_data_message(msg)
+        elif msg.type == CDTP2Message.Type.BOR:
+            self._handle_bor_message(CDTP2BORMessage.cast(msg))
+        else:
+            self._handle_eor_message(CDTP2EORMessage.cast(msg))
+
+    def _handle_bor_message(self, msg: CDTP2BORMessage) -> None:
+        self.log_cdtp.info("Received BOR from %s with config %s", msg.sender, msg.configuration)
+
+        # If registered in states, raise if already connected
+        if (
+            msg.sender in self._data_transmitter_states
+            and self._data_transmitter_states[msg.sender] != TransmitterState.NOT_CONNECTED
+        ):
+            raise InvalidCDTPMessageType(msg.type, f"already received BOR from {msg.sender}")
+
+        # Udate state
+        self._data_transmitter_states[msg.sender] = TransmitterState.BOR_RECEIVED
+
+        # BOR callback
+        self._receive_bor(msg.sender, msg.user_tags, msg.configuration)
+
+    def _handle_data_message(self, msg: CDTP2Message) -> None:
+        self.log_cdtp.trace(
+            "Received data message from %s with data blocks from %s to %s",
+            msg.sender,
+            msg.data_blocks[0].sequence_number,
+            msg.data_blocks[-1].sequence_number,
+        )
+
+        # Check that BOR was received
+        self._check_bor_received(CDTP2Message.Type.DATA, msg.sender)
+
+        # Data callback for each data block
+        for data_block in msg.data_blocks:
+            self._receive_data(msg.sender, data_block)
+
+    def _handle_eor_message(self, msg: CDTP2EORMessage) -> None:
+        self.log_cdtp.info("Received EOR from %s with run metadata %s", msg.sender, msg.run_metadata)
+
+        # Check that BOR was received
+        self._check_bor_received(CDTP2Message.Type.EOR, msg.sender)
+
+        # Update state
+        self._data_transmitter_states[msg.sender] = TransmitterState.EOR_RECEIVED
+
+        # EOR callback
+        self._receive_eor(msg.sender, msg.user_tags, msg.run_metadata)
+
+    def _check_bor_received(self, type: CDTP2Message.Type, sender: str) -> None:
+        # If not in states or state not BOR_RECEIVED, throw
+        try:
+            if self._data_transmitter_states[sender] == TransmitterState.BOR_RECEIVED:
+                return
+        except KeyError:
+            pass
+        raise InvalidCDTPMessageType(type, f"did not receive BOR from {sender}")
