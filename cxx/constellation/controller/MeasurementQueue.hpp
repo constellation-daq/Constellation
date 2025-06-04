@@ -12,10 +12,10 @@
 #include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <deque>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -56,14 +56,9 @@ namespace constellation::controller {
          * @brief Construct a measurement queue
          *
          * @param controller Reference to the controller object to be used
-         * @param prefix Prefix for the run identifier
-         * @param condition Stopping condition for run stop in case no per-measurement condition is defined
          * @param timeout Transition timeout after which the queue will be interrupted if the target state was not reached
          */
-        MeasurementQueue(Controller& controller,
-                         std::string prefix,
-                         std::shared_ptr<MeasurementCondition> condition,
-                         std::chrono::seconds timeout = std::chrono::seconds(60));
+        MeasurementQueue(Controller& controller, std::chrono::seconds timeout = std::chrono::seconds(60));
         /**
          * @brief Destruct the measurement queue
          */
@@ -76,6 +71,20 @@ namespace constellation::controller {
         MeasurementQueue(MeasurementQueue&& other) = delete;
         MeasurementQueue& operator=(MeasurementQueue&& other) = delete;
         /// @endcond
+
+        /**
+         * @brief Set run identifier prefix
+         *
+         * @param prefix Prefix for the run identifier
+         */
+        void setPrefix(std::string prefix);
+
+        /**
+         * @brief Set default condition
+         *
+         * @param condition Stopping condition for run stop in case no per-measurement condition is defined
+         */
+        void setDefaultCondition(std::shared_ptr<MeasurementCondition> condition);
 
         /**
          * @brief Append a new measurement
@@ -103,7 +112,7 @@ namespace constellation::controller {
          * @brief Get number of remaining measurements
          * @return Remaining measurement queue length
          */
-        std::size_t size() { return measurements_size_.load(); }
+        std::size_t size() const { return measurements_size_.load(); }
 
         /**
          * @brief Current progress of the measurement queue
@@ -188,6 +197,11 @@ namespace constellation::controller {
          */
         void cache_original_values(Measurement& measurement);
 
+    protected:
+        /** Queue of measurements */
+        std::deque<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>> measurements_;
+        mutable std::mutex measurement_mutex_;
+
     private:
         /** Logger to use */
         log::Logger logger_;
@@ -196,9 +210,6 @@ namespace constellation::controller {
         std::shared_ptr<MeasurementCondition> default_condition_;
         std::chrono::seconds transition_timeout_;
 
-        /** Queue of measurements */
-        std::queue<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>> measurements_;
-        std::mutex measurement_mutex_;
         std::atomic<std::size_t> measurements_size_ {0};
         std::atomic<std::size_t> run_sequence_ {0};
 

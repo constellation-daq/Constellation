@@ -82,7 +82,10 @@ public:
                std::string prefix,
                std::shared_ptr<constellation::controller::MeasurementCondition> condition,
                std::chrono::seconds timeout = std::chrono::seconds(60))
-        : MeasurementQueue(controller, std::move(prefix), std::move(condition), timeout) {}
+        : MeasurementQueue(controller, timeout) {
+        setPrefix(std::move(prefix));
+        setDefaultCondition(std::move(condition));
+    }
 
     void queue_started() final { started_ = true; }
 

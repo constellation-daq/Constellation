@@ -12,12 +12,12 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <exception>
 #include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -42,11 +42,8 @@ using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 
-MeasurementQueue::MeasurementQueue(Controller& controller,
-                                   std::string prefix,
-                                   std::shared_ptr<MeasurementCondition> condition,
-                                   std::chrono::seconds timeout)
-    : logger_("QUEUE"), run_identifier_prefix_(std::move(prefix)), default_condition_(std::move(condition)),
+MeasurementQueue::MeasurementQueue(Controller& controller, std::chrono::seconds timeout)
+    : logger_("QUEUE"), run_identifier_prefix_("queue_run_"), default_condition_(std::make_shared<TimerCondition>(60min)),
       transition_timeout_(timeout), controller_(controller) {};
 
 MeasurementQueue::~MeasurementQueue() {
@@ -59,6 +56,14 @@ MeasurementQueue::~MeasurementQueue() {
     }
 }
 
+void MeasurementQueue::setPrefix(std::string prefix) {
+    run_identifier_prefix_ = std::move(prefix);
+}
+
+void MeasurementQueue::setDefaultCondition(std::shared_ptr<MeasurementCondition> condition) {
+    default_condition_ = std::move(condition);
+}
+
 void MeasurementQueue::append(Measurement measurement, std::shared_ptr<MeasurementCondition> condition) {
     // Check that satellite names are valid canonical names:
     if(!std::ranges::all_of(measurement, [](const auto& elem) { return CSCP::is_valid_canonical_name(elem.first); })) {
@@ -66,7 +71,7 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     }
 
     const std::lock_guard measurement_lock {measurement_mutex_};
-    measurements_.emplace(std::move(measurement), std::move(condition));
+    measurements_.emplace_back(std::move(measurement), std::move(condition));
     measurements_size_++;
 
     // Report updated progress
@@ -84,11 +89,11 @@ void MeasurementQueue::clear() {
     const auto current_measurement = measurements_.front();
 
     // Clear queue
-    std::queue<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>>().swap(measurements_);
+    std::deque<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>>().swap(measurements_);
 
     // If running, emplace back current measurement:
     if(queue_running_) {
-        measurements_.push(current_measurement);
+        measurements_.push_back(current_measurement);
     }
 
     // Update progress and report:
@@ -305,7 +310,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             measurement_lock.lock();
             // Successfully concluded this measurement, pop it - skip if interrupted
             if(queue_running_) {
-                measurements_.pop();
+                measurements_.pop_front();
                 measurements_size_--;
                 run_sequence_++;
                 interrupt_counter_ = 0;
