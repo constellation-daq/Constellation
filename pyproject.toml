@@ -47,6 +47,7 @@ SatelliteKeithley = "constellation.satellites.Keithley.__main__:main"
 SatelliteLakeShore218 = "constellation.satellites.LakeShore218.__main__:main"
 SatelliteLeCroy = "constellation.satellites.LeCroy.__main__:main"
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
+SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
