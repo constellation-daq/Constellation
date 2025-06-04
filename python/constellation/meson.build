@@ -31,6 +31,7 @@ core_files = files(
 core_message_files = files(
   'core/message/__init__.py',
   'core/message/cscp1.py',
+  'core/message/cdtp2.py',
   'core/message/exceptions.py',
   'core/message/msgpack_helpers.py',
   'core/message/multipart.py',

@@ -5,15 +5,22 @@ SPDX-License-Identifier: EUPL-1.2
 Provides message class for ZeroMQ multipart messages
 """
 
+from collections.abc import Sequence
 from io import BytesIO
 
 import zmq
 
 
 class MultipartMessage:
-    def __init__(self, streams: list[BytesIO]) -> None:
-        # Convert stream to bytes object
-        self._frames = [stream.getvalue() for stream in streams]
+    def __init__(self, frames: Sequence[BytesIO | bytes]) -> None:
+        # Convert streams to bytes
+        self._frames = [self._get_bytes(frame) for frame in frames]
+
+    @staticmethod
+    def _get_bytes(data: BytesIO | bytes) -> bytes:
+        if isinstance(data, BytesIO):
+            return data.getvalue()
+        return data
 
     @property
     def frames(self) -> list[bytes]:
