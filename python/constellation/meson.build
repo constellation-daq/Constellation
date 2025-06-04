@@ -14,7 +14,6 @@ core_files = files(
   'core/controller.py',
   'core/configuration.py',
   'core/datareceiver.py',
-  'core/datasender.py',
   'core/error.py',
   'core/fsm.py',
   'core/heartbeatchecker.py',
@@ -26,6 +25,7 @@ core_files = files(
   'core/protocol.py',
   'core/py.typed',
   'core/satellite.py',
+  'core/transmitter_satellite.py',
 )
 
 core_message_files = files(
