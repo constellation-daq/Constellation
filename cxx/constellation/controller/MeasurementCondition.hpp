@@ -36,6 +36,12 @@ namespace constellation::controller {
          */
         virtual void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const = 0;
 
+        /**
+         * @brief Provide human-readable representation of the condition
+         * @return Condition description
+         */
+        virtual std::string str() const = 0;
+
         virtual ~MeasurementCondition() = default;
 
         /// @cond doxygen_suppress
@@ -65,6 +71,8 @@ namespace constellation::controller {
 
         void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
 
+        std::string str() const override;
+
     private:
         std::chrono::seconds duration_;
     };
@@ -91,6 +99,8 @@ namespace constellation::controller {
                         std::function<bool(config::Value, config::Value)> comparator);
 
         void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
+
+        std::string str() const override;
 
     private:
         std::string remote_;

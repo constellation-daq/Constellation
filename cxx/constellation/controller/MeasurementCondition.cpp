@@ -23,6 +23,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/listener/StatListener.hpp"
 
@@ -46,6 +47,12 @@ void TimerCondition::await(std::atomic_bool& running, Controller& controller, Lo
         }
         std::this_thread::sleep_for(100ms);
     }
+}
+
+std::string TimerCondition::str() const {
+    std::string msg = "Run for ";
+    msg += to_string(duration_);
+    return msg;
 }
 
 MetricCondition::MetricCondition(std::string remote,
@@ -115,4 +122,15 @@ void MetricCondition::await(std::atomic_bool& running, Controller& controller, L
 
     stat_listener.unsubscribeMetric(remote_, metric_);
     stat_listener.stopPool();
+}
+
+std::string MetricCondition::str() const {
+    std::string msg = "Run until ";
+    msg += remote_;
+    msg += " reports ";
+    msg += metric_;
+    // FIXME  symbol
+    msg += " ? ";
+    msg += target_.str();
+    return msg;
 }
