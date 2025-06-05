@@ -51,18 +51,18 @@ void DevNullReceiverSatellite::stopping() {
                 << data_rate << " Gbps)";
 }
 
-void DevNullReceiverSatellite::receive_bor(std::string_view sender,
+void DevNullReceiverSatellite::receive_bor(std::string_view /*sender*/,
                                            const Dictionary& /*user_tags*/,
-                                           const Configuration& config) {
-    LOG(INFO) << "Received BOR from " << sender << " with config" << config.getDictionary().to_string();
+                                           const Configuration& /*config*/) {
+    // Drop message
 }
 
 void DevNullReceiverSatellite::receive_data(std::string_view /*sender*/, const CDTP2Message::DataBlock& /*data_block*/) {
     // Drop message
 }
 
-void DevNullReceiverSatellite::receive_eor(std::string_view sender,
+void DevNullReceiverSatellite::receive_eor(std::string_view /*sender*/,
                                            const Dictionary& /*user_tags*/,
-                                           const Dictionary& run_metadata) {
-    LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
+                                           const Dictionary& /*run_metadata*/) {
+    // Drop message
 }
