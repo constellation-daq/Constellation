@@ -115,7 +115,7 @@ namespace constellation::heartbeat {
         /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> default_interval_;
         /** Current number of subscribers */
-        std::atomic<std::size_t> subscribers_;
+        std::size_t subscribers_;
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 

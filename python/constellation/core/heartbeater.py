@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+import math
 import threading
 import time
 from datetime import datetime
@@ -26,7 +27,8 @@ class HeartbeatSender(SatelliteStateHandler):
     ) -> None:
 
         super().__init__(name=name, interface=interface, **kwargs)
-        self.default_period = 60000
+        self.default_period = 30000
+        self.minimum_period = 500
         self._heartbeat_period = 500
         self._subscribers = 0
 
@@ -63,7 +65,8 @@ class HeartbeatSender(SatelliteStateHandler):
                 # Update number of subscribers and the associated heartbeat period
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
-                    self.default_period, int(self.default_period * pow(0.01 * self._subscribers, 2)) + 500
+                    self.default_period,
+                    max(self.minimum_period, int(self.minimum_period * math.sqrt(self._subscribers) * 5)),
                 )
                 self.log_chp_s.trace(
                     "Sending heartbeat, current period "
