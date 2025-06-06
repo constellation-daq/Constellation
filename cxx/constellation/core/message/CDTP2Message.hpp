@@ -113,9 +113,9 @@ namespace constellation::message {
              */
             CNSTLN_API std::size_t countPayloadBytes() const;
 
-            void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+            CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
 
-            void msgpack_unpack(const msgpack::object& msgpack_object);
+            CNSTLN_API void msgpack_unpack(const msgpack::object& msgpack_object);
 
         private:
             std::uint64_t sequence_number_ {};
