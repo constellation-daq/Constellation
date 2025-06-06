@@ -88,8 +88,8 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
-        // Wait until condition variable is notified or timeout of current interval is reached
-        cv_.wait_for(lock, interval_.load() / 2);
+        // Wait until condition variable is notified or timeout of interval is reached, send 20% earlier than promised
+        cv_.wait_for(lock, interval_.load() * 0.8);
 
         try {
             // Handle subscriptions to update subscriber count

@@ -61,7 +61,8 @@ class HeartbeatSender(SatelliteStateHandler):
         # assert for mypy static type analysis
         assert isinstance(self._com_thread_evt, threading.Event), "Thread Event not set up correctly"
         while not self._com_thread_evt.is_set():
-            if ((datetime.now() - last).total_seconds() > self._heartbeat_period / 1000) or self.fsm.transitioned:
+            # Wait until we need to send the next heartbeat, stay 20% below configured interval
+            if ((datetime.now() - last).total_seconds() > self._heartbeat_period * 0.8 / 1000) or self.fsm.transitioned:
                 # Update number of subscribers and the associated heartbeat period
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
@@ -78,7 +79,7 @@ class HeartbeatSender(SatelliteStateHandler):
 
                 last = datetime.now()
                 state = self.fsm.current_state_value
-                self._hb_tm.send(state.value, int(self._heartbeat_period * 1.1))
+                self._hb_tm.send(state.value, self._heartbeat_period)
                 self.fsm.transitioned = False
             else:
                 time.sleep(0.1)
