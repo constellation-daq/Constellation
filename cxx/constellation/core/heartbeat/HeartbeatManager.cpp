@@ -41,8 +41,9 @@ HeartbeatManager::HeartbeatManager(std::string sender,
                                    std::function<CSCP::State()> state_callback,
                                    std::function<void(std::string_view)> interrupt_callback)
     : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::move(sender), std::move(state_callback), 30000ms), interrupt_callback_(std::move(interrupt_callback)),
-      logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
+      sender_(std::move(sender), std::move(state_callback), CHP::MaximumInterval),
+      interrupt_callback_(std::move(interrupt_callback)), logger_("CHP"),
+      watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
     set_thread_name(watchdog_thread_, "HeartbeatManager");
     startPool();
 }
