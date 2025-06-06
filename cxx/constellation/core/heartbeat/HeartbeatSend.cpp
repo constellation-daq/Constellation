@@ -10,6 +10,7 @@
 #include "HeartbeatSend.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <functional>
 #include <mutex>
 #include <stop_token>
@@ -19,11 +20,13 @@
 #include <utility>
 
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/thread.hpp"
@@ -33,12 +36,17 @@ using namespace constellation::message;
 using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 HeartbeatSend::HeartbeatSend(std::string sender,
                              std::function<CSCP::State()> state_callback,
                              std::chrono::milliseconds interval)
-    : pub_socket_(*global_zmq_context(), zmq::socket_type::pub), port_(bind_ephemeral_port(pub_socket_)),
-      sender_(std::move(sender)), state_callback_(std::move(state_callback)), interval_(interval) {
+    : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
+      sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval),
+      interval_(CHP::MinimumInterval) {
+
+    // Enable XPub verbosity to receive all subscription and unsubscription messages:
+    pub_socket_.set(zmq::sockopt::xpub_verboser, true);
 
     // Announce service via CHIRP
     auto* chirp_manager = ManagerLocator::getCHIRPManager();
@@ -81,11 +89,30 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
-        // Wait until condition variable is notified or timeout is reached
-        cv_.wait_for(lock, interval_.load() / 2);
+        // Wait until condition variable is notified or timeout of interval is reached, send 20% earlier than promised
+        cv_.wait_for(lock, interval_.load() * 0.8);
 
         try {
-            // Publish CHP message with current state
+            // Handle subscriptions to update subscriber count
+            bool received = true;
+            while(received) {
+                zmq::multipart_t recv_msg {};
+                received = recv_msg.recv(pub_socket_, static_cast<int>(zmq::send_flags::dontwait));
+
+                // Break if timed out or wrong number of frames received
+                if(!received || recv_msg.size() != 1) {
+                    break;
+                }
+
+                // First byte \x01 is subscription, \0x00 is unsubscription
+                const auto subscribe = static_cast<bool>(*recv_msg.front().data<uint8_t>());
+                subscribers_ += (subscribe ? 1 : -1);
+            }
+
+            // Update the interval based on the amount of subscribers:
+            interval_ = CHP::calculate_interval(subscribers_, default_interval_);
+
+            // Publish CHP message with current state and the updated interval
             CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
             status_.reset();
         } catch(const zmq::error_t& e) {

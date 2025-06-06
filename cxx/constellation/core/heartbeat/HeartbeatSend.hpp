@@ -12,6 +12,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <functional>
 #include <mutex>
 #include <optional>
@@ -77,7 +78,21 @@ namespace constellation::heartbeat {
          *
          * @param interval New maximum heartbeat interval
          */
-        void updateInterval(std::chrono::milliseconds interval) { interval_ = interval; }
+        void setMaximumInterval(std::chrono::milliseconds interval) { default_interval_ = interval; }
+
+        /**
+         * @brief Obtain the currently used heartbeat interval
+         *
+         * @return Current heartbeat interval
+         */
+        std::chrono::milliseconds getCurrentInterval() const { return interval_.load(); }
+
+        /**
+         * @brief Obtain the current number of subscribers
+         *
+         * @return Current number of heartbeat subscribers
+         */
+        std::size_t getSubscriberCount() const { return subscribers_.load(); }
 
         /**
          * @brief Send an extrasystole
@@ -105,7 +120,12 @@ namespace constellation::heartbeat {
         std::string sender_;
         /** Function returning the current state */
         std::function<protocol::CSCP::State()> state_callback_;
+
         /** Maximum heartbeat broadcasting interval */
+        std::atomic<std::chrono::milliseconds> default_interval_;
+        /** Current number of subscribers */
+        std::atomic_size_t subscribers_;
+        /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 
         std::condition_variable cv_;

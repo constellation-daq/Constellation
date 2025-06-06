@@ -134,7 +134,7 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     REQUIRE(std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration()) < std::chrono::milliseconds(200));
 
     // Change interval:
-    sender.updateInterval(std::chrono::milliseconds(600));
+    sender.setMaximumInterval(std::chrono::milliseconds(500));
 
     // Wait for first message
     receiver.waitNextMessage();
@@ -147,7 +147,46 @@ TEST_CASE("Change heartbeat interval", "[chp][send]") {
     // The delay should have been less than the new but more than the previous interval:
     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(timer.duration());
     REQUIRE(duration > std::chrono::milliseconds(200));
-    REQUIRE(duration < std::chrono::milliseconds(600));
+    REQUIRE(duration < std::chrono::milliseconds(500));
+
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+    sender.terminate();
+    receiver.stopPool();
+}
+
+TEST_CASE("Heartbeat congestion control", "[chp][send]") {
+    create_chirp_manager();
+
+    auto receiver = CHPMockReceiver();
+    receiver.startPool();
+
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, 30000ms);
+
+    // Current heartbeat interval is minimum
+    REQUIRE(sender.getSubscriberCount() == 0);
+    REQUIRE(sender.getCurrentInterval() == 500ms);
+
+    // Mock service and wait until subscribed
+    const auto mocked_service = MockedChirpService("Sender", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
+    receiver.waitSubscription();
+
+    // Wait for next message
+    receiver.waitNextMessage();
+
+    // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getSubscriberCount() == 1);
+    REQUIRE(sender.getCurrentInterval() == 500ms);
+
+    // Mock another service and wait until subscribed
+    const auto mocked_service2 = MockedChirpService("Sender2", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
+    receiver.waitSubscription();
+
+    // Wait for next message
+    receiver.waitNextMessage();
+
+    // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getSubscriberCount() == 2);
+    REQUIRE(sender.getCurrentInterval() == 1500ms);
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     sender.terminate();

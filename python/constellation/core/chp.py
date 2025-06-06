@@ -64,6 +64,16 @@ class CHPTransmitter:
             flags = flags & ~zmq.SNDMORE
             self._socket.send_string(status, flags)
 
+    def parse_subscriptions(self) -> int:
+        subscriptions: int = 0
+        while True:
+            try:
+                msg = self._socket.recv(zmq.NOBLOCK)
+                subscriptions += 1 if msg == b"\x01" else -1
+            except zmq.ZMQError:
+                break
+        return subscriptions
+
     def recv(
         self, flags: int = zmq.NOBLOCK
     ) -> Tuple[str, msgpack.Timestamp, int, int, str | None] | Tuple[None, None, None, None]:

@@ -508,8 +508,8 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
     if(config.has("_heartbeat_interval")) {
         const auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::seconds(config.get<std::uint64_t>("_heartbeat_interval")));
-        LOG(logger_, INFO) << "Updating heartbeat interval to " + to_string(interval);
-        heartbeat_manager_.updateInterval(interval);
+        LOG(logger_, INFO) << "Updating maximum heartbeat interval to " + to_string(interval);
+        heartbeat_manager_.setMaximumInterval(interval);
     }
 
     if(config.has("_allow_departure")) {
