@@ -61,6 +61,9 @@ void MeasurementQueue::setPrefix(std::string prefix) {
 }
 
 void MeasurementQueue::setDefaultCondition(std::shared_ptr<MeasurementCondition> condition) {
+    // Lock the measurements mutex since the default condition might be used when appending
+    const std::lock_guard measurement_lock {measurement_mutex_};
+
     default_condition_ = std::move(condition);
 }
 
@@ -71,7 +74,9 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     }
 
     const std::lock_guard measurement_lock {measurement_mutex_};
-    measurements_.emplace_back(std::move(measurement), std::move(condition));
+
+    // Use the current default condition of no measurement-specific is provided:
+    measurements_.emplace_back(std::move(measurement), (condition == nullptr ? default_condition_ : std::move(condition)));
     measurements_size_++;
 
     // Report updated progress
@@ -284,11 +289,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             await_state(CSCP::State::RUN);
 
             // Wait for condition to be come true
-            if(condition != nullptr) {
-                condition->await(queue_running_, controller_, logger_);
-            } else {
-                default_condition_->await(queue_running_, controller_, logger_);
-            }
+            condition->await(queue_running_, controller_, logger_);
 
             // Stop the constellation
             LOG(logger_, INFO) << "Stopping satellites";
