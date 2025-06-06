@@ -160,9 +160,10 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     auto receiver = CHPMockReceiver();
     receiver.startPool();
 
-    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, 60000ms);
+    auto sender = HeartbeatSend("Sender", [&]() { return CSCP::State::NEW; }, 30000ms);
 
     // Current heartbeat interval is minimum
+    REQUIRE(sender.getSubscriberCount() == 0);
     REQUIRE(sender.getCurrentInterval() == 500ms);
 
     // Mock service and wait until subscribed
@@ -173,6 +174,7 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     receiver.waitNextMessage();
 
     // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getSubscriberCount() == 1);
     REQUIRE(sender.getCurrentInterval() == 500ms);
 
     // Mock another service and wait until subscribed
@@ -183,6 +185,7 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     receiver.waitNextMessage();
 
     // Current heartbeat interval is adjusted to single subscriber
+    REQUIRE(sender.getSubscriberCount() == 2);
     REQUIRE(sender.getCurrentInterval() == 1500ms);
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();

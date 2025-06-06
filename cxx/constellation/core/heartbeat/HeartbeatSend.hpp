@@ -86,6 +86,12 @@ namespace constellation::heartbeat {
         std::chrono::milliseconds getCurrentInterval() const { return interval_; }
 
         /**
+         * @brief Obtain the current number of subscribers
+         * @return Current number of heartbeat subscribers
+         */
+        std::size_t getSubscriberCount() const { return subscribers_; }
+
+        /**
          * @brief Send an extrasystole
          *
          * @param status message to be attached
@@ -115,7 +121,7 @@ namespace constellation::heartbeat {
         /** Maximum heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> default_interval_;
         /** Current number of subscribers */
-        std::size_t subscribers_;
+        std::atomic<std::size_t> subscribers_;
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
 

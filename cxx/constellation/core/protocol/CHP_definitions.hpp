@@ -31,7 +31,7 @@ namespace constellation::protocol::CHP {
      */
     constexpr std::chrono::milliseconds calculate_interval(std::size_t subscribers, std::chrono::milliseconds max) {
         using namespace std::chrono_literals;
-        const auto sub = static_cast<double>(std::max(subscribers, 1UL) - 1);
+        const auto sub = static_cast<double>(std::max(subscribers, static_cast<std::size_t>(1)) - 1);
         return std::min(max,
                         std::max(500ms, std::chrono::duration_cast<std::chrono::milliseconds>(500ms * std::sqrt(sub) * 3.)));
     }
