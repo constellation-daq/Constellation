@@ -58,12 +58,14 @@ std::string TimerCondition::str() const {
 MetricCondition::MetricCondition(std::string remote,
                                  std::string metric,
                                  config::Value target,
-                                 std::function<bool(config::Value, config::Value)> comparator)
+                                 std::function<bool(config::Value, config::Value)> comparator,
+                                 std::string comp_name)
     : remote_(std::move(remote)), metric_(std::move(metric)), target_(std::move(target)), comparator_(std::move(comparator)),
-      metric_reception_timeout_(std::chrono::seconds(60)) {};
+      comparator_str_(std::move(comp_name)), metric_reception_timeout_(std::chrono::seconds(60)) {};
 
 void MetricCondition::await(std::atomic_bool& running, Controller& controller, Logger& logger) const {
-    LOG(logger, DEBUG) << "Running until " << remote_ << " reports " << metric_ << " >= " << target_.str();
+    LOG(logger, DEBUG) << "Running until " << remote_ << " reports " << metric_ << " " << comparator_str_ << " "
+                       << target_.str();
 
     std::atomic<bool> condition_satisfied {false};
     // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -129,8 +131,9 @@ std::string MetricCondition::str() const {
     msg += remote_;
     msg += " reports ";
     msg += metric_;
-    // FIXME  symbol
-    msg += " ? ";
+    msg += " ";
+    msg += comparator_str_;
+    msg += " ";
     msg += target_.str();
     return msg;
 }

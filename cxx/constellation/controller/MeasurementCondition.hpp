@@ -91,12 +91,14 @@ namespace constellation::controller {
          * @param metric Metric to subscribe to from remote satellite
          * @param target Target value of the metric
          * @param comparator Comparison function the received metric value and the target value should satisfy
+         * @param comp_name String representation of the comparator function, e.g. ">="
 
          */
         MetricCondition(std::string remote,
                         std::string metric,
                         config::Value target,
-                        std::function<bool(config::Value, config::Value)> comparator);
+                        std::function<bool(const config::Value, const config::Value)> comparator = std::greater_equal<>(),
+                        std::string comp_name = ">=");
 
         void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
 
@@ -107,6 +109,7 @@ namespace constellation::controller {
         std::string metric_;
         config::Value target_;
         std::function<bool(config::Value, config::Value)> comparator_;
+        std::string comparator_str_;
         std::chrono::seconds metric_reception_timeout_;
     };
 
