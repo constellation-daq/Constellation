@@ -173,16 +173,17 @@ TEST_CASE("Heartbeat congestion control", "[chp][send]") {
     receiver.waitNextMessage();
 
     // Current heartbeat interval is adjusted to single subscriber
-    REQUIRE(sender.getCurrentInterval() == 506ms);
+    REQUIRE(sender.getCurrentInterval() == 500ms);
 
-    // Heartbeat interval changes when changing the maximum interval
-    sender.setMaximumInterval(100000ms);
+    // Mock another service and wait until subscribed
+    const auto mocked_service2 = MockedChirpService("Sender2", CHIRP::ServiceIdentifier::HEARTBEAT, sender.getPort());
+    receiver.waitSubscription();
 
     // Wait for next message
     receiver.waitNextMessage();
 
     // Current heartbeat interval is adjusted to single subscriber
-    REQUIRE(sender.getCurrentInterval() == 510ms);
+    REQUIRE(sender.getCurrentInterval() == 1500ms);
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     sender.terminate();

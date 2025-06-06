@@ -83,7 +83,7 @@ A sending CHP host MAY adjust the time interval automatically as a function of t
 To mitigate this scaling behavior, it is RECOMMENDED that the heartbeat interval be scaled approximately with the square root of the number of CHP hosts. A suitable formula for this adjustment is:
 
 ```{math}
-\Delta t = \min \left(\Delta t_{max}, \max \left( \Delta t_{min}, \Delta t_{min} \cdot \sqrt{N} \cdot l \right) \right)
+\Delta t = \min \left(\Delta t_{max}, \max \left( \Delta t_{min}, \Delta t_{min} \cdot \sqrt{N - 1} \cdot l \right) \right)
 ```
 
 where {math}`\Delta t` is the computed heartbeat time interval to be used by the sender, {math}`\Delta t_{min}` and {math}`\Delta t_{max}` the minimum and maximum allowed heartbeat time intervals, respectively, and {math}`l` is a load factor which MAY be used to tune the weight of the number of CHP hosts.

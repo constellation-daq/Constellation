@@ -22,7 +22,7 @@ namespace constellation::protocol::CHP {
 
     /**
      * @brief Method to calculate the heartbeat interval based on the number of subscriber satellites and a maximum interval
-     * Using a load factor of 5 to scale down number of messages
+     * Using a load factor of 3 to scale down number of messages
      *
      * @param subscribers Current number of subscriber satellites
      * @param max Maximum allowed interval between heartbeats
@@ -31,10 +31,9 @@ namespace constellation::protocol::CHP {
      */
     constexpr std::chrono::milliseconds calculate_interval(std::size_t subscribers, std::chrono::milliseconds max) {
         using namespace std::chrono_literals;
+        const auto sub = static_cast<double>(std::max(subscribers, 1UL) - 1);
         return std::min(max,
-                        std::max(500ms,
-                                 std::chrono::duration_cast<std::chrono::milliseconds>(
-                                     500ms * std::sqrt(static_cast<double>(subscribers)) * 5.)));
+                        std::max(500ms, std::chrono::duration_cast<std::chrono::milliseconds>(500ms * std::sqrt(sub) * 3.)));
     }
 
 } // namespace constellation::protocol::CHP

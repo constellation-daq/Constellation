@@ -66,7 +66,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
                     self.default_period,
-                    max(self.minimum_period, int(self.minimum_period * math.sqrt(self._subscribers) * 5)),
+                    max(self.minimum_period, int(self.minimum_period * math.sqrt(max(self._subscribers, 1) - 1) * 3)),
                 )
                 self.log_chp_s.trace(
                     "Sending heartbeat, current period "
