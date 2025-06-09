@@ -17,10 +17,11 @@ from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callbac
 from .chirp import CHIRPServiceIdentifier, get_uuid
 from .commandmanager import get_cscp_commands
 from .configuration import flatten_config, load_config
-from .cscp import CommandTransmitter, SatelliteState
+from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
+from .message.cscp1 import SatelliteState
 from .network import get_interface_names
 from .satellite import Satellite
 

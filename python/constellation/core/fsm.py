@@ -18,8 +18,8 @@ from statemachine.states import States
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
 from .error import debug_log, handle_error
-from .message.cscp1 import CSCP1Message, SatelliteState
 from .heartbeatchecker import HeartbeatChecker
+from .message.cscp1 import CSCP1Message, SatelliteState
 
 
 class SatelliteFSM(StateMachine):

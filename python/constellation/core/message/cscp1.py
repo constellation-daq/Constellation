@@ -8,7 +8,7 @@ Provides message class for CSCP1
 from __future__ import annotations
 
 from datetime import datetime
-from enum import IntEnum
+from enum import Enum, IntEnum
 from io import BytesIO
 from typing import Any, Optional
 
@@ -18,7 +18,6 @@ from ..protocol import Protocol
 from .exceptions import InvalidProtocolError, MessageDecodingError, UnexpectedProtocolError
 from .msgpack_helpers import msgpack_unpack_to, msgpack_unpack_to_int_enum
 from .multipart import MultipartMessage
-from .protocol import MessageHeader, Protocol
 
 
 class SatelliteState(Enum):

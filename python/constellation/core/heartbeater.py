@@ -93,7 +93,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 state = self.fsm.current_state_value
                 self._hb_tm.send(
                     state.value,
-                    self.heartbeat_period,
+                    self._heartbeat_period,
 		    self._role.flags(),
                     self.fsm.status if self.fsm.status != prev_status else None,
                 )
