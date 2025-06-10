@@ -12,6 +12,7 @@ from conftest import mock_packet_queue_recv, mock_packet_queue_sender, mocket
 from constellation.core.chirp import get_uuid
 from constellation.core.fsm import SatelliteState
 from constellation.core.heartbeater import HeartbeatSender
+from constellation.core.network import get_loopback_interface_name
 
 HB_PORT = 33333
 
@@ -33,7 +34,7 @@ def mock_heartbeat_sender():
             name="mock_heartbeater",
             group="mockstellation",
             hb_port=HB_PORT,
-            interface="127.0.0.1",
+            interface=[get_loopback_interface_name()],
         )
         hbs._add_com_thread()
         hbs._start_com_threads()

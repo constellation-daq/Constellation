@@ -11,17 +11,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import mock_packet_queue_sender, mocket, send_port
 
-from constellation.core.chirp import (
-    CHIRPBeaconTransmitter,
-    CHIRPMessageType,
-    CHIRPServiceIdentifier,
-)
+from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
-from constellation.core.monitoring import (
-    MonitoringSender,
-    ZeroMQSocketLogListener,
-    schedule_metric,
-)
+from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
+from constellation.core.network import get_loopback_interface_name
 
 
 @pytest.fixture
@@ -190,7 +183,7 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ml, tmpdir = monitoringlistener
     ms = monitoringsender
     assert len(ml._log_listeners) == 0
-    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", interface="*")
+    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", interface=[get_loopback_interface_name()])
     chirp.broadcast(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, send_port)
     # start metric sender thread
     ms._add_com_thread()

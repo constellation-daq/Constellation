@@ -15,16 +15,14 @@ import pytest
 import zmq
 
 from constellation.core.cdtp import DataTransmitter
-from constellation.core.chirp import (
-    CHIRP_PORT,
-    CHIRPBeaconTransmitter,
-)
+from constellation.core.chirp import CHIRP_PORT, CHIRPBeaconTransmitter
 from constellation.core.configuration import Configuration, flatten_config, load_config
 from constellation.core.controller import BaseController
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
 from constellation.core.logging import setup_cli_logging
 from constellation.core.monitoring import FileMonitoringListener
+from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 
 # chirp
@@ -117,7 +115,7 @@ def mock_chirp_socket():
 @pytest.fixture
 def mock_chirp_transmitter(mock_chirp_socket):
     """Yields a CHIRP transmitter for our fake Constellation."""
-    t = CHIRPBeaconTransmitter("mock_transmitter", "mockstellation", "127.0.0.1")
+    t = CHIRPBeaconTransmitter("mock_transmitter", "mockstellation", [get_loopback_interface_name()])
     yield t
 
 
@@ -320,7 +318,7 @@ def mock_satellite(mock_chirp_socket, mock_heartbeat_poller):
         mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
+        s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -341,7 +339,7 @@ def mock_controller(mock_chirp_socket, mock_heartbeat_poller):
         mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        c = BaseController(name="mock_controller", group="mockstellation", interface="127.0.0.1")
+        c = BaseController(name="mock_controller", group="mockstellation", interface=[get_loopback_interface_name()])
         # give the threads a chance to start
         time.sleep(0.1)
         yield c
@@ -382,7 +380,7 @@ def mock_example_satellite(mock_chirp_socket):
         mock_context = Mock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
+        s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -398,7 +396,7 @@ def monitoringlistener():
         m = FileMonitoringListener(
             name="mock_monitor",
             group="mockstellation",
-            interface="*",
+            interface=[get_loopback_interface_name()],
             output_path=tmpdirname,
         )
         t = threading.Thread(target=m.run_listener)

@@ -14,6 +14,7 @@ from conftest import mocket, send_port
 from constellation.core.commandmanager import CommandReceiver, cscp_requestable
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.network import get_loopback_interface_name
 
 CMD_PORT = send_port
 
@@ -49,7 +50,7 @@ def mock_cmdreceiver(mock_chirp_transmitter):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface="127.0.0.1")
+        cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface=[get_loopback_interface_name()])
         cr._add_com_thread()
         cr._start_com_threads()
         # give the thread a chance to start
@@ -155,7 +156,7 @@ def test_cmd_unique_commands():
             return 42, None, None
 
     with patch("constellation.core.commandmanager.zmq.Context"):
-        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222, interface="127.0.0.1")
+        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222, interface=[get_loopback_interface_name()])
         msg, cmds, _meta = cr.get_commands()
         # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
         assert "get_state" not in cmds
