@@ -167,7 +167,7 @@ void MeasurementQueue::interrupt() {
 
 void MeasurementQueue::queue_started() {};
 void MeasurementQueue::queue_stopped() {};
-void MeasurementQueue::queue_failed() {};
+void MeasurementQueue::queue_failed(std::string_view /*reason*/) {};
 void MeasurementQueue::progress_updated(double /*progress*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
@@ -203,7 +203,7 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
         if(message.getVerb().first != CSCP1Message::Type::SUCCESS) {
             std::string msg = "Could not obtain configuration from satellite ";
             msg += satellite;
-            msg += ": ";
+            msg += ", ";
             msg += to_string(message.getVerb().second);
             LOG(logger_, CRITICAL) << msg;
             throw QueueError(msg);
@@ -323,15 +323,16 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         // Wait for ORBIT state across all
         await_state(CSCP::State::ORBIT);
 
+        LOG(logger_, STATUS) << "Queue ended";
+        queue_running_ = false;
+        queue_stopped();
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();
-        queue_failed();
+        queue_running_ = false;
+        queue_failed(error.what());
     } catch(...) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread";
-        queue_failed();
+        queue_running_ = false;
+        queue_failed("Unknown exception");
     }
-
-    LOG(logger_, STATUS) << "Queue ended";
-    queue_running_ = false;
-    queue_stopped();
 }

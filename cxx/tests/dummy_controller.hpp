@@ -91,7 +91,10 @@ public:
 
     void queue_stopped() final { stopped_ = true; }
 
-    void queue_failed() final { failed_ = true; }
+    void queue_failed(std::string_view reason) final {
+        failed_reason_ = reason;
+        failed_ = true;
+    }
 
     void progress_updated(double progress) final {
         progress_updated_ = true;
@@ -122,6 +125,8 @@ public:
         failed_.store(false);
     }
 
+    std::string getFailureReason() const { return failed_reason_; }
+
     double waitProgress() {
         // Wait for callback to trigger
         while(!progress_updated_.load()) {
@@ -135,6 +140,7 @@ private:
     std::atomic_bool started_ {false};
     std::atomic_bool stopped_ {false};
     std::atomic_bool failed_ {false};
+    std::string failed_reason_;
     std::atomic_bool progress_updated_ {false};
     std::atomic<double> progress_;
 };

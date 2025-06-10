@@ -158,8 +158,10 @@ namespace constellation::controller {
 
         /**
          * @brief Method called whenever a the queue failed or was interrupted
+         *
+         * @param reason Reason for the failure
          */
-        virtual void queue_failed();
+        virtual void queue_failed(std::string_view reason);
 
         /**
          * @brief Method called whenever the progress of the queue was updated

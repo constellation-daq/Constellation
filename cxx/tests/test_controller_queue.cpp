@@ -11,6 +11,8 @@
 #include <thread>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
@@ -28,6 +30,7 @@
 #include "dummy_controller.hpp"
 #include "dummy_satellite.hpp"
 
+using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::message;
@@ -54,6 +57,57 @@ TEST_CASE("Empty Queue", "[controller]") {
     // Attempt to start, controller not in orbit:
     queue.start();
     REQUIRE_FALSE(queue.running());
+
+    // Stop controller
+    controller.stop();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+}
+
+TEST_CASE("Missing Satellite in Queue", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    const auto condition = std::make_shared<TimerCondition>(std::chrono::seconds(5));
+    DummyQueue queue(controller, "queue_run_", condition);
+
+    // Create and start satellite
+    DummySatellite satellite {"a"};
+    satellite.skipTransitional(true);
+    satellite.mockChirpService(CHIRP::CONTROL);
+    satellite.mockChirpService(CHIRP::HEARTBEAT);
+
+    // Await connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
+    // Initialize and launch satellite, and check that state updates were propagated
+    satellite.reactFSM(FSM::Transition::initialize, Configuration());
+    controller.waitReachedState(CSCP::State::INIT, true);
+    satellite.reactFSM(FSM::Transition::launch);
+    controller.waitReachedState(CSCP::State::ORBIT, true);
+
+    // Add measurements to the queue with unknown satellite
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
+    queue.append(measurement);
+    queue.append(measurement);
+    REQUIRE(queue.size() == 2);
+    REQUIRE_FALSE(queue.running());
+
+    // Start the queue and wait for it to fail
+    queue.start();
+    queue.waitFailed();
+
+    REQUIRE_FALSE(queue.running());
+    REQUIRE(queue.size() == 2);
+    REQUIRE(queue.progress() == 0.);
+    REQUIRE_THAT(queue.getFailureReason(),
+                 Equals("Measurement queue error: Could not obtain configuration from satellite Dummy.b, Target satellite "
+                        "is unknown to controller"));
 
     // Stop controller
     controller.stop();
