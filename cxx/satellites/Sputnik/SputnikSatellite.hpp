@@ -23,6 +23,7 @@ public:
     void initializing(constellation::config::Configuration& config) final;
     void launching() final;
     void running(const std::stop_token& stop_token) final;
+    void reconfiguring(const constellation::config::Configuration& config) final;
 
 private:
     std::chrono::system_clock::time_point launch_time_;
