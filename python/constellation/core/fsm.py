@@ -10,7 +10,6 @@ from enum import Enum
 from threading import Event
 from typing import Any, Callable
 
-from msgpack import Timestamp  # type: ignore[import-untyped]
 from statemachine import StateMachine
 from statemachine.exceptions import TransitionNotAllowed
 from statemachine.states import States
@@ -374,7 +373,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         """
         payload = self.fsm.current_state_value.value
         meta = {
-            "last_changed": Timestamp.from_datetime(self.fsm.last_changed),
+            "last_changed": self.fsm.last_changed,
             "last_changed_iso": self.fsm.last_changed.isoformat(),
         }
         return self.fsm.current_state_value.name, payload, meta
