@@ -19,15 +19,11 @@ class MulticastMessage:
 
 
 class MulticastSocket:
-    _recv_socket: socket.socket
-    _send_sockets: list[socket.socket]
-    _multicast_endpoint: tuple[str, int]
-
     def __init__(self, interface_addresses: set[str], multicast_address: str, multicast_port: int) -> None:
         self._multicast_endpoint = (multicast_address, multicast_port)
 
         # Create send sockets
-        self._send_sockets = []
+        self._send_sockets = list[socket.socket]()
         for interface_address in interface_addresses:
             # Create socket for UDP
             send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
