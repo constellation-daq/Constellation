@@ -99,41 +99,33 @@ public:
     }
 
     void waitStarted() {
-        using namespace std::chrono_literals;
-
         // Wait for callback to trigger
         while(!started_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         started_.store(false);
     }
 
     void waitStopped() {
-        using namespace std::chrono_literals;
-
         // Wait for callback to trigger
         while(!stopped_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         stopped_.store(false);
     }
 
     void waitFailed() {
-        using namespace std::chrono_literals;
-
         // Wait for callback to trigger
         while(!failed_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         failed_.store(false);
     }
 
     double waitProgress() {
-        using namespace std::chrono_literals;
-
         // Wait for callback to trigger
         while(!progress_updated_.load()) {
-            std::this_thread::sleep_for(50ms);
+            std::this_thread::yield();
         }
         progress_updated_.store(false);
         return progress_.load();

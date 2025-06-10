@@ -10,7 +10,9 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
 #include <string_view>
+#include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -20,7 +22,13 @@ namespace constellation::controller {
      * @ingroup Exceptions
      * @brief Base class for all controller exceptions
      */
-    class CNSTLN_API ControllerError : public utils::RuntimeError {};
+    class CNSTLN_API ControllerError : public utils::RuntimeError {
+    public:
+        explicit ControllerError(std::string what_arg) : RuntimeError(std::move(what_arg)) {}
+
+    protected:
+        ControllerError() = default;
+    };
 
     /**
      * @ingroup Exceptions

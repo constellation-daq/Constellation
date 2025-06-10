@@ -14,10 +14,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -54,12 +56,30 @@ TEST_CASE("Controller without connections", "[controller]") {
     DummyController controller {"ctrl"};
     controller.start();
 
-    // No connections at present:
+    // No connections at present
     REQUIRE(controller.getConnectionCount() == 0);
 
-    // The controller is in state NEW;
+    // The controller is in state NEW
     REQUIRE(controller.isInState(CSCP::State::NEW));
     REQUIRE_FALSE(controller.isInState(CSCP::State::ORBIT));
+
+    // Stop controller
+    controller.stop();
+}
+
+TEST_CASE("Controller await state", "[controller]") {
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    // No connections at present and in NEW state
+    REQUIRE(controller.getConnectionCount() == 0);
+    REQUIRE(controller.isInState(CSCP::State::NEW));
+
+    // Await INIT state (fails)
+    REQUIRE_THROWS_MATCHES(
+        controller.awaitState(CSCP::State::INIT, 0s), ControllerError, Message("Timed out waiting for global state INIT"));
+    ;
 
     // Stop controller
     controller.stop();

@@ -212,6 +212,15 @@ namespace constellation::controller {
         bool isInGlobalState() const;
 
         /**
+         * @brief Helper to wait until all connected satellites are in a given state
+         *
+         * @param state State to be checked for
+         * @param timeout Time to wait before an exception is thrown
+         * @throw ControllerError If the timeout is reached before the global state is reached
+         */
+        void awaitState(protocol::CSCP::State state, std::chrono::seconds timeout) const;
+
+        /**
          * @brief Get lowest state of any satellite connected
          * @details This returns the lowest state of any of the satellites. Here, "lowest" refers to the state code, i.e. the
          * underlying value of the protocol::CSCP::State enum.

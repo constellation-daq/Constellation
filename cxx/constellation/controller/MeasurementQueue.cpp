@@ -169,16 +169,7 @@ void MeasurementQueue::queue_failed() {};
 void MeasurementQueue::progress_updated(double /*progress*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
-    auto timer = TimeoutTimer(transition_timeout_);
-    timer.reset();
-
-    while(!controller_.isInState(state)) {
-        if(timer.timeoutReached()) {
-            throw QueueError("Timeout out waiting for global state " + to_string(state));
-        }
-
-        std::this_thread::sleep_for(100ms);
-    }
+    controller_.awaitState(state, transition_timeout_);
 }
 
 void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {

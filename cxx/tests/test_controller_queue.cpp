@@ -208,11 +208,15 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     REQUIRE(queue.size() == 1);
     REQUIRE_FALSE(queue.running());
 
-    // Start the queue and interrupt it directly
+    // Start the queue
     queue.start();
-
     queue.waitStarted();
     REQUIRE(queue.running());
+
+    // Wait until in RUN state
+    controller.awaitState(CSCP::State::RUN, 1s);
+
+    // Interrupt directly
     queue.interrupt();
     queue.waitStopped();
 

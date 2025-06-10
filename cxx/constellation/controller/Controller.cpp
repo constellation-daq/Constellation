@@ -31,6 +31,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
@@ -46,6 +47,7 @@
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/timers.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
@@ -336,6 +338,20 @@ bool Controller::isInGlobalState() const {
     return std::ranges::adjacent_find(connections_.cbegin(), connections_.cend(), [](auto const& x, auto const& y) {
                return x.second.state != y.second.state;
            }) == connections_.cend();
+}
+
+void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) const {
+    auto timer = TimeoutTimer(timeout);
+    timer.reset();
+
+    while(!isInState(state)) {
+        if(timer.timeoutReached()) {
+            throw ControllerError("Timed out waiting for global state " + to_string(state));
+        }
+
+        // Wait a bit to avoid hot-loop
+        std::this_thread::sleep_for(10ms);
+    }
 }
 
 CSCP::State Controller::getLowestState() const {
