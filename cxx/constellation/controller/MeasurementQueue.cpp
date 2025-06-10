@@ -32,7 +32,6 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
-#include "constellation/core/utils/timers.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
