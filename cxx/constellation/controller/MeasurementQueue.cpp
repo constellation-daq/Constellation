@@ -94,7 +94,7 @@ void MeasurementQueue::clear() {
     const auto current_measurement = measurements_.front();
 
     // Clear queue
-    std::deque<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>>().swap(measurements_);
+    measurements_.clear();
 
     // If running, emplace back current measurement:
     if(queue_running_) {
@@ -118,14 +118,12 @@ void MeasurementQueue::start() {
 
     // Already running?
     if(queue_running_) {
-        // throw QueueError("Queue already running");
         LOG(logger_, WARNING) << "Queue already running";
         return;
     }
 
     // We only start when we are in orbit
     if(!controller_.isInState(CSCP::State::ORBIT)) {
-        // throw QueueError("Controller not in correct state");
         LOG(logger_, WARNING) << "Not in correct state, controller reports " << controller_.getLowestState();
         return;
     }
@@ -136,7 +134,6 @@ void MeasurementQueue::start() {
         queue_thread_.join();
     }
 
-    const std::lock_guard measurement_lock {measurement_mutex_};
     queue_thread_ = std::jthread(std::bind_front(&MeasurementQueue::queue_loop, this));
 }
 
@@ -187,7 +184,6 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
         return success;
     });
 
-    // FIXME too harsh?
     if(!success) {
         throw QueueError("Unexpected reply from satellite");
     }
@@ -203,18 +199,24 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
         auto& value_cache = std::get<Dictionary>(original_values_[satellite]);
 
         // Fetch configuration from this satellite:
-        const auto& msg = controller_.sendCommand(satellite, "get_config");
-        if(msg.getVerb().first != CSCP1Message::Type::SUCCESS) {
-            LOG(logger_, DEBUG) << "Could not obtain configuration from satellite " << satellite;
-            return;
+        const auto& message = controller_.sendCommand(satellite, "get_config");
+        if(message.getVerb().first != CSCP1Message::Type::SUCCESS) {
+            std::string msg = "Could not obtain configuration from satellite ";
+            msg += satellite;
+            msg += ": ";
+            msg += to_string(message.getVerb().second);
+            LOG(logger_, CRITICAL) << msg;
+            throw QueueError(msg);
         }
-        const auto config = Dictionary::disassemble(msg.getPayload());
+        const auto config = Dictionary::disassemble(message.getPayload());
 
         // Check if the measurement keys are available in the config:
         auto& measurement_dict = std::get<Dictionary>(cmd_payload);
         for(const auto& [key, value] : measurement_dict) {
             // Check that the key exists in the current configuration:
             if(!config.contains(key)) {
+                LOG(logger_, WARNING) << "Parameter " << key << " does not exist in configuration of satellite " << satellite
+                                      << ", cannot reset original value after queue";
                 continue;
             }
 

@@ -40,4 +40,4 @@ and `2`, and the parameter `b` to value `5` will first read the parameter `a` fr
 `a = 1` for the first measurement and `a = 2` in the subsequent measurement.
 The final measurement will set `b = 5` as well as parameter `a = 99` to its original value initially read from the satellite.
 
-When implementing queues manually e.g. through a Python script [as described in the How-To Guide](../howtos/scanning_python.md).
+When implementing queues manually e.g. through a Python script [as described in the How-To Guide](../howtos/scanning_python.md), the original value has to be cached and reconfigured by the script.
