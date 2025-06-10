@@ -74,11 +74,15 @@ if jemalloc_dep.found()
   message('Using jemalloc as memory allocator')
 endif
 
-# Compilation arguments
+# Compilation arguments and private system dependencies
 constellation_args = []
+constellation_private_deps = []
 if host_machine.system() == 'windows'
   # Disable parts of Windows API with conflicting macro definitions
   constellation_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
+  # Add ws2_32 and iphlpapi to dependencies
+  constellation_private_deps += cpp.find_library('ws2_32')
+  constellation_private_deps += cpp.find_library('iphlpapi')
 endif
 # Add flags for static libraries
 if get_option('default_library') == 'static'

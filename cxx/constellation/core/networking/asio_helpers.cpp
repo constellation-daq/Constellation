@@ -16,7 +16,14 @@
 
 #include <asio.hpp>
 #include <asio/ip/address_v4.hpp>
-#ifndef _WIN32
+
+#ifdef _WIN32
+// clang-format off
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+// clang-format on
+#else
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
@@ -27,6 +34,9 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/utils/string.hpp"
+#ifdef _WIN32
+#include "constellation/core/utils/windows.hpp"
+#endif
 
 using namespace constellation::networking;
 using namespace constellation::utils;
@@ -36,8 +46,53 @@ std::vector<Interface> constellation::networking::get_interfaces() {
 
 #if defined(_WIN32)
 
-    // TODO(stephan.lachnit): implement this on Windows, right now take default address
-    addresses.emplace(asio::ip::address_v4::any());
+    // Allocate a 15 KiB buffer for adapter info
+    ULONG buffer_size = 15 * 1024;
+    std::vector<char> buffer {};
+    buffer.resize(buffer_size);
+    IP_ADAPTER_ADDRESSES* adapters = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+
+    // Only return IPv4 interfaces
+    ULONG family = AF_INET;
+    ULONG flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_PREFIX;
+
+    // Get adapters
+    DWORD result = GetAdaptersAddresses(family, flags, nullptr, adapters, &buffer_size);
+
+    // Try again if buffer was too small
+    if(result == ERROR_BUFFER_OVERFLOW) {
+        buffer.resize(buffer_size);
+        adapters = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+        result = GetAdaptersAddresses(family, flags, nullptr, adapters, &buffer_size);
+    }
+
+    if(result != NO_ERROR) {
+        throw NetworkError("Unable to get list of interfaces");
+    }
+
+    for(IP_ADAPTER_ADDRESSES* adapter = adapters; adapter != nullptr; adapter = adapter->Next) {
+        // Select only running interfaces
+        if(adapter->OperStatus != IfOperStatusUp) {
+            continue;
+        }
+
+        // Iterate through addresses of the current adapter
+        for(IP_ADAPTER_UNICAST_ADDRESS* ua = adapter->FirstUnicastAddress; ua != nullptr; ua = ua->Next) {
+            if(ua->Address.lpSockaddr->sa_family != AF_INET) {
+                continue;
+            }
+
+            sockaddr_in* ipv4 = reinterpret_cast<sockaddr_in*>(ua->Address.lpSockaddr);
+            char buffer[INET_ADDRSTRLEN];
+            if(inet_ntop(AF_INET, &(ipv4->sin_addr), buffer, INET_ADDRSTRLEN)) {
+                try {
+                    interfaces.emplace_back(to_std_string(adapter->FriendlyName), asio::ip::make_address_v4(buffer));
+                } catch(const asio::system_error&) {
+                    continue;
+                }
+            }
+        }
+    }
 
 #else
 
