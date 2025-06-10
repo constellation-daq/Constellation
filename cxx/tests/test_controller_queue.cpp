@@ -89,7 +89,7 @@ TEST_CASE("Run Queue", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue
-    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
     queue.append(measurement);
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
@@ -145,7 +145,7 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
 
     // Add measurements to the queue, overwriting default length
     const auto measurement_condition = std::make_shared<TimerCondition>(1s);
-    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
     queue.append(measurement, measurement_condition);
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
@@ -204,7 +204,7 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue
-    queue.append({{"Dummy.b", Dictionary {}}});
+    queue.append({{"Dummy.a", Dictionary {}}});
     REQUIRE(queue.size() == 1);
     REQUIRE_FALSE(queue.running());
 
