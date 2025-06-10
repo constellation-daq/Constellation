@@ -147,7 +147,7 @@ std::vector<Interface> constellation::networking::get_interfaces(std::vector<std
 
     std::ranges::for_each(interface_names, [&](const auto& interface_name) {
         const auto interface_it =
-            std::ranges::find(all_interfaces, interface_name, [](const auto& interface) { return interface.name; });
+            std::ranges::find(all_interfaces, interface_name, [](const auto& if_s) { return if_s.name; });
         if(interface_it == all_interfaces.end()) {
             throw NetworkError("Interface `" + interface_name + "` does not exist or is not suitable");
         }
