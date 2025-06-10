@@ -294,9 +294,9 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
             // Check if new port if service already discovered
             if(discovered_service_it->port != discovered_service.port) {
                 // Assume old host is dead
-                LOG(logger_, DEBUG) << discovered_service.host_id.to_string() << " has new port " << discovered_service.port
-                                    << " for " << discovered_service.identifier
-                                    << " service, assuming service has been replaced";
+                LOG(logger_, WARNING) << discovered_service.host_id.to_string() << " has new port "
+                                      << discovered_service.port << " for " << discovered_service.identifier
+                                      << " service, assuming service has been replaced";
 
                 // Forget any discovered services of host
                 discovered_services_lock.unlock();
