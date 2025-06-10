@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -22,6 +23,9 @@ namespace constellation::protocol::CHIRP {
 
     /** Version of CHIRP protocol */
     constexpr std::uint8_t VERSION = '\x01';
+
+    /** Multicast address of the CHIRP protocol */
+    constexpr std::array<unsigned char, 4> MULTICAST_ADDRESS = {239, 192, 7, 123};
 
     /** Port number of the CHIRP protocol */
     constexpr networking::Port PORT = 7123;

@@ -21,11 +21,11 @@
 namespace constellation::networking {
 
     /**
-     * @brief Get all broadcast addresses
+     * @brief Get all interface addresses
      *
-     * @return Set with all broadcast addresses
+     * @return Set with all interface addresses
      */
-    CNSTLN_API std::set<asio::ip::address_v4> get_broadcast_addresses();
+    CNSTLN_API std::set<asio::ip::address_v4> get_interface_addresses();
 
     /**
      * @brief Build a URI from an IP address and a port

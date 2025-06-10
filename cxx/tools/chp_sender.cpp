@@ -53,7 +53,7 @@ namespace {
 
         ManagerLocator::getSinkManager().setConsoleLevels(WARNING);
 
-        auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, name);
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, name);
         chirp_manager->start();
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 

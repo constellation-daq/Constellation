@@ -84,7 +84,7 @@ def test_manager_discover(mock_bm):
     # thread running in background listening to "socket"
     time.sleep(0.5)
     mock_bm._stop_com_threads()
-    assert mock_bm._beacon._sock.seen == 1
+    assert mock_bm._beacon._socket._recv_socket.seen == 1
     assert len(mock_bm.discovered_services) == 1
     # check late callback queuing
     mock = MagicMock()
@@ -111,7 +111,7 @@ def test_manager_ext_callback_runtime(mock_bm):
     mock_chirp_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
-    assert mock_bm._beacon._sock.seen == 1
+    assert mock_bm._beacon._socket._recv_socket.seen == 1
     assert len(mock_bm.discovered_services) == 1
     # callback queued but not performed (no worker thread)
     assert not mock_bm.task_queue.empty()
@@ -132,7 +132,7 @@ def test_manager_method_callback_runtime(mock_bm_alt_parent):
     mock_chirp_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
-    assert mock_bm_alt_parent._beacon._sock.seen == 1
+    assert mock_bm_alt_parent._beacon._socket._recv_socket.seen == 1
     assert len(mock_bm_alt_parent.discovered_services) == 1
     # callback queued but not performed (no worker thread)
     assert not mock_bm_alt_parent.alt_callback_triggered
@@ -151,7 +151,7 @@ def test_manager_callback_decorator(mock_bm_parent):
     mock_chirp_packet_queue.append(offer_data_666)
     # thread running in background listening to "socket"
     time.sleep(0.5)
-    assert mock_bm_parent._beacon._sock.seen == 1
+    assert mock_bm_parent._beacon._socket._recv_socket.seen == 1
     assert len(mock_bm_parent.discovered_services) == 1
     # callback queued but not performed (no worker thread)
     assert not mock_bm_parent.task_queue.empty()

@@ -53,7 +53,7 @@ namespace {
 
         const std::string name = "dummy_controller";
 
-        auto chirp_manager = std::make_unique<chirp::Manager>("255.255.255.255", "0.0.0.0", group, name);
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, name);
         chirp_manager->start();
         chirp_manager->sendRequest(CHIRP::ServiceIdentifier::CONTROL);
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));

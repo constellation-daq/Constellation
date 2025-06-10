@@ -297,10 +297,8 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         time.sleep(0.2)
         self.request(CHIRPServiceIdentifier.CONTROL)
         time.sleep(0.2)
-        while self._beacon.busy:
-            # still receiving chirp packets from last request
-            time.sleep(0.05)
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
+        time.sleep(0.1)
 
     @property
     def states(self) -> dict[str, SatelliteState]:

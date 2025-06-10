@@ -18,9 +18,8 @@
 #include <asio.hpp>
 #include <catch2/catch_test_macros.hpp>
 
-#include "constellation/core/chirp/BroadcastRecv.hpp"
-#include "constellation/core/chirp/BroadcastSend.hpp"
 #include "constellation/core/chirp/Manager.hpp"
+#include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 
@@ -81,7 +80,7 @@ TEST_CASE("Sorting of discover callbacks", "[chirp]") {
 }
 
 TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
 
     // test that first register works
     REQUIRE(manager.registerService(CONTROL, 23999));
@@ -100,7 +99,7 @@ TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
 
     // DiscoverCallback signature NOLINTNEXTLINE(performance-unnecessary-value-param)
     auto callback = [](DiscoveredService, ServiceStatus, std::any) {};
@@ -121,37 +120,37 @@ TEST_CASE("Register callbacks in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Get async timeout in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
     manager.start();
     // This is purely a coverage test to ensure that the async receive works
     std::this_thread::sleep_for(100ms);
 }
 
 TEST_CASE("Ignore CHIRP message from other group in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group2", "sat2", CONTROL, 23999).assemble();
-    sender.sendBroadcast(asm_msg);
+    sender.sendMessage(asm_msg);
 
     REQUIRE(manager.getDiscoveredServices().empty());
 }
 
 TEST_CASE("Ignore CHIRP message from self in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
     manager.start();
 
     const auto asm_msg = CHIRPMessage(OFFER, "group1", "sat1", CONTROL, 23999).assemble();
-    sender.sendBroadcast(asm_msg);
+    sender.sendMessage(asm_msg);
 
     REQUIRE(manager.getDiscoveredServices().empty());
 }
 
 TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
+    Manager manager1 {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
+    Manager manager2 {"group1", "sat2", asio::ip::make_address_v4("127.0.0.1")};
     manager2.start();
 
     // Register service, should send OFFER
@@ -183,6 +182,10 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
     // Now test that we can filter a service category
     REQUIRE(manager2.getDiscoveredServices(HEARTBEAT).size() == 1);
     // Test that we can forget services
+    manager2.forgetDiscoveredService(HEARTBEAT, manager1.getHostID());
+    REQUIRE(manager2.getDiscoveredServices().size() == 1);
+    manager2.forgetDiscoveredServices(MD5Hash("Some-nonexistent-host-id"));
+    manager2.forgetDiscoveredServices(manager1.getHostID());
     manager2.forgetDiscoveredServices();
     REQUIRE(manager2.getDiscoveredServices().empty());
 
@@ -201,8 +204,8 @@ TEST_CASE("Discover services in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager1 {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    Manager manager2 {"0.0.0.0", "0.0.0.0", "group1", "sat2"};
+    Manager manager1 {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
+    Manager manager2 {"group1", "sat2", asio::ip::make_address_v4("127.0.0.1")};
     manager2.start();
 
     // Callback test struct to test if callback was properly executed
@@ -304,18 +307,18 @@ TEST_CASE("Execute callbacks in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastRecv receiver {"0.0.0.0", PORT};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
+    MulticastSocket receiver {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
     // Note: it seems we have to construct receiver after manager, else we do not receive messages
     // Why? we can only have one working recv binding to the same socket per process unfortunately :/
 
     // Start listening for request message
-    auto raw_msg_fut = std::async(&BroadcastRecv::recvBroadcast, &receiver);
+    auto raw_msg_fut = std::async(&MulticastSocket::recvMessage, &receiver, 10ms);
     // Send request
     manager.sendRequest(CONTROL);
     // Receive message
     const auto raw_msg = raw_msg_fut.get();
-    auto msg_from_manager = CHIRPMessage::disassemble(raw_msg.content);
+    auto msg_from_manager = CHIRPMessage::disassemble(raw_msg.value().content); // NOLINT(bugprone-unchecked-optional-access)
     // Check message
     REQUIRE(msg_from_manager.getType() == REQUEST);
     REQUIRE(msg_from_manager.getServiceIdentifier() == CONTROL);
@@ -323,8 +326,8 @@ TEST_CASE("Send CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
 }
 
 TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") {
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
-    BroadcastSend sender {"0.0.0.0", PORT};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
+    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
     // Note: we cannot test if an offer is actually replied, see `test_manager_send_request`
 
     // Register service
@@ -333,8 +336,8 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
     // Send requests
     const auto asm_msg_a = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
     const auto asm_msg_b = CHIRPMessage(REQUEST, "group1", "sat2", DATA, 0).assemble();
-    sender.sendBroadcast(asm_msg_a);
-    sender.sendBroadcast(asm_msg_b);
+    sender.sendMessage(asm_msg_a);
+    sender.sendMessage(asm_msg_b);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(100ms);
 
@@ -342,15 +345,15 @@ TEST_CASE("Receive CHIRP requests in CHIRP manager", "[chirp][chirp::manager]") 
 }
 
 TEST_CASE("Detect incorrect CHIRP message in CHIRP manager", "[chirp][chirp::manager]") {
-    BroadcastSend sender {"0.0.0.0", PORT};
-    Manager manager {"0.0.0.0", "0.0.0.0", "group1", "sat1"};
+    MulticastSocket sender {{asio::ip::make_address_v4("127.0.0.1")}, asio::ip::address_v4(MULTICAST_ADDRESS), PORT};
+    Manager manager {"group1", "sat1", asio::ip::make_address_v4("127.0.0.1")};
     manager.start();
 
     // Create invalid message
     auto asm_msg = CHIRPMessage(REQUEST, "group1", "sat2", CONTROL, 0).assemble();
     asm_msg[0] = std::byte('X');
     // Send message
-    sender.sendBroadcast(asm_msg);
+    sender.sendMessage(asm_msg);
     // Wait a bit ensure we received the message
     std::this_thread::sleep_for(100ms);
 

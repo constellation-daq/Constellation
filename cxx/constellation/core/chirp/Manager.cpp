@@ -30,7 +30,7 @@
 
 #include <asio/ip/address_v4.hpp>
 
-#include "constellation/core/chirp/BroadcastSend.hpp"
+#include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -98,30 +98,26 @@ bool DiscoverCallbackEntry::operator<(const DiscoverCallbackEntry& other) const 
     return std::to_underlying(service_id) < std::to_underlying(other.service_id);
 }
 
-Manager::Manager(const std::optional<asio::ip::address_v4>& brd_address,
-                 const asio::ip::address_v4& any_address,
-                 std::string_view group_name,
-                 std::string_view host_name)
-    : receiver_(any_address, PORT), group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
-
-    std::set<asio::ip::address_v4> brd_addresses {};
-    if(brd_address.has_value()) {
-        brd_addresses = {brd_address.value()};
-        LOG(logger_, TRACE) << "Using provided broadcast address " << brd_address.value().to_string();
-    } else {
-        brd_addresses = get_broadcast_addresses();
-        LOG(logger_, TRACE) << "Using broadcast addresses "
-                            << range_to_string(brd_addresses, [](const auto& adr) { return adr.to_string(); });
-    }
-    sender_ = std::make_unique<BroadcastSend>(brd_addresses, PORT);
-
-    LOG(logger_, TRACE) << "Using any address " << any_address.to_string();
+Manager::Manager(std::string_view group_name,
+                 std::string_view host_name,
+                 const std::set<asio::ip::address_v4>& interface_addresses)
+    : group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
+
+    LOG(logger_, INFO) << "Using interface addresses "
+                       << range_to_string(interface_addresses,
+                                          [](const auto& interface_address) { return interface_address.to_string(); });
+
+    const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
+    multicast_socket_ = std::make_unique<MulticastSocket>(interface_addresses, multicast_adddress, PORT);
 }
 
-Manager::Manager(std::string_view brd_ip, std::string_view any_ip, std::string_view group_name, std::string_view host_name)
-    : Manager(asio::ip::make_address_v4(brd_ip), asio::ip::make_address_v4(any_ip), group_name, host_name) {}
+Manager::Manager(std::string_view group_name, std::string_view host_name)
+    : Manager(group_name, host_name, get_interface_addresses()) {}
+
+Manager::Manager(std::string_view group_name, std::string_view host_name, const asio::ip::address_v4& interface_address)
+    : Manager(group_name, host_name, std::set({asio::ip::address_v4::loopback(), interface_address})) {}
 
 Manager::~Manager() {
     // First stop Run function
@@ -257,7 +253,7 @@ void Manager::sendRequest(ServiceIdentifier service) {
 void Manager::send_message(MessageType type, RegisteredService service) {
     LOG(logger_, DEBUG) << "Sending " << type << " for " << service.identifier << " service on port " << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
-    sender_->sendBroadcast(asm_msg);
+    multicast_socket_->sendMessage(asm_msg);
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
@@ -275,86 +271,85 @@ void Manager::call_discover_callbacks(const DiscoveredService& discovered_servic
     }
 }
 
+void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asio::ip::address_v4& address) {
+    LOG(logger_, TRACE) << "Received message from " << address.to_string()    //
+                        << ": group = " << chirp_msg.getGroupID().to_string() //
+                        << ", host = " << chirp_msg.getHostID().to_string()   //
+                        << ", type = " << chirp_msg.getType()                 //
+                        << ", service = " << chirp_msg.getServiceIdentifier() //
+                        << ", port = " << chirp_msg.getPort();
+
+    if(chirp_msg.getGroupID() != group_id_) {
+        // Broadcast from different group, ignore
+        return;
+    }
+    if(chirp_msg.getHostID() == host_id_) {
+        // Broadcast from self, ignore
+        return;
+    }
+
+    const DiscoveredService discovered_service {
+        address, chirp_msg.getHostID(), chirp_msg.getServiceIdentifier(), chirp_msg.getPort()};
+
+    switch(chirp_msg.getType()) {
+    case REQUEST: {
+        auto service_id = discovered_service.identifier;
+        LOG(logger_, DEBUG) << "Received REQUEST for " << service_id << " services";
+        const std::lock_guard registered_services_lock {registered_services_mutex_};
+        // Replay OFFERs for registered services with same service identifier
+        for(const auto& service : registered_services_) {
+            if(service.identifier == service_id) {
+                send_message(OFFER, service);
+            }
+        }
+        break;
+    }
+    case OFFER: {
+        std::unique_lock discovered_services_lock {discovered_services_mutex_};
+        if(!discovered_services_.contains(discovered_service)) {
+            discovered_services_.insert(discovered_service);
+
+            // Unlock discovered_services_lock for user callback
+            discovered_services_lock.unlock();
+
+            LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << address.to_string() << ":"
+                                << chirp_msg.getPort() << " discovered";
+
+            call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
+        }
+        break;
+    }
+    case DEPART: {
+        std::unique_lock discovered_services_lock {discovered_services_mutex_};
+        if(discovered_services_.contains(discovered_service)) {
+            discovered_services_.erase(discovered_service);
+
+            // Unlock discovered_services_lock for user callback
+            discovered_services_lock.unlock();
+
+            LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << address.to_string() << ":"
+                                << chirp_msg.getPort() << " departed";
+
+            call_discover_callbacks(discovered_service, ServiceStatus::DEPARTED);
+        }
+        break;
+    }
+    default: std::unreachable();
+    }
+}
+
 void Manager::main_loop(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
-        try {
-            const auto raw_msg_opt = receiver_.asyncRecvBroadcast(50ms);
-
-            // Check for timeout
-            if(!raw_msg_opt.has_value()) {
-                continue;
-            }
-
+        // Receive CHIRP message and handle it
+        const auto raw_msg_opt = multicast_socket_->recvMessage(50ms);
+        if(raw_msg_opt.has_value()) {
             const auto& raw_msg = raw_msg_opt.value();
-            auto chirp_msg = CHIRPMessage::disassemble(raw_msg.content);
-
-            LOG(logger_, TRACE) << "Received message from " << raw_msg.address.to_string() //
-                                << ": group = " << chirp_msg.getGroupID().to_string()      //
-                                << ", host = " << chirp_msg.getHostID().to_string()        //
-                                << ", type = " << chirp_msg.getType()                      //
-                                << ", service = " << chirp_msg.getServiceIdentifier()      //
-                                << ", port = " << chirp_msg.getPort();
-
-            if(chirp_msg.getGroupID() != group_id_) {
-                // Broadcast from different group, ignore
+            try {
+                handle_incoming_message(CHIRPMessage::disassemble(raw_msg.content), raw_msg.address);
+            } catch(const MessageDecodingError& error) {
+                LOG(logger_, WARNING) << error.what();
                 continue;
             }
-            if(chirp_msg.getHostID() == host_id_) {
-                // Broadcast from self, ignore
-                continue;
-            }
-
-            const DiscoveredService discovered_service {
-                raw_msg.address, chirp_msg.getHostID(), chirp_msg.getServiceIdentifier(), chirp_msg.getPort()};
-
-            switch(chirp_msg.getType()) {
-            case REQUEST: {
-                auto service_id = discovered_service.identifier;
-                LOG(logger_, DEBUG) << "Received REQUEST for " << service_id << " services";
-                const std::lock_guard registered_services_lock {registered_services_mutex_};
-                // Replay OFFERs for registered services with same service identifier
-                for(const auto& service : registered_services_) {
-                    if(service.identifier == service_id) {
-                        send_message(OFFER, service);
-                    }
-                }
-                break;
-            }
-            case OFFER: {
-                std::unique_lock discovered_services_lock {discovered_services_mutex_};
-                if(!discovered_services_.contains(discovered_service)) {
-                    discovered_services_.insert(discovered_service);
-
-                    // Unlock discovered_services_lock for user callback
-                    discovered_services_lock.unlock();
-
-                    LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << raw_msg.address.to_string()
-                                        << ":" << chirp_msg.getPort() << " discovered";
-
-                    call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
-                }
-                break;
-            }
-            case DEPART: {
-                std::unique_lock discovered_services_lock {discovered_services_mutex_};
-                if(discovered_services_.contains(discovered_service)) {
-                    discovered_services_.erase(discovered_service);
-
-                    // Unlock discovered_services_lock for user callback
-                    discovered_services_lock.unlock();
-
-                    LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << raw_msg.address.to_string()
-                                        << ":" << chirp_msg.getPort() << " departed";
-
-                    call_discover_callbacks(discovered_service, ServiceStatus::DEPARTED);
-                }
-                break;
-            }
-            default: std::unreachable();
-            }
-        } catch(const MessageDecodingError& error) {
-            LOG(logger_, WARNING) << error.what();
-            continue;
         }
     }
 }

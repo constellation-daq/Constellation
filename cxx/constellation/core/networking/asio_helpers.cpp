@@ -14,6 +14,7 @@
 #include <string_view>
 
 #include <asio.hpp>
+#include <asio/ip/address_v4.hpp>
 #ifndef _WIN32
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -28,13 +29,16 @@
 using namespace constellation::networking;
 using namespace constellation::utils;
 
-std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresses() {
+std::set<asio::ip::address_v4> constellation::networking::get_interface_addresses() {
     std::set<asio::ip::address_v4> addresses {};
+
+    // Always add loopback interface
+    addresses.emplace(asio::ip::address_v4::loopback());
 
 #if defined(_WIN32)
 
-    // TODO(stephan.lachnit): implement this on Windows, right now take default brd address
-    addresses.emplace(asio::ip::address_v4::broadcast());
+    // TODO(stephan.lachnit): implement this on Windows, right now take default address
+    addresses.emplace(asio::ip::address_v4::any());
 
 #else
 
@@ -53,13 +57,13 @@ std::set<asio::ip::address_v4> constellation::networking::get_broadcast_addresse
             continue;
         }
 
-        // Ensure that the interface holds a broadcast address
-        if((ifa->ifa_flags & IFF_BROADCAST) == 0U) {
+        // Ensure that the interface is multicast capable
+        if((ifa->ifa_flags & IFF_MULTICAST) == 0U) {
             continue;
         }
 
-        char buffer[NI_MAXHOST];           // NOLINT(modernize-avoid-c-arrays)
-        if(getnameinfo(ifa->ifa_broadaddr, // NOLINT(cppcoreguidelines-pro-type-union-access)
+        char buffer[NI_MAXHOST];      // NOLINT(modernize-avoid-c-arrays)
+        if(getnameinfo(ifa->ifa_addr, // NOLINT(cppcoreguidelines-pro-type-union-access)
                        sizeof(struct sockaddr_in),
                        buffer, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
                        sizeof(buffer),

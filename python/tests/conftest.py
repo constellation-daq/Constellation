@@ -18,7 +18,6 @@ from constellation.core.cdtp import DataTransmitter
 from constellation.core.chirp import (
     CHIRP_PORT,
     CHIRPBeaconTransmitter,
-    get_uuid,
 )
 from constellation.core.configuration import Configuration, flatten_config, load_config
 from constellation.core.controller import BaseController
@@ -44,14 +43,14 @@ CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac
 setup_cli_logging("TRACE")
 
 
-class mock_socket:
-    """Mock socket.socket.
+class chirpsocket:
+    """Mocks socket.socket.
 
     Used in tests involving CHIRP."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
-        self.seen = 0
+        self.seen: int = 0
+        self.timeout: float = -1
 
     def connected(self):
         return True
@@ -64,9 +63,9 @@ class mock_socket:
         """ignored"""
         pass
 
-    def settimeout(self, *args, **kwargs):
-        """ignored"""
-        pass
+    def settimeout(self, timeout: float):
+        """Adjust timeout."""
+        self.timeout = timeout
 
     def bind(self, *args, **kwargs):
         """ignored"""
@@ -78,8 +77,10 @@ class mock_socket:
         try:
             data = mock_chirp_packet_queue[self.seen]
             self.seen += 1
-            return data, ["localhost", CHIRP_PORT]
+            return data, ["127.0.0.1", CHIRP_PORT]
         except IndexError:
+            if self.timeout > 0:
+                raise TimeoutError("no mock data")
             raise BlockingIOError("no mock data")
 
     def recvmsg(self, bufsize, ancsize):
@@ -96,33 +97,28 @@ class mock_socket:
                     b"\x02\x00\x1b\xd3\x7f\x00\x00\xff\x00\x00\x00\x00\x00\x00\x00\x00",
                 )
             ]
-            return data, ancdata, 0, ["localhost", CHIRP_PORT]
+            return data, ancdata, 0, ["127.0.0.1", CHIRP_PORT]
         except IndexError:
             raise TimeoutError("no mock data")
+
+    def setsockopt(self, *args, **kwargs):
+        """Ignored."""
+        pass
 
 
 @pytest.fixture
 def mock_chirp_socket():
     """Mock CHIRP socket calls."""
-    with patch("constellation.core.chirp.get_broadcast_socket") as mock:
-        sock = mock_socket()
-        mock.return_value = sock
-        yield sock
+    with patch("constellation.core.multicast.socket.socket") as mock:
+        mock.side_effect = chirpsocket
+        yield mock
 
 
 @pytest.fixture
-def mock_chirp_transmitter():
-    def mock_init(self, *args, **kwargs):
-        self._host_uuid = get_uuid(args[0])
-        self._group_uuid = get_uuid("mockstellation")
-        self._broadcast_addrs = ["localhost"]
-        self._filter_group = True
-        mock = mock_socket()
-        self._sock = mock
-
-    with patch.object(CHIRPBeaconTransmitter, "__init__", mock_init):
-        t = CHIRPBeaconTransmitter("mock_transmitter")
-        yield t
+def mock_chirp_transmitter(mock_chirp_socket):
+    """Yields a CHIRP transmitter for our fake Constellation."""
+    t = CHIRPBeaconTransmitter("mock_transmitter", "mockstellation", "127.0.0.1")
+    yield t
 
 
 class mocket:
@@ -270,8 +266,8 @@ def mock_data_receiver(mock_socket_receiver):
 
 
 @pytest.fixture
-def mock_heartbeat_checker():
-    """Create a mock HeartbeatChecker instance."""
+def mock_heartbeat_poller():
+    """Create a mock HeartbeatChecker poller."""
 
     mockets = []
 
@@ -298,16 +294,22 @@ def mock_heartbeat_checker():
             mock_poller = Mock()
             mock_poller.poll.side_effect = poll
             mock_p.return_value = mock_poller
-            hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
-            hbc._add_com_thread()
-            hbc._start_com_threads()
-            # give the threads a chance to start
-            time.sleep(0.1)
-            yield hbc
+            yield mock_context, mock_poller
 
 
 @pytest.fixture
-def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
+def mock_heartbeat_checker(mock_heartbeat_poller):
+    """Create a mock HeartbeatChecker instance."""
+    hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
+    hbc._add_com_thread()
+    hbc._start_com_threads()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield hbc
+
+
+@pytest.fixture
+def mock_satellite(mock_chirp_socket, mock_heartbeat_poller):
     """Create a mock Satellite base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -327,7 +329,7 @@ def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
 
 
 @pytest.fixture
-def mock_controller(mock_chirp_transmitter, mock_heartbeat_checker):
+def mock_controller(mock_chirp_socket, mock_heartbeat_poller):
     """Create a mock Controller base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -363,7 +365,7 @@ def config(rawconfig):
 
 
 @pytest.fixture
-def mock_example_satellite(mock_chirp_transmitter):
+def mock_example_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
     def mocket_factory(*args, **kwargs):
