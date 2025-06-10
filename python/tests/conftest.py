@@ -266,8 +266,8 @@ def mock_data_receiver(mock_socket_receiver):
 
 
 @pytest.fixture
-def mock_heartbeat_checker():
-    """Create a mock HeartbeatChecker instance."""
+def mock_heartbeat_poller():
+    """Create a mock HeartbeatChecker poller."""
 
     mockets = []
 
@@ -294,16 +294,22 @@ def mock_heartbeat_checker():
             mock_poller = Mock()
             mock_poller.poll.side_effect = poll
             mock_p.return_value = mock_poller
-            hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
-            hbc._add_com_thread()
-            hbc._start_com_threads()
-            # give the threads a chance to start
-            time.sleep(0.1)
-            yield hbc
+            yield mock_context, mock_poller
 
 
 @pytest.fixture
-def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
+def mock_heartbeat_checker(mock_heartbeat_poller):
+    """Create a mock HeartbeatChecker instance."""
+    hbc = HeartbeatChecker("mock_hbchecker", "127.0.0.1")
+    hbc._add_com_thread()
+    hbc._start_com_threads()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield hbc
+
+
+@pytest.fixture
+def mock_satellite(mock_chirp_socket, mock_heartbeat_poller):
     """Create a mock Satellite base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -323,7 +329,7 @@ def mock_satellite(mock_chirp_transmitter, mock_heartbeat_checker):
 
 
 @pytest.fixture
-def mock_controller(mock_chirp_transmitter, mock_heartbeat_checker):
+def mock_controller(mock_chirp_socket, mock_heartbeat_poller):
     """Create a mock Controller base instance."""
 
     def mocket_factory(*args, **kwargs):
@@ -359,7 +365,7 @@ def config(rawconfig):
 
 
 @pytest.fixture
-def mock_example_satellite(mock_chirp_transmitter):
+def mock_example_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
     def mocket_factory(*args, **kwargs):

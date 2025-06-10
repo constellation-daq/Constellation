@@ -19,7 +19,7 @@ from constellation.core.satellite import Satellite
 
 
 @pytest.fixture
-def mock_device_satellite(mock_chirp_transmitter):
+def mock_device_satellite(mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
 
     def mocket_factory(*args, **kwargs):
@@ -234,7 +234,7 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     mock_chirp_transmitter.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     time.sleep(0.5)
     # chirp message has been processed
-    assert satellite._beacon._sock.seen >= 1
+    assert satellite._beacon._socket._recv_socket.seen >= 1
     assert satellite.callback_triggered
     assert isinstance(satellite.callback_triggered, DiscoveredService)
 
