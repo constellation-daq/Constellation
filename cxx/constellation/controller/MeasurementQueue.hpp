@@ -30,8 +30,9 @@
 
 namespace constellation::controller {
 
-    /** Measurement queue class which allows to queue and fetch measurement configurations which can be used to reconfigure
-     * a constellation
+    /**
+     * @brief Measurement queue class which allows to queue and fetch measurement configurations which can be used to
+     * reconfigure a constellation
      *
      * The measurement queue holds a reference to the currently used controller of the constellation and can take over when
      * the global state is ORBIT, i.e. all satellites have been initialized and launched, It will only take care of
@@ -193,16 +194,17 @@ namespace constellation::controller {
          *          The actual measurement dictionary is amended with keys from the original values cache whenever this value
          *          does not appear anymore.
          *
-         * \param measurement Current measurement
+         * @param measurement Current measurement
          */
         void cache_original_values(Measurement& measurement);
 
     protected:
         /** Queue of measurements */
-        // NOLINTNEXTLINE(*-non-private-member-variables-in-classes)
+        // NOLINTBEGIN(*-non-private-member-variables-in-classes)
         std::deque<std::pair<Measurement, std::shared_ptr<MeasurementCondition>>> measurements_;
-        mutable std::mutex measurement_mutex_;                    // NOLINT(*-non-private-member-variables-in-classes)
-        std::shared_ptr<MeasurementCondition> default_condition_; // NOLINT(*-non-private-member-variables-in-classes)
+        mutable std::mutex measurement_mutex_;
+        std::shared_ptr<MeasurementCondition> default_condition_;
+        // NOLINTEND(*-non-private-member-variables-in-classes)
 
     private:
         /** Logger to use */
@@ -211,14 +213,14 @@ namespace constellation::controller {
         std::string run_identifier_prefix_;
         std::chrono::seconds transition_timeout_;
 
-        std::atomic<std::size_t> measurements_size_ {0};
-        std::atomic<std::size_t> run_sequence_ {0};
+        std::atomic_size_t measurements_size_ {0};
+        std::atomic_size_t run_sequence_ {0};
 
         /** Original parameters to be reset after the queue */
         Measurement original_values_;
 
         /** Interrupt counter to append to run identifier for re-tries */
-        std::atomic<std::size_t> interrupt_counter_ {0};
+        std::atomic_size_t interrupt_counter_ {0};
 
         /** Controller to use for the measurements */
         Controller& controller_;

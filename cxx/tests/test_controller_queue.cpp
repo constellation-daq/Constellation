@@ -144,7 +144,7 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     controller.waitReachedState(CSCP::State::ORBIT, true);
 
     // Add measurements to the queue, overwriting default length
-    const auto measurement_condition = std::make_shared<TimerCondition>(std::chrono::seconds(1));
+    const auto measurement_condition = std::make_shared<TimerCondition>(1s);
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
     queue.append(measurement, measurement_condition);
     queue.append(measurement);
