@@ -111,6 +111,7 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
 
     // Stop controller
     controller.stop();
+    satellite.exit();
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
 }
 
