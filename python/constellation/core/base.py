@@ -20,7 +20,7 @@ import zmq
 from . import __version__, __version_code_name__
 from .cmdp import CMDPTransmitter
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler
-from .network import get_interface_addresses, validate_interface
+from .network import get_interface_addresses_args, validate_interface
 
 
 @atexit.register
@@ -67,7 +67,7 @@ class ConstellationArgumentParser(ArgumentParser):
         self.network.add_argument(
             "--interface",
             type=validate_interface,
-            choices=get_interface_addresses(),
+            choices=get_interface_addresses_args(),
             default="*",
             help="The network interface (i.e. IP address) to bind to. "
             "Use '*' to bind to alla available interfaces "
