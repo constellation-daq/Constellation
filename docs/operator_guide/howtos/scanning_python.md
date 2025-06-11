@@ -71,20 +71,15 @@ It is also possible to create a standalone script which can be run without the I
 import time
 
 from constellation.core.configuration import load_config
-from constellation.core.controller import BaseController
-from constellation.core.logging import setup_cli_logging
-from constellation.core.network import get_interface_names
+from constellation.core.controller import ScriptableController
 
 # Settings
 config_file_path = "/path/to/config.toml"
 group_name = "edda"
 n_satellites = 1
 
-# Setup logging
-setup_cli_logging("info")
-
 # Create controller
-ctrl = BaseController(group=group_name, name="PythonCtrl", interface=get_interface_names())
+ctrl = ScriptableController(group_name)
 constellation = ctrl.constellation
 
 # Load configuration
