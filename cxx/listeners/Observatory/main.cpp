@@ -53,8 +53,7 @@ int main(int argc, char* argv[]) {
         try {
             options = parser.parse({argv, static_cast<std::size_t>(argc)});
         } catch(const std::exception& error) {
-            LOG(CRITICAL) << "Argument parsing failed: " << error.what();
-            LOG(CRITICAL) << "Run `Observatory --help` for help";
+            LOG(CRITICAL) << "Argument parsing failed: " << error.what() << "\n\n" << parser.help();
             return 1;
         }
 

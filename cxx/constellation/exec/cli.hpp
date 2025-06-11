@@ -69,9 +69,16 @@ namespace constellation::exec {
          * @return Parsed options
          */
         BaseOptions parse(std::span<char*> args);
+
+        /**
+         * @brief Get program help
+         *
+         * @return String containing the program help
+         */
+        std::string help() const;
     };
 
-    class CNSTLN_API SatelliteParser : protected BaseParser {
+    class CNSTLN_API SatelliteParser : public BaseParser {
     public:
         struct SatelliteOptions : BaseOptions {
             /** Constellation group */
@@ -128,7 +135,7 @@ namespace constellation::exec {
         std::optional<std::string> type_;
     };
 
-    class CNSTLN_API GUIParser : protected BaseParser {
+    class CNSTLN_API GUIParser : public BaseParser {
     public:
         struct GUIOptions : BaseOptions {
             /** Constellation group */

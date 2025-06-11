@@ -76,6 +76,10 @@ BaseParser::BaseOptions BaseParser::parse(std::span<char*> args) {
     return {level.value(), interfaces};
 }
 
+std::string BaseParser::help() const {
+    return argparse::ArgumentParser::help().str();
+}
+
 SatelliteParser::SatelliteParser(std::string program, std::optional<std::string> type)
     : BaseParser(std::move(program)), type_(std::move(type)) {}
 

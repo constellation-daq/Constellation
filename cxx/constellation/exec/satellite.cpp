@@ -45,8 +45,7 @@ int constellation::exec::satellite_main(int argc,
         try {
             options = parser.parse({argv, static_cast<std::size_t>(argc)});
         } catch(const std::exception& error) {
-            LOG(CRITICAL) << "Argument parsing failed: " << error.what();
-            LOG(CRITICAL) << "Run `" << program << " --help` for help";
+            LOG(CRITICAL) << "Argument parsing failed: " << error.what() << "\n\n" << parser.help();
             return 1;
         }
 
