@@ -24,6 +24,8 @@ The following parameters are read and interpreted by this satellite. Parameters 
 |------------|-------------|------|---------------|
 | `interval` | Interval in which beep signals are emitted in units of milliseconds | Unsigned integer | `3000` |
 
+This satellite supports in-orbit reconfiguration of the `interval` parameter.
+
 ### Configuration Example
 
 An example configuration for this satellite which could be dropped into a Constellation configuration as a starting point
