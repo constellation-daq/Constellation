@@ -14,6 +14,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
@@ -26,6 +27,9 @@ using namespace constellation::controller;
 namespace {
     std::filesystem::path test_files_dir() {
         const auto* cxx_tests_dir = std::getenv("CXX_TESTS_DIR"); // NOLINT(concurrency-mt-unsafe)
+        if(cxx_tests_dir == nullptr) {
+            return std::filesystem::current_path() / "cxx" / "tests" / "test_files";
+        }
         return std::filesystem::path(cxx_tests_dir) / "test_files";
     }
 } // namespace
@@ -111,4 +115,45 @@ TEST_CASE("Adding satellite configuration", "[controller]") {
     const auto satellite_config = config.getSatelliteConfiguration("Dummy.Added");
     REQUIRE(satellite_config.at("key").get<int>() == 13);
 }
+
+TEST_CASE("Convert to TOML", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict;
+    dict["bool"] = true;
+    dict["int"] = 123;
+    dict["double"] = 1.0;
+    dict["str"] = "Hello World!";
+    dict["bool_arr"] = std::vector<bool>({true, false});
+    dict["int_arr"] = std::vector<int>({1, 2, 3});
+    dict["double_arr"] = std::vector<double>({1.0});
+    dict["str_arr"] = std::vector<std::string>({"Hello", "World"});
+
+    config.addSatelliteConfiguration("Dummy.Added", dict);
+    REQUIRE(config.hasSatelliteConfiguration("Dummy.Added"));
+
+    // Get as TOML
+    const auto toml = config.getAsTOML();
+    REQUIRE_THAT(toml, ContainsSubstring("[satellites.dummy.added]"));
+    REQUIRE_THAT(toml, ContainsSubstring("bool = true"));
+    REQUIRE_THAT(toml, ContainsSubstring("int = 123"));
+    REQUIRE_THAT(toml, ContainsSubstring("double = 1.0"));
+    REQUIRE_THAT(toml, ContainsSubstring("str = 'Hello World!'"));
+    REQUIRE_THAT(toml, ContainsSubstring("bool_arr = [ true, false ]"));
+    REQUIRE_THAT(toml, ContainsSubstring("int_arr = [ 1, 2, 3 ]"));
+    REQUIRE_THAT(toml, ContainsSubstring("double_arr = [ 1.0 ]"));
+    REQUIRE_THAT(toml, ContainsSubstring("str_arr = [ 'Hello', 'World' ]"));
+
+    // Parse TOML
+    const ControllerConfiguration config2 {std::string_view(toml)};
+    const auto dict2 = config.getSatelliteConfiguration("Dummy.Added");
+    REQUIRE(dict2.at("bool").get<bool>() == true);
+    REQUIRE(dict2.at("int").get<int>() == 123);
+    REQUIRE(dict2.at("double").get<double>() == 1.0);
+    REQUIRE(dict2.at("str").get<std::string>() == "Hello World!");
+    REQUIRE(dict2.at("bool_arr").get<std::vector<bool>>() == std::vector<bool>({true, false}));
+    REQUIRE(dict2.at("int_arr").get<std::vector<int>>() == std::vector<int>({1, 2, 3}));
+    REQUIRE(dict2.at("double_arr").get<std::vector<double>>() == std::vector<double>({1.0}));
+    REQUIRE(dict2.at("str_arr").get<std::vector<std::string>>() == std::vector<std::string>({"Hello", "World"}));
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
