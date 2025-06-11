@@ -116,7 +116,15 @@ test('Core utilities test', test_core_utils,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
-# Exec / DSO Loader
+# Exec
+
+test_exec_cli = executable('test_exec_cli',
+  sources: 'test_exec_cli.cpp',
+  dependencies: [core_dep, exec_dep, catch2_dep],
+)
+test('Exec CLI test', test_exec_cli,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
 
 test_exec_dsoloader = executable('test_exec_dsoloader',
   sources: 'test_exec_dsoloader.cpp',
