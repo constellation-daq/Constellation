@@ -91,7 +91,7 @@ namespace constellation::controller {
         /**
          * @brief Append a new measurement.
          * @details Appends the measurement to the queue and updates the progress. The currently configured default condition
-         *          is st for this measurement unless a measurement-specific condition is provided.
+         *          is set for this measurement unless a measurement-specific condition is provided.
          *
          * @param measurement Measurement to be added to the queue
          * @param condition Optional condition for this specific measurement. If not provided, the queue's default condition

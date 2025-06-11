@@ -10,6 +10,7 @@
 #include <chrono>
 #include <cstddef>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -93,6 +94,7 @@ public:
     void queue_stopped() final { stopped_ = true; }
 
     void queue_failed(std::string_view reason) final {
+        const std::lock_guard messages_lock {failed_reason_mutex_};
         failed_reason_ = reason;
         failed_ = true;
     }
@@ -126,7 +128,10 @@ public:
         failed_.store(false);
     }
 
-    std::string getFailureReason() const { return failed_reason_; }
+    std::string getFailureReason() {
+        const std::lock_guard messages_lock {failed_reason_mutex_};
+        return failed_reason_;
+    }
 
     double waitProgress() {
         // Wait for callback to trigger
@@ -141,6 +146,7 @@ private:
     std::atomic_bool started_ {false};
     std::atomic_bool stopped_ {false};
     std::atomic_bool failed_ {false};
+    std::mutex failed_reason_mutex_;
     std::string failed_reason_;
     std::atomic_bool progress_updated_ {false};
     std::atomic<double> progress_;
