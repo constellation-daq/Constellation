@@ -50,6 +50,8 @@ TEST_CASE("Empty Queue", "[controller]") {
     const auto condition = std::make_shared<TimerCondition>(std::chrono::seconds(5));
     DummyQueue queue(controller, "queue_run_", condition);
 
+    REQUIRE_THAT(condition->str(), Equals("Run for 5s"));
+
     REQUIRE_FALSE(queue.running());
     REQUIRE(queue.size() == 0);
     REQUIRE(queue.progress() == 0.);
@@ -57,6 +59,9 @@ TEST_CASE("Empty Queue", "[controller]") {
     // Attempt to start, controller not in orbit:
     queue.start();
     REQUIRE_FALSE(queue.running());
+
+    // Halt queue to check nothing happens
+    queue.halt();
 
     // Stop controller
     controller.stop();
@@ -150,14 +155,15 @@ TEST_CASE("Run Queue", "[controller]") {
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
 
-    // Start the queue and stop it directly, should end after current measurement
+    // Start the queue
     queue.start();
-
     queue.waitStarted();
     REQUIRE(queue.running());
-    queue.halt();
 
+    // Stop queue, should end after current measurement
+    queue.halt();
     queue.waitStopped();
+
     REQUIRE(queue.size() == 1);
     REQUIRE(queue.progress() == 0.5);
     REQUIRE_FALSE(queue.running());
@@ -292,6 +298,76 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     REQUIRE(queue.progress() == 1.);
     REQUIRE_FALSE(queue.running());
     REQUIRE(controller.getRunIdentifier() == "queue_run_0_retry_1");
+
+    // Stop controller and exit satellites
+    controller.stop();
+    satellite.exit();
+    ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
+}
+
+TEST_CASE("Clear Queue", "[controller]") {
+    // Create CHIRP manager for control service discovery
+    create_chirp_manager();
+
+    // Create and start controller
+    DummyController controller {"ctrl"};
+    controller.start();
+
+    const auto condition = std::make_shared<TimerCondition>(std::chrono::seconds(1));
+    DummyQueue queue(controller, "queue_run_", condition);
+
+    // Create and start satellite
+    DummySatellite satellite {"a"};
+    satellite.skipTransitional(true);
+    satellite.mockChirpService(CHIRP::CONTROL);
+    satellite.mockChirpService(CHIRP::HEARTBEAT);
+
+    // Await connection
+    while(controller.getConnectionCount() < 1) {
+        std::this_thread::sleep_for(50ms);
+    }
+
+    // Initialize and launch satellite, and check that state updates were propagated
+    satellite.reactFSM(FSM::Transition::initialize, Configuration());
+    controller.waitReachedState(CSCP::State::INIT, true);
+    satellite.reactFSM(FSM::Transition::launch);
+    controller.waitReachedState(CSCP::State::ORBIT, true);
+
+    // Add measurements to the queue
+    const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
+    queue.append(measurement);
+    queue.append(measurement);
+    REQUIRE(queue.size() == 2);
+    REQUIRE_FALSE(queue.running());
+
+    // Start the queue
+    queue.start();
+    queue.waitStarted();
+    REQUIRE(queue.running());
+
+    // Start queue again to check nothing happens
+    queue.start();
+    REQUIRE(queue.running());
+
+    // Clear queue while running, keeps current measurement
+    queue.clear();
+    REQUIRE(queue.running());
+    REQUIRE(queue.size() == 1);
+
+    // Stop queue, should end after current measurement
+    queue.halt();
+    queue.waitStopped();
+
+    REQUIRE(queue.size() == 0);
+    REQUIRE(queue.progress() == 1.);
+    REQUIRE_FALSE(queue.running());
+
+    // Add new measurement and clear while queue is stopped
+    queue.append(measurement);
+    REQUIRE(queue.size() == 1);
+    queue.clear();
+    REQUIRE(queue.size() == 0);
+    queue.clear();
 
     // Stop controller and exit satellites
     controller.stop();
