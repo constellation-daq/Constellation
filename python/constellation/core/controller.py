@@ -374,11 +374,16 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             return prefix + "All " + res[0]
         return prefix + ", ".join(res)
 
-    def await_state(self, target: SatelliteState) -> None:
+    def await_state(self, target: SatelliteState, timeout: int = 60) -> None:
         """Blocks until the desired global SatelliteState of the controller satellites is reached."""
-        self.log.info("Awaiting global state " + str(target))
+        self.log.info("Awaiting global state %s", target)
+        start = time.time()
         while not all([state == target for state in self.states.values()]):
-            time.sleep(0.5)
+            if time.time() - start > timeout:
+                raise Exception(f"Timeout after {timeout}s while waiting for state {target.name}")
+            if any([state == SatelliteState.ERROR for state in self.states.values()]):
+                raise Exception(f"ERROR state detected while waiting for state {target.name}")
+            time.sleep(0.1)
 
     @property
     def constellation(self) -> SatelliteArray:

@@ -1,5 +1,7 @@
 # Parameter Scans with Python
 
+## Using the IPython Console
+
 The Python Controller of Constellation is a fully-features IPython console. It can be installed with the `cli` component:
 
 ::::{tab-set}
@@ -57,6 +59,11 @@ for ivl in range(0, 100, 10):
         constellation.stop()
         ctrl.await_state(SatelliteState.ORBIT)
 ```
+
+The `await_state` function raises an exception after waiting for  60 seconds by default (can be adapted using the `timeout`
+parameter) and when any satellite is in the ERROR state.
+
+## Using a Standalone Script
 
 It is also possible to create a standalone script which can be run without the IPython console:
 
