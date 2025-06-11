@@ -32,6 +32,7 @@ using namespace std::chrono_literals;
 
 SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name) : Satellite(type, name) {
     LOG(STATUS) << "Sputnik prototype satellite " << getCanonicalName() << " created";
+    support_reconfigure(true);
 
     register_command("get_channel_reading",
                      "This example command reads the a device value from the channel number provided as argument. Since this"
@@ -50,6 +51,17 @@ void SputnikSatellite::initializing(Configuration& config) {
     register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");
     register_metric("TEMPERATURE", "degC", MetricType::LAST_VALUE, "Measured temperature inside satellite");
     register_metric("FAN_RUNNING", "", MetricType::LAST_VALUE, "Information on the fan state");
+}
+
+void SputnikSatellite::reconfiguring(const constellation::config::Configuration& config) {
+    if(config.has("interval")) {
+        register_timed_metric("BEEP",
+                              "beeps",
+                              MetricType::LAST_VALUE,
+                              "Sputnik beeps",
+                              std::chrono::milliseconds(config.get<std::uint64_t>("interval")),
+                              []() { return 42; });
+    }
 }
 
 void SputnikSatellite::launching() {
