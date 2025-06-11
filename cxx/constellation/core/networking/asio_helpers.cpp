@@ -41,6 +41,13 @@
 using namespace constellation::networking;
 using namespace constellation::utils;
 
+std::string constellation::networking::get_hostname() {
+    auto host_name = asio::ip::host_name();
+    std::ranges::replace(host_name, '-', '_');
+    std::ranges::replace(host_name, '.', '_');
+    return host_name;
+}
+
 std::vector<Interface> constellation::networking::get_interfaces() {
     std::vector<Interface> interfaces {};
 

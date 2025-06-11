@@ -169,7 +169,7 @@ class SatelliteArray:
 
     def _sanitize_name(self, name: str) -> str:
         """Remove characters not suited for Python methods from names."""
-        return name.replace("-", "_")
+        return name.replace("-", "_").replace(".", "_")
 
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:
         if cycle:

@@ -32,6 +32,13 @@ namespace constellation::networking {
     };
 
     /**
+     * @brief Get hostname
+     *
+     * @note This function sanitized the hostname by replacing hyphens and dots with underscores
+     */
+    CNSTLN_API std::string get_hostname();
+
+    /**
      * @brief Get all interfaces
      *
      * @return List with all interfaces

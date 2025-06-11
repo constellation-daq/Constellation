@@ -98,9 +98,8 @@ void SatelliteParser::setup() {
 
     // Satellite name (-n)
     try {
-        // Try to use host name as default, replace hyphens with underscores:
-        auto default_name = asio::ip::host_name();
-        std::ranges::replace(default_name, '-', '_');
+        // Try to use host name as default
+        const auto default_name = get_hostname();
         add_argument("-n", "--name").help("satellite name").default_value(default_name);
     } catch(const asio::system_error& error) {
         add_argument("-n", "--name").help("satellite name").required();
@@ -134,9 +133,8 @@ void GUIParser::setup() {
 
     // Instance name (-n)
     try {
-        // Try to use host name as default, replace hyphens with underscores:
-        auto default_name = asio::ip::host_name();
-        std::ranges::replace(default_name, '-', '_');
+        // Try to use host name as default
+        const auto default_name = get_hostname();
         add_argument("-n", "--name").help("instance name").default_value(default_name);
     } catch(const asio::system_error& error) {
         add_argument("-n", "--name").help("instance name");
