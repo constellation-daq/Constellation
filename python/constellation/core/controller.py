@@ -22,6 +22,7 @@ from .error import debug_log
 from .fsm import SatelliteState
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
+from .network import get_interface_names
 from .satellite import Satellite
 
 
@@ -730,3 +731,20 @@ def main(args: Any = None) -> None:
 
 if __name__ == "__main__":
     main()
+
+
+class ScriptableController(BaseController):
+    """Simple controller class to which initializes logging and networking."""
+
+    def __init__(
+        self,
+        group: str,
+        log_level: str = "INFO",
+        name: str = "ScriptableController",
+        interface: list[str] = get_interface_names(),
+    ) -> None:
+        # Initialize logging first
+        setup_cli_logging(log_level)
+
+        # Initialize BaseController
+        super().__init__(group=group, name=name, interface=interface)
