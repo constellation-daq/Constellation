@@ -10,7 +10,9 @@
 #pragma once
 
 #include <filesystem>
+#include <string>
 #include <string_view>
+#include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -20,7 +22,13 @@ namespace constellation::controller {
      * @ingroup Exceptions
      * @brief Base class for all controller exceptions
      */
-    class CNSTLN_API ControllerError : public utils::RuntimeError {};
+    class CNSTLN_API ControllerError : public utils::RuntimeError {
+    public:
+        explicit ControllerError(std::string what_arg) : RuntimeError(std::move(what_arg)) {}
+
+    protected:
+        ControllerError() = default;
+    };
 
     /**
      * @ingroup Exceptions
@@ -68,6 +76,22 @@ namespace constellation::controller {
             error_message_ = "Invalid value type for key ";
             error_message_ += key;
             error_message_ += ": ";
+            error_message_ += error;
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error from a measurement queue
+     */
+    class CNSTLN_API QueueError : public ControllerError {
+    public:
+        /**
+         * @brief Construct an error for a measurement queue
+         * @param error Error message from the queue
+         */
+        explicit QueueError(std::string_view error) {
+            error_message_ = "Measurement queue error: ";
             error_message_ += error;
         }
     };

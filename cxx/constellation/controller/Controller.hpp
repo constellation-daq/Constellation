@@ -177,16 +177,18 @@ namespace constellation::controller {
          * @brief Send a command to all connected satellites
          * @details This method allows to send command message to all connected satellites. The message is formed
          * individually for each satellite from the provided verb and the payload entry in the map for the given satellite.
-         * Missing entries in the payload table will receive an empty payload. The response from all satellites is
-         * returned as a map.
+         * The response from all satellites is returned as a map.
          *
          * @param verb Command
          * @param payloads Map of payloads for each target satellite.
+         * @param include_missing Also send the command to satellites not present in the payload map. If false, missing
+         *                        satellites are skipped, if true, they will receive an empty payload.
          *
          * @return Map of satellite canonical names and their CSCP response messages
          */
         std::map<std::string, message::CSCP1Message> sendCommands(const std::string& verb,
-                                                                  const std::map<std::string, CommandPayload>& payloads);
+                                                                  const std::map<std::string, CommandPayload>& payloads,
+                                                                  bool include_missing = true);
 
         /**
          * @brief Helper to check if all connected satellites are in a given state
@@ -197,11 +199,26 @@ namespace constellation::controller {
         bool isInState(protocol::CSCP::State state) const;
 
         /**
+         * @brief Helper to check if any of the connected satellites report an error or safe state
+         * @return True if any satellite is in ERROR or SAFE state, false otherwise
+         */
+        bool hasAnyErrorState() const;
+
+        /**
          * @brief Helper to check if the constellation is in a coherent global state of if states are mixed
          *
          * @return True if all connected satellites are in the same state, false if states are mixed
          */
         bool isInGlobalState() const;
+
+        /**
+         * @brief Helper to wait until all connected satellites are in a given state
+         *
+         * @param state State to be checked for
+         * @param timeout Time to wait before an exception is thrown
+         * @throw ControllerError If the timeout is reached before the global state is reached
+         */
+        void awaitState(protocol::CSCP::State state, std::chrono::seconds timeout) const;
 
         /**
          * @brief Get lowest state of any satellite connected

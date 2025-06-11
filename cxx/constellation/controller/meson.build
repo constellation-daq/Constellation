@@ -4,12 +4,14 @@
 controller_src = files(
   'Controller.cpp',
   'ControllerConfiguration.cpp',
+  'MeasurementCondition.cpp',
+  'MeasurementQueue.cpp',
 )
 
 controller_lib = library('ConstellationController',
   sources: controller_src,
   include_directories: constellation_inc,
-  dependencies: [core_dep, cppzmq_dep, msgpack_cxx_dep, tomlplusplus_dep],
+  dependencies: [core_dep, listener_dep, cppzmq_dep, msgpack_cxx_dep, tomlplusplus_dep],
   gnu_symbol_visibility: 'hidden',
   cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
@@ -33,5 +35,7 @@ install_headers(
   'Controller.hpp',
   'ControllerConfiguration.hpp',
   'exceptions.hpp',
+  'MeasurementCondition.hpp',
+  'MeasurementQueue.hpp',
   subdir: 'constellation/controller',
 )

@@ -175,6 +175,15 @@ test('Controller config test', test_controller_config,
   env: ['CXX_TESTS_DIR='+meson.current_source_dir()],
 )
 
+test_controller_queue = executable('test_controller_queue',
+  sources: 'test_controller_queue.cpp',
+  dependencies: [core_dep, controller_dep, satellite_dep, catch2_dep],
+)
+test('Controller queue test', test_controller_queue,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  is_parallel: false,
+)
+
 # Listener
 
 test_listener_cmdp = executable('test_listener_cmdp',

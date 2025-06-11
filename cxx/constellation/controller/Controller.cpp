@@ -24,6 +24,7 @@
 #include <stop_token>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 #include <variant>
 
@@ -31,6 +32,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
+#include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
@@ -46,6 +48,7 @@
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/timers.hpp"
 
 using namespace constellation::config;
 using namespace constellation::controller;
@@ -307,8 +310,26 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
 bool Controller::isInState(CSCP::State state) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
+    // Without connections, the state is NEW
+    if(connections_.empty() && state != CSCP::State::NEW) {
+        return false;
+    }
+
     return std::ranges::all_of(
         connections_.cbegin(), connections_.cend(), [state](const auto& conn) { return conn.second.state == state; });
+}
+
+bool Controller::hasAnyErrorState() const {
+    const std::lock_guard connection_lock {connection_mutex_};
+
+    // Without connection, there is no error state
+    if(connections_.empty()) {
+        return false;
+    }
+
+    return std::ranges::any_of(connections_.cbegin(), connections_.cend(), [](const auto& conn) {
+        return conn.second.state == CSCP::State::ERROR || conn.second.state == CSCP::State::SAFE;
+    });
 }
 
 bool Controller::isInGlobalState() const {
@@ -318,6 +339,20 @@ bool Controller::isInGlobalState() const {
     return std::ranges::adjacent_find(connections_.cbegin(), connections_.cend(), [](auto const& x, auto const& y) {
                return x.second.state != y.second.state;
            }) == connections_.cend();
+}
+
+void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) const {
+    auto timer = TimeoutTimer(timeout);
+    timer.reset();
+
+    while(!isInState(state)) {
+        if(timer.timeoutReached()) {
+            throw ControllerError("Timed out waiting for global state " + to_string(state));
+        }
+
+        // Wait a bit to avoid hot-loop
+        std::this_thread::sleep_for(10ms);
+    }
 }
 
 CSCP::State Controller::getLowestState() const {
@@ -435,7 +470,8 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(std::string verb, c
 }
 
 std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& verb,
-                                                             const std::map<std::string, CommandPayload>& payloads) {
+                                                             const std::map<std::string, CommandPayload>& payloads,
+                                                             bool include_missing) {
 
     std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
@@ -443,6 +479,11 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
     const std::lock_guard connection_lock {connection_mutex_};
 
     for(auto& [name, sat] : connections_) {
+        // If satellites without payload should not be included, skip:
+        if(!include_missing && !payloads.contains(name)) {
+            continue;
+        }
+
         // Start command sending and store future:
         futures.emplace(name, std::async(std::launch::async, [&]() {
                             // Prepare message:
