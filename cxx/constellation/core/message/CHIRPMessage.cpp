@@ -107,12 +107,12 @@ CHIRPMessage CHIRPMessage::disassemble(std::span<const std::byte> assembled_mess
     // Check protocol identifier
     for(std::size_t n = 0; n < IDENTIFIER.length(); ++n) {
         if(std::to_integer<char>(assembled_message[n]) != IDENTIFIER.at(n)) {
-            throw MessageDecodingError("not a CHIRP broadcast");
+            throw MessageDecodingError("not a CHIRP message");
         }
     }
     // Check the protocol version
     if(std::to_integer<std::uint8_t>(assembled_message[5]) != VERSION) {
-        throw MessageDecodingError("not a CHIRP v1 broadcast");
+        throw MessageDecodingError("not a CHIRP v1 message");
     }
     // Message Type
     if(std::to_integer<std::uint8_t>(assembled_message[6]) < std::to_underlying(REQUEST) ||
