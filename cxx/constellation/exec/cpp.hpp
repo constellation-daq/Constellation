@@ -24,11 +24,6 @@
 namespace constellation::exec {
 
     /**
-     * @brief Enable Logging
-     */
-    CNSTLN_API void constellation_enable_logging();
-
-    /**
      * @brief Setup Logging
      *
      * @param default_level Default log level for the console output

@@ -34,9 +34,6 @@ int constellation::exec::satellite_main(int argc,
                                         std::string_view program,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     try {
-        // Enable logging
-        constellation_enable_logging();
-
         // Get parser and setup
         auto parser =
             SatelliteParser(std::string(program),

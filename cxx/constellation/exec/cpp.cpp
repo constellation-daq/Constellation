@@ -47,11 +47,6 @@ extern "C" void signal_handler(int signal) {
     signal_v = signal;
 }
 
-void constellation::exec::constellation_enable_logging() {
-    // Initialize ManagerLocator to initialize SinkManager
-    ManagerLocator::getSinkManager();
-}
-
 void constellation::exec::constellation_setup_logging(Level default_level) {
     // Set default log level
     ManagerLocator::getSinkManager().setConsoleLevels(default_level);

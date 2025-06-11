@@ -31,9 +31,6 @@ using namespace constellation::gui;
 
 int main(int argc, char* argv[]) {
     try {
-        // Enable logging
-        constellation_enable_logging();
-
         // Initialize Qt application
         initResources();
         auto qapp = std::make_shared<QApplication>(argc, argv);
