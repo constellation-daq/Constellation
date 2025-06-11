@@ -17,8 +17,8 @@ def main(args=None):
     parser = SatelliteArgumentParser(description=main.__doc__)
     args = vars(parser.parse_args(args))
 
-    # set up logging
-    setup_cli_logging(args.pop("log_level"))
+    # Set up logging
+    setup_cli_logging(args.pop("level"))
 
     # start server with remaining args
     s = LakeShore218(**args)

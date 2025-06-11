@@ -128,9 +128,9 @@ class DataSender(Satellite):
         self.socket = ctx.socket(zmq.PUSH)
 
         if not self.data_port:
-            self.data_port = self.socket.bind_to_random_port(f"tcp://{self.interface}")
+            self.data_port = self.socket.bind_to_random_port("tcp://*")
         else:
-            self.socket.bind(f"tcp://{self.interface}:{self.data_port}")
+            self.socket.bind(f"tcp://*:{self.data_port}")
 
         # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
@@ -334,8 +334,8 @@ def main(args: Any = None) -> None:
     parser = DataSenderArgumentParser(description=main.__doc__, epilog=EPILOG)
     args = vars(parser.parse_args(args))
 
-    # set up logging
-    setup_cli_logging(args.pop("log_level"))
+    # Set up logging
+    setup_cli_logging(args.pop("level"))
 
     # start server with remaining args
     s = RandomDataSender(**args)

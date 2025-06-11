@@ -641,8 +641,8 @@ def main(args: Any = None) -> None:
     # get a dict of the parsed arguments
     args = vars(parser.parse_args(args))
 
-    # set up logging
-    setup_cli_logging(args.pop("log_level"))
+    # Set up logging
+    setup_cli_logging(args.pop("level"))
 
     cfg_file = args.pop("config")
 

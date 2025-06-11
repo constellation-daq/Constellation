@@ -19,7 +19,7 @@ def main(args=None):
     args = vars(parser.parse_args(args))
 
     # Set up logging
-    setup_cli_logging(args.pop("log_level"))
+    setup_cli_logging(args.pop("level"))
 
     # Start satellite with remaining args
     s = Mariner(**args)

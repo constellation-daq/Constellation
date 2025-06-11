@@ -15,6 +15,7 @@ from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.fsm import SatelliteState
 from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 
 
@@ -47,7 +48,7 @@ def mock_device_satellite(mock_chirp_socket):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
+        s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start
@@ -72,7 +73,7 @@ def mock_fail_satellite(mock_chirp_transmitter):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
+        s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start

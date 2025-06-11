@@ -42,7 +42,7 @@ class Satellite(
         cmd_port: int,
         hb_port: int,
         mon_port: int,
-        interface: str,
+        interface: list[str],
     ):
         """Set up class attributes."""
         super().__init__(

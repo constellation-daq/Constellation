@@ -12,6 +12,7 @@ from conftest import mocket, wait_for_state
 
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.network import get_loopback_interface_name
 from constellation.satellites.Mariner.Mariner import Mariner as MarinerDef
 
 
@@ -34,7 +35,7 @@ def mariner_satellite(mock_chirp_transmitter):
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
         mock.return_value = mock_context
-        s = Mariner("Nine", "mockstellation", 11111, 22222, 33333, "127.0.0.1")
+        s = Mariner("Nine", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
         t.start()
         # give the threads a chance to start

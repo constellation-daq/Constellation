@@ -24,6 +24,7 @@ from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.datasender import DataSender
+from constellation.core.network import get_loopback_interface_name
 from constellation.satellites.H5DataWriter.H5DataWriter import H5DataWriter
 
 DATA_PORT = 50101
@@ -111,7 +112,7 @@ def mock_sender_satellite(mock_chirp_transmitter):
             mon_port=22222,
             hb_port=33333,
             data_port=DATA_PORT,
-            interface="127.0.0.1",
+            interface=[get_loopback_interface_name()],
         )
         t = threading.Thread(target=s.run_satellite)
         t.start()
@@ -137,7 +138,7 @@ def receiver_satellite():
         cmd_port=CMD_PORT,
         mon_port=MON_PORT,
         hb_port=33333,
-        interface="127.0.0.1",
+        interface=[get_loopback_interface_name()],
     )
     t = threading.Thread(target=s.run_satellite)
     t.start()
@@ -169,7 +170,7 @@ def sender_satellite():
         mon_port=MON_PORT,
         data_port=DATA_PORT,
         hb_port=33333,
-        interface="127.0.0.1",
+        interface=[get_loopback_interface_name()],
     )
     t = threading.Thread(target=s.run_satellite)
     t.start()
