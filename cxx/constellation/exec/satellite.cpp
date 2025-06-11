@@ -9,11 +9,11 @@
 
 #include "satellite.hpp"
 
-#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 
@@ -29,8 +29,7 @@ using namespace constellation::exec;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-int constellation::exec::satellite_main(int argc,
-                                        char* argv[], // NOLINT(modernize-avoid-c-arrays)
+int constellation::exec::satellite_main(std::span<const char*> args,
                                         std::string_view program,
                                         std::optional<SatelliteType> satellite_type) noexcept {
     try {
@@ -43,7 +42,7 @@ int constellation::exec::satellite_main(int argc,
         // Parse options
         SatelliteParser::SatelliteOptions options {};
         try {
-            options = parser.parse({argv, static_cast<std::size_t>(argc)});
+            options = parser.parse(args);
         } catch(const std::exception& error) {
             LOG(CRITICAL) << "Argument parsing failed: " << error.what() << "\n\n" << parser.help();
             return 1;

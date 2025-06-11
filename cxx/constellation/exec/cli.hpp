@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <optional>
 #include <span>
 #include <string>
@@ -21,6 +22,17 @@
 #include "constellation/core/networking/asio_helpers.hpp"
 
 namespace constellation::exec {
+
+    /**
+     * @brief Cast C-style main argument to C++ span
+     *
+     * @param argc Argument count
+     * @param argv Pointer to arguments
+     * @return Span of arguments
+     */
+    inline std::span<const char*> to_span(int argc, char** argv) {
+        return {const_cast<const char**>(argv), static_cast<std::size_t>(argc)};
+    };
 
     class CNSTLN_API BaseParser : protected argparse::ArgumentParser {
     public:
@@ -68,7 +80,7 @@ namespace constellation::exec {
          *
          * @return Parsed options
          */
-        BaseOptions parse(std::span<char*> args);
+        BaseOptions parse(std::span<const char*> args);
 
         /**
          * @brief Get program help
@@ -98,7 +110,7 @@ namespace constellation::exec {
          * @param program Name of the program to display in help
          * @param type Optional predefined satellite type
          */
-        SatelliteParser(std::string program, std::optional<std::string> type);
+        SatelliteParser(std::string program, std::optional<std::string> type = std::nullopt);
 
         virtual ~SatelliteParser() = default;
 
@@ -129,7 +141,7 @@ namespace constellation::exec {
          *
          * @return Parsed options
          */
-        SatelliteOptions parse(std::span<char*> args);
+        SatelliteOptions parse(std::span<const char*> args);
 
     private:
         std::optional<std::string> type_;
@@ -181,7 +193,7 @@ namespace constellation::exec {
          *
          * @return Parsed options
          */
-        GUIOptions parse(std::span<char*> args);
+        GUIOptions parse(std::span<const char*> args);
     };
 
 } // namespace constellation::exec

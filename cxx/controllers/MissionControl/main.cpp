@@ -7,7 +7,6 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <cstddef>
 #include <exception>
 #include <iostream>
 #include <memory>
@@ -29,7 +28,7 @@
 using namespace constellation::exec;
 using namespace constellation::gui;
 
-int main(int argc, char* argv[]) {
+int main(int argc, char** argv) {
     try {
         // Initialize Qt application
         initResources();
@@ -51,7 +50,7 @@ int main(int argc, char* argv[]) {
         // Parse options
         GUIParser::GUIOptions options {};
         try {
-            options = parser.parse({argv, static_cast<std::size_t>(argc)});
+            options = parser.parse(to_span(argc, argv));
         } catch(const std::exception& error) {
             LOG(CRITICAL) << "Argument parsing failed: " << error.what() << "\n\n" << parser.help();
             return 1;

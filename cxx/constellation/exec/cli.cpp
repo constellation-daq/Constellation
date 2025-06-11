@@ -57,9 +57,13 @@ void BaseParser::setup() {
     }
 }
 
-BaseParser::BaseOptions BaseParser::parse(std::span<char*> args) {
+BaseParser::BaseOptions BaseParser::parse(std::span<const char*> args) {
     // Parse args
-    parse_args(static_cast<int>(args.size()), args.data());
+    try {
+        parse_args(static_cast<int>(args.size()), args.data());
+    } catch(const std::runtime_error& error) {
+        throw CommandLineInterfaceError(error.what());
+    }
 
     // Get log level
     const auto level_str = get("level");
@@ -106,7 +110,7 @@ void SatelliteParser::setup() {
     BaseParser::setup();
 }
 
-SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<char*> args) {
+SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<const char*> args) {
     // Parse base args
     const auto base_options = BaseParser::parse(args);
 
@@ -142,7 +146,7 @@ void GUIParser::setup() {
     BaseParser::setup();
 }
 
-GUIParser::GUIOptions GUIParser::parse(std::span<char*> args) {
+GUIParser::GUIOptions GUIParser::parse(std::span<const char*> args) {
     // Parse base args
     const auto base_options = BaseParser::parse(args);
 
