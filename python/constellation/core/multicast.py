@@ -35,7 +35,7 @@ class MulticastSocket:
             send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 
             # Disable loopback since loopback interface is added explicitly
-            send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0)
+            send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0 if interface_address != "127.0.0.1" else 1)
 
             # Set interface address
             send_socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(interface_address))
