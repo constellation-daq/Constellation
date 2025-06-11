@@ -17,6 +17,7 @@ from statemachine.states import States
 
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
+from .configuration import Configuration, make_lowercase
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
 from .message.cscp1 import CSCP1Message, SatelliteState
@@ -153,6 +154,9 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             # missing payload
             raise TypeError("Payload must be a dictionary with configuration values")
 
+        # prepare configuration
+        config = Configuration(make_lowercase(request.payload))
+
         # Clear conditions
         self.conditions = defaultdict(list)
 
@@ -165,15 +169,16 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             SatelliteState.stopping,
         ]:
             key = f"_require_{transition.name}_after"
-            if key in request.payload.keys():
-                value = request.payload[key]
+            if key in config.get_keys():
+                value = config[key]
+                # FIXME could check for valid canonical name
                 if isinstance(value, list):
                     self.conditions[transition] = value
                 else:
                     self.conditions[transition].append(value)
                 self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
-        return self._transition("initialize", request.payload, thread=False)
+        return self._transition("initialize", config, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -253,7 +258,10 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         if not isinstance(request.payload, dict):
             # missing payload
             raise TypeError("Payload must be a dictionary with configuration values")
-        return self._transition("reconfigure", request.payload, thread=False)
+
+        partial_config = Configuration(request.payload)
+
+        return self._transition("reconfigure", partial_config, thread=False)
 
     @debug_log
     @cscp_requestable
