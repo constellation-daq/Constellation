@@ -73,6 +73,7 @@ import time
 from constellation.core.configuration import load_config
 from constellation.core.controller import BaseController
 from constellation.core.logging import setup_cli_logging
+from constellation.core.network import get_interface_names
 
 # Settings
 config_file_path = "/path/to/config.toml"
@@ -83,7 +84,7 @@ n_satellites = 1
 setup_cli_logging("info")
 
 # Create controller
-ctrl = BaseController(group=group_name, name="PythonCtrl", interface="*")
+ctrl = BaseController(group=group_name, name="PythonCtrl", interface=get_interface_names())
 constellation = ctrl.constellation
 
 # Load configuration
