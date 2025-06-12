@@ -3,9 +3,11 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+from __future__ import annotations
+
 import io
 import time
-from enum import IntFlag
+from enum import Enum, IntFlag, auto
 from typing import Tuple
 
 import msgpack  # type: ignore[import-untyped]
@@ -22,6 +24,37 @@ class CHPMessageFlags(IntFlag):
     TRIGGER_INTERRUPT = 0x02
     MARK_DEGRADED = 0x04
     IS_EXTRASYSTOLE = 0x80
+
+
+class CHPRole(Enum):
+    """Defines the role of the satellite."""
+
+    NONE = auto()
+    TRANSIENT = auto()
+    DYNAMIC = auto()
+    ESSENTIAL = auto()
+
+    @classmethod
+    def from_flags(cls, flags: CHPMessageFlags) -> CHPRole:
+        if flags & CHPMessageFlags.MARK_DEGRADED:
+            if flags & CHPMessageFlags.TRIGGER_INTERRUPT:
+                if flags & CHPMessageFlags.DENY_DEPARTURE:
+                    return CHPRole.ESSENTIAL
+                return CHPRole.DYNAMIC
+            return CHPRole.TRANSIENT
+        return CHPRole.NONE
+
+    def flags(self) -> CHPMessageFlags:
+        if self == CHPRole.TRANSIENT:
+            return CHPMessageFlags.MARK_DEGRADED
+        if self == CHPRole.DYNAMIC:
+            return CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT
+        if self == CHPRole.ESSENTIAL:
+            return CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT | CHPMessageFlags.DENY_DEPARTURE
+        return CHPMessageFlags.NONE
+
+    def role_requires(self, flags: CHPMessageFlags) -> bool:
+        return bool(flags & self.flags())
 
 
 def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:

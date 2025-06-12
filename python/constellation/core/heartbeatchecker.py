@@ -3,51 +3,17 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
-from __future__ import annotations
-
 import threading
 import time
 from datetime import datetime, timezone
-from enum import Enum, auto
 from typing import Any, Callable, Optional
 from uuid import UUID
 
 import zmq
 
 from .base import BaseSatelliteFrame
-from .chp import CHPDecodeMessage, CHPMessageFlags
+from .chp import CHPDecodeMessage, CHPMessageFlags, CHPRole
 from .fsm import SatelliteState
-
-
-class HeartbeatRole(Enum):
-    """Defines the role of the satellite."""
-
-    NONE = auto()
-    TRANSIENT = auto()
-    DYNAMIC = auto()
-    ESSENTIAL = auto()
-
-    @classmethod
-    def from_flags(cls, flags: CHPMessageFlags) -> HeartbeatRole:
-        if flags & CHPMessageFlags.MARK_DEGRADED:
-            if flags & CHPMessageFlags.TRIGGER_INTERRUPT:
-                if flags & CHPMessageFlags.DENY_DEPARTURE:
-                    return HeartbeatRole.ESSENTIAL
-                return HeartbeatRole.DYNAMIC
-            return HeartbeatRole.TRANSIENT
-        return HeartbeatRole.NONE
-
-
-def role_requires(role: HeartbeatRole, flags: CHPMessageFlags) -> bool:
-    if role == HeartbeatRole.TRANSIENT:
-        return bool(flags & (CHPMessageFlags.MARK_DEGRADED))
-    if role == HeartbeatRole.DYNAMIC:
-        return bool(flags & (CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT))
-    if role == HeartbeatRole.ESSENTIAL:
-        return bool(
-            flags & (CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT | CHPMessageFlags.DENY_DEPARTURE)
-        )
-    return False
 
 
 class HeartbeatState:
@@ -58,7 +24,7 @@ class HeartbeatState:
         evt: threading.Event,
         lives: int,
         interval: int,
-        role: HeartbeatRole = HeartbeatRole.DYNAMIC,
+        role: CHPRole = CHPRole.DYNAMIC,
     ):
         self.host = host
         self.name = name
@@ -219,7 +185,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     hb.refresh(timestamp.to_datetime())
                     hb.state = SatelliteState(state)
                     hb.interval = interval
-                    hb.role = HeartbeatRole.from_flags(flags)
+                    hb.role = CHPRole.from_flags(flags)
                     # refresh lives
                     if hb.lives != self.HB_INIT_LIVES:
                         self.log_chp.log(
@@ -261,7 +227,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             hb.name,
                             hb.lives,
                         )
-                        if hb.lives <= 0 and role_requires(hb.role, CHPMessageFlags.TRIGGER_INTERRUPT):
+                        if hb.lives <= 0 and hb.role.role_requires(CHPMessageFlags.TRIGGER_INTERRUPT):
                             # no lives left, interrupt
                             if not hb.failed.is_set():
                                 self.log_chp.info(f"{hb.name} unresponsive causing interrupt callback to be called")
