@@ -119,10 +119,14 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         return QString::fromStdString(conn.host_id.to_string());
     }
     case 9: {
+        // Role
+        return QString::fromStdString(enum_name(conn.role));
+    }
+    case 10: {
         // Last heartbeat
         return from_timepoint(conn.last_heartbeat);
     }
-    case 10: {
+    case 11: {
         // Last checked
         return from_timepoint(conn.last_checked);
     }
