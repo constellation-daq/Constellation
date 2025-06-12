@@ -210,6 +210,16 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     connect(&runcontrol_, &QController::reachedState, this, [&](CSCP::State state, bool global) {
         update_button_states(state);
         labelState->setText(get_styled_state(state, global));
+
+        if(state == CSCP::State::RUN && global) {
+            // Set start time for this run
+            const auto run_time = runcontrol_.getRunStartTime();
+            if(run_time.has_value()) {
+                run_start_time_ = from_timepoint(run_time.value());
+            } else {
+                run_start_time_ = QDateTime::currentDateTimeUtc();
+            }
+        }
     });
 
     connect(&runcontrol_, &QController::leavingState, this, [&](CSCP::State state, bool global) {
@@ -236,14 +246,6 @@ void MissionControl::startup(std::size_t num) {
     // For the very first connection, try to obtain run time and run identifier
     if(num == 1) {
         const auto is_running = runcontrol_.isInState(CSCP::State::RUN);
-
-        if(is_running) {
-            auto run_time = runcontrol_.getRunStartTime();
-            if(run_time.has_value()) {
-                LOG(logger_, DEBUG) << "Fetched time from satellites, setting run timer to " << run_time.value();
-                run_start_time_ = from_timepoint(run_time.value());
-            }
-        }
 
         // Read last run identifier from the connection:
         const auto run_id = std::string(runcontrol_.getRunIdentifier());
@@ -349,9 +351,6 @@ void MissionControl::on_btnStart_clicked() {
     for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << response.second.getVerb().first;
     }
-
-    // Set start time for this run
-    run_start_time_ = QDateTime::currentDateTimeUtc();
 }
 
 void MissionControl::on_btnStop_clicked() {
