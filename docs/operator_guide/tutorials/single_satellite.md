@@ -151,7 +151,7 @@ dictionary. Their basic structure and syntax is the following:
 ```toml
 [satellites]
 # General settings which apply to all satellites
-confidentiality = "TOPSECRET"
+_role = "DYNAMIC"
 
 [satellites.Sputnik]
 # Settings which apply to all satellites of type "Sputnik"
