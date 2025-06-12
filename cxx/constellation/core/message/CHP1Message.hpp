@@ -69,7 +69,7 @@ namespace constellation::message {
         constexpr protocol::CHP::Role getRole() const { return role_from_flags(flags_); }
 
         /** Return optional status of the message */
-        constexpr std::optional<std::string> getStatus() const { return status_; }
+        constexpr const std::optional<std::string>& getStatus() const { return status_; }
 
         /** Return maxima time interval until next message is expected */
         constexpr std::chrono::milliseconds getInterval() const { return interval_; }
