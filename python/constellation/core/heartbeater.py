@@ -11,7 +11,7 @@ from typing import Any
 
 import zmq
 
-from .chp import CHPMessageFlags, CHPRole, CHPTransmitter
+from .chp import CHPRole, CHPTransmitter
 from .commandmanager import cscp_requestable
 from .fsm import SatelliteStateHandler
 from .message.cscp1 import CSCP1Message
@@ -32,6 +32,7 @@ class HeartbeatSender(SatelliteStateHandler):
         self.minimum_period = 500
         self._heartbeat_period = 500
         self._subscribers = 0
+        self._role = CHPRole.DYNAMIC
 
         self.log_chp_s = self.get_logger("CHP")
 
@@ -49,6 +50,14 @@ class HeartbeatSender(SatelliteStateHandler):
 
         self.log_chp_s.info(f"Setting up heartbeater on port {self.hb_port}")
         self._hb_tm = CHPTransmitter(self.name, socket)
+
+    @property
+    def role(self) -> CHPRole:
+        return self._role
+
+    @role.setter
+    def role(self, new_role: CHPRole) -> None:
+        self._role = new_role
 
     def _add_com_thread(self) -> None:
         """Add the CHIRP broadcaster thread to the communication thread pool."""
@@ -80,7 +89,7 @@ class HeartbeatSender(SatelliteStateHandler):
 
                 last = datetime.now()
                 state = self.fsm.current_state_value
-                self._hb_tm.send(state.value, self._heartbeat_period, CHPMessageFlags.NONE)
+                self._hb_tm.send(state.value, self._heartbeat_period, self._role.flags())
                 self.fsm.transitioned = False
             else:
                 time.sleep(0.1)
@@ -94,5 +103,4 @@ class HeartbeatSender(SatelliteStateHandler):
 
         No payload argument.
         """
-        role = CHPRole.NONE
-        return role.name, role.flags().value, {}
+        return self._role.name, self._role.flags().value, {}

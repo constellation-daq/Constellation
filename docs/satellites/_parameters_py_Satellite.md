@@ -1,4 +1,6 @@
 <!-- markdownlint-disable MD041 -->
 ### Metrics inherited from `Satellite`
 
-None
+| Parameter | Type | Description | Default Value |
+|-----------|------|-------------|---------------|
+| `_role` | Role name | Role this satellite should take in the Constellation. Accepted values are `ESSENTIAL`, `DYNAMIC`, `TRANSIENT` and `NONE`. | `DYNAMIC` |
