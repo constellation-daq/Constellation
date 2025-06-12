@@ -44,8 +44,8 @@ def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
 def test_config_flattening(rawconfig):
     """Test that config flattening works"""
     assert "ampere" in flatten_config(rawconfig, "mocksat"), "Parameter missing from class part of config"
-    assert "importance" in flatten_config(rawconfig, "mocksat"), "Parameter missing from constellation part of cfg"
-    val = flatten_config(rawconfig, "mocksat", "device2")["importance"]
+    assert "_role" in flatten_config(rawconfig, "mocksat"), "Parameter missing from constellation part of cfg"
+    val = flatten_config(rawconfig, "mocksat", "device2")["_role"]
     assert val == "essential", "Parameter incorrect from constellation part of cfg"
     val = flatten_config(rawconfig, "mocksat", "device1")["voltage"]
     assert val == 5000, "Error flattening cfg for Satellite"
