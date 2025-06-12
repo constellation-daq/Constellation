@@ -77,7 +77,7 @@ namespace constellation::heartbeat {
          *
          * @param flags Message flags for this sender
          */
-        void setFalgs(protocol::CHP::MessageFlags flags) { default_flags_ = flags; }
+        void setFlags(protocol::CHP::MessageFlags flags) { default_flags_ = flags; }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value

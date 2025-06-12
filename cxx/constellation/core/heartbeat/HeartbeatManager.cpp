@@ -81,7 +81,7 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
 }
 
 void HeartbeatManager::setRole(CHP::Role role) {
-    sender_.setFalgs(CHP::flags_from_role(role));
+    sender_.setFlags(CHP::flags_from_role(role));
     role_.store(role);
 }
 
