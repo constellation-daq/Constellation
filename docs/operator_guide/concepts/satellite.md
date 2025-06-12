@@ -53,7 +53,7 @@ satellite needs to implement:
 | `get_version`  | Returns the Constellation version identifier the satellite has been built with
 | `get_commands` | Provides a full list of the available commands for the queried satellite
 | `get_state`    | Returns the current [state](#the-finite-state-machine) of the satellite
-| `get_role`     | Returns the current [role](./autonomy.md#roles) of the satellite
+| `get_role`     | Returns the current [role](./autonomy.md#satellite-autonomy--roles) of the satellite
 | `get_status`   | Returns the current [status message](#state-and-status) of the satellite
 | `get_config`   | Returns the applied configuration
 | `get_run_id`   | Returns the current or last run identifier
