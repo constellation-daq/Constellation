@@ -136,9 +136,9 @@ namespace constellation::heartbeat {
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
         /** Default message flags, defined e.g. by the role of the sender */
-        protocol::CHP::MessageFlags default_flags_ {protocol::CHP::flags_from_role(protocol::CHP::Role::DYNAMIC)};
+        std::atomic<protocol::CHP::MessageFlags> default_flags_;
         /** Message flags for next message */
-        std::atomic<protocol::CHP::MessageFlags> flags_ {default_flags_};
+        std::atomic<protocol::CHP::MessageFlags> flags_;
 
         std::condition_variable cv_;
         std::mutex mutex_;
