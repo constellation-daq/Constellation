@@ -9,6 +9,7 @@
 
 #include "FSM.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <functional>
@@ -29,6 +30,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -244,25 +246,6 @@ void FSM::registerRemoteCallback(std::function<std::optional<State>(std::string_
     remote_callback_ = std::move(callback);
 }
 
-void FSM::registerRemoteCondition(const std::string& remote, State transitional) {
-
-    // Check that the requested remote is not this satellite:
-    if(utils::transform(remote, ::tolower) == utils::transform(satellite_->getCanonicalName(), ::tolower)) {
-        throw std::invalid_argument("Conditions cannot be applied to same satellite");
-    }
-
-    // Check that the state is not a steady state but a transitional state:
-    if(is_steady(transitional)) {
-        throw std::invalid_argument("Conditions cannot be applied to steady state " + to_string(transitional));
-    }
-
-    remote_conditions_.emplace(remote, transitional);
-}
-
-void FSM::clearRemoteCondition() {
-    remote_conditions_.clear();
-}
-
 void FSM::call_state_callbacks(bool only_with_status) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
 
@@ -424,7 +407,7 @@ namespace {
 void FSM::initialize_fsm(Configuration& config) {
 
     // Clear previously stored conditions
-    clearRemoteCondition();
+    remote_conditions_.clear();
 
     // Parse all transition condition parameters
     for(const auto& state : {CSCP::State::initializing,
@@ -435,15 +418,21 @@ void FSM::initialize_fsm(Configuration& config) {
         const auto key = "_require_" + to_string(state) + "_after";
         if(config.has(key)) {
             auto register_condition = [this, &config, key, state](auto& remote) {
-                if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
-                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
-                }
-
                 if(!CSCP::is_valid_canonical_name(remote)) {
                     throw InvalidValueError(config, key, "Not a valid canonical name");
                 }
 
-                registerRemoteCondition(remote, state);
+                // Check that the requested remote is not this satellite:
+                if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
+                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
+                }
+
+                // Check that the state is not a steady state but a transitional state:
+                if(CSCP::is_steady(state)) {
+                    throw std::invalid_argument("Conditions cannot be applied to steady state " + to_string(state));
+                }
+
+                remote_conditions_.emplace(remote, state);
             };
 
             try {

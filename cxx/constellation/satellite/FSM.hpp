@@ -189,27 +189,11 @@ namespace constellation::satellite {
         CNSTLN_API void registerRemoteCallback(std::function<std::optional<State>(std::string_view)> callback);
 
         /**
-         * @brief Register a new condition for a remote satellite
-         *
-         * This function registers a new transition condition for a remote satellite. The FSM will query remote states from
-         * its remote callback to satisfy these conditions before locally executing the requested transition.
-         *
-         * @param remote Remote satellite to which this condition applies
-         * @param transitional The transitional state the remote satellite has to successfully conclude
-         */
-        CNSTLN_API void registerRemoteCondition(const std::string& remote, State transitional);
-
-        /**
          * @brief Set timeout for remote conditions of transitions
          *
          * @param timeout Timeout in seconds for the conditional transition to time out
          */
         CNSTLN_API void setRemoteConditionTimeout(std::chrono::seconds timeout) { remote_condition_timeout_ = timeout; };
-
-        /**
-         * @brief Clears all remote conditions for this satellite
-         */
-        CNSTLN_API void clearRemoteCondition();
 
         /**
          * @brief Terminate all FSM threads
@@ -269,6 +253,14 @@ namespace constellation::satellite {
          */
         void join_failure_thread();
 
+        /**
+         * @brief Read FSM-relevant parameters from the initialization configuration
+         *
+         * This function registers transition conditions for remote satellites. The FSM will query remote states from
+         * its remote callback to satisfy these conditions before locally executing the requested transition.
+         *
+         * @param config Satellite configuration
+         */
         void initialize_fsm(config::Configuration& config);
 
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
