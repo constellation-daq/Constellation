@@ -72,6 +72,13 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
         throw QueueError("Measurement contains invalid canonical name");
     }
 
+    // Check if all mentioned satellites implement reconfiguration:
+    for(const auto& [sat, cfg] : measurement) {
+        if(!controller_.getConnectionCommands(sat).contains("reconfigure")) {
+            throw QueueError("Satellite " + sat + " does not support reconfiguration but has queue parameter");
+        }
+    }
+
     const std::lock_guard measurement_lock {measurement_mutex_};
 
     // Use the current default condition of no measurement-specific is provided:
