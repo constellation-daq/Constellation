@@ -286,9 +286,6 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         super()._add_com_thread()
         super()._start_com_threads()
 
-        # auto-recover for heartbeats
-        self.auto_recover = True
-
         # set up thread to handle incoming tasks (e.g. CHIRP discoveries)
         self._task_handler_event = threading.Event()
         self._task_handler_thread = threading.Thread(target=self._run_task_handler, daemon=True)
