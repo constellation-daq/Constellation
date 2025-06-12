@@ -66,10 +66,9 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
             msgpack_unpack_to<std::chrono::system_clock::time_point>(to_char_ptr(frame.data()), frame.size(), offset);
 
         // Unpack remote state
-        const auto state =
-            static_cast<CSCP::State>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
+        const auto state = msgpack_unpack_to_enum<CSCP::State>(to_char_ptr(frame.data()), frame.size(), offset);
 
-        // Unpack message flags
+        // Unpack message flags (do not use unpack_to_enum since it is an enum flag)
         const auto flags =
             static_cast<CHP::MessageFlags>(msgpack_unpack_to<std::uint8_t>(to_char_ptr(frame.data()), frame.size(), offset));
 
