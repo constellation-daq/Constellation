@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD041 -->
-### Metrics inherited from `Satellite`
+### Parameters inherited from `Satellite`
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
