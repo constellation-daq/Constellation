@@ -421,9 +421,53 @@ namespace {
     }
 } // namespace
 
+void FSM::initialize_fsm(Configuration& config) {
+
+    // Clear previously stored conditions
+    clearRemoteCondition();
+
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = "_require_" + to_string(state) + "_after";
+        if(config.has(key)) {
+            auto register_condition = [this, &config, key, state](auto& remote) {
+                if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
+                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
+                }
+
+                if(!CSCP::is_valid_canonical_name(remote)) {
+                    throw InvalidValueError(config, key, "Not a valid canonical name");
+                }
+
+                registerRemoteCondition(remote, state);
+            };
+
+            try {
+                const auto remotes = config.getArray<std::string>(key);
+                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
+                                   << " and remotes " << range_to_string(remotes);
+                std::ranges::for_each(remotes, register_condition);
+            } catch(InvalidTypeError&) {
+                const auto remote = config.get<std::string>(key);
+                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
+                                   << " and remote " << remote;
+                register_condition(remote);
+            }
+        }
+    }
+}
+
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 FSM::State FSM::initialize(TransitionPayload payload) {
+
+    // Initialize FSM itself with configuration settings
+    initialize_fsm(std::get<Configuration>(payload));
+
     auto call_wrapper = [this](Configuration&& config) {
         // First join failure thread
         join_failure_thread();

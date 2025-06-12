@@ -269,6 +269,8 @@ namespace constellation::satellite {
          */
         void join_failure_thread();
 
+        void initialize_fsm(config::Configuration& config);
+
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
         CNSTLN_API auto initialized(TransitionPayload payload) -> State;
         CNSTLN_API auto launch(TransitionPayload payload) -> State;
