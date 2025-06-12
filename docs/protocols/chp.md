@@ -62,7 +62,7 @@ The second 1-OCTET integer variable SHALL hold the CHP message flags, which are 
 * `%x02` for message flag `TRIGGER_INTERRUPT`: Any issue encountered with this sender should trigger an interrupt.
 * `%x04` for message flag `MARK_DEGRADED`: Any issue encountered with this sender should mark data as degraded.
 * `%x80` for message flag `IS_EXTRASYSTOLE`: The currently processed CHP message is an extrasystole message.
-* The flags `%x08`, `%x10`, `%x20` and `%x40` are reserved.
+* The flags `%x08`, `%x10`, `%x20` and `%x40` are reserved for future extensions to the protocol.
 
 The 2-OCTET integer variable SHALL indicate the maximum time interval in units of milliseconds until the next heartbeat message is emitted by the sending CHP host.
 
