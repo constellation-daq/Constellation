@@ -533,11 +533,6 @@ void BaseSatellite::apply_internal_config(const Configuration& config) {
         LOG(logger_, INFO) << "Configuring role " << role;
         heartbeat_manager_.setRole(role);
     }
-
-    // Set timeout for conditional transitions:
-    if(config.has("_conditional_transition_timeout")) {
-        fsm_.setRemoteConditionTimeout(std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout")));
-    }
 }
 
 std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& config) {

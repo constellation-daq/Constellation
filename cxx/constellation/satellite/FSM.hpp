@@ -189,13 +189,6 @@ namespace constellation::satellite {
         CNSTLN_API void registerRemoteCallback(std::function<std::optional<State>(std::string_view)> callback);
 
         /**
-         * @brief Set timeout for remote conditions of transitions
-         *
-         * @param timeout Timeout in seconds for the conditional transition to time out
-         */
-        CNSTLN_API void setRemoteConditionTimeout(std::chrono::seconds timeout) { remote_condition_timeout_ = timeout; };
-
-        /**
          * @brief Terminate all FSM threads
          */
         CNSTLN_API void terminate();

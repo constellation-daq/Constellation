@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <future>
@@ -447,6 +448,11 @@ void FSM::initialize_fsm(Configuration& config) {
                 register_condition(remote);
             }
         }
+    }
+
+    // Set timeout for conditional transitions:
+    if(config.has("_conditional_transition_timeout")) {
+        remote_condition_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout"));
     }
 }
 
