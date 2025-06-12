@@ -205,9 +205,10 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     // Find satellite from connection list based in the heartbeat sender name
     const auto sat = connections_.find(msg.getSender());
     if(sat != connections_.end()) {
-        LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState() << ", flags "
-                            << enum_name(msg.getFlags()) << ", status " << msg.getStatus().value_or("(none)")
-                            << ", next message in " << msg.getInterval().count();
+        LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()                            //
+                            << ", flags " << enum_name(msg.getFlags())                                           //
+                            << (msg.getStatus().has_value() ? ", status `" + msg.getStatus().value() + "`" : "") //
+                            << ", next message in " << msg.getInterval().count();                                //
 
         const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
         if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
