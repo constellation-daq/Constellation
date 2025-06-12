@@ -459,13 +459,13 @@ void FSM::initialize_fsm(Configuration& config) {
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 FSM::State FSM::initialize(TransitionPayload payload) {
-
-    // Initialize FSM itself with configuration settings
-    initialize_fsm(std::get<Configuration>(payload));
-
     auto call_wrapper = [this](Configuration&& config) {
         // First join failure thread
         join_failure_thread();
+
+        // Initialize FSM itself with configuration settings
+        LOG(logger_, DEBUG) << "Initializing FSM settings...";
+        initialize_fsm(config);
 
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::initializing_wrapper, std::move(config));
