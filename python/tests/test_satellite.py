@@ -10,8 +10,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from conftest import mocket, wait_for_state
 
+from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.chp import CHPRole
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.fsm import SatelliteState
 from constellation.core.message.cscp1 import CSCP1Message
@@ -103,6 +105,50 @@ def test_satellite_unknown_cmd_recv(mock_socket_sender, mock_satellite):
     assert isinstance(req, CSCP1Message)
     assert "unknown" in req.verb_msg.lower()
     assert req.verb_type == CSCP1Message.Type.UNKNOWN
+
+
+@pytest.mark.forked
+def test_satellite_std_commands(mock_socket_sender, mock_satellite):
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    # get_name
+    req = sender.request_get_response("get_name")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == "Satellite.mock_satellite"
+    # get_version
+    req = sender.request_get_response("get_version")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == __version__
+    # get_commands
+    req = sender.request_get_response("get_commands")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert isinstance(req.payload, dict)
+    # get_state
+    req = sender.request_get_response("get_state")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == "NEW"
+    # get_role
+    req = sender.request_get_response("get_role")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert req.verb_msg == "DYNAMIC"
+    assert req.payload == CHPRole.DYNAMIC.flags()
+    # get_status
+    req = sender.request_get_response("get_status")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    # get_config
+    req = sender.request_get_response("get_config")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert isinstance(req.payload, dict)
+    # get_run_id
+    req = sender.request_get_response("get_run_id")
+    assert isinstance(req, CSCP1Message)
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
 @pytest.mark.forked

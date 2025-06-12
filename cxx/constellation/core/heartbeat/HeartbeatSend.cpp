@@ -43,7 +43,8 @@ HeartbeatSend::HeartbeatSend(std::string sender,
                              std::chrono::milliseconds interval)
     : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
       sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval),
-      interval_(CHP::MinimumInterval) {
+      interval_(CHP::MinimumInterval), default_flags_(CHP::flags_from_role(CHP::Role::DYNAMIC)),
+      flags_(default_flags_.load()) {
 
     // Enable XPub verbosity to receive all subscription and unsubscription messages:
     pub_socket_.set(zmq::sockopt::xpub_verboser, true);
@@ -80,6 +81,7 @@ void HeartbeatSend::sendExtrasystole(std::string_view status) {
         const std::lock_guard lock {mutex_};
         status_ = status;
     }
+    flags_ = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
     cv_.notify_one();
 }
 
@@ -113,8 +115,10 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
             interval_ = CHP::calculate_interval(subscribers_, default_interval_);
 
             // Publish CHP message with current state and the updated interval
-            CHP1Message(sender_, state_callback_(), interval_.load(), status_).assemble().send(pub_socket_);
+            CHP1Message(sender_, state_callback_(), interval_.load(), flags_.load(), status_).assemble().send(pub_socket_);
+            // Reset status and flags to default flags
             status_.reset();
+            flags_.store(default_flags_.load());
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }

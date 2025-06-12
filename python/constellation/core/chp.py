@@ -3,8 +3,11 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+from __future__ import annotations
+
 import io
 import time
+from enum import Enum, IntFlag, auto
 from typing import Tuple
 
 import msgpack  # type: ignore[import-untyped]
@@ -13,7 +16,48 @@ import zmq
 from .protocol import Protocol
 
 
-def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, int, str | None]:
+class CHPMessageFlags(IntFlag):
+    """Defines the message flags of CHP messages."""
+
+    NONE = 0x00
+    DENY_DEPARTURE = 0x01
+    TRIGGER_INTERRUPT = 0x02
+    MARK_DEGRADED = 0x04
+    IS_EXTRASYSTOLE = 0x80
+
+
+class CHPRole(Enum):
+    """Defines the role of the satellite."""
+
+    NONE = auto()
+    TRANSIENT = auto()
+    DYNAMIC = auto()
+    ESSENTIAL = auto()
+
+    @classmethod
+    def from_flags(cls, flags: CHPMessageFlags) -> CHPRole:
+        if flags & CHPMessageFlags.MARK_DEGRADED:
+            if flags & CHPMessageFlags.TRIGGER_INTERRUPT:
+                if flags & CHPMessageFlags.DENY_DEPARTURE:
+                    return CHPRole.ESSENTIAL
+                return CHPRole.DYNAMIC
+            return CHPRole.TRANSIENT
+        return CHPRole.NONE
+
+    def flags(self) -> CHPMessageFlags:
+        if self == CHPRole.TRANSIENT:
+            return CHPMessageFlags.MARK_DEGRADED
+        if self == CHPRole.DYNAMIC:
+            return CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT
+        if self == CHPRole.ESSENTIAL:
+            return CHPMessageFlags.MARK_DEGRADED | CHPMessageFlags.TRIGGER_INTERRUPT | CHPMessageFlags.DENY_DEPARTURE
+        return CHPMessageFlags.NONE
+
+    def role_requires(self, flags: CHPMessageFlags) -> bool:
+        return bool(flags & self.flags())
+
+
+def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
     """Decode a CHP binary message.
 
     Returns host, timestamp, state, interval and status if available.
@@ -28,13 +72,14 @@ def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, int
     name = unpacker.unpack()
     timestamp = unpacker.unpack()
     state = unpacker.unpack()
+    flags = unpacker.unpack()
     interval = unpacker.unpack()
 
     status = None
     if len(msg) > 1:
         status = msg[1].decode("utf-8")
 
-    return name, timestamp, state, interval, status
+    return name, timestamp, state, flags, interval, status
 
 
 class CHPTransmitter:
@@ -45,7 +90,7 @@ class CHPTransmitter:
         self.name = name
         self._socket = socket
 
-    def send(self, state: int, interval: int, status: str | None = None, flags: int = 0) -> None:
+    def send(self, state: int, interval: int, msgflags: CHPMessageFlags, status: str | None = None, flags: int = 0) -> None:
         """Send state and interval via CHP."""
         stream = io.BytesIO()
         packer = msgpack.Packer()
@@ -53,6 +98,7 @@ class CHPTransmitter:
         stream.write(packer.pack(self.name))
         stream.write(packer.pack(msgpack.Timestamp.from_unix_nano(time.time_ns())))
         stream.write(packer.pack(state))
+        stream.write(packer.pack(msgflags))
         stream.write(packer.pack(interval))
 
         if status:
@@ -76,14 +122,14 @@ class CHPTransmitter:
 
     def recv(
         self, flags: int = zmq.NOBLOCK
-    ) -> Tuple[str, msgpack.Timestamp, int, int, str | None] | Tuple[None, None, None, None]:
+    ) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None] | Tuple[None, None, None, None, None]:
         """Receive a heartbeat via CHP."""
         try:
             msg = self._socket.recv_multipart(flags)
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
-            return None, None, None, None
+            return None, None, None, None, None
         return CHPDecodeMessage(msg)
 
     def close(self) -> None:

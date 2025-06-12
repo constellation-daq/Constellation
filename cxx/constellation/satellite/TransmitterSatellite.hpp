@@ -26,6 +26,7 @@
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
@@ -222,6 +223,14 @@ namespace constellation::satellite {
         template <typename T> void set_run_metadata_tag(std::string_view key, const T& value) {
             run_metadata_[utils::transform(key, ::tolower)] = value;
         }
+
+        /**
+         * @brief Helper to append flags to the run condition
+         *
+         * @param conditions Input conditions
+         * @return Amended conditions
+         */
+        protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
 
     private:
         zmq::socket_t cdtp_push_socket_;

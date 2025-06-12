@@ -25,6 +25,7 @@
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/pools/SubscriberPool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 #include "chirp_mock.hpp"
@@ -39,15 +40,18 @@ public:
 
     std::string_view getName() const { return name_; }
 
-    void sendHeartbeat(constellation::protocol::CSCP::State state, std::chrono::milliseconds interval) {
-        auto msg = constellation::message::CHP1Message(name_, state, interval);
+    void sendHeartbeat(constellation::protocol::CSCP::State state,
+                       std::chrono::milliseconds interval,
+                       constellation::protocol::CHP::MessageFlags flags = {}) {
+        auto msg = constellation::message::CHP1Message(name_, state, interval, flags);
         msg.assemble().send(pub_socket_);
     }
 
     void sendExtrasystole(constellation::protocol::CSCP::State state,
                           std::chrono::milliseconds interval,
+                          constellation::protocol::CHP::MessageFlags flags = {},
                           std::optional<std::string> status = {}) {
-        auto msg = constellation::message::CHP1Message(name_, state, interval, std::move(status));
+        auto msg = constellation::message::CHP1Message(name_, state, interval, flags, std::move(status));
         msg.assemble().send(pub_socket_);
     }
 

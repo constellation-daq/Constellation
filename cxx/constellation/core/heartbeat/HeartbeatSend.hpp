@@ -25,6 +25,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::heartbeat {
@@ -70,6 +71,13 @@ namespace constellation::heartbeat {
          * @return Port number
          */
         constexpr networking::Port getPort() const { return port_; }
+
+        /**
+         * @brief Set the message flags this sender is emitting
+         *
+         * @param flags Message flags for this sender
+         */
+        void setFlags(protocol::CHP::MessageFlags flags) { default_flags_ = flags; }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
@@ -127,6 +135,10 @@ namespace constellation::heartbeat {
         std::atomic_size_t subscribers_;
         /** Current heartbeat broadcasting interval */
         std::atomic<std::chrono::milliseconds> interval_;
+        /** Default message flags, defined e.g. by the role of the sender */
+        std::atomic<protocol::CHP::MessageFlags> default_flags_;
+        /** Message flags for next message */
+        std::atomic<protocol::CHP::MessageFlags> flags_;
 
         std::condition_variable cv_;
         std::mutex mutex_;

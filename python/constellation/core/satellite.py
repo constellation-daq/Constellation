@@ -16,6 +16,7 @@ from . import __version__
 from .base import ConstellationArgumentParser
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
+from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration, make_lowercase
 from .error import debug_log, handle_error
@@ -198,7 +199,7 @@ class Satellite(
         user code is executed.
 
         """
-        pass
+        self.role = CHPRole[self.config.setdefault("_role", "DYNAMIC").upper()]
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str:

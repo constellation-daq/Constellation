@@ -332,6 +332,9 @@ void ReceiverSatellite::stopping_receiver() {
                 if(data_transmitter.second.missed > 0) {
                     condition_code |= CDTP::RunCondition::INCOMPLETE;
                 }
+                if(is_run_degraded()) {
+                    condition_code |= CDTP::RunCondition::DEGRADED;
+                }
                 run_metadata["condition_code"] = condition_code;
                 run_metadata["condition"] = enum_name(condition_code);
                 receive_eor({data_transmitter.first, 0, CDTP1Message::Type::EOR}, std::move(run_metadata));
@@ -450,6 +453,9 @@ void ReceiverSatellite::handle_eor_message(CDTP1Message eor_message) {
     // Mark run as incomplete if there are missed messages:
     if(data_transmitter_it->second.missed > 0) {
         auto condition_code = CDTP::RunCondition::INCOMPLETE;
+        if(is_run_degraded()) {
+            condition_code |= CDTP::RunCondition::DEGRADED;
+        }
         auto condition_code_it = metadata.find("condition_code");
         if(condition_code_it != metadata.end()) {
             // Add INCOMPLETE flag to existing condition

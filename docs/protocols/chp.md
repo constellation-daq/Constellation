@@ -44,7 +44,7 @@ A receiving CHP host SHALL discard messages that it receives with an invalid for
 ### Message Content
 
 The heartbeat and extrasystole message frame MUST be encoded according to the MessagePack specification.
-It SHALL contain two strings, followed by a 64-bit timestamp, a 1-OCTET integer value and a 2-OCTET integer value.
+It SHALL contain two strings, followed by a 64-bit timestamp, two 1-OCTET integer values and a 2-OCTET integer value.
 
 The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘H’ and ‘P’, followed by the protocol version number, which SHALL be `%x01`.
 
@@ -54,7 +54,15 @@ The timestamp SHALL follow the MessagePack specification for timestamps and cont
 
 The values SHOULD be the time of sending the heartbeat or extrasystole message at the sending CHP host.
 
-The 1-OCTET integer variable SHALL contain the current state of the CHP sending host.
+The first 1-OCTET integer variable SHALL contain the current state of the CHP sending host.
+
+The second 1-OCTET integer variable SHALL hold the CHP message flags, which are defined as follows:
+
+* `%x01` for message flag `DENY_DEPARTURE`: When this sender departs, an interrupt should be triggered.
+* `%x02` for message flag `TRIGGER_INTERRUPT`: Any issue encountered with this sender should trigger an interrupt.
+* `%x04` for message flag `MARK_DEGRADED`: Any issue encountered with this sender should mark data as degraded.
+* `%x80` for message flag `IS_EXTRASYSTOLE`: The currently processed CHP message is an extrasystole message.
+* The flags `%x08`, `%x10`, `%x20` and `%x40` are reserved for future extensions to the protocol.
 
 The 2-OCTET integer variable SHALL indicate the maximum time interval in units of milliseconds until the next heartbeat message is emitted by the sending CHP host.
 

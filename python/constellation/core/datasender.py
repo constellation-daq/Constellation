@@ -164,6 +164,7 @@ class DataSender(Satellite):
 
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all DataSender-type classes."""
+        super()._pre_initializing_hook(config)
         self._bor_timeout = self.config.setdefault("bor_timeout", 10)
         self._data_timeout = self.config.setdefault("data_timeout", 10)
         self._eor_timeout = self.config.setdefault("eor_timeout", 10)

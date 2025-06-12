@@ -18,6 +18,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
 
@@ -30,15 +31,18 @@ namespace constellation::message {
          * @param sender Sender name
          * @param state State of the sender
          * @param interval Time interval until next message is expected
+         * @param flags Message flags
          * @param status Optional status string for the message
          * @param time Message time
          */
         CHP1Message(std::string sender,
                     protocol::CSCP::State state,
                     std::chrono::milliseconds interval,
+                    protocol::CHP::MessageFlags flags = {},
                     std::optional<std::string> status = {},
                     std::chrono::system_clock::time_point time = std::chrono::system_clock::now())
-            : sender_(std::move(sender)), time_(time), state_(state), interval_(interval), status_(std::move(status)) {}
+            : sender_(std::move(sender)), time_(time), state_(state), flags_(flags), interval_(interval),
+              status_(std::move(status)) {}
 
         /** Return message protocol */
         constexpr protocol::Protocol getProtocol() const { return protocol_; }
@@ -52,8 +56,20 @@ namespace constellation::message {
         /** Return state of the message */
         constexpr protocol::CSCP::State getState() const { return state_; }
 
+        /** Return the message flags */
+        constexpr protocol::CHP::MessageFlags getFlags() const { return flags_; }
+
+        /** Check whether this message has a specific flag set */
+        constexpr bool hasFlag(protocol::CHP::MessageFlags flag) const { return (flags_ & flag) != 0U; }
+
+        /** Return whether this message is an extraystole */
+        constexpr bool isExtrasystole() const { return (flags_ & protocol::CHP::MessageFlags::IS_EXTRASYSTOLE) != 0U; }
+
+        /** Return role of the sender */
+        constexpr protocol::CHP::Role getRole() const { return role_from_flags(flags_); }
+
         /** Return optional status of the message */
-        constexpr std::optional<std::string> getStatus() const { return status_; }
+        constexpr const std::optional<std::string>& getStatus() const { return status_; }
 
         /** Return maxima time interval until next message is expected */
         constexpr std::chrono::milliseconds getInterval() const { return interval_; }
@@ -75,6 +91,7 @@ namespace constellation::message {
         std::string sender_;
         std::chrono::system_clock::time_point time_;
         protocol::CSCP::State state_;
+        protocol::CHP::MessageFlags flags_;
         std::chrono::milliseconds interval_;
         std::optional<std::string> status_;
     };

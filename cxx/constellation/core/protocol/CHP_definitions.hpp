@@ -15,10 +15,86 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
+
 namespace constellation::protocol::CHP {
 
     /** Default lives for a remote on detection/replenishment */
     static constexpr std::uint8_t Lives = 3;
+
+    /** Possible CHP message flags */
+    enum MessageFlags : std::uint8_t {
+        NONE = 0x00,
+
+        /** Indicating that the sender should not be allowed to depart, and an interrupt should be triggered */
+        DENY_DEPARTURE = 0x01,
+
+        /** Indicating that ERROR or SAFE states and missing heartbeats should trigger an interrupt */
+        TRIGGER_INTERRUPT = 0x02,
+
+        /** Indicating that the current run should me marked as degraded if this sender reports failure or disappears */
+        MARK_DEGRADED = 0x04,
+
+        /* Indicate a extrasystole message */
+        IS_EXTRASYSTOLE = 0x80,
+    };
+
+    /** Satellite roles, representing a combination of message flags */
+    enum class Role : std::uint8_t {
+        NONE,      ///< No Flags
+        TRANSIENT, ///< Flags MARK_DEGRADED
+        DYNAMIC,   ///< Flags MARK_DEGRADED, TRIGGER_INTERRUPT
+        ESSENTIAL  ///< Flags MARK_DEGRADED, TRIGGER_INTERRUPT, DENY_DEPARTURE
+    };
+
+    /**
+     * @brief Get flags for a given role
+     *
+     * @param role Role
+     */
+    constexpr MessageFlags flags_from_role(Role role) {
+        if(role == Role::TRANSIENT) {
+            return MessageFlags::MARK_DEGRADED;
+        }
+        if(role == Role::DYNAMIC) {
+            return MessageFlags::MARK_DEGRADED | MessageFlags::TRIGGER_INTERRUPT;
+        }
+        if(role == Role::ESSENTIAL) {
+            return MessageFlags::MARK_DEGRADED | MessageFlags::TRIGGER_INTERRUPT | MessageFlags::DENY_DEPARTURE;
+        }
+
+        return MessageFlags::NONE;
+    }
+
+    /**
+     * @brief Get role from given message flags
+     *
+     * @param flags Message flags
+     */
+    constexpr Role role_from_flags(MessageFlags flags) {
+        if((flags & MessageFlags::MARK_DEGRADED) != 0U) {
+            if((flags & MessageFlags::TRIGGER_INTERRUPT) != 0U) {
+                if((flags & MessageFlags::DENY_DEPARTURE) != 0U) {
+                    return Role::ESSENTIAL;
+                }
+                return Role::DYNAMIC;
+            }
+            return Role::TRANSIENT;
+        }
+        return Role::NONE;
+    }
+
+    /**
+     * @brief Check if the given role requires the given message flag
+     *
+     * @param role Role
+     * @param flags Message flags
+     *
+     * @return True if role mandates the flag, false otherwise
+     */
+    constexpr bool role_requires(Role role, MessageFlags flags) {
+        return (flags_from_role(role) & flags) != 0U;
+    }
 
     /** Minimal interval between heartbeat messages */
     static constexpr std::chrono::milliseconds MinimumInterval = std::chrono::milliseconds(500);

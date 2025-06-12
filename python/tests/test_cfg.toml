@@ -13,11 +13,11 @@ name = "myconstellation"
 
 [constellation.mocksat]
 # Class-specific system settings for network
-importance = "low"
+_role = "none"
 
 [constellation.mocksat.device2]
 # Device-specific system settings for network
-importance = "essential"
+_role = "essential"
 start_after = "mocksat.device1"
 parameter1 = "nothing"
 
@@ -53,6 +53,7 @@ parameter1 = "a lot"
 name_format = "test_data_{date}.h5"
 
 [satellites.MockExampleSatellite]
+_role = "DYNAMIC"
 magic = "True"
 mode = "passionate"
 voltage = 10

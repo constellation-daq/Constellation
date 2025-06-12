@@ -28,6 +28,7 @@
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/protocol/CHP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -116,6 +117,16 @@ TEST_CASE("Standard commands", "[satellite]") {
     auto recv_get_state = msgpack_unpack_to<std::underlying_type_t<CSCP::State>>(
         to_char_ptr(recv_get_state_payload.span().data()), recv_get_state_payload.span().size());
     REQUIRE(recv_get_state == std::to_underlying(CSCP::State::NEW));
+
+    // get_role
+    sender.sendCommand("get_role");
+    auto recv_msg_get_role = sender.recv();
+    REQUIRE(recv_msg_get_role.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_role.getVerb().second), Equals("DYNAMIC"));
+    const auto& recv_msg_get_role_payload = recv_msg_get_role.getPayload();
+    auto recv_get_role = msgpack_unpack_to<std::underlying_type_t<CHP::MessageFlags>>(
+        to_char_ptr(recv_msg_get_role_payload.span().data()), recv_msg_get_role_payload.span().size());
+    REQUIRE(recv_get_role == std::to_underlying(flags_from_role(CHP::Role::DYNAMIC)));
 
     // get_status
     sender.sendCommand("get_status");

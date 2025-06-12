@@ -39,10 +39,12 @@ using namespace std::chrono_literals;
 
 HeartbeatManager::HeartbeatManager(std::string sender,
                                    std::function<CSCP::State()> state_callback,
-                                   std::function<void(std::string_view)> interrupt_callback)
+                                   std::function<void(std::string_view)> interrupt_callback,
+                                   std::function<void()> degradation_callback)
     : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::move(sender), std::move(state_callback), CHP::MaximumInterval),
-      interrupt_callback_(std::move(interrupt_callback)), logger_("CHP"),
+      sender_(std::move(sender), state_callback, CHP::MaximumInterval), role_(CHP::Role::DYNAMIC),
+      state_callback_(std::move(state_callback)), interrupt_callback_(std::move(interrupt_callback)),
+      degradation_callback_(std::move(degradation_callback)), logger_("CHP"),
       watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
     set_thread_name(watchdog_thread_, "HeartbeatManager");
     startPool();
@@ -78,10 +80,12 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
     return {};
 }
 
+void HeartbeatManager::setRole(CHP::Role role) {
+    sender_.setFlags(CHP::flags_from_role(role));
+    role_.store(role);
+}
+
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
-    if(!allow_departure_) {
-        return;
-    }
 
     LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
     const std::lock_guard lock {mutex_};
@@ -90,14 +94,32 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
     auto remote_it =
         std::ranges::find_if(remotes_, [&service](const auto& remote) { return MD5Hash(remote.first) == service.host_id; });
     if(remote_it != remotes_.end()) {
-        LOG(INFO) << remote_it->first << " departed orderly, removing heartbeat check";
-        remotes_.erase(remote_it);
+        // Check if the run needs to be marked as degraded:
+        if(degradation_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::MARK_DEGRADED) &&
+           state_callback_() == CSCP::State::RUN) {
+            LOG(logger_, DEBUG) << "Marking run as degraded because " << remote_it->first << " departed";
+            degradation_callback_();
+        }
+
+        // Check if per its role, this remote is allowed to depart:
+        if(role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
+            if(interrupt_callback_) {
+                LOG(logger_, DEBUG) << "Detected orderly departure of " << remote_it->first << ", interrupting";
+                interrupt_callback_(remote_it->first + " departs illicitly");
+            }
+        } else {
+            LOG(INFO) << remote_it->first << " departed orderly, removing heartbeat check";
+            remotes_.erase(remote_it);
+        }
     }
 }
 
 void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
-    LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState() << ", next message in "
-                        << msg.getInterval();
+    const auto& status = msg.getStatus();
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()          //
+                        << ", flags " << enum_name(msg.getFlags())                         //
+                        << (status.has_value() ? ", status `" + status.value() + "`" : "") //
+                        << ", next message in " << msg.getInterval();                      //
 
     const auto now = std::chrono::system_clock::now();
     const std::lock_guard lock {mutex_};
@@ -108,7 +130,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Add newly discovered remote:
     if(remote_it == remotes_.end()) {
         LOG(logger_, DEBUG) << "Adding " << msg.getSender() << " after receiving first heartbeat";
-        auto [it, inserted] = remotes_.emplace(msg.getSender(), Remote(msg.getInterval(), now, msg.getState(), now));
+        auto [it, inserted] =
+            remotes_.emplace(msg.getSender(), Remote(msg.getRole(), msg.getInterval(), now, msg.getState(), now));
         remote_it = it;
     }
 
@@ -118,10 +141,14 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
         LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
     }
 
+    // Update the role with latest information:
+    remote_it->second.role = msg.getRole();
+
     // Check for ERROR and SAFE states:
     if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         remote_it->second.lives = 0;
-        if(interrupt_callback_) {
+        // Only trigger interrupt if demanded by the message flags:
+        if(interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT)) {
             LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
             interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
         }
@@ -134,7 +161,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 
     // Replenish lives unless we're in ERROR or SAFE state:
     if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
-        remote_it->second.lives = protocol::CHP::Lives;
+        remote_it->second.lives = CHP::Lives;
     }
 }
 
@@ -161,10 +188,21 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 remote.last_checked = now;
                 LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
 
-                if(remote.lives == 0 && interrupt_callback_) {
-                    // This parrot is dead, it is no more
+                if(remote.lives == 0) {
                     LOG(logger_, DEBUG) << "Missed heartbeats from " << key << ", no lives left";
-                    interrupt_callback_("No signs of life detected anymore from " + key);
+
+                    // Check if the run needs to be marked as degraded:
+                    if(degradation_callback_ && role_requires(remote.role, CHP::MessageFlags::MARK_DEGRADED) &&
+                       state_callback_() == CSCP::State::RUN) {
+                        LOG(logger_, DEBUG) << "Marking run as degraded";
+                        degradation_callback_();
+                    }
+
+                    // Only trigger interrupt if the role demands it
+                    if(interrupt_callback_ && role_requires(remote.role, CHP::MessageFlags::TRIGGER_INTERRUPT)) {
+                        // This parrot is dead, it is no more
+                        interrupt_callback_("No signs of life detected anymore from " + key);
+                    }
                 }
             }
 

@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -52,10 +53,12 @@ namespace constellation::heartbeat {
          * @param state_callback Function that return the current state
          * @param interrupt_callback Interrupt callback which is invoked when a remote heartbeat sender reports an ERROR
          * state or stopped sending heartbeats
+         * @param degradation_callback Callback to mark a run as degraded when the constituents of the constellation changed
          */
         HeartbeatManager(std::string sender,
                          std::function<protocol::CSCP::State()> state_callback,
-                         std::function<void(std::string_view)> interrupt_callback);
+                         std::function<void(std::string_view)> interrupt_callback,
+                         std::function<void()> degradation_callback);
 
         /** Destructor which terminates the heartbeat manager */
         virtual ~HeartbeatManager();
@@ -91,23 +94,27 @@ namespace constellation::heartbeat {
         std::optional<protocol::CSCP::State> getRemoteState(std::string_view remote);
 
         /**
+         * @brief Set the sender role
+         *
+         * @param role Role of the heartbeat sender
+         */
+        CNSTLN_API void setRole(protocol::CHP::Role role);
+
+        /**
+         * @brief Get the sender role
+         *
+         * @return Role of the heartbeat sender
+         */
+        protocol::CHP::Role getRole() const { return role_.load(); }
+
+        /**
          * @brief Update the maximum heartbeat interval to a new value
          *
          * @note Heartbeats are send roughly twice as often as the maximum heartbeat interval
          *
          * @param interval New maximum heartbeat interval
          */
-        void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
-
-        /**
-         * @brief Configure whether regular departures are allows.
-         * @details If set to true, departing satellites which send a proper DEPART CHIRP message are not considered
-         *          erroneous but are removed from the list of monitored heartbeats. If set to false, any missing heartbeat,
-         *          even after a regular departure, is considered erroneous and the interruption callback is activated
-         *
-         * @param allow Boolean flag whether regular departures are allowed or not
-         */
-        void allowDeparture(bool allow) { allow_departure_ = allow; }
+        CNSTLN_API void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound
@@ -131,7 +138,7 @@ namespace constellation::heartbeat {
          * @details Proper departure of satellites is considered different from the simple disappearance of a heartbeat
          * signal. Whether to not to take appropriate action can be configured.
          *
-         * @param service The remote service which has departed and send an appropriate CHIRP DEPART message
+         * @param service The remote service which has departed and sent an appropriate CHIRP DEPART message
          */
         void host_disconnected(const chirp::DiscoveredService& service) override;
 
@@ -148,16 +155,23 @@ namespace constellation::heartbeat {
     private:
         /** Sender service */
         HeartbeatSend sender_;
+        std::atomic<protocol::CHP::Role> role_;
+
+        /** Function returning the current state */
+        std::function<protocol::CSCP::State()> state_callback_;
 
         /** Interrupt callback invoked upon remote failure condition and missing heartbeats */
         std::function<void(std::string_view)> interrupt_callback_;
+
+        /** Degradation callback to mark runs as degraded */
+        std::function<void()> degradation_callback_;
 
         /**
          * @struct Remote
          * @brief Struct holding all relevant information for a remote CHP host
          */
         struct Remote {
-            // TODO(simonspa) add importance here
+            protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {};
             std::chrono::system_clock::time_point last_heartbeat;
             protocol::CSCP::State last_state {};
@@ -169,9 +183,6 @@ namespace constellation::heartbeat {
         utils::string_hash_map<Remote> remotes_;
         std::mutex mutex_;
         std::condition_variable cv_;
-
-        /** Configuration */
-        bool allow_departure_ {true};
 
         log::Logger logger_;
 
