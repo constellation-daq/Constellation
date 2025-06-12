@@ -70,7 +70,6 @@ class HeartbeatChecker(BaseSatelliteFrame):
         # dict to keep states mapped to socket
         self._states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
         self._socket_lock = threading.Lock()
-        self.auto_recover = False  # clear fail Event if Satellite reappears?
 
     def register_heartbeat_callback(self, callback: Optional[Callable[[str, SatelliteState], None]] = None) -> None:
         self._callback = callback
@@ -91,8 +90,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
         """
         for hb in self._states.values():
             if host == hb.host:
-                self.log_chp.warning(f"Heartbeating for {host} already registered!")
-                return hb.failed
+                self.log_chp.warning(f"Heartbeating for {hb.name} already registered, replacing connection!")
+                self.unregister_heartbeat_host(host)
+                break
 
         ctx = context or zmq.Context()
         try:
@@ -119,20 +119,23 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def unregister_heartbeat_host(self, host: UUID) -> None:
         """Unregister a heartbeat check for a specific Satellite."""
         s: zmq.Socket | None = None  # type: ignore[type-arg]
-        name: str | None = None
+        h: HeartbeatState | None = None
         for socket, hb in self._states.items():
             if hb.host == host:
-                # TODO(simonspa) Add DENY_DEPARTURE check here and call _interrupting
+                h = hb
                 s = socket
-                name = hb.name
                 break
-        if not s:
+        if s is None or h is None:
             return
         with self._socket_lock:
             self._poller.unregister(s)
             self._states.pop(s)
             s.close()
-        self.log_chp.info("Removed heartbeat check for %s", name)
+        self.log_chp.info("Removed heartbeat check for %s", h.name)
+        # Check for DENY_DEPARTURE flag and call _interrupting
+        if h.role.role_requires(CHPMessageFlags.DENY_DEPARTURE):
+            self.log_chp.info(f"{h.name} departure causing interrupt callback to be called")
+            self._interrupting(h.name, SatelliteState.DEAD)
 
     def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
@@ -210,10 +213,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             self.log_chp.info(f"{hb.name} state causing interrupt callback to be called")
                             hb.failed.set()
                             self._interrupting(hb.name, hb.state)
-                    else:
-                        # recover?
-                        if self.auto_recover and hb.failed.is_set():
-                            hb.failed.clear()
+                    elif hb.failed.is_set():
+                        # satellite recovered, clear failed flags
+                        hb.failed.clear()
 
             # regularly check for stale connections and missed heartbeats
             if (datetime.now(timezone.utc) - last_check).total_seconds() > 0.3:
@@ -221,12 +223,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     if hb.seconds_since_refresh > (hb.interval / 1000) * 1.5 and not hb.failed.is_set():
                         # no message after 150% of the interval, subtract life
                         hb.lives -= 1
-                        self.log_chp.log(
-                            5,
-                            "%s unresponsive, removed life, now %d",
-                            hb.name,
-                            hb.lives,
-                        )
+                        self.log_chp.debug("Missed heartbeat from %s, reduced lives to %d", hb.name, hb.lives)
                         if hb.lives <= 0 and hb.role.role_requires(CHPMessageFlags.TRIGGER_INTERRUPT):
                             # no lives left, interrupt
                             if not hb.failed.is_set():

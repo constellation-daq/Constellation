@@ -13,6 +13,7 @@ from conftest import mocket, wait_for_state
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.chp import CHPRole
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.fsm import SatelliteState
 from constellation.core.message.cscp1 import CSCP1Message
@@ -133,7 +134,8 @@ def test_satellite_std_commands(mock_socket_sender, mock_satellite):
     req = sender.request_get_response("get_role")
     assert isinstance(req, CSCP1Message)
     assert req.verb_type == CSCP1Message.Type.SUCCESS
-    assert req.verb_msg == "NONE"
+    assert req.verb_msg == "DYNAMIC"
+    assert req.payload == CHPRole.DYNAMIC.flags()
     # get_status
     req = sender.request_get_response("get_status")
     assert isinstance(req, CSCP1Message)
