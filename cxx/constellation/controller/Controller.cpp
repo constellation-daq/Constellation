@@ -219,7 +219,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         // Check if information has changed and we need to calculate and propagate updates:
         bool connection_updated = (sat->second.state != msg.getState()) || (sat->second.interval != msg.getInterval());
 
-        // Update state and timers
+        // Update heartbeat info
+        sat->second.role = msg.getRole();
         sat->second.interval = msg.getInterval();
         sat->second.last_heartbeat = now;
         sat->second.state = msg.getState();
