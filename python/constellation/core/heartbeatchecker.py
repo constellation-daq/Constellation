@@ -119,20 +119,23 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def unregister_heartbeat_host(self, host: UUID) -> None:
         """Unregister a heartbeat check for a specific Satellite."""
         s: zmq.Socket | None = None  # type: ignore[type-arg]
-        name: str | None = None
+        h: HeartbeatState | None = None
         for socket, hb in self._states.items():
             if hb.host == host:
-                # TODO(simonspa) Add DENY_DEPARTURE check here and call _interrupting
+                h = hb
                 s = socket
-                name = hb.name
                 break
-        if not s:
+        if s is None or h is None:
             return
         with self._socket_lock:
             self._poller.unregister(s)
             self._states.pop(s)
             s.close()
-        self.log_chp.info("Removed heartbeat check for %s", name)
+        self.log_chp.info("Removed heartbeat check for %s", h.name)
+        # Check for DENY_DEPARTURE flag and call _interrupting
+        if h.role.role_requires(CHPMessageFlags.DENY_DEPARTURE):
+            self.log_chp.info(f"{h.name} departure causing interrupt callback to be called")
+            self._interrupting(h.name, SatelliteState.DEAD)
 
     def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
