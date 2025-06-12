@@ -265,8 +265,9 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_state: {
-        return_verb = {CSCP1Message::Type::SUCCESS, to_string(fsm_.getState())};
-        return_payload = Value::set(std::to_underlying(fsm_.getState())).assemble();
+        const auto state = fsm_.getState();
+        return_verb = {CSCP1Message::Type::SUCCESS, enum_name(state)};
+        return_payload = Value::set(std::to_underlying(state)).assemble();
         return_tags["last_changed"] = fsm_.getLastChanged();
         break;
     }
