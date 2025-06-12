@@ -33,11 +33,12 @@ using namespace std::chrono_literals;
 TEST_CASE("Sorting of registered services", "[chirp]") {
     // test self not smaller than self
     REQUIRE_FALSE(RegisteredService({DATA, 0}) < RegisteredService({DATA, 0}));
-    // test service identifier takes priority over port
+    // test sorting after service identifier
     REQUIRE(RegisteredService({CONTROL, 1}) < RegisteredService({DATA, 0}));
     REQUIRE_FALSE(RegisteredService({DATA, 0}) < RegisteredService({CONTROL, 1}));
-    // test sort after port if service identifier the same
-    REQUIRE(RegisteredService({DATA, 0}) < RegisteredService({DATA, 1}));
+    // test port is ignored if service identifier is identical
+    REQUIRE_FALSE(RegisteredService({DATA, 0}) < RegisteredService({DATA, 1}));
+    REQUIRE_FALSE(RegisteredService({DATA, 0}) > RegisteredService({DATA, 1}));
 }
 
 TEST_CASE("Sorting of discovered services", "[chirp]") {
@@ -57,8 +58,9 @@ TEST_CASE("Sorting of discovered services", "[chirp]") {
     // test service identifier takes priority if same host
     REQUIRE(DiscoveredService({ip1, id1, CONTROL, 1}) < DiscoveredService({ip1, id1, DATA, 0}));
     REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, CONTROL, 1}));
-    // test port takes priority if same host and service identifier
-    REQUIRE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 1}));
+    // test port is ignored if same host and service identifier
+    REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) < DiscoveredService({ip1, id1, DATA, 1}));
+    REQUIRE_FALSE(DiscoveredService({ip1, id1, DATA, 0}) > DiscoveredService({ip1, id1, DATA, 1}));
 }
 
 TEST_CASE("Sorting of discover callbacks", "[chirp]") {
@@ -86,13 +88,15 @@ TEST_CASE("Register services in CHIRP manager", "[chirp][chirp::manager]") {
     REQUIRE(manager.registerService(CONTROL, 23999));
     // test that second register does not work
     REQUIRE_FALSE(manager.registerService(CONTROL, 23999));
+    // test that second register on a different port does not work
+    REQUIRE_FALSE(manager.registerService(CONTROL, 24000));
     // test that unregistering works
     REQUIRE(manager.unregisterService(CONTROL, 23999));
     // test that unregistering for not registered service does not work
     REQUIRE_FALSE(manager.unregisterService(CONTROL, 23999));
     // test unregister all services
     manager.registerService(CONTROL, 23999);
-    manager.registerService(CONTROL, 24000);
+    manager.registerService(DATA, 24000);
     REQUIRE(manager.getRegisteredServices().size() == 2);
     manager.unregisterServices();
     REQUIRE(manager.getRegisteredServices().empty());
