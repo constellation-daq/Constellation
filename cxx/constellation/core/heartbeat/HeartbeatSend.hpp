@@ -73,11 +73,11 @@ namespace constellation::heartbeat {
         constexpr networking::Port getPort() const { return port_; }
 
         /**
-         * @brief Set the role this sender is emitting
+         * @brief Set the message flags this sender is emitting
          *
-         * @param role Role this sender is inhabiting
+         * @param flags Message flags for this sender
          */
-        void setRole(protocol::CHP::Role role) { default_flags_ = protocol::CHP::flags_from_role(role); }
+        void setFalgs(protocol::CHP::MessageFlags flags) { default_flags_ = flags; }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value

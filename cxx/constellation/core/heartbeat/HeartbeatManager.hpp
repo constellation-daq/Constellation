@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
@@ -97,7 +98,14 @@ namespace constellation::heartbeat {
          *
          * @param role Role of the heartbeat sender
          */
-        CNSTLN_API void setRole(protocol::CHP::Role role) { sender_.setRole(role); }
+        CNSTLN_API void setRole(protocol::CHP::Role role);
+
+        /**
+         * @brief Get the sender role
+         *
+         * @return Role of the heartbeat sender
+         */
+        protocol::CHP::Role getRole() const { return role_.load(); }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
@@ -147,6 +155,7 @@ namespace constellation::heartbeat {
     private:
         /** Sender service */
         HeartbeatSend sender_;
+        std::atomic<protocol::CHP::Role> role_;
 
         /** Function returning the current state */
         std::function<protocol::CSCP::State()> state_callback_;

@@ -42,9 +42,10 @@ HeartbeatManager::HeartbeatManager(std::string sender,
                                    std::function<void(std::string_view)> interrupt_callback,
                                    std::function<void()> degradation_callback)
     : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
-      sender_(std::move(sender), state_callback, CHP::MaximumInterval), state_callback_(std::move(state_callback)),
-      interrupt_callback_(std::move(interrupt_callback)), degradation_callback_(std::move(degradation_callback)),
-      logger_("CHP"), watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
+      sender_(std::move(sender), state_callback, CHP::MaximumInterval), role_(CHP::Role::DYNAMIC),
+      state_callback_(std::move(state_callback)), interrupt_callback_(std::move(interrupt_callback)),
+      degradation_callback_(std::move(degradation_callback)), logger_("CHP"),
+      watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
     set_thread_name(watchdog_thread_, "HeartbeatManager");
     startPool();
 }
@@ -77,6 +78,11 @@ std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view rem
 
     // Remote unknown, return empty optional
     return {};
+}
+
+void HeartbeatManager::setRole(CHP::Role role) {
+    sender_.setFalgs(CHP::flags_from_role(role));
+    role_.store(role);
 }
 
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {

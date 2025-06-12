@@ -213,6 +213,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         command_dict["get_commands"] =
             "Get commands supported by satellite (returned in payload as flat MessagePack dict with strings as keys)";
         command_dict["get_state"] = "Get state of satellite";
+        command_dict["get_role"] = "Get role of satellite";
         command_dict["get_status"] = "Get status of satellite";
         command_dict["get_config"] =
             "Get config of satellite (returned in payload as flat MessagePack dict with strings as keys)";
@@ -269,6 +270,12 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         return_verb = {CSCP1Message::Type::SUCCESS, enum_name(state)};
         return_payload = Value::set(std::to_underlying(state)).assemble();
         return_tags["last_changed"] = fsm_.getLastChanged();
+        break;
+    }
+    case get_role: {
+        const auto role = heartbeat_manager_.getRole();
+        return_verb = {CSCP1Message::Type::SUCCESS, enum_name(role)};
+        return_payload = Value::set(std::to_underlying(flags_from_role(role))).assemble();
         break;
     }
     case get_status: {

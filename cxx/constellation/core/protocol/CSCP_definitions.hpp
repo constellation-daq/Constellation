@@ -75,6 +75,7 @@ namespace constellation::protocol::CSCP {
         get_version,
         get_commands,
         get_state,
+        get_role,
         get_status,
         get_config,
         get_run_id,

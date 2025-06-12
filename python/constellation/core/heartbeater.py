@@ -11,8 +11,10 @@ from typing import Any
 
 import zmq
 
-from .chp import CHPMessageFlags, CHPTransmitter
+from .chp import CHPMessageFlags, CHPRole, CHPTransmitter
+from .commandmanager import cscp_requestable
 from .fsm import SatelliteStateHandler
+from .message.cscp1 import CSCP1Message
 
 
 class HeartbeatSender(SatelliteStateHandler):
@@ -85,3 +87,12 @@ class HeartbeatSender(SatelliteStateHandler):
         self.log_chp_s.info("HeartbeatSender thread shutting down.")
         # clean up
         self._hb_tm.close()
+
+    @cscp_requestable
+    def get_role(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
+        """Return the current role of the Satellite.
+
+        No payload argument.
+        """
+        role = CHPRole.NONE
+        return role.name, role.flags().value, {}
