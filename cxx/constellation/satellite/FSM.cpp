@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <compare>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -51,6 +52,7 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 using namespace std::string_literals;
 
 std::strong_ordering FSM::Condition::operator<=>(const Condition& other) const {
@@ -316,9 +318,10 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
     if(remote_callback_ && !remote_conditions_.empty()) {
         LOG(logger_, INFO) << "Checking remote conditions...";
 
+        // Start timer for remote conditions
         TimeoutTimer timer {remote_condition_timeout_};
-        // Start the timer:
         timer.reset();
+
         while(true) {
             bool satisfied = true;
             for(const auto& condition : remote_conditions_) {
@@ -348,7 +351,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
                     if(!condition.isSatisfied(remote_state.value())) {
                         const auto msg = "Awaiting state from " + std::string(condition.getRemote()) +
                                          ", currently reporting state `" + enum_name(remote_state.value()) + "`";
-                        LOG(logger_, DEBUG) << msg;
+                        LOG_T(logger_, DEBUG, 1s) << msg;
 
                         // Set status message and emit if new:
                         set_status(msg);
@@ -375,8 +378,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
             }
 
             // Wait a bit before checking again
-            using namespace std::literals::chrono_literals;
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_for(10ms);
         }
     }
 
