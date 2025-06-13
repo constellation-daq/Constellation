@@ -428,11 +428,6 @@ void FSM::initialize_fsm(Configuration& config) {
                     throw InvalidValueError(config, key, "Satellite cannot depend on itself");
                 }
 
-                // Check that the state is not a steady state but a transitional state:
-                if(CSCP::is_steady(state)) {
-                    throw std::invalid_argument("Conditions cannot be applied to steady state " + to_string(state));
-                }
-
                 remote_conditions_.emplace(remote, state);
             };
 
