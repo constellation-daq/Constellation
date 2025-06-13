@@ -11,12 +11,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <compare>
 #include <functional>
 #include <map>
 #include <mutex>
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <variant>
@@ -49,15 +51,44 @@ namespace constellation::satellite {
         /** Maps state to transition maps for that state */
         using StateTransitionMap = std::map<State, TransitionMap>;
 
-        struct Condition {
-            std::string remote;
-            State transitional;
+    private:
+        class Condition {
+        public:
+            /**
+             * @brief Construct a new condition
+             *
+             * @param remote Canonical name of the remote corresponding to the condition
+             * @param state Station for which the condition applies
+             */
+            Condition(std::string remote, State state) : remote_(std::move(remote)), state_(state) {}
 
-            bool operator<(const Condition& a) const { return (remote < a.remote || transitional < a.transitional); }
+            /**
+             * @brief Get the remote corresponding to the transition
+             *
+             * @return Name of the remote
+             */
+            std::string_view getRemote() const { return remote_; }
 
-            bool applies(const State state) const { return (transitional == state); }
+            /**
+             * @brief Check if the condition applies to the current state
+             *
+             * @return True if the condition applies, false otherwise
+             */
+            bool applies(State state) const { return (state_ == state); }
 
-            bool isSatisfied(const State state) const { return protocol::CSCP::transitions_to(transitional, state); }
+            /**
+             * @brief Check if the condition is satisfied
+             *
+             * @param state State of the remote
+             * @return True if the condition is satisfied, false otherwise
+             */
+            bool isSatisfied(State state) const { return protocol::CSCP::transitions_to(state_, state); }
+
+            std::strong_ordering operator<=>(const Condition& other) const;
+
+        private:
+            std::string remote_;
+            State state_;
         };
 
     public:
