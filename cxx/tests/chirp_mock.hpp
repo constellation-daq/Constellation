@@ -79,7 +79,7 @@ public:
         chirp_mock_service(name, service, port, true);
     }
 
-    ~MockedChirpService() { chirp_mock_service(name_, service_, port_, false); }
+    ~MockedChirpService() { chirp_mock_service(name_, service_, port_, false); } // NOLINT(bugprone-exception-escape)
 
 private:
     std::string name_;

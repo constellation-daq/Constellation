@@ -90,14 +90,14 @@ void MeasurementQueue::clear() {
     }
 
     // Get current measurement
-    const auto current_measurement = measurements_.front();
+    auto current_measurement = std::move(measurements_.front());
 
     // Clear queue
     measurements_.clear();
 
     // If running, emplace back current measurement:
     if(queue_running_) {
-        measurements_.push_back(current_measurement);
+        measurements_.emplace_back(std::move(current_measurement));
     }
 
     // Update progress and report:

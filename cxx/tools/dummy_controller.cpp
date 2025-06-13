@@ -77,6 +77,11 @@ namespace {
                 continue;
             }
 
+            // Quit if requested
+            if(command == "quit") {
+                break;
+            }
+
             // Send command to all satellites we currently know
             auto send_msg = CSCP1Message({"dummy_controller"}, {CSCP1Message::Type::REQUEST, command});
             if(command == "initialize" || command == "reconfigure") {

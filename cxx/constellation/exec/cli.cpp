@@ -111,18 +111,18 @@ void SatelliteParser::setup() {
 
 SatelliteParser::SatelliteOptions SatelliteParser::parse(std::span<const char*> args) {
     // Parse base args
-    const auto base_options = BaseParser::parse(args);
+    auto base_options = BaseParser::parse(args);
 
     // Get group
-    const auto group = get("group");
+    auto group = get("group");
 
     // Get satellite type
-    const auto type = type_.has_value() ? type_.value() : get("type");
+    auto type = type_.has_value() ? type_.value() : get("type");
 
     // Get satellite name
-    const auto name = get("name");
+    auto name = get("name");
 
-    return {base_options, group, type, name};
+    return {std::move(base_options), std::move(group), std::move(type), std::move(name)};
 }
 
 GUIParser::GUIParser(std::string program) : BaseParser(std::move(program)) {}
@@ -146,10 +146,10 @@ void GUIParser::setup() {
 
 GUIParser::GUIOptions GUIParser::parse(std::span<const char*> args) {
     // Parse base args
-    const auto base_options = BaseParser::parse(args);
+    auto base_options = BaseParser::parse(args);
 
     // Get group
-    const auto group = present("group");
+    auto group = present("group");
 
     // Get instance name
     std::optional<std::string> name;
@@ -158,5 +158,5 @@ GUIParser::GUIOptions GUIParser::parse(std::span<const char*> args) {
     } catch(const std::logic_error&) { // NOLINT(bugprone-empty-catch)
     }
 
-    return {base_options, group, std::move(name)};
+    return {std::move(base_options), std::move(group), std::move(name)};
 }

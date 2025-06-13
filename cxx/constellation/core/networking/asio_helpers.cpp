@@ -25,7 +25,7 @@
 // clang-format on
 #else
 #include <ifaddrs.h>
-#include <net/if.h>
+#include <net/if.h> // NOLINT(misc-include-cleaner) bug used for IFF_RUNNING etc
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
