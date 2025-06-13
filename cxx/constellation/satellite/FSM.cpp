@@ -19,7 +19,6 @@
 #include <iomanip>
 #include <mutex>
 #include <optional>
-#include <stdexcept>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -416,7 +415,6 @@ namespace {
 } // namespace
 
 void FSM::initialize_fsm(Configuration& config) {
-
     // Clear previously stored conditions
     remote_conditions_.clear();
 
@@ -428,37 +426,29 @@ void FSM::initialize_fsm(Configuration& config) {
                              CSCP::State::stopping}) {
         const auto key = "_require_" + to_string(state) + "_after";
         if(config.has(key)) {
-            auto register_condition = [this, &config, key, state](auto& remote) {
+            const auto remotes = config.getArray<std::string>(key);
+
+            LOG(logger_, INFO) << "Registering condition for transitional state `" << state << "` and remotes "
+                               << range_to_string(remotes);
+
+            std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
+                // Check that names are valid
                 if(!CSCP::is_valid_canonical_name(remote)) {
                     throw InvalidValueError(config, key, "Not a valid canonical name");
                 }
 
-                // Check that the requested remote is not this satellite:
+                // Check that the requested remote is not this satellite
                 if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
                     throw InvalidValueError(config, key, "Satellite cannot depend on itself");
                 }
 
                 remote_conditions_.emplace(remote, state);
-            };
-
-            try {
-                const auto remotes = config.getArray<std::string>(key);
-                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
-                                   << " and remotes " << range_to_string(remotes);
-                std::ranges::for_each(remotes, register_condition);
-            } catch(InvalidTypeError&) {
-                const auto remote = config.get<std::string>(key);
-                LOG(logger_, INFO) << "Registering condition for transitional state " << std::quoted(to_string(state))
-                                   << " and remote " << remote;
-                register_condition(remote);
-            }
+            });
         }
     }
 
-    // Set timeout for conditional transitions:
-    if(config.has("_conditional_transition_timeout")) {
-        remote_condition_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout"));
-    }
+    // Set timeout for conditional transitions
+    remote_condition_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout", 60));
 }
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
