@@ -28,6 +28,9 @@ LOG_IF(WARNING, parameter == 5) << "Parameter 5 is set "
 
 // Logging a message only every Nth time:
 LOG_NTH(STATUS, 100) << "This message is logged every 100th call to the logging macro.";
+
+// Logging a message only every T seconds:
+LOG_T(DEBUG, 5s) << "This message is logged at most every 5s";
 ```
 
 ```{seealso}

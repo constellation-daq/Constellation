@@ -10,6 +10,7 @@
 #pragma once
 
 #include <atomic> // IWYU pragma: keep
+#include <chrono> // IWYU pragma: keep
 
 #include "constellation/core/log/Level.hpp"  // IWYU pragma: export
 #include "constellation/core/log/Logger.hpp" // IWYU pragma: keep
@@ -126,6 +127,30 @@ using enum constellation::log::Level; // Forward log level enum
  */
 #define LOG_NTH_2ARGS(level, count) LOG_NTH_3ARGS(constellation::log::Logger::getDefault(), level, count)
 
+/** Logs a message at most every T seconds
+ *
+ * @param logger Logger on which to log
+ * @param level Log level on which to log
+ * @param time Minimum interval between which the message should be logged
+ */
+#define LOG_T_3ARGS(logger, level, time)                                                                                    \
+    static thread_local std::atomic<std::chrono::steady_clock::time_point> LOG_VAR {std::chrono::steady_clock::now() -      \
+                                                                                    (time)};                                \
+    if(std::chrono::steady_clock::now() - LOG_VAR.load() > (time) &&                                                        \
+       [&]() {                                                                                                              \
+           LOG_VAR.store(std::chrono::steady_clock::now());                                                                 \
+           return true;                                                                                                     \
+       }() &&                                                                                                               \
+       (logger).shouldLog(level))                                                                                           \
+    (logger).log(level)
+
+/** Logs a message at most every T seconds to the default logger
+ *
+ * @param level Log level on which to log
+ * @param time Minimum interval between which the message should be logged
+ */
+#define LOG_T_2ARGS(level, time) LOG_T_3ARGS(constellation::log::Logger::getDefault(), level, time)
+
 /**
  * Helper macros which allow to chose the correct target macro (_1ARG, _2ARGS or _3ARGS) depending on the number of arguments
  * and the macro prefix (F##) provided.
@@ -213,5 +238,18 @@ using enum constellation::log::Level; // Forward log level enum
  * to log and `count` is the interval of calls to the macro at which the message will be logged.
  */
 #define LOG_NTH(...) LOG_MACRO(LOG_NTH, __VA_ARGS__)
+
+/**
+ * Logs a message at most every T seconds the logging macro is called either to the default logger or a defined logger.
+ *
+ * This macro takes either two or three arguments:
+ *
+ * * `LOG_T(level, time)` will log to the default logger of the framework
+ * * `LOG_T(logger, level, time)` will log to the chosen logger instance
+ *
+ * `logger` is the optional \ref constellation::log::Logger instance to use, `level` indicates the verbosity level on which
+ * to log and `time` is the interval (`std::chrono::duration`) of calls to the macro at which the message will be logged.
+ */
+#define LOG_T(...) LOG_MACRO(LOG_T, __VA_ARGS__)
 
 // NOLINTEND(cppcoreguidelines-macro-usage)
