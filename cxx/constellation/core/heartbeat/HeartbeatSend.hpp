@@ -18,6 +18,7 @@
 #include <optional>
 #include <stop_token>
 #include <string>
+#include <string_view>
 #include <thread>
 
 #include <zmq.hpp>
@@ -106,7 +107,7 @@ namespace constellation::heartbeat {
          *
          * @param status message to be attached
          */
-        CNSTLN_API void sendExtrasystole(std::string status);
+        CNSTLN_API void sendExtrasystole(std::string_view status);
 
     private:
         /**

@@ -83,7 +83,7 @@ namespace constellation::heartbeat {
          *
          * @param status Latest status message of the satellite
          */
-        void sendExtrasystole(std::string status);
+        void sendExtrasystole(std::string_view status);
 
         /**
          * @brief Obtain the current state registered from a given remote
