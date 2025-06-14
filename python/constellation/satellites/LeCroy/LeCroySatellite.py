@@ -88,7 +88,7 @@ class LeCroySatellite(DataSender):
                     event_payload = np.append(event_payload, wave_array)
                 self.data_queue.put((event_payload.tobytes(), {"dtype": f"{event_payload.dtype}"}))
             except socket.timeout:
-                self.log.warning('Timeout encountered while retrieving the sequence.')
+                self.log.warning("Timeout encountered while retrieving the sequence.")
                 continue
             except (socket.error, struct.error) as e:
                 self.log.error(str(e))
