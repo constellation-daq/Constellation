@@ -94,7 +94,7 @@ caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py"]
 influx = ["influxdb-client"]
 keithley = ["pyserial"]
-lecroy = ["lecrunch3", "numpy"]
+lecroy = ["lecrunch3>=3.0.3", "numpy"]
 visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 
 [tool.meson-python.args]
