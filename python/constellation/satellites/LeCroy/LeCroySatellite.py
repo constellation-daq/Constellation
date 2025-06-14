@@ -6,6 +6,7 @@ Provides the satellite implementation for the LeCroy/LeCrunch
 Constellation interface
 """
 
+import datetime
 import socket
 import struct
 from typing import Any
@@ -38,7 +39,6 @@ class LeCroySatellite(DataSender):
 
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
-            self._scope.clear()
         except ConnectionRefusedError as e:
             raise RuntimeError(f"Connection refused to {ip_address}:{port} -> {str(e)}")
 
@@ -87,6 +87,9 @@ class LeCroySatellite(DataSender):
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
                 self.data_queue.put((event_payload.tobytes(), {"dtype": f"{event_payload.dtype}"}))
+            except socket.timeout:
+                self.log.warning('Timeout encountered while retrieving the sequence.')
+                continue
             except (socket.error, struct.error) as e:
                 self.log.error(str(e))
                 self._scope.clear()
@@ -95,7 +98,13 @@ class LeCroySatellite(DataSender):
             num_sequences_acquired += 1
             self.log.info(f"Fetched event {self._num_triggers_acquired}/sequence {num_sequences_acquired}")
 
+        self.EOR["current_time"] = datetime.datetime.now().timestamp()
         return "Finished acquisition"
+
+    def do_stopping(self) -> str:
+        self._scope.clear()
+        self.log.info(f"Stopping the run after {self._num_triggers_acquired} event(s)")
+        return "Stopped acquisition"
 
     @cscp_requestable
     def num_triggers(self, request: CSCPMessage) -> [str, int, dict[str, Any]]:
