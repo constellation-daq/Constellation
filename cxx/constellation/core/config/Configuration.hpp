@@ -153,7 +153,8 @@ namespace constellation::config {
         template <typename T> T get(const std::string& key, const T& def);
 
         /**
-         * @brief Get values for a key containing an array
+         * @brief Get values for a key containing an array. This will also attempt to read the configuration key as single
+         *        value and will return a vector with one entry if succeeding
          * @param key Key to get values of
          * @return List of values in the array in the requested template parameter
          *
@@ -163,7 +164,7 @@ namespace constellation::config {
          * @throws InvalidKeyError If the conversion to the requested type did not succeed
          * @throws InvalidKeyError If an overflow happened while converting the key
          */
-        template <typename T> std::vector<T> getArray(const std::string& key) const { return get<std::vector<T>>(key); }
+        template <typename T> std::vector<T> getArray(const std::string& key) const;
 
         /**
          * @brief Get values for a key containing an array or default array if it does not exists

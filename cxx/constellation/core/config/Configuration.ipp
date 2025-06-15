@@ -49,17 +49,27 @@ namespace constellation::config {
         return get<T>(key);
     }
 
+    template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
+        try {
+            // First, try reading as single value
+            return {get<T>(key)};
+        } catch(const InvalidTypeError&) {
+            // Try reading as array
+            return get<std::vector<T>>(key);
+        }
+    }
+
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) {
         return get<std::vector<T>>(key, def);
     }
 
     template <typename T> std::set<T> Configuration::getSet(const std::string& key) const {
-        const auto vec = get<std::vector<T>>(key);
+        const auto vec = getArray<T>(key);
         return {vec.begin(), vec.end()};
     }
 
     template <typename T> std::set<T> Configuration::getSet(const std::string& key, const std::set<T>& def) {
-        const auto vec = get<std::vector<T>>(key, {def.begin(), def.end()});
+        const auto vec = getArray<T>(key, {def.begin(), def.end()});
         return {vec.begin(), vec.end()};
     }
 

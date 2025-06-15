@@ -70,6 +70,10 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     // Read values back
     REQUIRE(config.get<bool>("bool") == true);
 
+    // Read single value as array or set:
+    REQUIRE(config.getArray<bool>("bool") == std::vector<bool>({true}));
+    REQUIRE(config.getSet<bool>("bool") == std::set<bool>({true}));
+
     REQUIRE(config.get<std::int64_t>("int64") == 63);
     REQUIRE(config.get<std::size_t>("size") == 1);
     REQUIRE(config.get<std::uint64_t>("uint64") == 64);
