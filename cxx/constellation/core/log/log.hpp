@@ -136,12 +136,14 @@ using enum constellation::log::Level; // Forward log level enum
 #define LOG_T_3ARGS(logger, level, time)                                                                                    \
     static thread_local std::atomic<std::chrono::steady_clock::time_point> LOG_VAR {std::chrono::steady_clock::now() -      \
                                                                                     (time)};                                \
-    if(std::chrono::steady_clock::now() - LOG_VAR.load() > (time) &&                                                        \
-       [&]() {                                                                                                              \
-           LOG_VAR.store(std::chrono::steady_clock::now());                                                                 \
-           return true;                                                                                                     \
-       }() &&                                                                                                               \
-       (logger).shouldLog(level))                                                                                           \
+    if((logger).shouldLog(level) && [&]() {                                                                                 \
+           const auto now = std::chrono::steady_clock::now();                                                               \
+           if(now - LOG_VAR.load() > (time)) {                                                                              \
+               LOG_VAR.store(now);                                                                                          \
+               return true;                                                                                                 \
+           }                                                                                                                \
+           return false;                                                                                                    \
+       }())                                                                                                                 \
     (logger).log(level)
 
 /** Logs a message at most every T seconds to the default logger
