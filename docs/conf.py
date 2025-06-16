@@ -111,6 +111,7 @@ html_sidebars = {
         "ablog/categories.html",
         "ablog/archives.html",
     ],
+    "about": [],
 }
 
 # Favicon
