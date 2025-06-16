@@ -55,16 +55,15 @@ std::vector<Interface> constellation::networking::get_interfaces() {
 
     // Allocate a 15 KiB buffer for adapter info
     ULONG buffer_size = 15 * 1024;
-    std::vector<char> buffer {};
-    buffer.resize(buffer_size);
-    IP_ADAPTER_ADDRESSES* adapters = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
+    auto buffer = std::vector<char>(buffer_size);
+    auto* adapters = reinterpret_cast<IP_ADAPTER_ADDRESSES*>(buffer.data());
 
     // Only return IPv4 interfaces
-    ULONG family = AF_INET;
-    ULONG flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_PREFIX;
+    const auto family = AF_INET;
+    const auto flags = GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_INCLUDE_PREFIX;
 
-    // Get adapters
-    DWORD result = GetAdaptersAddresses(family, flags, nullptr, adapters, &buffer_size);
+    // Get adapters (buffer_size is given as reference in case the buffer is too small)
+    auto result = GetAdaptersAddresses(family, flags, nullptr, adapters, &buffer_size);
 
     // Try again if buffer was too small
     if(result == ERROR_BUFFER_OVERFLOW) {
@@ -77,23 +76,23 @@ std::vector<Interface> constellation::networking::get_interfaces() {
         throw NetworkError("Unable to get list of interfaces");
     }
 
-    for(IP_ADAPTER_ADDRESSES* adapter = adapters; adapter != nullptr; adapter = adapter->Next) {
+    for(auto* adapter = adapters; adapter != nullptr; adapter = adapter->Next) {
         // Select only running interfaces
         if(adapter->OperStatus != IfOperStatusUp) {
             continue;
         }
 
         // Iterate through addresses of the current adapter
-        for(IP_ADAPTER_UNICAST_ADDRESS* ua = adapter->FirstUnicastAddress; ua != nullptr; ua = ua->Next) {
+        for(auto* ua = adapter->FirstUnicastAddress; ua != nullptr; ua = ua->Next) {
             if(ua->Address.lpSockaddr->sa_family != AF_INET) {
                 continue;
             }
 
-            sockaddr_in* ipv4 = reinterpret_cast<sockaddr_in*>(ua->Address.lpSockaddr);
-            char buffer[INET_ADDRSTRLEN];
-            if(inet_ntop(AF_INET, &(ipv4->sin_addr), buffer, INET_ADDRSTRLEN)) {
+            auto* ipv4 = reinterpret_cast<sockaddr_in*>(ua->Address.lpSockaddr);
+            char ipv4_buffer[INET_ADDRSTRLEN];
+            if(inet_ntop(AF_INET, &(ipv4->sin_addr), ipv4_buffer, INET_ADDRSTRLEN)) {
                 try {
-                    interfaces.emplace_back(to_std_string(adapter->FriendlyName), asio::ip::make_address_v4(buffer));
+                    interfaces.emplace_back(to_std_string(adapter->FriendlyName), asio::ip::make_address_v4(ipv4_buffer));
                 } catch(const asio::system_error&) {
                     continue;
                 }
@@ -156,7 +155,7 @@ std::vector<Interface> constellation::networking::get_interfaces(std::vector<std
         const auto interface_it =
             std::ranges::find(all_interfaces, interface_name, [](const auto& if_s) { return if_s.name; });
         if(interface_it == all_interfaces.end()) {
-            throw NetworkError("Interface `" + interface_name + "` does not exist or is not suitable");
+            throw NetworkError("Interface `" + interface_name + "` does not exist or is not suitable for network discovery");
         }
         interfaces.emplace_back(*interface_it);
     });
