@@ -14,7 +14,7 @@ Parameters to control [autonomous transition orchestration](../operator_guide/co
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `_conditional_transition_timeout` | Unsigned integer | Timeout in seconds to wait for all conditions to be satisfied for conditional transitioning | `60` |
+| `_conditional_transition_timeout` | Unsigned integer | Timeout in seconds to wait for all conditions to be satisfied for conditional transitioning | `30` |
 | `_require_initializing_after` | List of strings | List of canonical names of remote satellites for conditional transitioning in `initializing` state | - |
 | `_require_launching_after` | List of strings | List of canonical names of remote satellites for conditional transitioning in `launching` state | - |
 | `_require_landing_after` | List of strings | List of canonical names of remote satellites for conditional transitioning in `landing` state | - |

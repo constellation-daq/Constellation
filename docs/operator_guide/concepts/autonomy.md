@@ -172,6 +172,6 @@ Waiting for remote conditions to be satisfied can be interrupted by a number of 
 * The remote satellite the condition depends on is not present or disappeared
 * The remote satellite the condition depends on returns an {bdg-secondary}`ERROR` state
 * The waiting satellite runs into the timeout for conditional transitions. The timeout can be configured using the key
-  `_conditional_transition_timeout` and defaults to 60 seconds.
+  `_conditional_transition_timeout` and defaults to 30 seconds.
 
 In all cases the waiting satellite aborts the pending action and transitions into its {bdg-secondary}`ERROR` state.
