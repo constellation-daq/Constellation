@@ -94,6 +94,7 @@ html_theme_options = {
         "satellites/**": ["page-toc"],
     },
     "show_prev_next": False,
+    "header_links_before_dropdown": 6,
 }
 
 html_css_files = [
