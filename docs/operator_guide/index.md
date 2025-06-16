@@ -42,7 +42,7 @@ Features, protocols and the behavior of individual components may still change.
 ```
 
 ```{toctree}
-:caption: Get started
+:caption: 🚀 Get started
 
 get_started/install_from_flathub
 get_started/install_from_pypi
@@ -54,7 +54,7 @@ get_started/install_from_source
 ```
 
 ```{toctree}
-:caption: Tutorials
+:caption: 📚 Tutorials
 
 tutorials/single_satellite
 tutorials/missioncontrol
@@ -66,7 +66,7 @@ tutorials/observatory
 ```
 
 ```{toctree}
-:caption: Concepts
+:caption: 💡 Concepts
 
 concepts/constellation
 concepts/satellite
@@ -82,7 +82,7 @@ concepts/data
 ```
 
 ```{toctree}
-:caption: How-To Guides
+:caption: 📖 How-To Guides
 
 howtos/setup_influxdb_grafana
 howtos/setup_mattermost_logger

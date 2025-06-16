@@ -15,7 +15,7 @@ Features, protocols and the behavior of individual components may still change.
 ```
 
 ```{toctree}
-:caption: Tutorials
+:caption: 📚 Tutorials
 
 tutorials/satellite_cxx
 tutorials/satellite_py
@@ -26,7 +26,7 @@ tutorials/satellite_py
 ```
 
 ```{toctree}
-:caption: Adding Functionality
+:caption: ✏️ Adding Functionality
 
 functionality/logging
 functionality/metrics
@@ -40,7 +40,7 @@ functionality/custom_commands
 ```
 
 ```{toctree}
-:caption: How-To Guides
+:caption: 📖 How-To Guides
 
 howtos/external_satellite
 howtos/port_eudaq

@@ -15,7 +15,7 @@ only for implementing Constellation libraries in different languages, or for con
 ```
 
 ```{toctree}
-:caption: General
+:caption: ⚙ General
 
 contributing
 flatpak
@@ -27,7 +27,7 @@ release
 ```
 
 ```{toctree}
-:caption: Technical Documentation
+:caption: 🔧 Technical Documentation
 
 satellite
 naming
