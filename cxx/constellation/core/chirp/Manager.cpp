@@ -81,26 +81,17 @@ std::strong_ordering DiscoverCallbackEntry::operator<=>(const DiscoverCallbackEn
     return ord_callback;
 }
 
-Manager::Manager(std::string_view group_name,
-                 std::string_view host_name,
-                 const std::set<asio::ip::address_v4>& interface_addresses)
+Manager::Manager(std::string_view group_name, std::string_view host_name, const std::vector<Interface>& interfaces)
     : group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 
-    LOG(logger_, INFO) << "Using interface addresses "
-                       << range_to_string(interface_addresses,
-                                          [](const auto& interface_address) { return interface_address.to_string(); });
+    LOG(logger_, INFO) << "Using interfaces "
+                       << range_to_string(interfaces, [](const auto& interface) { return interface.name; });
 
     const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
-    multicast_socket_ = std::make_unique<MulticastSocket>(interface_addresses, multicast_adddress, PORT);
+    multicast_socket_ = std::make_unique<MulticastSocket>(interfaces, multicast_adddress, PORT);
 }
-
-Manager::Manager(std::string_view group_name, std::string_view host_name)
-    : Manager(group_name, host_name, get_interface_addresses()) {}
-
-Manager::Manager(std::string_view group_name, std::string_view host_name, const asio::ip::address_v4& interface_address)
-    : Manager(group_name, host_name, std::set({asio::ip::address_v4::loopback(), interface_address})) {}
 
 Manager::~Manager() {
     // First stop Run function

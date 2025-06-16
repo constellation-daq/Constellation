@@ -13,25 +13,28 @@
 #include <chrono>
 #include <cstddef>
 #include <optional>
-#include <set>
 #include <span>
 #include <utility>
+#include <vector>
 
 #include <asio.hpp>
 
+#include "constellation/core/networking/asio_helpers.hpp"
+
 using namespace constellation::chirp;
+using namespace constellation::networking;
 
 constexpr std::size_t MESSAGE_BUFFER = 1024;
 constexpr int MULTICAST_TTL = 8;
 
-MulticastSocket::MulticastSocket(const std::set<asio::ip::address_v4>& interface_addresses,
+MulticastSocket::MulticastSocket(const std::vector<Interface>& interfaces,
                                  const asio::ip::address_v4& multicast_address,
                                  asio::ip::port_type multicast_port)
     : recv_socket_(io_context_), multicast_endpoint_(multicast_address, multicast_port) {
 
     // Create send sockets
-    send_sockets_.reserve(interface_addresses.size());
-    for(const auto& interface_address : interface_addresses) {
+    send_sockets_.reserve(interfaces.size());
+    for(const auto& interface : interfaces) {
         asio::ip::udp::socket socket {io_context_};
 
         // Open socket to set protocol
@@ -44,10 +47,10 @@ MulticastSocket::MulticastSocket(const std::set<asio::ip::address_v4>& interface
         socket.set_option(asio::ip::multicast::hops(MULTICAST_TTL));
 
         // Disable loopback since loopback interface is added explicitly
-        socket.set_option(asio::ip::multicast::enable_loopback(interface_address.is_loopback()));
+        socket.set_option(asio::ip::multicast::enable_loopback(interface.address.is_loopback()));
 
         // Set interface address
-        socket.set_option(asio::ip::multicast::outbound_interface(interface_address));
+        socket.set_option(asio::ip::multicast::outbound_interface(interface.address));
 
         send_sockets_.emplace_back(std::move(socket));
     }
@@ -68,8 +71,8 @@ MulticastSocket::MulticastSocket(const std::set<asio::ip::address_v4>& interface
     recv_socket_.bind(multicast_endpoint_);
 
     // Join multicast group on each interface
-    for(const auto& interface_address : interface_addresses) {
-        recv_socket_.set_option(asio::ip::multicast::join_group(multicast_address, interface_address));
+    for(const auto& interface : interfaces) {
+        recv_socket_.set_option(asio::ip::multicast::join_group(multicast_address, interface.address));
     }
 }
 

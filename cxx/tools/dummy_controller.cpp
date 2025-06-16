@@ -23,6 +23,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
@@ -32,6 +33,7 @@ using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -53,7 +55,7 @@ namespace {
 
         const std::string name = "dummy_controller";
 
-        auto chirp_manager = std::make_unique<chirp::Manager>(group, name);
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, name, get_interfaces());
         chirp_manager->start();
         chirp_manager->sendRequest(CHIRP::ServiceIdentifier::CONTROL);
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));

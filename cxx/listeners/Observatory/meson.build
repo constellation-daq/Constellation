@@ -16,7 +16,7 @@ ui_files = qt.compile_ui(sources: ['Observatory.ui'])
 moc_files = qt.compile_moc(headers: ['QLogFilter.hpp', 'QLogListener.hpp', 'QSenderSubscriptions.hpp', 'QSubscriptionList.hpp', 'Observatory.hpp'])
 
 executable('Observatory',
-  sources: ['Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp', 'QSubscriptionList.cpp', 'QSenderSubscriptions.cpp', qrc_files, ui_files, moc_files],
+  sources: ['main.cpp', 'Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp', 'QSubscriptionList.cpp', 'QSenderSubscriptions.cpp', qrc_files, ui_files, moc_files],
   dependencies: [core_dep, gui_dep, listener_dep, exec_dep, argparse_dep, qt_dep],
   install: true,
   install_rpath: constellation_rpath,

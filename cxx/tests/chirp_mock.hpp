@@ -14,6 +14,7 @@
 #include <thread>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 #include <asio/ip/address_v4.hpp>
 
@@ -21,9 +22,14 @@
 #include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+
+inline std::vector<constellation::networking::Interface> get_loopback_if() {
+    return {{"lo", asio::ip::make_address_v4("127.0.0.1")}};
+}
 
 inline constellation::chirp::Manager* create_chirp_manager() {
     // TODO(stephan.lachnit): CHIRP manager should be part of registry,
@@ -32,8 +38,7 @@ inline constellation::chirp::Manager* create_chirp_manager() {
     static std::once_flag manager_flag {};
     std::call_once(manager_flag, [&] {
         LOG(STATUS) << "Creating chirp manager";
-        auto manager =
-            std::make_unique<constellation::chirp::Manager>("edda", "chirp_manager", asio::ip::make_address_v4("127.0.0.1"));
+        auto manager = std::make_unique<constellation::chirp::Manager>("edda", "chirp_manager", get_loopback_if());
         manager->start();
         constellation::utils::ManagerLocator::setDefaultCHIRPManager(std::move(manager));
     });
@@ -47,9 +52,8 @@ inline void chirp_mock_service(std::string_view name,
     // Hack: add fake satellite to chirp to find satellite (cannot find from same manager)
     using namespace constellation::chirp;
     using namespace constellation::protocol::CHIRP;
-    const auto interface_address = asio::ip::make_address_v4("127.0.0.1");
     const auto multicast_address = asio::ip::address_v4(MULTICAST_ADDRESS);
-    MulticastSocket chirp_sender {{interface_address}, multicast_address, PORT};
+    MulticastSocket chirp_sender {get_loopback_if(), multicast_address, PORT};
     const auto msgtype = offer ? MessageType::OFFER : MessageType::DEPART;
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendMessage(chirp_msg.assemble());

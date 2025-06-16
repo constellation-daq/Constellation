@@ -11,11 +11,21 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::exec {
+    /**
+     * @ingroup Exceptions
+     * @brief Generic error for CLI functions
+     */
+    class CNSTLN_API CommandLineInterfaceError : public utils::RuntimeError {
+    public:
+        explicit CommandLineInterfaceError(std::string what_arg) : utils::RuntimeError(std::move(what_arg)) {}
+    };
+
     /**
      * @ingroup Exceptions
      * @brief Error while interacting with a Dynamic Shared Object (DSO)

@@ -11,6 +11,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -33,13 +34,11 @@ namespace constellation::exec {
     /**
      * Provides the main function for a satellite
      *
-     * @param argc CLI argument count
-     * @param argv CLI arguments
+     * @param args CLI arguments
      * @param program Name of the CLI executable
      * @param satellite_type Optional satellite type to pre-load
      */
-    CNSTLN_API int satellite_main(int argc,
-                                  char* argv[], // NOLINT(modernize-avoid-c-arrays)
+    CNSTLN_API int satellite_main(std::span<const char*> args,
                                   std::string_view program,
                                   std::optional<SatelliteType> satellite_type = std::nullopt) noexcept;
 

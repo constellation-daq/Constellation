@@ -12,7 +12,7 @@
 #include <string>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <stringapiset.h>
 #endif
 
 namespace constellation::utils {

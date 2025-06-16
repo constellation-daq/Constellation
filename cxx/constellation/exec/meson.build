@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 exec_src = files(
+  'cli.cpp',
+  'cpp.cpp',
   'DSOLoader.cpp',
   'satellite.cpp',
 )
@@ -20,7 +22,7 @@ exec_dep = declare_dependency(
   link_with: exec_lib,
   compile_args: constellation_args,
   include_directories: constellation_inc,
-  dependencies: [core_dep, satellite_dep],
+  dependencies: [core_dep, satellite_dep, argparse_dep],
 )
 
 pkg.generate(exec_lib,
@@ -30,14 +32,16 @@ pkg.generate(exec_lib,
 )
 
 install_headers(
-  'exceptions.hpp',
+  'cli.hpp',
+  'cpp.hpp',
   'DSOLoader.hpp',
+  'exceptions.hpp',
   'satellite.hpp',
   subdir: 'constellation/exec',
 )
 
 executable('Satellite',
-  sources: 'main.cpp',
+  sources: 'satellite_main.cpp',
   dependencies: [exec_dep],
   install: true,
   install_rpath: constellation_rpath,

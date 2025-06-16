@@ -27,6 +27,7 @@
 #include "constellation/core/chirp/MulticastSocket.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/networking/Port.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 
@@ -110,17 +111,11 @@ namespace constellation::chirp {
         /**
          * @param group_name Group name of the group to join
          * @param host_name Host name for outgoing messages
-         */
-        CNSTLN_API Manager(std::string_view group_name, std::string_view host_name);
-
-        /**
-         * @param group_name Group name of the group to join
-         * @param host_name Host name for outgoing messages
-         * @param interface_address Interface address to use
+         * @param interfaces Interfaces to use
          */
         CNSTLN_API Manager(std::string_view group_name,
                            std::string_view host_name,
-                           const asio::ip::address_v4& interface_address);
+                           const std::vector<networking::Interface>& interfaces);
 
         CNSTLN_API virtual ~Manager();
 
@@ -267,15 +262,6 @@ namespace constellation::chirp {
         CNSTLN_API void sendRequest(protocol::CHIRP::ServiceIdentifier service_id);
 
     private:
-        /**
-         * @param group_name Group name of the group to join
-         * @param host_name Host name for outgoing messages
-         * @param interface_addresses Set of interface addresses to use
-         */
-        Manager(std::string_view group_name,
-                std::string_view host_name,
-                const std::set<asio::ip::address_v4>& interface_addresses);
-
         /**
          * Send a CHIRP broadcast
          *

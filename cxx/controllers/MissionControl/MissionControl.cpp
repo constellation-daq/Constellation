@@ -11,13 +11,9 @@
 
 #include <chrono>
 #include <cstddef>
-#include <exception>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <map>
-#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -27,21 +23,19 @@
 
 #include <argparse/argparse.hpp>
 
-#include <QApplication>
 #include <QCloseEvent>
-#include <QCoreApplication>
 #include <QDateTime>
-#include <QException>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QInputDialog>
 #include <QLinearGradient>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMetaType>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QSpinBox>
+#include <QString>
 #include <QStyleOptionViewItem>
 #include <QTextDocument>
 #include <QtGlobal>
@@ -52,26 +46,21 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/gui/QCommandDialog.hpp"
 #include "constellation/gui/QConnectionDialog.hpp"
 #include "constellation/gui/QResponseDialog.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
-using namespace constellation;
-using namespace constellation::chirp;
 using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::gui;
 using namespace constellation::log;
-using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
@@ -615,142 +604,4 @@ std::optional<Controller::CommandPayload> MissionControl::parse_config_file(cons
         QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + error.what()));
     }
     return {};
-}
-
-namespace {
-    // NOLINTNEXTLINE(*-avoid-c-arrays)
-    void parse_args(int argc, char* argv[], argparse::ArgumentParser& parser) {
-        // Controller name (-n)
-        parser.add_argument("-n", "--name").help("controller name").default_value("MissionControl");
-
-        // Constellation group (-g)
-        parser.add_argument("-g", "--group").help("group name");
-
-        // Console log level (-l)
-        parser.add_argument("-l", "--level").help("log level").default_value("INFO");
-
-        // Interface address (--if)
-        parser.add_argument("--if").help("interface address");
-
-        // Note: this might throw
-        parser.parse_args(argc, argv);
-    }
-
-    // parser.get() might throw a logic error, but this never happens in practice
-    std::string get_arg(argparse::ArgumentParser& parser, std::string_view arg) noexcept {
-        try {
-            return parser.get(arg);
-        } catch(const std::exception&) {
-            std::unreachable();
-        }
-    }
-} // namespace
-
-int main(int argc, char** argv) {
-    try {
-        constellation::gui::initResources();
-        auto qapp = std::make_shared<QApplication>(argc, argv);
-
-        try {
-            QCoreApplication::setOrganizationName("Constellation");
-            QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
-            QCoreApplication::setApplicationName("MissionControl");
-        } catch(const QException&) {
-            std::cerr << "Failed to set up UI application\n" << std::flush;
-            return 1;
-        }
-
-        // Ensure that ZeroMQ doesn't fail creating the CMDP sink
-        try {
-            ManagerLocator::getInstance();
-        } catch(const NetworkError& error) {
-            std::cerr << "Failed to initialize logging: " << error.what() << "\n" << std::flush;
-            return 1;
-        }
-
-        // Get the default logger
-        auto& logger = Logger::getDefault();
-
-        // CLI parsing
-        argparse::ArgumentParser parser {"MissionControl", CNSTLN_VERSION_FULL};
-        try {
-            parse_args(argc, argv, parser);
-        } catch(const std::exception& error) {
-            LOG(logger, CRITICAL) << "Argument parsing failed: " << error.what();
-            LOG(logger, CRITICAL) << "Run " << std::quoted("MissionControl --help") << " for help";
-            return 1;
-        }
-
-        // Set log level
-        const auto default_level = enum_cast<Level>(get_arg(parser, "level"));
-        if(!default_level.has_value()) {
-            LOG(logger, CRITICAL) << "Log level " << std::quoted(get_arg(parser, "level"))
-                                  << " is not valid, possible values are: " << list_enum_names<Level>();
-            return 1;
-        }
-        ManagerLocator::getSinkManager().setConsoleLevels(default_level.value());
-
-        // Check interface address
-        std::optional<asio::ip::address_v4> if_addr {};
-        try {
-            const auto if_string = parser.present("if");
-            if(if_string.has_value()) {
-                if_addr = asio::ip::make_address_v4(if_string.value());
-            }
-        } catch(const asio::system_error& error) {
-            LOG(logger, CRITICAL) << "Invalid interface address \"" << get_arg(parser, "if") << "\"";
-            return 1;
-        } catch(const std::exception&) {
-            std::unreachable();
-        }
-
-        // Get controller name
-        const auto controller_name = get_arg(parser, "name");
-
-        // Log the version after all the basic checks are done
-        LOG(logger, STATUS) << "Constellation " << CNSTLN_VERSION_FULL;
-
-        // Get Constellation group:
-        std::string group_name;
-        if(parser.is_used("group")) {
-            group_name = get_arg(parser, "group");
-        } else {
-            const QString text =
-                QInputDialog::getText(nullptr, "Constellation", "Constellation group to connect to:", QLineEdit::Normal);
-            if(!text.isEmpty()) {
-                group_name = text.toStdString();
-            } else {
-                LOG(logger, CRITICAL) << "Invalid or empty constellation group name";
-                return 1;
-            }
-        }
-
-        // Create CHIRP manager and set as default
-        std::unique_ptr<chirp::Manager> chirp_manager {};
-        try {
-            if(if_addr.has_value()) {
-                chirp_manager = std::make_unique<chirp::Manager>(group_name, controller_name, if_addr.value());
-            } else {
-                chirp_manager = std::make_unique<chirp::Manager>(group_name, controller_name);
-            }
-            chirp_manager->start();
-            ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
-        } catch(const std::exception& error) {
-            LOG(logger, CRITICAL) << "Failed to initiate network discovery: " << error.what();
-        }
-
-        // Register CMDP in CHIRP and set sender name for CMDP
-        ManagerLocator::getSinkManager().enableCMDPSending(controller_name);
-
-        try {
-            MissionControl gui(controller_name, group_name);
-            gui.show();
-            return QCoreApplication::exec();
-        } catch(const QException&) {
-            std::cerr << "Failed to start UI application\n" << std::flush;
-        }
-    } catch(...) {
-        std::cerr << "Failed to start UI\n" << std::flush;
-    }
-    return 1;
 }

@@ -29,7 +29,7 @@ core_lib = library(
   'ConstellationCore',
   sources: core_src,
   include_directories: constellation_inc,
-  dependencies: [
+  dependencies: constellation_private_deps + [
     asio_dep,
     cppzmq_dep,
     magic_enum_dep,

@@ -15,7 +15,7 @@ endif
 
 test_core_chirp_manager = executable('test_core_chirp_manager',
   sources: 'test_core_chirp_manager.cpp',
-  dependencies: [core_dep, catch2_dep],
+  dependencies: [core_dep, asio_dep, catch2_dep],
 )
 test('Core CHIRP manager test', test_core_chirp_manager,
   args: ['--durations', 'yes', '--verbosity', 'high'],
@@ -24,7 +24,7 @@ test('Core CHIRP manager test', test_core_chirp_manager,
 
 test_core_chirp_message = executable('test_core_chirp_message',
   sources: 'test_core_chirp_message.cpp',
-  dependencies: [core_dep, catch2_dep],
+  dependencies: [core_dep, asio_dep, catch2_dep],
 )
 test('Core CHIRP message test', test_core_chirp_message,
   args: ['--durations', 'yes', '--verbosity', 'high'],
@@ -116,7 +116,15 @@ test('Core utilities test', test_core_utils,
   args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
-# Exec / DSO Loader
+# Exec
+
+test_exec_cli = executable('test_exec_cli',
+  sources: 'test_exec_cli.cpp',
+  dependencies: [core_dep, exec_dep, catch2_dep],
+)
+test('Exec CLI test', test_exec_cli,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
 
 test_exec_dsoloader = executable('test_exec_dsoloader',
   sources: 'test_exec_dsoloader.cpp',

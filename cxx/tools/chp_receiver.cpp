@@ -24,6 +24,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
+#include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -32,6 +33,7 @@ using namespace constellation;
 using namespace constellation::heartbeat;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::networking;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
@@ -56,7 +58,7 @@ namespace {
         }
         std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
 
-        auto chirp_manager = std::make_unique<chirp::Manager>(group, "chp_receiver");
+        auto chirp_manager = std::make_unique<chirp::Manager>(group, "chp_receiver", get_interfaces());
         chirp_manager->start();
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
