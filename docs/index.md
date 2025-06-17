@@ -209,8 +209,9 @@ is available on [DESY's GitLab instance](https://gitlab.desy.de/constellation/co
 :hidden:
 
 news
-Satellites <satellites/index>
-Operator Docs <operator_guide/index>
-Application Development <application_development/index>
-Framework Reference <framework_reference/index>
+About <about>
+🛰️ Satellites <satellites/index>
+📑 Operate <operator_guide/index>
+🧩 Integrate <application_development/index>
+🔧 Contribute <framework_reference/index>
 ```
