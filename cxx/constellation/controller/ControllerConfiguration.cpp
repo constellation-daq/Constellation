@@ -9,6 +9,7 @@
 
 #include "ControllerConfiguration.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -18,6 +19,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -25,14 +27,17 @@
 #include <toml++/toml.hpp>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::controller;
 using namespace constellation::config;
 using namespace constellation::log;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 
 ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& path) {
@@ -50,13 +55,36 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     buffer << file.rdbuf();
 
     parse_toml(buffer.view());
+
+    // Build the dependency graph from all satellite configurations
+    for(const auto& [name, cfg] : satellite_configs_) {
+        fill_dependency_graph(name);
+    }
+
+    // Validate the configuration
+    validate();
 }
 
 ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
     parse_toml(toml);
+
+    // Build the dependency graph from all satellite configurations
+    for(const auto& [name, cfg] : satellite_configs_) {
+        fill_dependency_graph(name);
+    }
+
+    // Validate the configuration
+    validate();
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
+
+    // Validate the configuration
+    try {
+        validate();
+    } catch(const ConfigFileValidationError& error) {
+        LOG(config_parser_logger_, WARNING) << error.what();
+    }
 
     auto get_toml_array = [&](auto&& val) -> toml::array {
         toml::array arr;
@@ -254,6 +282,103 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
     }
 }
 
+void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_name) {
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = transform("_require_" + to_string(state) + "_after", ::tolower);
+
+        // Get final assembled config and look for the key:
+        const auto config = getSatelliteConfiguration(canonical_name);
+        if(config.contains(key)) {
+            auto register_dependency = [this, canonical_name, state](auto& dependent) {
+                // Register dependency in graph, current satellite depends on config value satellite
+                transition_graph_[state][transform(dependent, ::tolower)].emplace(transform(canonical_name, ::tolower));
+            };
+
+            const auto dependents = Configuration(config).getArray<std::string>(key);
+            LOG(config_parser_logger_, DEBUG)
+                << "Registering dependency for transitional state `" << to_string(state) << "` of " << canonical_name
+                << " with dependents " << range_to_string(dependents);
+            std::ranges::for_each(dependents, register_dependency);
+        }
+    }
+}
+
+void ControllerConfiguration::validate() const {
+
+    // Check each transition for possible cycles
+    for(const auto& transition_pair : transition_graph_) {
+        const auto transition = transition_pair.first;
+        LOG(config_parser_logger_, DEBUG) << "Checking for deadlock in transition: " << transition;
+
+        if(check_transition_deadlock(transition)) {
+            LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
+            throw ConfigFileValidationError("Cyclic dependency for transition `" + to_string(transition) + "`");
+        }
+    }
+    // No deadlock in any transition
+}
+
+bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) const {
+    // If no dependencies for this transition doesn't exist, there is no cycle:
+    if(!transition_graph_.contains(transition)) {
+        return false;
+    }
+
+    std::unordered_set<std::string> visited;
+    std::unordered_set<std::string> recursion_stack;
+
+    // Recursive depth first search:
+    auto dfs = [&](const auto& self, const std::string& satellite) { // NOLINT(misc-no-recursion)
+        // Cycle detected (deadlock)
+        if(recursion_stack.find(satellite) != recursion_stack.end()) {
+            return true;
+        }
+
+        // Satellite already processed
+        if(visited.find(satellite) != visited.end()) {
+            return false;
+        }
+
+        // No transition registered for this satellite:
+        if(!transition_graph_.at(transition).contains(satellite)) {
+            return false;
+        }
+
+        visited.insert(satellite);
+        recursion_stack.insert(satellite);
+
+        // Visit all dependent satellites
+        for(const auto& dependent : transition_graph_.at(transition).at(satellite)) {
+            if(self(self, dependent)) {
+                return true;
+            }
+        }
+
+        // Remove satellite from recursion stack
+        recursion_stack.erase(satellite);
+        return false;
+    };
+
+    // Traverse each satellite for the given transition
+    for(const auto& pair : transition_graph_.at(transition)) {
+        const std::string& satellite = pair.first;
+        if(visited.find(satellite) == visited.end()) {
+            if(dfs(dfs, satellite)) {
+                // Deadlock detected in this transition
+                return true;
+            }
+        }
+    }
+
+    // No deadlock detected in this transition
+    return false;
+}
+
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
     return satellite_configs_.contains(transform(canonical_name, ::tolower));
 }
@@ -269,6 +394,9 @@ void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonic
     } else {
         satellite_configs_.emplace(canonical_name_lc, std::move(config));
     }
+
+    // Add satellite to dependency graph:
+    fill_dependency_graph(canonical_name);
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {

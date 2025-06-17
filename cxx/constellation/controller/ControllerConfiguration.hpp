@@ -10,12 +10,15 @@
 #pragma once
 
 #include <filesystem>
+#include <set>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/Logger.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::controller {
@@ -90,6 +93,14 @@ namespace constellation::controller {
 
         CNSTLN_API std::string getAsTOML() const;
 
+        /**
+         * @brief Validate the configuration
+         * @details Runs checks such as dependency graph validation on the set of satellite configurations
+         *
+         * @throws ConfigFileValidationError if a validation error is encountered
+         */
+        CNSTLN_API void validate() const;
+
     private:
         /**
          * @brief Parse a string view with TOML data into dictionaries
@@ -101,6 +112,25 @@ namespace constellation::controller {
          * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
         void parse_toml(std::string_view toml);
+
+        /**
+         * @brief Add satellite dependencies to the transition dependency graph
+         * @details This method looks for keys of the autonomous transition orchestration on the final assembled satellite
+         *          configuration and adds the respective dependencies to the graph for validation. All satellite names are
+         *          canonical names in lower case.
+         *
+         * @param canonical_name Canonical name of the satellite to be added to the dependency graph
+         */
+        void fill_dependency_graph(std::string_view canonical_name);
+
+        /**
+         * @brief Helper function to check for deadlock in a specific transition
+         * @details This method traverses the dependency graph for the given transition and checks for cycles
+         *
+         * @param transition Transition to be checked
+         * @return Boolean indicating whether a cycle has been found
+         */
+        bool check_transition_deadlock(protocol::CSCP::State transition) const;
 
     private:
         /* Key-value pairs of the global satellite section */
@@ -116,6 +146,9 @@ namespace constellation::controller {
          *       satellites are allowed
          */
         utils::string_hash_map<config::Dictionary> satellite_configs_;
+
+        /* Satellite dependency graph for each transition type */
+        std::unordered_map<protocol::CSCP::State, utils::string_hash_map<std::set<std::string>>> transition_graph_;
 
         /* Logger */
         log::Logger config_parser_logger_ {"CONF"};

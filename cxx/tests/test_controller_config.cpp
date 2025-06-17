@@ -156,4 +156,89 @@ TEST_CASE("Convert to TOML", "[controller]") {
     REQUIRE(dict2.at("str_arr").get<std::vector<std::string>>() == std::vector<std::string>({"Hello", "World"}));
 }
 
+TEST_CASE("Valid dependency graph", "[controller]") {
+    ControllerConfiguration config;
+
+    // A depends on B
+    Dictionary dict_sat_a;
+    dict_sat_a["_require_starting_after"] = "dummy.b";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    config.addSatelliteConfiguration("dummy.b", {});
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+
+    // No exception thrown
+    config.validate();
+
+    // A depends on B and C,
+    // C depends on B
+    dict_sat_a["_require_starting_after"] = std::vector<std::string> {"dummy.b", "dummy.c"};
+    Dictionary dict_sat_c;
+    dict_sat_c["_require_starting_after"] = "dummy.b";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    config.addSatelliteConfiguration("dummy.c", dict_sat_c);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.c"));
+
+    // No exception thrown
+    config.validate();
+}
+
+TEST_CASE("Direct cyclic dependency graph", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict_sat_a;
+    dict_sat_a["_require_starting_after"] = "dummy.b";
+    Dictionary dict_sat_b;
+    dict_sat_b["_require_starting_after"] = "dummy.a";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    config.addSatelliteConfiguration("dummy.b", dict_sat_b);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+
+    // No exception thrown
+    REQUIRE_THROWS_MATCHES(config.validate(),
+                           ConfigFileValidationError,
+                           Message("Error validating configuration file: Cyclic dependency for transition `starting`"));
+}
+
+TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict_sat_a;
+    dict_sat_a["_require_launching_after"] = "dummy.b";
+    Dictionary dict_sat_b;
+    dict_sat_b["_require_launching_after"] = "dummy.c";
+    Dictionary dict_sat_c;
+    dict_sat_c["_require_launching_after"] = "dummy.a";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    config.addSatelliteConfiguration("dummy.b", dict_sat_b);
+    config.addSatelliteConfiguration("dummy.c", dict_sat_c);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.b"));
+    REQUIRE(config.hasSatelliteConfiguration("dummy.c"));
+
+    // No exception thrown
+    REQUIRE_THROWS_MATCHES(config.validate(),
+                           ConfigFileValidationError,
+                           Message("Error validating configuration file: Cyclic dependency for transition `launching`"));
+}
+
+TEST_CASE("Self-dependency", "[controller]") {
+    ControllerConfiguration config;
+    Dictionary dict_sat_a;
+    dict_sat_a["_require_starting_after"] = "dummy.a";
+
+    config.addSatelliteConfiguration("dummy.a", dict_sat_a);
+    REQUIRE(config.hasSatelliteConfiguration("dummy.a"));
+
+    // No exception thrown
+    REQUIRE_THROWS_MATCHES(config.validate(),
+                           ConfigFileValidationError,
+                           Message("Error validating configuration file: Cyclic dependency for transition `starting`"));
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

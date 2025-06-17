@@ -82,6 +82,22 @@ namespace constellation::controller {
 
     /**
      * @ingroup Exceptions
+     * @brief Error in configuration file validation
+     */
+    class CNSTLN_API ConfigFileValidationError : public ControllerError {
+    public:
+        /**
+         * @brief Construct an error for a configuration file validation failure
+         * @param error Error message
+         */
+        explicit ConfigFileValidationError(std::string_view error) {
+            error_message_ = "Error validating configuration file: ";
+            error_message_ += error;
+        }
+    };
+
+    /**
+     * @ingroup Exceptions
      * @brief Error from a measurement queue
      */
     class CNSTLN_API QueueError : public ControllerError {
