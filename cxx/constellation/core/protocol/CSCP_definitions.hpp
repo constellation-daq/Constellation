@@ -21,7 +21,13 @@
 
 namespace constellation::protocol::CSCP {
 
-    /** Possible Satellite FSM states */
+    /** Possible Satellite FSM states
+     *
+     * The following statements can be made about states:
+     * - States with lower four bits equal to zero are steady states, e.g. INIT.
+     * - The other states are transition, and their lower four bits indicate the steady state the enter into, e.g. the lower
+     *   four bits of state landing are 0x2, so this transitional state enters into steady state 0x20, INIT.
+     * */
     enum class State : std::uint8_t {
         NEW = 0x10,
         initializing = 0x12,
@@ -89,7 +95,7 @@ namespace constellation::protocol::CSCP {
      * @brief Check if a state is steady
      */
     constexpr bool is_steady(State state) {
-        // In steady states the lower four bytes are 0
+        // In steady states the lower four bits are 0
         return (static_cast<unsigned int>(std::to_underlying(state)) & 0x0FU) == 0x00U;
     }
 
@@ -101,6 +107,24 @@ namespace constellation::protocol::CSCP {
     constexpr bool is_shutdown_allowed(State state) {
         using enum State;
         return (state == NEW || state == INIT || state == SAFE || state == ERROR);
+    }
+
+    /**
+     * @brief Check if "transition" is a transitional state from steady state "steady" to a new steady state
+     */
+    constexpr bool transitions_from(State transition, State steady) {
+        // Origin steady states indicated by the upper four bits
+        return (static_cast<unsigned int>(std::to_underlying(transition)) & 0xF0U) ==
+               (static_cast<unsigned int>(std::to_underlying(steady)));
+    }
+
+    /**
+     * @brief Check if "transition" is a transitional state from a former state into steady state "steady"
+     */
+    constexpr bool transitions_to(State transition, State steady) {
+        // Target steady state indicated by the lower four bits
+        return ((static_cast<unsigned int>(std::to_underlying(transition)) & 0x0FU) << 4U) ==
+               (static_cast<unsigned int>(std::to_underlying(steady)));
     }
 
     /**

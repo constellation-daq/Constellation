@@ -11,10 +11,14 @@
 
 #include <atomic>
 #include <chrono>
+#include <compare>
 #include <functional>
 #include <map>
 #include <mutex>
+#include <optional>
+#include <set>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <variant>
@@ -46,6 +50,46 @@ namespace constellation::satellite {
 
         /** Maps state to transition maps for that state */
         using StateTransitionMap = std::map<State, TransitionMap>;
+
+    private:
+        class Condition {
+        public:
+            /**
+             * @brief Construct a new condition
+             *
+             * @param remote Canonical name of the remote corresponding to the condition
+             * @param state Station for which the condition applies
+             */
+            Condition(std::string remote, State state) : remote_(std::move(remote)), state_(state) {}
+
+            /**
+             * @brief Get the remote corresponding to the transition
+             *
+             * @return Name of the remote
+             */
+            std::string_view getRemote() const { return remote_; }
+
+            /**
+             * @brief Check if the condition applies to the current state
+             *
+             * @return True if the condition applies, false otherwise
+             */
+            bool applies(State state) const { return (state_ == state); }
+
+            /**
+             * @brief Check if the condition is satisfied
+             *
+             * @param state State of the remote
+             * @return True if the condition is satisfied, false otherwise
+             */
+            bool isSatisfied(State state) const { return protocol::CSCP::transitions_to(state_, state); }
+
+            std::strong_ordering operator<=>(const Condition& other) const;
+
+        private:
+            std::string remote_;
+            State state_;
+        };
 
     public:
         /**
@@ -165,6 +209,17 @@ namespace constellation::satellite {
         CNSTLN_API void unregisterStateCallback(const std::string& identifier);
 
         /**
+         * @brief Registering a callback which allows to fetch the state of a remote satellite
+         *
+         * This function registers a remote state callback which allows the FSM to query the last known state of a remote
+         * satellite, e.g. for conditional transitions
+         *
+         * @param callback Callback taking the name of the remote satellite as argument and returning an optional with its
+         * state, if known, or a `std::nullopt` if not known
+         */
+        CNSTLN_API void registerRemoteCallback(std::function<std::optional<State>(std::string_view)> callback);
+
+        /**
          * @brief Terminate all FSM threads
          */
         CNSTLN_API void terminate();
@@ -191,8 +246,10 @@ namespace constellation::satellite {
 
         /**
          * @brief Call all state callbacks
+         *
+         * @param only_with_status Boolean to set whether callbacks are always called or only with a new status
          */
-        void call_state_callbacks();
+        void call_state_callbacks(bool only_with_status = false);
 
         /**
          * @brief Call a satellite function
@@ -219,6 +276,16 @@ namespace constellation::satellite {
          * @brief Join the failure_thread
          */
         void join_failure_thread();
+
+        /**
+         * @brief Read FSM-relevant parameters from the initialization configuration
+         *
+         * This function registers transition conditions for remote satellites. The FSM will query remote states from
+         * its remote callback to satisfy these conditions before locally executing the requested transition.
+         *
+         * @param config Satellite configuration
+         */
+        void initialize_fsm(config::Configuration& config);
 
         CNSTLN_API auto initialize(TransitionPayload payload) -> State;
         CNSTLN_API auto initialized(TransitionPayload payload) -> State;
@@ -315,6 +382,11 @@ namespace constellation::satellite {
         /** State update callback */
         std::map<std::string, std::function<void(State, std::string_view)>> state_callbacks_;
         std::mutex state_callbacks_mutex_;
+
+        /** Remote state callback */
+        std::function<std::optional<State>(std::string_view)> remote_callback_;
+        std::set<Condition> remote_conditions_;
+        std::chrono::seconds remote_condition_timeout_ {60};
     };
 
 } // namespace constellation::satellite

@@ -9,12 +9,16 @@
 
 #include "FSM.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <compare>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <future>
 #include <iomanip>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -27,6 +31,7 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -37,6 +42,7 @@
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/string.hpp"
+#include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
@@ -45,7 +51,16 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 using namespace std::string_literals;
+
+std::strong_ordering FSM::Condition::operator<=>(const Condition& other) const {
+    const auto ord_remote = remote_ <=> other.remote_;
+    if(std::is_eq(ord_remote)) {
+        return state_ <=> other.state_;
+    }
+    return ord_remote;
+}
 
 FSM::~FSM() {
     terminate();
@@ -237,8 +252,17 @@ void FSM::terminate() {
     join_failure_thread();
 }
 
-void FSM::call_state_callbacks() {
+void FSM::registerRemoteCallback(std::function<std::optional<State>(std::string_view)> callback) {
+    remote_callback_ = std::move(callback);
+}
+
+void FSM::call_state_callbacks(bool only_with_status) {
     const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+
+    // Check if the status has been emitted:
+    if(status_emitted_.load() && only_with_status) {
+        return;
+    }
 
     // Fetch the status message unless emitted already
     std::unique_lock status_lock {status_mutex_};
@@ -288,6 +312,76 @@ void FSM::join_failure_thread() {
 // Calls the wrapper function of the BaseSatellite and returns if completed or failure on exception
 template <typename Func, typename... Args> bool FSM::call_satellite_function(Func func, Args&&... args) {
     std::string error_message {};
+
+    // Check if transition conditions are satisfied:
+    if(remote_callback_ && !remote_conditions_.empty()) {
+        LOG(logger_, INFO) << "Checking remote conditions...";
+
+        // Start timer for remote conditions
+        TimeoutTimer timer {remote_condition_timeout_};
+        timer.reset();
+
+        while(true) {
+            bool satisfied = true;
+            for(const auto& condition : remote_conditions_) {
+                // Check if this condition applies to current state:
+                if(condition.applies(state_.load())) {
+                    // Get remote state:
+                    const auto remote_state = remote_callback_(condition.getRemote());
+
+                    // Fail if the satellite to which this condition applies is not present in the constellation
+                    if(!remote_state.has_value()) {
+                        error_message = "Dependent remote satellite " + std::string(condition.getRemote()) + " not present";
+                        LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                        set_status("Critical failure: " + error_message);
+                        return false;
+                    }
+
+                    // Check if state is ERROR:
+                    if(remote_state.value() == State::ERROR) {
+                        error_message = "Dependent remote satellite " + std::string(condition.getRemote()) +
+                                        " reports state `" + enum_name(remote_state.value()) + "`";
+                        LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                        set_status("Critical failure: " + error_message);
+                        return false;
+                    }
+
+                    // Check if condition is fulfilled:
+                    if(!condition.isSatisfied(remote_state.value())) {
+                        const auto msg = "Awaiting state from " + std::string(condition.getRemote()) +
+                                         ", currently reporting state `" + enum_name(remote_state.value()) + "`";
+                        LOG_T(logger_, DEBUG, 1s) << msg;
+
+                        // Set status message and emit if new:
+                        set_status(msg);
+                        call_state_callbacks(true);
+
+                        satisfied = false;
+                        break;
+                    }
+                }
+            }
+
+            // If all conditions are satisfied, continue:
+            if(satisfied) {
+                LOG(logger_, INFO) << "Satisfied with all remote conditions, continuing";
+                break;
+            }
+
+            // If timeout reached, throw
+            if(timer.timeoutReached()) {
+                error_message =
+                    "Could not satisfy remote conditions within " + to_string(remote_condition_timeout_) + " timeout";
+                LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
+                set_status("Critical failure: " + error_message);
+                return false;
+            }
+
+            // Wait a bit before checking again
+            std::this_thread::sleep_for(10ms);
+        }
+    }
+
     try {
         // Call function of satellite
         const auto status = (satellite_->*func)(std::forward<Args>(args)...);
@@ -304,8 +398,9 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
         error_message = "<unknown exception>";
     }
     // Something went wrong, log and return false
-    LOG(satellite_->logger_, CRITICAL) << "Critical failure: " << error_message;
-    set_status("Critical failure: " + error_message);
+    std::string failure_message = "Critical failure: " + error_message;
+    LOG(satellite_->logger_, CRITICAL) << failure_message;
+    set_status(std::move(failure_message));
     return false;
 }
 
@@ -321,12 +416,61 @@ namespace {
     }
 } // namespace
 
+void FSM::initialize_fsm(Configuration& config) {
+    // Clear previously stored conditions
+    remote_conditions_.clear();
+
+    // Parse all transition condition parameters
+    for(const auto& state : {CSCP::State::initializing,
+                             CSCP::State::launching,
+                             CSCP::State::landing,
+                             CSCP::State::starting,
+                             CSCP::State::stopping}) {
+        const auto key = "_require_" + to_string(state) + "_after";
+        if(config.has(key)) {
+            const auto remotes = config.getArray<std::string>(key);
+
+            LOG(logger_, INFO) << "Registering condition for transitional state `" << state << "` and remotes "
+                               << range_to_string(remotes);
+
+            std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
+                // Check that names are valid
+                if(!CSCP::is_valid_canonical_name(remote)) {
+                    throw InvalidValueError(config, key, "Not a valid canonical name");
+                }
+
+                // Check that the requested remote is not this satellite
+                if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
+                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
+                }
+
+                remote_conditions_.emplace(remote, state);
+            });
+        }
+    }
+
+    // Set timeout for conditional transitions
+    remote_condition_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout", 30));
+}
+
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)
 
 FSM::State FSM::initialize(TransitionPayload payload) {
     auto call_wrapper = [this](Configuration&& config) {
         // First join failure thread
         join_failure_thread();
+
+        // Initialize FSM itself with configuration settings
+        LOG(logger_, DEBUG) << "Initializing FSM settings...";
+        try {
+            initialize_fsm(config);
+        } catch(const std::exception& error) {
+            std::string failure_message = "Critical failure: "s + error.what();
+            LOG(logger_, CRITICAL) << failure_message;
+            set_status(std::move(failure_message));
+            react(Transition::failure);
+            return;
+        }
 
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::initializing_wrapper, std::move(config));

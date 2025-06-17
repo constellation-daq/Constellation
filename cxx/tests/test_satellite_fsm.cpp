@@ -7,6 +7,7 @@
 #include <atomic>
 #include <chrono> // IWYU pragma: keep
 #include <future>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -560,6 +561,120 @@ TEST_CASE("FSM failure request", "[satellite][satellite::fsm]") {
     // Request failure from ERROR -> nothing happens
     fsm.requestFailure("second test failure");
     REQUIRE(fsm.getState() == State::ERROR);
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    Configuration config {};
+    config.set("_require_initializing_after", "Dummy.sat2");
+    config.set("_require_launching_after", "Dummy.sat2");
+    config.set("_require_landing_after", "Dummy.sat2");
+    config.set("_require_starting_after", "Dummy.sat2");
+    config.set("_require_stopping_after", "Dummy.sat2");
+
+    // Remote callback
+    std::atomic<State> state {State::NEW};
+    fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional(state.load()); });
+
+    // Initialize
+    satellite.reactFSM(Transition::initialize, std::move(config), false);
+    REQUIRE(fsm.getState() == State::initializing);
+
+    // Wait a bit to ensure that loop runs without condition being satisfied
+    std::this_thread::sleep_for(20ms);
+    REQUIRE_THAT(std::string(fsm.getStatus()), Equals("Awaiting state from Dummy.sat2, currently reporting state `NEW`"));
+
+    // Update state and progress FSM
+    state.store(State::INIT);
+    satellite.progressFsm();
+    REQUIRE(fsm.getState() == State::INIT);
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions (invalid configuration)", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    // Initialization failure due to invalid canonical name
+    Configuration config1 {};
+    config1.set("_require_initializing_after", "Dummy.sat2.fake");
+    satellite.reactFSM(Transition::initialize, std::move(config1));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Value `Dummy.sat2.fake` of key `_require_initializing_after` is not valid: Not "
+                        "a valid canonical name"));
+
+    // Initialization failure due to depence on self
+    Configuration config2 {};
+    config2.set("_require_initializing_after", "Dummy.sat1");
+    satellite.reactFSM(Transition::initialize, std::move(config2));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Value `Dummy.sat1` of key `_require_initializing_after` is not valid: "
+                        "Satellite cannot depend on itself"));
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions (remote not present)", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    Configuration config {};
+    config.set("_require_initializing_after", "Dummy.sat2");
+
+    // Remote callback
+    fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional<State>(); });
+
+    // Initialization failure since satellite not present
+    satellite.reactFSM(Transition::initialize, std::move(config));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Dependent remote satellite Dummy.sat2 not present"));
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions (remote in ERROR)", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    Configuration config {};
+    config.set("_require_initializing_after", "Dummy.sat2");
+
+    // Remote callback
+    fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional(State::ERROR); });
+
+    // Initialization failure since satellite in ERROR
+    satellite.reactFSM(Transition::initialize, std::move(config));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Dependent remote satellite Dummy.sat2 reports state `ERROR`"));
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions (timeout)", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    Configuration config {};
+    config.set("_conditional_transition_timeout", 0);
+    config.set("_require_initializing_after", "Dummy.sat2");
+
+    // Remote callback
+    fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional(State::NEW); });
+
+    // Initialization failure since satellite in ERROR
+    satellite.reactFSM(Transition::initialize, std::move(config));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Could not satisfy remote conditions within 0s timeout"));
 
     satellite.exit();
 }

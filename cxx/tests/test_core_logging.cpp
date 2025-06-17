@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+#include <chrono> // IWYU pragma: keep
+
 #include <catch2/catch_test_macros.hpp>
 
 #include "constellation/core/log/log.hpp"
@@ -15,6 +17,7 @@
 
 using namespace constellation::log;
 using namespace constellation::utils;
+using namespace std::chrono_literals;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
@@ -84,18 +87,21 @@ TEST_CASE("Logging macros", "[logging]") {
     int count_n {0};
     int count_if {0};
     int count_nth {0};
+    int count_t {0};
 
     for(int i = 0; i < 5; ++i) {
         LOG_ONCE(logger, STATUS) << "log once, i=" << i << ", count " << ++count_once;
         LOG_N(logger, STATUS, 3) << "log n, i=" << i << ", count " << ++count_n;
         LOG_IF(logger, STATUS, i % 2 == 1) << "log if, i=" << i << ", count " << ++count_if;
         LOG_NTH(logger, STATUS, 2) << "log_nth, i=" << i << ", count " << ++count_nth;
+        LOG_T(logger, STATUS, 30s) << "log_t, i=" << i << ", count " << ++count_t;
     }
 
     REQUIRE(count_once == 1);
     REQUIRE(count_n == 3);
     REQUIRE(count_if == 2);
     REQUIRE(count_nth == 3);
+    REQUIRE(count_t == 1);
 }
 
 TEST_CASE("Logging macros with default logger", "[logging]") {
@@ -105,16 +111,19 @@ TEST_CASE("Logging macros with default logger", "[logging]") {
     int count_once {0};
     int count_n {0};
     int count_if {0};
+    int count_t {0};
 
     for(int i = 0; i < 5; ++i) {
         LOG_ONCE(STATUS) << "log once, i=" << i << ", count " << ++count_once;
         LOG_N(STATUS, 3) << "log n, i=" << i << ", count " << ++count_n;
         LOG_IF(STATUS, i % 2 == 1) << "log if, i=" << i << ", count " << ++count_if;
+        LOG_T(STATUS, 30s) << "log_t, i=" << i << ", count " << ++count_t;
     }
 
     REQUIRE(count_once == 1);
     REQUIRE(count_n == 3);
     REQUIRE(count_if == 2);
+    REQUIRE(count_t == 1);
 }
 
 TEST_CASE("Log levels", "[logging]") {
