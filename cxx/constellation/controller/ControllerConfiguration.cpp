@@ -79,7 +79,11 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 std::string ControllerConfiguration::getAsTOML() const {
 
     // Validate the configuration
-    validate();
+    try {
+        validate();
+    } catch(const ConfigFileValidationError& error) {
+        LOG(config_parser_logger_, WARNING) << error.what();
+    }
 
     auto get_toml_array = [&](auto&& val) -> toml::array {
         toml::array arr;
