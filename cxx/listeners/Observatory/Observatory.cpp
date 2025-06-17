@@ -15,8 +15,6 @@
 #include <string_view>
 #include <utility>
 
-#include <argparse/argparse.hpp>
-
 #include <QBrush>
 #include <QCloseEvent>
 #include <QDateTime>

@@ -213,8 +213,8 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     // List of subscribed topics:
     string_hash_set subscription_topics {};
     subscription_topics.reserve(stat_subscriptions_.size());
-    for(const auto& [topic, counter] : stat_subscriptions_) {
-        if(counter > 0) {
+    for(const auto& [topic, sub_count] : stat_subscriptions_) {
+        if(sub_count > 0) {
             subscription_topics.insert(topic);
         }
     }

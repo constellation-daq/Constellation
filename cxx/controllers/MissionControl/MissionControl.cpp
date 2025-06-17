@@ -21,8 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include <argparse/argparse.hpp>
-
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QFileDialog>

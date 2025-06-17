@@ -66,10 +66,10 @@ namespace constellation::message {
         }
 
         /** Convert message header to human readable string */
-        CNSTLN_API virtual std::string to_string() const;
+        virtual std::string to_string() const;
 
         /** Pack message header with msgpack */
-        CNSTLN_API virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
+        virtual void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const;
 
     protected:
         /**
@@ -92,7 +92,7 @@ namespace constellation::message {
          * @param protocol Protocol
          * @param data View to byte data
          */
-        CNSTLN_API static BaseHeader disassemble(protocol::Protocol protocol, std::span<const std::byte> data);
+        static BaseHeader disassemble(protocol::Protocol protocol, std::span<const std::byte> data);
 
     private:
         protocol::Protocol protocol_;

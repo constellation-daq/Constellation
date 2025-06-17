@@ -22,7 +22,9 @@
 #include <variant>
 #include <vector>
 
+#if __has_include(<cxxabi.h>)
 #include <cxxabi.h>
+#endif
 
 #include "constellation/core/utils/string.hpp"
 
@@ -55,7 +57,7 @@ namespace constellation::utils {
     /// @endcond
 
     /**
-     * @brief Demangle type to human-readable form using cxxabi
+     * @brief Demangle type to human-readable form
      *
      * @note This is not portable and potentially ugly, use `demangle<T>()` instead if possible.
      *
@@ -63,12 +65,15 @@ namespace constellation::utils {
      * @return String with demangled type or mangled name if demangling failed
      */
     inline std::string demangle(const std::type_info& type) {
+#if __has_include(<cxxabi.h>)
+        // Try using cxxabi
         int status = -1;
         const std::unique_ptr<char, void (*)(void*)> res {abi::__cxa_demangle(type.name(), nullptr, nullptr, &status),
                                                           std::free};
         if(status == 0) {
             return res.get();
         }
+#endif
         // Fallback using mangled name
         return type.name();
     }

@@ -37,7 +37,7 @@ namespace constellation::listener {
          * @param log_topic Logger topic to be used for this component
          * @param callback Callback function pointer for received messages
          */
-        CNSTLN_API CMDPListener(std::string_view log_topic, std::function<void(message::CMDP1Message&&)> callback);
+        CMDPListener(std::string_view log_topic, std::function<void(message::CMDP1Message&&)> callback);
 
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress
@@ -47,21 +47,21 @@ namespace constellation::listener {
         CMDPListener& operator=(CMDPListener&& other) = delete;
         /// @endcond
 
-        CNSTLN_API virtual ~CMDPListener() = default;
+        virtual ~CMDPListener() = default;
 
         /**
          * @brief Subscribe to a given topic for all sockets
          *
          * @param topic Topic to subscribe to
          */
-        CNSTLN_API void subscribeTopic(std::string topic);
+        void subscribeTopic(std::string topic);
 
         /**
          * @brief Unsubscribe from a given topic for all sockets
          *
          * @param topic Topic to unsubscribe from
          */
-        CNSTLN_API void unsubscribeTopic(std::string topic);
+        void unsubscribeTopic(std::string topic);
 
         /**
          * @brief Unsubscribe from and subscribe to multiple topics for all sockets
@@ -69,15 +69,15 @@ namespace constellation::listener {
          * @param unsubscribe_topics List of topics to unsubscribe from
          * @param subscribe_topics List of topics to subscribe to
          */
-        CNSTLN_API void multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
-                                          const std::vector<std::string>& subscribe_topics);
+        void multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
+                               const std::vector<std::string>& subscribe_topics);
 
         /**
          * @brief Get set of subscribed topics for all sockets
          *
          * @return Set containing the currently subscribed topics
          */
-        CNSTLN_API std::set<std::string> getTopicSubscriptions();
+        std::set<std::string> getTopicSubscriptions();
 
         /**
          * @brief Subscribe to a given topic for a specific socket
@@ -87,7 +87,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host to subscribe to
          * @param topic Topic to subscribe to
          */
-        CNSTLN_API void subscribeExtraTopic(const std::string& host, std::string topic);
+        void subscribeExtraTopic(const std::string& host, std::string topic);
 
         /**
          * @brief Unsubscribe from a given topic for a specific socket
@@ -97,7 +97,7 @@ namespace constellation::listener {
          * @param host Canonical name of the host to unsubscribe from
          * @param topic Topic to unsubscribe from
          */
-        CNSTLN_API void unsubscribeExtraTopic(const std::string& host, std::string topic);
+        void unsubscribeExtraTopic(const std::string& host, std::string topic);
 
         /**
          * @brief Unsubscribe from and subscribe to multiple extra topics for a specific socket
@@ -106,9 +106,9 @@ namespace constellation::listener {
          * @param unsubscribe_topics List of topics to unsubscribe from
          * @param subscribe_topics List of topics to subscribe to
          */
-        CNSTLN_API void multiscribeExtraTopics(const std::string& host,
-                                               const std::vector<std::string>& unsubscribe_topics,
-                                               const std::vector<std::string>& subscribe_topics);
+        void multiscribeExtraTopics(const std::string& host,
+                                    const std::vector<std::string>& unsubscribe_topics,
+                                    const std::vector<std::string>& subscribe_topics);
 
         /**
          * @brief Get set of subscribed extra topics for a specific socket
@@ -117,19 +117,19 @@ namespace constellation::listener {
          *
          * @return Set containing the currently subscribed extra topics for given host
          */
-        CNSTLN_API std::set<std::string> getExtraTopicSubscriptions(const std::string& host);
+        std::set<std::string> getExtraTopicSubscriptions(const std::string& host);
 
         /**
          * @brief Remove extra topics for a specific socket
          *
          * @param host Canonical name of the host
          */
-        CNSTLN_API void removeExtraTopicSubscriptions(const std::string& host);
+        void removeExtraTopicSubscriptions(const std::string& host);
 
         /**
          * @brief Remove extra topics for all sockets
          */
-        CNSTLN_API void removeExtraTopicSubscriptions();
+        void removeExtraTopicSubscriptions();
 
         /**
          * @brief Obtain available topics for given sender. Topics are parsed from CMDP notification messages and cached per
@@ -138,21 +138,21 @@ namespace constellation::listener {
          * @param sender Sending CMDP host to get available topics for
          * @return Map with available topics as keys and their description as values
          */
-        CNSTLN_API std::map<std::string, std::string> getAvailableTopics(std::string_view sender) const;
+        std::map<std::string, std::string> getAvailableTopics(std::string_view sender) const;
 
         /**
          * @brief Obtain all available topics from any sender.
          *
          * @return Map with available topics as keys and their description as values
          */
-        CNSTLN_API std::map<std::string, std::string> getAvailableTopics() const;
+        std::map<std::string, std::string> getAvailableTopics() const;
 
         /**
          * @brief Obtain all available senders.
          *
          * @return Set with available senders
          */
-        CNSTLN_API std::set<std::string> getAvailableSenders() const;
+        std::set<std::string> getAvailableSenders() const;
 
         /**
          * @brief Check if a given topic is in the list of available topics
@@ -162,7 +162,7 @@ namespace constellation::listener {
          * @param topic Topic to search for
          * @return Boolean indicating whether the topic is available or not
          */
-        CNSTLN_API bool isTopicAvailable(std::string_view topic) const;
+        bool isTopicAvailable(std::string_view topic) const;
 
         /**
          * @brief Check if a given sender is known and available
@@ -172,7 +172,7 @@ namespace constellation::listener {
          * @param sender Sender to search for
          * @return Boolean indicating whether the sender is available or not
          */
-        CNSTLN_API bool isSenderAvailable(std::string_view sender) const;
+        bool isSenderAvailable(std::string_view sender) const;
 
     protected:
         /**
@@ -181,35 +181,35 @@ namespace constellation::listener {
          * @warning Derived functions should always call `CMDPListener::host_connected()` to ensure that sockets are
          *          subscribed to the correct topics.
          */
-        CNSTLN_API void host_connected(const chirp::DiscoveredService& service) override;
+        void host_connected(const chirp::DiscoveredService& service) override;
 
         /**
          * @brief Method for derived classes to act on sockets before disconnecting
          *
          * @warning Derived functions should always call `CMDPListener::host_disconnected()`
          */
-        CNSTLN_API void host_disconnected(const chirp::DiscoveredService& service) override;
+        void host_disconnected(const chirp::DiscoveredService& service) override;
 
         /**
          * @brief Method for derived classes to act on topic notifications
          *
          * @param sender CMDP sending host of the topic notification
          */
-        CNSTLN_API virtual void topics_changed(std::string_view sender);
+        virtual void topics_changed(std::string_view sender);
 
         /**
          * @brief Method for derived classes to act on new senders
          *
          * @param sender New CMDP sending host
          */
-        CNSTLN_API virtual void sender_connected(std::string_view sender);
+        virtual void sender_connected(std::string_view sender);
 
         /**
          * @brief Method for derived classes to act on disconnecting senders
          *
          * @param sender Disconnected CMDP sending host
          */
-        CNSTLN_API virtual void sender_disconnected(std::string_view sender);
+        virtual void sender_disconnected(std::string_view sender);
 
     private:
         /**
