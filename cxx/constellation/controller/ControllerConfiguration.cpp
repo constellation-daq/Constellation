@@ -27,6 +27,7 @@
 #include <toml++/toml.hpp>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/log/log.hpp"
@@ -298,19 +299,11 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
                 transition_graph_[state][transform(dependent, ::tolower)].emplace(transform(canonical_name, ::tolower));
             };
 
-            try {
-                const auto dependents = config.at(key).get<std::vector<std::string>>();
-                LOG(config_parser_logger_, DEBUG)
-                    << "Registering dependency for transitional state " << std::quoted(to_string(state)) << " of "
-                    << canonical_name << " with dependents " << range_to_string(dependents);
-                std::ranges::for_each(dependents, register_dependency);
-            } catch(const std::bad_variant_access&) {
-                const auto dependent = config.at(key).get<std::string>();
-                LOG(config_parser_logger_, DEBUG)
-                    << "Registering dependency for transitional state " << std::quoted(to_string(state)) << " of "
-                    << canonical_name << " and dependent " << dependent;
-                register_dependency(dependent);
-            }
+            const auto dependents = Configuration(config).getArray<std::string>(key);
+            LOG(config_parser_logger_, DEBUG)
+                << "Registering dependency for transitional state `" << to_string(state) << "` of " << canonical_name
+                << " with dependents " << range_to_string(dependents);
+            std::ranges::for_each(dependents, register_dependency);
         }
     }
 }
@@ -324,7 +317,7 @@ void ControllerConfiguration::validate() const {
 
         if(check_transition_deadlock(transition)) {
             LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
-            throw ConfigFileValidationError("Cyclic dependency for transition \"" + to_string(transition) + "\"");
+            throw ConfigFileValidationError("Cyclic dependency for transition `" + to_string(transition) + "`");
         }
     }
     // No deadlock in any transition
