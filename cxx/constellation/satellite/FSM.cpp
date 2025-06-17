@@ -370,7 +370,8 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
             // If timeout reached, throw
             if(timer.timeoutReached()) {
-                error_message = "Could not satisfy remote conditions within timeout";
+                error_message =
+                    "Could not satisfy remote conditions within " + to_string(remote_condition_timeout_) + " timeout";
                 LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
                 set_status("Critical failure: " + error_message);
                 return false;
@@ -397,8 +398,9 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
         error_message = "<unknown exception>";
     }
     // Something went wrong, log and return false
-    LOG(satellite_->logger_, CRITICAL) << "Critical failure: " << error_message;
-    set_status("Critical failure: " + error_message);
+    std::string failure_message = "Critical failure: " + error_message;
+    LOG(satellite_->logger_, CRITICAL) << failure_message;
+    set_status(std::move(failure_message));
     return false;
 }
 
@@ -460,7 +462,15 @@ FSM::State FSM::initialize(TransitionPayload payload) {
 
         // Initialize FSM itself with configuration settings
         LOG(logger_, DEBUG) << "Initializing FSM settings...";
-        initialize_fsm(config);
+        try {
+            initialize_fsm(config);
+        } catch(const std::exception& error) {
+            std::string failure_message = "Critical failure: "s + error.what();
+            LOG(logger_, CRITICAL) << failure_message;
+            set_status(std::move(failure_message));
+            react(Transition::failure);
+            return;
+        }
 
         LOG(logger_, INFO) << "Calling initializing function of satellite...";
         const auto success = call_satellite_function(&BaseSatellite::initializing_wrapper, std::move(config));
