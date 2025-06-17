@@ -45,11 +45,11 @@ namespace constellation::message {
 
             constexpr Type getType() const { return type_; }
 
-            CNSTLN_API std::string to_string() const final;
+            std::string to_string() const final;
 
-            CNSTLN_API static Header disassemble(std::span<const std::byte> data);
+            static Header disassemble(std::span<const std::byte> data);
 
-            CNSTLN_API void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const final;
+            void msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const final;
 
         private:
             Header(std::string sender, config::Dictionary tags, std::uint64_t seq, Type type)
