@@ -15,10 +15,11 @@ import LeCrunch3
 import numpy as np
 
 from constellation.core.cmdp import MetricsType
-from constellation.core.commandmanager import CSCPMessage, cscp_requestable
+from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.datasender import DataSender
 from constellation.core.fsm import SatelliteState
+from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 
 
@@ -107,10 +108,10 @@ class LeCroySatellite(DataSender):
         return "Stopped acquisition"
 
     @cscp_requestable
-    def num_triggers(self, request: CSCPMessage) -> [str, int, dict[str, Any]]:
+    def get_num_triggers(self, request: CSCP1Message) -> [str, int, dict[str, Any]]:
         if self.fsm.current_state_value == SatelliteState.RUN:
             return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
-        return "Not running", None, {}
+        return "Not running", -1, {}
 
     @schedule_metric("", MetricsType.LAST_VALUE, 10)
     def NTRIGGERS(self) -> int | None:
