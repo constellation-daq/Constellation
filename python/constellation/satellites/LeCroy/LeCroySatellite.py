@@ -114,7 +114,7 @@ class LeCroySatellite(DataSender):
         return "Not running", -1, {}
 
     @schedule_metric("", MetricsType.LAST_VALUE, 10)
-    def NTRIGGERS(self) -> int | None:
+    def NUM_TRIGGERS(self) -> int | None:
         if self.fsm.current_state_value == SatelliteState.RUN:
             return self._num_triggers_acquired
         return None
