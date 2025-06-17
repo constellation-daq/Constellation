@@ -84,19 +84,21 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
         }
     }
 
-    const std::lock_guard measurement_lock {measurement_mutex_};
+    std::unique_lock measurement_lock {measurement_mutex_};
 
     // Use the current default condition of no measurement-specific is provided:
     measurements_.emplace_back(std::move(measurement), (condition == nullptr ? default_condition_ : std::move(condition)));
     measurements_size_++;
+    const auto [progress_current, progress_total] = load_progress();
+    measurement_lock.unlock();
 
     // Report updated progress
-    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+    progress_updated(progress_current, progress_total);
     queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE, "Added measurement");
 }
 
 void MeasurementQueue::clear() {
-    const std::lock_guard measurement_lock {measurement_mutex_};
+    std::unique_lock measurement_lock {measurement_mutex_};
 
     if(measurements_.empty()) {
         return;
@@ -115,10 +117,12 @@ void MeasurementQueue::clear() {
 
     // Reset the sequence counter:
     run_sequence_ = 0;
+    measurements_size_ = measurements_.size();
+    const auto [progress_current, progress_total] = load_progress();
+    measurement_lock.unlock();
 
     // Update progress and report:
-    measurements_size_ = measurements_.size();
-    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+    progress_updated(progress_current, progress_total);
 
     if(!queue_running_) {
         queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue cleared");
@@ -126,10 +130,13 @@ void MeasurementQueue::clear() {
 }
 
 double MeasurementQueue::progress() const {
-    if(measurements_size_ == 0 && run_sequence_ == 0) {
+    const auto run_sequence = run_sequence_.load();
+    const auto measurements_size = measurements_size_.load();
+
+    if(measurements_size == 0 && run_sequence == 0) {
         return 0.;
     }
-    return static_cast<double>(run_sequence_) / static_cast<double>(measurements_size_ + run_sequence_);
+    return static_cast<double>(run_sequence) / static_cast<double>(measurements_size + run_sequence);
 }
 
 void MeasurementQueue::start() {
@@ -260,17 +267,28 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
     }
 }
 
+std::pair<std::size_t, std::size_t> MeasurementQueue::load_progress() const {
+    const auto run_sequence = run_sequence_.load();
+    const auto measurements_size = measurements_size_.load();
+    return {run_sequence, measurements_size + run_sequence};
+}
+
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
     try {
-        std::unique_lock measurement_lock {measurement_mutex_};
-
-        LOG(logger_, STATUS) << "Started measurement queue";
-        queue_running_ = true;
-        queue_state_changed(State::RUNNING, "Started measurement queue");
+        std::unique_lock measurement_lock {measurement_mutex_, std::defer_lock};
+        std::once_flag queue_started_flag {};
 
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
+            // Notify that queue has been started
+            std::call_once(queue_started_flag, [this]() {
+                LOG(logger_, STATUS) << "Started measurement queue";
+                queue_running_ = true;
+                queue_state_changed(State::RUNNING, "Started measurement queue");
+            });
+
             // Start a new measurement:
+            measurement_lock.lock();
             auto [measurement, condition] = measurements_.front();
             measurement_lock.unlock();
             LOG(logger_, STATUS) << "Starting new measurement from queue, " << measurement.size()
@@ -328,9 +346,11 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                 run_sequence_++;
                 interrupt_counter_ = 0;
             }
+            const auto [progress_current, progress_total] = load_progress();
+            measurement_lock.unlock();
 
             // Report updated progress
-            progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+            progress_updated(progress_current, progress_total);
         }
 
         // Reset the original values collected during the measurement:

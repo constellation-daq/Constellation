@@ -209,6 +209,13 @@ namespace constellation::controller {
          */
         void cache_original_values(Measurement& measurement);
 
+        /**
+         * @brief Load current measurement number and total number of measurements
+         *
+         * @return Pair with current measurement number and total number of measurements
+         */
+        std::pair<std::size_t, std::size_t> load_progress() const;
+
     protected:
         /** Queue of measurements */
         // NOLINTBEGIN(*-non-private-member-variables-in-classes)
