@@ -4,9 +4,10 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import re
+import time
+from collections import defaultdict
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
-from enum import Enum
 from threading import Event
 from typing import Any, Callable
 
@@ -16,37 +17,10 @@ from statemachine.states import States
 
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
+from .configuration import Configuration, make_lowercase
 from .error import debug_log, handle_error
-from .message.cscp1 import CSCP1Message
-
-
-class SatelliteState(Enum):
-    """Available states to cycle through."""
-
-    # Idle state without any configuration
-    NEW = 0x10
-    # Initialized state with configuration but not (fully) applied
-    INIT = 0x20
-    # Prepared state where configuration is applied
-    ORBIT = 0x30
-    # Running state where DAQ is running
-    RUN = 0x40
-    # Safe fallback state if error is discovered during run
-    SAFE = 0xE0
-    # Error state if something went wrong
-    ERROR = 0xF0
-    #
-    #  TRANSITIONAL STATES
-    #
-    initializing = 0x12
-    launching = 0x23
-    landing = 0x32
-    reconfiguring = 0x33
-    starting = 0x34
-    stopping = 0x43
-    interrupting = 0x0E
-    # state if shutdown
-    DEAD = 0xFF
+from .heartbeatchecker import HeartbeatChecker
+from .message.cscp1 import CSCP1Message, SatelliteState
 
 
 class SatelliteFSM(StateMachine):
@@ -114,12 +88,19 @@ class SatelliteFSM(StateMachine):
     def __init__(self) -> None:
         # current status (i.e. state description)
         self.status = "Satellite not initialized yet."
+
         # flag indicated a finished state transition;
         # used by (and acknowledged by) Heartbeater.
         self.transitioned = False
         # timestamp for last state change
         self.last_changed = datetime.now(timezone.utc)
         super().__init__()
+
+    def set_status(self, status: str) -> None:
+        """Update the status and set updated flag if the status message is new"""
+        if self.status != status:
+            self.status = status
+            self.transitioned = True
 
     def before_transition(self, status: str) -> None:
         """Set status before the state change."""
@@ -139,7 +120,7 @@ class SatelliteFSM(StateMachine):
         dot.write_png(filename)
 
 
-class SatelliteStateHandler(BaseSatelliteFrame):
+class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
@@ -149,6 +130,9 @@ class SatelliteStateHandler(BaseSatelliteFrame):
 
         # instantiate state machine
         self.fsm = SatelliteFSM()
+
+        # transition conditions
+        self.conditions: dict[SatelliteState, list[str]] = defaultdict(list)
 
         # (transitional) state executor and event
         self._state_thread_evt: Event | None = None
@@ -169,7 +153,35 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         if not isinstance(request.payload, dict):
             # missing payload
             raise TypeError("Payload must be a dictionary with configuration values")
-        return self._transition("initialize", request.payload, thread=False)
+
+        # prepare configuration
+        config = Configuration(make_lowercase(request.payload))
+
+        # Clear conditions
+        self.conditions = defaultdict(list)
+
+        # Read transition conditions from config
+        for transition in [
+            SatelliteState.initializing,
+            SatelliteState.launching,
+            SatelliteState.landing,
+            SatelliteState.starting,
+            SatelliteState.stopping,
+        ]:
+            key = f"_require_{transition.name}_after"
+            if key in config.get_keys():
+                value = config[key]
+                # FIXME could check for valid canonical name
+                if isinstance(value, list):
+                    self.conditions[transition] = value
+                else:
+                    self.conditions[transition].append(value)
+                self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
+
+        # Set timeout for conditional transitions
+        self._conditional_transition_timeout = config.setdefault("_conditional_transition_timeout", 30)
+
+        return self._transition("initialize", config, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -249,7 +261,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         if not isinstance(request.payload, dict):
             # missing payload
             raise TypeError("Payload must be a dictionary with configuration values")
-        return self._transition("reconfigure", request.payload, thread=False)
+
+        partial_config = Configuration(request.payload)
+
+        return self._transition("reconfigure", partial_config, thread=False)
 
     @debug_log
     @cscp_requestable
@@ -277,6 +292,58 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         """
         return self._transition("failure", request.payload, thread=False)
 
+    @handle_error
+    def _satisfy_remote_conditions(self) -> None:
+        """Check for defined remote conditions to be met"""
+
+        self.log_fsm.debug("Awaiting remote conditions for state transition %s", self.fsm.current_state)
+
+        # Check for conditions
+        if self.fsm.current_state.value not in self.conditions.keys():
+            self.log_fsm.trace("No condition configured for state transition %s", self.fsm.current_state)
+            return
+
+        timeout = self._conditional_transition_timeout
+        timeout_start = time.time()
+
+        # Wait for remote states to match condition:
+        while True:
+
+            satisfied = True
+            for name in self.conditions[self.fsm.current_state.value]:
+                # Check that remote is registered
+                if name not in self.heartbeat_states:
+                    error_message = f"Dependent remote satellite {name} not present"
+                    self.fsm.status = error_message
+                    raise RuntimeError(error_message)
+
+                # Check if state is ERROR
+                if self.heartbeat_states[name] == SatelliteState.ERROR:
+                    error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name]}"
+                    self.fsm.status = error_message
+                    raise RuntimeError(error_message)
+
+                # Check if condition is fulfilled:
+                if not self.fsm.current_state.value.transitions_to(self.heartbeat_states[name]):
+                    msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name]}"
+                    self.log_fsm.debug(msg)
+                    self.fsm.set_status(msg)
+                    satisfied = False
+                    break
+
+            # If all conditions are satisfied, continue:
+            if satisfied:
+                self.log_fsm.debug("Satisfied with all remote conditions, continuing")
+                return
+
+            # If timeout reached, throw
+            if time.time() > timeout_start + timeout:
+                error_message = "Could not satisfy remote conditions within timeout"
+                self.fsm.status = error_message
+                raise RuntimeError(error_message)
+
+            time.sleep(0.01)
+
     def _transition(self, target: str, payload: Any, thread: bool) -> tuple[str, Any, dict[str, Any]]:
         """Prepare and enqeue a transition task.
 
@@ -295,6 +362,7 @@ class SatelliteStateHandler(BaseSatelliteFrame):
         # call FSM transition, will throw exception if not allowed
         self.log_fsm.debug("State transition %s requested", target)
         getattr(self.fsm, target)(f"{target.capitalize()} called via CSCP request.")
+
         self.log_fsm.status("State transition %s initiated.", target)
         transit_fcn = getattr(self, f"_wrap_{target}")
         # add to the task queue to run from the main thread
@@ -309,6 +377,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     def _start_transition(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition and advance FSM for transitional states."""
+
+        # Check for remote conditions being met:
+        self._satisfy_remote_conditions()
+
         res = fcn(payload)
         if not res:
             res = "Transition completed!"
@@ -327,6 +399,10 @@ class SatelliteStateHandler(BaseSatelliteFrame):
     @debug_log
     def _start_transition_thread(self, fcn: Callable[[Any], str], payload: Any) -> None:
         """Start a transition thread with the given fcn and arguments."""
+
+        # Check for remote conditions being met:
+        self._satisfy_remote_conditions()
+
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
         # add a callback triggered when transition is complete

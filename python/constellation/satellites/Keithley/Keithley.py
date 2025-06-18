@@ -10,8 +10,7 @@ from typing import Any
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
-from constellation.core.fsm import SatelliteState
-from constellation.core.message.cscp1 import CSCP1Message
+from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
 from constellation.core.monitoring import schedule_metric
 from constellation.core.satellite import Satellite
 

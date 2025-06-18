@@ -18,12 +18,11 @@ from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callbac
 from .chirp import CHIRPServiceIdentifier
 from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
-from .configuration import ConfigError, Configuration, make_lowercase
+from .configuration import ConfigError, Configuration
 from .error import debug_log, handle_error
-from .fsm import SatelliteState
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
-from .message.cscp1 import CSCP1Message
+from .message.cscp1 import CSCP1Message, SatelliteState
 from .monitoring import MonitoringSender
 
 
@@ -154,7 +153,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_initialize(self, config: dict[str, Any]) -> str:
+    def _wrap_initialize(self, config: Configuration) -> str:
         """Wrapper for the 'initializing' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -172,12 +171,13 @@ class Satellite(
             pass
         self._state_thread_evt = None
         self._state_thread_fut = None
-        # prepare configuration
-        config = make_lowercase(config)
-        self.config = Configuration(config)
+
+        # Store configuration
+        self.config = config
+
         # call device-specific user-routine
         try:
-            self._pre_initializing_hook(config)
+            self._pre_initializing_hook(self.config)
             init_msg: str = self.do_initializing(self.config)
             if self.config.has_unused_values():
                 for key in self.config.get_unused_keys():
@@ -228,7 +228,7 @@ class Satellite(
 
     @handle_error
     @debug_log
-    def _wrap_reconfigure(self, partial_config_dict: dict[str, Any]) -> str:
+    def _wrap_reconfigure(self, partial_config: Configuration) -> str:
         """Wrapper for the 'reconfigure' transitional state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -236,15 +236,13 @@ class Satellite(
 
         """
 
-        partial_config = Configuration(partial_config_dict)
-
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the exististance of the method to
         # determine the reaction to a `reconfigure` CSCP command.
         init_msg: str = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
 
         # update config
-        self.config.update(partial_config_dict, partial_config.get_unused_keys())
+        self.config.update(partial_config.get_dict(), partial_config.get_unused_keys())
 
         if partial_config.has_unused_values():
             for key in partial_config.get_unused_keys():

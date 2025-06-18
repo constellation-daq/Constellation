@@ -13,7 +13,7 @@ import zmq
 
 from .base import BaseSatelliteFrame
 from .chp import CHPDecodeMessage, CHPMessageFlags, CHPRole
-from .fsm import SatelliteState
+from .message.cscp1 import SatelliteState
 
 
 class HeartbeatState:
@@ -139,12 +139,17 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
-        registered = False
         for hb in self._states.values():
             if hb.host == host:
-                registered = True
-                break
-        return registered
+                return True
+        return False
+
+    def heartbeat_name_is_registered(self, name: str) -> bool:
+        """Check whether a given Satellite is already registered."""
+        for hb in self._states.values():
+            if hb.name == name:
+                return True
+        return False
 
     @property
     def heartbeat_states(self) -> dict[str, SatelliteState]:

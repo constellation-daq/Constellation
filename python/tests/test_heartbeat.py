@@ -10,8 +10,8 @@ import pytest
 from conftest import mock_packet_queue_recv, mock_packet_queue_sender, mocket
 
 from constellation.core.chirp import get_uuid
-from constellation.core.fsm import SatelliteState
 from constellation.core.heartbeater import HeartbeatSender
+from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
 
 HB_PORT = 33333
@@ -97,9 +97,9 @@ def test_hb_extrasystoles(mock_heartbeat_sender):
     hbs = mock_heartbeat_sender
     hbs.default_period = 20000
     assert HB_PORT not in mock_packet_queue_recv
-    hbs.fsm.initialize("running mock init")
+    hbs.fsm.initialize("")
     time.sleep(0.3)
-    hbs.fsm.initialized("done with mock init")
+    hbs.fsm.initialized("")
     time.sleep(0.3)
     assert HB_PORT in mock_packet_queue_sender
     assert len(mock_packet_queue_sender[HB_PORT]) == 2
