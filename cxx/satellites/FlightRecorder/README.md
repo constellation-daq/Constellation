@@ -1,7 +1,7 @@
 ---
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
-title: "Flight Recorder"
+title: "FlightRecorder"
 description: "Satellite to record log messages from a Constellation"
 category: "Monitoring"
 ---
