@@ -81,7 +81,7 @@ class Configuration:
 def _adjust_config_value(value: Any) -> Any:
     """Adjust TOML config values for internal use"""
     if isinstance(value, datetime.time):
-        return datetime.datetime.combine(datetime.date.today(), value)
+        return datetime.datetime.combine(datetime.date.today(), value).astimezone(datetime.timezone.utc)
     return value
 
 
@@ -94,7 +94,6 @@ def load_config(path: str) -> dict[str, Any]:
     except tomllib.TOMLDecodeError:
         raise
         # TODO: Handle TOMLDecodeError
-    config = {key: _adjust_config_value(value) for key, value in config.items()}
     return config
 
 
@@ -127,7 +126,7 @@ def flatten_config(
         try:
             for key, value in config[category].items():
                 if not isinstance(value, dict):
-                    res[key] = value
+                    res[key] = _adjust_config_value(value)
         except KeyError:
             pass
 
@@ -136,7 +135,7 @@ def flatten_config(
         try:
             for key, value in config[category][sat_class].items():
                 if not isinstance(value, dict):
-                    res[key] = value
+                    res[key] = _adjust_config_value(value)
         except KeyError:
             pass
 
@@ -146,7 +145,7 @@ def flatten_config(
             try:
                 for key, value in config[category][sat_class][sat_name].items():
                     if not isinstance(value, dict):
-                        res[key] = value
+                        res[key] = _adjust_config_value(value)
             except KeyError:
                 pass
 
