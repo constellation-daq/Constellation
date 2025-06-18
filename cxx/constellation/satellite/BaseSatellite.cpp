@@ -136,6 +136,9 @@ void BaseSatellite::terminate() {
 
     // Terminate FSM
     fsm_.terminate();
+
+    // Mark satellite as terminated
+    terminated_.store(true);
 }
 
 std::optional<CSCP1Message> BaseSatellite::get_next_command() {
@@ -334,6 +337,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     case shutdown: {
         if(CSCP::is_shutdown_allowed(fsm_.getState())) {
             return_verb = {CSCP1Message::Type::SUCCESS, "Shutting down satellite"};
+            LOG(STATUS) << "Shutting down satellite";
             terminate();
         } else {
             return_verb = {CSCP1Message::Type::INVALID,

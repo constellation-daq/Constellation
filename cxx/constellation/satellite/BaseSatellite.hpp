@@ -130,6 +130,13 @@ namespace constellation::satellite {
          */
         void terminate();
 
+        /**
+         * @brief Check if the satellite has been terminated
+         *
+         * @return True if the satellite has been terminated
+         */
+        bool terminated() const { return terminated_.load(); }
+
     private:
         /**
          * @brief Get the next CSCP command
@@ -249,6 +256,8 @@ namespace constellation::satellite {
 
         log::Logger cscp_logger_;
         std::jthread cscp_thread_;
+        std::atomic_bool terminated_ {false};
+
         bool support_reconfigure_ {false};
         config::Configuration config_;
         std::string run_identifier_;

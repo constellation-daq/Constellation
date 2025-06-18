@@ -81,14 +81,16 @@ void constellation::exec::join_cpp_satellite(Satellite* satellite) {
     std::signal(SIGTERM, &signal_handler); // NOLINT(cert-err33-c)
     std::signal(SIGINT, &signal_handler);  // NOLINT(cert-err33-c)
 
-    // Wait for signal
-    while(signal_v == 0) {
+    // Wait for signal or satellite termination
+    while(signal_v == 0 && !satellite->terminated()) {
         std::this_thread::sleep_for(50ms);
     }
 
-    // Terminate satellite
-    LOG(STATUS) << "Terminating satellite";
-    satellite->terminate();
+    // Terminate satellite if not terminated already
+    if(!satellite->terminated()) {
+        LOG(STATUS) << "Terminating satellite";
+        satellite->terminate();
+    }
 
     // Join satellite
     satellite->join();
