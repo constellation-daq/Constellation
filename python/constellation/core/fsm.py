@@ -293,7 +293,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("failure", request.payload, thread=False)
 
     @handle_error
-    def _satisfy_remote_conditions(self) -> bool:
+    def _satisfy_remote_conditions(self) -> None:
         """Check for defined remote conditions to be met"""
 
         self.log_fsm.debug("Awaiting remote conditions for state transition %s", self.fsm.current_state)
@@ -301,7 +301,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         # Check for conditions
         if self.fsm.current_state.value not in self.conditions.keys():
             self.log_fsm.trace("No condition configured for state transition %s", self.fsm.current_state)
-            return True
+            return
 
         timeout = self._conditional_transition_timeout
         timeout_start = time.time()
@@ -316,14 +316,12 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                     error_message = f"Dependent remote satellite {name} not present"
                     self.fsm.status = error_message
                     raise RuntimeError(error_message)
-                    return False
 
                 # Check if state is ERROR
                 if self.heartbeat_states[name] == SatelliteState.ERROR:
                     error_message = f"Dependent remote satellite {name} reports state {self.heartbeat_states[name]}"
                     self.fsm.status = error_message
                     raise RuntimeError(error_message)
-                    return False
 
                 # Check if condition is fulfilled:
                 if not self.fsm.current_state.value.transitions_to(self.heartbeat_states[name]):
@@ -336,18 +334,15 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             # If all conditions are satisfied, continue:
             if satisfied:
                 self.log_fsm.debug("Satisfied with all remote conditions, continuing")
-                break
+                return
 
             # If timeout reached, throw
             if time.time() > timeout_start + timeout:
                 error_message = "Could not satisfy remote conditions within timeout"
                 self.fsm.status = error_message
                 raise RuntimeError(error_message)
-                return False
 
             time.sleep(0.01)
-
-        return True
 
     def _transition(self, target: str, payload: Any, thread: bool) -> tuple[str, Any, dict[str, Any]]:
         """Prepare and enqeue a transition task.
@@ -384,8 +379,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         """Start a transition and advance FSM for transitional states."""
 
         # Check for remote conditions being met:
-        if not self._satisfy_remote_conditions():
-            return
+        self._satisfy_remote_conditions()
 
         res = fcn(payload)
         if not res:
@@ -407,8 +401,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         """Start a transition thread with the given fcn and arguments."""
 
         # Check for remote conditions being met:
-        if not self._satisfy_remote_conditions():
-            return
+        self._satisfy_remote_conditions()
 
         self._state_thread_evt = Event()
         self._state_thread_fut = self._state_thread_exc.submit(fcn, payload)
