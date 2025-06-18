@@ -39,7 +39,7 @@ In its current version, Constellation is intended to run in closed internal netw
 * the subnet and all connected hosts can be trusted.
 * there are no malicious actors on the subnet.
 * the transmitted information is non-confidential to any actor on the subset.
-* the intervening router between neighboring subnets is configured to filter broadcast packets, which is a standard
+* the intervening router between neighboring subnets is configured to filter multicast packets, which is a standard
   configuration.
 
 All Constellation communication is handled exclusively via [ephemeral ports as defined in RFC 6335](https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml),

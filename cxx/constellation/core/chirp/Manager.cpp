@@ -254,11 +254,11 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
                         << ", port = " << chirp_msg.getPort();
 
     if(chirp_msg.getGroupID() != group_id_) {
-        // Broadcast from different group, ignore
+        // Message from different group, ignore
         return;
     }
     if(chirp_msg.getHostID() == host_id_) {
-        // Broadcast from self, ignore
+        // Message from self, ignore
         return;
     }
 

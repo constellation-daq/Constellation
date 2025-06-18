@@ -141,11 +141,11 @@ namespace constellation::metrics {
         /// @endcond
 
         /**
-         * Main loop listening and responding to incoming CHIRP broadcasts
+         * Main loop listening and responding to incoming CHIRP messages
          *
-         * The run loop responds to incoming CHIRP broadcasts with REQUEST type by sending CHIRP broadcasts with OFFER type
-         * for all registered services. It also tracks incoming CHIRP broadcasts with OFFER and DEPART type to form the list
-         * of discovered services and calls the corresponding discovery callbacks.
+         * The run loop responds to incoming CHIRP messages with REQUEST type by sending CHIRP messages with OFFER type for
+         * all registered services. It also tracks incoming CHIRP messages with OFFER and DEPART type to form the list of
+         * discovered services and calls the corresponding discovery callbacks.
          *
          * @param stop_token Token to stop loop via `std::jthread`
          */

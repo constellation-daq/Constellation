@@ -105,7 +105,7 @@ namespace constellation::chirp {
         CNSTLN_API std::strong_ordering operator<=>(const DiscoverCallbackEntry& other) const;
     };
 
-    /** Manager for CHIRP broadcasting and receiving */
+    /** Manager handling CHIRP messages */
     class Manager {
     public:
         /**
@@ -143,8 +143,8 @@ namespace constellation::chirp {
         /**
          * Register a service offered by the host in the manager
          *
-         * Calling this function sends a CHIRP broadcast with OFFER type, and registers the service such that the manager
-         * responds to CHIRP broadcasts with REQUEST type and the corresponding service identifier.
+         * Calling this function sends a CHIRP message with OFFER type, and registers the service such that the manager
+         * responds to CHIRP messages with REQUEST type and the corresponding service identifier.
          *
          * @param service_id Service identifier of the offered service
          * @param port Port of the offered service
@@ -156,7 +156,7 @@ namespace constellation::chirp {
         /**
          * Unregister a previously registered service offered by the host in the manager
          *
-         * Calling this function sends a CHIRP broadcast with DEPART type and removes the service from manager. See also
+         * Calling this function sends a CHIRP message with DEPART type and removes the service from manager. See also
          * `RegisterService`.
          *
          * @param service_id Service identifier of the previously offered service
@@ -252,8 +252,8 @@ namespace constellation::chirp {
         /**
          * Send a discovery request for a specific service identifier
          *
-         * This sends a CHIRP broadcast with a REQUEST type and a given service identifier. Other hosts might reply with a
-         * CHIRP broadcast with OFFER type for the given service identifier. These can be retrieved either by registering a
+         * This sends a CHIRP message with a REQUEST type and a given service identifier. Other hosts might reply with a
+         * CHIRP message with OFFER type for the given service identifier. These can be retrieved either by registering a
          * user callback (see `RegisterDiscoverCallback`) or by getting the list of discovered services shortly
          * after (see `GetDiscoveredServices`).
          *
@@ -263,9 +263,9 @@ namespace constellation::chirp {
 
     private:
         /**
-         * Send a CHIRP broadcast
+         * Send a CHIRP message
          *
-         * @param type CHIRP broadcast message type
+         * @param type CHIRP message type
          * @param service Service with identifier and port
          */
         void send_message(protocol::CHIRP::MessageType type, RegisteredService service);

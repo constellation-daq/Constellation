@@ -57,7 +57,7 @@ inline void chirp_mock_service(std::string_view name,
     const auto msgtype = offer ? MessageType::OFFER : MessageType::DEPART;
     const auto chirp_msg = constellation::message::CHIRPMessage(msgtype, "edda", name, service, port);
     chirp_sender.sendMessage(chirp_msg.assemble());
-    // Wait until broadcast is received
+    // Wait until message is received
     auto* manager = constellation::utils::ManagerLocator::getCHIRPManager();
     while(std::ranges::count(manager->getDiscoveredServices(),
                              std::make_tuple(constellation::message::MD5Hash(name), service, port),

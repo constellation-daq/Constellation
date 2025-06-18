@@ -1,25 +1,33 @@
 # CHIRP
 
-## Notes on sockets
+## Notes on Sockets
 
-Since CHIRP requires a fixed port and we might have multiple programs running CHIRP on one machine, it is important to ensure that the port is not blocked by one program. Networking libraries like ZeroMQ and NNG do this by default when binding to a wildcard address. To ensure that a socket can be used by more than one program, the `SO_REUSEADDR` socket option has to be enabled. Further, to send broadcasts the `SO_BROADCAST` socket option has to be enabled.
+CHIRP uses [multicast](https://en.wikipedia.org/wiki/Multicast) for network discovery, meaning message are distributed to all
+computers in a network which subscribed to the corresponding multicast group. A multicast group is just a specific multicast
+IP address. CHIRP uses `239.192.7.123` as its multicast address and uses port `7123`.
 
-## Notes on broadcast addresses
+To receive multicasts, a socket is required which binds to the multicast endpoint (which is the multicast address and port)
+and joins the multicast group on each network interface. Since there might be multiple programs running CHIRP on one machine,
+it is important to ensure that the port is not blocked by one program. To ensure that a socket can be used by more than one
+program, the `SO_REUSEADDR` socket option has to be enabled. To receive multicast messages from other programs running CHIRP
+the `IP_MULTICAST_LOOP` socket option has to be enabled.
 
-CHIRP uses an UDP broadcast over port 7123, which means that it send a message to all participants in a network. However, "all" in this context depends the broadcast address.
+For sending, a separate socket for each interface is required. Setting the interface is done by using the `IP_MULTICAST_IF`
+option. Sending sockets also requires the `SO_REUSEADDR` socket option. Note that the `IP_MULTICAST_LOOP` option should not
+be set since it is better to add the loopback interface explicitly to avoid message duplication when using multiple network
+interfaces. Further it is not required to join the multicast group, sending can be achieved by sending a message to the
+multicast endpoint.
 
-For example, if you have a device with a fixed IP (e.g. 192.168.1.17) in a subnet (e.g. 255.255.255.0), the general broadcast address (255.255.255.255) does not work. Instead, the broadcast address for the specified subnet has to be used (e.g. 192.168.1.255). On Linux, the broadcast IP for a specific network interface can found for example by running `ip a`, it is the IP shown after `brd`.
+Multicasts can also "hop" over network boundaries (i.e. routers) using the `IP_MULTICAST_TTL` socket option (which defines
+the number of network hops). By default CHIRP uses a TTL of eight. However, routers might still be configured to drop
+multicast instead of forwarding them.
 
-To opposite to the broadcast address is the "any" address, which accepts incoming traffic from any IP. In general it can be deduced from the broadcast address by replacing all 255s with 0s. However, the default any address (0.0.0.0) is enough since message filtering has to be done anyway.
+## CHIRP Testing Tool
 
-If no network (with DHCP) is available, the default broadcast address (255.255.255.255) does not work. As a workaround, the default any address (0.0.0.0) can be used to broadcast over localhost.
-
-## CHIRP Manager
-
-To run the CHIRP manager, run:
+To run the CHIRP testing tool, run:
 
 ```sh
-./build/cxx/constellation/tools/chirp_manager [CONSTELLATION_GROUP] [NAME] [BRD_ADDR] [ANY_ADDR]
+./build/cxx/constellation/tools/chirp_manager CONSTELLATION_GROUP NAME INTERFACE
 ```
 
 The following commands are available:

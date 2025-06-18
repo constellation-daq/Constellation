@@ -68,7 +68,7 @@ TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]
     auto asm_msg = msg.assemble();
     asm_msg[0] = std::byte('X');
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP broadcast"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP message"));
 }
 
 TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") {
@@ -76,7 +76,7 @@ TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") 
     auto asm_msg = msg.assemble();
     asm_msg[5] = std::byte('2');
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP v1 broadcast"));
+    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP v1 message"));
 }
 
 TEST_CASE("Detect invalid message type in CHIRP message", "[chirp][chirp::message]") {
