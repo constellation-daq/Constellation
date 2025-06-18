@@ -54,6 +54,18 @@ The IP address to use in this satellite will be provided beside the selection bo
 | `timeout` | Timeout before giving up on frames retrieval | Float | 5s |
 | `nsequence` | Number of triggers to combine in a readout in sequence mode | Integer | 1 |
 
+## Metrics
+
+| Metric | Description | Value Type | Metric Type | Interval |
+|--------|-------------|------------|-------------|----------|
+| `NUM_TRIGGERS` | Number of triggers collected so far | Integer | `LAST_VALUE` | 10s |
+
+## Custom Commands
+
+| Command | Description | Arguments | Return Value | Allowed States |
+|---------|-------------|-----------|--------------|----------------|
+| `get_num_triggers` | Retrieve the number of triggers collected so far | - | Integer | any |
+
 ## Output data format
 
 Data are packed as follows, using double precision floats for each word:
