@@ -178,6 +178,9 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                     self.conditions[transition].append(value)
                 self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
+        # Set timeout for conditional transitions
+        self._conditional_transition_timeout = config.setdefault("_conditional_transition_timeout", 30)
+
         return self._transition("initialize", config, thread=False)
 
     @debug_log
@@ -300,7 +303,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             self.log_fsm.trace("No condition configured for state transition %s", self.fsm.current_state)
             return True
 
-        timeout = 60
+        timeout = self._conditional_transition_timeout
         timeout_start = time.time()
 
         # Wait for remote states to match condition:
@@ -342,7 +345,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 raise RuntimeError(error_message)
                 return False
 
-            time.sleep(0.1)
+            time.sleep(0.01)
 
         return True
 
