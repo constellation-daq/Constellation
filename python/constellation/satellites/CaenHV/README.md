@@ -11,26 +11,12 @@ This Satellite allows to control CAEN high-voltage crates such as the SY5527 and
 
 ## Requirements
 
-The CaenHV satellite requires the `[caenhv]` component, which can be installed with:
-
-::::{tab-set}
-:::{tab-item} PyPI
-:sync: pypi
+The CaenHV satellite requires the `pyserial` and `pycaenhv` Python packages, however the latter one is not available on PyPI
+yet. The packages can be installed via:
 
 ```sh
-pip install "ConstellationDAQ[caenhv]"
+pip install pyserial git+https://gitlab.com/hperrey/pycaenhv.git@master
 ```
-
-:::
-:::{tab-item} Source
-:sync: source
-
-```sh
-pip install --no-build-isolation -e ".[caenhv]"
-```
-
-:::
-::::
 
 ## Parameters
 
