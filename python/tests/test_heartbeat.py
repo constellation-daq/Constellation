@@ -97,9 +97,9 @@ def test_hb_extrasystoles(mock_heartbeat_sender):
     hbs = mock_heartbeat_sender
     hbs.default_period = 20000
     assert HB_PORT not in mock_packet_queue_recv
-    hbs.fsm.initialize("running mock init")
+    hbs.fsm.initialize("")
     time.sleep(0.3)
-    hbs.fsm.initialized("done with mock init")
+    hbs.fsm.initialized("")
     time.sleep(0.3)
     assert HB_PORT in mock_packet_queue_sender
     assert len(mock_packet_queue_sender[HB_PORT]) == 2
