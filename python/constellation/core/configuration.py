@@ -3,6 +3,7 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
+import datetime
 import json
 import tomllib
 import typing
@@ -77,6 +78,13 @@ class Configuration:
             self._requested_keys.discard(key)
 
 
+def _adjust_config_value(value: Any) -> Any:
+    """Adjust TOML config values for internal use"""
+    if isinstance(value, datetime.time):
+        return datetime.datetime.combine(datetime.date.today(), value)
+    return value
+
+
 def load_config(path: str) -> dict[str, Any]:
     """Load a TOML configuration from file."""
     try:
@@ -86,6 +94,7 @@ def load_config(path: str) -> dict[str, Any]:
     except tomllib.TOMLDecodeError:
         raise
         # TODO: Handle TOMLDecodeError
+    config = {key: _adjust_config_value(value) for key, value in config.items()}
     return config
 
 
