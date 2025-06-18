@@ -18,6 +18,7 @@ More details about the project can be found on the website at [constellation.pag
 [![REUSE Status](https://api.reuse.software/badge/gitlab.desy.de/constellation/constellation)](https://api.reuse.software/info/gitlab.desy.de/constellation/constellation)
 [![Coverage Report](https://gitlab.desy.de/constellation/constellation/badges/main/coverage.svg)](https://gitlab.desy.de/constellation/constellation/-/graphs/main/charts)
 [![Build Status](https://gitlab.desy.de/constellation/constellation/badges/main/pipeline.svg)](https://gitlab.desy.de/constellation/constellation/-/pipelines/charts)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15688357.svg)](https://doi.org/10.5281/zenodo.15688357)
 
 ## Licenses
 
