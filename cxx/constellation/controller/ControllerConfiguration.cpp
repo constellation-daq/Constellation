@@ -227,6 +227,19 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
         if constexpr(toml::is_string<decltype(val)>) {
             return val.as_string()->get();
         }
+        if constexpr(toml::is_time<decltype(val)>) {
+            // TOML defines this as local time
+            const auto time = val.as_time()->get();
+            auto local_now = std::chrono::zoned_time {std::chrono::current_zone(), std::chrono::system_clock::now()};
+
+            // Use midnight today plus local time from TOML
+            auto local_time = std::chrono::floor<std::chrono::days>(local_now.get_local_time()) +
+                              std::chrono::hours {time.hour} + std::chrono::minutes {time.minute} +
+                              std::chrono::seconds {time.second};
+
+            // Return as system time
+            return std::chrono::zoned_time {std::chrono::current_zone(), local_time}.get_sys_time();
+        }
         // If not returned yet then unknown type
         throw ConfigFileTypeError(key.str(), "Unknown type");
     };
