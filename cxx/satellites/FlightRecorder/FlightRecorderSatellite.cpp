@@ -101,12 +101,13 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             break;
         }
         case LogMethod::DAILY: {
-            const auto minutes =
-                std::chrono::duration_cast<std::chrono::minutes>(
-                    config.get<std::chrono::system_clock::time_point>("daily_switching_time").time_since_epoch())
-                    .count();
-            sink_ = spdlog::daily_logger_mt(
-                getCanonicalName(), path_.string(), static_cast<int>(minutes / 60UL) % 24, static_cast<int>(minutes % 60UL));
+            // Get timestamp and convert to local time
+            const auto zoned = std::chrono::zoned_time {
+                std::chrono::current_zone(), config.get<std::chrono::system_clock::time_point>("daily_switching_time")};
+            const auto t = std::chrono::hh_mm_ss {zoned.get_local_time().time_since_epoch() % std::chrono::days(1)};
+
+            LOG(INFO) << "Daily log file change will be triggered at " << t.hours().count() << ":" << t.minutes().count();
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_.string(), t.hours().count(), t.minutes().count());
             break;
         }
         case LogMethod::RUN: {
