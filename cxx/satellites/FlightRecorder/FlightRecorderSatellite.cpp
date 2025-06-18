@@ -107,7 +107,10 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             const auto t = std::chrono::hh_mm_ss {zoned.get_local_time().time_since_epoch() % std::chrono::days(1)};
 
             LOG(INFO) << "Daily log file change will be triggered at " << t.hours().count() << ":" << t.minutes().count();
-            sink_ = spdlog::daily_logger_mt(getCanonicalName(), path_.string(), t.hours().count(), t.minutes().count());
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(),
+                                            path_.string(),
+                                            static_cast<int>(t.hours().count()),
+                                            static_cast<int>(t.minutes().count()));
             break;
         }
         case LogMethod::RUN: {
