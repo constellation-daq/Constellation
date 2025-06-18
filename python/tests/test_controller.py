@@ -8,7 +8,7 @@ import time
 import pytest
 
 from constellation.core.configuration import flatten_config
-from constellation.core.cscp import SatelliteState
+from constellation.core.message.cscp1 import SatelliteState
 
 # %%%%%%%%%%%%%%%
 # TESTS
