@@ -42,7 +42,6 @@ satellites_files = files(
 
 tools_files = files(
   'tools/H5datareader.py',
-  'tools/list_interfaces.py',
 )
 
 py.install_sources(core_files,
