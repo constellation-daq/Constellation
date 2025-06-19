@@ -89,48 +89,34 @@ public:
         setDefaultCondition(std::move(condition));
     }
 
-    void queue_started() final { started_ = true; }
-
-    void queue_stopped() final { stopped_ = true; }
-
-    void queue_failed(std::string_view reason) final {
-        const std::lock_guard messages_lock {failed_reason_mutex_};
-        failed_reason_ = reason;
-        failed_ = true;
-    }
+    void queue_state_changed(constellation::controller::MeasurementQueue::State state, std::string_view reason) final {
+        const std::lock_guard messages_lock {mutex_};
+        reason_ = reason;
+        state_ = state;
+        state_changed_ = true;
+    };
 
     void progress_updated(double progress) final {
         progress_updated_ = true;
         progress_ = progress;
     }
 
-    void waitStarted() {
+    void waitStateChanged() {
         // Wait for callback to trigger
-        while(!started_.load()) {
+        while(!state_changed_.load()) {
             std::this_thread::yield();
         }
-        started_.store(false);
+        state_changed_.store(false);
     }
 
-    void waitStopped() {
-        // Wait for callback to trigger
-        while(!stopped_.load()) {
-            std::this_thread::yield();
-        }
-        stopped_.store(false);
+    std::string getReason() {
+        const std::lock_guard messages_lock {mutex_};
+        return reason_;
     }
 
-    void waitFailed() {
-        // Wait for callback to trigger
-        while(!failed_.load()) {
-            std::this_thread::yield();
-        }
-        failed_.store(false);
-    }
-
-    std::string getFailureReason() {
-        const std::lock_guard messages_lock {failed_reason_mutex_};
-        return failed_reason_;
+    constellation::controller::MeasurementQueue::State getState() {
+        const std::lock_guard messages_lock {mutex_};
+        return state_;
     }
 
     double waitProgress() {
@@ -143,11 +129,11 @@ public:
     }
 
 private:
-    std::atomic_bool started_ {false};
-    std::atomic_bool stopped_ {false};
-    std::atomic_bool failed_ {false};
-    std::mutex failed_reason_mutex_;
-    std::string failed_reason_;
+    std::atomic_bool state_changed_ {false};
+    constellation::controller::MeasurementQueue::State state_;
+    std::string reason_;
+    std::mutex mutex_;
+
     std::atomic_bool progress_updated_ {false};
     std::atomic<double> progress_;
 };

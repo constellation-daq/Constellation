@@ -117,17 +117,24 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
 
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
+
     // End the second satellite
     satellite_b.exit();
 
     // Start the queue and wait for it to fail
     queue.start();
-    queue.waitFailed();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
+
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::FAILED);
 
     REQUIRE_FALSE(queue.running());
     REQUIRE(queue.size() == 2);
     REQUIRE(queue.progress() == 0.);
-    REQUIRE_THAT(queue.getFailureReason(),
+    REQUIRE_THAT(queue.getReason(),
                  Equals("Measurement queue error: Could not obtain configuration from satellite Dummy.b, Target satellite "
                         "is unknown to controller"));
 
@@ -169,17 +176,21 @@ TEST_CASE("Run Queue", "[controller]") {
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
     queue.append(measurement);
     queue.append(measurement);
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
 
     // Start the queue
     queue.start();
-    queue.waitStarted();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     REQUIRE(queue.running());
 
     // Stop queue, should end after current measurement
     queue.halt();
-    queue.waitStopped();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
 
     REQUIRE(queue.size() == 1);
     REQUIRE(queue.progress() == 0.5);
@@ -226,6 +237,8 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
     queue.append(measurement, measurement_condition);
     queue.append(measurement);
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
 
@@ -233,13 +246,15 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     auto timer = StopwatchTimer();
     queue.start();
 
-    queue.waitStarted();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     timer.start();
 
     REQUIRE(queue.running());
     queue.halt();
 
-    queue.waitStopped();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
     timer.stop();
 
     REQUIRE(queue.size() == 1);
@@ -283,12 +298,15 @@ TEST_CASE("Interrupt Queue", "[controller]") {
 
     // Add measurements to the queue
     queue.append({{"Dummy.a", Dictionary {}}});
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
     REQUIRE(queue.size() == 1);
     REQUIRE_FALSE(queue.running());
 
     // Start the queue
     queue.start();
-    queue.waitStarted();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     REQUIRE(queue.running());
 
     // Wait until in RUN state
@@ -296,7 +314,8 @@ TEST_CASE("Interrupt Queue", "[controller]") {
 
     // Interrupt directly
     queue.interrupt();
-    queue.waitStopped();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
 
     // Queue size after interrupting is still 1
     REQUIRE(queue.size() == 1);
@@ -306,11 +325,13 @@ TEST_CASE("Interrupt Queue", "[controller]") {
 
     // Restart the queue
     queue.start();
-    queue.waitStarted();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     REQUIRE(queue.running());
 
     // Wait until the queue successfully finished
-    queue.waitStopped();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::FINISHED);
     REQUIRE(queue.size() == 0);
     REQUIRE(queue.progress() == 1.);
     REQUIRE_FALSE(queue.running());
@@ -354,12 +375,15 @@ TEST_CASE("Clear Queue", "[controller]") {
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.a", Dictionary {}}});
     queue.append(measurement);
     queue.append(measurement);
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
 
     // Start the queue
     queue.start();
-    queue.waitStarted();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     REQUIRE(queue.running());
 
     // Start queue again to check nothing happens
@@ -373,7 +397,8 @@ TEST_CASE("Clear Queue", "[controller]") {
 
     // Stop queue, should end after current measurement
     queue.halt();
-    queue.waitStopped();
+    queue.waitStateChanged();
+    REQUIRE(queue.getState() == MeasurementQueue::State::FINISHED);
 
     REQUIRE(queue.size() == 0);
     REQUIRE(queue.progress() == 1.);

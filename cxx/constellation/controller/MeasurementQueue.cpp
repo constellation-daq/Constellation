@@ -91,6 +91,7 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
 
     // Report updated progress
     progress_updated(progress());
+    queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE);
 }
 
 void MeasurementQueue::clear() {
@@ -117,6 +118,10 @@ void MeasurementQueue::clear() {
     // Update progress and report:
     measurements_size_ = measurements_.size();
     progress_updated(progress());
+
+    if(!queue_running_) {
+        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE);
+    }
 }
 
 double MeasurementQueue::progress() const {
@@ -178,9 +183,7 @@ void MeasurementQueue::interrupt() {
     interrupt_counter_++;
 }
 
-void MeasurementQueue::queue_started() {};
-void MeasurementQueue::queue_stopped() {};
-void MeasurementQueue::queue_failed(std::string_view /*reason*/) {};
+void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_view /*reason*/) {};
 void MeasurementQueue::progress_updated(double /*progress*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
@@ -261,7 +264,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         LOG(logger_, STATUS) << "Started measurement queue";
         queue_running_ = true;
-        queue_started();
+        queue_state_changed(State::RUNNING, "Started measurement queue");
 
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
@@ -341,14 +344,14 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
-        queue_stopped();
+        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue ended");
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();
         queue_running_ = false;
-        queue_failed(error.what());
+        queue_state_changed(State::FAILED, error.what());
     } catch(...) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread";
         queue_running_ = false;
-        queue_failed("Unknown exception");
+        queue_state_changed(State::FAILED, "Unknown exception");
     }
 }
