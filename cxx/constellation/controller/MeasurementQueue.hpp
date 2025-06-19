@@ -164,6 +164,11 @@ namespace constellation::controller {
         virtual void queue_state_changed(State queue_state, std::string_view reason);
 
         /**
+         * @brief Method called whenever a measurement was successfully concluded and has been removed from the queue
+         */
+        virtual void measurement_concluded();
+
+        /**
          * @brief Method called whenever the progress of the queue was updated
          *
          * @param progress Current measurement progress of the queue, value as 0 < progress < 1

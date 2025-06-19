@@ -184,6 +184,7 @@ void MeasurementQueue::interrupt() {
 }
 
 void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_view /*reason*/) {};
+void MeasurementQueue::measurement_concluded() {};
 void MeasurementQueue::progress_updated(double /*progress*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
@@ -321,6 +322,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Successfully concluded this measurement, pop it - skip if interrupted
             if(queue_running_) {
                 measurements_.pop_front();
+                measurement_concluded();
                 measurements_size_--;
                 run_sequence_++;
                 interrupt_counter_ = 0;
