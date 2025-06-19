@@ -73,3 +73,7 @@ unhandled
 nowait
 Gbps
 testbeam
+changelog
+waveforms
+poller
+allocator
