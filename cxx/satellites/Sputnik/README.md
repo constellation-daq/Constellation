@@ -23,6 +23,7 @@ The following parameters are read and interpreted by this satellite. Parameters 
 | Parameter  | Description | Type | Default Value |
 |------------|-------------|------|---------------|
 | `interval` | Interval in which beep signals are emitted in units of milliseconds | Unsigned integer | `3000` |
+| `launch_delay` | Delay for launch in seconds | Unsigned integer | `0` |
 
 This satellite supports in-orbit reconfiguration of the `interval` parameter.
 

@@ -27,4 +27,5 @@ public:
 
 private:
     std::chrono::system_clock::time_point launch_time_;
+    std::chrono::seconds launch_delay_ {};
 };
