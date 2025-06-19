@@ -236,6 +236,14 @@ namespace constellation::controller {
         std::set<std::string> getConnections() const;
 
         /**
+         * @brief Check if the controller has a connection to the satellite
+         *
+         * @param satellite_name Canonical name of the satellite
+         * @return True if connection is established, false if the satellite is known
+         */
+        bool hasConnection(std::string_view satellite_name) const;
+
+        /**
          * @brief Get set of all available commands for the given satellite
          *
          * @param satellite_name Canonical name of the satellite
