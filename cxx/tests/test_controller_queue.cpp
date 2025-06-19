@@ -12,10 +12,12 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/controller/Controller.hpp"
+#include "constellation/controller/exceptions.hpp"
 #include "constellation/controller/MeasurementCondition.hpp"
 #include "constellation/controller/MeasurementQueue.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -98,10 +100,25 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
 
     // Add measurements to the queue with unknown satellite
     const auto measurement = std::map<std::string, Controller::CommandPayload>({{"Dummy.b", Dictionary {}}});
+
+    // Cannot add measurement, satellite is known
+    REQUIRE_THROWS_MATCHES(queue.append(measurement),
+                           QueueError,
+                           Message("Measurement queue error: Satellite Dummy.b is unknown to controller"));
+
+    // Create and start second satellite
+    DummySatellite satellite_b {"b"};
+    satellite_b.skipTransitional(true);
+    satellite_b.mockChirpService(CHIRP::CONTROL);
+    satellite_b.mockChirpService(CHIRP::HEARTBEAT);
+
     queue.append(measurement);
     queue.append(measurement);
     REQUIRE(queue.size() == 2);
     REQUIRE_FALSE(queue.running());
+
+    // End the second satellite
+    satellite_b.exit();
 
     // Start the queue and wait for it to fail
     queue.start();
