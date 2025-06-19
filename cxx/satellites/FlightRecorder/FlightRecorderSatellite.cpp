@@ -23,6 +23,10 @@
 #include <sstream>
 #endif
 
+#if __cpp_lib_chrono < 201907L
+#include <ctime>
+#endif
+
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
@@ -101,12 +105,24 @@ void FlightRecorderSatellite::initializing(Configuration& config) {
             break;
         }
         case LogMethod::DAILY: {
-            const auto minutes =
-                std::chrono::duration_cast<std::chrono::minutes>(
-                    config.get<std::chrono::system_clock::time_point>("daily_switching_time").time_since_epoch())
-                    .count();
-            sink_ = spdlog::daily_logger_mt(
-                getCanonicalName(), path_.string(), static_cast<int>(minutes / 60UL) % 24, static_cast<int>(minutes % 60UL));
+            // Get timestamp and convert to local time
+            const auto daily_switchting_time = config.get<std::chrono::system_clock::time_point>("daily_switching_time");
+
+#if __cpp_lib_chrono >= 201907L
+            const auto local_time = std::chrono::current_zone()->to_local(daily_switchting_time);
+            const std::chrono::hh_mm_ss t {local_time - std::chrono::floor<std::chrono::days>(local_time)};
+#else
+            const auto time_t = std::chrono::system_clock::to_time_t(daily_switchting_time);
+            std::tm tm {};
+            localtime_r(&time_t, &tm); // there is no thread-safe std::localtime
+            const std::chrono::hh_mm_ss t {std::chrono::hours {tm.tm_hour} + std::chrono::minutes {tm.tm_min}};
+#endif
+
+            LOG(INFO) << "Daily log file change will be triggered at " << t.hours().count() << ":" << t.minutes().count();
+            sink_ = spdlog::daily_logger_mt(getCanonicalName(),
+                                            path_.string(),
+                                            static_cast<int>(t.hours().count()),
+                                            static_cast<int>(t.minutes().count()));
             break;
         }
         case LogMethod::RUN: {
