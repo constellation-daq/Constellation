@@ -101,7 +101,7 @@ The level of log messages to be received by this logger can be adjusted with the
 in the subscription section on the right.
 After adjusting the subscription, new log messages of selected level and all higher levels are received when generated e.g.
 by launching the satellites.
-For debugging purposes, it can be useful to increase the log level beyond the default `INFO` log level:
+For debugging purposes, it can be useful to increase the log level beyond the default log level:
 
 ```{figure} observatory_debug.png
 Observatory main window with debug messages

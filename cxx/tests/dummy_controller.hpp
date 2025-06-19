@@ -90,7 +90,7 @@ public:
     }
 
     void queue_state_changed(constellation::controller::MeasurementQueue::State state, std::string_view reason) final {
-        const std::lock_guard messages_lock {mutex_};
+        const std::lock_guard lock {mutex_};
         reason_ = reason;
         state_ = state;
         state_changed_ = true;
@@ -111,12 +111,12 @@ public:
     }
 
     std::string getReason() {
-        const std::lock_guard messages_lock {mutex_};
+        const std::lock_guard lock {mutex_};
         return reason_;
     }
 
     constellation::controller::MeasurementQueue::State getState() {
-        const std::lock_guard messages_lock {mutex_};
+        const std::lock_guard lock {mutex_};
         return state_;
     }
 
@@ -131,7 +131,7 @@ public:
 
 private:
     std::atomic_bool state_changed_ {false};
-    constellation::controller::MeasurementQueue::State state_;
+    std::atomic<constellation::controller::MeasurementQueue::State> state_;
     std::string reason_;
     std::mutex mutex_;
 

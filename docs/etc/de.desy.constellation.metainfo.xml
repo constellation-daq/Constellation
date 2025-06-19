@@ -59,11 +59,17 @@
   </supports>
 
   <releases>
+    <release version="0.5" date="2025-06-19">
+      <url type="details">https://constellation.pages.desy.de/news/2025-06-19-Constellation-Release-0.5.html</url>
+      <description>
+        <p>Release of Constellation Scutum</p>
+      </description>
+    </release>
     <release version="0.4" date="2025-04-22">
-        <url type="details">https://constellation.pages.desy.de/news/2025-04-22-Constellation-Release-0.4.html</url>
-        <description>
+      <url type="details">https://constellation.pages.desy.de/news/2025-04-22-Constellation-Release-0.4.html</url>
+      <description>
         <p>Release of Constellation Circinus</p>
-        </description>
+      </description>
     </release>
     <release version="0.3" date="2025-01-17">
       <url type="details">https://constellation.pages.desy.de/news/2025-01-17-Constellation-Release-0.3.html</url>

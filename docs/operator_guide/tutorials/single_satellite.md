@@ -2,7 +2,7 @@
 
 The following tutorial describes how to start a single [satellite](../concepts/satellite.md), how to discover it and change
 its state with a command line controller. For this purposes example satellites are used, a full list of satellites can be
-found [here](../../satellites/index.md).
+found under [Satellites](../../satellites/index.md).
 
 ```{hint}
 This tutorial assumes that both the C++ and Python implementations of Constellation are installed. If the C++ implementation
@@ -78,7 +78,7 @@ and a command can be sent. The response is then printed on the terminal:
 
 ```python
 edda > constellation.Sputnik.One.get_name()
-SatelliteResponse(msg='sputnik.one')
+SatelliteResponse(msg='Sputnik.One')
 ```
 
 The controller supports tab completion, and suggestions for possible commands are displayed typing e.g.
@@ -91,8 +91,8 @@ connected:
 edda > for sat in constellation.satellites.values():
   ...:     print(sat.get_name())
   ...:
-'sputnik.one'
-'mariner.nine'
+'Sputnik.One'
+'Mariner.Nine'
 ```
 
 ### Sending Commands to the Satellite
@@ -105,14 +105,14 @@ In the following example, this dictionary is empty (`{}`) and directly passed to
 
 ```python
 edda > constellation.Sputnik.One.initialize({})
-{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated')}
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated')}
 ```
 
 All satellites can be initialized together by sending the command to the entire constellation:
 
 ```python
 edda > constellation.initialize({})
-{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
  'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
 
@@ -121,19 +121,19 @@ satellite or the entire constellation via:
 
 ```python
 edda > constellation.Sputnik.One.get_state()
-SatelliteResponse(msg='init', payload=32,
-                  meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=796949911)})
+SatelliteResponse(msg='INIT', payload=32,
+                  meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)})
 ```
 
 ```python
 edda > constellation.get_state()
 {'Sputnik.One': SatelliteResponse(
-                   msg='init', payload=32,
-                   meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=796949911)}),
+                   msg='INIT', payload=32,
+                   meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 594792, tzinfo=datetime.timezone.utc)}),
  'Mariner.Nine': SatelliteResponse(
-                    msg='init', payload=32,
-                    meta={"last_changed": Timestamp(seconds=1734009498, nanoseconds=794958000),
-                        "last_changed_iso": '2024-12-12T13:18:18.794958+00:00'})}
+                    msg='INIT', payload=32,
+                    meta={"last_changed": datetime.datetime(2025, 6, 19, 12, 4, 49, 607260, tzinfo=datetime.timezone.utc),
+                        "last_changed_iso": '2025-06-19T12:04:49.607260+00:00'})}
 ```
 
 Here, the response of the satellites contain a message (`msg`) with the human-readable state name, a payload with the state
@@ -173,7 +173,7 @@ function:
 
 ```python
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
  'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
 
@@ -184,7 +184,7 @@ dictionaries to the individual satellites is taken care of by the controller.
 ```python
 edda > cfg = load_config("myconfiguration.toml")
 edda > constellation.initialize(cfg)
-{'Sputnik.One': SatelliteResponse(msg='transition initialize is being initiated'),
+{'Sputnik.One': SatelliteResponse(msg='Transition initialize is being initiated'),
  'Mariner.Nine': SatelliteResponse(msg='transitioning', payload=initialize)}
 ```
 
