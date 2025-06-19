@@ -339,9 +339,6 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
         // Wait for ORBIT state across all
         await_state(CSCP::State::ORBIT);
 
-        // Queue ended, reset run sequence counter:
-        run_sequence_ = 0;
-
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
         queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue ended");
