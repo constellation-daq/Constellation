@@ -264,7 +264,7 @@ bool Controller::hasConnection(std::string_view satellite_name) const {
     const std::lock_guard connection_lock {connection_mutex_};
 
     // Find satellite by canonical name:
-    return connections_.find(satellite_name) != connections_.end();
+    return connections_.contains(satellite_name);
 }
 
 Dictionary Controller::getConnectionCommands(std::string_view satellite_name) const {
