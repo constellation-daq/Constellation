@@ -96,9 +96,10 @@ public:
         state_changed_ = true;
     };
 
-    void progress_updated(double progress) final {
+    void progress_updated(std::size_t current, std::size_t total) final {
+        progress_current_ = current;
+        progress_total_ = total;
         progress_updated_ = true;
-        progress_ = progress;
     }
 
     void waitStateChanged() {
@@ -125,7 +126,7 @@ public:
             std::this_thread::yield();
         }
         progress_updated_.store(false);
-        return progress_.load();
+        return static_cast<double>(progress_current_.load()) / static_cast<double>(progress_total_.load());
     }
 
 private:
@@ -135,5 +136,6 @@ private:
     std::mutex mutex_;
 
     std::atomic_bool progress_updated_ {false};
-    std::atomic<double> progress_;
+    std::atomic<std::size_t> progress_current_;
+    std::atomic<std::size_t> progress_total_;
 };

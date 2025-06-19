@@ -171,9 +171,10 @@ namespace constellation::controller {
         /**
          * @brief Method called whenever the progress of the queue was updated
          *
-         * @param progress Current measurement progress of the queue, value as 0 < progress < 1
+         * @param current Current number of measurements already successfully finished
+         * @param total Total number of measurements (finished and pending) of this queue
          */
-        virtual void progress_updated(double progress);
+        virtual void progress_updated(std::size_t current, std::size_t total);
 
     private:
         /** Queue loop, iterates over all measurements */

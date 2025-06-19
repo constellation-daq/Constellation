@@ -90,7 +90,7 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     measurements_size_++;
 
     // Report updated progress
-    progress_updated(progress());
+    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
     queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE, "Added measurement");
 }
 
@@ -117,7 +117,7 @@ void MeasurementQueue::clear() {
 
     // Update progress and report:
     measurements_size_ = measurements_.size();
-    progress_updated(progress());
+    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
 
     if(!queue_running_) {
         queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue cleared");
@@ -128,7 +128,7 @@ double MeasurementQueue::progress() const {
     if(measurements_size_ == 0 && run_sequence_ == 0) {
         return 0.;
     }
-    return 1. - (static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_));
+    return static_cast<double>(run_sequence_) / static_cast<double>(measurements_size_ + run_sequence_);
 }
 
 void MeasurementQueue::start() {
@@ -185,7 +185,7 @@ void MeasurementQueue::interrupt() {
 
 void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_view /*reason*/) {};
 void MeasurementQueue::measurement_concluded() {};
-void MeasurementQueue::progress_updated(double /*progress*/) {};
+void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
     controller_.awaitState(state, transition_timeout_);
@@ -329,7 +329,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             }
 
             // Report updated progress
-            progress_updated(progress());
+            progress_updated(run_sequence_, measurements_size_ + run_sequence_);
         }
 
         // Reset the original values collected during the measurement:
