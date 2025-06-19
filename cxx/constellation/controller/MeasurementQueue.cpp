@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <deque>
 #include <exception>
 #include <functional>
@@ -72,6 +73,17 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
         throw QueueError("Measurement contains invalid canonical name");
     }
 
+    // Check if all mentioned satellites are present and implement reconfiguration:
+    for(const auto& [sat, cfg] : measurement) {
+        if(!controller_.hasConnection(sat)) {
+            throw QueueError("Satellite " + sat + " is unknown to controller");
+        }
+
+        if(!controller_.getConnectionCommands(sat).contains("reconfigure")) {
+            throw QueueError("Satellite " + sat + " does not support reconfiguration but has queue parameter");
+        }
+    }
+
     const std::lock_guard measurement_lock {measurement_mutex_};
 
     // Use the current default condition of no measurement-specific is provided:
@@ -79,7 +91,8 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
     measurements_size_++;
 
     // Report updated progress
-    progress_updated(progress());
+    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+    queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE, "Added measurement");
 }
 
 void MeasurementQueue::clear() {
@@ -100,16 +113,23 @@ void MeasurementQueue::clear() {
         measurements_.emplace_back(std::move(current_measurement));
     }
 
+    // Reset the sequence counter:
+    run_sequence_ = 0;
+
     // Update progress and report:
     measurements_size_ = measurements_.size();
-    progress_updated(progress());
+    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+
+    if(!queue_running_) {
+        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue cleared");
+    }
 }
 
 double MeasurementQueue::progress() const {
     if(measurements_size_ == 0 && run_sequence_ == 0) {
         return 0.;
     }
-    return 1. - (static_cast<double>(measurements_size_) / static_cast<double>(measurements_size_ + run_sequence_));
+    return static_cast<double>(run_sequence_) / static_cast<double>(measurements_size_ + run_sequence_);
 }
 
 void MeasurementQueue::start() {
@@ -164,10 +184,9 @@ void MeasurementQueue::interrupt() {
     interrupt_counter_++;
 }
 
-void MeasurementQueue::queue_started() {};
-void MeasurementQueue::queue_stopped() {};
-void MeasurementQueue::queue_failed(std::string_view /*reason*/) {};
-void MeasurementQueue::progress_updated(double /*progress*/) {};
+void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_view /*reason*/) {};
+void MeasurementQueue::measurement_concluded() {};
+void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
 void MeasurementQueue::await_state(CSCP::State state) const {
     controller_.awaitState(state, transition_timeout_);
@@ -247,7 +266,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         LOG(logger_, STATUS) << "Started measurement queue";
         queue_running_ = true;
-        queue_started();
+        queue_state_changed(State::RUNNING, "Started measurement queue");
 
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
@@ -304,13 +323,14 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             // Successfully concluded this measurement, pop it - skip if interrupted
             if(queue_running_) {
                 measurements_.pop_front();
+                measurement_concluded();
                 measurements_size_--;
                 run_sequence_++;
                 interrupt_counter_ = 0;
             }
 
             // Report updated progress
-            progress_updated(progress());
+            progress_updated(run_sequence_, measurements_size_ + run_sequence_);
         }
 
         // Reset the original values collected during the measurement:
@@ -324,14 +344,14 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
-        queue_stopped();
+        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue ended");
     } catch(const std::exception& error) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread: " << error.what();
         queue_running_ = false;
-        queue_failed(error.what());
+        queue_state_changed(State::FAILED, error.what());
     } catch(...) {
         LOG(logger_, CRITICAL) << "Caught exception in queue thread";
         queue_running_ = false;
-        queue_failed("Unknown exception");
+        queue_state_changed(State::FAILED, "Unknown exception");
     }
 }

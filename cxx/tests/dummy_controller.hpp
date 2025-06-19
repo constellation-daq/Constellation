@@ -89,48 +89,35 @@ public:
         setDefaultCondition(std::move(condition));
     }
 
-    void queue_started() final { started_ = true; }
+    void queue_state_changed(constellation::controller::MeasurementQueue::State state, std::string_view reason) final {
+        const std::lock_guard messages_lock {mutex_};
+        reason_ = reason;
+        state_ = state;
+        state_changed_ = true;
+    };
 
-    void queue_stopped() final { stopped_ = true; }
-
-    void queue_failed(std::string_view reason) final {
-        const std::lock_guard messages_lock {failed_reason_mutex_};
-        failed_reason_ = reason;
-        failed_ = true;
-    }
-
-    void progress_updated(double progress) final {
+    void progress_updated(std::size_t current, std::size_t total) final {
+        progress_current_ = current;
+        progress_total_ = total;
         progress_updated_ = true;
-        progress_ = progress;
     }
 
-    void waitStarted() {
+    void waitStateChanged() {
         // Wait for callback to trigger
-        while(!started_.load()) {
+        while(!state_changed_.load()) {
             std::this_thread::yield();
         }
-        started_.store(false);
+        state_changed_.store(false);
     }
 
-    void waitStopped() {
-        // Wait for callback to trigger
-        while(!stopped_.load()) {
-            std::this_thread::yield();
-        }
-        stopped_.store(false);
+    std::string getReason() {
+        const std::lock_guard messages_lock {mutex_};
+        return reason_;
     }
 
-    void waitFailed() {
-        // Wait for callback to trigger
-        while(!failed_.load()) {
-            std::this_thread::yield();
-        }
-        failed_.store(false);
-    }
-
-    std::string getFailureReason() {
-        const std::lock_guard messages_lock {failed_reason_mutex_};
-        return failed_reason_;
+    constellation::controller::MeasurementQueue::State getState() {
+        const std::lock_guard messages_lock {mutex_};
+        return state_;
     }
 
     double waitProgress() {
@@ -139,15 +126,16 @@ public:
             std::this_thread::yield();
         }
         progress_updated_.store(false);
-        return progress_.load();
+        return static_cast<double>(progress_current_.load()) / static_cast<double>(progress_total_.load());
     }
 
 private:
-    std::atomic_bool started_ {false};
-    std::atomic_bool stopped_ {false};
-    std::atomic_bool failed_ {false};
-    std::mutex failed_reason_mutex_;
-    std::string failed_reason_;
+    std::atomic_bool state_changed_ {false};
+    constellation::controller::MeasurementQueue::State state_;
+    std::string reason_;
+    std::mutex mutex_;
+
     std::atomic_bool progress_updated_ {false};
-    std::atomic<double> progress_;
+    std::atomic<std::size_t> progress_current_;
+    std::atomic<std::size_t> progress_total_;
 };
