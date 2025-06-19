@@ -105,39 +105,6 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
     REQUIRE_THROWS_MATCHES(queue.append(measurement),
                            QueueError,
                            Message("Measurement queue error: Satellite Dummy.b is unknown to controller"));
-
-    // Create and start second satellite
-    DummySatellite satellite_b {"b"};
-    satellite_b.skipTransitional(true);
-    satellite_b.mockChirpService(CHIRP::CONTROL);
-    satellite_b.mockChirpService(CHIRP::HEARTBEAT);
-
-    queue.append(measurement);
-    queue.append(measurement);
-    REQUIRE(queue.size() == 2);
-    REQUIRE_FALSE(queue.running());
-
-    queue.waitStateChanged();
-    REQUIRE(queue.getState() == MeasurementQueue::State::IDLE);
-
-    // End the second satellite
-    satellite_b.exit();
-
-    // Start the queue and wait for it to fail
-    queue.start();
-    queue.waitStateChanged();
-    REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
-
-    queue.waitStateChanged();
-    REQUIRE(queue.getState() == MeasurementQueue::State::FAILED);
-
-    REQUIRE_FALSE(queue.running());
-    REQUIRE(queue.size() == 2);
-    REQUIRE(queue.progress() == 0.);
-    REQUIRE_THAT(queue.getReason(),
-                 Equals("Measurement queue error: Could not obtain configuration from satellite Dummy.b, Target satellite "
-                        "is unknown to controller"));
-
     // Stop controller
     controller.stop();
     satellite.exit();

@@ -91,7 +91,7 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
 
     // Report updated progress
     progress_updated(progress());
-    queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE);
+    queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE, "Added measurement");
 }
 
 void MeasurementQueue::clear() {
@@ -120,7 +120,7 @@ void MeasurementQueue::clear() {
     progress_updated(progress());
 
     if(!queue_running_) {
-        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE);
+        queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue cleared");
     }
 }
 

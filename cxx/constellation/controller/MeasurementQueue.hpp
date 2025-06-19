@@ -54,7 +54,7 @@ namespace constellation::controller {
         /** Measurement is a map with satellite canonical names as keys and configuration dictionaries as values */
         using Measurement = std::map<std::string, Controller::CommandPayload>;
 
-        enum class State : uint8_t {
+        enum class State : std::uint8_t {
             IDLE,     ///< Queue is idling (there are pending measurements but the queue is stopped)
             FINISHED, ///< Queue is finished (there are no measurements in the queue and it is stopped)
             RUNNING,  ///< Queue is currently running
@@ -161,7 +161,7 @@ namespace constellation::controller {
          * @param queue_state New state of the queue
          * @param reason Reason for the state change, may be empty
          */
-        virtual void queue_state_changed(State queue_state, std::string_view reason = "");
+        virtual void queue_state_changed(State queue_state, std::string_view reason);
 
         /**
          * @brief Method called whenever the progress of the queue was updated
