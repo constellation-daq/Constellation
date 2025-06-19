@@ -40,10 +40,6 @@ dependencies = [
 Controller = "constellation.core.controller:main"
 Monitor = "constellation.core.monitoring:main"
 DemoDataSender = "constellation.core.datasender:main"
-DemoHeartbeatChecker = "constellation.core.heartbeatchecker:main"
-DemoHeartbeatSender = "constellation.core.heartbeater:main"
-# tools
-ConstellationListInterfaces = "constellation.tools.list_interfaces:main"
 # 3rd-party Satellites
 SatelliteCaenHV = "constellation.satellites.CaenHV.__main__:main"
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.__main__:main"
