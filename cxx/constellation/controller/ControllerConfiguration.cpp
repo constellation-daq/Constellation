@@ -24,6 +24,11 @@
 #include <utility>
 #include <variant>
 #include <vector>
+#include <version> // IWYU pragma: keep
+
+#if __cpp_lib_chrono < 201907L
+#include <ctime>
+#endif
 
 #include <toml++/toml.hpp>
 
@@ -230,16 +235,31 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
         }
         if constexpr(toml::is_time<decltype(val)>) {
             // TOML defines this as local time
-            const auto time = val.as_time()->get();
-            auto local_now = std::chrono::zoned_time {std::chrono::current_zone(), std::chrono::system_clock::now()};
+            const auto toml_time = val.as_time()->get();
 
+            const auto time_now = std::chrono::system_clock::now();
+
+#if __cpp_lib_chrono >= 201907L
+            const auto local_time_now = std::chrono::current_zone()->to_local(time_now);
             // Use midnight today plus local time from TOML
-            auto local_time = std::chrono::floor<std::chrono::days>(local_now.get_local_time()) +
-                              std::chrono::hours {time.hour} + std::chrono::minutes {time.minute} +
-                              std::chrono::seconds {time.second};
+            const auto local_time = std::chrono::floor<std::chrono::days>(local_time_now) +
+                                    std::chrono::hours {toml_time.hour} + std::chrono::minutes {toml_time.minute} +
+                                    std::chrono::seconds {toml_time.second};
+            const auto system_time = std::chrono::current_zone()->to_sys(local_time);
+#else
+            const auto time_t = std::chrono::system_clock::to_time_t(time_now);
+            std::tm tm {};
+            localtime_r(&time_t, &tm); // there is no thread-safe std::localtime
+            // Use mightnight today plus local time from TOML
+            tm.tm_hour = toml_time.hour;
+            tm.tm_min = toml_time.minute;
+            tm.tm_sec = toml_time.second;
+            const auto local_time_t = std::mktime(&tm);
+            const auto system_time = std::chrono::system_clock::from_time_t(local_time_t);
+#endif
 
             // Return as system time
-            return std::chrono::zoned_time {std::chrono::current_zone(), local_time}.get_sys_time();
+            return system_time;
         }
         // If not returned yet then unknown type
         throw ConfigFileTypeError(key.str(), "Unknown type");
