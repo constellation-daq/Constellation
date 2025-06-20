@@ -1,13 +1,16 @@
 # Autonomous Operation
 
-Constellations operate decentralized and each satellite runs autonomously and no central server which manages a common state
-is required. Controllers and listeners constitute the user interfaces and are entirely stateless.
+Constellations operate decentralized, each satellite runs autonomously and no central server which manages a common state
+is required. Controllers and listeners constitute the user interfaces and are entirely stateless. The following sections
+will introduce the autonomy concept and illustrate its features.
 
-The communication between the individual components of a Constellation is performed through so-called heartbeat messages
-emitted by the satellites. These messages contain the finite state machine state and a set of flags which define the role of
-the sending satellite as explained below.
+## Heartbeating
+
+The communication of state information between the individual components of a Constellation is performed through so-called heartbeat messages
+emitted by the satellites. These messages contain the [finite state machine](satellite.md#the-finite-state-machine) state and
+a set of flags which define the role of the sending satellite and which will be explained below.
 In addition to regular heartbeat messages, satellites emit so-called extrasystoles whenever their FSM state has changed.
-This ensures timely information of all Constellation constituents about new states or errors.
+This ensures timely distribution of information to all Constellation constituents.
 
 The interval between the regular heartbeat messages is automatically scaled according to the number of active hosts in the
 Constellation to avoid congestion.
@@ -62,7 +65,7 @@ Constellation. The following roles exist and can be configured through the `_rol
 The default role of satellites is the `DYNAMIC` role, the currently configured role can be requested with the `get_role`
 command.
 
-## Autonomous Transition Orchestration
+## Conditional Transitions
 
 In some cases it can be required to initialize, launch, start or stop satellites in a specific order - they might for example
 depend on receiving a hardware clock from another satellite that is only available after initializing.
@@ -87,25 +90,25 @@ concise "Sputnik.Second - Type" as A2
 
 S1 is ORBIT #line:Gray
 S2 is ORBIT #line:Gray
-A1 is steady #2DA8D8;line:2DA8D8
-A2 is steady #2DA8D8;line:2DA8D8
+A1 is steady #lightblue;line:lightblue
+A2 is steady #lightblue;line:lightblue
 
 @0
 
 @300
 S1 is starting #line:Gray
 S2 is starting #line:Gray
-A1 is transition #D9514E;line:D9514E : direct transition
+A1 is transition #lightcoral;line:lightcoral : direct transition
 A2 is waiting... #line:transparent : transition blocked
 
 @800
 S1 is RUN #line:Gray
-A1 is steady #2DA8D8;line:2DA8D8
-A2 is transition #D9514E;line:D9514E
+A1 is steady #lightblue;line:lightblue
+A2 is transition #lightcoral;line:lightcoral
 
 @1000
 S2 is RUN #line:Gray
-A2 is steady #2DA8D8;line:2DA8D8
+A2 is steady #lightblue;line:lightblue
 
 @1200
 

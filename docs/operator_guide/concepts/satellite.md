@@ -215,7 +215,7 @@ This transition needs to be specifically implemented in individual satellites in
 
 In some cases it can be required to launch, start or stop satellites in a specific order - they might for example depend on receiving a hardware clock from another satellite that is only available after initializing.
 
-For this purpose, Constellation provides [Autonomous Transition Orchestration](autonomy.md#autonomous-transition-orchestration), which enables defining
+For this purpose, Constellation provides [Conditional Transitions](autonomy.md#conditional-transitions), which enables defining
 a transition order using the `_require_<transition>_after` keywords provided via the satellite configuration:
 
 ```toml
