@@ -308,8 +308,48 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << "\t" << k << " = " << v.str();
                 }
             }
+
+            // Function to check when satellites last changed their state
+            std::map<std::string, Controller::CommandPayload> satellites_request_last_changed {};
+            std::ranges::for_each(
+                measurement, [&](const auto& it) { satellites_request_last_changed.emplace(it.first, std::monostate()); });
+            auto get_last_changed = [&, this]() {
+                std::map<std::string, std::chrono::system_clock::time_point> last_changed_map {};
+                const auto replies = controller_.sendCommands("get_state", satellites_request_last_changed, false);
+                for(const auto& [sat, reply] : replies) {
+                    try {
+                        const auto& header = reply.getHeader();
+                        last_changed_map.emplace(header.getSender(),
+                                                 header.getTag<std::chrono::system_clock::time_point>("last_changed"));
+                    } catch(const std::exception& error) {
+                        throw QueueError("Failed to get state from " + sat);
+                    }
+                }
+                return last_changed_map;
+            };
+
+            // Get when state was changed before reconfigure command
+            const auto last_changed_map_before_reconf = get_last_changed();
+
+            // Send reconfigure command
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
+
+            // Before we wait for ORBIT state, we need to ensure that the extrasystole for reconfiguring was processed
+            // For this, wait until we have no satellites left to request the state from
+            while(!satellites_request_last_changed.empty()) {
+                // Get when satellites was last changes
+                const auto last_changed_map = get_last_changed();
+                for(const auto& [satellite, last_changed] : last_changed_map) {
+                    // Check if last changed is never than before sending reconfigure command
+                    if(last_changed > last_changed_map_before_reconf.at(satellite)) {
+                        // Erase from list of satellites to request state from
+                        satellites_request_last_changed.erase(satellite);
+                    }
+                }
+                // Wait a bit to avoid hot loop
+                std::this_thread::sleep_for(10ms);
+            }
 
             // Wait for ORBIT state across all
             await_state(CSCP::State::ORBIT);
