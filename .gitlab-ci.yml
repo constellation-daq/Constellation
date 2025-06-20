@@ -588,6 +588,10 @@ docs:html:
   script:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs html
+  artifacts:
+    paths:
+      - docs/build/html
+    expire_in: 24 hour
 
 docs:pdf:
   extends:
@@ -602,6 +606,9 @@ docs:pdf:
   script:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs latexpdf
+  artifacts:
+    paths:
+      - docs/build/latex/*.pdf
 
 docs:spelling:
   extends:
