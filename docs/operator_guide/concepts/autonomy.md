@@ -15,9 +15,63 @@ This ensures timely distribution of information to all Constellation constituent
 The interval between the regular heartbeat messages is automatically scaled according to the number of active hosts in the
 Constellation to avoid congestion.
 
-```{figure} CHP.svg
-Schematic drawing of heartbeating in Constellation
+Be low are two sequence diagrams illustrating the heartbeat exchange, once for the communication between a controller instance and a satellite,
+and once for the heartbeat exchange between two satellites. Extrasystole messages that are sent at state changes are indicated in red, the activation
+bars indicate times of active heartbeat monitoring of the remote satellite.
+
+::::{grid} 1 1 2 2
+
+:::{grid-item-card}
+**Heartbeats with Controller & Satellite**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+note over "Controller" : Controller joins
+"Satellite" <-- "Controller": Subscription
+activate "Controller" #lightblue
+"Satellite" -> "Controller": Heartbeat **[launching]**
+"Satellite" -[#lightcoral]> "Controller": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
+|||
+"Satellite" -> "Controller": Heartbeat **[ORBIT]**
+|||
+"Satellite" -> "Controller": Heartbeat **[ORBIT]**
+note over "Controller" : Controller departs
+"Satellite" <-- "Controller": Unsubscription
+deactivate "Controller"
+@enduml
 ```
+
+:::
+
+:::{grid-item-card}
+**Heartbeats between Satellites**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+note over "Satellite A" : Satellite joins
+"Satellite A" --> "Satellite B": Subscription
+activate "Satellite A" #lightblue
+"Satellite A" <-- "Satellite B": Subscription
+activate "Satellite B" #lightblue
+"Satellite A" <- "Satellite B": Heartbeat **[launching]**
+"Satellite A" -> "Satellite B": Heartbeat **[NEW]**
+"Satellite A" <[#lightcoral]- "Satellite B": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
+|||
+"Satellite A" <- "Satellite B": Heartbeat **[ORBIT]**
+"Satellite A" -> "Satellite B": Heartbeat **[NEW]**
+note over "Satellite B" : Satellite departs
+"Satellite A" <-- "Satellite B": Unsubscription
+deactivate "Satellite B"
+"Satellite A" --> "Satellite B": Unsubscription
+deactivate "Satellite A"
+@enduml
+```
+
+:::
+
+::::
 
 ## Satellite Autonomy & Roles
 
