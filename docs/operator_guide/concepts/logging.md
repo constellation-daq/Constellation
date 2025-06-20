@@ -15,6 +15,42 @@ Details about how to implement logging can be found in the
 [application development guide](../../application_development/functionality/logging.md).
 ```
 
+::::{grid}
+
+:::{grid-item-card}
+**Subscription to Log Topics**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+skinparam ParticipantPadding 50
+"Satellite A" <-- "Listener": Connect
+"Satellite A" <- "Listener": **SUBSCRIBE** LOG/WARNING
+activate "Satellite A" #lightcoral
+loop #lightblue
+    "Satellite A" -> "Listener": **LOG/**WARNING [Message]
+end
+
+"Satellite A" <- "Listener": **SUBSCRIBE** LOG/INFO
+activate "Satellite A" #gold
+
+loop #lightblue
+    "Satellite A" -> "Listener": **LOG/**INFO [Message]
+    "Satellite A" -> "Listener": **LOG/**WARNING [Message]
+end
+
+"Satellite A" <- "Listener": **UNSUBSCRIBE** LOG/INFO
+deactivate "Satellite A"
+"Satellite A" <- "Listener": **UNSUBSCRIBE** LOG/WARNING
+deactivate "Satellite A"
+"Satellite A" <-- "Listener": Disconnect
+@enduml
+```
+
+:::
+
+::::
+
 ## Verbosity Levels
 
 The verbosity levels have been designed to identify mistakes and implementation errors as early as possible and to provide
