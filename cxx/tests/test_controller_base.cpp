@@ -340,6 +340,7 @@ TEST_CASE("Controller commands are sent and answered", "[controller]") {
     while(controller.getConnectionCount() < 2) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Send command to single satellite with payload
     const auto msg = controller.sendCommand("Dummy.a", "initialize", Dictionary());
@@ -424,6 +425,7 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     while(controller.getConnectionCount() < 2) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Send command to single satellite with payload
     Dictionary config_a;
@@ -481,6 +483,7 @@ TEST_CASE("Erroneous attempts to send commands", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Send command to unknown target satellite:
     const auto msg_rply_unknown = controller.sendCommand("Dummy.b", "launch");
