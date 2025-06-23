@@ -29,8 +29,12 @@ def mock_device_satellite(mock_chirp_socket):
         return m
 
     class MockDeviceSatellite(Satellite):
-        callback_triggered = False
-        KEEP_WAITING = True
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.callback_triggered = False
+            self.KEEP_WAITING = True
+            self.reconfigured = False
 
         @chirp_callback(CHIRPServiceIdentifier.DATA)
         def callback_function(self, service):
@@ -41,6 +45,10 @@ def mock_device_satellite(mock_chirp_socket):
             while self.KEEP_WAITING:
                 time.sleep(0.01)
             return "finished with mock initialization"
+
+        def do_reconfigure(self, payload):
+            """Implements the `reconfigure` state change"""
+            self.reconfigured = True
 
         def ready(self):
             self.KEEP_WAITING = False
@@ -148,6 +156,46 @@ def test_satellite_std_commands(mock_socket_sender, mock_satellite):
     req = sender.request_get_response("get_run_id")
     assert isinstance(req, CSCP1Message)
     assert req.verb_type == CSCP1Message.Type.SUCCESS
+
+
+@pytest.mark.forked
+@pytest.mark.parametrize(
+    "state",
+    ["initialize", "land", "launch", "shutdown", "start", "stop"],
+)
+def test_satellite_state_cmds(state, mock_socket_sender, mock_satellite):
+    """Test state commands (except `reconfigure`)."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    # send a request
+    req = sender.request_get_response("get_commands")
+    assert isinstance(req, CSCP1Message)
+    assert "commands known" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert state in req.payload.keys()
+
+
+@pytest.mark.forked
+def test_satellite_state_reconfigure_missing(mock_socket_sender, mock_satellite):
+    """Test that `reconfigure` command is missing if not implemented."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    # send a request
+    req = sender.request_get_response("get_commands")
+    assert isinstance(req, CSCP1Message)
+    assert "commands known" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert "reconfigure" not in req.payload.keys()
+
+
+@pytest.mark.forked
+def test_satellite_state_reconfigure_impl(mock_socket_sender, mock_device_satellite):
+    """Test that `reconfigure` command is available if implemented."""
+    sender = CommandTransmitter("mock_sender", mock_socket_sender)
+    # send a request
+    req = sender.request_get_response("get_commands")
+    assert isinstance(req, CSCP1Message)
+    assert "commands known" in req.verb_msg.lower()
+    assert req.verb_type == CSCP1Message.Type.SUCCESS
+    assert "reconfigure" in req.payload.keys()
 
 
 @pytest.mark.forked
