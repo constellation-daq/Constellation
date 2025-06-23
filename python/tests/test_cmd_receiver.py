@@ -78,7 +78,7 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
 
 @pytest.mark.forked
 def test_cmdtransmitter_timestamp(mock_socket_sender, mock_socket_receiver):
-    """Test that commands are received case insensitive (i.e. lower)."""
+    """Test reception of correct timestamps."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
     receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
     # send a request with timestamp
