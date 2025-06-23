@@ -48,6 +48,8 @@ def mock_device_satellite(mock_chirp_socket):
     with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = MagicMock()
         mock_context.socket = mocket_factory
+        mock_context.cscp_command = False
+        mock.cscp_command = False
         mock.return_value = mock_context
         s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)

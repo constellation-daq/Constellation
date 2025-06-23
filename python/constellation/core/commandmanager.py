@@ -48,7 +48,7 @@ def get_cscp_commands(cls: Any) -> dict[str, str]:
         call = getattr(cls, func)
         if callable(call) and not func.startswith("__"):
             # regular method
-            if hasattr(call, "cscp_command"):
+            if hasattr(call, "cscp_command") and getattr(call, "cscp_command"):
                 doc = call.__doc__
                 res[func] = doc
     return res

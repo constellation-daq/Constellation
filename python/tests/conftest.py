@@ -289,8 +289,11 @@ def mock_heartbeat_poller():
             mock_context = Mock()
             mock_context.socket = mocket_factory
             mock.return_value = mock_context
+            mock.cscp_command = False
+            mock_context.cscp_command = False
             mock_poller = Mock()
             mock_poller.poll.side_effect = poll
+            mock_poller.cscp_command = False
             mock_p.return_value = mock_poller
             yield mock_context, mock_poller
 
@@ -317,6 +320,8 @@ def mock_satellite(mock_chirp_socket, mock_heartbeat_poller):
     with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = Mock()
         mock_context.socket = mocket_factory
+        mock_context.cscp_command = False
+        mock.cscp_command = False
         mock.return_value = mock_context
         s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
         t = threading.Thread(target=s.run_satellite)
