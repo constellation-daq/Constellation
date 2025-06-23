@@ -158,7 +158,6 @@ class mocket:
         self.send(payload.encode(), flags=flags)
 
     def send_multipart(self, msg_parts, flags=None):
-        print(f"mock sending {msg_parts} on port {self.port}")
         for idx, msg in enumerate(msg_parts):
             flag = zmq.SNDMORE if idx < len(msg_parts) - 1 else None
             self.send(msg, flag)
