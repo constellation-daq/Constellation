@@ -76,6 +76,11 @@ class Satellite(
         # register callback for heartbeat checker
         self.register_heartbeat_callback(self._heartbeat_interrupt)
 
+        # Check whether the Satellite has a reconfigure state implemented.
+        # If so, add the command to the list of available commands.
+        if hasattr(self, "do_reconfigure"):
+            self.add_cscp_command("reconfigure")
+
         # Add exception handling via threading.excepthook to allow the state
         # machine to reflect exceptions in the communication services threads.
         #
