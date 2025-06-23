@@ -13,6 +13,7 @@ from conftest import mock_packet_queue_sender, mocket, send_port
 
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
+from constellation.core.logging import setup_cli_logging
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
 from constellation.core.network import get_loopback_interface_name
 
@@ -137,6 +138,7 @@ def test_log_monitoring(mock_listener, mock_monitoringsender):
 
 @pytest.mark.forked
 def test_log_levels(mock_listener, mock_monitoringsender):
+    setup_cli_logging("TRACE")
     listener, stream = mock_listener
     lr = mock_monitoringsender.get_logger("mock_sender")
     # log a custom level

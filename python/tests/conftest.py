@@ -38,7 +38,7 @@ SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket pac
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
 
 
-setup_cli_logging("TRACE")
+setup_cli_logging("DEBUG")
 
 
 class chirpsocket:
