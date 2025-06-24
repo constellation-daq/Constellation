@@ -11,4 +11,10 @@
         <file alias="reconf">icons/material-change_circle.svg</file>
         <file alias="shutdown">icons/material-power_settings_circle.svg</file>
     </qresource>
+    <qresource prefix="response">
+        <file alias="neutral">icons/material-adjust.svg</file>
+        <file alias="success">icons/material-check_circle.svg</file>
+        <file alias="notice">icons/material-error.svg</file>
+        <file alias="unknown">icons/material-help.svg</file>
+    </qresource>
 </RCC>
