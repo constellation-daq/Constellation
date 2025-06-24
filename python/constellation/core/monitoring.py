@@ -374,15 +374,15 @@ class FileMonitoringListener(MonitoringListener):
 
         super().__init__(name, group, interface)
 
-        handler = logging.handlers.RotatingFileHandler(
+        self._file_handler = logging.handlers.RotatingFileHandler(
             self.output_path / "logs" / (group + ".log"),
             maxBytes=10**7,
             backupCount=10,
         )
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-        handler.setFormatter(formatter)
-        handler.setLevel(logging.DEBUG)
-        self.log_cmdp_l.addHandler(handler)
+        self._file_handler.setFormatter(formatter)
+        self._file_handler.setLevel(logging.DEBUG)
+        self.log_cmdp_l.addHandler(self._file_handler)
 
     def metric_callback(self, metric: Metric) -> None:
         super().metric_callback(metric)
@@ -391,6 +391,10 @@ class FileMonitoringListener(MonitoringListener):
         ts = metric.time.to_unix()
         with open(path, "a") as csv:
             csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
+
+    def reentry(self) -> None:
+        self.log_cmdp_l.removeHandler(self._file_handler)
+        super().reentry()
 
 
 def main(args: Any = None) -> None:

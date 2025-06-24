@@ -167,7 +167,6 @@ def test_satellite_wrong_type_payload(mock_socket_sender, mock_satellite):
     assert req.verb_type == CSCP1Message.Type.INCOMPLETE
 
 
-@pytest.mark.forked
 def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     """Test fsm state change cmd reception."""
     sender = mock_cmd_transmitter

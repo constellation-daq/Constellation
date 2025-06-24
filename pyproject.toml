@@ -64,7 +64,6 @@ dev = [
 ]
 test = [
     "pytest",
-    "pytest-forked",
     "pytest-cov",
     "pytest-sugar",
 ]
