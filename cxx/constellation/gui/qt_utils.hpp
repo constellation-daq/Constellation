@@ -15,6 +15,7 @@
 #include <QApplication>
 #include <QColor>
 #include <QDateTime>
+#include <QIcon>
 #include <QPalette>
 #include <QString>
 #include <QTimeZone>
@@ -118,6 +119,35 @@ namespace constellation::gui {
         }
         case message::CSCP1Message::Type::ERROR: {
             return "<font color='darkred'>" + type_string + "</font>";
+        }
+        default: std::unreachable();
+        }
+    }
+
+    /**
+     * @brief Helper to obtain the CSCP message type icon
+     *
+     * @param type CSCP message type
+     *
+     * @return Icon for the CSCP response display
+     */
+    inline QIcon get_response_icon(message::CSCP1Message::Type type) {
+        const auto type_string = QString::fromStdString(utils::enum_name(type));
+        switch(type) {
+        case message::CSCP1Message::Type::REQUEST: {
+            return QIcon(":/response/neutral");
+        }
+        case message::CSCP1Message::Type::SUCCESS: {
+            return QIcon(":/response/success");
+        }
+        case message::CSCP1Message::Type::NOTIMPLEMENTED:
+        case message::CSCP1Message::Type::INCOMPLETE:
+        case message::CSCP1Message::Type::INVALID: {
+            return QIcon(":/response/notice");
+        }
+        case message::CSCP1Message::Type::UNKNOWN:
+        case message::CSCP1Message::Type::ERROR: {
+            return QIcon(":/response/unknown");
         }
         default: std::unreachable();
         }

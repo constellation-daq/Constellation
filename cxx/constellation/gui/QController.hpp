@@ -211,14 +211,15 @@ namespace constellation::gui {
          *
          * @return QVariant holding the connection detail data for the requested cell
          */
-        static QVariant get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection, std::size_t idx);
+        static QVariant get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection,
+                                 std::size_t idx,
+                                 int role = Qt::DisplayRole);
 
         // Column headers of the connection details
-        static constexpr std::array<const char*, 7> headers_ {
-            "Type", "Name", "State", "Last response", "Last message", "Heartbeat", "Lives"};
+        static constexpr std::array<const char*, 6> headers_ {"Type", "Name", "State", "Last message", "Heartbeat", "Lives"};
         // Additional headers for connection dialog
-        static constexpr std::array<const char*, 5> headers_details_ {
-            "Connection URI", "MD5 host ID", "Role", "Last heartbeat", "Last Check"};
+        static constexpr std::array<const char*, 6> headers_details_ {
+            "Connection URI", "MD5 host ID", "Role", "Last response", "Last heartbeat", "Last Check"};
     };
 
     class CNSTLN_API QControllerSortProxy : public QSortFilterProxyModel {
