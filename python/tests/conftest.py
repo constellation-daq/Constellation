@@ -3,7 +3,6 @@ SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
-import operator
 import os
 import random
 import threading
@@ -149,21 +148,14 @@ class mocket:
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.port = 0
-        # sender/receiver?
-        self.endpoint = 0  # 0 or 1
-        self.mock_packet_queue_recv = {}
-        self.mock_packet_queue_sender = {}
+        self.packet_queue_in = {}
+        self.packet_queue_out = {}
 
     def _get_queue(self, out: bool):
-        """Flip what queue to use depending on direction and endpoint.
-
-        Makes sure that A sends on B's receiving queue and vice-versa.
-
-        """
-        if operator.xor(self.endpoint, out):
-            return self.mock_packet_queue_sender
-        else:
-            return self.mock_packet_queue_recv
+        """Return queue depending on direction (outward/inward)."""
+        if out:
+            return self.packet_queue_out
+        return self.packet_queue_in
 
     def send(self, payload, flags=None):
         """Append buf to queue."""
@@ -251,6 +243,67 @@ class mocket:
     def setsockopt(self, *args, **kwargs):
         pass
 
+    def close(self, *args, **kwargs):
+        pass
+
+
+@pytest.fixture
+def mock_zmq_context(request):
+    """A mock ZMQ Context factory fixture that creates mock ZMQ sockets.
+
+    All sockets share the same bidirectional packet queue (two dicts). Use the
+    `flip_queue` function to exchange the direction.
+
+    For example,
+
+    ```
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
+    ```
+
+    """
+    packet_queue_in = {}
+    packet_queue_out = {}
+
+    def mocket_factory(ctx, *args, **kwargs):
+        m = mocket()
+        m.packet_queue_in = ctx.packet_queue_in
+        m.packet_queue_out = ctx.packet_queue_out
+        # keep track of instantiated mock sockets
+        ctx._known_sockets.append(m)
+        return m
+
+    def flip_queues(ctx):
+        tmp = ctx.packet_queue_in
+        ctx.packet_queue_in = ctx.packet_queue_out
+        ctx.packet_queue_out = tmp
+        ctx.queues_flipped = True
+
+    with patch("constellation.core.heartbeatchecker.zmq.Context") as hbcontext:
+        with patch("constellation.core.base.zmq.Context") as basecontext:
+
+            def context_factory():
+                ctx = Mock()
+                # mock context instantiation
+                hbcontext.return_value = ctx
+                basecontext.return_value = ctx
+                # ensure that the contexts are not picked up as cscp commands
+                hbcontext.cscp_command = False
+                basecontext.cscp_command = False
+                ctx.cscp_command = False
+                # save a reference to the packet queues
+                ctx.queues_flipped = False
+                ctx.packet_queue_in = packet_queue_in
+                ctx.packet_queue_out = packet_queue_out
+                ctx.flip_queues.side_effect = partial(flip_queues, ctx)
+                # return mockets for sockets
+                ctx.endpoint = 0
+                ctx._known_sockets = []
+                ctx.socket = partial(mocket_factory, ctx)
+                return ctx
+
+            yield context_factory
+
 
 @pytest.fixture
 def mock_socket_sender():
@@ -287,49 +340,43 @@ def mock_data_receiver(mock_socket_receiver):
 
 
 @pytest.fixture
-def mock_heartbeat_poller():
+def mock_heartbeat_poller(mock_zmq_context):
     """Create a mock HeartbeatChecker poller."""
 
-    mockets = []
+    with patch("constellation.core.heartbeatchecker.zmq.Poller") as mock_p:
+        ctx = mock_zmq_context()
+        ctx.flip_queues()  # flip bidirectional queues
+        mockets = ctx._known_sockets
 
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        m.endpoint = 1
-        mockets.append([m, 1])
-        return m
+        def poll(*args, **kwargs):
+            """Poll known sockets mimicking a ZMQ Poller."""
+            res = [[m, 1] for m in mockets if not m.has_no_data()]
+            timeout = 0.05
+            while not res and timeout > 0:
+                time.sleep(0.01)
+                timeout -= 0.01
+                res = [[m, 1] for m in mockets if not m.has_no_data()]
+            return res
 
-    def poll(*args, **kwargs):
-        res = [m for m in mockets if not m[0].has_no_data()]
-        timeout = 0.05
-        while not res and timeout > 0:
-            time.sleep(0.01)
-            timeout -= 0.01
-            res = [m for m in mockets if not m[0].has_no_data()]
-        return res
-
-    with patch("constellation.core.heartbeatchecker.zmq.Context") as mock:
-        with patch("constellation.core.heartbeatchecker.zmq.Poller") as mock_p:
-            mock_context = Mock()
-            mock_context.socket = mocket_factory
-            mock.return_value = mock_context
-            mock.cscp_command = False
-            mock_context.cscp_command = False
-            mock_poller = Mock()
-            mock_poller.poll.side_effect = poll
-            mock_poller.cscp_command = False
-            mock_p.return_value = mock_poller
-            yield mock_context, mock_poller
+        mock_poller = Mock()
+        mock_poller.poll.side_effect = poll
+        mock_poller.cscp_command = False
+        mock_p.return_value = mock_poller
+        yield ctx, mock_poller
 
 
 @pytest.fixture
 def mock_heartbeat_checker(mock_heartbeat_poller):
     """Create a mock HeartbeatChecker instance."""
+    ctx, poller = mock_heartbeat_poller
     hbc = HeartbeatChecker("mock_hbchecker")
     hbc._add_com_thread()
     hbc._start_com_threads()
     # give the threads a chance to start
     time.sleep(0.1)
-    yield hbc
+    yield hbc, ctx
+    # teardown
+    hbc.reentry()
 
 
 @pytest.fixture
