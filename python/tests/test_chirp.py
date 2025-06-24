@@ -11,7 +11,6 @@ from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, C
 from constellation.core.network import get_loopback_interface_name
 
 
-@pytest.mark.forked
 def test_chirp_beacon_send_recv(mock_chirp_socket):
     """Test interplay between two transmitters (sender/receiver)."""
     sender = CHIRPBeaconTransmitter("mock_sender", "mockstellation", [get_loopback_interface_name()])
@@ -42,7 +41,6 @@ def test_chirp_beacon_send_recv(mock_chirp_socket):
         assert "malformed message" in str(e.value), "Wrong chirp header did not trigger expected exception message."
 
 
-@pytest.mark.forked
 def test_filter_same_host(mock_chirp_transmitter):
     """Check that same-host packets are dropped."""
     t = mock_chirp_transmitter

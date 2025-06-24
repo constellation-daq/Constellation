@@ -8,6 +8,7 @@ import os
 import random
 import threading
 import time
+from functools import partial
 from tempfile import TemporaryDirectory
 from unittest.mock import Mock, patch
 
@@ -25,12 +26,7 @@ from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 
-# chirp
-mock_chirp_packet_queue = []
-
 # satellite
-mock_packet_queue_recv = {}
-mock_packet_queue_sender = {}
 send_port = 11111
 recv_port = 22222
 
@@ -38,7 +34,9 @@ SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket pac
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
 
 
-setup_cli_logging("DEBUG")
+@pytest.fixture(autouse=True)
+def setup_logging():
+    setup_cli_logging("DEBUG")
 
 
 class chirpsocket:
@@ -48,14 +46,19 @@ class chirpsocket:
 
     def __init__(self, *args, **kwargs):
         self.seen: int = 0
+        self._connected = False
         self.timeout: float = -1
+        self.mock_chirp_packet_queue = []
 
     def connected(self):
-        return True
+        return self._connected
+
+    def close(self):
+        self._connected = False
 
     def sendto(self, buf, addr):
         """Append buf to queue."""
-        mock_chirp_packet_queue.append(buf)
+        self.mock_chirp_packet_queue.append(buf)
 
     def setblocking(self, *args, **kwargs):
         """ignored"""
@@ -67,13 +70,13 @@ class chirpsocket:
 
     def bind(self, *args, **kwargs):
         """ignored"""
-        pass
+        self._connected = True
 
     def recvfrom(self, bufsize):
         """Get next entry from queue."""
         time.sleep(0.05)
         try:
-            data = mock_chirp_packet_queue[self.seen]
+            data = self.mock_chirp_packet_queue[self.seen]
             self.seen += 1
             return data, ["127.0.0.1", CHIRP_PORT]
         except IndexError:
@@ -86,7 +89,7 @@ class chirpsocket:
         time.sleep(0.05)
         try:
             # ancillary data for localhost:
-            data = mock_chirp_packet_queue[self.seen]
+            data = self.mock_chirp_packet_queue[self.seen]
             self.seen += 1
             ancdata = [
                 (
@@ -106,9 +109,28 @@ class chirpsocket:
 
 @pytest.fixture
 def mock_chirp_socket():
-    """Mock CHIRP socket calls."""
+    """Mock CHIRP socket calls.
+
+    Creates a packet queue that is shared for all subsequent opened sockets.
+
+    """
     with patch("constellation.core.multicast.socket.socket") as mock:
-        mock.side_effect = chirpsocket
+
+        # one packet queue per fixture
+        packet_queue = []
+        mock._packet_queue = packet_queue
+
+        def add_socket_info(mock, *args, **kwargs):
+            m = chirpsocket()
+            # one packet queue per fixture
+            m.mock_chirp_packet_queue = packet_queue
+            # keep track of instantiated mock sockets
+            if not isinstance(mock._known_sockets, list):
+                mock._known_sockets = []
+            mock._known_sockets.append(m)
+            return m
+
+        mock.side_effect = partial(add_socket_info, mock)
         yield mock
 
 
@@ -129,6 +151,8 @@ class mocket:
         self.port = 0
         # sender/receiver?
         self.endpoint = 0  # 0 or 1
+        self.mock_packet_queue_recv = {}
+        self.mock_packet_queue_sender = {}
 
     def _get_queue(self, out: bool):
         """Flip what queue to use depending on direction and endpoint.
@@ -137,9 +161,9 @@ class mocket:
 
         """
         if operator.xor(self.endpoint, out):
-            return mock_packet_queue_sender
+            return self.mock_packet_queue_sender
         else:
-            return mock_packet_queue_recv
+            return self.mock_packet_queue_recv
 
     def send(self, payload, flags=None):
         """Append buf to queue."""
