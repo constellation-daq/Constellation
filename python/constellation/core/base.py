@@ -27,7 +27,11 @@ from .network import get_interface_names, validate_interface
 def destroy_satellites() -> None:
     """Close down connections and perform orderly re-entry."""
     for sat in SATELLITE_LIST:
-        sat.reentry()
+        try:
+            sat.reentry()
+        except Exception:
+            pass
+    SATELLITE_LIST.clear()
 
 
 class ConstellationArgumentParser(ArgumentParser):
@@ -172,6 +176,9 @@ class BaseSatelliteFrame:
         """Orderly destroy the satellite."""
         self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
+        # remove all ZMQ log handlers
+        for logger in logging.root.manager.loggerDict:
+            logging.getLogger(logger).removeHandler(self._zmq_log_handler)
         self.log.debug("Terminating ZMQ context.")
         self._zmq_log_handler.close()
         self.context.term()
