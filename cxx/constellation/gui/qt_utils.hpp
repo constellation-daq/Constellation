@@ -39,6 +39,83 @@ namespace constellation::gui {
      */
     CNSTLN_API void initResources();
 
+    inline QColor get_state_color(protocol::CSCP::State state) {
+        switch(state) {
+        case protocol::CSCP::State::NEW:
+        case protocol::CSCP::State::initializing:
+        case protocol::CSCP::State::INIT: {
+            return QColorConstants::Svg::gray;
+        }
+        case protocol::CSCP::State::launching:
+        case protocol::CSCP::State::landing:
+        case protocol::CSCP::State::reconfiguring:
+        case protocol::CSCP::State::ORBIT: {
+            return QColorConstants::Svg::orange;
+        }
+        case protocol::CSCP::State::starting:
+        case protocol::CSCP::State::stopping:
+        case protocol::CSCP::State::RUN: {
+            return QColorConstants::Svg::green;
+        }
+        case protocol::CSCP::State::SAFE:
+        case protocol::CSCP::State::interrupting: {
+            return QColorConstants::Svg::red;
+        }
+        case protocol::CSCP::State::ERROR: {
+            return QColorConstants::Svg::darkred;
+        }
+        default: std::unreachable();
+        }
+    }
+
+    inline QString get_state_string(protocol::CSCP::State state, bool global) {
+
+        const QString global_indicatior = (global ? "" : " ≊");
+
+        switch(state) {
+        case protocol::CSCP::State::NEW: {
+            return "New" + global_indicatior;
+        }
+        case protocol::CSCP::State::initializing: {
+            return "Initializing..." + global_indicatior;
+        }
+        case protocol::CSCP::State::INIT: {
+            return "Initialized" + global_indicatior;
+        }
+        case protocol::CSCP::State::launching: {
+            return "Launching..." + global_indicatior;
+        }
+        case protocol::CSCP::State::landing: {
+            return "Landing..." + global_indicatior;
+        }
+        case protocol::CSCP::State::reconfiguring: {
+            return "Reconfiguring..." + global_indicatior;
+        }
+        case protocol::CSCP::State::ORBIT: {
+            return "Orbiting" + global_indicatior;
+        }
+        case protocol::CSCP::State::starting: {
+            return "Starting..." + global_indicatior;
+        }
+        case protocol::CSCP::State::stopping: {
+            return "Stopping..." + global_indicatior;
+        }
+        case protocol::CSCP::State::RUN: {
+            return "Running" + global_indicatior;
+        }
+        case protocol::CSCP::State::SAFE: {
+            return "Safe Mode" + global_indicatior;
+        }
+        case protocol::CSCP::State::interrupting: {
+            return "Interrupting..." + global_indicatior;
+        }
+        case protocol::CSCP::State::ERROR: {
+            return "Error" + global_indicatior;
+        }
+        default: std::unreachable();
+        }
+    }
+
     /**
      * @brief Helper to obtain the state string with color and formatting
      *
