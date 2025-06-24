@@ -146,13 +146,11 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     viewConn->header()->resizeSection(1, 100);
     viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
     viewConn->header()->resizeSection(2, 120);
-    viewConn->header()->setSectionResizeMode(3, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(3, 140);
-    viewConn->header()->setSectionResizeMode(4, QHeaderView::Stretch);
-    viewConn->header()->setSectionResizeMode(5, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(5, 80);
-    viewConn->header()->setSectionResizeMode(6, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(6, 40);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(4, 80);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(5, 40);
 
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {
