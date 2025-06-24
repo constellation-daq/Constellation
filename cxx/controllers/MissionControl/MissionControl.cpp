@@ -62,46 +62,6 @@ using namespace constellation::log;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
-void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    auto options = option;
-    initStyleOption(&options, index);
-
-    painter->save();
-
-    // Get sibling for column 6 (where the lives are stored) for current row:
-    const auto lives = index.sibling(index.row(), 6).data().toInt();
-    if(lives < 3 && index.column() >= 5) {
-        const auto alpha = (3 - lives) * 85;
-        QLinearGradient gradient(
-            options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
-        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 5 ? 0 : alpha)));
-        gradient.setColorAt(1, QColor(255, 0, 0, alpha));
-        painter->fillRect(options.rect, QBrush(gradient));
-    }
-
-    QTextDocument doc;
-    doc.setHtml(options.text);
-
-    options.text = "";
-    options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);
-
-    painter->translate(options.rect.left(), options.rect.top());
-    const QRect clip(0, 0, options.rect.width(), options.rect.height());
-    doc.drawContents(painter, clip);
-
-    painter->restore();
-}
-
-QSize ConnectionItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    QStyleOptionViewItem options = option;
-    initStyleOption(&options, index);
-
-    QTextDocument doc;
-    doc.setHtml(options.text);
-    doc.setTextWidth(options.rect.width());
-    return {static_cast<int>(doc.idealWidth()), static_cast<int>(doc.size().height())};
-}
-
 FileSystemModel::FileSystemModel(QObject* parent) : QFileSystemModel(parent) {}
 
 QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
@@ -132,7 +92,6 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
 
     sorting_proxy_.setSourceModel(&runcontrol_);
     viewConn->setModel(&sorting_proxy_);
-    viewConn->setItemDelegate(&item_delegate_);
     viewConn->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(viewConn, &QTreeView::customContextMenuRequested, this, &MissionControl::custom_context_menu);
 
