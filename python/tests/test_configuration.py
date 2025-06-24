@@ -5,13 +5,10 @@ SPDX-License-Identifier: EUPL-1.2
 
 import time
 
-import pytest
-
 from constellation.core.configuration import flatten_config
 from constellation.core.message.cscp1 import CSCP1Message
 
 
-@pytest.mark.forked
 def test_unused_values(config):
     assert config.has_unused_values()
     config.setdefault("voltage")
@@ -24,9 +21,8 @@ def test_unused_values(config):
     assert not config.has_unused_values()
 
 
-@pytest.mark.forked
 def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
-    satellite = mock_example_satellite
+    satellite, _ctx = mock_example_satellite
     sender = mock_cmd_transmitter
 
     sender.send_request("initialize", config._config)
@@ -40,7 +36,6 @@ def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
     assert satellite.config._config == config._config
 
 
-@pytest.mark.forked
 def test_config_flattening(rawconfig):
     """Test that config flattening works"""
     assert "ampere" in flatten_config(rawconfig, "mocksat"), "Parameter missing from class part of config"

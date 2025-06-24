@@ -25,8 +25,10 @@ from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
 
-# satellite
-SEND_PORT = 11111
+# a default port to send arbitrary data on
+DEFAULT_SEND_PORT = 11111
+# port for CDTP
+DATA_PORT = 50101
 
 SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
@@ -280,26 +282,29 @@ def mock_zmq_context():
 
     with patch("constellation.core.heartbeatchecker.zmq.Context") as hbcontext:
         with patch("constellation.core.base.zmq.Context") as basecontext:
+            with patch("constellation.core.commandmanager.zmq.Context") as cmdcontext:
 
-            def context_factory():
-                ctx = Mock()
-                # mock context instantiation
-                hbcontext.return_value = ctx
-                basecontext.return_value = ctx
-                # ensure that the contexts are not picked up as cscp commands
-                hbcontext.cscp_command = False
-                basecontext.cscp_command = False
-                ctx.cscp_command = False
-                # save a reference to the packet queues
-                ctx.queues_flipped = False
-                ctx.packet_queue_in = packet_queue_in
-                ctx.packet_queue_out = packet_queue_out
-                ctx.flip_queues.side_effect = partial(flip_queues, ctx)
-                # return mockets for sockets
-                ctx.endpoint = 0
-                ctx._known_sockets = []
-                ctx.socket = partial(mocket_factory, ctx)
-                return ctx
+                def context_factory():
+                    ctx = Mock()
+                    # mock context instantiation
+                    hbcontext.return_value = ctx
+                    basecontext.return_value = ctx
+                    cmdcontext.return_value = ctx
+                    # ensure that the contexts are not picked up as cscp commands
+                    hbcontext.cscp_command = False
+                    basecontext.cscp_command = False
+                    cmdcontext.cscp_command = False
+                    ctx.cscp_command = False
+                    # save a reference to the packet queues
+                    ctx.queues_flipped = False
+                    ctx.packet_queue_in = packet_queue_in
+                    ctx.packet_queue_out = packet_queue_out
+                    ctx.flip_queues.side_effect = partial(flip_queues, ctx)
+                    # return mockets for sockets
+                    ctx.endpoint = 0
+                    ctx._known_sockets = []
+                    ctx.socket = partial(mocket_factory, ctx)
+                    return ctx
 
             yield context_factory
 
@@ -308,7 +313,7 @@ def mock_zmq_context():
 def mock_socket_sender(mock_zmq_context):
     ctx = mock_zmq_context()
     socket = ctx.socket()
-    socket.port = SEND_PORT
+    socket.port = DEFAULT_SEND_PORT
     yield socket
 
 
@@ -317,7 +322,7 @@ def mock_socket_receiver(mock_zmq_context):
     ctx = mock_zmq_context()
     ctx.flip_queues()
     socket = ctx.socket()
-    socket.port = SEND_PORT
+    socket.port = DEFAULT_SEND_PORT
     yield socket
 
 
@@ -330,12 +335,14 @@ def mock_cmd_transmitter(mock_socket_sender):
 
 @pytest.fixture
 def mock_data_transmitter(mock_socket_sender):
+    mock_socket_sender.port = DATA_PORT
     t = DataTransmitter("mock_sender", mock_socket_sender)
     yield t
 
 
 @pytest.fixture
 def mock_data_receiver(mock_socket_receiver):
+    mock_socket_receiver.port = DATA_PORT
     r = DataTransmitter("mock_receiver", mock_socket_receiver)
     yield r
 
@@ -381,10 +388,11 @@ def mock_heartbeat_checker(mock_heartbeat_poller):
 
 
 @pytest.fixture
-def mock_satellite(mock_zmq_context, mock_chirp_socket, mock_heartbeat_poller):
+def mock_satellite(mock_zmq_context, mock_chirp_socket):
     """Create a mock Satellite base instance."""
     ctx = mock_zmq_context()
     ctx.flip_queues()
+
     s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
@@ -399,6 +407,7 @@ def mock_satellite(mock_zmq_context, mock_chirp_socket, mock_heartbeat_poller):
 def mock_controller(mock_zmq_context, mock_chirp_socket, mock_heartbeat_poller):
     """Create a mock Controller base instance."""
     ctx = mock_zmq_context()
+
     c = BaseController(name="mock_controller", group="mockstellation", interface=[get_loopback_interface_name()])
     # give the threads a chance to start
     time.sleep(0.1)
@@ -428,6 +437,7 @@ def config(rawconfig):
 def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
     ctx = mock_zmq_context()
+    ctx.flip_queues()
 
     class MockExampleSatellite(Satellite):
         def do_initializing(self, payload):
