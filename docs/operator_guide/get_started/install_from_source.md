@@ -209,14 +209,26 @@ sudo apt install python3 python3-venv
 ```
 
 :::
-:::{tab-item} ALMA/Fedora
+:::{tab-item} Alma
 
-TODO
+```sh
+sudo dnf install python3.11
+alias python3=python3.11
+```
+
+:::
+:::{tab-item} Fedora
+
+```sh
+sudo dnf install python3
+```
 
 :::
 :::{tab-item} MacOS
 
-TODO
+```sh
+brew install python
+```
 
 :::
 :::{tab-item} Windows
