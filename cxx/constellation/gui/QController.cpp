@@ -87,6 +87,13 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         }
     }
 
+    if(role == Qt::BackgroundRole) {
+        if((idx == 4 || idx == 5) && conn.lives < 3) {
+            const auto alpha = (3 - conn.lives) * 85;
+            return QColor(255, 0, 0, alpha);
+        }
+    }
+
     if(role == Qt::FontRole && idx == 2) {
         QFont font;
         font.setBold(true);
