@@ -128,7 +128,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
                         << ", next message in " << msg.getInterval();                      //
 
     const auto now = std::chrono::system_clock::now();
-    const std::lock_guard lock {mutex_};
+    std::unique_lock<std::mutex> lock {mutex_};
 
     // Update or add the remote:
     auto remote_it = remotes_.find(msg.getSender());
@@ -150,14 +150,12 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Update the role with latest information:
     remote_it->second.role = msg.getRole();
 
+    bool call_interrupt = false;
     // Check for ERROR and SAFE states:
     if(remote_it->second.lives > 0 && (msg.getState() == CSCP::State::ERROR || msg.getState() == CSCP::State::SAFE)) {
         remote_it->second.lives = 0;
         // Only trigger interrupt if demanded by the message flags:
-        if(interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT)) {
-            LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_it->first << ", interrupting";
-            interrupt_callback_(remote_it->first + " reports state " + to_string(msg.getState()));
-        }
+        call_interrupt = (interrupt_callback_ && msg.hasFlag(CHP::MessageFlags::TRIGGER_INTERRUPT));
     }
 
     // Update remote
@@ -168,6 +166,15 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Replenish lives unless we're in ERROR or SAFE state:
     if(msg.getState() != CSCP::State::ERROR && msg.getState() != CSCP::State::SAFE) {
         remote_it->second.lives = CHP::Lives;
+    }
+
+    const auto remote_name = remote_it->first;
+
+    // Delay calling the interrupt until we have unlocked the mutex:
+    lock.unlock();
+    if(call_interrupt) {
+        LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_name << ", interrupting";
+        interrupt_callback_(remote_name + " reports state " + to_string(msg.getState()));
     }
 }
 
