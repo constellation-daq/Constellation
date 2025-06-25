@@ -12,7 +12,7 @@
     },
     {
       "name": "AIDA-2020 TLU / aidatlu",
-      "readme": "https://github.com/SiLab-Bonn/aidatlu/blob/main/aidatlu/constellation/README.md",
+      "readme": "https://raw.githubusercontent.com/SiLab-Bonn/aidatlu/refs/heads/main/aidatlu/constellation/README.md",
       "website": "https://github.com/SiLab-Bonn/aidatlu"
     }
   ]
