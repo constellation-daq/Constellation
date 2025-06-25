@@ -228,8 +228,7 @@ class DataSender(Satellite):
         if self._bor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._bor_timeout / 1000
+            timeout = self._bor_timeout
         # satisfy mypy and verify out setup:
         if not self._bor_sent:
             raise RuntimeError("Data pusher events not set up correctly")
@@ -252,8 +251,7 @@ class DataSender(Satellite):
         if self._eor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._eor_timeout / 1000
+            timeout = self._eor_timeout
         assert isinstance(self._eor_sent, threading.Event)
         self._eor_sent.wait(timeout)
         if not self._eor_sent.is_set():
