@@ -9,6 +9,11 @@
       "name": "CMS Pixel / pxar",
       "readme": "https://raw.githubusercontent.com/simonspa/pxar/refs/heads/cnstln-testbeam-extend/constellation/README.md",
       "website": "https://github.com/simonspa/pxar/tree/cnstln-testbeam-extend"
+    },
+    {
+      "name": "AIDA-2020 TLU / aidatlu",
+      "readme": "https://github.com/SiLab-Bonn/aidatlu/blob/main/aidatlu/constellation/README.md",
+      "website": "https://github.com/SiLab-Bonn/aidatlu"
     }
   ]
 }
