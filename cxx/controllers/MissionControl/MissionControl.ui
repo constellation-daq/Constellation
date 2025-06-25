@@ -430,7 +430,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/stop</normaloff>:/stop</iconset>
+              <normaloff>:/command/stop</normaloff>:/command/stop</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -456,7 +456,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/start</normaloff>:/start</iconset>
+              <normaloff>:/command/start</normaloff>:/command/start</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -488,7 +488,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/land</normaloff>:/land</iconset>
+              <normaloff>:/command/land</normaloff>:/command/land</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -520,7 +520,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/launch</normaloff>:/launch</iconset>
+              <normaloff>:/command/launch</normaloff>:/command/launch</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -543,7 +543,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/init</normaloff>:/init</iconset>
+              <normaloff>:/command/init</normaloff>:/command/init</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -578,7 +578,7 @@
             </property>
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
-              <normaloff>:/shutdown</normaloff>:/shutdown</iconset>
+              <normaloff>:/command/shutdown</normaloff>:/command/shutdown</iconset>
             </property>
             <property name="iconSize">
              <size>
