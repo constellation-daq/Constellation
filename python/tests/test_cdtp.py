@@ -259,7 +259,7 @@ def test_sending_package(
         msg = rx.recv()
         if BOR:
             assert msg.msgtype == CDTPMessageIdentifier.BOR
-            assert msg.payload == "set in do_starting()"
+            assert msg.payload["_role"] == "DYNAMIC"
             BOR = False
         else:
             assert msg.msgtype == CDTPMessageIdentifier.DAT
