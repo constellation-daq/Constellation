@@ -144,23 +144,23 @@ class DataSender(Satellite):
 
     @property
     def EOR(self) -> Any:
-        """Get optional payload for the end-of-run event (EOR)."""
-        return self._end_of_run["payload"]
+        """Get optional metadata for the end-of-run event (EOR)."""
+        return self._end_of_run["meta"]
 
     @EOR.setter
-    def EOR(self, payload: Any) -> None:
-        """Set optional payload for the end-of-run event (EOR)."""
-        self._end_of_run["payload"] = payload
+    def EOR(self, meta: Any) -> None:
+        """Set optional metadata for the end-of-run event (EOR)."""
+        self._end_of_run["meta"] = meta
 
     @property
     def BOR(self) -> Any:
-        """Get optional payload for the beginning-of-run event (BOR)."""
-        return self._beg_of_run["payload"]
+        """Get optional metadata for the beginning-of-run event (BOR)."""
+        return self._beg_of_run["meta"]
 
     @BOR.setter
-    def BOR(self, payload: Any) -> None:
-        """Set optional payload for the beginning-of-run event (BOR)."""
-        self._beg_of_run["payload"] = payload
+    def BOR(self, meta: Any) -> None:
+        """Set optional metadata for the beginning-of-run event (BOR)."""
+        self._beg_of_run["meta"] = meta
 
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all DataSender-type classes."""
@@ -221,10 +221,8 @@ class DataSender(Satellite):
         Configure and send the Beginning Of Run (BOR) message.
 
         """
-        # Beginning of run message. If nothing was provided by the user (yet),
-        # use the configuration dictionary as a payload
-        if not self.BOR:
-            self.BOR = self.config._config
+        # Store satellite configuration in payload:
+        self._beg_of_run["payload"] = self.config._config
         self.log_cdtp_s.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         if self._bor_timeout < 0:
