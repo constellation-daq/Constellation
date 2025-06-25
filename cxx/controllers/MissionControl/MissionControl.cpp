@@ -100,9 +100,9 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
 
     // Set default column width of main connection view
     viewConn->header()->setSectionResizeMode(0, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(0, 100);
+    viewConn->header()->resizeSection(0, 150);
     viewConn->header()->setSectionResizeMode(1, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(1, 100);
+    viewConn->header()->resizeSection(1, 150);
     viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
     viewConn->header()->resizeSection(2, 120);
     viewConn->header()->setSectionResizeMode(3, QHeaderView::Stretch);
