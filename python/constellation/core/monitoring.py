@@ -145,7 +145,7 @@ class MonitoringSender(BaseSatelliteFrame):
                         if metric.value is not None:
                             self.send_metric(metric)
                         else:
-                            self.log_cmdp_s.debug(f"Not sending metric {metric_name}: currently None")
+                            self.log_cmdp_s.trace(f"Not sending metric {metric_name}: currently None")
                     except Exception as e:
                         self.log_cmdp_s.error(f"Could not retrieve metric {metric_name}: {repr(e)}")
                     last_update[metric_name] = datetime.now()
