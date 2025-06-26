@@ -324,43 +324,13 @@
            </widget>
           </item>
           <item row="1" column="3">
-           <widget class="QComboBox" name="comboBoxLogLevel">
+           <widget class="constellation::gui::QLogLevelComboBox" name="comboBoxLogLevel">
             <property name="currentIndex">
-             <number>2</number>
+             <number>-1</number>
             </property>
             <property name="maxVisibleItems">
              <number>6</number>
             </property>
-            <item>
-             <property name="text">
-              <string>TRACE</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>DEBUG</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>INFO</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>WARNING</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>STATUS</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>CRITICAL</string>
-             </property>
-            </item>
            </widget>
           </item>
           <item row="0" column="2">
@@ -624,19 +594,16 @@
              <string>Satellites connected to the Run Control</string>
             </property>
             <property name="horizontalScrollBarPolicy">
-             <enum>Qt::ScrollBarAlwaysOff</enum>
+             <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
             </property>
             <property name="sizeAdjustPolicy">
-             <enum>QAbstractScrollArea::AdjustToContents</enum>
-            </property>
-            <property name="selectionBehavior">
-             <enum>QAbstractItemView::SelectRows</enum>
+             <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
             </property>
             <property name="selectionMode">
              <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
             </property>
-            <property name="allColumnsShowFocus">
-             <bool>true</bool>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
             </property>
             <property name="rootIsDecorated">
              <bool>false</bool>
@@ -645,6 +612,9 @@
              <bool>true</bool>
             </property>
             <property name="sortingEnabled">
+             <bool>true</bool>
+            </property>
+            <property name="allColumnsShowFocus">
              <bool>true</bool>
             </property>
             <attribute name="headerCascadingSectionResizes">
@@ -675,11 +645,18 @@
      <x>0</x>
      <y>0</y>
      <width>1280</width>
-     <height>23</height>
+     <height>24</height>
     </rect>
    </property>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>constellation::gui::QLogLevelComboBox</class>
+   <extends>QComboBox</extends>
+   <header>constellation/gui/QLogLevelComboBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>txtConfigFileName</tabstop>
   <tabstop>txtLogmsg</tabstop>

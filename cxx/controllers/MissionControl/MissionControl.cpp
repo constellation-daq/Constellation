@@ -125,6 +125,11 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         showMaximized();
     }
 
+    // Restore log level:
+    const auto qslevel = gui_settings_.value("log_level").toString();
+    const auto slevel = enum_cast<Level>(qslevel.toStdString());
+    comboBoxLogLevel->setCurrentLevel(slevel.value_or(Level::INFO));
+
     // Restore last run identifier from configuration:
     update_run_identifier(gui_settings_.value("run/identifier", "run").toString(),
                           gui_settings_.value("run/sequence", 0).toInt());
@@ -305,10 +310,12 @@ void MissionControl::on_btnStop_clicked() {
 
 void MissionControl::on_btnLog_clicked() {
     const auto msg = txtLogmsg->text().toStdString();
-    if(!msg.empty()) {
-        const auto level = static_cast<Level>(comboBoxLogLevel->currentIndex());
-        LOG(user_logger_, level) << msg;
+    if(msg.empty()) {
+        return;
     }
+
+    const auto level = enum_cast<Level>(comboBoxLogLevel->currentText().toStdString());
+    LOG(user_logger_, level.value_or(Level::INFO)) << msg;
     txtLogmsg->clear();
 }
 
@@ -396,6 +403,7 @@ void MissionControl::closeEvent(QCloseEvent* event) {
         gui_settings_.setValue("window/pos", pos());
         gui_settings_.setValue("window/size", size());
     }
+    gui_settings_.setValue("log_level", comboBoxLogLevel->currentText());
 
     gui_settings_.setValue("run/configfile", txtConfigFileName->text());
 
