@@ -308,7 +308,7 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
-        self.log_satellite.status(f"Starting run '{run_identifier}'")
+        self.log_satellite.info(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
         # allow inheriting classes to execute code just before do_run is called:
         self._pre_run_hook(run_identifier)
