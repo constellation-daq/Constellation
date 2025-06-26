@@ -86,7 +86,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         host: UUID,
         address: str,
         name: str = "",
-        context: Optional[zmq.Context] = None,
+        context: Optional[zmq.Context] = None,  # type: ignore[type-arg]
         init_state: Optional[dict[str, Any]] = None,
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
