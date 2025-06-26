@@ -69,10 +69,7 @@ def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
     # assert to help mypy determine type
     assert isinstance(record, dict)
     # receive payload
-    message = msg[2].decode()
-    # message == msg % args
-    if "msg" not in record and "args" not in record:
-        record["msg"] = message
+    record["msg"] = msg[2].decode()
     record["created"] = time.to_datetime().timestamp()
     record["name"] = sender
     record["levelname"] = topic.split("/")[1]
@@ -135,14 +132,13 @@ class CMDPTransmitter:
         # end.
         meta = {
             "name": record.name,
-            "msg": record.msg,
-            # "args": record.args,
+            # msgpck cannot serialize args, so need for format message now
+            "msg": record.getMessage(),
             "levelname": record.levelname,
             "levelno": record.levelno,
             "pathname": record.pathname,
             "filename": record.filename,
             "module": record.module,
-            "exc_info": record.exc_info,
             "exc_text": record.exc_text,
             "stack_info": record.stack_info,
             "lineno": record.lineno,
