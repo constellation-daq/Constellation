@@ -77,7 +77,7 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
 
     // Register types used in signals & slots:
     qRegisterMetaType<QModelIndex>("QModelIndex");
-    qRegisterMetaType<constellation::protocol::CSCP::State>("constellation::protocol::CSCP::State");
+    qRegisterMetaType<CSCP::State>("protocol::CSCP::State");
     qRegisterMetaType<std::size_t>("std::size_t");
 
     // Set up the user interface
