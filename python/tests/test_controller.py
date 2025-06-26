@@ -41,6 +41,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
         timeout -= 0.05
     assert timeout > 0, "Timed out while waiting for Satellite to be found."
     assert mock_controller.states["Satellite.mock_satellite"] == SatelliteState.NEW
+    assert mock_controller.state_changes["Satellite.mock_satellite"] == mock_satellite.fsm.last_changed
 
 
 @pytest.mark.forked
