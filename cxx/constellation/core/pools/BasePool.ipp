@@ -155,7 +155,7 @@ namespace constellation::pools {
                 socket.disconnect(service.to_uri());
                 socket.close();
             } catch(const zmq::error_t& error) {
-                pool_logger_.log(WARNING) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
+                pool_logger_.log(DEBUG) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
             }
         }
         sockets_.clear();
@@ -188,8 +188,8 @@ namespace constellation::pools {
                 socket_it->second.disconnect(service.to_uri());
                 socket_it->second.close();
             } catch(const zmq::error_t& error) {
-                pool_logger_.log(WARNING) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": "
-                                          << error.what();
+                pool_logger_.log(DEBUG) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": "
+                                        << error.what();
             }
 
             sockets_.erase(socket_it);
