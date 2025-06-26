@@ -40,12 +40,6 @@
 
 #include "ui_MissionControl.h"
 
-class ConnectionItemDelegate : public QStyledItemDelegate {
-protected:
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
-};
-
 class FileSystemModel : public QFileSystemModel {
 public:
     FileSystemModel(QObject* parent = nullptr);
@@ -197,7 +191,6 @@ private:
 
     /** The controller instance of the UI */
     constellation::gui::QController runcontrol_;
-    ConnectionItemDelegate item_delegate_;
 
     /** Sorting proxy for the connection list */
     constellation::gui::QControllerSortProxy sorting_proxy_;

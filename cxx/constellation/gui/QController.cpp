@@ -20,6 +20,7 @@
 #include <zmq.hpp>
 
 #include <QAbstractListModel>
+#include <QFont>
 #include <QMetaType>
 #include <QSortFilterProxyModel>
 #include <Qt>
@@ -53,7 +54,7 @@ int QController::columnCount(const QModelIndex& /*unused*/) const {
 
 QVariant QController::data(const QModelIndex& index, int role) const {
 
-    if(role != Qt::DisplayRole || !index.isValid()) {
+    if(!index.isValid()) {
         return {};
     }
 
@@ -66,13 +67,43 @@ QVariant QController::data(const QModelIndex& index, int role) const {
     auto it = connections_.begin();
     std::advance(it, index.row());
 
-    return get_data(it, index.column());
+    return get_data(it, index.column(), role);
 }
 
-QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection, std::size_t idx) {
+QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::const_iterator connection,
+                               std::size_t idx,
+                               int role) {
 
     const auto& name = connection->first;
     const auto& conn = connection->second;
+
+    if(role == Qt::DecorationRole && (idx == 3 || idx == 9)) {
+        return get_response_icon(conn.last_cmd_type);
+    }
+
+    if(role == Qt::ForegroundRole) {
+        if(idx == 2) {
+            return get_state_color(conn.state);
+        }
+    }
+
+    if(role == Qt::BackgroundRole) {
+        if((idx == 4 || idx == 5) && conn.lives < 3) {
+            const auto alpha = (3 - conn.lives) * 85;
+            return QColor(255, 0, 0, alpha);
+        }
+    }
+
+    if(role == Qt::FontRole && idx == 2) {
+        QFont font;
+        font.setBold(true);
+        return font;
+    }
+
+    // Below only handle display role
+    if(role != Qt::DisplayRole) {
+        return {};
+    }
 
     switch(idx) {
     case 0: {
@@ -87,25 +118,21 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
     }
     case 2: {
         // State
-        return get_styled_state(conn.state, true);
+        return get_state_string(conn.state, true);
     }
     case 3: {
-        // Last command response type
-        return get_styled_response(conn.last_cmd_type);
-    }
-    case 4: {
         // Last command response message
         return QString::fromStdString(conn.last_message);
     }
-    case 5: {
+    case 4: {
         // Heartbeat period
         return QString::fromStdString(to_string(conn.interval));
     }
-    case 6: {
+    case 5: {
         // Remaining lives:
         return conn.lives;
     }
-    case 7: {
+    case 6: {
         // Connection (URI)
         try {
             const std::string last_endpoint = conn.req.get(zmq::sockopt::last_endpoint);
@@ -114,13 +141,17 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
             return QString::fromStdString(e.what());
         }
     }
-    case 8: {
+    case 7: {
         // MD5 host ID
         return QString::fromStdString(conn.host_id.to_string());
     }
-    case 9: {
+    case 8: {
         // Role
         return QString::fromStdString(enum_name(conn.role));
+    }
+    case 9: {
+        // Last command response type
+        return QString::fromStdString(utils::enum_name(conn.last_cmd_type));
     }
     case 10: {
         // Last heartbeat

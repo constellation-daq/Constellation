@@ -62,46 +62,6 @@ using namespace constellation::log;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
-void ConnectionItemDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    auto options = option;
-    initStyleOption(&options, index);
-
-    painter->save();
-
-    // Get sibling for column 6 (where the lives are stored) for current row:
-    const auto lives = index.sibling(index.row(), 6).data().toInt();
-    if(lives < 3 && index.column() >= 5) {
-        const auto alpha = (3 - lives) * 85;
-        QLinearGradient gradient(
-            options.rect.left(), options.rect.center().y(), options.rect.right(), options.rect.center().y());
-        gradient.setColorAt(0, QColor(255, 0, 0, (index.column() == 5 ? 0 : alpha)));
-        gradient.setColorAt(1, QColor(255, 0, 0, alpha));
-        painter->fillRect(options.rect, QBrush(gradient));
-    }
-
-    QTextDocument doc;
-    doc.setHtml(options.text);
-
-    options.text = "";
-    options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);
-
-    painter->translate(options.rect.left(), options.rect.top());
-    const QRect clip(0, 0, options.rect.width(), options.rect.height());
-    doc.drawContents(painter, clip);
-
-    painter->restore();
-}
-
-QSize ConnectionItemDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const {
-    QStyleOptionViewItem options = option;
-    initStyleOption(&options, index);
-
-    QTextDocument doc;
-    doc.setHtml(options.text);
-    doc.setTextWidth(options.rect.width());
-    return {static_cast<int>(doc.idealWidth()), static_cast<int>(doc.size().height())};
-}
-
 FileSystemModel::FileSystemModel(QObject* parent) : QFileSystemModel(parent) {}
 
 QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
@@ -132,7 +92,6 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
 
     sorting_proxy_.setSourceModel(&runcontrol_);
     viewConn->setModel(&sorting_proxy_);
-    viewConn->setItemDelegate(&item_delegate_);
     viewConn->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(viewConn, &QTreeView::customContextMenuRequested, this, &MissionControl::custom_context_menu);
 
@@ -141,18 +100,16 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
 
     // Set default column width of main connection view
     viewConn->header()->setSectionResizeMode(0, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(0, 100);
+    viewConn->header()->resizeSection(0, 150);
     viewConn->header()->setSectionResizeMode(1, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(1, 100);
+    viewConn->header()->resizeSection(1, 150);
     viewConn->header()->setSectionResizeMode(2, QHeaderView::Fixed);
     viewConn->header()->resizeSection(2, 120);
-    viewConn->header()->setSectionResizeMode(3, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(3, 140);
-    viewConn->header()->setSectionResizeMode(4, QHeaderView::Stretch);
-    viewConn->header()->setSectionResizeMode(5, QHeaderView::Interactive);
-    viewConn->header()->resizeSection(5, 80);
-    viewConn->header()->setSectionResizeMode(6, QHeaderView::Fixed);
-    viewConn->header()->resizeSection(6, 40);
+    viewConn->header()->setSectionResizeMode(3, QHeaderView::Stretch);
+    viewConn->header()->setSectionResizeMode(4, QHeaderView::Interactive);
+    viewConn->header()->resizeSection(4, 80);
+    viewConn->header()->setSectionResizeMode(5, QHeaderView::Fixed);
+    viewConn->header()->resizeSection(5, 40);
 
     const auto cfg_file = gui_settings_.value("run/configfile", "").toString();
     if(QFile::exists(cfg_file)) {
@@ -455,7 +412,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
     auto contextMenu = QMenu(viewConn);
 
-    auto* initialiseAction = new QAction(QIcon(":/init"), "Initialize", this);
+    auto* initialiseAction = new QAction(QIcon(":/command/init"), "Initialize", this);
     connect(initialiseAction, &QAction::triggered, this, [this, index]() {
         auto config = parse_config_file(txtConfigFileName->text(), index);
         if(!config.has_value()) {
@@ -465,25 +422,25 @@ void MissionControl::custom_context_menu(const QPoint& point) {
     });
     contextMenu.addAction(initialiseAction);
 
-    auto* launchAction = new QAction(QIcon(":/launch"), "Launch", this);
+    auto* launchAction = new QAction(QIcon(":/command/launch"), "Launch", this);
     connect(launchAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "launch"); });
     contextMenu.addAction(launchAction);
 
-    auto* landAction = new QAction(QIcon(":/land"), "Land", this);
+    auto* landAction = new QAction(QIcon(":/command/land"), "Land", this);
     connect(landAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "land"); });
     contextMenu.addAction(landAction);
 
-    auto* startAction = new QAction(QIcon(":/start"), "Start", this);
+    auto* startAction = new QAction(QIcon(":/command/start"), "Start", this);
     connect(startAction, &QAction::triggered, this, [this, index]() {
         runcontrol_.sendQCommand(index, "start", current_run_.toStdString());
     });
     contextMenu.addAction(startAction);
 
-    auto* stopAction = new QAction(QIcon(":/stop"), "Stop", this);
+    auto* stopAction = new QAction(QIcon(":/command/stop"), "Stop", this);
     connect(stopAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "stop"); });
     contextMenu.addAction(stopAction);
 
-    auto* terminateAction = new QAction(QIcon(":/shutdown"), "Shutdown", this);
+    auto* terminateAction = new QAction(QIcon(":/command/shutdown"), "Shutdown", this);
     connect(terminateAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "shutdown"); });
     contextMenu.addAction(terminateAction);
 
