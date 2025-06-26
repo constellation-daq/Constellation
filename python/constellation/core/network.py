@@ -7,6 +7,7 @@ This module provides network helper routines.
 
 import argparse
 import socket
+from typing import Optional
 
 import psutil
 
@@ -27,8 +28,9 @@ def get_loopback_interface_name() -> str:
     return "lo"
 
 
-def get_interface_addresses(interface_names: list[str]) -> set[str]:
+def get_interface_addresses(interface_names: Optional[list[str]]) -> set[str]:
     """Get all multicast interface addresses for a given list of interface names."""
+    interface_names = interface_names if interface_names is not None else get_interface_names()
     interface_addresses = []
     for if_idx, if_name in socket.if_nameindex():
         if_addr = get_addr(if_name)

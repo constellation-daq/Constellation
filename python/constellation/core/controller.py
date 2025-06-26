@@ -22,7 +22,6 @@ from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
 from .message.cscp1 import SatelliteState
-from .network import get_interface_names
 from .satellite import Satellite
 
 
@@ -738,7 +737,7 @@ class ScriptableController(BaseController):
         group: str,
         log_level: str = "INFO",
         name: str = "ScriptableController",
-        interface: list[str] = get_interface_names(),
+        interface: Optional[list[str]] = None,
     ) -> None:
         # Initialize logging first
         setup_cli_logging(log_level)
