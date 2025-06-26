@@ -182,6 +182,7 @@ def convert_satellite_readme(
     """
     # Convert front matter
     markdown = convert_front_matter(markdown, extra_front_matter)
+
     # Append parent classes
     if parent_classes:
         markdown += append_parent_classes(language, parent_classes)
@@ -251,6 +252,6 @@ def convert_satellite_readme_ext(name: str, readme_url: str, website: str, out_p
         # Return category
         return category
 
-    except:  # noqa: E722
-        logger.warning(f"Failed to convert external satellite README for {name}")
+    except Exception as e:
+        logger.warning(f"Failed to convert external satellite README for {name}: {str(e)}")
     return None
