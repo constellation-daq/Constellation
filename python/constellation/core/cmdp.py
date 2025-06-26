@@ -139,7 +139,6 @@ class CMDPTransmitter:
             "pathname": record.pathname,
             "filename": record.filename,
             "module": record.module,
-            "exc_info": record.exc_info,
             "exc_text": record.exc_text,
             "stack_info": record.stack_info,
             "lineno": record.lineno,
