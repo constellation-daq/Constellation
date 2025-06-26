@@ -186,7 +186,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 for socket in sockets_ready.keys():
                     binmsg = socket.recv_multipart()
                     name, timestamp, state, flags, interval, status = CHPDecodeMessage(binmsg)
-                    self.log_chp.debug(f"Received heartbeat from {name}, state {state}, next in {interval}")
+                    self.log_chp.trace(f"Received heartbeat from {name}, state {state}, next in {interval}")
                     hb = self._states[socket]
                     # update values
                     hb.name = name
