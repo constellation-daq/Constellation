@@ -133,7 +133,7 @@ class CMDPTransmitter:
         meta = {
             "name": record.name,
             # msgpck cannot serialize args, so need for format message now
-            "msg": record.msg % record.args,
+            "msg": record.getMessage(),
             "levelname": record.levelname,
             "levelno": record.levelno,
             "pathname": record.pathname,
