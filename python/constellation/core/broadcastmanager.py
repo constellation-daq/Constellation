@@ -20,6 +20,7 @@ from .chirp import (
     CHIRPMessageType,
     CHIRPServiceIdentifier,
 )
+from .network import get_interface_addresses
 
 T = TypeVar("T")
 B = TypeVar("B", bound=BaseSatelliteFrame)
@@ -125,9 +126,14 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         super().__init__(name=name, interface=interface, mon_port=mon_port, **kwds)
         self.group = group
         self._stop_broadcasting = threading.Event()
-        self._beacon = CHIRPBeaconTransmitter(self.name, group, interface)
 
         self.log_chirp = self.get_logger("CHIRP")
+
+        # Gather interface addresses
+        interface_addresses = get_interface_addresses(interface)
+        self.log_chirp.info("Using interfaces addresses %s", interface_addresses)
+
+        self._beacon = CHIRPBeaconTransmitter(self.name, group, interface_addresses)
 
         # Offered and discovered services
         self._registered_services: dict[int, CHIRPServiceIdentifier] = {}
