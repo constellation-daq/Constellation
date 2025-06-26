@@ -250,8 +250,8 @@ namespace constellation::satellite {
         zmq::socket_t cscp_rep_socket_;
         networking::Port cscp_port_;
 
-        std::string_view satellite_type_;
-        std::string_view satellite_name_;
+        std::string satellite_type_;
+        std::string satellite_name_;
         FSM fsm_;
 
         log::Logger cscp_logger_;

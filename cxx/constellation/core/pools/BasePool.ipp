@@ -27,7 +27,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/log/log.hpp"
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
@@ -106,10 +106,12 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::connect(const chirp::DiscoveredService& service) {
+        using enum constellation::log::Level;
+
         std::unique_lock sockets_lock {sockets_mutex_};
 
         // Connect
-        LOG(pool_logger_, TRACE) << "Connecting to " << service.to_uri() << "...";
+        pool_logger_.log(TRACE) << "Connecting to " << service.to_uri() << "...";
         try {
 
             zmq::socket_t socket {*networking::global_zmq_context(), SOCKET_TYPE};
@@ -120,7 +122,7 @@ namespace constellation::pools {
             sockets_.emplace(service, std::move(socket));
             socket_count_.store(sockets_.size());
             poller_events_.resize(sockets_.size());
-            LOG(pool_logger_, DEBUG) << "Connected to " << service.to_uri();
+            pool_logger_.log(DEBUG) << "Connected to " << service.to_uri();
 
             // Call connected callback
             sockets_lock.unlock();
@@ -135,6 +137,8 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::disconnect_all() {
+        using enum constellation::log::Level;
+
         std::vector<chirp::DiscoveredService> services_disconnected_ {};
         std::unique_lock sockets_lock {sockets_mutex_};
 
@@ -151,7 +155,7 @@ namespace constellation::pools {
                 socket.disconnect(service.to_uri());
                 socket.close();
             } catch(const zmq::error_t& error) {
-                LOG(pool_logger_, WARNING) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
+                pool_logger_.log(WARNING) << "Error disconnecting socket for " << service.to_uri() << ": " << error.what();
             }
         }
         sockets_.clear();
@@ -167,12 +171,15 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::disconnect(const chirp::DiscoveredService& service) {
+        using enum constellation::log::Level;
+
         std::unique_lock sockets_lock {sockets_mutex_};
 
         // Disconnect the socket
         const auto socket_it = sockets_.find(service);
         if(socket_it != sockets_.end()) {
-            LOG(pool_logger_, TRACE) << "Disconnecting from " << service.to_uri() << "...";
+            pool_logger_.log(TRACE) << "Disconnecting from " << service.to_uri() << "...";
+
             try {
                 // Remove from poller
                 poller_.remove(zmq::socket_ref(socket_it->second));
@@ -181,14 +188,14 @@ namespace constellation::pools {
                 socket_it->second.disconnect(service.to_uri());
                 socket_it->second.close();
             } catch(const zmq::error_t& error) {
-                LOG(pool_logger_, WARNING)
-                    << "Error disconnecting socket for " << socket_it->first.to_uri() << ": " << error.what();
+                pool_logger_.log(WARNING) << "Error disconnecting socket for " << socket_it->first.to_uri() << ": "
+                                          << error.what();
             }
 
             sockets_.erase(socket_it);
             socket_count_.store(sockets_.size());
             poller_events_.resize(sockets_.size());
-            LOG(pool_logger_, DEBUG) << "Disconnected from " << service.to_uri();
+            pool_logger_.log(DEBUG) << "Disconnected from " << service.to_uri();
 
             // Call disconnected callback
             sockets_lock.unlock();
@@ -198,12 +205,15 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::dispose(const chirp::DiscoveredService& service) {
+        using enum constellation::log::Level;
+
         std::unique_lock sockets_lock {sockets_mutex_};
 
         // Disconnect the socket
         const auto socket_it = sockets_.find(service);
         if(socket_it != sockets_.end()) {
-            LOG(pool_logger_, TRACE) << "Removing " << service.to_uri() << "...";
+            pool_logger_.log(TRACE) << "Removing " << service.to_uri() << "...";
+
             try {
                 // Remove from poller
                 poller_.remove(zmq::socket_ref(socket_it->second));
@@ -212,13 +222,13 @@ namespace constellation::pools {
                 socket_it->second.disconnect(service.to_uri());
                 socket_it->second.close();
             } catch(const zmq::error_t& error) {
-                LOG(pool_logger_, DEBUG) << "Socket could not be disconnected properly for " << socket_it->first.to_uri()
-                                         << ": " << error.what();
+                pool_logger_.log(DEBUG) << "Socket could not be disconnected properly for " << socket_it->first.to_uri()
+                                        << ": " << error.what();
             }
 
             sockets_.erase(socket_it);
             socket_count_.store(sockets_.size());
-            LOG(pool_logger_, DEBUG) << "Removed " << service.to_uri();
+            pool_logger_.log(DEBUG) << "Removed " << service.to_uri();
 
             // Call removed callback
             sockets_lock.unlock();
@@ -229,7 +239,9 @@ namespace constellation::pools {
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::callback_impl(const chirp::DiscoveredService& service,
                                                                 chirp::ServiceStatus status) {
-        LOG(pool_logger_, TRACE) << "Callback for " << service.to_uri() << ", status " << status;
+        using enum constellation::log::Level;
+
+        pool_logger_.log(TRACE) << "Callback for " << service.to_uri() << ", status " << status;
 
         if(status == chirp::ServiceStatus::DEPARTED) {
             disconnect(service);
@@ -251,6 +263,8 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE, zmq::socket_type SOCKET_TYPE>
     void BasePool<MESSAGE, SERVICE, SOCKET_TYPE>::loop(const std::stop_token& stop_token) {
+        using enum constellation::log::Level;
+
         try {
             std::vector<zmq::multipart_t> polled_messages {};
 
@@ -297,18 +311,19 @@ namespace constellation::pools {
                     try {
                         message_callback_(MESSAGE::disassemble(zmq_msg));
                     } catch(const message::MessageDecodingError& error) {
-                        LOG(pool_logger_, WARNING) << error.what();
+                        pool_logger_.log(WARNING) << error.what();
+
                     } catch(const message::IncorrectMessageType& error) {
-                        LOG(pool_logger_, WARNING) << error.what();
+                        pool_logger_.log(WARNING) << error.what();
                     }
                 });
                 polled_messages.clear();
             }
         } catch(const std::exception& error) {
-            LOG(pool_logger_, CRITICAL) << "Caught exception in pool thread: " << error.what();
+            pool_logger_.log(CRITICAL) << "Caught exception in pool thread: " << error.what();
             exception_ptr_ = std::current_exception();
         } catch(...) {
-            LOG(pool_logger_, CRITICAL) << "Caught exception in pool thread";
+            pool_logger_.log(CRITICAL) << "Caught exception in pool thread";
             exception_ptr_ = std::current_exception();
         }
     }
