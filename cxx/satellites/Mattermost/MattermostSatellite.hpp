@@ -27,8 +27,8 @@ public:
     void initializing(constellation::config::Configuration& config) final;
     void starting(std::string_view run_identifier) final;
     void stopping() final;
-    void interrupting(constellation::protocol::CSCP::State previous_state) final;
-    void failure(constellation::protocol::CSCP::State previous_state) final;
+    void interrupting(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
+    void failure(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
 
 private:
     enum class Priority : std::uint8_t {

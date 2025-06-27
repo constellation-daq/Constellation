@@ -164,10 +164,10 @@ public:
     void stopping() final;
 
     /** Transition function for interrupt transition to SAFE mode */
-    void interrupting(constellation::protocol::CSCP::State previous_state) final;
+    void interrupting(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
 
     /** Transition function for failure transition to ERROR mode */
-    void failure(constellation::protocol::CSCP::State previous_state) final;
+    void failure(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
 
 protected:
     /** Callback for receiving a BOR message */

@@ -76,11 +76,13 @@ void MattermostSatellite::stopping() {
     send_message("@channel Run `" + std::string(getRunIdentifier()) + "` stopped");
 }
 
-void MattermostSatellite::interrupting(State previous_state) {
-    send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), IMPORTANT);
+void MattermostSatellite::interrupting(State previous_state, std::string_view reason) {
+    send_message("@channel Interrupted: " + std::string(reason) +
+                     "\nPrevious state: " + std::string(enum_name(previous_state)),
+                 IMPORTANT);
 }
 
-void MattermostSatellite::failure(State /*previous_state*/) {
+void MattermostSatellite::failure(State /*previous_state*/, std::string_view reason) {
     stopPool();
 }
 

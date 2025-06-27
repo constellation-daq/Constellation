@@ -567,21 +567,23 @@ FSM::State FSM::stopped(TransitionPayload /* payload */) {
 
 FSM::State FSM::interrupt(TransitionPayload payload) {
     // Set status message with information from payload:
+    std::string reason;
     if(std::holds_alternative<std::string>(payload)) {
-        set_status(std::get<std::string>(std::move(payload)));
+        reason = std::get<std::string>(std::move(payload));
+        set_status(reason);
     }
 
-    auto call_wrapper = [this](State previous_state) {
+    auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
         }
 
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
-        const auto success = call_satellite_function(&BaseSatellite::interrupting_wrapper, previous_state);
+        const auto success = call_satellite_function(&BaseSatellite::interrupting_wrapper, previous_state, reason);
         react(success ? Transition::interrupted : Transition::failure);
     };
-    launch_assign_thread(transitional_thread_, call_wrapper, state_.load());
+    launch_assign_thread(transitional_thread_, call_wrapper, state_.load(), std::move(reason));
     return State::interrupting;
 }
 
@@ -590,16 +592,17 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::failure(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](State previous_state) {
+    std::string reason;
+    auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
         }
 
         LOG(logger_, INFO) << "Calling failure function of satellite...";
-        call_satellite_function(&BaseSatellite::failure_wrapper, previous_state);
+        call_satellite_function(&BaseSatellite::failure_wrapper, previous_state, reason);
     };
-    launch_assign_thread(failure_thread_, call_wrapper, state_.load());
+    launch_assign_thread(failure_thread_, call_wrapper, state_.load(), std::move(reason));
     return State::ERROR;
 }
 
