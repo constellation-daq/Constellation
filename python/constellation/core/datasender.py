@@ -252,6 +252,40 @@ class DataSender(Satellite):
 
         """
         res: str = super()._wrap_stop(payload)
+        self._send_eor()
+        assert isinstance(self._eor_sent, threading.Event)
+        if not self._eor_sent.is_set():
+            raise RuntimeError("Timeout reached when sending EOR. No DataReceiver available?")
+        return res
+
+    @handle_error
+    @debug_log
+    def _wrap_interrupt(self, payload: Any) -> str:
+        """Wrapper for the 'interrupting' transitional state of the FSM.
+
+        Sends the EOR event after base class wrapper and `do_interrupting` have
+        finished.
+
+        """
+        res: str = super()._wrap_interrupt(payload)
+        # send EOR but only if it hasn't yet (i.e. we were in RUN before)
+        assert isinstance(self._eor_sent, threading.Event)
+        if not self._eor_sent.is_set():
+            self._send_eor()
+            if not self._eor_sent.is_set():
+                self.log_cdtp_s.warning("Could not send EOR within timeout. No DataReceiver available?")
+        # stop the pusher thread
+        assert isinstance(self._stop_pusher, threading.Event)
+        self._stop_pusher.set()
+        try:
+            assert isinstance(self._push_thread, threading.Thread)
+            self._push_thread.join(timeout=10)
+        except TimeoutError:
+            self.log_cdtp_s.warning("Unable to close push thread. Process timed out.")
+        return res
+
+    def _send_eor(self) -> None:
+        """Send the EOR and optionally wait for it to be sent."""
         self.log_cdtp_s.debug("Sending EOR")
         self.data_queue.put((self._end_of_run, CDTPMessageIdentifier.EOR))
         if self._eor_timeout < 0:
@@ -260,9 +294,6 @@ class DataSender(Satellite):
             timeout = self._eor_timeout
         assert isinstance(self._eor_sent, threading.Event)
         self._eor_sent.wait(timeout)
-        if not self._eor_sent.is_set():
-            raise RuntimeError("Timeout reached when sending EOR. No DataReceiver available?")
-        return res
 
     def do_run(self, run_identifier: str) -> str:
         """Perform the data acquisition and enqueue the results.
