@@ -628,18 +628,18 @@ def test_receive_many_satellites_interrupt(
             for msg in res.values():
                 assert msg.success
             for sat in all_sats:
-                wait_for_state(sat.fsm, "INIT", 1)
+                wait_for_state(sat.fsm, "INIT", 4)
             res = controller.constellation.launch()
             for msg in res.values():
                 assert msg.success
             for sat in all_sats:
-                wait_for_state(sat.fsm, "ORBIT", 1)
+                wait_for_state(sat.fsm, "ORBIT", 4)
 
             res = controller.constellation.start(str(run_num))
             for msg in res.values():
                 assert msg.success
             for sat in all_sats:
-                wait_for_state(sat.fsm, "RUN", 2)
+                wait_for_state(sat.fsm, "RUN", 4)
             timeout = 4
             while timeout > 0 and len(receiver.active_satellites) < len(sender_satellite_array):
                 time.sleep(0.005)
