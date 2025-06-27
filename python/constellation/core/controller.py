@@ -639,7 +639,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             # initialization of the class fails
             pass
         if getattr(self, "_task_handler_event", None):
-            self._task_handler_thread.join()
+            self._task_handler_thread.join(timeout=1)
         super().reentry()
 
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:
