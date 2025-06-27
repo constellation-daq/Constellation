@@ -82,7 +82,7 @@ void MattermostSatellite::interrupting(State previous_state, std::string_view re
                  IMPORTANT);
 }
 
-void MattermostSatellite::failure(State /*previous_state*/, std::string_view reason) {
+void MattermostSatellite::failure(State /*previous_state*/, std::string_view /*reason*/) {
     stopPool();
 }
 
