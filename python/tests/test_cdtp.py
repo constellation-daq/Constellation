@@ -170,6 +170,7 @@ def sender_satellite():
         group="mockstellation",
         mon_port=MON_PORT,
         data_port=DATA_PORT,
+        cmd_port=CMD_PORT,
         hb_port=33333,
         interface=[get_loopback_interface_name()],
     )
