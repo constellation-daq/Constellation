@@ -615,7 +615,13 @@ def test_receive_many_satellites_interrupt(
     with TemporaryDirectory() as tmpdir:
         for run_num in range(2):
             # initialize
-            res = controller.constellation.initialize({"_file_name_pattern": FILE_NAME, "_output_path": tmpdir})
+            res = controller.constellation.initialize(
+                {
+                    "_file_name_pattern": FILE_NAME,
+                    "_output_path": tmpdir,
+                    "_eor_timeout": 60,  # ensure that the datareceiver waits for EOR
+                }
+            )
             for msg in res.values():
                 assert msg.success
             for sat in all_sats:
@@ -647,6 +653,8 @@ def test_receive_many_satellites_interrupt(
             sat._interrupt()
             for sat in all_sats:
                 wait_for_state(sat.fsm, "SAFE", 3)
+            # datareceiver waits for EOR for 60, so we should have received then
+            # now
 
             fn = FILE_NAME.format(run_identifier=run_num)
             assert os.path.exists(os.path.join(tmpdir, fn))
