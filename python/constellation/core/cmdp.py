@@ -196,6 +196,7 @@ class CMDPTransmitter:
             raise RuntimeError("Monitoring ZMQ socket misconfigured")
         with self._lock:
             self._socket.close()
+            self._socket = None
 
     def _dispatch(
         self,
@@ -205,11 +206,12 @@ class CMDPTransmitter:
         flags: int = 0,
     ) -> None:
         """Dispatch a message via ZMQ socket."""
-        if not self._socket:
-            raise RuntimeError("Monitoring ZMQ socket misconfigured")
-        topic = topic.upper()
-        flags = zmq.SNDMORE | flags
         with self._lock:
+            if not self._socket:
+                # closed already
+                return
+            topic = topic.upper()
+            flags = zmq.SNDMORE | flags
             self._socket.send_string(topic, flags)
             self.msgheader.send(self._socket, meta=meta, flags=flags)
             flags = flags & ~zmq.SNDMORE

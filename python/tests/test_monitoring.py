@@ -209,3 +209,5 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     assert os.path.exists(
         os.path.join(tmpdir, "stats", "MyStatProducer.mock_sender.get_answer.csv")
     ), "Expected output metrics csv not found"
+    # teardown
+    chirp.close()
