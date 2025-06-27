@@ -376,6 +376,11 @@ def mock_example_satellite(mock_chirp_socket):
             self.mode = self.config.setdefault("mode", "passionate")
             return "finished with mock initialization"
 
+        def do_reconfigure(self, payload):
+            self.voltage = self.config.setdefault("voltage", 100)
+            self.mode = self.config.setdefault("mode", "cautious")
+            return "finished with mock reconfiguration"
+
     with patch("constellation.core.base.zmq.Context") as mock:
         mock_context = Mock()
         mock_context.socket = mocket_factory
