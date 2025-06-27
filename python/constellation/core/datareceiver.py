@@ -220,6 +220,13 @@ class DataReceiver(Satellite):
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
 
+    def _wrap_interrupt(self, payload: Any) -> str:
+        """Wrapper for the 'interrupting' transitional state of the FSM."""
+        # no need to wait for EOR as they will not be sent.
+        self._eor_timeout = 0
+        res: str = super()._wrap_interrupt(payload)
+        return res
+
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService) -> None:
         """Callback method for connecting to data service."""
