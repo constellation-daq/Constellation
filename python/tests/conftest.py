@@ -445,6 +445,11 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
             self.mode = self.config.setdefault("mode", "passionate")
             return "finished with mock initialization"
 
+        def do_reconfigure(self, payload):
+            self.voltage = self.config.setdefault("voltage", 100)
+            self.mode = self.config.setdefault("mode", "cautious")
+            return "finished with mock reconfiguration"
+
     s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
