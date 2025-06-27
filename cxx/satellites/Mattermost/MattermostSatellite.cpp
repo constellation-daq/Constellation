@@ -60,11 +60,11 @@ void MattermostSatellite::initializing(Configuration& config) {
 }
 
 void MattermostSatellite::starting(std::string_view run_identifier) {
-    send_message("@channel Run " + std::string(run_identifier) + " started");
+    send_message("@channel Run `" + std::string(run_identifier) + "` started");
 }
 
 void MattermostSatellite::stopping() {
-    send_message("@channel Run " + std::string(getRunIdentifier()) + " stopped");
+    send_message("@channel Run `" + std::string(getRunIdentifier()) + "` stopped");
 }
 
 void MattermostSatellite::interrupting(CSCP::State previous_state) {
