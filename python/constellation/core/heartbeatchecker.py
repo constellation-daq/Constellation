@@ -32,7 +32,7 @@ class HeartbeatState:
         self.lives = lives
         self.interval = interval
         self.last_refresh = datetime.now(timezone.utc)
-        self.last_statechange = datetime(1955, 11, 5, 6, 28, 0)
+        self.last_statechange = datetime(2000, 1, 1)
         self.state = SatelliteState.DEAD
         self.failed: threading.Event = evt
 
