@@ -176,26 +176,6 @@ class DataReceiver(Satellite):
             self.active_satellites = []
         return f"Finished acquisition to {filename}"
 
-    def _write_data(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write data to file"""
-        raise NotImplementedError()
-
-    def _write_EOR(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write EOR to file"""
-        raise NotImplementedError()
-
-    def _write_BOR(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write BOR to file"""
-        raise NotImplementedError()
-
-    def _open_file(self, filename: pathlib.Path) -> Any:
-        """Return the filehandler"""
-        raise NotImplementedError()
-
-    def _close_file(self, outfile: Any) -> None:
-        """Close the filehandler"""
-        raise NotImplementedError()
-
     def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         for uuid in self._pull_interfaces.keys():
@@ -219,6 +199,26 @@ class DataReceiver(Satellite):
             address, port = host
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
+
+    def _write_data(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write data to file"""
+        raise NotImplementedError()
+
+    def _write_EOR(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write EOR to file"""
+        raise NotImplementedError()
+
+    def _write_BOR(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write BOR to file"""
+        raise NotImplementedError()
+
+    def _open_file(self, filename: pathlib.Path) -> Any:
+        """Return the filehandler"""
+        raise NotImplementedError()
+
+    def _close_file(self, outfile: Any) -> None:
+        """Close the filehandler"""
+        raise NotImplementedError()
 
     def _wrap_interrupt(self, payload: Any) -> str:
         """Wrapper for the 'interrupting' transitional state of the FSM."""
