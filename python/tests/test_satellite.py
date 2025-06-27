@@ -371,6 +371,48 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
 
 
 @pytest.mark.forked
+def test_satellite_fsm_transition_safe_walk(mock_cmd_transmitter, mock_satellite):
+    """Test that Satellite can 'walk' through SAFE state."""
+    transitions = [
+        ("initialize", "INIT"),
+        ("launch", "ORBIT"),
+        ("start", "RUN"),
+        ("_interrupt", "SAFE"),
+        ("initialize", "INIT"),
+        ("launch", "ORBIT"),
+        ("start", "RUN"),
+        ("stop", "ORBIT"),
+        ("land", "INIT"),
+    ]
+    sender = mock_cmd_transmitter
+    for cmd, state in transitions:
+        if cmd == "initialize":
+            payload = {"mock_cfg_key": "mock config string"}
+        elif cmd == "start":
+            payload = "5001"
+        else:
+            # send a dict, why not?
+            payload = {"mock key": "mock argument string"}
+        sender.send_request(cmd, payload)
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert isinstance(req, CSCP1Message)
+        assert "transitioning" in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
+        # wait for state transition
+
+        wait_for_state(mock_satellite.fsm, state, 4.0)
+        # check state
+        sender.send_request("get_state")
+        time.sleep(0.2)
+        req = sender.get_message()
+        assert isinstance(req, CSCP1Message)
+        assert state.lower() in str(req.verb_msg).lower()
+        assert req.verb_type == CSCP1Message.Type.SUCCESS
+        time.sleep(0.5)  # remain in state
+
+
+@pytest.mark.forked
 def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
     """Test that FSM timestamps transitions."""
     transitions = [
