@@ -32,7 +32,8 @@ class HeartbeatState:
         self.lives = lives
         self.interval = interval
         self.last_refresh = datetime.now(timezone.utc)
-        self.state = SatelliteState.NEW
+        self.last_statechange = datetime(2000, 1, 1)
+        self.state = SatelliteState.DEAD
         self.failed: threading.Event = evt
 
     def refresh(self, ts: datetime | None = None) -> None:
@@ -81,9 +82,18 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self.log_chp.debug("Heartbeat receiver thread prepared and added to the pool.")
 
     def register_heartbeat_host(
-        self, host: UUID, address: str, name: str = "", context: Optional[zmq.Context] = None  # type: ignore[type-arg]
+        self,
+        host: UUID,
+        address: str,
+        name: str = "",
+        context: Optional[zmq.Context] = None,  # type: ignore[type-arg]
+        init_state: Optional[dict[str, Any]] = None,
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
+
+        Allows to set an initial state via the `init_state` dictionary, where
+        the key "state" gives the SatelliteState and the key "last_changed" the
+        datetime timestamp of the last change.
 
         Returns threading.Event that will be set when a failure occurs.
 
@@ -109,6 +119,10 @@ class HeartbeatChecker(BaseSatelliteFrame):
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         evt = threading.Event()
         self._remote_heatbeat_states[socket] = HeartbeatState(host, name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
+        # set initial state
+        if init_state:
+            self._remote_heatbeat_states[socket].state = init_state["state"]
+            self._remote_heatbeat_states[socket].last_statechange = init_state["last_changed"]
 
         with self._heartbeatchecker_socket_lock:
             self._heartbeat_poller.register(socket, zmq.POLLIN)
@@ -160,6 +174,14 @@ class HeartbeatChecker(BaseSatelliteFrame):
         return res
 
     @property
+    def heartbeat_state_changes(self) -> dict[str, datetime]:
+        """Return a dictionary of the times of the last state changes."""
+        res = {}
+        for hb in self._remote_heatbeat_states.values():
+            res[hb.name] = hb.last_statechange
+        return res
+
+    @property
     def fail_events(self) -> dict[str, threading.Event]:
         """Return a dictionary of Events triggered for failed Satellites."""
         res = {}
@@ -190,7 +212,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
                     # update values
                     hb.name = name
                     hb.refresh(timestamp.to_datetime())
-                    hb.state = SatelliteState(state)
+                    if SatelliteState(state) != hb.state:
+                        hb.state = SatelliteState(state)
+                        hb.last_statechange = datetime.now()
                     self.log_chp.trace(f"Received heartbeat from {name}, state '{hb.state.name}', next in {interval}")
                     hb.interval = interval
                     hb.role = CHPRole.from_flags(flags)
