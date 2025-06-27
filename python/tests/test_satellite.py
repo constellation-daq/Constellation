@@ -5,10 +5,9 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
-from unittest.mock import MagicMock, patch
 
 import pytest
-from conftest import mocket, wait_for_state
+from conftest import wait_for_state
 
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
@@ -21,15 +20,12 @@ from constellation.core.satellite import Satellite
 
 
 @pytest.fixture
-def mock_device_satellite(mock_chirp_socket):
+def mock_device_satellite(mock_zmq_context, mock_chirp_socket):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        return m
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
 
     class MockDeviceSatellite(Satellite):
-
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.callback_triggered = False
@@ -53,41 +49,35 @@ def mock_device_satellite(mock_chirp_socket):
         def ready(self):
             self.KEEP_WAITING = False
 
-    with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
+    s = MockDeviceSatellite("mydevice1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield s, ctx
+    # teardown
+    s.reentry()
 
 
 @pytest.fixture
-def mock_fail_satellite(mock_chirp_transmitter):
+def mock_fail_satellite(mock_zmq_context, mock_chirp_transmitter):
     """Mock a Satellite that fails on run."""
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        return m
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
 
     class MockFailSatellite(Satellite):
 
         def do_run(self, run_identifier):
             raise RuntimeError("mock failure")
 
-    with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
+    s = MockFailSatellite("fail1", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield s, ctx
+    # teardown
+    s.reentry()
 
 
 # %%%%%%%%%%%%%%%
@@ -95,13 +85,12 @@ def mock_fail_satellite(mock_chirp_transmitter):
 # %%%%%%%%%%%%%%%
 
 
-@pytest.mark.forked
 def test_device_satellite_instantiation(mock_device_satellite):
     """Test that we can create the satellite."""
-    assert mock_device_satellite.name == "MockDeviceSatellite.mydevice1"
+    sat, _ctx = mock_device_satellite
+    assert sat.name == "MockDeviceSatellite.mydevice1"
 
 
-@pytest.mark.forked
 def test_satellite_unknown_cmd_recv(mock_socket_sender, mock_satellite):
     """Test unknown cmd reception."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -114,7 +103,6 @@ def test_satellite_unknown_cmd_recv(mock_socket_sender, mock_satellite):
     assert req.verb_type == CSCP1Message.Type.UNKNOWN
 
 
-@pytest.mark.forked
 def test_satellite_std_commands(mock_socket_sender, mock_satellite):
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
     # get_name
@@ -158,7 +146,6 @@ def test_satellite_std_commands(mock_socket_sender, mock_satellite):
     assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
-@pytest.mark.forked
 @pytest.mark.parametrize(
     "state",
     ["initialize", "land", "launch", "shutdown", "start", "stop"],
@@ -174,7 +161,6 @@ def test_satellite_state_cmds(state, mock_socket_sender, mock_satellite):
     assert state in req.payload.keys()
 
 
-@pytest.mark.forked
 def test_satellite_state_reconfigure_missing(mock_socket_sender, mock_satellite):
     """Test that `reconfigure` command is missing if not implemented."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -198,7 +184,6 @@ def test_satellite_state_reconfigure_impl(mock_socket_sender, mock_device_satell
     assert "reconfigure" in req.payload.keys()
 
 
-@pytest.mark.forked
 def test_satellite_wrong_type_payload(mock_socket_sender, mock_satellite):
     """Test unknown cmd reception."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -225,7 +210,6 @@ def test_satellite_wrong_type_payload(mock_socket_sender, mock_satellite):
     assert req.verb_type == CSCP1Message.Type.INCOMPLETE
 
 
-@pytest.mark.forked
 def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     """Test fsm state change cmd reception."""
     sender = mock_cmd_transmitter
@@ -252,10 +236,9 @@ def test_satellite_fsm_change_on_cmd(mock_cmd_transmitter, mock_satellite):
     assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
-@pytest.mark.forked
 def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_satellite):
     """Test slow transitional states."""
-    satellite = mock_device_satellite
+    satellite, _ctx = mock_device_satellite
     sender = mock_cmd_transmitter
     # send a request to init
     sender.send_request("initialize", {"mock key": "mock argument string"})
@@ -282,9 +265,9 @@ def test_satellite_fsm_change_transitional(mock_cmd_transmitter, mock_device_sat
     assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
-@pytest.mark.forked
 def test_satellite_fsm_cannot_change_transitional(mock_cmd_transmitter, mock_device_satellite):
     """Test transitions from slow transitional states."""
+    satellite, _ctx = mock_device_satellite
     sender = mock_cmd_transmitter
     # send a request to init
     sender.send_request("initialize", {"mock key": "mock argument string"})
@@ -318,12 +301,13 @@ def test_satellite_fsm_cannot_change_transitional(mock_cmd_transmitter, mock_dev
     req = sender.get_message()
     assert isinstance(req, CSCP1Message)
     assert req.verb_type == CSCP1Message.Type.INVALID
+    # finish transition for teardown
+    satellite.ready()
 
 
-@pytest.mark.forked
 def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     """Test cmd reception."""
-    satellite = mock_device_satellite
+    satellite, _ctx = mock_device_satellite
     assert not satellite.callback_triggered
     mock_chirp_transmitter.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     time.sleep(0.5)
@@ -333,7 +317,6 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     assert isinstance(satellite.callback_triggered, DiscoveredService)
 
 
-@pytest.mark.forked
 def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
     """Test that Satellite can 'walk' through a series of transitions."""
     transitions = {
@@ -344,6 +327,7 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         "land": "INIT",
     }
     sender = mock_cmd_transmitter
+    satellite, _ctx = mock_satellite
     for cmd, state in transitions.items():
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
@@ -360,7 +344,7 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
 
-        wait_for_state(mock_satellite.fsm, state, 4.0)
+        wait_for_state(satellite.fsm, state, 4.0)
         # check state
         sender.send_request("get_state")
         time.sleep(0.2)
@@ -370,7 +354,6 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
         assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
-@pytest.mark.forked
 def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
     """Test that FSM timestamps transitions."""
     transitions = {
@@ -381,8 +364,9 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         "land": "INIT",
     }
     sender = mock_cmd_transmitter
-    assert mock_satellite.fsm.last_changed
-    last_changed = mock_satellite.fsm.last_changed
+    satellite, _ctx = mock_satellite
+    assert satellite.fsm.last_changed
+    last_changed = satellite.fsm.last_changed
     for cmd, state in transitions.items():
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
@@ -399,10 +383,10 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
 
-        wait_for_state(mock_satellite.fsm, state, 4.0)
+        wait_for_state(satellite.fsm, state, 4.0)
         # check state
-        assert (mock_satellite.fsm.last_changed - last_changed).total_seconds() > 0
-        last_changed = mock_satellite.fsm.last_changed
+        assert (satellite.fsm.last_changed - last_changed).total_seconds() > 0
+        last_changed = satellite.fsm.last_changed
         sender.send_request("get_state")
         time.sleep(0.2)
         req = sender.get_message()
@@ -414,7 +398,6 @@ def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
         assert req.payload == getattr(SatelliteState, state).value
 
 
-@pytest.mark.forked
 def test_satellite_run_id_cmd(mock_cmd_transmitter, mock_satellite):
     """Test that FSM timestamps transitions."""
     transitions = {
@@ -425,8 +408,9 @@ def test_satellite_run_id_cmd(mock_cmd_transmitter, mock_satellite):
         "land": "INIT",
     }
     sender = mock_cmd_transmitter
+    satellite, _ctx = mock_satellite
     run_id = ""
-    assert mock_satellite.run_identifier == run_id
+    assert satellite.run_identifier == run_id
 
     for cmd, state in transitions.items():
         if cmd == "initialize":
@@ -442,14 +426,13 @@ def test_satellite_run_id_cmd(mock_cmd_transmitter, mock_satellite):
         assert "transitioning" in str(req.verb_msg).lower()
         assert req.verb_type == CSCP1Message.Type.SUCCESS
         # wait for state transition
-        wait_for_state(mock_satellite.fsm, state, 4.0)
+        wait_for_state(satellite.fsm, state, 4.0)
         # check run id
-        assert mock_satellite.run_identifier == run_id
+        assert satellite.run_identifier == run_id
         req = sender.request_get_response("get_run_id")
         assert req.verb_msg == run_id
 
 
-@pytest.mark.forked
 def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
     """Test that Satellite can fail in run."""
     transitions = {
@@ -458,6 +441,7 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
         "start": "RUN",
     }
     sender = mock_cmd_transmitter
+    satellite, _ctx = mock_fail_satellite
     for cmd, state in transitions.items():
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
@@ -475,7 +459,7 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
         # wait for state transition; should fail for RUN
         if state == "RUN":
             state = "ERROR"
-        wait_for_state(mock_fail_satellite.fsm, state, 1.0)
+        wait_for_state(satellite.fsm, state, 1.0)
         # check state
         sender.send_request("get_state")
         time.sleep(0.2)

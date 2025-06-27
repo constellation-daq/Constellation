@@ -270,6 +270,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
                 last_check = datetime.now(timezone.utc)
             # finally, wait a moment
             time.sleep(0.05)
+        # teardown
+        self.log_chp.debug("HeartbeatChecker thread shutting down")
+        self.close()
 
     def _interrupting(self, name: str, state: SatelliteState) -> None:
         with self._callback_lock:

@@ -10,13 +10,12 @@ import threading
 import time
 from tempfile import TemporaryDirectory
 from typing import Any
-from unittest.mock import MagicMock, patch
 
 import h5py
 import numpy as np
 import pytest
 import zmq
-from conftest import mocket, wait_for_state
+from conftest import DATA_PORT, wait_for_state
 
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService
@@ -27,17 +26,9 @@ from constellation.core.datasender import DataSender
 from constellation.core.network import get_loopback_interface_name
 from constellation.satellites.H5DataWriter.H5DataWriter import H5DataWriter
 
-DATA_PORT = 50101
 MON_PORT = 22222
 CMD_PORT = 10101
 FILE_NAME = "mock_file_{run_identifier}.h5"
-
-
-@pytest.fixture
-def mock_data_transmitter(mock_socket_sender: mocket):
-    mock_socket_sender.port = DATA_PORT
-    t = DataTransmitter("mock_sender", mock_socket_sender)
-    yield t
 
 
 @pytest.fixture
@@ -47,6 +38,9 @@ def data_transmitter():
     socket.bind(f"tcp://127.0.0.1:{DATA_PORT}")
     t = DataTransmitter("simple_sender", socket)
     yield t
+    # teardown
+    socket.close()
+    ctx.term()
 
 
 @pytest.fixture
@@ -56,13 +50,9 @@ def commander():
     socket.connect(f"tcp://127.0.0.1:{CMD_PORT}")
     commander = CommandTransmitter("cmd", socket)
     yield commander
-
-
-@pytest.fixture
-def mock_data_receiver(mock_socket_receiver: mocket):
-    mock_socket_receiver.port = DATA_PORT
-    r = DataTransmitter("mock_receiver", mock_socket_receiver)
-    yield r
+    # teardown
+    socket.close()
+    ctx.term()
 
 
 @pytest.fixture
@@ -72,16 +62,16 @@ def data_receiver():
     socket.connect(f"tcp://127.0.0.1:{DATA_PORT}")
     r = DataTransmitter("simple_receiver", socket)
     yield r
+    # teardown
+    socket.close()
+    ctx.term()
 
 
 @pytest.fixture
-def mock_sender_satellite(mock_chirp_transmitter):
+def mock_sender_satellite(mock_zmq_context, mock_chirp_transmitter):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        m.endpoint = 1
-        return m
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
 
     class MockSenderSatellite(DataSender):
         def do_initializing(self, config):
@@ -101,24 +91,22 @@ def mock_sender_satellite(mock_chirp_transmitter):
                 time.sleep(0.02)
             return "Send finished"
 
-    with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = MockSenderSatellite(
-            name="mydevice1",
-            group="mockstellation",
-            cmd_port=CMD_PORT,
-            mon_port=22222,
-            hb_port=33333,
-            data_port=DATA_PORT,
-            interface=[get_loopback_interface_name()],
-        )
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
+    s = MockSenderSatellite(
+        name="mydevice1",
+        group="mockstellation",
+        cmd_port=CMD_PORT,
+        mon_port=22222,
+        hb_port=33333,
+        data_port=DATA_PORT,
+        interface=[get_loopback_interface_name()],
+    )
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield s
+    # teardown
+    s.reentry()
 
 
 @pytest.fixture
@@ -145,6 +133,8 @@ def receiver_satellite():
     # give the threads a chance to start
     time.sleep(0.2)
     yield s
+    # teardown
+    s.reentry()
 
 
 @pytest.fixture
@@ -177,9 +167,10 @@ def sender_satellite():
     # give the threads a chance to start
     time.sleep(0.2)
     yield s
+    # teardown
+    s.reentry()
 
 
-@pytest.mark.forked
 def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_receiver: DataTransmitter):
     sender = mock_data_transmitter
     rx = mock_data_receiver
@@ -231,18 +222,18 @@ def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_recei
     assert msg.msgtype == CDTPMessageIdentifier.EOR
 
 
-@pytest.mark.forked
 def test_sending_package(
+    mock_zmq_context,
     mock_sender_satellite,
-    mock_data_receiver,
+    mock_data_transmitter,
 ):
-    mock = mocket()
-    mock.endpoint = 0
+    ctx = mock_zmq_context()
+    mock = ctx.socket()
     mock.port = CMD_PORT
 
     commander = CommandTransmitter("cmd", mock)
     transmitter = mock_sender_satellite
-    rx = mock_data_receiver
+    rx = mock_data_transmitter
 
     assert not transmitter.BOR
     commander.send_request("initialize", {"mock key": "mock argument string"})
@@ -279,7 +270,6 @@ def test_sending_package(
     assert transmitter.payload_id == 10
 
 
-@pytest.mark.forked
 def test_receive_writing_package(
     receiver_satellite,
     data_transmitter,
@@ -353,7 +343,6 @@ def test_receive_writing_package(
             h5file.close()
 
 
-@pytest.mark.forked
 def test_receive_writing_swmr_mode(
     receiver_satellite,
     data_transmitter,
@@ -469,7 +458,6 @@ def test_receive_writing_swmr_mode(
             h5file.close()
 
 
-@pytest.mark.forked
 def test_fail_sending_bor(commander, sender_satellite):
     """Test a run failing due to missing data receiver."""
     sender = sender_satellite
@@ -483,7 +471,6 @@ def test_fail_sending_bor(commander, sender_satellite):
     wait_for_state(sender.fsm, "ERROR", 2)
 
 
-@pytest.mark.forked
 def test_fail_sending_eor(commander, sender_satellite, data_receiver):
     """Test a run failing due to missing data receiver at EOR."""
     sender = sender_satellite
@@ -514,7 +501,6 @@ def test_fail_sending_eor(commander, sender_satellite, data_receiver):
     wait_for_state(sender.fsm, "ERROR", 2)
 
 
-@pytest.mark.forked
 def test_receiver_stats(
     receiver_satellite,
     monitoringlistener,

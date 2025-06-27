@@ -15,19 +15,16 @@ from constellation.core.network import (
 )
 
 
-@pytest.mark.forked
 def test_interface_addr():
     """Test the retrieval of network interface addresses."""
     assert "127.0.0.1" in get_interface_addresses([get_loopback_interface_name()])
 
 
-@pytest.mark.forked
 def test_interface_names():
     """Test the retrieval of network interface names."""
     assert get_loopback_interface_name() in get_interface_names()
 
 
-@pytest.mark.forked
 def test_interface_validation():
     """Test the validation of network interfaces."""
     lo = get_loopback_interface_name()
