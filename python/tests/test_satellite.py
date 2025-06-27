@@ -336,15 +336,15 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
 @pytest.mark.forked
 def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
     """Test that Satellite can 'walk' through a series of transitions."""
-    transitions = {
-        "initialize": "INIT",
-        "launch": "ORBIT",
-        "start": "RUN",
-        "stop": "ORBIT",
-        "land": "INIT",
-    }
+    transitions = [
+        ("initialize", "INIT"),
+        ("launch", "ORBIT"),
+        ("start", "RUN"),
+        ("stop", "ORBIT"),
+        ("land", "INIT"),
+    ]
     sender = mock_cmd_transmitter
-    for cmd, state in transitions.items():
+    for cmd, state in transitions:
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
@@ -373,17 +373,17 @@ def test_satellite_fsm_transition_walk(mock_cmd_transmitter, mock_satellite):
 @pytest.mark.forked
 def test_satellite_fsm_timestamp(mock_cmd_transmitter, mock_satellite):
     """Test that FSM timestamps transitions."""
-    transitions = {
-        "initialize": "INIT",
-        "launch": "ORBIT",
-        "start": "RUN",
-        "stop": "ORBIT",
-        "land": "INIT",
-    }
+    transitions = [
+        ("initialize", "INIT"),
+        ("launch", "ORBIT"),
+        ("start", "RUN"),
+        ("stop", "ORBIT"),
+        ("land", "INIT"),
+    ]
     sender = mock_cmd_transmitter
     assert mock_satellite.fsm.last_changed
     last_changed = mock_satellite.fsm.last_changed
-    for cmd, state in transitions.items():
+    for cmd, state in transitions:
         if cmd == "initialize":
             payload = {"mock_cfg_key": "mock config string"}
         elif cmd == "start":
