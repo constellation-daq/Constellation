@@ -220,13 +220,6 @@ class DataReceiver(Satellite):
         """Close the filehandler"""
         raise NotImplementedError()
 
-    def _wrap_interrupt(self, payload: Any) -> str:
-        """Wrapper for the 'interrupting' transitional state of the FSM."""
-        # no need to wait for EOR as they will not be sent.
-        self._eor_timeout = 0
-        res: str = super()._wrap_interrupt(payload)
-        return res
-
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService) -> None:
         """Callback method for connecting to data service."""
