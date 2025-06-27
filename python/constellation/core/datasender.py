@@ -221,6 +221,12 @@ class DataSender(Satellite):
         Configure and send the Beginning Of Run (BOR) message.
 
         """
+        # reset the BOR/EOR flags
+        assert isinstance(self._eor_sent, threading.Event)
+        assert isinstance(self._bor_sent, threading.Event)
+        self._bor_sent.clear()
+        self._eor_sent.clear()
+
         # Store satellite configuration in payload:
         self._beg_of_run["payload"] = self.config._config
         self.log_cdtp_s.debug("Sending BOR")
