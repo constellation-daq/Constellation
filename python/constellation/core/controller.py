@@ -591,7 +591,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
                     self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
                     return cfg
             except AttributeError:
-                self.log.info("Command needs a (valid) configuration dict.")
+                self.log.warning("Command needs a (valid) configuration dict.")
                 raise RuntimeError("Command needs a (valid) configuration dict.")
         return payload
 
