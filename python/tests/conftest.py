@@ -346,6 +346,17 @@ def mock_controller(mock_chirp_socket, mock_heartbeat_poller):
 
 
 @pytest.fixture
+def controller():
+    """Create a Controller base instance."""
+    c = BaseController(name="test_controller", group="mockstellation", interface=[get_loopback_interface_name()])
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield c
+    # teardown
+    c.reentry()
+
+
+@pytest.fixture
 def rawconfig():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cfg.toml")
     yield load_config(path)

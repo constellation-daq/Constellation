@@ -147,26 +147,27 @@ def receiver_satellite():
     yield s
 
 
+class MockSenderSatellite(DataSender):
+    def do_run(self, payload: any):
+        """Send a few packets, then wait until stopped."""
+        self.payload_id = 0
+        while self.payload_id < 10 and not self._state_thread_evt.is_set():
+            payload = f"mock payload {self.payload_id}".encode("utf-8")
+            self.data_queue.put((payload, {}))
+            self.payload_id += 1
+            time.sleep(0.01)
+        while not self._state_thread_evt.is_set():
+            time.sleep(0.002)
+        return "Send finished"
+
+
 @pytest.fixture
 def sender_satellite():
     """A sender Satellite."""
 
-    class MockSenderSatellite(DataSender):
-        def do_run(self, payload: any):
-            self.payload_id = 0
-            while self.payload_id < 10 and not self._state_thread_evt.is_set():
-                payload = f"mock payload {self.payload_id}".encode("utf-8")
-                self.data_queue.put((payload, {}))
-                self.payload_id += 1
-                time.sleep(0.02)
-            while not self._state_thread_evt.is_set():
-                time.sleep(0.02)
-            return "Send finished"
-
     s = MockSenderSatellite(
         name="mock_sender",
         group="mockstellation",
-        cmd_port=CMD_PORT,
         mon_port=MON_PORT,
         data_port=DATA_PORT,
         hb_port=33333,
@@ -177,6 +178,29 @@ def sender_satellite():
     # give the threads a chance to start
     time.sleep(0.2)
     yield s
+
+
+@pytest.fixture
+def sender_satellite_array():
+    """Fixture creating multiple sender Satellites."""
+
+    sats = []
+    for i in range(4):
+        s = MockSenderSatellite(
+            name=f"mock_sender{i}",
+            group="mockstellation",
+            mon_port=MON_PORT + i + 1,
+            cmd_port=CMD_PORT + i + 1,
+            hb_port=33333 + i + 1,
+            data_port=DATA_PORT + i + 1,
+            interface=[get_loopback_interface_name()],
+        )
+        t = threading.Thread(target=s.run_satellite)
+        t.start()
+        sats.append(s)
+    # give the threads a chance to start
+    time.sleep(0.2)
+    yield sats
 
 
 @pytest.mark.forked
@@ -576,3 +600,53 @@ def test_receiver_stats(
     # close thread and connections to allow temp dir to be removed
     ml._log_listening_shutdown()
     ml._metrics_listening_shutdown()
+
+
+@pytest.mark.forked
+def test_receive_many_satellites_interrupt(
+    receiver_satellite,
+    sender_satellite_array,
+    controller,
+):
+    """Test receiving and writing data from multiple satellites and interrupting."""
+    receiver = receiver_satellite
+    # list of all satellites
+    all_sats = [*sender_satellite_array, receiver]
+    with TemporaryDirectory() as tmpdir:
+        for run_num in range(2):
+            # initialize
+            res = controller.constellation.initialize({"_file_name_pattern": FILE_NAME, "_output_path": tmpdir})
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "INIT", 1)
+            res = controller.constellation.launch()
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "ORBIT", 1)
+
+            res = controller.constellation.start(str(run_num))
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "RUN", 2)
+            timeout = 4
+            while timeout > 0 and len(receiver.active_satellites) < len(sender_satellite_array):
+                time.sleep(0.005)
+                timeout -= 0.005
+            assert len(receiver.active_satellites) == len(sender_satellite_array), "Not enough BORs received!"
+            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
+            time.sleep(0.2)  # send more data
+            # still in run?
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "RUN", 1)
+
+            # interrupt single satellite
+            sat = getattr(controller.constellation.MockSenderSatellite, "mock_sender1")
+            sat._interrupt()
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "SAFE", 3)
+
+            fn = FILE_NAME.format(run_identifier=run_num)
+            assert os.path.exists(os.path.join(tmpdir, fn))
