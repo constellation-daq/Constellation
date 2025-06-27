@@ -423,3 +423,17 @@ def wait_for_state(fsm, state: str, timeout: float = 2.0):
         timeout -= 0.005
     if timeout < 0:
         raise RuntimeError(f"Never reached {state}, now in state {fsm.current_state_value.name} with status '{fsm.status}'")
+
+
+def check_output(capsys, caplog) -> None:
+    """Function to ensure that there were no error messages printed in the stdout or logs.
+
+    Expects the fixtures capsys and caplog being passed to it.
+
+    """
+    # FIXME the coloredlogs package writes to stderr by default, making the test below meaningless
+    # captured = capsys.readouterr()
+    # assert not captured.err, "Error messages were produced, please check printed output of test."
+    for record in caplog.records:
+        assert record.levelname != "CRITICAL", "Critical error messages were logged"
+        assert record.levelname != "ERROR", "Error messages were logged"

@@ -16,7 +16,7 @@ import h5py
 import numpy as np
 import pytest
 import zmq
-from conftest import mocket, wait_for_state
+from conftest import check_output, mocket, wait_for_state
 
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService
@@ -605,6 +605,8 @@ def test_receiver_stats(
 
 @pytest.mark.forked
 def test_receive_many_satellites_interrupt(
+    capsys,
+    caplog,
     receiver_satellite,
     sender_satellite_array,
     controller,
@@ -656,6 +658,6 @@ def test_receive_many_satellites_interrupt(
                 wait_for_state(sat.fsm, "SAFE", 3)
             # datareceiver waits for EOR for 60, so we should have received then
             # now
-
             fn = FILE_NAME.format(run_identifier=run_num)
             assert os.path.exists(os.path.join(tmpdir, fn))
+            check_output(capsys, caplog)
