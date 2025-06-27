@@ -49,3 +49,24 @@ Not subscribing to `WARNING`, `STATUS` or `CRITICAL` messages could lead to miss
 logging verbosity levels lower than `INFO` for an extended period of time over the network may have a considerable impact on
 on the bandwidth available to e.g. transmit data.
 ```
+
+## Log Topics
+
+Some verbosity levels can be - no pun intended - very verbose. In order to allow further filtering of messages on the sending
+side, Constellation implements so-called *log topics*. These divide the messages of each verbosity level into sections to
+which loggers can subscribe individually.
+
+Log topics are appended to the verbosity level by a slash, a valid log topic would for example be `WARNING/FSM`. Subscribing
+to this topic would cause the sender to only emit messages of verbosity level `WARNING` **and** the topic `FSM`, so any warning
+relating to the [finite state machine](./satellite.md#the-finite-state-machine) of the satellite.
+
+Log topics can freely be set by the senders, and satellite implementations may add their own topics. There are, however, some
+standardized log topics used by the framework:
+
+* **`<type>`**: Every satellite logs implementation-specific things on a log topic which corresponds to their type. This means
+  that the `Sputnik` satellite, which serves as an example implementation for C++ satellites, will log anything that concerns
+  its functionality on a topic called `SPUTNIK`. Similarly, the Python `Mariner` satellite would log to the `MARINER` topic.
+
+* **`OP`**: This log topic indicates direct action by a human operator. This log topic is typically only emitted by controller
+instances when e.g. a command is sent to the Constellation or a configuration file path is changed. Some user interfaces also
+provide a dedicated input for operators to manually send log messages to be stored in the log files.
