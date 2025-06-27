@@ -434,7 +434,7 @@ def test_receive_writing_swmr_mode(
             commander.request_get_response("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
             timeout = 0.5
-            while not receiver.active_satellites or timeout < 0:
+            while not receiver.active_satellites or not receiver._swmr_mode_enabled or timeout < 0:
                 time.sleep(0.05)
                 timeout -= 0.05
             assert len(receiver.active_satellites) == 1, "No BOR received!"
