@@ -15,7 +15,6 @@ from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, C
 from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
 from constellation.core.logging import setup_cli_logging
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
-from constellation.core.network import get_loopback_interface_name
 
 
 @pytest.fixture
@@ -196,7 +195,7 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ml, tmpdir = monitoringlistener
     ms = monitoringsender
     assert len(ml._log_listeners) == 0
-    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", interface=[get_loopback_interface_name()])
+    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", interface_addresses=["127.0.0.1"])
     chirp.broadcast(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, DEFAULT_SEND_PORT)
     # start metric sender thread
     ms._add_com_thread()
