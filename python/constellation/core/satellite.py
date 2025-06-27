@@ -10,7 +10,7 @@ import time
 import traceback
 from concurrent.futures import Future
 from queue import Empty
-from typing import Any
+from typing import Any, Optional
 
 from . import __version__
 from .base import ConstellationArgumentParser
@@ -42,7 +42,7 @@ class Satellite(
         cmd_port: int,
         hb_port: int,
         mon_port: int,
-        interface: list[str],
+        interface: Optional[list[str]],
     ):
         """Set up class attributes."""
         super().__init__(
@@ -75,6 +75,11 @@ class Satellite(
 
         # register callback for heartbeat checker
         self.register_heartbeat_callback(self._heartbeat_interrupt)
+
+        # Check whether the Satellite has a reconfigure state implemented.
+        # If so, add the command to the list of available commands.
+        if hasattr(self, "do_reconfigure"):
+            self.add_cscp_command("reconfigure")
 
         # Add exception handling via threading.excepthook to allow the state
         # machine to reflect exceptions in the communication services threads.
@@ -303,7 +308,7 @@ class Satellite(
 
         """
         self.run_identifier = run_identifier
-        self.log_satellite.status(f"Starting run '{run_identifier}'")
+        self.log_satellite.info(f"Starting run '{run_identifier}'")
         res: str = self.do_starting(run_identifier)
         # allow inheriting classes to execute code just before do_run is called:
         self._pre_run_hook(run_identifier)

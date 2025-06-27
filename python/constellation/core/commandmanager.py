@@ -188,6 +188,25 @@ class CommandReceiver(BaseSatelliteFrame):
         # shutdown
         self._cmd_tm.close()
 
+    def add_cscp_command(self, method: str, doc: str | None = None) -> None:
+        """Add a method to CSCP.
+
+        This is an alternative to using the `@cscp_requestable` decorator.
+
+        Arguments:
+
+        - method [str]: name of the method.
+
+        - doc [str]: a short string providing documentation to the command. If
+          no `doc` argument is given, the doc-string of the method will be
+          used instead.
+
+        """
+        if not doc:
+            call = getattr(self, method)
+            doc = call.__doc__
+        self._cmds[method] = doc
+
     @cscp_requestable
     def get_commands(self, _request: CSCP1Message | None = None) -> Tuple[str, dict[str, str], None]:
         """Return all commands supported by the Satellite.

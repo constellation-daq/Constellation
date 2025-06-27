@@ -144,30 +144,30 @@ class DataSender(Satellite):
 
     @property
     def EOR(self) -> Any:
-        """Get optional payload for the end-of-run event (EOR)."""
-        return self._end_of_run["payload"]
+        """Get optional metadata for the end-of-run event (EOR)."""
+        return self._end_of_run["meta"]
 
     @EOR.setter
-    def EOR(self, payload: Any) -> None:
-        """Set optional payload for the end-of-run event (EOR)."""
-        self._end_of_run["payload"] = payload
+    def EOR(self, meta: Any) -> None:
+        """Set optional metadata for the end-of-run event (EOR)."""
+        self._end_of_run["meta"] = meta
 
     @property
     def BOR(self) -> Any:
-        """Get optional payload for the beginning-of-run event (BOR)."""
-        return self._beg_of_run["payload"]
+        """Get optional metadata for the beginning-of-run event (BOR)."""
+        return self._beg_of_run["meta"]
 
     @BOR.setter
-    def BOR(self, payload: Any) -> None:
-        """Set optional payload for the beginning-of-run event (BOR)."""
-        self._beg_of_run["payload"] = payload
+    def BOR(self, meta: Any) -> None:
+        """Set optional metadata for the beginning-of-run event (BOR)."""
+        self._beg_of_run["meta"] = meta
 
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all DataSender-type classes."""
         super()._pre_initializing_hook(config)
-        self._bor_timeout = self.config.setdefault("bor_timeout", 10)
-        self._data_timeout = self.config.setdefault("data_timeout", 10)
-        self._eor_timeout = self.config.setdefault("eor_timeout", 10)
+        self._bor_timeout = self.config.setdefault("_bor_timeout", 10)
+        self._data_timeout = self.config.setdefault("_data_timeout", 10)
+        self._eor_timeout = self.config.setdefault("_eor_timeout", 10)
 
     @handle_error
     @debug_log
@@ -221,17 +221,14 @@ class DataSender(Satellite):
         Configure and send the Beginning Of Run (BOR) message.
 
         """
-        # Beginning of run message. If nothing was provided by the user (yet),
-        # use the configuration dictionary as a payload
-        if not self.BOR:
-            self.BOR = self.config._config
+        # Store satellite configuration in payload:
+        self._beg_of_run["payload"] = self.config._config
         self.log_cdtp_s.debug("Sending BOR")
         self.data_queue.put((self._beg_of_run, CDTPMessageIdentifier.BOR))
         if self._bor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._bor_timeout / 1000
+            timeout = self._bor_timeout
         # satisfy mypy and verify out setup:
         if not self._bor_sent:
             raise RuntimeError("Data pusher events not set up correctly")
@@ -254,8 +251,7 @@ class DataSender(Satellite):
         if self._eor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._eor_timeout / 1000
+            timeout = self._eor_timeout
         assert isinstance(self._eor_sent, threading.Event)
         self._eor_sent.wait(timeout)
         if not self._eor_sent.is_set():

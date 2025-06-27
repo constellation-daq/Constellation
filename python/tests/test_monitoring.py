@@ -157,8 +157,27 @@ def test_log_levels(mock_listener, mock_monitoringsender):
     assert stream.mock_calls[2][1][0].levelname == "CRITICAL"
 
 
+def test_log_exception(mock_listener, mock_monitoringsender):
+    """Test use of logging.exception call."""
+    listener, stream, sock = mock_listener
+    ms, ctx = mock_monitoringsender
+    lr = ms.get_logger("mock_sender")
+    # log an exception
+    try:
+        raise RuntimeError("mock an exception")
+    except RuntimeError:
+        lr.exception("caught mock exception")
+    time.sleep(0.1)
+    ctx.packet_queue_out[DEFAULT_SEND_PORT][0].startswith(b"LOG/CRITICAL")
+    # check reconstruction
+    listener.start()
+    time.sleep(0.1)
+    assert isinstance(stream.mock_calls[0][1][0], logging.LogRecord)
+    assert stream.mock_calls[0][1][0].levelname == "CRITICAL"
+
+
 def test_monitoring_sender_init(mock_listener, mock_monitoringsender):
-    m, ctx = mock_monitoringsender
+    m, _ctx = mock_monitoringsender
     # is our method registered?
     assert len(m._metrics_callbacks) == 1
 

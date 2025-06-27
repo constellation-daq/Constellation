@@ -57,7 +57,7 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     // Open target file
     auto file = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
 
-    LOG(STATUS) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
+    LOG(INFO) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
     serializer_ = std::make_unique<FileSerializer>(std::move(file), sequence);
 
     // Start timer for flushing data to file
@@ -69,7 +69,9 @@ void EudaqNativeWriterSatellite::stopping() {
 }
 
 void EudaqNativeWriterSatellite::interrupting(CSCP::State /*previous_state*/) {
-    serializer_->flush();
+    if(serializer_ != nullptr) {
+        serializer_->flush();
+    }
     serializer_.reset();
 }
 

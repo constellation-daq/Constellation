@@ -246,7 +246,6 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         return self._transition("stop", request.payload, thread=False)
 
     @debug_log
-    @cscp_requestable
     def reconfigure(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
         """Initiate reconfigure state transition via a CSCP request.
 

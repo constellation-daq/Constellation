@@ -20,7 +20,7 @@
 
 #include <zmq.hpp>
 
-#include "constellation/core/log/log.hpp"
+#include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -33,17 +33,19 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::scribe(message::MD5Hash host_id, std::string_view topic, bool subscribe) {
+        using enum constellation::log::Level;
+
         try {
             const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
             const auto socket_it = std::ranges::find(
                 BasePoolT::get_sockets(), host_id, [&](const auto& socket_p) { return socket_p.first.host_id; });
             if(socket_it != BasePoolT::get_sockets().end()) {
                 if(subscribe) {
-                    LOG(BasePoolT::pool_logger_, TRACE)
+                    BasePoolT::pool_logger_.log(TRACE)
                         << "Subscribing to " << std::quoted(topic) << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::subscribe, topic);
                 } else {
-                    LOG(BasePoolT::pool_logger_, TRACE)
+                    BasePoolT::pool_logger_.log(TRACE)
                         << "Unsubscribing from " << std::quoted(topic) << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::unsubscribe, topic);
                 }
@@ -55,16 +57,17 @@ namespace constellation::pools {
 
     template <typename MESSAGE, protocol::CHIRP::ServiceIdentifier SERVICE>
     void SubscriberPool<MESSAGE, SERVICE>::scribe_all(std::string_view topic, bool subscribe) {
+        using enum constellation::log::Level;
 
         try {
             const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
             for(auto& [host, socket] : BasePoolT::get_sockets()) {
                 if(subscribe) {
-                    LOG(BasePoolT::pool_logger_, TRACE)
+                    BasePoolT::pool_logger_.log(TRACE)
                         << "Subscribing to " << std::quoted(topic) << " for " << host.to_uri();
                     socket.set(zmq::sockopt::subscribe, topic);
                 } else {
-                    LOG(BasePoolT::pool_logger_, TRACE)
+                    BasePoolT::pool_logger_.log(TRACE)
                         << "Unsubscribing from " << std::quoted(topic) << " for " << host.to_uri();
                     socket.set(zmq::sockopt::unsubscribe, topic);
                 }

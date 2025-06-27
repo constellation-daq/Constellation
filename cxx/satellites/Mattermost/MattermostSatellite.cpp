@@ -111,7 +111,7 @@ void MattermostSatellite::send_message(std::string&& text,
                                     cpr::Header({{"Content-Type", "application/json"}}),
                                     cpr::Body({"{" + text_json(std::move(text)) + priority_json(priority) +
                                                username_json(username) + card_json(card) + "}"}),
-                                    cpr::Timeout({1s}));
+                                    cpr::Timeout({2s}));
     if(response.error) [[unlikely]] {
         throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
     }

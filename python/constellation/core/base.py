@@ -75,8 +75,8 @@ class ConstellationArgumentParser(ArgumentParser):
             type=validate_interface,
             choices=get_interface_names(),
             action="append",
-            default=get_interface_names(),
-            help="The network interfaces to announce this satellite to. (default: %(default)s).",
+            default=None,
+            help=f"The network interfaces to announce this satellite to. (default: {get_interface_names()}s).",
         )
 
 
