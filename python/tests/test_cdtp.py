@@ -585,8 +585,8 @@ def test_receiver_stats(
         wait_for_state(receiver.fsm, "ORBIT", 1)
     timeout = 4
     while timeout > 0 and not len(ml._metric_sockets) > 0:
-        time.sleep(0.05)
-        timeout -= 0.05
+        time.sleep(0.005)
+        timeout -= 0.005
     assert len(receiver.receiver_stats) == 2
     assert len(receiver._metrics_callbacks) > 1
     assert len(ml._metric_sockets) == 1
@@ -594,8 +594,8 @@ def test_receiver_stats(
     statfile = os.path.join(tmpdir, "stats", "MockReceiverSatellite.mock_receiver.nbytes.csv")
     timeout = 5
     while timeout > 0 and not os.path.exists(statfile):
-        time.sleep(0.05)
-        timeout -= 0.05
+        time.sleep(0.005)
+        timeout -= 0.005
     assert os.path.exists(statfile), "Expected output metrics csv not found"
     # close thread and connections to allow temp dir to be removed
     ml._log_listening_shutdown()
