@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 Module implementing the Constellation Satellite Control Protocol.
 """
 
+from threading import Lock
 from typing import Any, Optional
 
 import zmq
@@ -18,6 +19,7 @@ class CommandTransmitter:
     def __init__(self, name: str, socket: zmq.Socket):  # type: ignore[type-arg]
         self._name = name
         self._socket = socket
+        self._lock = Lock()
 
     def send_request(self, command: str, payload: Any = None, tags: Optional[dict[str, Any]] = None) -> None:
         """Send a command request to a Satellite with an optional payload."""
@@ -52,7 +54,8 @@ class CommandTransmitter:
 
         """
         try:
-            frames = self._socket.recv_multipart(flags)
+            with self._lock:
+                frames = self._socket.recv_multipart(flags)
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
@@ -65,7 +68,8 @@ class CommandTransmitter:
         message = CSCP1Message(self._name, verb, tags=tags)
         if payload is not None:
             message.payload = payload
-        message.assemble().send(self._socket, flags)
+        with self._lock:
+            message.assemble().send(self._socket, flags)
 
     def close(self) -> None:
         self._socket.close()

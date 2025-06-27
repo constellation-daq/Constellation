@@ -11,7 +11,6 @@ from hashlib import md5
 from uuid import UUID
 
 from .multicast import MulticastSocket
-from .network import get_interface_addresses
 
 CHIRP_PORT = 7123
 CHIRP_MULTICAST_ADDRESS = "239.192.7.123"
@@ -143,7 +142,7 @@ class CHIRPBeaconTransmitter:
         self,
         name: str,
         group: str,
-        interface: list[str],
+        interface_addresses: set[str],
     ) -> None:
         """Initialize attributes and open broadcast socket."""
         self._host_uuid = get_uuid(name)
@@ -151,9 +150,6 @@ class CHIRPBeaconTransmitter:
 
         # whether or not to filter broadcasts on group
         self._filter_group = True
-
-        # Gather interface addresses
-        interface_addresses = get_interface_addresses(interface)
 
         # Create multicast socket
         self._socket = MulticastSocket(interface_addresses, CHIRP_MULTICAST_ADDRESS, CHIRP_PORT)

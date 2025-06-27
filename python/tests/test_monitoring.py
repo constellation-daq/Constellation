@@ -14,7 +14,6 @@ from conftest import mock_packet_queue_sender, mocket, send_port
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
-from constellation.core.network import get_loopback_interface_name
 
 
 @pytest.fixture
@@ -161,6 +160,25 @@ def test_log_levels(mock_listener, mock_monitoringsender):
 
 
 @pytest.mark.forked
+def test_log_exception(mock_listener, mock_monitoringsender):
+    """Test use of logging.exception call."""
+    listener, stream = mock_listener
+    lr = mock_monitoringsender.get_logger("mock_sender")
+    # log an exception
+    try:
+        raise RuntimeError("mock an exception")
+    except RuntimeError:
+        lr.exception("caught mock exception")
+    time.sleep(0.1)
+    mock_packet_queue_sender[send_port][0].startswith(b"LOG/CRITICAL")
+    # check reconstruction
+    listener.start()
+    time.sleep(0.1)
+    assert isinstance(stream.mock_calls[0][1][0], logging.LogRecord)
+    assert stream.mock_calls[0][1][0].levelname == "CRITICAL"
+
+
+@pytest.mark.forked
 def test_monitoring_sender_init(mock_listener, mock_monitoringsender):
     m = mock_monitoringsender
     # is our method registered?
@@ -183,7 +201,7 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ml, tmpdir = monitoringlistener
     ms = monitoringsender
     assert len(ml._log_listeners) == 0
-    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", interface=[get_loopback_interface_name()])
+    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", set(["127.0.0.1"]))
     chirp.broadcast(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, send_port)
     # start metric sender thread
     ms._add_com_thread()

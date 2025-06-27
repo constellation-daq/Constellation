@@ -5,6 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
+from datetime import datetime
 from enum import Enum
 from queue import Empty
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -22,7 +23,6 @@ from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
 from .logging import setup_cli_logging
 from .message.cscp1 import SatelliteState
-from .network import get_interface_names
 from .satellite import Satellite
 
 
@@ -308,6 +308,15 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         return self.heartbeat_states
 
     @property
+    def state_changes(self) -> dict[str, datetime]:
+        """Return a dictionary of connected Satellite's last state change.
+
+        Based on heartbeat information.
+
+        """
+        return self.heartbeat_state_changes
+
+    @property
     def state(self) -> ControllerState:
         """Return the global state of all connected Satellite's state.
 
@@ -405,6 +414,9 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             return
         uuid = str(service.host_uuid)
         if uuid in self._transmitters:
+            # get current state with last_changed timestamp
+            msg = self._transmitters[uuid].request_get_response("get_state")
+            init_state = {"state": SatelliteState[msg.verb_msg], "last_changed": msg.tags["last_changed"]}
             # we are controlling this satellite
             if not self.heartbeat_host_is_registered(service.host_uuid):
                 name, cls = self.constellation._get_name_from_uuid(uuid)
@@ -412,6 +424,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
                     host=service.host_uuid,
                     address=f"tcp://{service.address}:{service.port}",
                     name=f"{cls}.{name}",
+                    init_state=init_state,
                 )
 
     def _add_satellite(self, service: DiscoveredService) -> None:
@@ -464,13 +477,19 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             uuid = str(service.host_uuid)
             self._uuid_lookup[uuid] = (cls, name)
             self._transmitters[uuid] = ct
+            # get current state and timestamp of last change
+            msg = ct.request_get_response("get_state")
+            init_state = {"state": SatelliteState[msg.verb_msg], "last_changed": msg.tags["last_changed"]}
             # check if heartbeat service for satellite is known already
             for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
                 if hbservice.host_uuid == service.host_uuid:
                     if self.heartbeat_host_is_registered(service.host_uuid):
                         self.unregister_heartbeat_host(service.host_uuid)
                     self.register_heartbeat_host(
-                        host=service.host_uuid, address=f"tcp://{hbservice.address}:{hbservice.port}", name=f"{cls}.{name}"
+                        host=service.host_uuid,
+                        address=f"tcp://{hbservice.address}:{hbservice.port}",
+                        name=f"{cls}.{name}",
+                        init_state=init_state,
                     )
                     break
         except RuntimeError as e:
@@ -742,7 +761,7 @@ class ScriptableController(BaseController):
         group: str,
         log_level: str = "INFO",
         name: str = "ScriptableController",
-        interface: list[str] = get_interface_names(),
+        interface: Optional[list[str]] = None,
     ) -> None:
         # Initialize logging first
         setup_cli_logging(log_level)

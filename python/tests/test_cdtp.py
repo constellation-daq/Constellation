@@ -474,7 +474,7 @@ def test_fail_sending_bor(commander, sender_satellite):
     """Test a run failing due to missing data receiver."""
     sender = sender_satellite
     # set timeout value for BOR to 1s
-    commander.request_get_response("initialize", {"bor_timeout": 1000})
+    commander.request_get_response("initialize", {"_bor_timeout": 1})
     wait_for_state(sender.fsm, "INIT", 1)
     commander.request_get_response("launch")
     wait_for_state(sender.fsm, "ORBIT", 1)
@@ -489,7 +489,7 @@ def test_fail_sending_eor(commander, sender_satellite, data_receiver):
     sender = sender_satellite
     rx = data_receiver
     # set timeout value for BOR to 1s
-    commander.request_get_response("initialize", {"eor_timeout": 1000})
+    commander.request_get_response("initialize", {"_eor_timeout": 1})
     wait_for_state(sender.fsm, "INIT", 1)
     commander.request_get_response("launch")
     wait_for_state(sender.fsm, "ORBIT", 1)

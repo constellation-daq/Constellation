@@ -15,6 +15,7 @@
 #include <QApplication>
 #include <QColor>
 #include <QDateTime>
+#include <QIcon>
 #include <QPalette>
 #include <QString>
 #include <QTimeZone>
@@ -37,6 +38,83 @@ namespace constellation::gui {
      * @warning This needs to be called before any resource such as icons or logos is used in the application
      */
     CNSTLN_API void initResources();
+
+    inline QColor get_state_color(protocol::CSCP::State state) {
+        switch(state) {
+        case protocol::CSCP::State::NEW:
+        case protocol::CSCP::State::initializing:
+        case protocol::CSCP::State::INIT: {
+            return QColorConstants::Svg::gray;
+        }
+        case protocol::CSCP::State::launching:
+        case protocol::CSCP::State::landing:
+        case protocol::CSCP::State::reconfiguring:
+        case protocol::CSCP::State::ORBIT: {
+            return QColorConstants::Svg::orange;
+        }
+        case protocol::CSCP::State::starting:
+        case protocol::CSCP::State::stopping:
+        case protocol::CSCP::State::RUN: {
+            return QColorConstants::Svg::green;
+        }
+        case protocol::CSCP::State::SAFE:
+        case protocol::CSCP::State::interrupting: {
+            return QColorConstants::Svg::red;
+        }
+        case protocol::CSCP::State::ERROR: {
+            return QColorConstants::Svg::darkred;
+        }
+        default: std::unreachable();
+        }
+    }
+
+    inline QString get_state_string(protocol::CSCP::State state, bool global) {
+
+        const QString global_indicatior = (global ? "" : " ≊");
+
+        switch(state) {
+        case protocol::CSCP::State::NEW: {
+            return "New" + global_indicatior;
+        }
+        case protocol::CSCP::State::initializing: {
+            return "Initializing..." + global_indicatior;
+        }
+        case protocol::CSCP::State::INIT: {
+            return "Initialized" + global_indicatior;
+        }
+        case protocol::CSCP::State::launching: {
+            return "Launching..." + global_indicatior;
+        }
+        case protocol::CSCP::State::landing: {
+            return "Landing..." + global_indicatior;
+        }
+        case protocol::CSCP::State::reconfiguring: {
+            return "Reconfiguring..." + global_indicatior;
+        }
+        case protocol::CSCP::State::ORBIT: {
+            return "Orbiting" + global_indicatior;
+        }
+        case protocol::CSCP::State::starting: {
+            return "Starting..." + global_indicatior;
+        }
+        case protocol::CSCP::State::stopping: {
+            return "Stopping..." + global_indicatior;
+        }
+        case protocol::CSCP::State::RUN: {
+            return "Running" + global_indicatior;
+        }
+        case protocol::CSCP::State::SAFE: {
+            return "Safe Mode" + global_indicatior;
+        }
+        case protocol::CSCP::State::interrupting: {
+            return "Interrupting..." + global_indicatior;
+        }
+        case protocol::CSCP::State::ERROR: {
+            return "Error" + global_indicatior;
+        }
+        default: std::unreachable();
+        }
+    }
 
     /**
      * @brief Helper to obtain the state string with color and formatting
@@ -118,6 +196,35 @@ namespace constellation::gui {
         }
         case message::CSCP1Message::Type::ERROR: {
             return "<font color='darkred'>" + type_string + "</font>";
+        }
+        default: std::unreachable();
+        }
+    }
+
+    /**
+     * @brief Helper to obtain the CSCP message type icon
+     *
+     * @param type CSCP message type
+     *
+     * @return Icon for the CSCP response display
+     */
+    inline QIcon get_response_icon(message::CSCP1Message::Type type) {
+        const auto type_string = QString::fromStdString(utils::enum_name(type));
+        switch(type) {
+        case message::CSCP1Message::Type::REQUEST: {
+            return QIcon(":/response/neutral");
+        }
+        case message::CSCP1Message::Type::SUCCESS: {
+            return QIcon(":/response/success");
+        }
+        case message::CSCP1Message::Type::NOTIMPLEMENTED:
+        case message::CSCP1Message::Type::INCOMPLETE:
+        case message::CSCP1Message::Type::INVALID: {
+            return QIcon(":/response/notice");
+        }
+        case message::CSCP1Message::Type::UNKNOWN:
+        case message::CSCP1Message::Type::ERROR: {
+            return QIcon(":/response/unknown");
         }
         default: std::unreachable();
         }

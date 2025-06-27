@@ -37,7 +37,7 @@ QResponseDialog::QResponseDialog(QWidget* parent, const CSCP1Message& message)
     // Set satellite name:
     ui_->satelliteName->setText("<font color='gray'><b>" +
                                 QString::fromStdString(std::string(message.getHeader().getSender())) + "</b></font>");
-    ui_->satelliteResponse->setText("<font color='gray'><b>" + get_styled_response(message.getVerb().first) + "</b></font>");
+    ui_->satelliteResponse->setText("<b>" + get_styled_response(message.getVerb().first) + "</b>");
     ui_->responseVerb->setText(QString::fromStdString(std::string(message.getVerb().second)));
 
     ui_->responseTable->setVisible(true);

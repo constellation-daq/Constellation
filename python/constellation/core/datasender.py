@@ -165,9 +165,9 @@ class DataSender(Satellite):
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all DataSender-type classes."""
         super()._pre_initializing_hook(config)
-        self._bor_timeout = self.config.setdefault("bor_timeout", 10)
-        self._data_timeout = self.config.setdefault("data_timeout", 10)
-        self._eor_timeout = self.config.setdefault("eor_timeout", 10)
+        self._bor_timeout = self.config.setdefault("_bor_timeout", 10)
+        self._data_timeout = self.config.setdefault("_data_timeout", 10)
+        self._eor_timeout = self.config.setdefault("_eor_timeout", 10)
 
     @handle_error
     @debug_log
@@ -228,8 +228,7 @@ class DataSender(Satellite):
         if self._bor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._bor_timeout / 1000
+            timeout = self._bor_timeout
         # satisfy mypy and verify out setup:
         if not self._bor_sent:
             raise RuntimeError("Data pusher events not set up correctly")
@@ -252,8 +251,7 @@ class DataSender(Satellite):
         if self._eor_timeout < 0:
             timeout = None
         else:
-            # convert to seconds
-            timeout = self._eor_timeout / 1000
+            timeout = self._eor_timeout
         assert isinstance(self._eor_sent, threading.Event)
         self._eor_sent.wait(timeout)
         if not self._eor_sent.is_set():

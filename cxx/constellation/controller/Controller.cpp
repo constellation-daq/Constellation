@@ -228,6 +228,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         // Update status message if available
         if(status.has_value()) {
             sat->second.last_message = status.value();
+            // Set the command type to REQUEST to change the message indicator for the status message
+            sat->second.last_cmd_type = CSCP1Message::Type::REQUEST;
             connection_updated = true;
         }
 
