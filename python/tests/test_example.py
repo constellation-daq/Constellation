@@ -5,10 +5,9 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
-from unittest.mock import MagicMock, patch
 
 import pytest
-from conftest import mocket, wait_for_state
+from conftest import wait_for_state
 
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
@@ -24,23 +23,18 @@ class Mariner(MarinerDef):
 
 
 @pytest.fixture
-def mariner_satellite(mock_chirp_transmitter):
+def mariner_satellite(mock_zmq_context, mock_chirp_transmitter):
     """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
 
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        return m
-
-    with patch("constellation.core.base.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        s = Mariner("Nine", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        # give the threads a chance to start
-        time.sleep(0.1)
-        yield s
+    s = Mariner("Nine", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    t = threading.Thread(target=s.run_satellite)
+    t.start()
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield s
+    s.reentry()
 
 
 # %%%%%%%%%%%%%%%
@@ -48,13 +42,11 @@ def mariner_satellite(mock_chirp_transmitter):
 # %%%%%%%%%%%%%%%
 
 
-@pytest.mark.forked
 def test_mariner_instantiation(mariner_satellite):
     """Test that we can create the satellite."""
     assert mariner_satellite.name == "Mariner.Nine"
 
 
-@pytest.mark.forked
 def test_mariner_fsm_transition(mock_cmd_transmitter, mariner_satellite):
     """Test that Satellite can 'walk' through a series of transitions."""
     transitions = {
@@ -91,7 +83,6 @@ def test_mariner_fsm_transition(mock_cmd_transmitter, mariner_satellite):
         assert req.verb_type == CSCP1Message.Type.SUCCESS
 
 
-@pytest.mark.forked
 def test_mariner_cfg_missing_items(mock_cmd_transmitter, mariner_satellite):
     """Test that Satellite can gracefully handle missing cfg items."""
     sender = mock_cmd_transmitter
@@ -108,7 +99,6 @@ def test_mariner_cfg_missing_items(mock_cmd_transmitter, mariner_satellite):
     assert "missing a required configuration value" in mariner_satellite.fsm.status
 
 
-@pytest.mark.forked
 def test_mariner_command(mock_cmd_transmitter, mariner_satellite):
     """Test that Satellite can gracefully handle missing cfg items."""
     sender = mock_cmd_transmitter

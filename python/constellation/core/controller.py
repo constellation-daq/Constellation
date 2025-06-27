@@ -602,12 +602,16 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
         if cmd == "initialize" or cmd == "reconfigure":
             # payload needs to be a flat dictionary, but we want to allow to
             # supply a full config -- flatten it here
-            if any(isinstance(i, dict) for i in payload.values()):
-                # have a nested dict
-                cls, name = self._uuid_lookup[uuid]
-                cfg = flatten_config(payload, cls, name)
-                self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
-                return cfg
+            try:
+                if any(isinstance(i, dict) for i in payload.values()):
+                    # have a nested dict
+                    cls, name = self._uuid_lookup[uuid]
+                    cfg = flatten_config(payload, cls, name)
+                    self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
+                    return cfg
+            except AttributeError:
+                self.log.warning("Command needs a (valid) configuration dict.")
+                raise RuntimeError("Command needs a (valid) configuration dict.")
         return payload
 
     def _run_task_handler(self) -> None:
@@ -639,7 +643,7 @@ class BaseController(CHIRPBroadcaster, HeartbeatChecker):
             # initialization of the class fails
             pass
         if getattr(self, "_task_handler_event", None):
-            self._task_handler_thread.join()
+            self._task_handler_thread.join(timeout=1)
         super().reentry()
 
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:

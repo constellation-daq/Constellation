@@ -5,27 +5,23 @@ SPDX-License-Identifier: EUPL-1.2
 
 import time
 from datetime import datetime
-from unittest.mock import MagicMock, patch
 
 import pytest
 import zmq
-from conftest import mocket, send_port
+from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.commandmanager import CommandReceiver, cscp_requestable
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.network import get_loopback_interface_name
 
-CMD_PORT = send_port
+CMD_PORT = DEFAULT_SEND_PORT
 
 
 @pytest.fixture
-def mock_cmdreceiver(mock_chirp_transmitter):
-
-    def mocket_factory(*args, **kwargs):
-        m = mocket()
-        m.endpoint = 0
-        return m
+def mock_cmdreceiver(mock_zmq_context, mock_chirp_transmitter):
+    ctx = mock_zmq_context()
+    ctx.flip_queues()
 
     class MockCommandReceiver(CommandReceiver):
         @cscp_requestable
@@ -46,19 +42,16 @@ def mock_cmdreceiver(mock_chirp_transmitter):
         def _fcnnotallowed_is_allowed(self, msg):
             return False
 
-    with patch("constellation.core.commandmanager.zmq.Context") as mock:
-        mock_context = MagicMock()
-        mock_context.socket = mocket_factory
-        mock.return_value = mock_context
-        cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface=[get_loopback_interface_name()])
-        cr._add_com_thread()
-        cr._start_com_threads()
-        # give the thread a chance to start
-        time.sleep(0.1)
-        yield cr
+    cr = MockCommandReceiver("mock_satellite", cmd_port=CMD_PORT, interface=[get_loopback_interface_name()])
+    cr._add_com_thread()
+    cr._start_com_threads()
+    # give the thread a chance to start
+    time.sleep(0.1)
+    yield cr
+    # teardown
+    cr.reentry()
 
 
-@pytest.mark.forked
 def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
     """Test self-concistency between two transmitters (sender/receiver)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -76,9 +69,8 @@ def test_cmdtransmitter_send_recv(mock_socket_sender, mock_socket_receiver):
     assert "make your" in req.payload
 
 
-@pytest.mark.forked
 def test_cmdtransmitter_timestamp(mock_socket_sender, mock_socket_receiver):
-    """Test that commands are received case insensitive (i.e. lower)."""
+    """Test reception of correct timestamps."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
     receiver = CommandTransmitter("mock_receiver", mock_socket_receiver)
     # send a request with timestamp
@@ -90,7 +82,6 @@ def test_cmdtransmitter_timestamp(mock_socket_sender, mock_socket_receiver):
     assert req.tags["timestamp"] == timestamp
 
 
-@pytest.mark.forked
 def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_cmdreceiver):
     """Test that commands are received case insensitive (i.e. lower)."""
     sender = CommandTransmitter("mock_sender", mock_socket_sender)
@@ -101,7 +92,6 @@ def test_cmdtransmitter_case_insensitve(mock_socket_sender, mock_cmdreceiver):
     assert rep.verb_msg == "MockCommandReceiver.mock_satellite"
 
 
-@pytest.mark.forked
 def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     """Test sending cmds and retrieving answers."""
     # cmd w/o '_is_allowed' method: always allowed
@@ -132,7 +122,6 @@ def test_command_receiver(mock_cmdreceiver, mock_cmd_transmitter):
     assert not rep.payload
 
 
-@pytest.mark.forked
 def test_thread_shutdown(mock_cmdreceiver, mock_cmd_transmitter):
     """Test that receiver thread shuts down properly"""
     # shut down the thread
@@ -146,8 +135,7 @@ def test_thread_shutdown(mock_cmdreceiver, mock_cmd_transmitter):
     assert not mock_cmdreceiver._com_thread_evt
 
 
-@pytest.mark.forked
-def test_cmd_unique_commands():
+def test_cmd_unique_commands(mock_cmdreceiver):
     """Test that commands from different classes do not mix."""
 
     class MockOtherCommandReceiver(CommandReceiver):
@@ -155,8 +143,7 @@ def test_cmd_unique_commands():
         def get_unique_value(self, msg):
             return 42, None, None
 
-    with patch("constellation.core.commandmanager.zmq.Context"):
-        cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222, interface=[get_loopback_interface_name()])
-        msg, cmds, _meta = cr.get_commands()
-        # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
-        assert "get_state" not in cmds
+    cr = MockOtherCommandReceiver("mock_other_satellite", cmd_port=22222, interface=[get_loopback_interface_name()])
+    msg, cmds, _meta = cr.get_commands()
+    # get_state not part of MockOtherCommandReceiver but of MockCommandReceiver
+    assert "get_state" not in cmds
