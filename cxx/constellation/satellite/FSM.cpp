@@ -230,10 +230,11 @@ void FSM::requestFailure(std::string_view reason) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
 
-    // Trigger failure
-    const auto failing = reactIfAllowed(Transition::failure);
-    LOG(logger_, failing ? CRITICAL : WARNING)
-        << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
+    const auto msg = "Failure during satellite operation: " + std::string(reason);
+
+    // Trigger failure and pass reason as payload
+    const auto failing = reactIfAllowed(Transition::failure, {msg});
+    LOG(logger_, failing ? CRITICAL : WARNING) << msg << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
@@ -591,8 +592,14 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
     return State::SAFE;
 }
 
-FSM::State FSM::failure(TransitionPayload /* payload */) {
+FSM::State FSM::failure(TransitionPayload payload) {
+    // Set status message with information from payload:
     std::string reason;
+    if(std::holds_alternative<std::string>(payload)) {
+        reason = std::get<std::string>(std::move(payload));
+        set_status(reason);
+    }
+
     auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
