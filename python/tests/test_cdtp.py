@@ -199,8 +199,8 @@ def sender_satellite_array():
         t = threading.Thread(target=s.run_satellite)
         t.start()
         sats.append(s)
-    # give the threads a chance to start
-    time.sleep(0.2)
+        # give the threads a chance to start
+        time.sleep(0.2)
     yield sats
 
 
@@ -607,14 +607,20 @@ def test_receiver_stats(
 def test_receive_many_satellites_interrupt(
     capsys,
     caplog,
+    controller,
     receiver_satellite,
     sender_satellite_array,
-    controller,
 ):
     """Test receiving and writing data from multiple satellites and interrupting."""
     receiver = receiver_satellite
     # list of all satellites
     all_sats = [*sender_satellite_array, receiver]
+    # allow chirp phase to conclude
+    timeout = 4
+    while timeout > 0 and len(controller.constellation.satellites) < len(all_sats):
+        timeout -= 0.005
+        time.sleep(0.005)
+    assert len(controller.constellation.satellites) == len(all_sats), "Test setup failed"
     with TemporaryDirectory() as tmpdir:
         for run_num in range(2):
             # initialize
