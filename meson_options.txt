@@ -17,6 +17,7 @@ option('controller_missioncontrol', type: 'boolean', value: true, description: '
 
 # Listeners
 option('listener_observatory', type: 'boolean', value: true, description: 'Build the Observatory Qt Log Listener GUI')
+option('listener_telemetry_console', type: 'boolean', value: true, description: 'Build the Telemetry Console Qt GUI')
 
 # Satellites
 option('build_satellites', type: 'boolean', value: true, description: 'Build satellites')
