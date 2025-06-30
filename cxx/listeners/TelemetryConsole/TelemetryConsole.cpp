@@ -129,9 +129,9 @@ void TelemetryConsole::onDeleteMetricWidgets() {
 }
 
 void TelemetryConsole::onResetMetricWidgets() {
-    // Call the clear method of all widgets
+    // Call the reset method of all widgets
     for(auto& metric : metric_widgets_) {
-        metric->clear();
+        metric->reset();
     }
 }
 
