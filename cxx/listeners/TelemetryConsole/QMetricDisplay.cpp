@@ -11,13 +11,19 @@
 
 #include <algorithm>
 
+#include <QApplication>
 #include <QDateTime>
+#include <QGraphicsLayout>
 #include <QLabel>
 #include <QToolButton>
+
+#include "constellation/gui/qt_utils.hpp"
 
 #include <QtCharts/QChart>
 #include <QtGui/QPainter>
 #include <QtWidgets/QVBoxLayout>
+
+using namespace constellation::gui;
 
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
@@ -34,8 +40,7 @@ QMetricDisplay::QMetricDisplay(
 
     // Add title label above the metric display (optional)
     auto* titleLabel = new QLabel(sender + ": ", this);
-    titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
-    value_label_.setStyleSheet("margin-bottom: 4px;");
+    titleLabel->setStyleSheet("font-weight: bold;");
 
     auto* resetBtn = new QToolButton(this);
     resetBtn->setIcon(QIcon(":/action/reset"));
@@ -56,10 +61,16 @@ QMetricDisplay::QMetricDisplay(
     topBar->addWidget(resetBtn);
     topBar->addWidget(deleteBtn);
 
+    const auto current = this->palette().color(QPalette::Window);
+    const auto bg_color = is_dark_mode() ? current.darker(120) : current.lighter(120);
+
     auto chart = chart_view_->chart();
     chart->addAxis(&axis_x_, Qt::AlignBottom);
     chart->addAxis(&axis_y_, Qt::AlignLeft);
     chart->legend()->hide();
+    chart->layout()->setContentsMargins(0, 0, 0, 0);
+    chart->setTheme(is_dark_mode() ? QChart::ChartThemeDark : QChart::ChartThemeLight);
+    chart->setBackgroundBrush(QBrush(bg_color));
 
     layout->addLayout(topBar);
     layout->addWidget(chart_view_.get());
@@ -68,7 +79,8 @@ QMetricDisplay::QMetricDisplay(
     // Apply visual frame to thew widget
     setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     setLineWidth(1);
-    setStyleSheet("QMetricDisplay { border: 1px solid #888; border-radius: 6px; background: #fafafa; }");
+    setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                  QString("background-color: %1;").arg(bg_color.name()) + " }");
 
     // Reset axes
     reset();
