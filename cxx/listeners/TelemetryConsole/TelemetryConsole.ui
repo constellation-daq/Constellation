@@ -284,6 +284,10 @@
              <property name="text">
               <string>Add</string>
              </property>
+             <property name="icon">
+              <iconset resource="../../constellation/gui/Constellation.qrc">
+               <normaloff>:/action/add</normaloff>:/action/add</iconset>
+             </property>
             </widget>
            </item>
           </layout>
@@ -292,7 +296,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox_2">
           <property name="title">
-           <string>Metrics</string>
+           <string>Dashboard</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
@@ -300,12 +304,20 @@
              <property name="text">
               <string>Reset</string>
              </property>
+             <property name="icon">
+              <iconset resource="../../constellation/gui/Constellation.qrc">
+               <normaloff>:/action/reset</normaloff>:/action/reset</iconset>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="clearMetrics">
              <property name="text">
               <string>Clear</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../../constellation/gui/Constellation.qrc">
+               <normaloff>:/action/delete</normaloff>:/action/delete</iconset>
              </property>
             </widget>
            </item>
@@ -331,6 +343,7 @@
  </widget>
  <resources>
   <include location="TelemetryConsole.qrc"/>
+  <include location="../../constellation/gui/Constellation.qrc"/>
  </resources>
  <connections/>
 </ui>
