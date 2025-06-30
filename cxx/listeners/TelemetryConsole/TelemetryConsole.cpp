@@ -95,23 +95,8 @@ void TelemetryConsole::onAddMetric() {
     }
 
     // Create new metric widget
-    auto* metric_widget = create_metric_display(
+    create_metric_display(
         sender, metric, type, checkBoxWindow->isChecked(), static_cast<std::size_t>(spinBoxMins->value()) * 60);
-
-    if(metric_widget == nullptr) {
-        return;
-    }
-
-    // Subscribe to metric
-    stat_listener_.subscribeMetric(sender.toStdString(), metric.toStdString());
-
-    // Connect delete request and update method
-    connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::onDeleteMetricWidget);
-    connect(&stat_listener_, &QStatListener::newMessage, metric_widget, &QMetricDisplay::update);
-
-    // Store widget and update layout
-    metric_widgets_.append(metric_widget);
-    update_layout();
 
     // Clear inputs for next metric to be added
     metricName->clear();
@@ -239,23 +224,35 @@ void TelemetryConsole::update_layout() {
     // NOLINTEND(cppcoreguidelines-owning-memory)
 }
 
-QMetricDisplay* TelemetryConsole::create_metric_display(
+void TelemetryConsole::create_metric_display(
     const QString& sender, const QString& name, const QString& type, bool window, std::size_t seconds) {
 
-    // Ownership is transferred to the caller
+    // Ownership is transferred to the storage
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
+    QMetricDisplay* metric_widget = nullptr;
     if(type == "Spline") {
-        return new QSplineMetricDisplay(sender, name, window, seconds, this);
-    }
-    if(type == "Scatter") {
-        return new QScatterMetricDisplay(sender, name, window, seconds, this);
-    }
-    if(type == "Area") {
-        return new QAreaMetricDisplay(sender, name, window, seconds, this);
+        metric_widget = new QSplineMetricDisplay(sender, name, window, seconds, this);
+    } else if(type == "Scatter") {
+        metric_widget = new QScatterMetricDisplay(sender, name, window, seconds, this);
+    } else if(type == "Area") {
+        metric_widget = new QAreaMetricDisplay(sender, name, window, seconds, this);
     }
     // NOLINTEND(cppcoreguidelines-owning-memory)
 
-    return nullptr;
+    if(metric_widget == nullptr) {
+        return;
+    }
+
+    // Subscribe to metric
+    stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
+
+    // Connect delete request and update method
+    connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::onDeleteMetricWidget);
+    connect(&stat_listener_, &QStatListener::newMessage, metric_widget, &QMetricDisplay::update);
+
+    // Store widget and update layout
+    metric_widgets_.append(metric_widget);
+    update_layout();
 }
 
 void TelemetryConsole::closeEvent(QCloseEvent* event) {

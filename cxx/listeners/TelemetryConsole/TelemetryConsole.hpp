@@ -89,9 +89,8 @@ private:
      * @param type Type of chart to book
      * @param window Boolean indicating whether this is a sliding window display
      * @param seconds Number of seconds the sliding window extends
-     * @return Widget
      */
-    QMetricDisplay*
+    void
     create_metric_display(const QString& sender, const QString& name, const QString& type, bool window, std::size_t seconds);
 
     // Vector of all metric widgets
