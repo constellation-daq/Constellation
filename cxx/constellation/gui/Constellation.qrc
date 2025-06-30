@@ -21,5 +21,6 @@
         <file alias="add">icons/material-add_circle.svg</file>
         <file alias="delete">icons/material-cancel.svg</file>
         <file alias="reset">icons/material-change_circle.svg</file>
+        <file alias="pause">icons/material-pause_circle.svg</file>
     </qresource>
 </RCC>

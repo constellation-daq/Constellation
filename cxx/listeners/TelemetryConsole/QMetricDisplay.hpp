@@ -16,6 +16,7 @@
 #include <QFrame>
 #include <QLabel>
 #include <QString>
+#include <QToolButton>
 #include <QVariant>
 #include <QWidget>
 
@@ -127,6 +128,11 @@ private:
     // Sender and metric information
     QString sender_;
     QString metric_;
+
+    // Buttons
+    QToolButton pause_btn_;
+    QToolButton reset_btn_;
+    QToolButton delete_btn_;
 };
 
 class QSplineMetricDisplay : public QMetricDisplay {

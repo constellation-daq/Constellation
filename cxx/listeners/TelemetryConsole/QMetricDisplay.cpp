@@ -48,24 +48,28 @@ QMetricDisplay::QMetricDisplay(
     auto* titleLabel = new QLabel(sender + ": ", this);
     titleLabel->setStyleSheet("font-weight: bold;");
 
-    auto* resetBtn = new QToolButton(this);
-    resetBtn->setIcon(QIcon(":/action/reset"));
-    resetBtn->setFixedSize(24, 24);
-    resetBtn->setToolTip("Reset the data of this metric display");
+    pause_btn_.setIcon(QIcon(":/action/pause"));
+    pause_btn_.setFixedSize(24, 24);
+    pause_btn_.setToolTip("Pause this metric display");
+    pause_btn_.setCheckable(true);
 
-    auto* deleteBtn = new QToolButton(this);
-    deleteBtn->setIcon(QIcon(":/action/delete"));
-    deleteBtn->setFixedSize(24, 24);
-    deleteBtn->setToolTip("Delete this metric display");
+    reset_btn_.setIcon(QIcon(":/action/reset"));
+    reset_btn_.setFixedSize(24, 24);
+    reset_btn_.setToolTip("Reset the data of this metric display");
 
-    connect(resetBtn, &QToolButton::clicked, this, &QMetricDisplay::reset);
-    connect(deleteBtn, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
+    delete_btn_.setIcon(QIcon(":/action/delete"));
+    delete_btn_.setFixedSize(24, 24);
+    delete_btn_.setToolTip("Delete this metric display");
+
+    connect(&reset_btn_, &QToolButton::clicked, this, &QMetricDisplay::reset);
+    connect(&delete_btn_, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
 
     topBar->addWidget(titleLabel);
     topBar->addWidget(&value_label_);
     topBar->addStretch();
-    topBar->addWidget(resetBtn);
-    topBar->addWidget(deleteBtn);
+    topBar->addWidget(&pause_btn_);
+    topBar->addWidget(&reset_btn_);
+    topBar->addWidget(&delete_btn_);
 
     const auto current = this->palette().color(QPalette::Window);
     const auto bg_color = is_dark_mode() ? current.darker(120) : current.lighter(120);
@@ -135,10 +139,12 @@ void QMetricDisplay::update(const QString& sender, const QString& metric, const 
 
     // Append point to series
     append_point(x.toMSecsSinceEpoch(), yd);
-    rescale_axes(x);
 
-    // Update labels
-    value_label_.setText(metric + " = " + y.toString());
+    // Rescale axes and update labels unless paused
+    if(!pause_btn_.isChecked()) {
+        rescale_axes(x);
+        value_label_.setText(metric + " = " + y.toString());
+    }
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
