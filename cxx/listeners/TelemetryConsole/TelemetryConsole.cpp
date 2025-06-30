@@ -188,11 +188,13 @@ void TelemetryConsole::update_layout() {
 
     // Generate splitters to allow resizing
     auto* splitter_vertical = new QSplitter(Qt::Vertical, &dashboard_widget_);
+    splitter_vertical->setHandleWidth(9);
 
     int widget_idx = 0;
     for(int row = 0; row < optimal_rows; ++row) {
         // Split row vertically
         auto* splitter_horizontal = new QSplitter(Qt::Horizontal, splitter_vertical);
+        splitter_horizontal->setHandleWidth(9);
 
         for(int col = 0; col < optimal_cols; ++col) {
             auto* w = (widget_idx < count ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));

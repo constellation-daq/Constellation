@@ -13,6 +13,7 @@
 
 #include <QDateTime>
 #include <QFrame>
+#include <QLabel>
 #include <QString>
 #include <QVariant>
 #include <QWidget>
@@ -101,6 +102,7 @@ private:
 
     std::unique_ptr<QChartView> chart_view_;
     QXYSeries* series_ {nullptr};
+    QLabel value_label_;
 
     // Axes
     QDateTimeAxis axis_x_;

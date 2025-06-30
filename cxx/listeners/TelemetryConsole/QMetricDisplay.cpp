@@ -21,8 +21,8 @@
 
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), window_sliding_(sliding), window_duration_(window),
-      sender_(sender), metric_(metric) {
+    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), value_label_(metric, this), window_sliding_(sliding),
+      window_duration_(window), sender_(sender), metric_(metric) {
 
     // Set up axis labels and format
     axis_x_.setFormat("HH:mm:ss");
@@ -33,8 +33,9 @@ QMetricDisplay::QMetricDisplay(
     auto* topBar = new QHBoxLayout();
 
     // Add title label above the metric display (optional)
-    auto* titleLabel = new QLabel(sender + ": " + metric, this);
+    auto* titleLabel = new QLabel(sender + ": ", this);
     titleLabel->setStyleSheet("font-weight: bold; margin-bottom: 4px;");
+    value_label_.setStyleSheet("margin-bottom: 4px;");
 
     auto* resetBtn = new QToolButton(this);
     resetBtn->setIcon(QIcon(":/action/reset"));
@@ -50,6 +51,7 @@ QMetricDisplay::QMetricDisplay(
     connect(deleteBtn, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
 
     topBar->addWidget(titleLabel);
+    topBar->addWidget(&value_label_);
     topBar->addStretch();
     topBar->addWidget(resetBtn);
     topBar->addWidget(deleteBtn);
@@ -115,19 +117,22 @@ void QMetricDisplay::update(const QString& sender, const QString& metric, const 
 
     series_->append(x.toMSecsSinceEpoch(), yd);
     rescale_axes(x);
+
+    // Update labels
+    value_label_.setText(metric + " = " + y.toString());
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     const auto local_time = newTime.toLocalTime();
 
     // Rescale y axis according to min/max values
-    const auto points = series_->points();
-    const auto [min, max] = std::minmax_element(
+    const auto& points = series_->points();
+    const auto& [min, max] = std::minmax_element(
         points.cbegin(), points.cend(), [](const QPointF& a, const QPointF& b) { return a.y() < b.y(); });
 
     if(min != points.cend() && max != points.cend()) {
         const auto span = std::max(1e-3, max->y() - min->y());
-        axis_y_.setRange(min->y() - span * 0.05, max->y() + span * 0.05);
+        axis_y_.setRange(min->y() - span * 0.1, max->y() + span * 0.1);
     }
 
     if(window_sliding_) {
