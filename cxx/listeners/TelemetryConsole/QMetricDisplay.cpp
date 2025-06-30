@@ -67,6 +67,9 @@ QMetricDisplay::QMetricDisplay(
     setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
     setLineWidth(1);
     setStyleSheet("QMetricDisplay { border: 1px solid #888; border-radius: 6px; background: #fafafa; }");
+
+    // Reset axes
+    reset();
 }
 
 void QMetricDisplay::init_series(QXYSeries* series) {
@@ -93,7 +96,8 @@ void QMetricDisplay::reset() {
     }
 
     // Reset axis ranges
-    axis_x_.setRange(QDateTime(), QDateTime());
+    axis_x_.setMin(QDateTime::currentDateTime().addSecs(-1));
+    axis_x_.setMax(QDateTime::currentDateTime());
     axis_y_.setRange(0.0, 1.0);
 }
 
@@ -114,6 +118,7 @@ void QMetricDisplay::update(const QString& sender, const QString& metric, const 
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
+    const auto local_time = newTime.toLocalTime();
 
     // Rescale y axis according to min/max values
     const auto points = series_->points();
@@ -125,17 +130,17 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
         axis_y_.setRange(min->y() - span * 0.05, max->y() + span * 0.05);
     }
 
-    if(!axis_x_.min().isValid()) {
-        axis_x_.setRange(QDateTime::currentDateTime(), newTime);
+    if(window_sliding_) {
+        const auto end = local_time;
+        const auto start = end.addSecs(-1 * static_cast<int>(window_duration_));
+        axis_x_.setRange(start, end);
         return;
     }
 
-    if(window_sliding_) {
-        const auto end = newTime;
-        const auto start = end.addSecs(-1 * static_cast<int>(window_duration_));
-        axis_x_.setRange(start, end);
-    } else {
-        if(newTime > axis_x_.max())
-            axis_x_.setMax(newTime);
+    if(local_time > axis_x_.max()) {
+        axis_x_.setMax(local_time);
+    }
+    if(local_time < axis_x_.min()) {
+        axis_x_.setMin(local_time);
     }
 }
