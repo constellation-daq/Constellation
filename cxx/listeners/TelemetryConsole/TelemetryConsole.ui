@@ -23,7 +23,7 @@
      <number>6</number>
     </property>
     <property name="bottomMargin">
-     <number>0</number>
+     <number>9</number>
     </property>
     <property name="margin" stdset="0">
      <number>9</number>
@@ -159,7 +159,7 @@
            <x>0</x>
            <y>0</y>
            <width>1285</width>
-           <height>597</height>
+           <height>588</height>
           </rect>
          </property>
         </widget>
