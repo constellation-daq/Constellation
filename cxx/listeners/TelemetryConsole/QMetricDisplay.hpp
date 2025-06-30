@@ -27,6 +27,12 @@
 #include <QtCharts/QValueAxis>
 #include <QtCharts/QXYSeries>
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#define QT_CHART QtCharts::
+#else
+#define QT_CHART
+#endif
+
 /**
  * @class QMetricDisplay
  * @brief Base class for displaying an auto-updating chart view of a given metric
@@ -90,7 +96,7 @@ protected:
      *
      * @param series Series holding the data for this chart
      */
-    void init_series(QAbstractSeries* series);
+    void init_series(QT_CHART QAbstractSeries* series);
 
     virtual void append_point(qint64 x, double y) = 0;
 
@@ -105,13 +111,13 @@ private:
      */
     void rescale_axes(const QDateTime& time);
 
-    std::unique_ptr<QChartView> chart_view_;
-    QAbstractSeries* series_ {nullptr};
+    std::unique_ptr<QT_CHART QChartView> chart_view_;
+    QT_CHART QAbstractSeries* series_ {nullptr};
     QLabel value_label_;
 
     // Axes
-    QDateTimeAxis axis_x_;
-    QValueAxis axis_y_;
+    QT_CHART QDateTimeAxis axis_x_;
+    QT_CHART QValueAxis axis_y_;
 
     // Sliding window settings
     bool window_sliding_;
@@ -132,7 +138,7 @@ private:
     void clear() override;
     QList<QPointF> points() override;
     void append_point(qint64 x, double y) override;
-    QSplineSeries* spline_;
+    QT_CHART QSplineSeries* spline_;
 };
 
 class QScatterMetricDisplay : public QMetricDisplay {
@@ -145,7 +151,7 @@ private:
     void clear() override;
     QList<QPointF> points() override;
     void append_point(qint64 x, double y) override;
-    QScatterSeries* scatter_;
+    QT_CHART QScatterSeries* scatter_;
 };
 
 class QAreaMetricDisplay : public QMetricDisplay {
@@ -158,7 +164,7 @@ private:
     void clear() override;
     QList<QPointF> points() override;
     void append_point(qint64 x, double y) override;
-    QSplineSeries* spline_;
-    QLineSeries* lower_;
-    QAreaSeries* area_series_ = nullptr;
+    QT_CHART QSplineSeries* spline_;
+    QT_CHART QLineSeries* lower_;
+    QT_CHART QAreaSeries* area_series_ = nullptr;
 };

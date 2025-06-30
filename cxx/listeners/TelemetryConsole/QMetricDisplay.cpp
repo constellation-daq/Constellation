@@ -23,7 +23,11 @@
 #include <QtGui/QPainter>
 #include <QtWidgets/QVBoxLayout>
 
-using namespace constellation::gui;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+using namespace QtCharts
+#endif
+
+    using namespace constellation::gui;
 
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
