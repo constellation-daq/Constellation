@@ -86,7 +86,7 @@ QMetricDisplay::QMetricDisplay(
     reset();
 }
 
-void QMetricDisplay::init_series(QXYSeries* series) {
+void QMetricDisplay::init_series(QAbstractSeries* series) {
     if(series == nullptr) {
         return;
     }
@@ -106,7 +106,7 @@ void QMetricDisplay::init_series(QXYSeries* series) {
 
 void QMetricDisplay::reset() {
     if(series_) {
-        series_->clear();
+        this->clear();
     }
 
     // Reset axis ranges
@@ -127,7 +127,8 @@ void QMetricDisplay::update(const QString& sender, const QString& metric, const 
         return;
     }
 
-    series_->append(x.toMSecsSinceEpoch(), yd);
+    // Append point to series
+    append_point(x.toMSecsSinceEpoch(), yd);
     rescale_axes(x);
 
     // Update labels
@@ -138,7 +139,7 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     const auto local_time = newTime.toLocalTime();
 
     // Rescale y axis according to min/max values
-    const auto& points = series_->points();
+    const auto& points = this->points();
     const auto& [min, max] = std::minmax_element(
         points.cbegin(), points.cend(), [](const QPointF& a, const QPointF& b) { return a.y() < b.y(); });
 
@@ -160,4 +161,66 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     if(local_time < axis_x_.min()) {
         axis_x_.setMin(local_time);
     }
+}
+
+QSplineMetricDisplay::QSplineMetricDisplay(
+    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
+    : QMetricDisplay(sender, metric, sliding, window, parent) {
+    spline_ = new QSplineSeries();
+    init_series(spline_);
+}
+
+void QSplineMetricDisplay::clear() {
+    spline_->clear();
+};
+
+QList<QPointF> QSplineMetricDisplay::points() {
+    return spline_->points();
+};
+
+void QSplineMetricDisplay::append_point(qint64 x, double y) {
+    spline_->append(x, y);
+}
+
+QScatterMetricDisplay::QScatterMetricDisplay(
+    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
+    : QMetricDisplay(sender, metric, sliding, window, parent) {
+    scatter_ = new QScatterSeries();
+    scatter_->setMarkerSize(8.0);
+    init_series(scatter_);
+}
+
+void QScatterMetricDisplay::clear() {
+    scatter_->clear();
+};
+
+QList<QPointF> QScatterMetricDisplay::points() {
+    return scatter_->points();
+};
+
+void QScatterMetricDisplay::append_point(qint64 x, double y) {
+    scatter_->append(x, y);
+}
+
+QAreaMetricDisplay::QAreaMetricDisplay(
+    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
+    : QMetricDisplay(sender, metric, sliding, window, parent) {
+    spline_ = new QSplineSeries();
+    lower_ = new QLineSeries();
+    area_series_ = new QAreaSeries(spline_, lower_);
+    init_series(area_series_);
+}
+
+void QAreaMetricDisplay::clear() {
+    spline_->clear();
+    lower_->clear();
+};
+
+QList<QPointF> QAreaMetricDisplay::points() {
+    return spline_->points();
+};
+
+void QAreaMetricDisplay::append_point(qint64 x, double y) {
+    spline_->append(x, y);
+    lower_->append(x, 0);
 }

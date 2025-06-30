@@ -90,7 +90,12 @@ protected:
      *
      * @param series Series holding the data for this chart
      */
-    void init_series(QXYSeries* series);
+    void init_series(QAbstractSeries* series);
+
+    virtual void append_point(qint64 x, double y) = 0;
+
+    virtual void clear() = 0;
+    virtual QList<QPointF> points() = 0;
 
 private:
     /**
@@ -101,7 +106,7 @@ private:
     void rescale_axes(const QDateTime& time);
 
     std::unique_ptr<QChartView> chart_view_;
-    QXYSeries* series_ {nullptr};
+    QAbstractSeries* series_ {nullptr};
     QLabel value_label_;
 
     // Axes
@@ -121,37 +126,39 @@ class QSplineMetricDisplay : public QMetricDisplay {
     Q_OBJECT
 public:
     QSplineMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr)
-        : QMetricDisplay(sender, metric, sliding, window, parent) {
-        auto* spline = new QSplineSeries();
-        init_series(spline);
-    }
+        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
+
+private:
+    void clear() override;
+    QList<QPointF> points() override;
+    void append_point(qint64 x, double y) override;
+    QSplineSeries* spline_;
 };
 
 class QScatterMetricDisplay : public QMetricDisplay {
     Q_OBJECT
 public:
     QScatterMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr)
-        : QMetricDisplay(sender, metric, sliding, window, parent) {
-        auto* scatter = new QScatterSeries();
-        scatter->setMarkerSize(8.0);
-        init_series(scatter);
-    }
+        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
+
+private:
+    void clear() override;
+    QList<QPointF> points() override;
+    void append_point(qint64 x, double y) override;
+    QScatterSeries* scatter_;
 };
 
 class QAreaMetricDisplay : public QMetricDisplay {
     Q_OBJECT
 public:
     QAreaMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr)
-        : QMetricDisplay(sender, metric, sliding, window, parent) {
-        auto* spline = new QSplineSeries();
-        auto* lower = new QLineSeries(parent);
-        area_series_ = new QAreaSeries(spline, lower);
-        init_series(spline); // add area series as main series
-    }
+        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
 
 private:
+    void clear() override;
+    QList<QPointF> points() override;
+    void append_point(qint64 x, double y) override;
+    QSplineSeries* spline_;
+    QLineSeries* lower_;
     QAreaSeries* area_series_ = nullptr;
 };
