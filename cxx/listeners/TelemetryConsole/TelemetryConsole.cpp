@@ -58,6 +58,15 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         metricSender->setCurrentIndex(-1);
     });
 
+    // Update existing metric widgets with connection updates:
+    connect(&stat_listener_, &QStatListener::senderDisconnected, this, [&](const QString& host) {
+        for(auto& metric : metric_widgets_) {
+            if(metric->getSender() == host) {
+                metric->setConnection(false);
+            }
+        }
+    });
+
     // Start the log receiver pool
     stat_listener_.startPool();
 

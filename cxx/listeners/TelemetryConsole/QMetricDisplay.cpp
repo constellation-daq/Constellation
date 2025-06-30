@@ -45,9 +45,8 @@ QMetricDisplay::QMetricDisplay(
     auto* layout = new QVBoxLayout(this);
     auto* topBar = new QHBoxLayout();
 
-    // Add title label above the metric display (optional)
-    auto* titleLabel = new QLabel(sender + ": ", this);
-    titleLabel->setStyleSheet("font-weight: bold;");
+    title_label_.setText(sender + ": ");
+    title_label_.setStyleSheet("font-weight: bold;");
 
     pause_btn_.setIcon(QIcon(":/action/pause"));
     pause_btn_.setFixedSize(24, 24);
@@ -65,7 +64,7 @@ QMetricDisplay::QMetricDisplay(
     connect(&reset_btn_, &QToolButton::clicked, this, &QMetricDisplay::reset);
     connect(&delete_btn_, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
 
-    topBar->addWidget(titleLabel);
+    topBar->addWidget(&title_label_);
     topBar->addWidget(&value_label_);
     topBar->addStretch();
     topBar->addWidget(&pause_btn_);
@@ -102,6 +101,16 @@ std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
         return window_duration_;
     }
     return {};
+}
+
+void QMetricDisplay::setConnection(bool connected) {
+    if(!connected) {
+        title_label_.setText(sender_ + " (disconnected): ");
+        title_label_.setStyleSheet("font-weight: bold; color: red");
+    } else {
+        title_label_.setText(sender_ + ": ");
+        title_label_.setStyleSheet("font-weight: bold;");
+    }
 }
 
 void QMetricDisplay::init_series(QAbstractSeries* series) {

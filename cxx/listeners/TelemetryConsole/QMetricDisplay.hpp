@@ -82,6 +82,13 @@ public:
      */
     std::optional<std::size_t> slidingWindow() const;
 
+    /**
+     * @brief Mark sender as disconnected
+     *
+     * @param connected Boolean indicating connection status of sender
+     */
+    void setConnection(bool connected);
+
 signals:
     /**
      * @brief Signal to indicate a deletion request
@@ -137,7 +144,8 @@ private:
     QString sender_;
     QString metric_;
 
-    // Buttons
+    // Buttons & labels
+    QLabel title_label_;
     QToolButton pause_btn_;
     QToolButton reset_btn_;
     QToolButton delete_btn_;
