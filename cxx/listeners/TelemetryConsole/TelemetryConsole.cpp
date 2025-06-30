@@ -64,6 +64,15 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     // Central dashboard widget with scroll area to hold widgets
     scrollArea->setWidgetResizable(true);
     scrollArea->setWidget(&dashboard_widget_);
+
+    // Restore window geometry:
+    restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
+    restoreState(gui_settings_.value("window/savestate", saveState()).toByteArray());
+    move(gui_settings_.value("window/pos", pos()).toPoint());
+    resize(gui_settings_.value("window/size", size()).toSize());
+    if(gui_settings_.value("window/maximized", isMaximized()).toBool()) {
+        showMaximized();
+    }
 }
 
 void TelemetryConsole::onAddMetric() {
@@ -243,6 +252,15 @@ QMetricDisplay* TelemetryConsole::create_metric_display(
 void TelemetryConsole::closeEvent(QCloseEvent* event) {
     // Stop the stat receiver
     stat_listener_.stopPool();
+
+    // Store window geometry:
+    gui_settings_.setValue("window/geometry", saveGeometry());
+    gui_settings_.setValue("window/savestate", saveState());
+    gui_settings_.setValue("window/maximized", isMaximized());
+    if(!isMaximized()) {
+        gui_settings_.setValue("window/pos", pos());
+        gui_settings_.setValue("window/size", size());
+    }
 
     // Terminate the application
     event->accept();

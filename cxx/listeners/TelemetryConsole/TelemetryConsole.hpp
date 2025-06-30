@@ -14,6 +14,7 @@
 
 #include <QCloseEvent>
 #include <QMainWindow>
+#include <QSettings>
 #include <QVector>
 #include <QWidget>
 
@@ -98,4 +99,7 @@ private:
 
     // Qt widget to display dashboard
     QWidget dashboard_widget_;
+
+    /** UI Settings */
+    QSettings gui_settings_;
 };
