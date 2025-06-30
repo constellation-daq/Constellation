@@ -47,10 +47,12 @@ void QStatListener::process_message(CMDP1StatMessage&& msg) {
 
 void QStatListener::sender_connected(std::string_view sender) {
     // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
     emit senderConnected(QString::fromStdString(std::string(sender)));
 }
 
 void QStatListener::sender_disconnected(std::string_view sender) {
     // Emit signals with the current number of connections & the sender name
+    emit connectionsChanged(countSockets());
     emit senderDisconnected(QString::fromStdString(std::string(sender)));
 }

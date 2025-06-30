@@ -35,6 +35,12 @@ public:
 
 signals:
     /**
+     * @brief Signal emitted whenever a connection changed
+     * @param connections Number of currently held connections
+     */
+    void connectionsChanged(std::size_t connections);
+
+    /**
      * @brief Signal emitted when a new sender connects to the stat listener
      * @param host Canonical name of the newly connected sender
      */
