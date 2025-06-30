@@ -30,4 +30,4 @@ meson configure build -Dsatellite_mattermost=true
 | `webhook_url` | URL of the Mattermost webhook | string | - |
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
 | `ignore_topics` | Ignore log messages with certain topics | list of strings | [`FSM`] |
-| `only_in_run` | Only log to Mattermost in the `RUN`, `interrupting` or `SAFE` state | bool | `true` |
+| `only_in_run` | Only log to Mattermost in the `RUN`, `interrupting` or `SAFE` state | bool | `false` |

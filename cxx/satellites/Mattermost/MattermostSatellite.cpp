@@ -60,7 +60,7 @@ void MattermostSatellite::initializing(Configuration& config) {
     ignore_topics_.clear();
     ignore_topics_.insert(ignore_topics_v.begin(), ignore_topics_v.end());
 
-    only_in_run_ = config.get<bool>("only_in_run", true);
+    only_in_run_ = config.get<bool>("only_in_run", false);
     LOG_IF(INFO, only_in_run_) << "Only logging to Mattermost in RUN state";
 
     // Stop pool in case it was already started
