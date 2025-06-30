@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <memory>
+#include <optional>
 
 #include <QDateTime>
 #include <QFrame>
@@ -73,6 +74,13 @@ public:
      * @return Name of the metric
      */
     QString getMetric() const { return metric_; }
+
+    /**
+     * @brief Get sliding window length
+     * @details Only holds a value if sliding window is active
+     * @return Optional with sliding window length
+     */
+    std::optional<std::size_t> slidingWindow() const;
 
 signals:
     /**

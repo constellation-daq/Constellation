@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <memory>
+#include <optional>
 
 #include <QApplication>
 #include <QDateTime>
@@ -94,6 +95,13 @@ QMetricDisplay::QMetricDisplay(
 
     // Reset axes
     reset();
+}
+
+std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
+    if(window_sliding_) {
+        return window_duration_;
+    }
+    return {};
 }
 
 void QMetricDisplay::init_series(QAbstractSeries* series) {
