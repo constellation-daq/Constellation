@@ -10,6 +10,8 @@
 #include "QMetricDisplay.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <memory>
 
 #include <QApplication>
 #include <QDateTime>
@@ -68,7 +70,7 @@ QMetricDisplay::QMetricDisplay(
     const auto current = this->palette().color(QPalette::Window);
     const auto bg_color = is_dark_mode() ? current.darker(120) : current.lighter(120);
 
-    auto chart = chart_view_->chart();
+    auto* chart = chart_view_->chart();
     chart->addAxis(&axis_x_, Qt::AlignBottom);
     chart->addAxis(&axis_y_, Qt::AlignLeft);
     chart->legend()->hide();
@@ -95,7 +97,7 @@ void QMetricDisplay::init_series(QAbstractSeries* series) {
         return;
     }
 
-    if(series_) {
+    if(series_ != nullptr) {
         series_->detachAxis(&axis_x_);
         series_->detachAxis(&axis_y_);
         chart_view_->chart()->removeSeries(series_);
@@ -109,7 +111,7 @@ void QMetricDisplay::init_series(QAbstractSeries* series) {
 }
 
 void QMetricDisplay::reset() {
-    if(series_) {
+    if(series_ != nullptr) {
         this->clear();
     }
 
@@ -144,18 +146,17 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
 
     // Rescale y axis according to min/max values
     const auto& points = this->points();
-    const auto& [min, max] = std::minmax_element(
-        points.cbegin(), points.cend(), [](const QPointF& a, const QPointF& b) { return a.y() < b.y(); });
+    const auto& [min, max] =
+        std::ranges::minmax_element(points, [](const QPointF& a, const QPointF& b) { return a.y() < b.y(); });
 
     if(min != points.cend() && max != points.cend()) {
         const auto span = std::max(1e-3, max->y() - min->y());
-        axis_y_.setRange(min->y() - span * 0.1, max->y() + span * 0.1);
+        axis_y_.setRange(min->y() - (span * 0.1), max->y() + (span * 0.1));
     }
 
     if(window_sliding_) {
-        const auto end = local_time;
-        const auto start = end.addSecs(-1 * static_cast<int>(window_duration_));
-        axis_x_.setRange(start, end);
+        const auto start = local_time.addSecs(-1 * static_cast<qint64>(window_duration_));
+        axis_x_.setRange(start, local_time);
         return;
     }
 
@@ -169,8 +170,7 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
 
 QSplineMetricDisplay::QSplineMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent) {
-    spline_ = new QSplineSeries();
+    : QMetricDisplay(sender, metric, sliding, window, parent), spline_(new QSplineSeries()) {
     init_series(spline_);
 }
 
@@ -183,13 +183,12 @@ QList<QPointF> QSplineMetricDisplay::points() {
 };
 
 void QSplineMetricDisplay::append_point(qint64 x, double y) {
-    spline_->append(x, y);
+    spline_->append(static_cast<double>(x), y);
 }
 
 QScatterMetricDisplay::QScatterMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent) {
-    scatter_ = new QScatterSeries();
+    : QMetricDisplay(sender, metric, sliding, window, parent), scatter_(new QScatterSeries()) {
     scatter_->setMarkerSize(8.0);
     init_series(scatter_);
 }
@@ -203,15 +202,13 @@ QList<QPointF> QScatterMetricDisplay::points() {
 };
 
 void QScatterMetricDisplay::append_point(qint64 x, double y) {
-    scatter_->append(x, y);
+    scatter_->append(static_cast<double>(x), y);
 }
 
 QAreaMetricDisplay::QAreaMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent) {
-    spline_ = new QSplineSeries();
-    lower_ = new QLineSeries();
-    area_series_ = new QAreaSeries(spline_, lower_);
+    : QMetricDisplay(sender, metric, sliding, window, parent), spline_(new QSplineSeries()), lower_(new QLineSeries()),
+      area_series_(new QAreaSeries(spline_, lower_)) {
     init_series(area_series_);
 }
 
@@ -225,6 +222,6 @@ QList<QPointF> QAreaMetricDisplay::points() {
 };
 
 void QAreaMetricDisplay::append_point(qint64 x, double y) {
-    spline_->append(x, y);
-    lower_->append(x, 0);
+    spline_->append(static_cast<double>(x), y);
+    lower_->append(static_cast<double>(x), 0);
 }

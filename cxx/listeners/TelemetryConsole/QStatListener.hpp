@@ -10,9 +10,6 @@
 #pragma once
 
 #include <cstddef>
-#include <deque>
-#include <mutex>
-#include <shared_mutex>
 #include <string_view>
 
 #include <QObject>

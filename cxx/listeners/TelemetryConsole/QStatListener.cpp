@@ -9,11 +9,9 @@
 
 #include "QStatListener.hpp"
 
-#include <cstddef>
-#include <mutex>
-#include <shared_mutex>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include <QDateTime>
 #include <QObject>
@@ -23,7 +21,7 @@
 
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/gui/qt_utils.hpp"
-#include "constellation/listener/LogListener.hpp"
+#include "constellation/listener/StatListener.hpp"
 
 using namespace constellation::message;
 using namespace constellation::gui;
@@ -32,6 +30,7 @@ using namespace constellation::listener;
 QStatListener::QStatListener(QObject* parent)
     : QObject(parent), StatListener("STAT", [this](auto&& arg) { process_message(std::forward<decltype(arg)>(arg)); }) {}
 
+// NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void QStatListener::process_message(CMDP1StatMessage&& msg) {
 
     const auto sender = QString::fromStdString(std::string(msg.getHeader().getSender()));

@@ -9,6 +9,11 @@
 
 #include "TelemetryConsole.hpp"
 
+#include <cstddef>
+#include <limits>
+#include <string>
+#include <string_view>
+
 #include <QCloseEvent>
 #include <QDateTime>
 #include <QList>
@@ -16,8 +21,6 @@
 #include <QString>
 #include <QVBoxLayout>
 #include <QWidget>
-
-#include "constellation/build.hpp"
 
 #include "QMetricDisplay.hpp"
 #include "QStatListener.hpp"
@@ -75,7 +78,7 @@ void TelemetryConsole::onAddMetric() {
 
     // Create new metric widget
     auto* metric_widget = create_metric_display(
-        sender, metric, type, checkBoxWindow->isChecked(), static_cast<std::size_t>(spinBoxMins->value() * 60));
+        sender, metric, type, checkBoxWindow->isChecked(), static_cast<std::size_t>(spinBoxMins->value()) * 60);
 
     if(metric_widget == nullptr) {
         return;
@@ -100,7 +103,7 @@ void TelemetryConsole::onAddMetric() {
 void TelemetryConsole::onDeleteMetricWidget() {
     // Get object which sent this signal
     auto* metric_widget = qobject_cast<QMetricDisplay*>(sender());
-    if(!metric_widget) {
+    if(metric_widget == nullptr) {
         return;
     }
 
@@ -141,7 +144,8 @@ void TelemetryConsole::update_layout() {
     }
 
     // Delete old layout and remove child widgets
-    if(auto* old_layout = dashboard_widget_.layout()) {
+    auto* old_layout = dashboard_widget_.layout();
+    if(old_layout != nullptr) {
         delete old_layout;
     }
 
@@ -162,20 +166,20 @@ void TelemetryConsole::update_layout() {
     constexpr double penalty_weight = 0.5;
     auto best_score = std::numeric_limits<double>::max();
 
-    const auto count = metric_widgets_.size();
-    int optimal_cols = 1;
-    int optimal_rows = count;
+    const auto count = static_cast<std::size_t>(metric_widgets_.size());
+    std::size_t optimal_cols = 1;
+    std::size_t optimal_rows = count;
 
     // Find optimal number of columns
-    for(int cols = 1; cols <= count; ++cols) {
-        const auto rows = (count + cols - 1) / cols; // ceil division
-        const auto empty_cells = cols * rows - count;
+    for(std::size_t cols = 1; cols <= count; ++cols) {
+        const auto rows = (count + cols - 1) / cols;
+        const auto empty_cells = (cols * rows) - count;
 
         // Difference to target ratio
-        const auto ratio_difference = std::abs(static_cast<double>(cols) / rows - target_ratio);
+        const auto ratio_difference = std::abs((static_cast<double>(cols) / static_cast<double>(rows)) - target_ratio);
 
         // Final score consisting of ratio difference and penalties for empty cells
-        const auto score = ratio_difference + empty_cells * penalty_weight;
+        const auto score = ratio_difference + (static_cast<double>(empty_cells) * penalty_weight);
         if(score < best_score) {
             best_score = score;
             optimal_cols = cols;
@@ -190,13 +194,13 @@ void TelemetryConsole::update_layout() {
     auto* splitter_vertical = new QSplitter(Qt::Vertical, &dashboard_widget_);
     splitter_vertical->setHandleWidth(9);
 
-    int widget_idx = 0;
-    for(int row = 0; row < optimal_rows; ++row) {
+    std::size_t widget_idx = 0;
+    for(std::size_t row = 0; row < optimal_rows; ++row) {
         // Split row vertically
         auto* splitter_horizontal = new QSplitter(Qt::Horizontal, splitter_vertical);
         splitter_horizontal->setHandleWidth(9);
 
-        for(int col = 0; col < optimal_cols; ++col) {
+        for(std::size_t col = 0; col < optimal_cols; ++col) {
             auto* w = (widget_idx < count ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
             w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             splitter_horizontal->addWidget(w);
@@ -224,9 +228,11 @@ QMetricDisplay* TelemetryConsole::create_metric_display(
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
     if(type == "Spline") {
         return new QSplineMetricDisplay(sender, name, window, seconds, this);
-    } else if(type == "Scatter") {
+    }
+    if(type == "Scatter") {
         return new QScatterMetricDisplay(sender, name, window, seconds, this);
-    } else if(type == "Area") {
+    }
+    if(type == "Area") {
         return new QAreaMetricDisplay(sender, name, window, seconds, this);
     }
     // NOLINTEND(cppcoreguidelines-owning-memory)

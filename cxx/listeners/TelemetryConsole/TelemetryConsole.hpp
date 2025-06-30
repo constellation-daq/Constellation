@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include <cstddef>
+#include <string_view>
+
 #include <QCloseEvent>
 #include <QMainWindow>
 #include <QVector>
@@ -42,7 +45,7 @@ public:
      */
     void closeEvent(QCloseEvent* event) override;
 
-private slots:
+public slots:
     /**
      * @brief Slot for adding a new metric to the dashboard
      * @details Creates the metric display and handles subscriptions
