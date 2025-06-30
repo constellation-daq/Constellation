@@ -209,7 +209,7 @@ void TelemetryConsole::update_layout() {
     splitter_vertical->setSizes(QList<int>(optimal_rows, 1));
 
     auto* layout = new QVBoxLayout(&dashboard_widget_);
-    layout->setContentsMargins(6, 6, 6, 6);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(splitter_vertical);
     dashboard_widget_.setLayout(layout);
     // NOLINTEND(cppcoreguidelines-owning-memory)
