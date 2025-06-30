@@ -10,6 +10,7 @@
 #include "MattermostSatellite.hpp"
 
 #include <chrono> // IWYU pragma: keep
+#include <set>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -31,11 +32,16 @@ using namespace constellation::config;
 using namespace constellation::listener;
 using namespace constellation::log;
 using namespace constellation::message;
-using namespace constellation::protocol;
+using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
 using namespace std::string_literals;
+
+namespace {
+    // NOLINTNEXTLINE(cert-err58-cpp)
+    const std::set<State> run_interrupting_safe {State::RUN, State::interrupting, State::SAFE};
+} // namespace
 
 MattermostSatellite::MattermostSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), LogListener("MATTERMOST", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
@@ -54,6 +60,9 @@ void MattermostSatellite::initializing(Configuration& config) {
     ignore_topics_.clear();
     ignore_topics_.insert(ignore_topics_v.begin(), ignore_topics_v.end());
 
+    only_in_run_ = config.get<bool>("only_in_run", true);
+    LOG_IF(INFO, only_in_run_) << "Only logging to Mattermost in RUN state";
+
     // Stop pool in case it was already started
     stopPool();
     startPool();
@@ -67,15 +76,19 @@ void MattermostSatellite::stopping() {
     send_message("@channel Run `" + std::string(getRunIdentifier()) + "` stopped");
 }
 
-void MattermostSatellite::interrupting(CSCP::State previous_state) {
+void MattermostSatellite::interrupting(State previous_state) {
     send_message("@channel Interrupted! Previous state: " + std::string(enum_name(previous_state)), IMPORTANT);
 }
 
-void MattermostSatellite::failure(CSCP::State /*previous_state*/) {
+void MattermostSatellite::failure(State /*previous_state*/) {
     stopPool();
 }
 
 void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
+    // Skip if only_in_run setting enabled but not in RUN or SAFE
+    if(only_in_run_ && run_interrupting_safe.contains(getState())) {
+        return;
+    }
     // Skip if ignored topic
     if(ignore_topics_.contains(msg.getTopic())) {
         return;
