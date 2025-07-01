@@ -22,6 +22,7 @@
 #include <QList>
 #include <QSplitter>
 #include <QString>
+#include <QVariant>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -81,10 +82,9 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
     // Connect restore placeholder button to restore widgets from settings:
     connect(restoreButton, &QPushButton::clicked, this, [&]() {
-        gui_settings_.beginGroup("dashboard");
-        const auto cnt = gui_settings_.value("count", 0).toInt();
+        const auto cnt = gui_settings_.value("dashboard/count", 0).toInt();
         for(int i = 0; i < cnt; ++i) {
-            gui_settings_.beginGroup(QString("widget%1").arg(i));
+            gui_settings_.beginGroup(QString("dashboard/widget%1").arg(i));
             const auto sender = gui_settings_.value("sender").toString();
             const auto type = gui_settings_.value("type").toString();
             const auto metric = gui_settings_.value("metric").toString();
@@ -101,7 +101,6 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
             // Drop prefix and suffix from type
             create_metric_display(sender, metric, type.mid(1, type.size() - 14), sliding_window, duration);
         }
-        gui_settings_.endGroup();
     });
 
     // Start the log receiver pool
@@ -319,13 +318,16 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
     // Stop the stat receiver
     stat_listener_.stopPool();
 
-    // Store current metric widgets:
+    // Clear old layout
     gui_settings_.beginGroup("dashboard");
+    gui_settings_.remove("");
+    gui_settings_.endGroup();
 
+    // Store current metric widgets:
     std::unique_lock widgets_lock {metric_widgets_mutex_};
-    gui_settings_.setValue("count", metric_widgets_.size());
+    gui_settings_.setValue("dashboard/count", metric_widgets_.size());
     for(int i = 0; i < metric_widgets_.size(); ++i) {
-        gui_settings_.beginGroup(QString("widget%1").arg(i));
+        gui_settings_.beginGroup(QString("dashboard/widget%1").arg(i));
         gui_settings_.setValue("type", metric_widgets_[i]->metaObject()->className());
         gui_settings_.setValue("sender", metric_widgets_[i]->getSender());
         gui_settings_.setValue("metric", metric_widgets_[i]->getMetric());
@@ -334,6 +336,24 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
             gui_settings_.setValue("slide", static_cast<int>(sliding.value()));
         }
         gui_settings_.endGroup();
+    }
+
+    gui_settings_.beginGroup("dashboard/layout");
+    // Save vertical splitter states (row heights)
+    auto* splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
+    if(splitter_vertical != nullptr) {
+        gui_settings_.setValue("vertical", QVariant::fromValue(splitter_vertical->sizes()));
+
+        // For each row, store horizontal splitter states
+        gui_settings_.beginWriteArray("horizontal");
+        for(int i = 0; i < splitter_vertical->count(); ++i) {
+            auto* splitter_horizontal = qobject_cast<QSplitter*>(splitter_vertical->widget(i));
+            if(splitter_horizontal != nullptr) {
+                gui_settings_.setArrayIndex(i);
+                gui_settings_.setValue("cells", QVariant::fromValue(splitter_horizontal->sizes()));
+            }
+        }
+        gui_settings_.endArray();
     }
     gui_settings_.endGroup();
     widgets_lock.unlock();
