@@ -39,6 +39,11 @@ SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name)
                      "will reset the corresponding channel, this can only be done before the run has started.",
                      {State::NEW, State::INIT, State::ORBIT},
                      std::function<double(int)>([&](int channel) -> double { return 13.8 * channel; }));
+
+    register_timed_metric("BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", 3s, []() { return 42; });
+    register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");
+    register_metric("TEMPERATURE", "degC", MetricType::LAST_VALUE, "Measured temperature inside satellite");
+    register_metric("FAN_RUNNING", "", MetricType::LAST_VALUE, "Information on the fan state");
 }
 
 void SputnikSatellite::initializing(Configuration& config) {
@@ -50,10 +55,6 @@ void SputnikSatellite::initializing(Configuration& config) {
 
     register_timed_metric(
         "BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", std::chrono::milliseconds(interval), []() { return 42; });
-
-    register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");
-    register_metric("TEMPERATURE", "degC", MetricType::LAST_VALUE, "Measured temperature inside satellite");
-    register_metric("FAN_RUNNING", "", MetricType::LAST_VALUE, "Information on the fan state");
 }
 
 void SputnikSatellite::reconfiguring(const constellation::config::Configuration& config) {
