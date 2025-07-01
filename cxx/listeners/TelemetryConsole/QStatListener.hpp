@@ -50,6 +50,12 @@ signals:
     void senderDisconnected(const QString& host);
 
     /**
+     * @brief Signal emitted when the registered metrics for a given host changed
+     * @param host Canonical name of the sender
+     */
+    void metricsChanged(const QString& host);
+
+    /**
      * @brief Signal emitted whenever a new stat message has been received
      * @param sender Name of the sending host
      * @param metric Name of the metric
@@ -77,4 +83,10 @@ private:
      * @param sender Canonical name of the sender that disconnected
      */
     void sender_disconnected(std::string_view sender) override;
+
+    /**
+     * @brief Helper to emit signals for update metric topics
+     * @param sender CCanonical name of the sender that sent the topic notification
+     */
+    void topics_changed(std::string_view sender) override;
 };

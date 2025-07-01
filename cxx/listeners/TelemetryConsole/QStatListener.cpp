@@ -55,3 +55,8 @@ void QStatListener::sender_disconnected(std::string_view sender) {
     emit connectionsChanged(countSockets());
     emit senderDisconnected(QString::fromStdString(std::string(sender)));
 }
+
+void QStatListener::topics_changed(std::string_view sender) {
+    // Emit signal for changed metrics
+    emit metricsChanged(QString::fromStdString(std::string(sender)));
+}
