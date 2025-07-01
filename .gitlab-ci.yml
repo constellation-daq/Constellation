@@ -284,6 +284,7 @@ build:python-3.13:
     - pip install --no-build-isolation -e .[test,hdf5]
     - pytest --force-sugar --junitxml=junit.xml
   artifacts:
+    expire_in: 1 week
     reports:
       junit: junit.xml
   <<: *python-rules
@@ -396,6 +397,7 @@ lint:coverage-py:
     - pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
+    expire_in: 1 week
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -413,6 +415,7 @@ lint:coverage-cpp:
     - ninja -C build coverage-xml
   coverage: '/^\s*lines:\s*\d+.\d+\%/'
   artifacts:
+    expire_in: 1 week
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -473,8 +476,8 @@ lint:clang-scan-build:
   artifacts:
     paths:
       - build/meson-logs/scanbuild
-    when: on_failure
     expire_in: 1 week
+    when: on_failure
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
@@ -607,6 +610,7 @@ docs:pdf:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs latexpdf
   artifacts:
+    expire_in: 1 week
     paths:
       - docs/build/latex/*.pdf
 
