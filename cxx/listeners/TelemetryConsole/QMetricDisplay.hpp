@@ -87,8 +87,9 @@ public:
      * @brief Mark sender as disconnected
      *
      * @param connected Boolean indicating connection status of sender
+     * @param metric Boolean indicating if this metric is available
      */
-    void setConnection(bool connected);
+    void setConnection(bool connected, bool metric = false);
 
 signals:
     /**
@@ -154,6 +155,7 @@ private:
     QToolButton pause_btn_;
     QToolButton reset_btn_;
     QToolButton delete_btn_;
+    QColor bg_color_;
 };
 
 class QSplineMetricDisplay : public QMetricDisplay {

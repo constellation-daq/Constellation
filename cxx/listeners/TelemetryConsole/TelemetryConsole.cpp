@@ -69,7 +69,8 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         const std::lock_guard widgets_lock {metric_widgets_mutex_};
         for(auto& metric : metric_widgets_) {
             if(metric->getSender() == host) {
-                metric->setConnection(true);
+                metric->setConnection(
+                    true, stat_listener_.getAvailableTopics(host.toStdString()).contains(metric->getMetric().toStdString()));
             }
         }
     });
@@ -78,6 +79,15 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         for(auto& metric : metric_widgets_) {
             if(metric->getSender() == host) {
                 metric->setConnection(false);
+            }
+        }
+    });
+    connect(&stat_listener_, &QStatListener::metricsChanged, this, [&](const QString& host) {
+        const std::lock_guard widgets_lock {metric_widgets_mutex_};
+        for(auto& metric : metric_widgets_) {
+            if(metric->getSender() == host) {
+                metric->setConnection(
+                    true, stat_listener_.getAvailableTopics(host.toStdString()).contains(metric->getMetric().toStdString()));
             }
         }
     });

@@ -69,15 +69,17 @@ QMetricDisplay::QMetricDisplay(
     tool_bar_.addWidget(&delete_btn_);
 
     const auto current = this->palette().color(QPalette::Window);
-    const auto bg_color = is_dark_mode() ? current.darker(120) : current.lighter(120);
+    bg_color_ = is_dark_mode() ? current.darker(120) : current.lighter(120);
 
     auto* chart = chart_view_->chart();
     chart->addAxis(&axis_x_, Qt::AlignBottom);
     chart->addAxis(&axis_y_, Qt::AlignLeft);
     chart->legend()->hide();
     chart->layout()->setContentsMargins(0, 0, 0, 0);
+    chart->setBackgroundVisible(false);
     chart->setTheme(is_dark_mode() ? QChart::ChartThemeDark : QChart::ChartThemeLight);
-    chart->setBackgroundBrush(QBrush(bg_color));
+    chart_view_->setBackgroundBrush(Qt::NoBrush);
+    chart_view_->setStyleSheet("background: transparent");
 
     layout_.addLayout(&tool_bar_);
     layout_.addWidget(chart_view_.get());
@@ -88,7 +90,7 @@ QMetricDisplay::QMetricDisplay(
     setFrameShadow(QFrame::Plain);
     setLineWidth(1);
     setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
-                  QString("background-color: %1;").arg(bg_color.name()) + " }");
+                  QString("background-color: %1;").arg(bg_color_.name()) + " }");
 
     // Reset axes
     reset();
@@ -101,13 +103,23 @@ std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
     return {};
 }
 
-void QMetricDisplay::setConnection(bool connected) {
+void QMetricDisplay::setConnection(bool connected, bool metric) {
+
+    title_label_.setStyleSheet("font-weight: bold;");
+    value_label_.setStyleSheet("font-weight: normal;");
     if(!connected) {
-        title_label_.setText(sender_ + " (disconnected): ");
         title_label_.setStyleSheet("font-weight: bold; color: red");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(QColor(255, 0, 0, 24).name(QColor::HexArgb)) + " }");
+
+    } else if(!metric) {
+        value_label_.setStyleSheet("font-weight: normal; color: orange");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(QColor(255, 138, 0, 32).name(QColor::HexArgb)) + " }");
     } else {
-        title_label_.setText(sender_ + ": ");
         title_label_.setStyleSheet("font-weight: bold;");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(bg_color_.name()) + " }");
     }
 }
 
