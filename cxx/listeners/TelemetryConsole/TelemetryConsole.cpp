@@ -11,6 +11,7 @@
 
 #include <cstddef>
 #include <limits>
+#include <mutex>
 #include <string>
 #include <string_view>
 
@@ -59,7 +60,16 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     });
 
     // Update existing metric widgets with connection updates:
+    connect(&stat_listener_, &QStatListener::senderConnected, this, [&](const QString& host) {
+        const std::lock_guard widgets_lock {metric_widgets_mutex_};
+        for(auto& metric : metric_widgets_) {
+            if(metric->getSender() == host) {
+                metric->setConnection(true);
+            }
+        }
+    });
     connect(&stat_listener_, &QStatListener::senderDisconnected, this, [&](const QString& host) {
+        const std::lock_guard widgets_lock {metric_widgets_mutex_};
         for(auto& metric : metric_widgets_) {
             if(metric->getSender() == host) {
                 metric->setConnection(false);
@@ -104,6 +114,8 @@ void TelemetryConsole::onAddMetric() {
 }
 
 void TelemetryConsole::onDeleteMetricWidget() {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+
     // Get object which sent this signal
     auto* metric_widget = qobject_cast<QMetricDisplay*>(sender());
     if(metric_widget == nullptr) {
@@ -122,6 +134,7 @@ void TelemetryConsole::onDeleteMetricWidget() {
 }
 
 void TelemetryConsole::onDeleteMetricWidgets() {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
     // Loop over all metric widgets, remove them from layout, unsubscribe and mark for deletion
     for(auto& metric : metric_widgets_) {
@@ -135,6 +148,8 @@ void TelemetryConsole::onDeleteMetricWidgets() {
 }
 
 void TelemetryConsole::onResetMetricWidgets() {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+
     // Call the reset method of all widgets
     for(auto& metric : metric_widgets_) {
         metric->reset();
@@ -142,15 +157,14 @@ void TelemetryConsole::onResetMetricWidgets() {
 }
 
 void TelemetryConsole::update_layout() {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+
     if(metric_widgets_.empty()) {
         return;
     }
 
     // Delete old layout and remove child widgets
-    auto* old_layout = dashboard_widget_.layout();
-    if(old_layout != nullptr) {
-        delete old_layout;
-    }
+    delete dashboard_widget_.layout();
 
     // Single widget occupies entire area
     if(metric_widgets_.size() == 1) {
@@ -197,14 +211,15 @@ void TelemetryConsole::update_layout() {
     auto* splitter_vertical = new QSplitter(Qt::Vertical, &dashboard_widget_);
     splitter_vertical->setHandleWidth(9);
 
-    std::size_t widget_idx = 0;
+    int widget_idx = 0;
     for(std::size_t row = 0; row < optimal_rows; ++row) {
         // Split row vertically
         auto* splitter_horizontal = new QSplitter(Qt::Horizontal, splitter_vertical);
         splitter_horizontal->setHandleWidth(9);
 
         for(std::size_t col = 0; col < optimal_cols; ++col) {
-            auto* w = (widget_idx < count ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
+            auto* w =
+                (widget_idx < static_cast<int>(count) ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
             w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             splitter_horizontal->addWidget(w);
         }
@@ -243,6 +258,7 @@ void TelemetryConsole::create_metric_display(
         return;
     }
 
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
     // Subscribe to metric
     stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
 
@@ -252,6 +268,8 @@ void TelemetryConsole::create_metric_display(
 
     // Store widget and update layout
     metric_widgets_.append(metric_widget);
+
+    widgets_lock.unlock();
     update_layout();
 }
 

@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstddef>
+#include <mutex>
 #include <string_view>
 
 #include <QCloseEvent>
@@ -95,6 +96,7 @@ private:
 
     // Vector of all metric widgets
     QVector<QMetricDisplay*> metric_widgets_;
+    std::mutex metric_widgets_mutex_;
 
     // Qt widget to display dashboard
     QWidget dashboard_widget_;
