@@ -18,14 +18,11 @@
     <normaloff>:/logo_telemetry.png</normaloff>:/logo_telemetry.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <property name="spacing">
      <number>6</number>
     </property>
     <property name="bottomMargin">
-     <number>9</number>
-    </property>
-    <property name="margin" stdset="0">
      <number>9</number>
     </property>
     <item>
@@ -162,6 +159,25 @@
            <height>588</height>
           </rect>
          </property>
+         <layout class="QVBoxLayout" name="placeholderLayout">
+          <item alignment="Qt::AlignCenter">
+           <widget class="QPushButton" name="restoreButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Restore Dashboard</string>
+            </property>
+            <property name="icon">
+             <iconset resource="../../constellation/gui/Constellation.qrc">
+              <normaloff>:/action/reset</normaloff>:/action/reset</iconset>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </widget>
       </item>

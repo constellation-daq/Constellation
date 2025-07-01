@@ -77,12 +77,36 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         }
     });
 
+    // Connect restore placeholder button to restore widgets from settings:
+    connect(restoreButton, &QPushButton::clicked, this, [&]() {
+        gui_settings_.beginGroup("dashboard");
+        const auto cnt = gui_settings_.value("count", 0).toInt();
+        for(int i = 0; i < cnt; ++i) {
+            gui_settings_.beginGroup(QString("widget%1").arg(i));
+            const auto sender = gui_settings_.value("sender").toString();
+            const auto type = gui_settings_.value("type").toString();
+            const auto metric = gui_settings_.value("metric").toString();
+
+            bool sliding_window = false;
+            std::size_t duration = 0;
+            const auto slide = gui_settings_.value("slide");
+            if(slide.isValid()) {
+                sliding_window = true;
+                duration = static_cast<std::size_t>(slide.toInt());
+            }
+            gui_settings_.endGroup();
+
+            // Drop prefix and suffix from type
+            create_metric_display(sender, metric, type.mid(1, type.size() - 14), sliding_window, duration);
+        }
+        gui_settings_.endGroup();
+    });
+
     // Start the log receiver pool
     stat_listener_.startPool();
 
     // Central dashboard widget with scroll area to hold widgets
     scrollArea->setWidgetResizable(true);
-    scrollArea->setWidget(&dashboard_widget_);
 
     // Restore window geometry:
     restoreGeometry(gui_settings_.value("window/geometry", saveGeometry()).toByteArray());
@@ -248,6 +272,9 @@ void TelemetryConsole::update_layout() {
 void TelemetryConsole::create_metric_display(
     const QString& sender, const QString& name, const QString& type, bool window, std::size_t seconds) {
 
+    // Ensure we are displaying the dashboard:
+    scrollArea->setWidget(&dashboard_widget_);
+
     // Ownership is transferred to the storage
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
     QMetricDisplay* metric_widget = nullptr;
@@ -262,6 +289,11 @@ void TelemetryConsole::create_metric_display(
 
     if(metric_widget == nullptr) {
         return;
+    }
+
+    // Set connection state of the widget:
+    if(!stat_listener_.isSenderAvailable(sender.toStdString())) {
+        metric_widget->setConnection(false);
     }
 
     std::unique_lock widgets_lock {metric_widgets_mutex_};
@@ -282,6 +314,25 @@ void TelemetryConsole::create_metric_display(
 void TelemetryConsole::closeEvent(QCloseEvent* event) {
     // Stop the stat receiver
     stat_listener_.stopPool();
+
+    // Store current metric widgets:
+    gui_settings_.beginGroup("dashboard");
+
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
+    gui_settings_.setValue("count", metric_widgets_.size());
+    for(int i = 0; i < metric_widgets_.size(); ++i) {
+        gui_settings_.beginGroup(QString("widget%1").arg(i));
+        gui_settings_.setValue("type", metric_widgets_[i]->metaObject()->className());
+        gui_settings_.setValue("sender", metric_widgets_[i]->getSender());
+        gui_settings_.setValue("metric", metric_widgets_[i]->getMetric());
+        const auto sliding = metric_widgets_[i]->slidingWindow();
+        if(sliding.has_value()) {
+            gui_settings_.setValue("slide", static_cast<int>(sliding.value()));
+        }
+        gui_settings_.endGroup();
+    }
+    gui_settings_.endGroup();
+    widgets_lock.unlock();
 
     // Store window geometry:
     gui_settings_.setValue("window/geometry", saveGeometry());
