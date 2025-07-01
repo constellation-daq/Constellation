@@ -54,4 +54,5 @@ private:
 private:
     std::string webhook_url_;
     constellation::utils::string_hash_set ignore_topics_;
+    bool only_in_run_ {};
 };
