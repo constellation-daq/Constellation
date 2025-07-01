@@ -328,6 +328,7 @@ test:debian-gcc:
     paths:
       - build
     expire_in: 24 hour
+    when: always
   <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
 test:fedora-clang:
