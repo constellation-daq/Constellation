@@ -15,6 +15,7 @@
 
 #include <QDateTime>
 #include <QFrame>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QString>
 #include <QToolButton>
@@ -145,6 +146,8 @@ private:
     QString metric_;
 
     // Buttons & labels
+    QVBoxLayout layout_;
+    QHBoxLayout tool_bar_;
     QLabel title_label_;
     QToolButton pause_btn_;
     QToolButton reset_btn_;

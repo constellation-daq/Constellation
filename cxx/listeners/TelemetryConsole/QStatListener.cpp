@@ -9,7 +9,10 @@
 
 #include "QStatListener.hpp"
 
+#include <chrono>
+#include <concepts>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 

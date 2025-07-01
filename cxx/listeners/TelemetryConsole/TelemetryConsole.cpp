@@ -9,6 +9,8 @@
 
 #include "TelemetryConsole.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <limits>
 #include <mutex>

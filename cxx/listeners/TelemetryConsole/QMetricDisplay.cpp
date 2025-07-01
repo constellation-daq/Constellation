@@ -35,15 +35,12 @@ using namespace constellation::gui;
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
     : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), value_label_(metric, this), window_sliding_(sliding),
-      window_duration_(window), sender_(sender), metric_(metric) {
+      window_duration_(window), sender_(sender), metric_(metric), layout_(this) {
 
     // Set up axis labels and format
     axis_x_.setFormat("HH:mm:ss");
     axis_x_.setTitleText("Time");
     axis_y_.setTitleText(metric);
-
-    auto* layout = new QVBoxLayout(this);
-    auto* topBar = new QHBoxLayout();
 
     title_label_.setText(sender + ": ");
     title_label_.setStyleSheet("font-weight: bold;");
@@ -64,12 +61,12 @@ QMetricDisplay::QMetricDisplay(
     connect(&reset_btn_, &QToolButton::clicked, this, &QMetricDisplay::reset);
     connect(&delete_btn_, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
 
-    topBar->addWidget(&title_label_);
-    topBar->addWidget(&value_label_);
-    topBar->addStretch();
-    topBar->addWidget(&pause_btn_);
-    topBar->addWidget(&reset_btn_);
-    topBar->addWidget(&delete_btn_);
+    tool_bar_.addWidget(&title_label_);
+    tool_bar_.addWidget(&value_label_);
+    tool_bar_.addStretch();
+    tool_bar_.addWidget(&pause_btn_);
+    tool_bar_.addWidget(&reset_btn_);
+    tool_bar_.addWidget(&delete_btn_);
 
     const auto current = this->palette().color(QPalette::Window);
     const auto bg_color = is_dark_mode() ? current.darker(120) : current.lighter(120);
@@ -82,9 +79,9 @@ QMetricDisplay::QMetricDisplay(
     chart->setTheme(is_dark_mode() ? QChart::ChartThemeDark : QChart::ChartThemeLight);
     chart->setBackgroundBrush(QBrush(bg_color));
 
-    layout->addLayout(topBar);
-    layout->addWidget(chart_view_.get());
-    layout->setContentsMargins(6, 6, 6, 6);
+    layout_.addLayout(&tool_bar_);
+    layout_.addWidget(chart_view_.get());
+    layout_.setContentsMargins(6, 6, 6, 6);
 
     // Apply visual frame to thew widget
     setFrameShape(QFrame::StyledPanel);
