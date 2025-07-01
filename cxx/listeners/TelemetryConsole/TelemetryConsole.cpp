@@ -40,9 +40,10 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     spinBoxMins->setEnabled(false);
 
     connect(addMetric, &QPushButton::clicked, this, &TelemetryConsole::onAddMetric);
+    connect(checkBoxWindow, &QCheckBox::toggled, spinBoxMins, &QSpinBox::setEnabled);
     connect(resetMetrics, &QPushButton::clicked, this, &TelemetryConsole::onResetMetricWidgets);
     connect(clearMetrics, &QPushButton::clicked, this, &TelemetryConsole::onDeleteMetricWidgets);
-    connect(checkBoxWindow, &QCheckBox::toggled, spinBoxMins, &QSpinBox::setEnabled);
+    connect(alignDashboard, &QPushButton::clicked, this, &TelemetryConsole::update_layout);
 
     // When selecting new satellite, update available metric list
     connect(metricSender, &QComboBox::currentTextChanged, this, [&](const QString& text) {

@@ -319,6 +319,17 @@
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_5">
            <item>
+            <widget class="QPushButton" name="alignDashboard">
+             <property name="text">
+              <string>Align</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../../constellation/gui/Constellation.qrc">
+               <normaloff>:/action/align</normaloff>:/action/align</iconset>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="resetMetrics">
              <property name="text">
               <string>Reset</string>
