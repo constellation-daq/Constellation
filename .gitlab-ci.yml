@@ -274,6 +274,10 @@ build:python-3.13:
   script:
     - meson test -C build --suite Constellation --no-rebuild --print-errorlogs
   artifacts:
+    paths:
+      - build/meson-logs/testlog.txt
+    expire_in: 1 week
+    when: on_failure
     reports:
       junit: build/meson-logs/testlog.junit.xml
   <<: *cpp-rules
