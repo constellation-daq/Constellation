@@ -59,10 +59,12 @@ signals:
      * @brief Signal emitted whenever a new stat message has been received
      * @param sender Name of the sending host
      * @param metric Name of the metric
-     * @param x Timestamp of the sender
-     * @param y Value of the metric
+     * @param unit Unit of the metric
+     * @param time Timestamp of the sender
+     * @param value Value of the metric
      */
-    void newMessage(const QString& sender, const QString& metric, const QDateTime& x, const QVariant& y);
+    void newMessage(
+        const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value);
 
 private:
     /**

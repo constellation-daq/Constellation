@@ -103,10 +103,12 @@ public slots:
      *
      * @param sender Name of the sender to select correct input
      * @param metric Name of the metric to filter correct metric
-     * @param x Time value for x axis
-     * @param y Variant holding the metric value for the y axis
+     * @param unit Unit of the metric
+     * @param time Time value for x axis
+     * @param value Variant holding the metric value for the y axis
      */
-    void update(const QString& sender, const QString& metric, const QDateTime& x, const QVariant& y);
+    void
+    update(const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value);
 
 protected:
     /**

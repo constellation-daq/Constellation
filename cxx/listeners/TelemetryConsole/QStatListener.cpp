@@ -40,6 +40,7 @@ void QStatListener::process_message(CMDP1StatMessage&& msg) {
 
     const auto sender = QString::fromStdString(std::string(msg.getHeader().getSender()));
     const auto metric = QString::fromStdString(std::string(msg.getMetric().getMetric()->name()));
+    const auto unit = QString::fromStdString(std::string(msg.getMetric().getMetric()->unit()));
     const auto time = from_timepoint(msg.getHeader().getTime());
 
     const auto qvar = std::visit(
@@ -73,7 +74,7 @@ void QStatListener::process_message(CMDP1StatMessage&& msg) {
         msg.getMetric().getValue());
 
     // Send signal
-    emit newMessage(sender, metric, time, qvar);
+    emit newMessage(sender, metric, unit, time, qvar);
 }
 
 void QStatListener::sender_connected(std::string_view sender) {

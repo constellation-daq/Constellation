@@ -140,25 +140,27 @@ void QMetricDisplay::reset() {
     axis_y_.setRange(0.0, 1.0);
 }
 
-void QMetricDisplay::update(const QString& sender, const QString& metric, const QDateTime& x, const QVariant& y) {
+void QMetricDisplay::update(
+    const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value) {
 
     if(sender_ != sender || metric_ != metric) {
         return;
     }
 
     bool success = false;
-    const double yd = y.toDouble(&success);
+    const double yd = value.toDouble(&success);
     if(!success) {
         return;
     }
 
     // Append point to series
-    append_point(x.toMSecsSinceEpoch(), yd);
+    append_point(time.toMSecsSinceEpoch(), yd);
 
     // Rescale axes and update labels unless paused
     if(!pause_btn_.isChecked()) {
-        rescale_axes(x);
-        value_label_.setText(metric + " = " + y.toString());
+        rescale_axes(time);
+        axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
+        value_label_.setText(metric + " = " + value.toString() + (unit.isEmpty() ? "" : " " + unit));
     }
 }
 
