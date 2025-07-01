@@ -68,5 +68,19 @@ standardized log topics used by the framework:
   its functionality on a topic called `SPUTNIK`. Similarly, the Python `Mariner` satellite would log to the `MARINER` topic.
 
 * **`OP`**: This log topic indicates direct action by a human operator. This log topic is typically only emitted by controller
-instances when e.g. a command is sent to the Constellation or a configuration file path is changed. Some user interfaces also
-provide a dedicated input for operators to manually send log messages to be stored in the log files.
+  instances when e.g. a command is sent to the Constellation or a configuration file path is changed. Some user interfaces also
+  provide a dedicated input for operators to manually send log messages to be stored in the log files.
+
+* **`FSM`**: Any change of the finite state machine is logged under this topic.
+
+* **`CTRL`**: This log topic comprises all control-related messages such as commands sent by controllers and received by
+  satellites, their interpretation and the responses to the controller.
+
+* **`MNTR`**: Monitoring code logs under this topic. This concerns the distribution of log messages and telemetry data as well
+  as the reception thereof. Also subscription messages are logged under this topic.
+
+* **`LINK`**: All networking-related log messages are published under this topic. This comprises, among others, satellite
+  heartbeats, network discovery messages, and data link communication.
+
+* **`UI`**: Anything related to user interfaces such as change of button states or the parsing of configurations are logged
+  under this topic.
