@@ -28,15 +28,26 @@ def get_loopback_interface_name() -> str:
     return "lo"
 
 
-def get_interface_addresses(interface_names: Optional[list[str]]) -> set[str]:
+def get_interface_addresses(interface_names: Optional[list[str]]) -> list[str]:
     """Get all multicast interface addresses for a given list of interface names."""
     interface_names = interface_names if interface_names is not None else get_interface_names()
     interface_addresses = []
-    for if_idx, if_name in socket.if_nameindex():
-        if_addr = get_addr(if_name)
-        if if_addr is not None and if_name in interface_names:
-            interface_addresses.append(if_addr)
-    return set(interface_addresses)
+
+    # Always add loopback interface
+    interface_addresses.append("127.0.0.1")
+
+    # Iterate over given names
+    if_names = [if_name for if_idx, if_name in socket.if_nameindex()]
+    for if_name in interface_names:
+        if if_name in if_names:
+            if_addr = get_addr(if_name)
+            if if_addr is not None:
+                interface_addresses.append(if_addr)
+
+    # Remove duplicates without changing the order
+    interface_addresses = list(dict.fromkeys(interface_addresses))
+
+    return interface_addresses
 
 
 def get_interface_names() -> list[str]:

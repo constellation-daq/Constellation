@@ -137,7 +137,7 @@ def mock_chirp_socket():
 @pytest.fixture
 def mock_chirp_transmitter(mock_chirp_socket):
     """Yields a CHIRP transmitter for our fake Constellation."""
-    t = CHIRPBeaconTransmitter("mock_transmitter", "mockstellation", set(["127.0.0.1"]))
+    t = CHIRPBeaconTransmitter("mock_transmitter", "mockstellation", ["127.0.0.1"])
     yield t
 
 

@@ -142,7 +142,7 @@ class CHIRPBeaconTransmitter:
         self,
         name: str,
         group: str,
-        interface_addresses: set[str],
+        interface_addresses: list[str],
     ) -> None:
         """Initialize attributes and open broadcast socket."""
         self._host_uuid = get_uuid(name)
