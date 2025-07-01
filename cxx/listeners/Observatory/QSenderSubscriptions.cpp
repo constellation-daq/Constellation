@@ -143,10 +143,11 @@ QSenderSubscriptions::QSenderSubscriptions(QString name,
     // Connect the sender level to subscription:
     connect(sender_level_, &QLogLevelComboBox::currentTextChanged, this, [&](const QString& text) {
         const auto level = enum_cast<Level>(text.toStdString());
+        const auto type = name_.section('.', 0, 0).toUpper().toStdString();
         if(level.has_value()) {
-            sub_callback_(name_.toStdString(), "", level.value());
+            sub_callback_(name_.toStdString(), type, level.value());
         } else {
-            unsub_callback_(name_.toStdString(), "");
+            unsub_callback_(name_.toStdString(), type);
         }
     });
 
@@ -174,6 +175,10 @@ void QSenderSubscriptions::setTopics(const QStringList& topics) {
 
     // Loop over received topic list and add all new ones:
     for(const auto& topic : topics) {
+        // Skip the type topic:
+        if(topic == name_.section('.', 0, 0).toUpper()) {
+            continue;
+        }
 
         if(topics_->findItems(topic).empty()) {
             // Underlying QStandardItemModel takes ownership of QStandardItem instances

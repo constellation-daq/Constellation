@@ -112,10 +112,14 @@ Only log messages with log level `DEBUG` emitted _after_ changing the subscripti
 debug messages before that moment since they have not been sent by the satellites.
 ```
 
+The log level selection offered directly next to the sender name allows to change the subscription level for the *type* topic
+of that sender, for `Sputnik.One` this would be `SPUTNIK`. This is usually the log topic under which instrument code will log
+information.
 
 It is also possible to increase the verbosity for a specific log topic of a sender. For example, to see heartbeating in
-action it is possible to increase the verbosity of the `CHP` topic to `TRACE` for the `Sputnik.One` sender. This is achieved
+action it is possible to increase the verbosity of the `LINK` topic to `TRACE` for the `Sputnik.One` sender. This is achieved
 by clicking on the name of the sender in the subscription window on the right and the adjusting the log level for the topic.
+A list of common log topics is provided in [the logging section](../concepts/logging.md#log-topics).
 
 ```{figure} observatory_extra_subscription.png
 Observatory main window with trace messages for heartbeating
@@ -136,7 +140,7 @@ list of the interface:
 - Filtering by log topic
 - Filtering by text matching log messages
 
-For example, to find the `CHP` messages referring to `RandomTransmitter.Sender`, messages can be filtered using text matching
+For example, to find the `LINK` messages referring to `RandomTransmitter.Sender`, messages can be filtered using text matching
 the name of that satellite.
 
 ```{figure} observatory_text_filter.png
