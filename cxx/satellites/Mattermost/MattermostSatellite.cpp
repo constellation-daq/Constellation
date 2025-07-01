@@ -44,7 +44,7 @@ namespace {
 } // namespace
 
 MattermostSatellite::MattermostSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), LogListener("MATTERMOST", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
+    : Satellite(type, name), LogListener("MNTR", [this](CMDP1Message&& msg) { log_callback(std::move(msg)); }) {}
 
 void MattermostSatellite::initializing(Configuration& config) {
     webhook_url_ = config.get<std::string>("webhook_url");

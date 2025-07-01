@@ -35,7 +35,7 @@ namespace constellation::heartbeat {
          * @param callback Callback function pointer for received heartbeat messages
          */
         HeartbeatRecv(std::function<void(message::CHP1Message&&)> callback)
-            : SubscriberPool<message::CHP1Message, protocol::CHIRP::HEARTBEAT>("CHP", std::move(callback)) {}
+            : SubscriberPool<message::CHP1Message, protocol::CHIRP::HEARTBEAT>("LINK", std::move(callback)) {}
 
     private:
         void host_connected(const chirp::DiscoveredService& service) final {

@@ -72,7 +72,7 @@ QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
 }
 
 MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
-    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP"),
+    : runcontrol_(std::move(controller_name)), logger_("UI"), user_logger_("OP"),
       run_id_validator_(QRegularExpression("^[\\w-]+$"), this), config_file_fs_(&config_file_completer_) {
 
     // Register types used in signals & slots:

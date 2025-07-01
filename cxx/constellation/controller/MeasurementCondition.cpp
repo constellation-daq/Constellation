@@ -69,7 +69,7 @@ void MetricCondition::await(std::atomic_bool& running, Controller& controller, L
 
     std::atomic<bool> condition_satisfied {false};
     // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
-    auto stat_listener = StatListener("QUEUE", [&](CMDP1StatMessage&& msg) {
+    auto stat_listener = StatListener("MNTR", [&](CMDP1StatMessage&& msg) {
         // FIXME case-insensitive
         if(msg.getHeader().getSender() != remote_) {
             return;

@@ -43,7 +43,7 @@ using namespace std::chrono_literals;
 
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
-      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("CDTP") {
+      cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("LINK") {
 
     register_timed_metric("BYTES_TRANSMITTED",
                           "B",

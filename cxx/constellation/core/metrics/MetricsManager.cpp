@@ -35,7 +35,7 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 MetricsManager::MetricsManager()
-    : logger_("STAT"), global_subscription_(false), thread_(std::bind_front(&MetricsManager::run, this)) {};
+    : logger_("MNTR"), global_subscription_(false), thread_(std::bind_front(&MetricsManager::run, this)) {};
 
 MetricsManager::~MetricsManager() noexcept {
     thread_.request_stop();
