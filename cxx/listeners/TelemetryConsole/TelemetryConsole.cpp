@@ -24,6 +24,7 @@
 #include <QString>
 #include <QVariant>
 #include <QVBoxLayout>
+#include <QVector>
 #include <QWidget>
 
 #include "QMetricDisplay.hpp"
@@ -101,6 +102,20 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
             // Drop prefix and suffix from type
             create_metric_display(sender, metric, type.mid(1, type.size() - 14), sliding_window, duration);
         }
+
+        // Restore the layout:
+        gui_settings_.beginGroup("dashboard/layout");
+        const auto vertical = gui_settings_.value("vertical").value<QList<int>>();
+        const auto rows = gui_settings_.beginReadArray("horizontal");
+        QVector<QList<int>> horizontal;
+        for(int r = 0; r < rows; ++r) {
+            gui_settings_.setArrayIndex(r);
+            horizontal.append(gui_settings_.value("cells").value<QList<int>>());
+        }
+        gui_settings_.endArray();
+        gui_settings_.endGroup();
+
+        generate_splitters(vertical, horizontal);
     });
 
     // Start the log receiver pool
@@ -161,7 +176,7 @@ void TelemetryConsole::onDeleteMetricWidget() {
 }
 
 void TelemetryConsole::onDeleteMetricWidgets() {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
 
     // Loop over all metric widgets, remove them from layout, unsubscribe and mark for deletion
     for(auto& metric : metric_widgets_) {
@@ -169,6 +184,7 @@ void TelemetryConsole::onDeleteMetricWidgets() {
         metric_widgets_.removeOne(metric);
         metric->deleteLater();
     }
+    widgets_lock.unlock();
 
     // Update dashboard layout
     update_layout();
@@ -184,17 +200,16 @@ void TelemetryConsole::onResetMetricWidgets() {
 }
 
 void TelemetryConsole::update_layout() {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
 
     if(metric_widgets_.empty()) {
         return;
     }
 
-    // Delete old layout and remove child widgets
-    delete dashboard_widget_.layout();
-
     // Single widget occupies entire area
     if(metric_widgets_.size() == 1) {
+        delete dashboard_widget_.layout();
+
         // Ownership is transferred to the dashboard widget
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         auto* layout = new QVBoxLayout(&dashboard_widget_);
@@ -230,12 +245,30 @@ void TelemetryConsole::update_layout() {
             optimal_rows = rows;
         }
     }
+    widgets_lock.unlock();
 
-    // Generate list with relative width - Qt5 is missing the constructor, setSizes ignores additional entries
-    QList<int> cell_sizes;
-    for(std::size_t r = 0; r < std::max(optimal_rows, optimal_cols); r++) {
-        cell_sizes.append(1);
+    // Generate list with relative width - Qt5 is missing the constructor
+    QList<int> h_cell_sizes;
+    QList<int> v_cell_sizes;
+
+    for(std::size_t r = 0; r < optimal_rows; r++) {
+        v_cell_sizes.append(1);
     }
+    for(std::size_t c = 0; c < optimal_cols; c++) {
+        h_cell_sizes.append(1);
+    }
+
+    // Equal splitting
+    generate_splitters(v_cell_sizes, QVector<QList<int>>(optimal_rows, h_cell_sizes));
+}
+
+void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVector<QList<int>>& horizontal) {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+
+    // Delete old layout and remove child widgets
+    delete dashboard_widget_.layout();
+
+    // FIXME ensure horizontal vector has size == vertical.size()
 
     // Ownership is transferred to the dashboard widget
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
@@ -245,25 +278,26 @@ void TelemetryConsole::update_layout() {
     splitter_vertical->setHandleWidth(9);
 
     int widget_idx = 0;
-    for(std::size_t row = 0; row < optimal_rows; ++row) {
+    for(int row = 0; row < vertical.size(); ++row) {
         // Split row vertically
         auto* splitter_horizontal = new QSplitter(Qt::Horizontal, splitter_vertical);
         splitter_horizontal->setHandleWidth(9);
 
-        for(std::size_t col = 0; col < optimal_cols; ++col) {
+        const auto& h = horizontal.at(row);
+        for(int col = 0; col < h.size(); ++col) {
             auto* w =
-                (widget_idx < static_cast<int>(count) ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
+                (widget_idx < metric_widgets_.size() ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
             w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             splitter_horizontal->addWidget(w);
         }
 
         // Enforce equal column widths in this row
-        splitter_horizontal->setSizes(cell_sizes);
+        splitter_horizontal->setSizes(h);
         splitter_vertical->addWidget(splitter_horizontal);
     }
 
     // Enforce equal row heights
-    splitter_vertical->setSizes(cell_sizes);
+    splitter_vertical->setSizes(vertical);
 
     auto* layout = new QVBoxLayout(&dashboard_widget_);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -340,7 +374,10 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
 
     gui_settings_.beginGroup("dashboard/layout");
     // Save vertical splitter states (row heights)
-    auto* splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
+    QSplitter* splitter_vertical = nullptr;
+    if(dashboard_widget_.layout() != nullptr && dashboard_widget_.layout()->count() > 0) {
+        splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
+    }
     if(splitter_vertical != nullptr) {
         gui_settings_.setValue("vertical", QVariant::fromValue(splitter_vertical->sizes()));
 
@@ -368,5 +405,5 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
     }
 
     // Terminate the application
-    event->accept();
+    QMainWindow::closeEvent(event);
 }

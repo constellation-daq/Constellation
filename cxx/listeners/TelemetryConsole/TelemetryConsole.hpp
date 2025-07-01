@@ -14,6 +14,7 @@
 #include <string_view>
 
 #include <QCloseEvent>
+#include <QList>
 #include <QMainWindow>
 #include <QSettings>
 #include <QVector>
@@ -78,9 +79,19 @@ private:
 
     /**
      * @brief Helper to update the dashboard layout after adding or removing a widget
-     * @details This calculates best position of widgets and rearranges them
+     * @details This calculates best position of widgets and calls generate_splitters to rearrange them
      */
     void update_layout();
+
+    /**
+     * @brief Helper to generate the dashboard layout
+     * @details Takes splitter sizes vertically and horizontally and builds the grid from it. Removes the old layout before
+     *          adding the new one
+     *
+     * @param vertical Relative sizes of the vertical sections (rows)
+     * @param horizontal Relative sizes for the horizontal cells in each of the rows
+     */
+    void generate_splitters(const QList<int>& vertical, const QVector<QList<int>>& horizontal);
 
     /**
      * @brief Helper to create different types of metric display widgets
