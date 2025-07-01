@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 #include <vector>
 
 #include <asio.hpp>
@@ -151,6 +152,13 @@ std::vector<Interface> constellation::networking::get_interfaces(std::vector<std
     std::vector<Interface> interfaces {};
     const auto all_interfaces = get_interfaces();
 
+    // Always add loopback interface as first interface
+    const auto lo_if = std::ranges::find_if(all_interfaces, [](const auto& if_s) { return if_s.address.is_loopback(); });
+    if(lo_if != all_interfaces.end()) {
+        interfaces.emplace_back(*lo_if);
+    }
+
+    // Iterate over given names
     std::ranges::for_each(interface_names, [&](const auto& interface_name) {
         const auto interface_it =
             std::ranges::find(all_interfaces, interface_name, [](const auto& if_s) { return if_s.name; });
@@ -159,6 +167,12 @@ std::vector<Interface> constellation::networking::get_interfaces(std::vector<std
         }
         interfaces.emplace_back(*interface_it);
     });
+
+    // Remove duplicates without changing the order
+    std::unordered_set<asio::ip::address_v4> interfaces_seen {};
+    const auto [first, last] = std::ranges::remove_if(
+        interfaces, [&interfaces_seen](const auto& if_s) { return !interfaces_seen.insert(if_s.address).second; });
+    interfaces.erase(first, last);
 
     return interfaces;
 }
