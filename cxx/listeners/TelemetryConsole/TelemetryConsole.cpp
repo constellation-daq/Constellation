@@ -140,7 +140,7 @@ void TelemetryConsole::onAddMetric() {
 }
 
 void TelemetryConsole::onDeleteMetricWidget() {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
 
     // Get object which sent this signal
     auto* metric_widget = qobject_cast<QMetricDisplay*>(sender());
@@ -156,6 +156,8 @@ void TelemetryConsole::onDeleteMetricWidget() {
 
     // Mark for deletion and update layout
     metric_widget->deleteLater();
+    widgets_lock.unlock();
+
     update_layout();
 }
 
