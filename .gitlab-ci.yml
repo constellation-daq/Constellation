@@ -597,11 +597,13 @@ docs:html:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs html
     - mv docs/build/html html
+    - echo "{\"HTML\":[{\"external_link\":{\"label\":\"Website Preview\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/html/index.html\"}}]}" > website_preview.json
   artifacts:
     paths:
       - html
     expire_in: 1 week
-    expose_as: "Website"
+    reports:
+      annotations: "website_preview.json"
 
 docs:pdf:
   extends:
@@ -616,10 +618,14 @@ docs:pdf:
   script:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs latexpdf
+    - mkdir pdf && mv docs/build/latex/*.pdf pdf
+    - echo "{\"PDF\":[{\"external_link\":{\"label\":\"Operator Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/operator_guide.pdf\"}},{\"external_link\":{\"label\":\"Application Developer Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/application_development_guide.pdf\"}},{\"external_link\":{\"label\":\"Framework Development Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/framework_development_guide.pdf\"}}]}" > pdf_documentation.json
   artifacts:
-    expire_in: 1 week
     paths:
-      - docs/build/latex/*.pdf
+      - pdf
+    expire_in: 1 week
+    reports:
+      annotations: "pdf_documentation.json"
 
 docs:spelling:
   extends:

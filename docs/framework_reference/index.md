@@ -1,4 +1,4 @@
-# Framework Developer Guide
+# Framework Development Guide
 
 ```{raw} latex
 \chapter*{Preface}
