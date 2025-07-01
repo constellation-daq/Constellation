@@ -27,10 +27,10 @@
 #include <QtWidgets/QVBoxLayout>
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-using namespace QtCharts
+using namespace QtCharts;
 #endif
 
-    using namespace constellation::gui;
+using namespace constellation::gui;
 
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
@@ -87,7 +87,8 @@ QMetricDisplay::QMetricDisplay(
     layout->setContentsMargins(6, 6, 6, 6);
 
     // Apply visual frame to thew widget
-    setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
+    setFrameShape(QFrame::StyledPanel);
+    setFrameShadow(QFrame::Plain);
     setLineWidth(1);
     setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                   QString("background-color: %1;").arg(bg_color.name()) + " }");

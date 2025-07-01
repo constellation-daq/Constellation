@@ -204,6 +204,12 @@ void TelemetryConsole::update_layout() {
         }
     }
 
+    // Generate list with relative width - Qt5 is missing the constructor, setSizes ignores additional entries
+    QList<int> cell_sizes;
+    for(std::size_t r = 0; r < std::max(optimal_rows, optimal_cols); r++) {
+        cell_sizes.append(1);
+    }
+
     // Ownership is transferred to the dashboard widget
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
@@ -225,12 +231,12 @@ void TelemetryConsole::update_layout() {
         }
 
         // Enforce equal column widths in this row
-        splitter_horizontal->setSizes(QList<int>(optimal_cols, 1));
+        splitter_horizontal->setSizes(cell_sizes);
         splitter_vertical->addWidget(splitter_horizontal);
     }
 
     // Enforce equal row heights
-    splitter_vertical->setSizes(QList<int>(optimal_rows, 1));
+    splitter_vertical->setSizes(cell_sizes);
 
     auto* layout = new QVBoxLayout(&dashboard_widget_);
     layout->setContentsMargins(0, 0, 0, 0);
