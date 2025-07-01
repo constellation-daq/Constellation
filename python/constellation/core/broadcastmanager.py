@@ -127,7 +127,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         self.group = group
         self._stop_broadcasting = threading.Event()
 
-        self.log_chirp = self.get_logger("CHIRP")
+        self.log_chirp = self.get_logger("LINK")
 
         # Gather interface addresses
         interface_addresses = get_interface_addresses(interface)

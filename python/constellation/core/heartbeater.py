@@ -34,7 +34,7 @@ class HeartbeatSender(SatelliteStateHandler):
         self._subscribers = 0
         self._role = CHPRole.DYNAMIC
 
-        self.log_chp_s = self.get_logger("CHP")
+        self.log_chp_s = self.get_logger("LINK")
 
         # register and start heartbeater
         socket = self.context.socket(zmq.XPUB)

@@ -83,7 +83,7 @@ class CommandReceiver(BaseSatelliteFrame):
         """Initialize the Receiver and set up a ZMQ REP socket on given port."""
         super().__init__(name=name, **kwds)
 
-        self.log_cscp = self.get_logger("CSCP")
+        self.log_cscp = self.get_logger("CTRL")
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)

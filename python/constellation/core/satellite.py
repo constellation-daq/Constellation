@@ -54,7 +54,7 @@ class Satellite(
             interface=interface,
         )
 
-        self.log_satellite = self.get_logger("SATELLITE")
+        self.log_satellite = self.get_logger("CTRL")
 
         self.run_identifier: str = ""
         self.config = Configuration({})
