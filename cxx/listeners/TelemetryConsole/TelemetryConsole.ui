@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1305</width>
+    <width>1330</width>
     <height>720</height>
    </rect>
   </property>
@@ -155,7 +155,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>1285</width>
+           <width>1310</width>
            <height>588</height>
           </rect>
          </property>
@@ -174,6 +174,12 @@
             <property name="icon">
              <iconset resource="../../constellation/gui/Constellation.qrc">
               <normaloff>:/action/reset</normaloff>:/action/reset</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>20</width>
+              <height>20</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -307,6 +313,12 @@
               <iconset resource="../../constellation/gui/Constellation.qrc">
                <normaloff>:/action/add</normaloff>:/action/add</iconset>
              </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
             </widget>
            </item>
           </layout>
@@ -327,6 +339,12 @@
               <iconset resource="../../constellation/gui/Constellation.qrc">
                <normaloff>:/action/align</normaloff>:/action/align</iconset>
              </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
             </widget>
            </item>
            <item>
@@ -338,6 +356,12 @@
               <iconset resource="../../constellation/gui/Constellation.qrc">
                <normaloff>:/action/reset</normaloff>:/action/reset</iconset>
              </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
             </widget>
            </item>
            <item>
@@ -348,6 +372,12 @@
              <property name="icon">
               <iconset resource="../../constellation/gui/Constellation.qrc">
                <normaloff>:/action/delete</normaloff>:/action/delete</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
              </property>
             </widget>
            </item>
@@ -365,7 +395,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1305</width>
+     <width>1330</width>
      <height>23</height>
     </rect>
    </property>
