@@ -31,6 +31,14 @@ public:
      */
     explicit QStatListener(QObject* parent = nullptr);
 
+    /**
+     * @brief Obtain list of current metric topics for a sender
+     *
+     * @param sender Name of the sender
+     * @return List of available metric topics
+     */
+    QStringList getMetrics(const QString& sender) const;
+
 signals:
     /**
      * @brief Signal emitted whenever a connection changed

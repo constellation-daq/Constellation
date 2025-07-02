@@ -35,6 +35,16 @@ using namespace constellation::utils;
 QStatListener::QStatListener(QObject* parent)
     : QObject(parent), StatListener("STAT", [this](auto&& arg) { process_message(std::forward<decltype(arg)>(arg)); }) {}
 
+QStringList QStatListener::getMetrics(const QString& sender) const {
+    // Obtain list of metrics for this host:
+    const auto topics = getAvailableTopics(sender.toStdString());
+    QStringList metrics;
+    for(const auto& [topic, desc] : topics) {
+        metrics.append(QString::fromStdString(topic));
+    }
+    return metrics;
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
 void QStatListener::process_message(CMDP1StatMessage&& msg) {
 
@@ -90,13 +100,9 @@ void QStatListener::sender_disconnected(std::string_view sender) {
 }
 
 void QStatListener::topics_changed(std::string_view sender) {
-    // Obtain list of metrics for this host:
-    const auto topics = getAvailableTopics(sender);
-    QStringList metrics;
-    for(const auto& [topic, desc] : topics) {
-        metrics.append(QString::fromStdString(topic));
-    }
+
+    const auto s = QString::fromStdString(std::string(sender));
 
     // Emit signal for changed metrics
-    emit metricsChanged(QString::fromStdString(std::string(sender)), metrics);
+    emit metricsChanged(s, getMetrics(s));
 }
