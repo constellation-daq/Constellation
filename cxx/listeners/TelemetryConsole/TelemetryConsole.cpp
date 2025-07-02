@@ -298,7 +298,6 @@ void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVec
         for(int col = 0; col < h.size(); ++col) {
             auto* w =
                 (widget_idx < metric_widgets_.size() ? metric_widgets_[widget_idx++] : new QWidget(splitter_horizontal));
-            w->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
             splitter_horizontal->addWidget(w);
         }
 

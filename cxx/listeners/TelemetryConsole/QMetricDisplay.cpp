@@ -17,7 +17,6 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QGraphicsLayout>
-#include <QLabel>
 #include <QToolButton>
 
 #include "constellation/gui/qt_utils.hpp"
@@ -35,15 +34,18 @@ using namespace constellation::gui;
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
     : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), window_sliding_(sliding), window_duration_(window),
-      sender_(sender), metric_(metric), layout_(this) {
+      sender_(sender), metric_(metric), layout_(this), title_label_(metric, this) {
 
     // Set up axis labels and format
     axis_x_.setFormat("HH:mm:ss");
     axis_x_.setTitleText("Time");
     axis_y_.setTitleText(metric);
 
-    title_label_.setText(metric);
-    title_label_.setStyleSheet("font-weight: bold;");
+    title_label_.setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    title_label_.setReadOnly(true);
+    title_label_.setFrame(false);
+    title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold;");
+    title_label_.setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     pause_btn_.setIcon(QIcon(":/action/pause"));
     pause_btn_.setFixedSize(24, 24);
@@ -86,7 +88,10 @@ QMetricDisplay::QMetricDisplay(
     layout_.addWidget(chart_view_.get());
     layout_.setContentsMargins(6, 6, 6, 6);
 
-    // Apply visual frame to thew widget
+    // Set size policy
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    // Apply visual frame to the widget
     setFrameShape(QFrame::StyledPanel);
     setFrameShadow(QFrame::Plain);
     setLineWidth(1);
@@ -106,17 +111,17 @@ std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
 
 void QMetricDisplay::setConnection(bool connected, bool metric) {
 
-    title_label_.setStyleSheet("font-weight: bold;");
     if(!connected) {
-        title_label_.setStyleSheet("font-weight: bold; color: red");
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: red");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(QColor(255, 0, 0, 24).name(QColor::HexArgb)) + " }");
 
     } else if(!metric) {
-        title_label_.setStyleSheet("font-weight: bold; color: orange");
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: orange");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(QColor(255, 138, 0, 32).name(QColor::HexArgb)) + " }");
     } else {
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold;");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(bg_color_.name()) + " }");
     }

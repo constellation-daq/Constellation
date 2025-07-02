@@ -17,7 +17,7 @@
 #include <QFrame>
 #include <QGraphicsTextItem>
 #include <QHBoxLayout>
-#include <QLabel>
+#include <QLineEdit>
 #include <QString>
 #include <QToolButton>
 #include <QVariant>
@@ -151,7 +151,7 @@ private:
     // Buttons & labels
     QVBoxLayout layout_;
     QHBoxLayout tool_bar_;
-    QLabel title_label_;
+    QLineEdit title_label_;
     QToolButton pause_btn_;
     QToolButton reset_btn_;
     QToolButton delete_btn_;
