@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <span>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -510,65 +511,31 @@ TEST_CASE("Catch incorrect payload", "[satellite]") {
 
 TEST_CASE("Catch invalid user command registrations", "[satellite]") {
     class MySatellite : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
-
     public:
-        MySatellite() { register_command("", "A User Command", {}, &MySatellite::cmd, this); }
-    };
-    REQUIRE_THROWS_MATCHES(MySatellite(), LogicError, Message("Command name is invalid"));
-
-    class MySatelliteI : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
-
-    public:
-        MySatelliteI() { register_command("command_with_amper&sand", "A User Command", {}, &MySatelliteI::cmd, this); }
-    };
-    REQUIRE_THROWS_MATCHES(MySatelliteI(), LogicError, Message("Command name is invalid"));
-
-    class MySatellite2 : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
-
-    public:
-        MySatellite2() {
-            register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
-            register_command("my_cmd", "A User Command", {}, &MySatellite2::cmd, this);
+        void registerCommand(std::string_view name) {
+            register_command(name, "A User Command", {}, []() {});
         }
     };
-    REQUIRE_THROWS_MATCHES(MySatellite2(), LogicError, Message("Command \"my_cmd\" is already registered"));
 
-    class MySatellite3 : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
+    auto my_satellite = MySatellite();
 
-    public:
-        MySatellite3() { register_command("initialize", "A User Command", {}, &MySatellite3::cmd, this); }
-    };
-    REQUIRE_THROWS_MATCHES(MySatellite3(), LogicError, Message("Satellite transition command with this name exists"));
+    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand(""), LogicError, Message("Command name `` is invalid"));
 
-    class MySatellite4 : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
+    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand("command_with_amper&sand"),
+                           LogicError,
+                           Message("Command name `command_with_amper&sand` is invalid"));
 
-    public:
-        MySatellite4() { register_command("get_commands", "A User Command", {}, &MySatellite4::cmd, this); }
-    };
-    REQUIRE_THROWS_MATCHES(MySatellite4(), LogicError, Message("Standard satellite command with this name exists"));
+    my_satellite.registerCommand("my_cmd_CaSiNg");
+    REQUIRE_THROWS_MATCHES(
+        my_satellite.registerCommand("my_cmd_casing"), LogicError, Message("Command `my_cmd_casing` is already registered"));
 
-    // Command registration is case insensitive
-    class MySatellite5 : public DummySatellite<> {
-        // NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-make-member-function-const)
-        int cmd() { return 2; }
+    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand("initialize"),
+                           LogicError,
+                           Message("Satellite transition command with this name exists"));
 
-    public:
-        MySatellite5() {
-            register_command("my_cmd", "A User Command", {}, &MySatellite5::cmd, this);
-            register_command("MY_CMD", "A User Command", {}, &MySatellite5::cmd, this);
-        }
-    };
-    REQUIRE_THROWS_MATCHES(MySatellite5(), LogicError, Message("Command \"my_cmd\" is already registered"));
+    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand("get_commands"),
+                           LogicError,
+                           Message("Standard satellite command with this name exists"));
 }
 
 TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
