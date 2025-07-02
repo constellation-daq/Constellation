@@ -112,9 +112,17 @@ public slots:
      * @details Used to mark senders as available or absent
      *
      * @param sender Name of the sender
+     */
+    void senderConnected(const QString& sender) { metricsChanged(sender, {}); }
+
+    /**
+     * @brief Slot to notify of new metric topics being available
+     * @details Used to mark metrics as available or absent
+     *
+     * @param sender Name of the sender
      * @param metrics List of available metrics from that sender
      */
-    void senderConnected(const QString& sender, const QStringList& metrics);
+    void metricsChanged(const QString& sender, const QStringList& metrics);
 
     /**
      * @brief Slot to notify of a  sender that disconnected

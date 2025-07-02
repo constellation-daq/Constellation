@@ -356,11 +356,9 @@ void TelemetryConsole::create_metric_display(const QString& name,
     // Connect delete request and update method and status updates
     connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::delete_metric);
     connect(&stat_listener_, &QStatListener::newMessage, metric_widget, &QMetricDisplay::update);
-    connect(&stat_listener_, &QStatListener::senderConnected, [&](const QString& sender) {
-        metric_widget->senderConnected(sender, {});
-    });
+    connect(&stat_listener_, &QStatListener::senderConnected, metric_widget, &QMetricDisplay::senderConnected);
     connect(&stat_listener_, &QStatListener::senderDisconnected, metric_widget, &QMetricDisplay::senderDisconnected);
-    connect(&stat_listener_, &QStatListener::metricsChanged, metric_widget, &QMetricDisplay::senderConnected);
+    connect(&stat_listener_, &QStatListener::metricsChanged, metric_widget, &QMetricDisplay::metricsChanged);
 
     // Store widget and update layout
     metric_widgets_.append(metric_widget);
@@ -382,7 +380,7 @@ void TelemetryConsole::add_metric_sender(const QString& name, const QString& sen
         if(!stat_listener_.isSenderAvailable(sender.toStdString())) {
             metric->senderDisconnected(sender);
         } else {
-            metric->senderConnected(sender, stat_listener_.getMetrics(sender));
+            metric->metricsChanged(sender, stat_listener_.getMetrics(sender));
         }
     }
 }

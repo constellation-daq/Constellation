@@ -146,7 +146,7 @@ void QMetricDisplay::senderDisconnected(const QString& sender) {
     }
 }
 
-void QMetricDisplay::senderConnected(const QString& sender, const QStringList& metrics) {
+void QMetricDisplay::metricsChanged(const QString& sender, const QStringList& metrics) {
     if(!hasSender(sender)) {
         return;
     }
