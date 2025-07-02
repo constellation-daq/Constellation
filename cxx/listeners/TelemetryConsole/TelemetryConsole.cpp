@@ -38,8 +38,9 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     cnstlnName->setText(QString::fromStdString("<font color=gray><b>" + std::string(group_name) + "</b></font>"));
 
     spinBoxMins->setEnabled(false);
+    addMetric->setEnabled(false);
 
-    connect(addMetric, &QPushButton::clicked, this, &TelemetryConsole::onAddMetric);
+    connect(createMetric, &QPushButton::clicked, this, &TelemetryConsole::onAddMetric);
     connect(checkBoxWindow, &QCheckBox::toggled, spinBoxMins, &QSpinBox::setEnabled);
     connect(resetMetrics, &QPushButton::clicked, this, &TelemetryConsole::onResetMetricWidgets);
     connect(clearMetrics, &QPushButton::clicked, this, &TelemetryConsole::onDeleteMetricWidgets);
@@ -51,6 +52,18 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         for(const auto& [topic, desc] : stat_listener_.getAvailableTopics(text.toStdString())) {
             metricName->addItem(QString::fromStdString(topic));
         }
+    });
+
+    // When selecting a metric, offer the "add" button of it exists already as display
+    connect(metricName, &QComboBox::currentTextChanged, this, [&](const QString& text) {
+        const std::lock_guard widgets_lock {metric_widgets_mutex_};
+        for(auto& metric : metric_widgets_) {
+            if(metric->getMetric() == text) {
+                addMetric->setEnabled(true);
+                return;
+            }
+        }
+        addMetric->setEnabled(false);
     });
 
     // When sender connected or disconnected, refresh satellite list and sender count

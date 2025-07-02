@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1330</width>
+    <width>1425</width>
     <height>720</height>
    </rect>
   </property>
@@ -155,7 +155,7 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>1310</width>
+           <width>1405</width>
            <height>588</height>
           </rect>
          </property>
@@ -221,7 +221,7 @@
           <property name="title">
            <string>Add Metric</string>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5,1,5,1,2,0,0,1">
+          <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,5,1,5,1,2,0,0,1,0">
            <property name="spacing">
             <number>15</number>
            </property>
@@ -321,6 +321,29 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="createMetric">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="text">
+              <string>Create</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../../constellation/gui/Constellation.qrc">
+               <normaloff>:/action/create</normaloff>:/action/create</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>
@@ -395,7 +418,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1330</width>
+     <width>1425</width>
      <height>23</height>
     </rect>
    </property>
