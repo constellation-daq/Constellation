@@ -9,7 +9,6 @@
 
 #include "TelemetryConsole.hpp"
 
-#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -292,7 +291,7 @@ void TelemetryConsole::update_layout() {
     }
 
     // Equal splitting
-    generate_splitters(v_cell_sizes, QVector<QList<int>>(optimal_rows, h_cell_sizes));
+    generate_splitters(v_cell_sizes, QVector<QList<int>>(static_cast<int>(optimal_rows), h_cell_sizes));
 }
 
 void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVector<QList<int>>& horizontal) {
