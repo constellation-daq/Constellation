@@ -81,6 +81,13 @@ namespace constellation::log {
         networking::Port getCMDPPort() const { return cmdp_sink_->getPort(); }
 
         /**
+         * @brief Set topic of default logger
+         *
+         * @param topic Topic of default logger
+         */
+        CNSTLN_API void setDefaultTopic(std::string_view topic);
+
+        /**
          * @brief Enable sending via CMDP
          *
          * @param sender_name Canonical name of the satellite

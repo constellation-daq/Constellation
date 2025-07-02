@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         }
 
         // Set log level
-        constellation_setup_logging(options.log_level);
+        constellation_setup_logging(options.log_level, "MissionControl");
 
         // Get Constellation group
         std::string group_name;

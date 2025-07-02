@@ -27,8 +27,9 @@ namespace constellation::exec {
      * @brief Setup Logging
      *
      * @param default_level Default log level for the console output
+     * @param default_topic Topic for default logger (type part the canonical name)
      */
-    CNSTLN_API void constellation_setup_logging(log::Level default_level);
+    CNSTLN_API void constellation_setup_logging(log::Level default_level, std::string_view default_topic);
 
     /**
      * @brief Setup CHIRP

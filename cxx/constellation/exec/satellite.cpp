@@ -48,12 +48,12 @@ int constellation::exec::satellite_main(std::span<const char*> args,
             return 1;
         }
 
-        // Set log level
-        constellation_setup_logging(options.log_level);
-
         // Set satellite type if required
         satellite_type = satellite_type.value_or(SatelliteType(options.satellite_type));
         const auto& satellite_type_v = satellite_type.value();
+
+        // Set log level and default topic
+        constellation_setup_logging(options.log_level, satellite_type_v.type_name);
 
         // Load satellite DSO
         LoadedCppSatellite loaded_satellite {};
