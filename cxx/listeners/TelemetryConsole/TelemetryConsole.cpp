@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <limits>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -27,8 +28,12 @@
 #include <QVector>
 #include <QWidget>
 
+#include "constellation/core/utils/enum.hpp"
+
 #include "QMetricDisplay.hpp"
 #include "QStatListener.hpp"
+
+using namespace constellation::utils;
 
 TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
@@ -107,25 +112,26 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
     // Connect restore placeholder button to restore widgets from settings:
     connect(restoreButton, &QPushButton::clicked, this, [&]() {
-        const auto cnt = gui_settings_.value("dashboard/count", 0).toInt();
-        for(int i = 0; i < cnt; ++i) {
-            gui_settings_.beginGroup(QString("dashboard/widget%1").arg(i));
-            const auto sender = gui_settings_.value("sender").toString();
+        // Restore widgets
+        const auto widgets = gui_settings_.beginReadArray("dashboard/widgets");
+        for(int i = 0; i < widgets; ++i) {
+            gui_settings_.setArrayIndex(i);
             const auto type = gui_settings_.value("type").toString();
             const auto metric = gui_settings_.value("metric").toString();
 
-            bool sliding_window = false;
-            std::size_t duration = 0;
+            std::optional<std::size_t> window;
             const auto slide = gui_settings_.value("slide");
             if(slide.isValid()) {
-                sliding_window = true;
-                duration = static_cast<std::size_t>(slide.toInt());
+                window = static_cast<std::size_t>(slide.toInt());
             }
-            gui_settings_.endGroup();
 
-            // Drop prefix and suffix from type
-            create_metric_display(sender, metric, type.mid(1, type.size() - 14), sliding_window, duration);
+            create_metric_display(metric, type, window);
+
+            for(const auto& sender : gui_settings_.value("senders").toStringList()) {
+                add_metric_sender(metric, sender);
+            }
         }
+        gui_settings_.endArray();
 
         // Restore the layout:
         gui_settings_.beginGroup("dashboard/layout");
@@ -168,9 +174,15 @@ void TelemetryConsole::onAddMetric() {
         return;
     }
 
+    std::optional<std::size_t> window;
+    if(checkBoxWindow->isChecked()) {
+        window = static_cast<std::size_t>(spinBoxMins->value()) * 60;
+    }
+
     // Create new metric widget
-    create_metric_display(
-        sender, metric, type, checkBoxWindow->isChecked(), static_cast<std::size_t>(spinBoxMins->value()) * 60);
+    create_metric_display(metric, type, window);
+    add_metric_sender(metric, sender);
+    update_layout();
 
     // Clear inputs for next metric to be added
     metricName->clear();
@@ -187,7 +199,9 @@ void TelemetryConsole::onDeleteMetricWidget() {
     }
 
     // Unsubscribe from metric
-    stat_listener_.unsubscribeMetric(metric_widget->getSender().toStdString(), metric_widget->getMetric().toStdString());
+    for(const auto& sender : metric_widget->getSenders()) {
+        stat_listener_.unsubscribeMetric(sender.toStdString(), metric_widget->getMetric().toStdString());
+    }
 
     // Remove from list of metrics
     metric_widgets_.removeOne(metric_widget);
@@ -204,7 +218,11 @@ void TelemetryConsole::onDeleteMetricWidgets() {
 
     // Loop over all metric widgets, remove them from layout, unsubscribe and mark for deletion
     for(auto& metric : metric_widgets_) {
-        stat_listener_.unsubscribeMetric(metric->getSender().toStdString(), metric->getMetric().toStdString());
+        // Unsubscribe from metric
+        for(const auto& sender : metric->getSenders()) {
+            stat_listener_.unsubscribeMetric(sender.toStdString(), metric->getMetric().toStdString());
+        }
+
         metric_widgets_.removeOne(metric);
         metric->deleteLater();
     }
@@ -329,36 +347,30 @@ void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVec
     // NOLINTEND(cppcoreguidelines-owning-memory)
 }
 
-void TelemetryConsole::create_metric_display(
-    const QString& sender, const QString& name, const QString& type, bool window, std::size_t seconds) {
+void TelemetryConsole::create_metric_display(const QString& name,
+                                             const QString& type_name,
+                                             std::optional<std::size_t> window) {
 
     // Ensure we are displaying the dashboard:
     scrollArea->setWidget(&dashboard_widget_);
 
-    // Ownership is transferred to the storage
-    // NOLINTBEGIN(cppcoreguidelines-owning-memory)
-    QMetricDisplay* metric_widget = nullptr;
-    if(type == "Spline") {
-        metric_widget = new QSplineMetricDisplay(sender, name, window, seconds, this);
-    } else if(type == "Scatter") {
-        metric_widget = new QScatterMetricDisplay(sender, name, window, seconds, this);
-    } else if(type == "Area") {
-        metric_widget = new QAreaMetricDisplay(sender, name, window, seconds, this);
-    }
-    // NOLINTEND(cppcoreguidelines-owning-memory)
-
-    if(metric_widget == nullptr) {
+    // Try to get type from name:
+    const auto type = enum_cast<QMetricDisplay::Type>(type_name.toStdString());
+    // FIXME show error? ignore?
+    if(!type.has_value()) {
         return;
     }
 
-    // Set connection state of the widget:
-    if(!stat_listener_.isSenderAvailable(sender.toStdString())) {
-        metric_widget->setConnection(false);
-    }
+    // Ownership is transferred to the storage
+    // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
+    auto* metric_widget = new QMetricDisplay(name, type.value(), window, this);
 
-    std::unique_lock widgets_lock {metric_widgets_mutex_};
-    // Subscribe to metric
-    stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
+    // Set connection state of the widget: FIXME
+    // if(!stat_listener_.isSenderAvailable(sender.toStdString())) {
+    // metric_widget->setConnection(false);
+    // }
+
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
     // Connect delete request and update method
     connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::onDeleteMetricWidget);
@@ -366,34 +378,48 @@ void TelemetryConsole::create_metric_display(
 
     // Store widget and update layout
     metric_widgets_.append(metric_widget);
+}
 
-    widgets_lock.unlock();
-    update_layout();
+void TelemetryConsole::add_metric_sender(const QString& name, const QString& sender) {
+    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+
+    // Find metric: FIXME always adds to first with this metric name
+    for(auto& metric : metric_widgets_) {
+        if(metric->getMetric() == name) {
+            // Subscribe to metric
+            metric->addSender(sender);
+            stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
+            return;
+        }
+    }
 }
 
 void TelemetryConsole::closeEvent(QCloseEvent* event) {
     // Stop the stat receiver
     stat_listener_.stopPool();
 
-    // Clear old layout
-    gui_settings_.beginGroup("dashboard");
-    gui_settings_.remove("");
-    gui_settings_.endGroup();
+    std::unique_lock widgets_lock {metric_widgets_mutex_};
+
+    // Clear old layout of any widgets are present
+    if(!metric_widgets_.isEmpty()) {
+        gui_settings_.beginGroup("dashboard");
+        gui_settings_.remove("");
+        gui_settings_.endGroup();
+    }
 
     // Store current metric widgets:
-    std::unique_lock widgets_lock {metric_widgets_mutex_};
-    gui_settings_.setValue("dashboard/count", metric_widgets_.size());
+    gui_settings_.beginWriteArray("dashboard/widgets");
     for(int i = 0; i < metric_widgets_.size(); ++i) {
-        gui_settings_.beginGroup(QString("dashboard/widget%1").arg(i));
-        gui_settings_.setValue("type", metric_widgets_[i]->metaObject()->className());
-        gui_settings_.setValue("sender", metric_widgets_[i]->getSender());
+        gui_settings_.setArrayIndex(i);
+        gui_settings_.setValue("type", QString::fromStdString(enum_name(metric_widgets_[i]->getType())));
         gui_settings_.setValue("metric", metric_widgets_[i]->getMetric());
         const auto sliding = metric_widgets_[i]->slidingWindow();
         if(sliding.has_value()) {
             gui_settings_.setValue("slide", static_cast<int>(sliding.value()));
         }
-        gui_settings_.endGroup();
+        gui_settings_.setValue("senders", metric_widgets_[i]->getSenders());
     }
+    gui_settings_.endArray();
 
     gui_settings_.beginGroup("dashboard/layout");
     // Save vertical splitter states (row heights)

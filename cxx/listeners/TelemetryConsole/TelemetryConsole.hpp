@@ -96,14 +96,19 @@ private:
     /**
      * @brief Helper to create different types of metric display widgets
      *
-     * @param sender Name of the sender
      * @param name Name of the metric
-     * @param type Type of chart to book
-     * @param window Boolean indicating whether this is a sliding window display
-     * @param seconds Number of seconds the sliding window extends
+     * @param type_name Type of chart to book
+     * @param window Optional number of seconds for a sliding window
      */
-    void
-    create_metric_display(const QString& sender, const QString& name, const QString& type, bool window, std::size_t seconds);
+    void create_metric_display(const QString& name, const QString& type_name, std::optional<std::size_t> window);
+
+    /**
+     * @brief Helper to attach a sender to a metric display
+     *
+     * @param name Name of the metric
+     * @param sender Name of the sender
+     */
+    void add_metric_sender(const QString& name, const QString& sender);
 
     // Vector of all metric widgets
     QVector<QMetricDisplay*> metric_widgets_;
