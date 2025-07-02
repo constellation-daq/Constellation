@@ -32,9 +32,9 @@ config::Value CommandRegistry::call(State state, const std::string& name, const 
         throw UnknownUserCommand(name_lc);
     }
 
-    // Check if we are allowed to call this command from the current state:
-    // Note: empty state list means that everything is allowed.
-    if(!cmd->second.valid_states.empty() && !cmd->second.valid_states.contains(state)) {
+    // Check if we are allowed to call this command from the current state
+    // Note: empty state list means that everything is allowed
+    if(!cmd->second.allowed_states.empty() && !cmd->second.allowed_states.contains(state)) {
         throw InvalidUserCommand(name_lc, state);
     }
 
@@ -60,9 +60,9 @@ std::map<std::string, std::string> CommandRegistry::describeCommands() const {
         description += " arguments.";
 
         // Append allowed states (empty means allowed from all states)
-        if(!cmd.second.valid_states.empty()) {
+        if(!cmd.second.allowed_states.empty()) {
             description += "\nThis command can only be called in the following states: ";
-            description += range_to_string(cmd.second.valid_states);
+            description += range_to_string(cmd.second.allowed_states);
         } else {
             description += "\nThis command can be called in all states.";
         }

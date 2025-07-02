@@ -11,9 +11,9 @@
 
 #include "CommandRegistry.hpp" // NOLINT(misc-header-include-cycle)
 
-#include <functional>
-#include <initializer_list>
+#include <set>
 #include <string>
+#include <string_view>
 #include <typeinfo>
 #include <utility>
 #include <variant>
@@ -44,14 +44,14 @@ namespace constellation::satellite {
         }
     }
 
-    template <typename R, typename... Args>
-    inline void CommandRegistry::add(const std::string& name,
+    template <typename C>
+    inline void CommandRegistry::add(std::string_view name,
                                      std::string description,
-                                     std::initializer_list<protocol::CSCP::State> states,
-                                     std::function<R(Args...)> func) {
+                                     std::set<protocol::CSCP::State> allowed_states,
+                                     C function) {
         const auto name_lc = utils::transform(name, ::tolower);
         if(!protocol::CSCP::is_valid_command_name(name_lc)) {
-            throw utils::LogicError("Command name is invalid");
+            throw utils::LogicError("Command name `" + name_lc + "` is invalid");
         }
 
         if(utils::enum_cast<protocol::CSCP::StandardCommand>(name_lc).has_value()) {
@@ -62,26 +62,18 @@ namespace constellation::satellite {
             throw utils::LogicError("Satellite transition command with this name exists");
         }
 
-        const auto [it, success] = commands_.emplace(
-            name_lc, Command {generate_call(std::move(func)), sizeof...(Args), std::move(description), states});
+        // Wrap object into a std::function
+        using function_traits = function_traits<decltype(&C::operator())>;
+        using function_type = typename function_traits::function_type;
+        const auto nargs = function_traits::argument_size::value;
+        auto call = Call(Wrapper(function_type(std::move(function))));
+
+        const auto [it, success] =
+            commands_.emplace(name_lc, Command(std::move(call), nargs, std::move(description), allowed_states));
 
         if(!success) {
-            throw utils::LogicError("Command \"" + name_lc + "\" is already registered");
+            throw utils::LogicError("Command `" + name_lc + "` is already registered");
         }
-    }
-
-    template <typename T, typename R, typename... Args>
-    inline void CommandRegistry::add(const std::string& name,
-                                     std::string description,
-                                     std::initializer_list<protocol::CSCP::State> states,
-                                     R (T::*func)(Args...),
-                                     T* t) {
-        if(!func || !t) {
-            throw utils::LogicError("Object and member function pointers must not be nullptr");
-        }
-        add(name, std::move(description), states, std::function<R(Args...)>([=](Args... args) {
-                return (t->*func)(args...);
-            }));
     }
 
 } // namespace constellation::satellite

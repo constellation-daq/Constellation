@@ -51,6 +51,16 @@ The arguments here are, in this order, the name of the command, its description,
 called in, the pointer to the command function and the pointer to this satellite instance. The individual parts of the
 registration process are discussed below in detail.
 
+Alternatively, commands can also be registered using
+[lambda expressions](https://en.cppreference.com/w/cpp/language/lambda.html):
+
+```c++
+    register_command("get_random_number",
+                     "Return random number chosen by a fair dice roll.", // See https://xkcd.com/221/
+                     {},                                                 // Allow commands in all states
+                     []() { return 4; });                                // Lambda expression
+```
+
 :::
 :::{tab-item} Python
 :sync: python

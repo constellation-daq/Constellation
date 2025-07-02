@@ -16,6 +16,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -65,6 +66,24 @@ namespace constellation::satellite {
                 }
                 return retval;
             });
+    }
+
+    template <typename T, typename R, typename... Args>
+    void Satellite::register_command(std::string_view name,
+                                     std::string description,
+                                     std::set<protocol::CSCP::State> allowed_states,
+                                     R (T::*func)(Args...),
+                                     T* t) {
+        register_command(
+            name, std::move(description), std::move(allowed_states), [=](Args... args) { return (t->*func)(args...); });
+    }
+
+    template <typename C>
+    void Satellite::register_command(std::string_view name,
+                                     std::string description,
+                                     std::set<protocol::CSCP::State> allowed_states,
+                                     C function) {
+        user_commands_.add(name, std::move(description), std::move(allowed_states), std::move(function));
     }
 
 } // namespace constellation::satellite

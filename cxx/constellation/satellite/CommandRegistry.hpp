@@ -12,18 +12,19 @@
 #include <concepts>
 #include <cstddef>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <set>
 #include <string>
+#include <string_view>
+#include <tuple>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/string_hash_map.hpp"
 
 namespace constellation::satellite {
 
@@ -38,39 +39,15 @@ namespace constellation::satellite {
     class CommandRegistry {
     public:
         /**
-         * @brief Register a command with arbitrary arguments from a functional
+         * @brief Register a command with arbitrary arguments
          *
          * @param name Name of the command
          * @param description Description of the command
-         * @param states States of the finite state machine in which this command can be called
-         * @param func Functional containing the callable object
-         * @tparam R Return type
-         * @tparam Args Argument types
+         * @param allowed_states Set of states in which this command can be called
+         * @param function Function to add
          */
-        template <typename R, typename... Args>
-        void add(const std::string& name,
-                 std::string description,
-                 std::initializer_list<protocol::CSCP::State> states,
-                 std::function<R(Args...)> func);
-
-        /**
-         * @brief Register a command with arbitrary arguments from a member function pointer and object pointer
-         *
-         * @param name Name of the command
-         * @param description Description of the command
-         * @param states States of the finite state machine in which this command can be called
-         * @param func Pointer to the member function of t to be called
-         * @param t Pointer to the called object
-         * @tparam T Type of the called object
-         * @tparam R Return type
-         * @tparam Args Argument types
-         */
-        template <typename T, typename R, typename... Args>
-        void add(const std::string& name,
-                 std::string description,
-                 std::initializer_list<protocol::CSCP::State> states,
-                 R (T::*func)(Args...),
-                 T* t);
+        template <typename C>
+        void add(std::string_view name, std::string description, std::set<protocol::CSCP::State> allowed_states, C function);
 
         /**
          * @brief Calls a registered function with its arguments
@@ -100,11 +77,19 @@ namespace constellation::satellite {
         CNSTLN_API std::map<std::string, std::string> describeCommands() const;
 
     private:
+        // Function traits to extract equivalent function type from lambda
+        template <typename T> struct function_traits;
+        template <typename R, typename Cls, typename... Args> struct function_traits<R (Cls::*)(Args...) const> {
+            using function_type = std::function<R(Args...)>;
+            using argument_size = std::tuple_size<std::tuple<Args...>>;
+        };
+
+        // Function alias for std::function used in storage
         using Call = std::function<config::Value(const config::List&)>;
 
         /**
-         * @struct Command
          * @brief Struct holding all information for a command
+         *
          * Struct holding the command function call, its number of required arguments, the description and valid
          * states of the finite state machine it can be called for.
          */
@@ -112,7 +97,7 @@ namespace constellation::satellite {
             Call func;
             std::size_t nargs;
             std::string description;
-            std::set<protocol::CSCP::State> valid_states;
+            std::set<protocol::CSCP::State> allowed_states;
         };
 
         template <typename T> static inline T to_argument(const config::Value& value);
@@ -137,21 +122,9 @@ namespace constellation::satellite {
             }
         };
 
-        /**
-         * @brief Generator method for Call objects
-         *
-         * @param function Function to be called
-         * @tparam R Return type
-         * @tparam Args Argument types
-         * @return Call object
-         */
-        template <typename R, typename... Args> CommandRegistry::Call generate_call(std::function<R(Args...)>&& function) {
-            return Wrapper<R, Args...>(std::forward<std::function<R(Args...)>>(std::move(function)));
-        }
-
     private:
         // Map of registered commands
-        std::unordered_map<std::string, Command> commands_;
+        utils::string_hash_map<Command> commands_;
     };
 
 } // namespace constellation::satellite

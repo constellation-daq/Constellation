@@ -11,8 +11,6 @@
 
 #include <chrono>
 #include <concepts>
-#include <functional>
-#include <initializer_list>
 #include <memory>
 #include <set>
 #include <stop_token>
@@ -25,7 +23,6 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
-#include "constellation/satellite/CommandRegistry.hpp"
 
 namespace constellation::satellite {
 
@@ -218,34 +215,30 @@ namespace constellation::satellite {
          *
          * @param name Name of the command
          * @param description Comprehensive description of the command
-         * @param states States of the finite state machine in which this command can be called
+         * @param allowed_states Set of states in which this command can be called
          * @param func Pointer to the member function to be called
-         * @param t Pointer to the satellite object
+         * @param t Pointer to the object of the member function
          */
         template <typename T, typename R, typename... Args>
-        void register_command(const std::string& name,
+        void register_command(std::string_view name,
                               std::string description,
-                              std::initializer_list<protocol::CSCP::State> states,
+                              std::set<protocol::CSCP::State> allowed_states,
                               R (T::*func)(Args...),
-                              T* t) {
-            user_commands_.add(name, std::move(description), states, func, t);
-        }
+                              T* t);
 
         /**
          * @brief Register a new user command from a function or lambda
          *
          * @param name Name of the command
          * @param description Comprehensive description of the command
-         * @param states States of the finite state machine in which this command can be called
-         * @param func Function to be called
+         * @param allowed_states Set of states in which this command can be called
+         * @param function Function to be registered
          */
-        template <typename R, typename... Args>
-        void register_command(const std::string& name,
+        template <typename C>
+        void register_command(std::string_view name,
                               std::string description,
-                              std::initializer_list<protocol::CSCP::State> states,
-                              std::function<R(Args...)> func) {
-            user_commands_.add(name, std::move(description), states, func);
-        }
+                              std::set<protocol::CSCP::State> allowed_states,
+                              C function);
     };
 
     // Generator function that needs to be exported in a satellite library
