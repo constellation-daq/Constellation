@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
-#include <functional>
 #include <string_view>
 #include <utility>
 
@@ -75,10 +74,8 @@ FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::str
                           3s,
                           [this]() { return msg_logged_run_.load(); });
 
-    register_command("flush",
-                     "Flush log sink",
-                     {State::INIT, State::ORBIT, State::RUN, State::SAFE},
-                     std::function<void(void)>([&]() { sink_->flush(); }));
+    register_command(
+        "flush", "Flush log sink", {State::INIT, State::ORBIT, State::RUN, State::SAFE}, [this]() { sink_->flush(); });
 }
 
 void FlightRecorderSatellite::initializing(Configuration& config) {
