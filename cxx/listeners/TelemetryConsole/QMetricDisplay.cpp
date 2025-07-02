@@ -34,15 +34,15 @@ using namespace constellation::gui;
 
 QMetricDisplay::QMetricDisplay(
     const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), value_label_(metric, this), window_sliding_(sliding),
-      window_duration_(window), sender_(sender), metric_(metric), layout_(this) {
+    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), window_sliding_(sliding), window_duration_(window),
+      sender_(sender), metric_(metric), layout_(this) {
 
     // Set up axis labels and format
     axis_x_.setFormat("HH:mm:ss");
     axis_x_.setTitleText("Time");
     axis_y_.setTitleText(metric);
 
-    title_label_.setText(sender + ": ");
+    title_label_.setText(metric);
     title_label_.setStyleSheet("font-weight: bold;");
 
     pause_btn_.setIcon(QIcon(":/action/pause"));
@@ -62,7 +62,6 @@ QMetricDisplay::QMetricDisplay(
     connect(&delete_btn_, &QToolButton::clicked, this, &QMetricDisplay::deleteRequested);
 
     tool_bar_.addWidget(&title_label_);
-    tool_bar_.addWidget(&value_label_);
     tool_bar_.addStretch();
     tool_bar_.addWidget(&pause_btn_);
     tool_bar_.addWidget(&reset_btn_);
@@ -74,10 +73,12 @@ QMetricDisplay::QMetricDisplay(
     auto* chart = chart_view_->chart();
     chart->addAxis(&axis_x_, Qt::AlignBottom);
     chart->addAxis(&axis_y_, Qt::AlignLeft);
-    chart->legend()->hide();
     chart->layout()->setContentsMargins(0, 0, 0, 0);
+    chart->setMargins(QMargins(3, 3, 3, 3));
+    chart->legend()->setAlignment(Qt::AlignTop);
     chart->setBackgroundVisible(false);
     chart->setTheme(is_dark_mode() ? QChart::ChartThemeDark : QChart::ChartThemeLight);
+    chart->scene()->addItem(&value_marker_);
     chart_view_->setBackgroundBrush(Qt::NoBrush);
     chart_view_->setStyleSheet("background: transparent");
 
@@ -106,18 +107,16 @@ std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
 void QMetricDisplay::setConnection(bool connected, bool metric) {
 
     title_label_.setStyleSheet("font-weight: bold;");
-    value_label_.setStyleSheet("font-weight: normal;");
     if(!connected) {
         title_label_.setStyleSheet("font-weight: bold; color: red");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(QColor(255, 0, 0, 24).name(QColor::HexArgb)) + " }");
 
     } else if(!metric) {
-        value_label_.setStyleSheet("font-weight: normal; color: orange");
+        title_label_.setStyleSheet("font-weight: bold; color: orange");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(QColor(255, 138, 0, 32).name(QColor::HexArgb)) + " }");
     } else {
-        title_label_.setStyleSheet("font-weight: bold;");
         setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
                       QString("background-color: %1;").arg(bg_color_.name()) + " }");
     }
@@ -138,6 +137,7 @@ void QMetricDisplay::init_series(QAbstractSeries* series) {
     chart_view_->chart()->addSeries(series_);
     series_->attachAxis(&axis_x_);
     series_->attachAxis(&axis_y_);
+    series_->setName(sender_);
     reset();
 }
 
@@ -169,11 +169,25 @@ void QMetricDisplay::update(
     append_point(time.toMSecsSinceEpoch(), yd);
 
     // Rescale axes and update labels unless paused
-    if(!pause_btn_.isChecked()) {
-        rescale_axes(time);
-        axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
-        value_label_.setText(metric + " = " + value.toString() + (unit.isEmpty() ? "" : " " + unit));
+    if(pause_btn_.isChecked()) {
+        return;
     }
+
+    rescale_axes(time);
+    axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
+
+    // Update marker/label for last value
+    if(this->points().isEmpty()) {
+        return;
+    }
+
+    // Update value label
+    const auto scene_pos = chart_view_->chart()->mapToPosition(this->points().last(), series_);
+
+    // Shift position of last point by bounding box size to right-align
+    value_marker_.setPlainText(QString::number(yd, 'f', 2) + (unit.isEmpty() ? "" : " " + unit));
+    const auto bounds = value_marker_.boundingRect();
+    value_marker_.setPos(scene_pos.x() - bounds.width(), scene_pos.y() - 10 - bounds.height());
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {

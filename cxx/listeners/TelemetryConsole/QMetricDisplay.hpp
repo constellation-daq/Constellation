@@ -15,6 +15,7 @@
 
 #include <QDateTime>
 #include <QFrame>
+#include <QGraphicsTextItem>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QString>
@@ -134,7 +135,6 @@ private:
 
     std::unique_ptr<QT_CHART QChartView> chart_view_;
     QT_CHART QAbstractSeries* series_ {nullptr};
-    QLabel value_label_;
 
     // Axes
     QT_CHART QDateTimeAxis axis_x_;
@@ -156,6 +156,7 @@ private:
     QToolButton reset_btn_;
     QToolButton delete_btn_;
     QColor bg_color_;
+    QGraphicsTextItem value_marker_;
 };
 
 class QSplineMetricDisplay : public QMetricDisplay {
