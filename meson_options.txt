@@ -7,7 +7,7 @@ option('impl_py', type: 'feature', value: 'disabled', description: 'Build Python
 option('cxx_tools', type: 'boolean', value: true, description: 'Build C++ tools')
 option('cxx_tests', type: 'feature', value: 'auto', description: 'Build C++ tests')
 
-option('jemalloc', type: 'feature', value: 'auto', description: 'Use jemalloc memory allocator')
+option('memory_allocator', type: 'combo', choices: ['auto', 'jemalloc', 'mimalloc', 'system'], value: 'auto', description: 'Custom memory allocator')
 
 # GUI framework version
 option('build_gui', type: 'combo', choices: ['none', 'qt5', 'qt6'], value: 'qt6', description: 'Build Qt graphical UIs')
