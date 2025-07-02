@@ -204,7 +204,7 @@ void QMetricDisplay::update(
 
     rescale_axes(time);
     axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
-    series->update_marker(chart_view_->chart(), unit);
+    series->updateMarker(chart_view_->chart(), unit);
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {

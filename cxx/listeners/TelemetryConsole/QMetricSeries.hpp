@@ -37,7 +37,7 @@ public:
      *
      * @param chart Chart this series will be attached to
      */
-    explicit QMetricSeries(QChart* chart);
+    explicit QMetricSeries(QT_CHART QChart* chart);
 
     virtual ~QMetricSeries() = default;
 
@@ -63,14 +63,14 @@ public:
      * @brief Update the value marker
      * @details Purely virtual method to be implemented by concrete series
      */
-    void update_marker(QChart* chart, const QString& unit);
+    void updateMarker(QT_CHART QChart* chart, const QString& unit);
 
 protected:
     /**
      * @brief Helper to get the main series
      * @return Pointer to series with data points
      */
-    virtual QAbstractSeries* series() const = 0;
+    virtual QT_CHART QAbstractSeries* series() const = 0;
 
 private:
     QGraphicsTextItem value_marker_;
@@ -78,37 +78,37 @@ private:
 
 class QSplineMetricSeries : public QMetricSeries {
 public:
-    QSplineMetricSeries(QChart* chart);
+    QSplineMetricSeries(QT_CHART QChart* chart);
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
 
 private:
-    QAbstractSeries* series() const override { return spline_; };
+    QT_CHART QAbstractSeries* series() const override { return spline_; }
     QT_CHART QSplineSeries* spline_;
 };
 
 class QScatterMetricSeries : public QMetricSeries {
 public:
-    QScatterMetricSeries(QChart* chart);
+    QScatterMetricSeries(QT_CHART QChart* chart);
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
 
 private:
-    QAbstractSeries* series() const override { return scatter_; };
+    QT_CHART QAbstractSeries* series() const override { return scatter_; }
     QT_CHART QScatterSeries* scatter_;
 };
 
 class QAreaMetricSeries : public QMetricSeries {
 public:
-    QAreaMetricSeries(QChart* chart);
+    QAreaMetricSeries(QT_CHART QChart* chart);
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
 
 private:
-    QAbstractSeries* series() const override { return area_series_; };
+    QT_CHART QAbstractSeries* series() const override { return area_series_; }
     QT_CHART QSplineSeries* spline_;
     QT_CHART QLineSeries* lower_;
     QT_CHART QAreaSeries* area_series_;

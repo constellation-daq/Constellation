@@ -36,7 +36,7 @@ QMetricSeries::QMetricSeries(QChart* chart) {
     chart->scene()->addItem(&value_marker_);
 }
 
-void QMetricSeries::update_marker(QChart* chart, const QString& unit) {
+void QMetricSeries::updateMarker(QChart* chart, const QString& unit) {
 
     const auto points = this->points();
 
