@@ -14,6 +14,7 @@
 #include <limits>
 #include <memory>
 #include <optional>
+#include <utility>
 
 #include <QApplication>
 #include <QDateTime>
@@ -23,6 +24,7 @@
 
 #include "constellation/gui/qt_utils.hpp"
 
+#include "QMetricSeries.hpp"
 #include <QtCharts/QChart>
 #include <QtGui/QPainter>
 #include <QtWidgets/QVBoxLayout>
@@ -217,8 +219,9 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
 
     for(auto* series : series_) {
         const auto& points = series->points();
-        if(points.isEmpty())
+        if(points.isEmpty()) {
             continue;
+        }
 
         has_points = true;
         for(const auto& point : points) {

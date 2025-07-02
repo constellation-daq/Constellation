@@ -10,6 +10,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 
@@ -48,7 +49,7 @@ public:
     /**
      * @brief Type of chart to create
      */
-    enum class Type { Spline, Scatter, Area };
+    enum class Type : std::uint8_t { Spline, Scatter, Area };
 
     /**
      * @brief Constructor of QMetricDisplay

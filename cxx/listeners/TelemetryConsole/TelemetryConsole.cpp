@@ -9,11 +9,13 @@
 
 #include "TelemetryConsole.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <limits>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <string>
 #include <string_view>
 
@@ -368,8 +370,8 @@ void TelemetryConsole::add_metric_sender(const QString& name, const QString& sen
     const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
     // Find metric - always add sender to the last widget registered with this metric
-    auto it = std::find_if(
-        metric_widgets_.rbegin(), metric_widgets_.rend(), [name](const auto& entry) { return entry->getMetric() == name; });
+    auto it = std::ranges::find_if(std::ranges::reverse_view(metric_widgets_),
+                                   [name](const auto& entry) { return entry->getMetric() == name; });
 
     if(it != metric_widgets_.rend()) {
         const auto& metric = *it;

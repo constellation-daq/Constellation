@@ -41,6 +41,14 @@ public:
 
     virtual ~QMetricSeries() = default;
 
+    // No copy constructor/assignment/move constructor/assignment
+    /// @cond doxygen_suppress
+    QMetricSeries(const QMetricSeries& other) = delete;
+    QMetricSeries& operator=(const QMetricSeries& other) = delete;
+    QMetricSeries(QMetricSeries&& other) noexcept = delete;
+    QMetricSeries& operator=(QMetricSeries&& other) = delete;
+    /// @endcond
+
     /**
      * @brief Clear all data points
      * @details Purely virtual method to be implemented by concrete series

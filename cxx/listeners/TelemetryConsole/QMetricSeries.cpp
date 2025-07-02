@@ -9,18 +9,11 @@
 
 #include "QMetricSeries.hpp"
 
-#include <algorithm>
-#include <cstddef>
-#include <memory>
-#include <optional>
-
 #include <QApplication>
 #include <QDateTime>
 #include <QGraphicsLayout>
 #include <QGraphicsScene>
 #include <QToolButton>
-
-#include "constellation/gui/qt_utils.hpp"
 
 #include <QtCharts/QChart>
 #include <QtGui/QPainter>
@@ -29,8 +22,6 @@
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 using namespace QtCharts;
 #endif
-
-using namespace constellation::gui;
 
 QMetricSeries::QMetricSeries(QChart* chart) {
     chart->scene()->addItem(&value_marker_);
