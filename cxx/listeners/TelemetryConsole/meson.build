@@ -17,7 +17,7 @@ qtcharts_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Chart
 
 qrc_files = qt.compile_resources(sources: 'TelemetryConsole.qrc')
 ui_files = qt.compile_ui(sources: ['TelemetryConsole.ui'])
-moc_files = qt.compile_moc(headers: ['QMetricDisplay.hpp', 'QMetricSeries.hpp', 'QStatListener.hpp', 'TelemetryConsole.hpp'])
+moc_files = qt.compile_moc(headers: ['QMetricDisplay.hpp', 'QStatListener.hpp', 'TelemetryConsole.hpp'])
 
 executable('TelemetryConsole',
   sources: ['main.cpp', 'TelemetryConsole.cpp', 'QMetricDisplay.cpp', 'QMetricSeries.cpp', 'QStatListener.cpp', qrc_files, moc_files, ui_files],

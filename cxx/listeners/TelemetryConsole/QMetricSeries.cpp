@@ -17,6 +17,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QGraphicsLayout>
+#include <QGraphicsScene>
 #include <QToolButton>
 
 #include "constellation/gui/qt_utils.hpp"
@@ -30,6 +31,27 @@ using namespace QtCharts;
 #endif
 
 using namespace constellation::gui;
+
+QMetricSeries::QMetricSeries(QChart* chart) {
+    chart->scene()->addItem(&value_marker_);
+}
+
+void QMetricSeries::update_marker(QChart* chart, const QString& unit) {
+
+    const auto points = this->points();
+
+    // Update marker/label for last value
+    if(points.isEmpty()) {
+        return;
+    }
+    // Update value label
+    const auto scene_pos = chart->mapToPosition(points.last(), series());
+
+    // Shift position of last point by bounding box size to right-align
+    value_marker_.setPlainText(QString::number(points.last().y(), 'f', 2) + (unit.isEmpty() ? "" : " " + unit));
+    const auto bounds = value_marker_.boundingRect();
+    value_marker_.setPos(scene_pos.x() - bounds.width(), scene_pos.y() - 10 - bounds.height());
+}
 
 QSplineMetricSeries::QSplineMetricSeries(QChart* chart) : QMetricSeries(chart), spline_(new QSplineSeries()) {
     chart->addSeries(spline_);

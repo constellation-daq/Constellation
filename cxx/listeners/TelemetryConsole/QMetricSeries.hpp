@@ -9,13 +9,11 @@
 
 #pragma once
 
-#include <cstddef>
-#include <memory>
-#include <optional>
-
+#include <QGraphicsTextItem>
 #include <QList>
 #include <QString>
 
+#include <QtCharts/QAbstractSeries>
 #include <QtCharts/QAreaSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QScatterSeries>
@@ -28,14 +26,54 @@
 #define QT_CHART
 #endif
 
+/**
+ * @class QMetricSeries
+ * @brief Abstract base class for metric series to be displayed in a chart
+ */
 class QMetricSeries {
 public:
-    explicit QMetricSeries(QChart* /*chart*/) {};
+    /**
+     * @brief Constructor, registers value label with the chart
+     *
+     * @param chart Chart this series will be attached to
+     */
+    explicit QMetricSeries(QChart* chart);
+
     virtual ~QMetricSeries() = default;
 
+    /**
+     * @brief Clear all data points
+     * @details Purely virtual method to be implemented by concrete series
+     */
     virtual void clear() = 0;
+
+    /**
+     * @brief Get list of all points of the series
+     * @details Purely virtual method to be implemented by concrete series
+     */
     virtual QList<QPointF> points() const = 0;
+
+    /**
+     * @brief Append a new data point to the series
+     * @details Purely virtual method to be implemented by concrete series
+     */
     virtual void append(qint64 x, double y) = 0;
+
+    /**
+     * @brief Update the value marker
+     * @details Purely virtual method to be implemented by concrete series
+     */
+    void update_marker(QChart* chart, const QString& unit);
+
+protected:
+    /**
+     * @brief Helper to get the main series
+     * @return Pointer to series with data points
+     */
+    virtual QAbstractSeries* series() const = 0;
+
+private:
+    QGraphicsTextItem value_marker_;
 };
 
 class QSplineMetricSeries : public QMetricSeries {
@@ -46,6 +84,7 @@ public:
     void append(qint64 x, double y) override;
 
 private:
+    QAbstractSeries* series() const override { return spline_; };
     QT_CHART QSplineSeries* spline_;
 };
 
@@ -57,6 +96,7 @@ public:
     void append(qint64 x, double y) override;
 
 private:
+    QAbstractSeries* series() const override { return scatter_; };
     QT_CHART QScatterSeries* scatter_;
 };
 
@@ -68,7 +108,8 @@ public:
     void append(qint64 x, double y) override;
 
 private:
+    QAbstractSeries* series() const override { return area_series_; };
     QT_CHART QSplineSeries* spline_;
     QT_CHART QLineSeries* lower_;
-    QT_CHART QAreaSeries* area_series_ = nullptr;
+    QT_CHART QAreaSeries* area_series_;
 };
