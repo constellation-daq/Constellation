@@ -17,6 +17,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLineEdit>
+#include <QMap>
 #include <QString>
 #include <QToolButton>
 #include <QVariant>
@@ -111,8 +112,9 @@ public slots:
      * @details Used to mark senders as available or absent
      *
      * @param sender Name of the sender
+     * @param metrics List of available metrics from that sender
      */
-    void senderConnected(const QString& sender) const;
+    void senderConnected(const QString& sender, const QStringList& metrics);
 
     /**
      * @brief Slot to notify of a  sender that disconnected
@@ -120,30 +122,7 @@ public slots:
      *
      * @param sender Name of the sender
      */
-    void senderDisconnected(const QString& sender) const;
-
-    /**
-     * @brief Slot to notify of new metric topics being available
-     * @details Used to mark metrics as available or absent
-     *
-     * @param sender Name of the sender
-     * @param metrics List of available metrics from that sender
-     */
-    void metricsChanged(const QString& sender, const QStringList& metrics) const;
-
-    /**
-     * @brief Mark sender as disconnected
-     *
-     * @param connected Boolean indicating connection status of sender
-     * @param metric Boolean indicating if this metric is available
-     */
-    void setConnection(bool connected, bool metric = false);
-
-signals:
-    /**
-     * @brief Signal to indicate a deletion request
-     */
-    void deleteRequested();
+    void senderDisconnected(const QString& sender);
 
 public slots:
     /**
@@ -158,6 +137,12 @@ public slots:
      */
     void
     update(const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value);
+
+signals:
+    /**
+     * @brief Signal to indicate a deletion request
+     */
+    void deleteRequested();
 
 private:
     /**

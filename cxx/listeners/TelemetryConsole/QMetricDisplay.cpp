@@ -18,6 +18,7 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QGraphicsLayout>
+#include <QMap>
 #include <QToolButton>
 
 #include "constellation/gui/qt_utils.hpp"
@@ -101,24 +102,6 @@ QMetricDisplay::QMetricDisplay(const QString& metric, Type type, std::optional<s
     reset();
 }
 
-void QMetricDisplay::setConnection(bool connected, bool metric) {
-
-    if(!connected) {
-        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: red");
-        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
-                      QString("background-color: %1;").arg(QColor(255, 0, 0, 24).name(QColor::HexArgb)) + " }");
-
-    } else if(!metric) {
-        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: orange");
-        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
-                      QString("background-color: %1;").arg(QColor(255, 138, 0, 32).name(QColor::HexArgb)) + " }");
-    } else {
-        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold;");
-        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
-                      QString("background-color: %1;").arg(bg_color_.name()) + " }");
-    }
-}
-
 void QMetricDisplay::addSender(const QString& sender) {
 
     // Don't add twice
@@ -155,11 +138,29 @@ void QMetricDisplay::addSender(const QString& sender) {
     series_.insert(sender, series.release());
 }
 
-void QMetricDisplay::senderConnected(const QString&) const {}
+void QMetricDisplay::senderDisconnected(const QString& sender) {
+    if(hasSender(sender)) {
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: red");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(QColor(255, 0, 0, 24).name(QColor::HexArgb)) + " }");
+    }
+}
 
-void QMetricDisplay::senderDisconnected(const QString&) const {}
+void QMetricDisplay::senderConnected(const QString& sender, const QStringList& metrics) {
+    if(!hasSender(sender)) {
+        return;
+    }
 
-void QMetricDisplay::metricsChanged(const QString&, const QStringList&) const {}
+    if(!metrics.contains(metric_)) {
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold; color: orange");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(QColor(255, 138, 0, 32).name(QColor::HexArgb)) + " }");
+    } else {
+        title_label_.setStyleSheet("background: transparent; border: none; font-weight: bold;");
+        setStyleSheet("QMetricDisplay { border: 1px solid gray; border-radius: 6px; " +
+                      QString("background-color: %1;").arg(bg_color_.name()) + " }");
+    }
+}
 
 void QMetricDisplay::reset() {
     // Clear all series
