@@ -14,6 +14,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QVariant>
 
 #include "constellation/core/message/CMDP1Message.hpp"
@@ -52,8 +53,9 @@ signals:
     /**
      * @brief Signal emitted when the registered metrics for a given host changed
      * @param host Canonical name of the sender
+     * @param metrics List of metrics registered for this host
      */
-    void metricsChanged(const QString& host);
+    void metricsChanged(const QString& host, const QStringList& metrics);
 
     /**
      * @brief Signal emitted whenever a new stat message has been received

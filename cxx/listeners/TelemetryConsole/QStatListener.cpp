@@ -90,6 +90,13 @@ void QStatListener::sender_disconnected(std::string_view sender) {
 }
 
 void QStatListener::topics_changed(std::string_view sender) {
+    // Obtain list of metrics for this host:
+    const auto topics = getAvailableTopics(sender);
+    QStringList metrics;
+    for(const auto& [topic, desc] : topics) {
+        metrics.append(QString::fromStdString(topic));
+    }
+
     // Emit signal for changed metrics
-    emit metricsChanged(QString::fromStdString(std::string(sender)));
+    emit metricsChanged(QString::fromStdString(std::string(sender)), metrics);
 }
