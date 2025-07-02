@@ -389,43 +389,43 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
         gui_settings_.beginGroup("dashboard");
         gui_settings_.remove("");
         gui_settings_.endGroup();
-    }
 
-    // Store current metric widgets:
-    gui_settings_.beginWriteArray("dashboard/widgets");
-    for(int i = 0; i < metric_widgets_.size(); ++i) {
-        gui_settings_.setArrayIndex(i);
-        gui_settings_.setValue("type", QString::fromStdString(enum_name(metric_widgets_[i]->getType())));
-        gui_settings_.setValue("metric", metric_widgets_[i]->getMetric());
-        const auto sliding = metric_widgets_[i]->slidingWindow();
-        if(sliding.has_value()) {
-            gui_settings_.setValue("slide", static_cast<int>(sliding.value()));
-        }
-        gui_settings_.setValue("senders", metric_widgets_[i]->getSenders());
-    }
-    gui_settings_.endArray();
-
-    gui_settings_.beginGroup("dashboard/layout");
-    // Save vertical splitter states (row heights)
-    QSplitter* splitter_vertical = nullptr;
-    if(dashboard_widget_.layout() != nullptr && dashboard_widget_.layout()->count() > 0) {
-        splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
-    }
-    if(splitter_vertical != nullptr) {
-        gui_settings_.setValue("vertical", QVariant::fromValue(splitter_vertical->sizes()));
-
-        // For each row, store horizontal splitter states
-        gui_settings_.beginWriteArray("horizontal");
-        for(int i = 0; i < splitter_vertical->count(); ++i) {
-            auto* splitter_horizontal = qobject_cast<QSplitter*>(splitter_vertical->widget(i));
-            if(splitter_horizontal != nullptr) {
-                gui_settings_.setArrayIndex(i);
-                gui_settings_.setValue("cells", QVariant::fromValue(splitter_horizontal->sizes()));
+        // Store current metric widgets:
+        gui_settings_.beginWriteArray("dashboard/widgets");
+        for(int i = 0; i < metric_widgets_.size(); ++i) {
+            gui_settings_.setArrayIndex(i);
+            gui_settings_.setValue("type", QString::fromStdString(enum_name(metric_widgets_[i]->getType())));
+            gui_settings_.setValue("metric", metric_widgets_[i]->getMetric());
+            const auto sliding = metric_widgets_[i]->slidingWindow();
+            if(sliding.has_value()) {
+                gui_settings_.setValue("slide", static_cast<int>(sliding.value()));
             }
+            gui_settings_.setValue("senders", metric_widgets_[i]->getSenders());
         }
         gui_settings_.endArray();
+
+        gui_settings_.beginGroup("dashboard/layout");
+        // Save vertical splitter states (row heights)
+        QSplitter* splitter_vertical = nullptr;
+        if(dashboard_widget_.layout() != nullptr && dashboard_widget_.layout()->count() > 0) {
+            splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
+        }
+        if(splitter_vertical != nullptr) {
+            gui_settings_.setValue("vertical", QVariant::fromValue(splitter_vertical->sizes()));
+
+            // For each row, store horizontal splitter states
+            gui_settings_.beginWriteArray("horizontal");
+            for(int i = 0; i < splitter_vertical->count(); ++i) {
+                auto* splitter_horizontal = qobject_cast<QSplitter*>(splitter_vertical->widget(i));
+                if(splitter_horizontal != nullptr) {
+                    gui_settings_.setArrayIndex(i);
+                    gui_settings_.setValue("cells", QVariant::fromValue(splitter_horizontal->sizes()));
+                }
+            }
+            gui_settings_.endArray();
+        }
+        gui_settings_.endGroup();
     }
-    gui_settings_.endGroup();
     widgets_lock.unlock();
 
     // Store window geometry:
