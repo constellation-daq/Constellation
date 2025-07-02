@@ -300,8 +300,6 @@ void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVec
     // Delete old layout and remove child widgets
     delete dashboard_widget_.layout();
 
-    // FIXME ensure horizontal vector has size == vertical.size()
-
     // Ownership is transferred to the dashboard widget
     // NOLINTBEGIN(cppcoreguidelines-owning-memory)
 
@@ -346,7 +344,6 @@ void TelemetryConsole::create_metric_display(const QString& name,
 
     // Try to get type from name:
     const auto type = enum_cast<QMetricDisplay::Type>(type_name.toStdString());
-    // FIXME show error? ignore?
     if(!type.has_value()) {
         return;
     }
@@ -370,14 +367,14 @@ void TelemetryConsole::create_metric_display(const QString& name,
 void TelemetryConsole::add_metric_sender(const QString& name, const QString& sender) {
     const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
-    // Find metric: FIXME always adds to first with this metric name
-    for(auto& metric : metric_widgets_) {
-        if(metric->getMetric() == name) {
-            // Subscribe to metric
-            metric->addSender(sender);
-            stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
-            return;
-        }
+    // Find metric - always add sender to the last widget registered with this metric
+    auto it = std::find_if(
+        metric_widgets_.rbegin(), metric_widgets_.rend(), [name](const auto& entry) { return entry->getMetric() == name; });
+
+    if(it != metric_widgets_.rend()) {
+        const auto& metric = *it;
+        metric->addSender(sender);
+        stat_listener_.subscribeMetric(sender.toStdString(), name.toStdString());
     }
 }
 
