@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <limits>
 #include <memory>
 #include <optional>
 
@@ -31,10 +32,9 @@ using namespace QtCharts;
 
 using namespace constellation::gui;
 
-QMetricDisplay::QMetricDisplay(
-    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), window_sliding_(sliding), window_duration_(window),
-      sender_(sender), metric_(metric), layout_(this), title_label_(metric, this) {
+QMetricDisplay::QMetricDisplay(const QString& metric, Type type, std::optional<std::size_t> window, QWidget* parent)
+    : QFrame(parent), chart_view_(std::make_unique<QChartView>(this)), metric_(metric), type_(type), sliding_window_(window),
+      layout_(this), title_label_(metric, this) {
 
     // Set up axis labels and format
     axis_x_.setFormat("HH:mm:ss");
@@ -80,7 +80,6 @@ QMetricDisplay::QMetricDisplay(
     chart->legend()->setAlignment(Qt::AlignTop);
     chart->setBackgroundVisible(false);
     chart->setTheme(is_dark_mode() ? QChart::ChartThemeDark : QChart::ChartThemeLight);
-    chart->scene()->addItem(&value_marker_);
     chart_view_->setBackgroundBrush(Qt::NoBrush);
     chart_view_->setStyleSheet("background: transparent");
 
@@ -102,13 +101,6 @@ QMetricDisplay::QMetricDisplay(
     reset();
 }
 
-std::optional<std::size_t> QMetricDisplay::slidingWindow() const {
-    if(window_sliding_) {
-        return window_duration_;
-    }
-    return {};
-}
-
 void QMetricDisplay::setConnection(bool connected, bool metric) {
 
     if(!connected) {
@@ -127,28 +119,46 @@ void QMetricDisplay::setConnection(bool connected, bool metric) {
     }
 }
 
-void QMetricDisplay::init_series(QAbstractSeries* series) {
-    if(series == nullptr) {
+void QMetricDisplay::addSender(const QString& sender) {
+
+    // Don't add twice
+    if(hasSender(sender)) {
         return;
     }
 
-    if(series_ != nullptr) {
-        series_->detachAxis(&axis_x_);
-        series_->detachAxis(&axis_y_);
-        chart_view_->chart()->removeSeries(series_);
+    auto* chart = chart_view_->chart();
+    std::unique_ptr<QMetricSeries> series;
+
+    switch(type_) {
+    case Type::Spline: {
+        series = std::make_unique<QSplineMetricSeries>(chart);
+        break;
+    }
+    case Type::Scatter: {
+        series = std::make_unique<QScatterMetricSeries>(chart);
+        break;
+    }
+    case Type::Area: {
+        series = std::make_unique<QAreaMetricSeries>(chart);
+        break;
+    }
+    default: std::unreachable();
     }
 
-    series_ = series;
-    chart_view_->chart()->addSeries(series_);
-    series_->attachAxis(&axis_x_);
-    series_->attachAxis(&axis_y_);
-    series_->setName(sender_);
-    reset();
+    // Attach axes for new series
+    auto* s = chart->series().last();
+    s->attachAxis(&axis_x_);
+    s->attachAxis(&axis_y_);
+    s->setName(sender);
+
+    // Add to list
+    series_.insert(sender, series.release());
 }
 
 void QMetricDisplay::reset() {
-    if(series_ != nullptr) {
-        this->clear();
+    // Clear all series
+    for(auto& s : series_) {
+        s->clear();
     }
 
     // Reset axis ranges
@@ -160,7 +170,14 @@ void QMetricDisplay::reset() {
 void QMetricDisplay::update(
     const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value) {
 
-    if(sender_ != sender || metric_ != metric) {
+    // Check metric
+    if(metric_ != metric) {
+        return;
+    }
+
+    // Get series for this sender
+    auto* series = series_.value(sender, nullptr);
+    if(series == nullptr) {
         return;
     }
 
@@ -171,7 +188,7 @@ void QMetricDisplay::update(
     }
 
     // Append point to series
-    append_point(time.toMSecsSinceEpoch(), yd);
+    series->append(time.toMSecsSinceEpoch(), yd);
 
     // Rescale axes and update labels unless paused
     if(pause_btn_.isChecked()) {
@@ -180,36 +197,36 @@ void QMetricDisplay::update(
 
     rescale_axes(time);
     axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
-
-    // Update marker/label for last value
-    if(this->points().isEmpty()) {
-        return;
-    }
-
-    // Update value label
-    const auto scene_pos = chart_view_->chart()->mapToPosition(this->points().last(), series_);
-
-    // Shift position of last point by bounding box size to right-align
-    value_marker_.setPlainText(QString::number(yd, 'f', 2) + (unit.isEmpty() ? "" : " " + unit));
-    const auto bounds = value_marker_.boundingRect();
-    value_marker_.setPos(scene_pos.x() - bounds.width(), scene_pos.y() - 10 - bounds.height());
+    series->update_marker(chart_view_->chart(), unit);
 }
 
 void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     const auto local_time = newTime.toLocalTime();
 
     // Rescale y axis according to min/max values
-    const auto& points = this->points();
-    const auto& [min, max] =
-        std::ranges::minmax_element(points, [](const QPointF& a, const QPointF& b) { return a.y() < b.y(); });
+    double global_min = std::numeric_limits<double>::max();
+    double global_max = std::numeric_limits<double>::lowest();
+    bool has_points = false;
 
-    if(min != points.cend() && max != points.cend()) {
-        const auto span = std::max(1e-3, max->y() - min->y());
-        axis_y_.setRange(min->y() - (span * 0.1), max->y() + (span * 0.1));
+    for(auto* series : series_) {
+        const auto& points = series->points();
+        if(points.isEmpty())
+            continue;
+
+        has_points = true;
+        for(const auto& point : points) {
+            global_min = std::min(global_min, point.y());
+            global_max = std::max(global_max, point.y());
+        }
     }
 
-    if(window_sliding_) {
-        const auto start = local_time.addSecs(-1 * static_cast<qint64>(window_duration_));
+    if(has_points) {
+        const double span = std::max(1e-3, global_max - global_min);
+        axis_y_.setRange(global_min - (span * 0.1), global_max + (span * 0.1));
+    }
+
+    if(sliding_window_.has_value()) {
+        const auto start = local_time.addSecs(-1 * static_cast<qint64>(sliding_window_.value()));
         axis_x_.setRange(start, local_time);
         return;
     }
@@ -220,62 +237,4 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     if(local_time < axis_x_.min()) {
         axis_x_.setMin(local_time);
     }
-}
-
-QSplineMetricDisplay::QSplineMetricDisplay(
-    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent), spline_(new QSplineSeries()) {
-    init_series(spline_);
-}
-
-void QSplineMetricDisplay::clear() {
-    spline_->clear();
-};
-
-QList<QPointF> QSplineMetricDisplay::points() {
-    return spline_->points();
-};
-
-void QSplineMetricDisplay::append_point(qint64 x, double y) {
-    spline_->append(static_cast<double>(x), y);
-}
-
-QScatterMetricDisplay::QScatterMetricDisplay(
-    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent), scatter_(new QScatterSeries()) {
-    scatter_->setMarkerSize(8.0);
-    init_series(scatter_);
-}
-
-void QScatterMetricDisplay::clear() {
-    scatter_->clear();
-};
-
-QList<QPointF> QScatterMetricDisplay::points() {
-    return scatter_->points();
-};
-
-void QScatterMetricDisplay::append_point(qint64 x, double y) {
-    scatter_->append(static_cast<double>(x), y);
-}
-
-QAreaMetricDisplay::QAreaMetricDisplay(
-    const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent)
-    : QMetricDisplay(sender, metric, sliding, window, parent), spline_(new QSplineSeries()), lower_(new QLineSeries()),
-      area_series_(new QAreaSeries(spline_, lower_)) {
-    init_series(area_series_);
-}
-
-void QAreaMetricDisplay::clear() {
-    spline_->clear();
-    lower_->clear();
-};
-
-QList<QPointF> QAreaMetricDisplay::points() {
-    return spline_->points();
-};
-
-void QAreaMetricDisplay::append_point(qint64 x, double y) {
-    spline_->append(static_cast<double>(x), y);
-    lower_->append(static_cast<double>(x), 0);
 }

@@ -15,7 +15,6 @@
 
 #include <QDateTime>
 #include <QFrame>
-#include <QGraphicsTextItem>
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QString>
@@ -23,14 +22,11 @@
 #include <QVariant>
 #include <QWidget>
 
+#include "QMetricSeries.hpp"
 #include <QtCharts/QAbstractSeries>
-#include <QtCharts/QAreaSeries>
 #include <QtCharts/QChartView>
 #include <QtCharts/QDateTimeAxis>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QSplineSeries>
 #include <QtCharts/QValueAxis>
-#include <QtCharts/QXYSeries>
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #define QT_CHART QtCharts::
@@ -46,30 +42,54 @@
  */
 class QMetricDisplay : public QFrame {
     Q_OBJECT
+
 public:
+    /**
+     * @brief Type of chart to create
+     */
+    enum class Type { Spline, Scatter, Area };
+
     /**
      * @brief Constructor of QMetricDisplay
      *
-     * @param sender Name of the metric sender
      * @param metric Name of the metric
-     * @param sliding Boolean to select sliding window or absolute time
-     * @param window Window size for sliding window display
+     * @param type Type of metric series
+     * @param window Window Optional size for sliding window display, no sliding window if `nullopt`
      * @param parent Parent QWidget
      */
-    QMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
+    QMetricDisplay(const QString& metric, Type type, std::optional<std::size_t> window, QWidget* parent = nullptr);
 
     /**
      * @brief Reset method
-     * @details Clears all data of the time series
+     * @details Clears the data of all series
      */
     void reset();
 
     /**
-     * @brief Get sender registered for this widget
-     * @return Sender name
+     * @brief Register a new sender to add a data series for
+     * @details This generates a new series of the configured type for the sender
+     *
+     * @param sender Canonical name of the sender
      */
-    QString getSender() const { return sender_; }
+    void addSender(const QString& sender);
+
+    /**
+     * @brief Check if sender registered for this widget
+     * @return True if sender is registered, false otherwise
+     */
+    bool hasSender(const QString& sender) const { return series_.contains(sender); }
+
+    /**
+     * @brief Obtain list of registered senders this chart displays
+     * @return List of registered senders
+     */
+    QStringList getSenders() const { return series_.keys(); }
+
+    /**
+     * @brief Obtain type of chart display
+     * @return Type of chart display
+     */
+    Type getType() const { return type_; }
 
     /**
      * @brief Get metric registered for this widget
@@ -82,7 +102,7 @@ public:
      * @details Only holds a value if sliding window is active
      * @return Optional with sliding window length
      */
-    std::optional<std::size_t> slidingWindow() const;
+    std::optional<std::size_t> slidingWindow() const { return sliding_window_; }
 
     /**
      * @brief Mark sender as disconnected
@@ -112,19 +132,6 @@ public slots:
     void
     update(const QString& sender, const QString& metric, const QString& unit, const QDateTime& time, const QVariant& value);
 
-protected:
-    /**
-     * @brief Helper to initialize data series from derived classes
-     *
-     * @param series Series holding the data for this chart
-     */
-    void init_series(QT_CHART QAbstractSeries* series);
-
-    virtual void append_point(qint64 x, double y) = 0;
-
-    virtual void clear() = 0;
-    virtual QList<QPointF> points() = 0;
-
 private:
     /**
      * @brief Helper tor rescale the x axis of the chart
@@ -134,19 +141,18 @@ private:
     void rescale_axes(const QDateTime& time);
 
     std::unique_ptr<QT_CHART QChartView> chart_view_;
-    QT_CHART QAbstractSeries* series_ {nullptr};
+    QMap<QString, QMetricSeries*> series_;
 
     // Axes
     QT_CHART QDateTimeAxis axis_x_;
     QT_CHART QValueAxis axis_y_;
 
-    // Sliding window settings
-    bool window_sliding_;
-    std::size_t window_duration_;
-
-    // Sender and metric information
-    QString sender_;
+    // Metric information
     QString metric_;
+    Type type_;
+
+    // Sliding window settings
+    std::optional<std::size_t> sliding_window_;
 
     // Buttons & labels
     QVBoxLayout layout_;
@@ -156,46 +162,4 @@ private:
     QToolButton reset_btn_;
     QToolButton delete_btn_;
     QColor bg_color_;
-    QGraphicsTextItem value_marker_;
-};
-
-class QSplineMetricDisplay : public QMetricDisplay {
-    Q_OBJECT
-public:
-    QSplineMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
-
-private:
-    void clear() override;
-    QList<QPointF> points() override;
-    void append_point(qint64 x, double y) override;
-    QT_CHART QSplineSeries* spline_;
-};
-
-class QScatterMetricDisplay : public QMetricDisplay {
-    Q_OBJECT
-public:
-    QScatterMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
-
-private:
-    void clear() override;
-    QList<QPointF> points() override;
-    void append_point(qint64 x, double y) override;
-    QT_CHART QScatterSeries* scatter_;
-};
-
-class QAreaMetricDisplay : public QMetricDisplay {
-    Q_OBJECT
-public:
-    QAreaMetricDisplay(
-        const QString& sender, const QString& metric, bool sliding, std::size_t window, QWidget* parent = nullptr);
-
-private:
-    void clear() override;
-    QList<QPointF> points() override;
-    void append_point(qint64 x, double y) override;
-    QT_CHART QSplineSeries* spline_;
-    QT_CHART QLineSeries* lower_;
-    QT_CHART QAreaSeries* area_series_ = nullptr;
 };
