@@ -86,34 +86,6 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         metricSender->setCurrentIndex(-1);
     });
 
-    // Update existing metric widgets with connection updates:
-    connect(&stat_listener_, &QStatListener::senderConnected, this, [&](const QString& host) {
-        const std::lock_guard widgets_lock {metric_widgets_mutex_};
-        for(auto& metric : metric_widgets_) {
-            if(metric->getSender() == host) {
-                metric->setConnection(
-                    true, stat_listener_.getAvailableTopics(host.toStdString()).contains(metric->getMetric().toStdString()));
-            }
-        }
-    });
-    connect(&stat_listener_, &QStatListener::senderDisconnected, this, [&](const QString& host) {
-        const std::lock_guard widgets_lock {metric_widgets_mutex_};
-        for(auto& metric : metric_widgets_) {
-            if(metric->getSender() == host) {
-                metric->setConnection(false);
-            }
-        }
-    });
-    connect(&stat_listener_, &QStatListener::metricsChanged, this, [&](const QString& host) {
-        const std::lock_guard widgets_lock {metric_widgets_mutex_};
-        for(auto& metric : metric_widgets_) {
-            if(metric->getSender() == host) {
-                metric->setConnection(
-                    true, stat_listener_.getAvailableTopics(host.toStdString()).contains(metric->getMetric().toStdString()));
-            }
-        }
-    });
-
     // Start the log receiver pool
     stat_listener_.startPool();
 
@@ -383,17 +355,14 @@ void TelemetryConsole::create_metric_display(const QString& name,
     // Ownership is transferred to the storage
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
     auto* metric_widget = new QMetricDisplay(name, type.value(), window, this);
-
-    // Set connection state of the widget: FIXME
-    // if(!stat_listener_.isSenderAvailable(sender.toStdString())) {
-    // metric_widget->setConnection(false);
-    // }
-
     const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
-    // Connect delete request and update method
+    // Connect delete request and update method and status updates
     connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::delete_metric);
     connect(&stat_listener_, &QStatListener::newMessage, metric_widget, &QMetricDisplay::update);
+    connect(&stat_listener_, &QStatListener::senderConnected, metric_widget, &QMetricDisplay::senderConnected);
+    connect(&stat_listener_, &QStatListener::senderDisconnected, metric_widget, &QMetricDisplay::senderDisconnected);
+    connect(&stat_listener_, &QStatListener::metricsChanged, metric_widget, &QMetricDisplay::metricsChanged);
 
     // Store widget and update layout
     metric_widgets_.append(metric_widget);

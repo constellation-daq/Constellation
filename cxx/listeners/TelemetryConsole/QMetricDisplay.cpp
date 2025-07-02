@@ -155,6 +155,12 @@ void QMetricDisplay::addSender(const QString& sender) {
     series_.insert(sender, series.release());
 }
 
+void QMetricDisplay::senderConnected(const QString&) const {}
+
+void QMetricDisplay::senderDisconnected(const QString&) const {}
+
+void QMetricDisplay::metricsChanged(const QString&, const QStringList&) const {}
+
 void QMetricDisplay::reset() {
     // Clear all series
     for(auto& s : series_) {
