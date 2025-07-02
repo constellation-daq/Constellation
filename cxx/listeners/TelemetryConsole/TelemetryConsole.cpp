@@ -45,11 +45,15 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     spinBoxMins->setEnabled(false);
     addMetric->setEnabled(false);
 
-    connect(createMetric, &QPushButton::clicked, this, &TelemetryConsole::onAddMetric);
+    connect(createMetric, &QPushButton::clicked, this, &TelemetryConsole::create_metric);
+    connect(addMetric, &QPushButton::clicked, this, &TelemetryConsole::add_metric);
     connect(checkBoxWindow, &QCheckBox::toggled, spinBoxMins, &QSpinBox::setEnabled);
-    connect(resetMetrics, &QPushButton::clicked, this, &TelemetryConsole::onResetMetricWidgets);
-    connect(clearMetrics, &QPushButton::clicked, this, &TelemetryConsole::onDeleteMetricWidgets);
+    connect(resetMetrics, &QPushButton::clicked, this, &TelemetryConsole::reset_metric);
+    connect(clearMetrics, &QPushButton::clicked, this, &TelemetryConsole::delete_all_metrics);
     connect(alignDashboard, &QPushButton::clicked, this, &TelemetryConsole::update_layout);
+
+    // Connect restore placeholder button to restore widgets from settings:
+    connect(restoreButton, &QPushButton::clicked, this, &TelemetryConsole::restore_metrics);
 
     // When selecting new satellite, update available metric list
     connect(metricSender, &QComboBox::currentTextChanged, this, [&](const QString& text) {
@@ -110,44 +114,6 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         }
     });
 
-    // Connect restore placeholder button to restore widgets from settings:
-    connect(restoreButton, &QPushButton::clicked, this, [&]() {
-        // Restore widgets
-        const auto widgets = gui_settings_.beginReadArray("dashboard/widgets");
-        for(int i = 0; i < widgets; ++i) {
-            gui_settings_.setArrayIndex(i);
-            const auto type = gui_settings_.value("type").toString();
-            const auto metric = gui_settings_.value("metric").toString();
-
-            std::optional<std::size_t> window;
-            const auto slide = gui_settings_.value("slide");
-            if(slide.isValid()) {
-                window = static_cast<std::size_t>(slide.toInt());
-            }
-
-            create_metric_display(metric, type, window);
-
-            for(const auto& sender : gui_settings_.value("senders").toStringList()) {
-                add_metric_sender(metric, sender);
-            }
-        }
-        gui_settings_.endArray();
-
-        // Restore the layout:
-        gui_settings_.beginGroup("dashboard/layout");
-        const auto vertical = gui_settings_.value("vertical").value<QList<int>>();
-        const auto rows = gui_settings_.beginReadArray("horizontal");
-        QVector<QList<int>> horizontal;
-        for(int r = 0; r < rows; ++r) {
-            gui_settings_.setArrayIndex(r);
-            horizontal.append(gui_settings_.value("cells").value<QList<int>>());
-        }
-        gui_settings_.endArray();
-        gui_settings_.endGroup();
-
-        generate_splitters(vertical, horizontal);
-    });
-
     // Start the log receiver pool
     stat_listener_.startPool();
 
@@ -164,7 +130,60 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
     }
 }
 
-void TelemetryConsole::onAddMetric() {
+void TelemetryConsole::restore_metrics() {
+    // Restore widgets
+    const auto widgets = gui_settings_.beginReadArray("dashboard/widgets");
+    for(int i = 0; i < widgets; ++i) {
+        gui_settings_.setArrayIndex(i);
+        const auto type = gui_settings_.value("type").toString();
+        const auto metric = gui_settings_.value("metric").toString();
+
+        std::optional<std::size_t> window;
+        const auto slide = gui_settings_.value("slide");
+        if(slide.isValid()) {
+            window = static_cast<std::size_t>(slide.toInt());
+        }
+
+        create_metric_display(metric, type, window);
+
+        for(const auto& sender : gui_settings_.value("senders").toStringList()) {
+            add_metric_sender(metric, sender);
+        }
+    }
+    gui_settings_.endArray();
+
+    // Restore the layout:
+    gui_settings_.beginGroup("dashboard/layout");
+    const auto vertical = gui_settings_.value("vertical").value<QList<int>>();
+    const auto rows = gui_settings_.beginReadArray("horizontal");
+    QVector<QList<int>> horizontal;
+    for(int r = 0; r < rows; ++r) {
+        gui_settings_.setArrayIndex(r);
+        horizontal.append(gui_settings_.value("cells").value<QList<int>>());
+    }
+    gui_settings_.endArray();
+    gui_settings_.endGroup();
+
+    generate_splitters(vertical, horizontal);
+}
+
+void TelemetryConsole::add_metric() {
+
+    const auto sender = metricSender->currentText();
+    const auto metric = metricName->currentText();
+
+    if(metric.isEmpty() || sender.isEmpty()) {
+        return;
+    }
+
+    add_metric_sender(metric, sender);
+
+    // Clear inputs for next metric to be added
+    metricName->clear();
+    metricSender->setCurrentIndex(-1);
+}
+
+void TelemetryConsole::create_metric() {
 
     const auto sender = metricSender->currentText();
     const auto type = metricType->currentText();
@@ -189,7 +208,7 @@ void TelemetryConsole::onAddMetric() {
     metricSender->setCurrentIndex(-1);
 }
 
-void TelemetryConsole::onDeleteMetricWidget() {
+void TelemetryConsole::delete_metric() {
     std::unique_lock widgets_lock {metric_widgets_mutex_};
 
     // Get object which sent this signal
@@ -213,7 +232,7 @@ void TelemetryConsole::onDeleteMetricWidget() {
     update_layout();
 }
 
-void TelemetryConsole::onDeleteMetricWidgets() {
+void TelemetryConsole::delete_all_metrics() {
     std::unique_lock widgets_lock {metric_widgets_mutex_};
 
     // Loop over all metric widgets, remove them from layout, unsubscribe and mark for deletion
@@ -232,7 +251,7 @@ void TelemetryConsole::onDeleteMetricWidgets() {
     update_layout();
 }
 
-void TelemetryConsole::onResetMetricWidgets() {
+void TelemetryConsole::reset_metric() {
     const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
     // Call the reset method of all widgets
@@ -373,7 +392,7 @@ void TelemetryConsole::create_metric_display(const QString& name,
     const std::lock_guard widgets_lock {metric_widgets_mutex_};
 
     // Connect delete request and update method
-    connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::onDeleteMetricWidget);
+    connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::delete_metric);
     connect(&stat_listener_, &QStatListener::newMessage, metric_widget, &QMetricDisplay::update);
 
     // Store widget and update layout

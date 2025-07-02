@@ -48,40 +48,52 @@ public:
      */
     void closeEvent(QCloseEvent* event) override;
 
-public slots:
+private slots:
     /**
      * @brief Slot for adding a new metric to the dashboard
      * @details Creates the metric display and handles subscriptions
      */
-    void onAddMetric();
+    void create_metric();
+
+    /**
+     * @brief Slot for adding a new sender to an existing metric on the dashboard
+     * @details Adds the sender to the metric display and handles subscriptions
+     */
+    void add_metric();
 
     /**
      * @brief Slot for clearing the content of all metric widgets
      * @details This clears stored data points
      */
-    void onResetMetricWidgets();
+    void reset_metric();
 
     /**
      * @brief Slot for deleting a metric widget
      * @details This removes the widget, unsubscribes from the metric and updates the dashboard layout
      */
-    void onDeleteMetricWidget();
+    void delete_metric();
 
     /**
-     * @brief [Slot for deleting all metric widgets from the dashboard
+     * @brief Slot for deleting all metric widgets from the dashboard
      * @details Clears widgets, deletes them and unsubscribes from metrics
      */
-    void onDeleteMetricWidgets();
+    void delete_all_metrics();
 
-private:
-    // Telemetry listener
-    QStatListener stat_listener_;
+    /**
+     * @brief Slot for restoring metric widgets from the application settings
+     * @details Reads the application settings and restores all widgets and the layout
+     */
+    void restore_metrics();
 
     /**
      * @brief Helper to update the dashboard layout after adding or removing a widget
      * @details This calculates best position of widgets and calls generate_splitters to rearrange them
      */
     void update_layout();
+
+private:
+    // Telemetry listener
+    QStatListener stat_listener_;
 
     /**
      * @brief Helper to generate the dashboard layout
