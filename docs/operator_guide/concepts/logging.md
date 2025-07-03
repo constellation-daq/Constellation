@@ -13,6 +13,8 @@ to individual topics.
 ```{seealso}
 Details about how to implement logging can be found in the
 [application development guide](../../application_development/functionality/logging.md).
+A detailed technical description, including protocol sequence diagrams, can be found in the
+[protocol description chapter](../../framework_reference/protocols.md#monitoring) in the framework development guide.
 ```
 
 ## Verbosity Levels

@@ -15,6 +15,10 @@ This ensures timely distribution of information to all Constellation constituent
 The interval between the regular heartbeat messages is automatically scaled according to the number of active hosts in the
 Constellation to avoid congestion.
 
+```{seealso}
+A detailed technical description, including protocol sequence diagrams, can be found in the
+[protocol description chapter](../../framework_reference/protocols.md#autonomous-operation) in the framework development guide.
+```
 
 ## Satellite Autonomy & Roles
 

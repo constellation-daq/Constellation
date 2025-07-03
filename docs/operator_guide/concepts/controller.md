@@ -4,6 +4,11 @@
 Schematic drawing of CSCP
 ```
 
+```{seealso}
+A detailed technical description, including protocol sequence diagrams, can be found in the
+[protocol description chapter](../../framework_reference/protocols.md#command--controlling) in the framework development guide.
+```
+
 ## Measurement Queues
 
 Measurement queues are a sequence of runs which are processed one after the other, either with the same or altered parameters
