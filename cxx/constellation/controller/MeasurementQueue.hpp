@@ -189,6 +189,21 @@ namespace constellation::controller {
         void await_state(protocol::CSCP::State state) const;
 
         /**
+         * @param TODO
+         */
+        void await_state(protocol::CSCP::State state,
+                         std::map<std::string, std::chrono::system_clock::time_point> last_state_changed) const;
+
+        /**
+         * @brief Get map of satellites and the timestamp of their last state change
+         *
+         * @param measurement Measurement from which to extract to extract relevant satellites
+         * @return Map of satellites names and the timestamp of their last state change
+         */
+        std::map<std::string, std::chrono::system_clock::time_point>
+        get_last_state_changed(const Measurement& measurement) const;
+
+        /**
          * @brief Checks all satellite replies for success verbs.
          * @throws If a satellite did not respond with success
          *

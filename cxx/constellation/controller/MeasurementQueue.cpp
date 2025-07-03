@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -199,6 +200,18 @@ void MeasurementQueue::await_state(CSCP::State state) const {
     controller_.awaitState(state, transition_timeout_);
 }
 
+void MeasurementQueue::await_state(CSCP::State state,
+                                   std::map<std::string, std::chrono::system_clock::time_point> last_state_changed) const {
+    controller_.awaitState(state, transition_timeout_, std::move(last_state_changed));
+}
+
+std::map<std::string, std::chrono::system_clock::time_point>
+MeasurementQueue::get_last_state_changed(const Measurement& measurement) const {
+    std::set<std::string> satellites {};
+    std::ranges::for_each(measurement, [&](const auto& p) { satellites.emplace(p.first); });
+    return controller_.getLastStateChanged(satellites);
+}
+
 void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
     const auto success = std::ranges::all_of(replies.cbegin(), replies.cend(), [&](const auto& reply) {
         const auto verb = reply.second.getVerb();
@@ -309,50 +322,15 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                 }
             }
 
-            // Function to check when satellites last changed their state
-            std::map<std::string, Controller::CommandPayload> satellites_request_last_changed {};
-            std::ranges::for_each(
-                measurement, [&](const auto& it) { satellites_request_last_changed.emplace(it.first, std::monostate()); });
-            auto get_last_changed = [&, this]() {
-                std::map<std::string, std::chrono::system_clock::time_point> last_changed_map {};
-                const auto replies = controller_.sendCommands("get_state", satellites_request_last_changed, false);
-                for(const auto& [sat, reply] : replies) {
-                    try {
-                        const auto& header = reply.getHeader();
-                        last_changed_map.emplace(header.getSender(),
-                                                 header.getTag<std::chrono::system_clock::time_point>("last_changed"));
-                    } catch(const std::exception& error) {
-                        throw QueueError("Failed to get state from " + sat);
-                    }
-                }
-                return last_changed_map;
-            };
-
             // Get when state was changed before reconfigure command
-            const auto last_changed_map_before_reconf = get_last_changed();
+            const auto last_state_changed_before_reconf = get_last_state_changed(measurement);
 
             // Send reconfigure command
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
 
-            // Before we wait for ORBIT state, we need to ensure that the extrasystole for reconfiguring was processed
-            // For this, wait until we have no satellites left to request the state from
-            while(!satellites_request_last_changed.empty()) {
-                // Get when satellites was last changes
-                const auto last_changed_map = get_last_changed();
-                for(const auto& [satellite, last_changed] : last_changed_map) {
-                    // Check if last changed is never than before sending reconfigure command
-                    if(last_changed > last_changed_map_before_reconf.at(satellite)) {
-                        // Erase from list of satellites to request state from
-                        satellites_request_last_changed.erase(satellite);
-                    }
-                }
-                // Wait a bit to avoid hot loop
-                std::this_thread::sleep_for(10ms);
-            }
-
-            // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            // Await ORBIT state while ensuring extrasystoles have been sent
+            await_state(CSCP::State::ORBIT, last_state_changed_before_reconf);
 
             // Start the measurement for all satellites
             LOG(logger_, INFO) << "Starting satellites";
@@ -395,12 +373,13 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         // Reset the original values collected during the measurement:
         LOG(logger_, INFO) << "Resetting parameters to pre-scan values";
+        const auto last_state_changed_before_reconf = get_last_state_changed(original_values_);
         const auto reply_reset = controller_.sendCommands("reconfigure", original_values_, false);
         check_replies(reply_reset);
         original_values_.clear();
 
         // Wait for ORBIT state across all
-        await_state(CSCP::State::ORBIT);
+        await_state(CSCP::State::ORBIT, last_state_changed_before_reconf);
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
