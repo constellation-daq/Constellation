@@ -65,8 +65,8 @@ void HeartbeatManager::terminate() {
     sender_.terminate();
 }
 
-void HeartbeatManager::sendExtrasystole(std::string_view status) {
-    sender_.sendExtrasystole(status);
+void HeartbeatManager::sendExtrasystole(std::string status) {
+    sender_.sendExtrasystole(std::move(status));
 }
 
 std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view remote) {

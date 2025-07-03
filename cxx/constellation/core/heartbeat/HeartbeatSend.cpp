@@ -13,9 +13,9 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <optional>
 #include <stop_token>
 #include <string>
-#include <string_view>
 #include <thread>
 #include <utility>
 
@@ -30,6 +30,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/thread.hpp"
+#include "constellation/core/utils/timers.hpp"
 
 using namespace constellation::heartbeat;
 using namespace constellation::message;
@@ -43,8 +44,7 @@ HeartbeatSend::HeartbeatSend(std::string sender,
                              std::chrono::milliseconds interval)
     : pub_socket_(*global_zmq_context(), zmq::socket_type::xpub), port_(bind_ephemeral_port(pub_socket_)),
       sender_(std::move(sender)), state_callback_(std::move(state_callback)), default_interval_(interval),
-      interval_(CHP::MinimumInterval), default_flags_(CHP::flags_from_role(CHP::Role::DYNAMIC)),
-      flags_(default_flags_.load()) {
+      interval_(CHP::MinimumInterval), flags_(CHP::flags_from_role(CHP::Role::DYNAMIC)) {
 
     // Enable XPub verbosity to receive all subscription and unsubscription messages:
     pub_socket_.set(zmq::sockopt::xpub_verboser, true);
@@ -76,51 +76,64 @@ void HeartbeatSend::terminate() {
     }
 }
 
-void HeartbeatSend::sendExtrasystole(std::string_view status) {
-    if(!status.empty()) {
-        const std::lock_guard lock {mutex_};
-        status_ = status;
+void HeartbeatSend::sendExtrasystole(std::string status) {
+    try {
+        const auto flags = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
+        send_heartbeat(flags, std::move(status));
+    } catch(const zmq::error_t& e) {
+        throw NetworkError(e.what());
     }
-    flags_ = flags_.load() | CHP::MessageFlags::IS_EXTRASYSTOLE;
-    cv_.notify_one();
 }
 
 void HeartbeatSend::loop(const std::stop_token& stop_token) {
-    // Notify condition variable when stop is requested
-    const std::stop_callback stop_callback {stop_token, [&]() { cv_.notify_all(); }};
-
     while(!stop_token.stop_requested()) {
-        std::unique_lock<std::mutex> lock {mutex_};
-        // Wait until condition variable is notified or timeout of interval is reached, send 20% earlier than promised
-        cv_.wait_for(lock, interval_.load() * 0.8);
-
         try {
-            // Handle subscriptions to update subscriber count
-            bool received = true;
-            while(received) {
-                zmq::multipart_t recv_msg {};
-                received = recv_msg.recv(pub_socket_, static_cast<int>(zmq::send_flags::dontwait));
+            // Wait until stop request or timeout of interval is reached, send 20% earlier than promised
+            const auto real_interval = interval_.load() * 0.8;
+            TimeoutTimer interval_timer {std::chrono::duration_cast<std::chrono::nanoseconds>(real_interval)};
+            interval_timer.reset();
 
-                // Break if timed out or wrong number of frames received
-                if(!received || recv_msg.size() != 1) {
-                    break;
+            while(!interval_timer.timeoutReached() && !stop_token.stop_requested()) {
+                // Handle subscriptions to update subscriber count
+                bool received = true;
+                while(received) {
+                    // Lock socket and receive subscriptions
+                    zmq::multipart_t recv_msg {};
+                    std::unique_lock lock {mutex_};
+                    received = recv_msg.recv(pub_socket_, static_cast<int>(zmq::send_flags::dontwait));
+                    lock.unlock();
+
+                    // Break if timed out or wrong number of frames received
+                    if(!received || recv_msg.size() != 1) {
+                        break;
+                    }
+
+                    // First byte \x01 is subscription, \0x00 is unsubscription
+                    const auto subscribe = static_cast<bool>(*recv_msg.front().data<uint8_t>());
+                    subscribers_ += (subscribe ? 1 : -1);
                 }
 
-                // First byte \x01 is subscription, \0x00 is unsubscription
-                const auto subscribe = static_cast<bool>(*recv_msg.front().data<uint8_t>());
-                subscribers_ += (subscribe ? 1 : -1);
+                // Sleep a bit avoid hot loop
+                std::this_thread::sleep_for(1ms);
             }
 
-            // Update the interval based on the amount of subscribers:
-            interval_ = CHP::calculate_interval(subscribers_, default_interval_);
+            // Send heartbeat
+            send_heartbeat(flags_.load());
 
-            // Publish CHP message with current state and the updated interval
-            CHP1Message(sender_, state_callback_(), interval_.load(), flags_.load(), status_).assemble().send(pub_socket_);
-            // Reset status and flags to default flags
-            status_.reset();
-            flags_.store(default_flags_.load());
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
         }
     }
+}
+
+void HeartbeatSend::send_heartbeat(CHP::MessageFlags flags, std::optional<std::string> status) {
+    // Lock socket
+    const std::lock_guard lock {mutex_};
+
+    // Update the interval based on the amount of subscribers
+    const auto interval = CHP::calculate_interval(subscribers_, default_interval_);
+    interval_.store(interval);
+
+    // Publish CHP message with current state and the updated interval
+    CHP1Message(sender_, state_callback_(), interval, flags, std::move(status)).assemble().send(pub_socket_);
 }
