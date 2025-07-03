@@ -1,32 +1,8 @@
 # The Controller
 
-::::{grid}
-
-:::{grid-item-card}
-**Command Communication between Controller & Satellite**
-^^^^^^^^^^^^
-
-```plantuml
-@startuml
-skinparam ParticipantPadding 50
-"Satellite A" <-- "Controller": Connect
-"Satellite A" <- "Controller": **REQUEST** get_name
-"Satellite A" -[#lightblue]> "Controller": <font color=lightblue><b>SUCCESS</b></font> Satellite A
-|||
-"Satellite A" <- "Controller": **REQUEST** unknown_function
-"Satellite A" -[#lightcoral]> "Controller": <font color=lightcoral><b>UNKNOWN</b></font> Unknown command
-|||
-"Satellite A" <- "Controller": **REQUEST** start "run_1"
-"Satellite A" -[#lightcoral]> "Controller": <font color=lightcoral><b>INVALID</b></font> Invalid transition from "INIT"
-
-"Satellite A" <-- "Controller": Disconnect
-@enduml
+```{figure} CSCP.svg
+Schematic drawing of CSCP
 ```
-
-:::
-
-::::
-
 
 ## Measurement Queues
 

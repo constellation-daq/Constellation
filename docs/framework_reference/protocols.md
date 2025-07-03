@@ -16,21 +16,110 @@ The five Constellation communication protocols are described in the following, o
 Autonomous operation of the Constellation requires constant exchange of state information between all participants. This is
 implemented via heartbeats send via the Constellation Heartbeat Protocol (CHP). Heartbeat messages contain
 
+* A timestamp when the heartbeat was sent
 * The current state of the sender finite state machine
+* A set of flags indicating the desired treatment of the sender
 * The time interval after which the next heartbeat is to be expected.
 
 With this information, heartbeat receivers can deduce independently whether a remote system is in {bdg-secondary}`ERROR` state
-or not responding due to network or machine failure.
+or not responding due to network or machine failure, and how to react to this information.
 
 In addition to regular heartbeat patterns, so-called extrasystoles are sent out-of-order whenever the state of the sender
 changes. This enabled immediate reaction to remote state changes without having to wait for the next regular heartbeat update
 interval.
+
+Be low are two sequence diagrams illustrating the heartbeat exchange, once for the communication between a controller instance and a satellite,
+and once for the heartbeat exchange between two satellites. Extrasystole messages that are sent at state changes are indicated in red, the activation
+bars indicate times of active heartbeat monitoring of the remote satellite.
+
+::::{grid} 1 1 2 2
+
+:::{grid-item-card}
+**Heartbeats with Controller & Satellite**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+note over "Controller" : Controller joins
+"Satellite" <-- "Controller": Subscription
+activate "Controller" #lightblue
+"Satellite" -> "Controller": Heartbeat **[launching]**
+"Satellite" -[#lightcoral]> "Controller": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
+|||
+"Satellite" -> "Controller": Heartbeat **[ORBIT]**
+|||
+"Satellite" -> "Controller": Heartbeat **[ORBIT]**
+note over "Controller" : Controller departs
+"Satellite" <-- "Controller": Unsubscription
+deactivate "Controller"
+@enduml
+```
+
+:::
+
+:::{grid-item-card}
+**Heartbeats between Satellites**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+note over "Satellite A" : Satellite joins
+"Satellite A" --> "Satellite B": Subscription
+activate "Satellite A" #lightblue
+"Satellite A" <-- "Satellite B": Subscription
+activate "Satellite B" #lightblue
+"Satellite A" <- "Satellite B": Heartbeat **[launching]**
+"Satellite A" -> "Satellite B": Heartbeat **[NEW]**
+"Satellite A" <[#lightcoral]- "Satellite B": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
+|||
+"Satellite A" <- "Satellite B": Heartbeat **[ORBIT]**
+"Satellite A" -> "Satellite B": Heartbeat **[NEW]**
+note over "Satellite B" : Satellite departs
+"Satellite A" <-- "Satellite B": Unsubscription
+deactivate "Satellite B"
+"Satellite A" --> "Satellite B": Unsubscription
+deactivate "Satellite A"
+@enduml
+```
+
+:::
+
+::::
+
 
 ## Command & Controlling
 
 Commands from controller instances to satellites are transmitted via the Constellation Satellite Control Protocol (CSCP). It
 resembles a client-server architecture with the typical request-reply pattern. Here, the satellite acts as the server while
 the controller assumes the role of the client.
+
+::::{grid}
+
+:::{grid-item-card}
+**Command Communication between Controller & Satellite**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+skinparam ParticipantPadding 50
+"Satellite A" <-- "Controller": Connect
+"Satellite A" <- "Controller": **REQUEST** get_name
+"Satellite A" -[#lightblue]> "Controller": <font color=lightblue><b>SUCCESS</b></font> Satellite A
+|||
+"Satellite A" <- "Controller": **REQUEST** unknown_function
+"Satellite A" -[#lightcoral]> "Controller": <font color=lightcoral><b>UNKNOWN</b></font> Unknown command
+|||
+"Satellite A" <- "Controller": **REQUEST** start "run_1"
+"Satellite A" -[#lightcoral]> "Controller": <font color=lightcoral><b>INVALID</b></font> Invalid transition from "INIT"
+
+"Satellite A" <-- "Controller": Disconnect
+@enduml
+```
+
+:::
+
+::::
+
 
 ## Data Transmission
 
@@ -51,6 +140,36 @@ message types, indicated by a flag in the header frame:
   by the sending satellite.
 
 Only `DATA` messages can be transmitted by satellite implementations, both `BOR` and `EOR` messages are handled automatically.
+
+::::{grid}
+
+:::{grid-item-card}
+**Data Transmission Sequence**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+skinparam ParticipantPadding 50
+note across : Run is started
+"Satellite A" <-- "Satellite B": Connect
+"Satellite A" -> "Satellite B": **BOR** [Satellite Configuration]
+activate "Satellite A" #lightcoral
+activate "Satellite B" #lightcoral
+loop #lightblue
+    "Satellite A" -> "Satellite B": **DATA** [Instrument Data]
+end
+note across : Run is stopped
+"Satellite A" -> "Satellite B": **EOR** [Run Metadata]
+deactivate "Satellite A"
+deactivate "Satellite B"
+"Satellite A" <-- "Satellite B": Disconnect
+@enduml
+```
+
+:::
+
+::::
+
 
 ## Monitoring
 
@@ -77,6 +196,43 @@ subscribing to the topic `TRACE/NETWORKING`.
 Apart from log messages, CMDP is also used to transmit performance metrics such as the current trigger rate, the number of recorded events, temperature or CPU loads.
 These messages are published under their respective topics and subscribers can choose the variables they want to follow.
 
+::::{grid}
+
+:::{grid-item-card}
+**Subscription to Log Topics**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+skinparam ParticipantPadding 50
+"Satellite A" <-- "Listener": Connect
+"Satellite A" <- "Listener": **SUBSCRIBE** LOG/WARNING
+activate "Satellite A" #lightcoral
+loop #lightblue
+    "Satellite A" -> "Listener": **LOG/**WARNING [Message]
+end
+
+"Satellite A" <- "Listener": **SUBSCRIBE** LOG/INFO
+activate "Satellite A" #gold
+
+loop #lightblue
+    "Satellite A" -> "Listener": **LOG/**INFO [Message]
+    "Satellite A" -> "Listener": **LOG/**WARNING [Message]
+end
+
+"Satellite A" <- "Listener": **UNSUBSCRIBE** LOG/INFO
+deactivate "Satellite A"
+"Satellite A" <- "Listener": **UNSUBSCRIBE** LOG/WARNING
+deactivate "Satellite A"
+"Satellite A" <-- "Listener": Disconnect
+@enduml
+```
+
+:::
+
+::::
+
+
 ## Network Discovery
 
 A common nuisance in volatile networking environments with devices appearing and disappearing is the discovery of available devices and services.
@@ -98,3 +254,25 @@ for each of the registered services.
 The `REQUEST` beacon allows hosts to join late, i.e. after the initial `OFFER` beacons have been distributed. This means that at any time of the
 framework operation, new hosts can join and request information on a particular service from the already running Constellation participants.
 A clean shutdown of services is possible with the `DEPART` beacon which will prompt other hosts to disconnect.
+
+::::{grid}
+
+:::{grid-item-card}
+**Discovery Message Communication**
+^^^^^^^^^^^^
+
+```plantuml
+@startuml
+skinparam ParticipantPadding 50
+note over "Satellite A" : Satellite joins
+"Satellite A" -> "Satellite B": **OFFER** HEARTBEAT
+"Satellite A" -> "Satellite B": **REQUEST** HEARTBEAT
+"Satellite A" <- "Satellite B": **OFFER** HEARTBEAT
+note over "Satellite A" : Satellite departs
+"Satellite A" -> "Satellite B": **DEPART** HEARTBEAT
+@enduml
+```
+
+:::
+
+::::

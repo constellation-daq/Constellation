@@ -29,35 +29,6 @@ The first message of a run is the so-called begin-of-run (BOR) message, the last
 This structure enables checks on sending and receiving side, e.g. that the connection is up and running or that all data have
 been transmitted correctly.
 
-::::{grid}
-
-:::{grid-item-card}
-**Data Transmission Sequence**
-^^^^^^^^^^^^
-
-```plantuml
-@startuml
-skinparam ParticipantPadding 50
-note across : Run is started
-"Satellite A" <-- "Satellite B": Connect
-"Satellite A" -> "Satellite B": **BOR** [Satellite Configuration]
-activate "Satellite A" #lightcoral
-activate "Satellite B" #lightcoral
-loop #lightblue
-    "Satellite A" -> "Satellite B": **DATA** [Instrument Data]
-end
-note across : Run is stopped
-"Satellite A" -> "Satellite B": **EOR** [Run Metadata]
-deactivate "Satellite A"
-deactivate "Satellite B"
-"Satellite A" <-- "Satellite B": Disconnect
-@enduml
-```
-
-:::
-
-::::
-
 
 ## Messages
 
