@@ -196,15 +196,6 @@ void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_vi
 void MeasurementQueue::measurement_concluded() {};
 void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
-void MeasurementQueue::await_state(CSCP::State state) const {
-    controller_.awaitState(state, transition_timeout_);
-}
-
-void MeasurementQueue::await_state(CSCP::State state,
-                                   std::map<std::string, std::chrono::system_clock::time_point> last_state_changed) const {
-    controller_.awaitState(state, transition_timeout_, std::move(last_state_changed));
-}
-
 std::map<std::string, std::chrono::system_clock::time_point>
 MeasurementQueue::get_last_state_changed(const Measurement& measurement) const {
     std::set<std::string> satellites {};
@@ -308,7 +299,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                                  << " satellite configurations";
 
             // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_);
 
             // Cache current value of the measurement keys and add original value resets:
             cache_original_values(measurement);
@@ -323,14 +314,14 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             }
 
             // Get when state was changed before reconfigure command
-            const auto last_state_changed_before_reconf = get_last_state_changed(measurement);
+            auto last_state_changed_before_reconf = get_last_state_changed(measurement);
 
             // Send reconfigure command
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
 
-            // Await ORBIT state while ensuring extrasystoles have been sent
-            await_state(CSCP::State::ORBIT, last_state_changed_before_reconf);
+            // Await ORBIT state while ensuring the states have changed
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_changed_before_reconf));
 
             // Start the measurement for all satellites
             LOG(logger_, INFO) << "Starting satellites";
@@ -342,7 +333,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             check_replies(reply_start);
 
             // Wait for RUN state across all
-            await_state(CSCP::State::RUN);
+            controller_.awaitState(CSCP::State::RUN, transition_timeout_);
 
             // Wait for condition to be come true
             condition->await(queue_running_, controller_, logger_);
@@ -353,7 +344,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             check_replies(reply_stop);
 
             // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_);
 
             measurement_lock.lock();
             // Successfully concluded this measurement, pop it - skip if interrupted
@@ -373,13 +364,13 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         // Reset the original values collected during the measurement:
         LOG(logger_, INFO) << "Resetting parameters to pre-scan values";
-        const auto last_state_changed_before_reconf = get_last_state_changed(original_values_);
+        auto last_state_changed_before_reconf = get_last_state_changed(original_values_);
         const auto reply_reset = controller_.sendCommands("reconfigure", original_values_, false);
         check_replies(reply_reset);
         original_values_.clear();
 
-        // Wait for ORBIT state across all
-        await_state(CSCP::State::ORBIT, last_state_changed_before_reconf);
+        // Wait for ORBIT state across all while ensuring the states have changed
+        controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_changed_before_reconf));
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
