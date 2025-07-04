@@ -472,13 +472,17 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
 
 
 @pytest.fixture
-def monitoringlistener():
+def monitoringlistener(request):
     """Create a MonitoringListener instance."""
-
+    marker = request.node.get_closest_marker("constellation")
+    if not marker:
+        constellation = "mockstellation"
+    else:
+        constellation = marker.args[0]
     with TemporaryDirectory(prefix="constellation_pytest_") as tmpdirname:
         m = FileMonitoringListener(
             name="mock_monitor",
-            group="mockstellation",
+            group=constellation,
             interface=[get_loopback_interface_name()],
             output_path=tmpdirname,
         )
