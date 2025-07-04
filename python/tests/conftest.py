@@ -29,6 +29,7 @@ from constellation.core.satellite import Satellite
 DEFAULT_SEND_PORT = 11111
 # port for CDTP
 DATA_PORT = 50101
+MON_PORT = 33333
 
 SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
@@ -393,7 +394,7 @@ def mock_satellite(mock_zmq_context, mock_chirp_socket):
     ctx = mock_zmq_context()
     ctx.flip_queues()
 
-    s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    s = Satellite("mock_satellite", "mockstellation", 11111, 22222, MON_PORT, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
     # give the threads a chance to start
@@ -461,7 +462,7 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
             self.mode = self.config.setdefault("mode", "cautious")
             return "finished with mock reconfiguration"
 
-    s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, MON_PORT, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
     # give the threads a chance to start

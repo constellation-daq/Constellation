@@ -7,7 +7,7 @@ import threading
 import time
 
 import pytest
-from conftest import wait_for_state
+from conftest import MON_PORT, wait_for_state
 
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
@@ -508,3 +508,17 @@ def test_satellite_run_fail(mock_cmd_transmitter, mock_fail_satellite):
         assert isinstance(req, CSCP1Message)
         assert state.lower() in str(req.verb_msg).lower()
         assert req.verb_type == CSCP1Message.Type.SUCCESS
+
+
+def test_satellite_logs(mock_satellite):
+    """Test whether the different loggers of a satellite sent their output via ZMQ."""
+    sat, ctx = mock_satellite
+    loggers = ["log_chirp", "log_chp", "log_chp_s", "log_cmdp_s", "log_cscp", "log_fsm", "log_satellite"]
+    for name in loggers:
+        logger = getattr(sat, name)
+        msg = f"{name} test log message"
+        logger.critical(msg)
+        time.sleep(0.2)
+        # flatten the output queue
+        flattened = [part for m in ctx.packet_queue_out[MON_PORT] for part in m if isinstance(m, list)]
+        assert msg.encode() in flattened, "Message not found in ZMQ output"

@@ -20,7 +20,7 @@ from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
 from .cmdp import CMDPTransmitter, Metric, MetricsType, decode_metric
-from .logging import setup_cli_logging
+from .logging import ConstellationLogger, ZeroMQSocketLogHandler, setup_cli_logging
 
 P = ParamSpec("P")
 B = TypeVar("B", bound=BaseSatelliteFrame)
@@ -71,7 +71,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
     """
 
-    def __init__(self, **kwds: Any):
+    def __init__(self, mon_port: int | None = None, **kwds: Any):
         """Set up logging and metrics transmitters."""
         super().__init__(**kwds)
 
@@ -79,6 +79,21 @@ class MonitoringSender(BaseSatelliteFrame):
 
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
+
+        cmdp_socket = self.context.socket(zmq.PUB)
+        if not mon_port:
+            self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
+        else:
+            cmdp_socket.bind(f"tcp://*:{mon_port}")
+            self.mon_port = mon_port
+        self._cmdp_transmitter = CMDPTransmitter(self.name, cmdp_socket)
+        self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
+
+        # add zmq logging to existing Constellation loggers
+        for name, logger in logging.root.manager.loggerDict.items():
+            if isinstance(logger, ConstellationLogger):
+                if self._zmq_log_handler not in logger.handlers:
+                    logger.addHandler(self._zmq_log_handler)
 
     def schedule_metric(
         self,
@@ -153,6 +168,19 @@ class MonitoringSender(BaseSatelliteFrame):
             time.sleep(0.1)
         self.log_cmdp_s.info("Monitoring metrics thread shutting down.")
 
+    def reentry(self) -> None:
+        """Orderly shut down monitoring communication infrastructure."""
+        # remove all ZMQ log handlers
+        self.log_cmdp_s.debug("Shutting down ZMQ logging.")
+        # add zmq logging to existing Constellation loggers
+        for name, logger in logging.root.manager.loggerDict.items():
+            if isinstance(logger, ConstellationLogger):
+                if self._zmq_log_handler in logger.handlers:
+                    logger.removeHandler(self._zmq_log_handler)
+        self._zmq_log_handler.close()
+        # pass tear-down on to base class
+        super().reentry()
+
 
 class ZeroMQSocketLogListener(QueueListener):
     """This listener receives messages from a CMDPTransmitter.
@@ -191,7 +219,7 @@ class ZeroMQSocketLogListener(QueueListener):
 class StatListener(CHIRPBroadcaster):
     """Simple listener class to receive metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: Optional[list[str]], mon_port: int | None = None, **kwds: Any):
+    def __init__(self, name: str, group: str, interface: Optional[list[str]], **kwds: Any):
         """Initialize values.
 
         Arguments:
@@ -199,7 +227,7 @@ class StatListener(CHIRPBroadcaster):
         - group ::  group of controller
         - interface :: the interfaces to connect to
         """
-        super().__init__(name=name, group=group, interface=interface, mon_port=mon_port, **kwds)
+        super().__init__(name=name, group=group, interface=interface, **kwds)
 
         self.log_cmdp_l = self.get_logger("CMDP")
 

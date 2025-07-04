@@ -27,9 +27,9 @@ from .monitoring import MonitoringSender
 
 
 class Satellite(
+    MonitoringSender,
     CommandReceiver,
     CHIRPBroadcaster,
-    MonitoringSender,
     HeartbeatSender,
     HeartbeatChecker,
 ):
