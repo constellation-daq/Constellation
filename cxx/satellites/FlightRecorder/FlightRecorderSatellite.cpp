@@ -205,12 +205,12 @@ void FlightRecorderSatellite::stopping() {
     sink_->flush();
 }
 
-void FlightRecorderSatellite::interrupting(State /*previous_state*/) {
+void FlightRecorderSatellite::interrupting(State /*previous_state*/, std::string_view /*reason*/) {
     // Force a flush at interruption
     sink_->flush();
 }
 
-void FlightRecorderSatellite::failure(State /*previous_state*/) {
+void FlightRecorderSatellite::failure(State /*previous_state*/, std::string_view /*reason*/) {
     try {
         if(sink_ != nullptr) {
             sink_->flush();

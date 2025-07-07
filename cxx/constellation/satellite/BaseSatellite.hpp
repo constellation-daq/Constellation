@@ -222,8 +222,8 @@ namespace constellation::satellite {
         virtual void starting(std::string_view run_identifier) = 0;
         virtual void stopping() = 0;
         virtual void running(const std::stop_token& stop_token) = 0;
-        virtual void interrupting(protocol::CSCP::State previous_state) = 0;
-        virtual void failure(protocol::CSCP::State previous_state) = 0;
+        virtual void interrupting(protocol::CSCP::State previous_state, std::string_view reason) = 0;
+        virtual void failure(protocol::CSCP::State previous_state, std::string_view reason) = 0;
         /// @endcond
 
     private:
@@ -234,8 +234,8 @@ namespace constellation::satellite {
         std::optional<std::string> starting_wrapper(std::string run_identifier);
         std::optional<std::string> stopping_wrapper();
         std::optional<std::string> running_wrapper(const std::stop_token& stop_token);
-        std::optional<std::string> interrupting_wrapper(protocol::CSCP::State previous_state);
-        std::optional<std::string> failure_wrapper(protocol::CSCP::State previous_state);
+        std::optional<std::string> interrupting_wrapper(protocol::CSCP::State previous_state, std::string_view reason);
+        std::optional<std::string> failure_wrapper(protocol::CSCP::State previous_state, std::string_view reason);
 
     protected:
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)

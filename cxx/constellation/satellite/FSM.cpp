@@ -230,10 +230,11 @@ void FSM::requestFailure(std::string_view reason) {
         LOG_ONCE(logger_, DEBUG) << "Waiting for a steady state...";
     }
 
-    // Trigger failure
-    const auto failing = reactIfAllowed(Transition::failure);
-    LOG(logger_, failing ? CRITICAL : WARNING)
-        << "Failure during satellite operation: " << reason << (failing ? "" : " (skipped transition, already in ERROR)");
+    const auto msg = "Failure during satellite operation: " + std::string(reason);
+
+    // Trigger failure and pass reason as payload
+    const auto failing = reactIfAllowed(Transition::failure, {msg});
+    LOG(logger_, failing ? CRITICAL : WARNING) << msg << (failing ? "" : " (skipped transition, already in ERROR)");
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
@@ -567,21 +568,23 @@ FSM::State FSM::stopped(TransitionPayload /* payload */) {
 
 FSM::State FSM::interrupt(TransitionPayload payload) {
     // Set status message with information from payload:
+    std::string reason;
     if(std::holds_alternative<std::string>(payload)) {
-        set_status(std::get<std::string>(std::move(payload)));
+        reason = std::get<std::string>(std::move(payload));
+        set_status(reason);
     }
 
-    auto call_wrapper = [this](State previous_state) {
+    auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
         }
 
         LOG(logger_, INFO) << "Calling interrupting function of satellite...";
-        const auto success = call_satellite_function(&BaseSatellite::interrupting_wrapper, previous_state);
+        const auto success = call_satellite_function(&BaseSatellite::interrupting_wrapper, previous_state, reason);
         react(success ? Transition::interrupted : Transition::failure);
     };
-    launch_assign_thread(transitional_thread_, call_wrapper, state_.load());
+    launch_assign_thread(transitional_thread_, call_wrapper, state_.load(), std::move(reason));
     return State::interrupting;
 }
 
@@ -589,17 +592,24 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
     return State::SAFE;
 }
 
-FSM::State FSM::failure(TransitionPayload /* payload */) {
-    auto call_wrapper = [this](State previous_state) {
+FSM::State FSM::failure(TransitionPayload payload) {
+    // Set status message with information from payload:
+    std::string reason;
+    if(std::holds_alternative<std::string>(payload)) {
+        reason = std::get<std::string>(std::move(payload));
+        set_status(reason);
+    }
+
+    auto call_wrapper = [this](State previous_state, std::string reason) {
         // First stop RUN thread if in RUN
         if(previous_state == State::RUN) {
             stop_run_thread();
         }
 
         LOG(logger_, INFO) << "Calling failure function of satellite...";
-        call_satellite_function(&BaseSatellite::failure_wrapper, previous_state);
+        call_satellite_function(&BaseSatellite::failure_wrapper, previous_state, reason);
     };
-    launch_assign_thread(failure_thread_, call_wrapper, state_.load());
+    launch_assign_thread(failure_thread_, call_wrapper, state_.load(), std::move(reason));
     return State::ERROR;
 }
 

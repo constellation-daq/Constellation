@@ -68,14 +68,14 @@ void EudaqNativeWriterSatellite::stopping() {
     serializer_.reset();
 }
 
-void EudaqNativeWriterSatellite::interrupting(CSCP::State /*previous_state*/) {
+void EudaqNativeWriterSatellite::interrupting(CSCP::State /*previous_state*/, std::string_view /*reason*/) {
     if(serializer_ != nullptr) {
         serializer_->flush();
     }
     serializer_.reset();
 }
 
-void EudaqNativeWriterSatellite::failure(CSCP::State /*previous_state*/) {
+void EudaqNativeWriterSatellite::failure(CSCP::State /*previous_state*/, std::string_view /*reason*/) {
     serializer_.reset();
 }
 

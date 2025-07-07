@@ -96,14 +96,16 @@ public:
         SatelliteT::stopping();
         transitional_state("stopping");
     }
-    void interrupting(constellation::protocol::CSCP::State previous_state) override {
+    void interrupting(constellation::protocol::CSCP::State previous_state, std::string_view reason) override {
         // Note: the default implementation calls `stopping()` and `landing()`, both of which call `transitional_state()`
         progress_fsm_ = true;
-        SatelliteT::interrupting(previous_state);
+        SatelliteT::interrupting(previous_state, reason);
         progress_fsm_ = false;
         transitional_state("interrupting");
     }
-    void failure(constellation::protocol::CSCP::State previous_state) override { SatelliteT::failure(previous_state); }
+    void failure(constellation::protocol::CSCP::State previous_state, std::string_view reason) override {
+        SatelliteT::failure(previous_state, reason);
+    }
 
     void skipTransitional(bool skip) { skip_transitional_ = skip; }
 

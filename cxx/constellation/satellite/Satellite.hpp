@@ -122,8 +122,9 @@ namespace constellation::satellite {
          * `stopping()` (if in RUN state) and then `landing()`.
          *
          * @param previous_state State in which the satellite was being interrupted
+         * @param reason Reason for the interrupt
          */
-        void interrupting(protocol::CSCP::State previous_state) override;
+        void interrupting(protocol::CSCP::State previous_state, std::string_view reason) override;
 
         /**
          * @brief Failure function
@@ -131,8 +132,9 @@ namespace constellation::satellite {
          * In this function a response to uncaught errors can be implemented. It is executed after entering the ERROR state.
          *
          * @param previous_state State in which the satellite was before experiencing a failure
+         * @param reason Reason for the failure
          */
-        void failure(protocol::CSCP::State previous_state) override;
+        void failure(protocol::CSCP::State previous_state, std::string_view reason) override;
 
     protected:
         /**

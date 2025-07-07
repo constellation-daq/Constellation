@@ -642,7 +642,7 @@ std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token&
     return std::nullopt;
 }
 
-std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previous_state, std::string_view reason) {
     // Interrupting from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -650,7 +650,7 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
         receiver_ptr->ReceiverSatellite::interrupting_receiver(previous_state);
     }
 
-    interrupting(previous_state);
+    interrupting(previous_state, reason);
 
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
@@ -666,14 +666,14 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
     return std::nullopt;
 }
 
-std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_state) {
+std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_state, std::string_view reason) {
     // failure from receiver needs to come first to stop BasePool thread
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
         receiver_ptr->ReceiverSatellite::failure_receiver();
     }
 
-    failure(previous_state);
+    failure(previous_state, reason);
 
     // Reset user status
     const std::lock_guard lock {user_status_mutex_};
