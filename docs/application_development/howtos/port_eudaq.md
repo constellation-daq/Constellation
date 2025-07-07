@@ -29,7 +29,7 @@ corresponding Constellation satellite skeleton. The following table helps in fin
 | `RunLoop`      | `running`               | Equivalent with the difference that instead of keeping track of the running via a custom variable (like `m_running`) often found in EUDAQ Producers, Constellation provides a stop token.
 | `DoReset`      | -                       | In EUDAQ, this command puts the producer back into the initial state. In contrast, resetting a satellite in Constellation means calling its `initializing` method again.
 | `DoTerminate`  | Destructor              | The EUDAQ equivalent of the `terminate` action in Constellation is the `shutdown` command which can only be triggered when not running or in orbit. The corresponding code should be placed in the destructor of the satellite.
-| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because metrics are transmitted differently, more similar to log messages. More information can be found [here](../functionality/metrics.md).
+| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because metrics are transmitted differently, more similar to log messages. More information can be found in the [metrics section](../functionality/metrics.md).
 
 ## Transmitting Data
 
@@ -54,14 +54,14 @@ and any number of frames with binary data. These frames can be likened to the EU
 does not exits in Constellation. Knowing this, the above sequence would translate to the following satellite code:
 
 ```cpp
-// Create new message, message sequence is handled by Constellation
-auto msg = newDataMessage();
-// Add data to the message
-msg.addFrame(std::move(data));
+// Create new data block, message sequence is handled by Constellation
+auto data_block = newDataBlock();
+// Add data to the data block
+data_block.addFrame(std::move(data));
 // Possibly add a tag
-msg.addTag("my_tag", my_value)
-// Send the message
-sendDataMessage(msg);
+data_block.addTag("my_tag", my_value)
+// Send the data block
+sendDataBlock(data_block);
 ```
 
 It should be noted that tag values in EUDAQ are limited to `std::string` while Constellation tags can hold any configuration

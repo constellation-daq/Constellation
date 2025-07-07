@@ -110,6 +110,8 @@ namespace constellation::satellite {
          * * `_bor_timeout`
          * * `_eor_timeout
          * * `_data_timeout`
+         * * `_payload_threshold`
+         * * `_queue_size`
          * * `_data_license`
          *
          * @param config Configuration of the satellite
@@ -123,6 +125,8 @@ namespace constellation::satellite {
          * * `_bor_timeout`
          * * `_eor_timeout`
          * * `_data_timeout`
+         * * `_payload_threshold`
+         * * `_queue_size`
          * * `_data_license`
          *
          * @param partial_config Changes to the configuration of the satellite

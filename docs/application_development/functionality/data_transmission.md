@@ -16,47 +16,43 @@ Any satellite that wishes to transmit measurement data for storage should inheri
 {cpp:class}`Satellite <constellation::satellite::Satellite>` class.
 This class implements the connection and transmission to data receivers in the Constellation in a transparent way.
 
-Data will only be transmitted in the `RUN` state. It is always preceded by a begin-of-run (BOR) message sent by the framework
-after the `starting()` function has successfully been executed, and it is followed by a end-of-run (EOR) message send
-automatically after the `stopping()` function has succeeded.
+Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always preceded by a begin-of-run (BOR) message sent
+by the framework after the `starting()` function has successfully been executed, and it is followed by a end-of-run (EOR)
+message send automatically after the `stopping()` function has succeeded.
 
-Data messages are created and sent in three steps. First, the data message is created, optionally allocating the number of
-frames it will contain if known already. Subsequently, these frames are added to the message:
+Data is sent in three steps. First, a data block is created, optionally allocating the number of frames it will contain if
+known already. Subsequently, these frames are added to the message:
 
 ```cpp
 // Creating a new data message with two frames pre-allocated:
-auto msg = newDataMessage(2);
-msg.addFrame(std::move(frame0));
-msg.addFrame(std::move(frame1));
+auto data_block = newDataBlock(2);
+data_block.addFrame(std::move(frame0));
+data_block.addFrame(std::move(frame1));
 ```
 
 ```{hint}
 C++ Move semantics `std::move` are strongly encouraged here in order to avoid copying memory as described below.
 ```
 
-Finally, the message is send to the connected receiver via one of the following two methods:
+Finally, the message is sent to the connected receiver:
 
-* The data can be sent with a pre-configured timeout. If the transmitter fails to send the data within this configured time
-  window, an exception is thrown and the satellite transitions into the `ERROR` state. This is the most commonly used method
-  of transmitting data and ensuring that there is no data loss.
+```cpp
+sendDataBlock(std::move(data_block));
+```
 
-  ```cpp
-  sendDataMessage(msg);
-  ```
+If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
+transitions into the `ERROR` state.
 
-* The second option is to handle potential issues in transmitting the data in satellite code. In this case, the message
-  should be sent via
+It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
+on the hardware or software level (e.g. dropping data):
 
-  ```cpp
-  auto sent = trySendDataMessage(msg);
-  ```
+```cpp
+if(checkDataRateLimited()) {
+  device->set_busy();
+}
+```
 
-  The boolean return value indicates if the sending was successful or failed. Either another attempt of sending the message
-  can be undertaken, or the message can be discarded. It should be noted that the {cpp:func}`trySendDataMessage() <constellation::satellite::TransmitterSatellite::trySendDataMessage()>` method is annotated
-  with the `[[nodiscard]]` keyword, indicating that the return value cannot be discarded and *has* to be used.
-
-Data messages contain a header with the canonical name of the sending satellite, the current system time when creating the
-message and a continuous sequence number. This means there is no need to separately count messages in user code.
+By default, no data is dropped and a sequence number scheme is implemented to ensure the completeness of the data.
 
 :::
 :::{tab-item} Python
@@ -130,7 +126,7 @@ Constellation makes no assumption on the data stored in message frames. All data
 and transmitted as such. The message frames of data messages are designed for minimum data copy and maximum speed.
 A data message can contain any number of frames.
 
-The {cpp:func}`DataMessage::addFrame() <constellation::satellite::TransmitterSatellite::DataMessage::addFrame()>` function takes so-called payload buffer as argument.
+The {cpp:func}`DataBlock::addFrame() <constellation::satellite::TransmitterSatellite::DataBlock::addFrame()>` function takes so-called payload buffer as argument.
 Consequently, the data to be transmitted has to be converted into such a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
 
@@ -199,7 +195,7 @@ Constellation provides the option to attach metadata to each message sent by the
 
   ```cpp
   // Create a new message
-  auto msg = newDataMessage();
+  auto msg = newDataBlock();
 
   // Add timestamps in picoseconds
   msg.addTag("timestamp_begin", ts_start_pico);
