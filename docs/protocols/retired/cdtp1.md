@@ -1,6 +1,6 @@
-# Constellation Data Transmission Protocol
+# Constellation Data Transmission Protocol v1
 
-* Status: draft
+* Status: retired
 * Editor: The Constellation authors
 
 The Constellation Data Transmission Protocol (CDTP) defines how data is transmitted from one sending host to one receiving host.
@@ -32,11 +32,19 @@ This specification is not transport specific, but not all behavior will be repro
 
 ## Implementation
 
+A CDTP message SHALL be sent as multipart message and MUST consist of at least one frame and MAY consist of any larger number of frames.
+The definitions of ‘frame’ and ‘multipart message’ follow those defined in [23/ZMTP](http://rfc.zeromq.org/spec:23/ZMTP).
+
+The first frame of the message frame MUST contain the message header.
+OPTIONAL frames with message payload MAY be sent afterwards.
+
 ### Overall Behavior
 
 A CDTP sender host SHALL advertise its CDTP service through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md) with service identifier `%x04`.
 
 Upon service discovery through [CHIRP](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/protocols/chirp.md), a CDTP receiver host SHOULD connect its PULL socket to the PUSH socket of one CDTP sender host as defined by [30/PIPELINE](http://rfc.zeromq.org/spec:30/PIPELINE).
+
+A CDTP receiver host SHALL notify the user about messages that it receives with an invalid header.
 
 In case of network congestion, unsent messaged SHALL be buffered by the sending CDTP host and sent at a later time.
 Upon reaching the high-water mark of buffered messages, the user MUST be notified and further sending of messages SHALL be blocked until action has been taken.
@@ -44,33 +52,31 @@ Upon reaching the high-water mark of buffered messages, the user MUST be notifie
 Any data message must be enclosed by the begin-of-run message and end-of-run message of the current measurement.
 If a CDTP host receives a data message before the begin-of-run message, or if it receives a data message after the end-of-run message, the user MUST be notified and further reception of messages SHALL be blocked until action has been taken.
 
-### Message Content
+### Message Header
 
-Any CDTP message SHALL be sent as a single ZeroMQ message. The message MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification. It SHALL contain two strings, followed by a one-byte message type identifier encoded as integer, and an array.
+The message header frame MUST be encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
+It SHALL contain two strings, followed by a one-byte message type identifier, a 64-bit integer and a map.
 
-The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘D’, ‘T’ and ‘P’, followed by the protocol version number, which SHALL be `%x02`.
+The first string MUST contain the protocol identifier, which SHALL consist of the letters ‘C’, ‘D’, ‘T’ and ‘P’, followed by the protocol version number, which SHALL be `%x01`.
 
 The second string SHOULD contain the name of the sending CDTP host.
 
-The message type identifier SHALL be either `%x00` (dubbed ‘DATA‘ for data), `%x01` (dubbed ‘BOR’ for begin-of-run), or `%x02` (dubbed ‘EOR’ for end-of-run).
+The message type identifier SHALL be either `%x00` (dubbed ‘DAT‘ for data), `%x01` (dubbed ‘BOR’ for begin-of-run), or `%x02` (dubbed ‘EOR’ for end-of-run).
 
-The array shall contain any number of ‘Data Blocks’, which will be described below.
-
-### Data Blocks
-
-A data block represent a measurement point. It is an object encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification. It consists of an array with a fixed length of 3, containing an integer, a map and an array.
-
-The integer SHALL contain the data block sequence number. It SHOULD be monotonically incremented number that represents the number of data blocks in DATA messages sent since the beginning of the measurement, starting with 1.
+The 64-bit integer SHALL contain the message sequence number of the sender, i.e. a monotonically incremented number that represents the number of messages sent since the beginning of the measurement.
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
-The array MAY contain any number of byte arrays, representing the measurement data.
+### Message Payload
 
-### BOR and EOR Messages
+For BOR type messages, a single payload frame MUST be attached containing a [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) encoded map containing the configuration of the CDTP sender host.
+The map MAY contain a sequence of key-value pairs.
+The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
-BOR and EOR type messages SHALL contain exactly two data blocks which SHALL NOT contain any measurement data.
+For DATA type messages, any number of payload frames MAY be attached consisting of any binary data.
+The interpretation and decoding of this data is not part of this protocol and left for user code implementations.
 
-For BOR type messages, the map of the second data block SHALL contain the configuration of the CDTP sender host.
-
-For EOR type messages, the map of the second data block MAY contain additional meta information of the measurement run.
+For EOR type messages, a single payload frame MUST be attached containing a [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) encoded map containing additional meta information of the measurement run.
+The map MAY contain a sequence of key-value pairs.
+The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
