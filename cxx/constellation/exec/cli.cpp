@@ -10,7 +10,9 @@
 #include "cli.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <exception>
+#include <iostream>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -34,13 +36,27 @@ using namespace constellation::log;
 using namespace constellation::networking;
 using namespace constellation::utils;
 
-BaseParser::BaseParser(std::string program) : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL) {}
+BaseParser::BaseParser(std::string program)
+    : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL, argparse::default_arguments::help) {}
 
 void BaseParser::setup() {
     // Console log level (-l)
     add_argument("-l", "--level").help("log level").default_value("INFO");
 
     // TODO(stephan.lachnit): module specific console log level
+
+    // Provide own version printout
+    add_argument("-v", "--version")
+        .action([](const auto& /*unused*/) {
+            std::cout << "Constellation " << CNSTLN_VERSION_FULL << "\n"
+                      << "\tBuild type: " << CNSTLN_BUILD_TYPE << "\n"
+                      << "\tLTO enabled: " << CNSTLN_LTO_STATUS << "\n";
+            std::exit(0);
+        })
+        .default_value(false)
+        .help("shows version information")
+        .implicit_value(true)
+        .nargs(0);
 
     // Interfaces (-i)
     try {
