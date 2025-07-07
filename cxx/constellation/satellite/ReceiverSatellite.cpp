@@ -411,7 +411,7 @@ void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
     if(data_transmitter_it != data_transmitter_states_.cend()) {
         // If stored states, check that not connected yet
         if(data_transmitter_it->second.state != TransmitterState::NOT_CONNECTED) [[unlikely]] {
-            throw InvalidCDTPMessageType(CDTP1Message::Type::BOR, "already received BOR from " + std::string(sender));
+            throw InvalidCDTPMessageType(CDTP2Message::Type::BOR, "already received BOR from " + std::string(sender));
         }
         data_transmitter_it->second.state = TransmitterState::BOR_RECEIVED;
     } else {
@@ -434,7 +434,7 @@ void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
     // Check that BOR was received
     if(data_transmitter_it == data_transmitter_states_.cend() ||
        data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
-        throw InvalidCDTPMessageType(CDTP1Message::Type::DATA, "did not receive BOR from " + std::string(sender));
+        throw InvalidCDTPMessageType(CDTP2Message::Type::DATA, "did not receive BOR from " + std::string(sender));
     }
     // Iterate over data blocks
     for(const auto& data_block : data_message.getDataBlocks()) {
@@ -458,7 +458,7 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
     // Check that BOR was received
     if(data_transmitter_it == data_transmitter_states_.cend() ||
        data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
-        throw InvalidCDTPMessageType(CDTP1Message::Type::EOR, "did not receive BOR from " + std::string(sender));
+        throw InvalidCDTPMessageType(CDTP2Message::Type::EOR, "did not receive BOR from " + std::string(sender));
     }
     auto metadata = eor_message.getRunMetadata();
 
