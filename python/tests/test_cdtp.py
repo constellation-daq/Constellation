@@ -194,6 +194,8 @@ def sender_satellite_array():
         # give the threads a chance to start
         time.sleep(0.2)
     yield sats
+    for s in sats:
+        s.reentry()
 
 
 def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_receiver: DataTransmitter):
