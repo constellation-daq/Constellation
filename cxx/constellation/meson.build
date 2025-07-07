@@ -22,6 +22,8 @@ build_hpp_data.set('libdir', get_option('libdir'))
 build_hpp_data.set('builddir', meson.project_build_root())
 build_hpp_data.set('dso_prefix', dso_prefix)
 build_hpp_data.set('dso_suffix', dso_suffix)
+build_hpp_data.set('build_type', get_option('buildtype'))
+build_hpp_data.set('lto_enabled', get_option('b_lto'))
 build_hpp = configure_file(
   input: 'build.hpp',
   output: 'build.hpp',

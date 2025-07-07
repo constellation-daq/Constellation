@@ -40,6 +40,10 @@
 
 #define CNSTLN_VERSION_FULL "v" CNSTLN_VERSION " (" CNSTLN_VERSION_CODE_NAME ")"
 
+#define CNSTLN_BUILD_TYPE "@build_type@"
+
+#define CNSTLN_LTO_STATUS "@lto_enabled@"
+
 #define CNSTLN_PREFIX "@prefix@"
 
 #define CNSTLN_LIBDIR "@libdir@"
