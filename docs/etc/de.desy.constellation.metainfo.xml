@@ -59,6 +59,12 @@
   </supports>
 
   <releases>
+    <release version="0.5.1" date="2025-07-07">
+      <url type="details">https://constellation.pages.desy.de/news/2025-07-07-Patch-Release-0.5.1.html</url>
+      <description>
+        <p>First Patch Release of Constellation Scutum</p>
+      </description>
+    </release>
     <release version="0.5" date="2025-06-19">
       <url type="details">https://constellation.pages.desy.de/news/2025-06-19-Constellation-Release-0.5.html</url>
       <description>
