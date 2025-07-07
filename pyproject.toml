@@ -110,6 +110,9 @@ skip_gitignore = true
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
+markers = [
+    "constellation: specify, which Constellation group name to use (not supported by all fixtures yet)",
+]
 
 [tool.coverage.run]
 source = ["constellation"]

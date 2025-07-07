@@ -15,7 +15,7 @@ import h5py
 import numpy as np
 import pytest
 import zmq
-from conftest import DATA_PORT, wait_for_state
+from conftest import DATA_PORT, check_output, wait_for_state
 
 from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService
@@ -137,28 +137,30 @@ def receiver_satellite():
     s.reentry()
 
 
+class MockSenderSatellite(DataSender):
+    def do_run(self, payload: any):
+        """Send a few packets, then wait until stopped."""
+        self.payload_id = 0
+        while self.payload_id < 10 and not self._state_thread_evt.is_set():
+            payload = f"mock payload {self.payload_id}".encode("utf-8")
+            self.data_queue.put((payload, {}))
+            self.payload_id += 1
+            time.sleep(0.01)
+        while not self._state_thread_evt.is_set():
+            time.sleep(0.002)
+        return "Send finished"
+
+
 @pytest.fixture
 def sender_satellite():
     """A sender Satellite."""
 
-    class MockSenderSatellite(DataSender):
-        def do_run(self, payload: any):
-            self.payload_id = 0
-            while self.payload_id < 10 and not self._state_thread_evt.is_set():
-                payload = f"mock payload {self.payload_id}".encode("utf-8")
-                self.data_queue.put((payload, {}))
-                self.payload_id += 1
-                time.sleep(0.02)
-            while not self._state_thread_evt.is_set():
-                time.sleep(0.02)
-            return "Send finished"
-
     s = MockSenderSatellite(
         name="mock_sender",
         group="mockstellation",
-        cmd_port=CMD_PORT,
         mon_port=MON_PORT,
         data_port=DATA_PORT,
+        cmd_port=CMD_PORT,
         hb_port=33333,
         interface=[get_loopback_interface_name()],
     )
@@ -169,6 +171,31 @@ def sender_satellite():
     yield s
     # teardown
     s.reentry()
+
+
+@pytest.fixture
+def sender_satellite_array():
+    """Fixture creating multiple sender Satellites."""
+
+    sats = []
+    for i in range(4):
+        s = MockSenderSatellite(
+            name=f"mock_sender{i}",
+            group="mockstellation",
+            mon_port=MON_PORT + i + 1,
+            cmd_port=CMD_PORT + i + 1,
+            hb_port=33333 + i + 1,
+            data_port=DATA_PORT + i + 1,
+            interface=[get_loopback_interface_name()],
+        )
+        t = threading.Thread(target=s.run_satellite)
+        t.start()
+        sats.append(s)
+        # give the threads a chance to start
+        time.sleep(0.2)
+    yield sats
+    for s in sats:
+        s.reentry()
 
 
 def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_receiver: DataTransmitter):
@@ -398,7 +425,7 @@ def test_receive_writing_swmr_mode(
             commander.request_get_response("start", str(run_num))
             wait_for_state(receiver.fsm, "RUN", 1)
             timeout = 0.5
-            while not receiver.active_satellites or timeout < 0:
+            while not receiver.active_satellites or not receiver._swmr_mode_enabled or timeout < 0:
                 time.sleep(0.05)
                 timeout -= 0.05
             assert len(receiver.active_satellites) == 1, "No BOR received!"
@@ -547,8 +574,8 @@ def test_receiver_stats(
         wait_for_state(receiver.fsm, "ORBIT", 1)
     timeout = 4
     while timeout > 0 and not len(ml._metric_sockets) > 0:
-        time.sleep(0.05)
-        timeout -= 0.05
+        time.sleep(0.005)
+        timeout -= 0.005
     assert len(receiver.receiver_stats) == 2
     assert len(receiver._metrics_callbacks) > 1
     assert len(ml._metric_sockets) == 1
@@ -556,9 +583,74 @@ def test_receiver_stats(
     statfile = os.path.join(tmpdir, "stats", "MockReceiverSatellite.mock_receiver.nbytes.csv")
     timeout = 5
     while timeout > 0 and not os.path.exists(statfile):
-        time.sleep(0.05)
-        timeout -= 0.05
+        time.sleep(0.005)
+        timeout -= 0.005
     assert os.path.exists(statfile), "Expected output metrics csv not found"
     # close thread and connections to allow temp dir to be removed
     ml._log_listening_shutdown()
     ml._metrics_listening_shutdown()
+
+
+def test_receive_many_satellites_interrupt(
+    capsys,
+    caplog,
+    controller,
+    receiver_satellite,
+    sender_satellite_array,
+):
+    """Test receiving and writing data from multiple satellites and interrupting."""
+    receiver = receiver_satellite
+    # list of all satellites
+    all_sats = [*sender_satellite_array, receiver]
+    # allow chirp phase to conclude
+    timeout = 4
+    while timeout > 0 and len(controller.constellation.satellites) < len(all_sats):
+        timeout -= 0.005
+        time.sleep(0.005)
+    assert len(controller.constellation.satellites) == len(all_sats), "Test setup failed"
+    with TemporaryDirectory() as tmpdir:
+        for run_num in range(2):
+            # initialize
+            res = controller.constellation.initialize(
+                {
+                    "_file_name_pattern": FILE_NAME,
+                    "_output_path": tmpdir,
+                    "_eor_timeout": 60,  # ensure that the datareceiver waits for EOR
+                }
+            )
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "INIT", 4)
+            res = controller.constellation.launch()
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "ORBIT", 4)
+
+            res = controller.constellation.start(str(run_num))
+            for msg in res.values():
+                assert msg.success
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "RUN", 4)
+            timeout = 4
+            while timeout > 0 and len(receiver.active_satellites) < len(sender_satellite_array):
+                time.sleep(0.005)
+                timeout -= 0.005
+            assert len(receiver.active_satellites) == len(sender_satellite_array), "Not enough BORs received!"
+            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
+            time.sleep(0.2)  # send more data
+            # still in run?
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "RUN", 1)
+
+            # interrupt single satellite
+            sat = getattr(controller.constellation.MockSenderSatellite, "mock_sender1")
+            sat._interrupt()
+            for sat in all_sats:
+                wait_for_state(sat.fsm, "SAFE", 3)
+            # datareceiver waits for EOR for 60, so we should have received then
+            # now
+            fn = FILE_NAME.format(run_identifier=run_num)
+            assert os.path.exists(os.path.join(tmpdir, fn))
+            check_output(capsys, caplog)

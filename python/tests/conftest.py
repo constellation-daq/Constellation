@@ -29,6 +29,7 @@ from constellation.core.satellite import Satellite
 DEFAULT_SEND_PORT = 11111
 # port for CDTP
 DATA_PORT = 50101
+MON_PORT = 33333
 
 SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
@@ -393,7 +394,7 @@ def mock_satellite(mock_zmq_context, mock_chirp_socket):
     ctx = mock_zmq_context()
     ctx.flip_queues()
 
-    s = Satellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    s = Satellite("mock_satellite", "mockstellation", 11111, 22222, MON_PORT, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
     # give the threads a chance to start
@@ -412,6 +413,17 @@ def mock_controller(mock_zmq_context, mock_chirp_socket, mock_heartbeat_poller):
     # give the threads a chance to start
     time.sleep(0.1)
     yield c, ctx
+    # teardown
+    c.reentry()
+
+
+@pytest.fixture
+def controller():
+    """Create a Controller base instance."""
+    c = BaseController(name="test_controller", group="mockstellation", interface=[get_loopback_interface_name()])
+    # give the threads a chance to start
+    time.sleep(0.1)
+    yield c
     # teardown
     c.reentry()
 
@@ -450,7 +462,7 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
             self.mode = self.config.setdefault("mode", "cautious")
             return "finished with mock reconfiguration"
 
-    s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, 33333, [get_loopback_interface_name()])
+    s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, MON_PORT, [get_loopback_interface_name()])
     t = threading.Thread(target=s.run_satellite)
     t.start()
     # give the threads a chance to start
@@ -461,13 +473,17 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
 
 
 @pytest.fixture
-def monitoringlistener():
+def monitoringlistener(request):
     """Create a MonitoringListener instance."""
-
+    marker = request.node.get_closest_marker("constellation")
+    if not marker:
+        constellation = "mockstellation"
+    else:
+        constellation = marker.args[0]
     with TemporaryDirectory(prefix="constellation_pytest_") as tmpdirname:
         m = FileMonitoringListener(
             name="mock_monitor",
-            group="mockstellation",
+            group=constellation,
             interface=[get_loopback_interface_name()],
             output_path=tmpdirname,
         )
@@ -481,7 +497,21 @@ def monitoringlistener():
 
 def wait_for_state(fsm, state: str, timeout: float = 2.0):
     while timeout > 0 and fsm.current_state_value.name != state:
-        time.sleep(0.05)
-        timeout -= 0.05
+        time.sleep(0.005)
+        timeout -= 0.005
     if timeout < 0:
         raise RuntimeError(f"Never reached {state}, now in state {fsm.current_state_value.name} with status '{fsm.status}'")
+
+
+def check_output(capsys, caplog) -> None:
+    """Function to ensure that there were no error messages printed in the stdout or logs.
+
+    Expects the fixtures capsys and caplog being passed to it.
+
+    """
+    # FIXME the coloredlogs package writes to stderr by default, making the test below meaningless
+    # captured = capsys.readouterr()
+    # assert not captured.err, "Error messages were produced, please check printed output of test."
+    for record in caplog.records:
+        assert record.levelname != "CRITICAL", "Critical error messages were logged"
+        assert record.levelname != "ERROR", "Error messages were logged"

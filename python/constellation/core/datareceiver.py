@@ -47,6 +47,9 @@ class DataReceiver(Satellite):
         """Initialize and configure the satellite."""
         # what pattern to use for the file names?
         self.file_name_pattern = self.config.setdefault("_file_name_pattern", "run_{run_identifier}_{date}.h5")
+        # how long to keep the connection alive to wait for all EOR after stop
+        # command was received?
+        self._eor_timeout = self.config.setdefault("_eor_timeout", 60)
         # what directory to store files in?
         self.output_path = self.config.setdefault("_output_path", "data")
         self._configure_monitoring(2.0)
@@ -106,7 +109,10 @@ class DataReceiver(Satellite):
             # assert for mypy static type analysis
             assert isinstance(self._state_thread_evt, threading.Event), "State thread Event not set up correctly"
 
-            while not self._state_thread_evt.is_set() or ((datetime.datetime.now() - keep_alive).total_seconds() < 60):
+            # run until STOP received but wait a grace period to collect all EORs
+            while not self._state_thread_evt.is_set() or (
+                (datetime.datetime.now() - keep_alive).total_seconds() < self._eor_timeout
+            ):
                 # refresh keep_alive timestamp
                 if not self._state_thread_evt.is_set():
                     keep_alive = datetime.datetime.now()
@@ -170,26 +176,6 @@ class DataReceiver(Satellite):
             self.active_satellites = []
         return f"Finished acquisition to {filename}"
 
-    def _write_data(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write data to file"""
-        raise NotImplementedError()
-
-    def _write_EOR(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write EOR to file"""
-        raise NotImplementedError()
-
-    def _write_BOR(self, outfile: Any, item: CDTPMessage) -> None:
-        """Write BOR to file"""
-        raise NotImplementedError()
-
-    def _open_file(self, filename: pathlib.Path) -> Any:
-        """Return the filehandler"""
-        raise NotImplementedError()
-
-    def _close_file(self, outfile: Any) -> None:
-        """Close the filehandler"""
-        raise NotImplementedError()
-
     def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         for uuid in self._pull_interfaces.keys():
@@ -213,6 +199,26 @@ class DataReceiver(Satellite):
             address, port = host
             res.append(f"{address}:{port} ({uuid})")
         return f"{num} connected data sources", res, None
+
+    def _write_data(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write data to file"""
+        raise NotImplementedError()
+
+    def _write_EOR(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write EOR to file"""
+        raise NotImplementedError()
+
+    def _write_BOR(self, outfile: Any, item: CDTPMessage) -> None:
+        """Write BOR to file"""
+        raise NotImplementedError()
+
+    def _open_file(self, filename: pathlib.Path) -> Any:
+        """Return the filehandler"""
+        raise NotImplementedError()
+
+    def _close_file(self, outfile: Any) -> None:
+        """Close the filehandler"""
+        raise NotImplementedError()
 
     @chirp_callback(CHIRPServiceIdentifier.DATA)
     def _add_sender_callback(self, service: DiscoveredService) -> None:

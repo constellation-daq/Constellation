@@ -18,8 +18,7 @@ import coloredlogs  # type: ignore[import-untyped]
 import zmq
 
 from . import __version__, __version_code_name__
-from .cmdp import CMDPTransmitter
-from .logging import ConstellationLogger, ZeroMQSocketLogHandler
+from .logging import ConstellationLogger
 from .network import get_interface_names, validate_interface
 
 
@@ -92,7 +91,7 @@ class BaseSatelliteFrame:
 
     """
 
-    def __init__(self, name: str, mon_port: int | None = None, **_kwds: Any):
+    def __init__(self, name: str, **_kwds: Any):
         # type name == python class name
         self.type = type(self).__name__
         # Check if provided name is valid:
@@ -101,15 +100,6 @@ class BaseSatelliteFrame:
         # add type name to create the canonical name
         self.name = f"{self.type}.{name}"
         self.context = zmq.Context()
-
-        cmdp_socket = self.context.socket(zmq.PUB)
-        if not mon_port:
-            self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
-        else:
-            cmdp_socket.bind(f"tcp://*:{mon_port}")
-            self.mon_port = mon_port
-        self._cmdp_transmitter = CMDPTransmitter(self.name, cmdp_socket)
-        self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
 
         self.log = self.get_logger(self.type.upper())
 
@@ -134,7 +124,10 @@ class BaseSatelliteFrame:
     def get_logger(self, name: str) -> ConstellationLogger:
         logging.setLoggerClass(ConstellationLogger)
         logger = cast(ConstellationLogger, logging.getLogger(name))
-        logger.addHandler(self._zmq_log_handler)
+        # add zmq handler now if already set up
+        zmqhandler = getattr(self, "_zmq_log_handler", None)
+        if zmqhandler:
+            logger.addHandler(zmqhandler)
         logger.setLevel(logging.DEBUG)
         coloredlogs.install(logger=logger, level=coloredlogs.DEFAULT_LOG_LEVEL)
         return logger
@@ -176,11 +169,7 @@ class BaseSatelliteFrame:
         """Orderly destroy the satellite."""
         self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
-        # remove all ZMQ log handlers
-        for logger in logging.root.manager.loggerDict:
-            logging.getLogger(logger).removeHandler(self._zmq_log_handler)
         self.log.debug("Terminating ZMQ context.")
-        self._zmq_log_handler.close()
         self.context.term()
 
 

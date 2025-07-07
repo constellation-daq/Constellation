@@ -27,9 +27,9 @@ from .monitoring import MonitoringSender
 
 
 class Satellite(
+    MonitoringSender,
     CommandReceiver,
     CHIRPBroadcaster,
-    MonitoringSender,
     HeartbeatSender,
     HeartbeatChecker,
 ):
@@ -413,7 +413,6 @@ class Satellite(
             # assert for mypy static type analysis
             assert isinstance(self._state_thread_fut, Future)
             res_run = self._state_thread_fut.result(timeout=None)
-            self._state_thread_evt = None
         self.log_satellite.debug("RUN thread finished, continue with INTERRUPTING.")
         res: str = self.do_interrupting()
         return f"{res_run}; {res}"

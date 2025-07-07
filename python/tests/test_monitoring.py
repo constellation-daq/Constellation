@@ -191,11 +191,12 @@ def test_monitoring_sender_loop(mock_listener, mock_monitoringsender):
     assert b"STAT/GET_ANSWER" in ctx.packet_queue_out[DEFAULT_SEND_PORT]
 
 
+@pytest.mark.constellation("monitoring_file_writing")
 def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ml, tmpdir = monitoringlistener
     ms = monitoringsender
     assert len(ml._log_listeners) == 0
-    chirp = CHIRPBeaconTransmitter("mock_sender", "mockstellation", ["127.0.0.1"])
+    chirp = CHIRPBeaconTransmitter("mock_sender", "monitoring_file_writing", interface_addresses=["127.0.0.1"])
     chirp.broadcast(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, DEFAULT_SEND_PORT)
     # start metric sender thread
     ms._add_com_thread()
@@ -205,7 +206,9 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     assert len(ml._metric_sockets) == 1
     assert os.path.exists(os.path.join(tmpdir, "logs")), "Log output directory not created"
     assert os.path.exists(os.path.join(tmpdir, "stats")), "Stats output directory not created"
-    assert os.path.exists(os.path.join(tmpdir, "logs", "mockstellation.log")), "No log file created"
+    assert os.path.exists(os.path.join(tmpdir, "logs", "monitoring_file_writing.log")), "No log file created"
     assert os.path.exists(
         os.path.join(tmpdir, "stats", "MyStatProducer.mock_sender.get_answer.csv")
     ), "Expected output metrics csv not found"
+    # teardown
+    chirp.close()

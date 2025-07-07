@@ -50,7 +50,7 @@ def test_hb_send_recv_comm(mock_heartbeat_sender, mock_heartbeat_checker):
     hbc, ctx1 = mock_heartbeat_checker
     hbs, ctx2 = mock_heartbeat_sender
     hbc.HB_INIT_PERIOD = 180
-    hbs.default_period = 200
+    hbs.default_heartbeat_period = 200
     hbc.register_heartbeat_host(get_uuid("HeartbeatSender.mock_heartbeater"), f"tcp://127.0.0.1:{HB_PORT}")
     time.sleep(0.5)
     assert not hbc.get_failed()
@@ -63,8 +63,9 @@ def test_hb_send_recv_comm(mock_heartbeat_sender, mock_heartbeat_checker):
 def test_hb_send_recv_lag(mock_heartbeat_sender, mock_heartbeat_checker):
     """Test that receiver can catch up to sender."""
     hbs, ctx_s = mock_heartbeat_sender
-    hbs.default_period = 120
+    hbs.default_heartbeat_period = 120
     hbc, ctx_c = mock_heartbeat_checker
+    hbs.default_period = 120
     hbc.HB_INIT_PERIOD = 180
     time.sleep(2)
     timeout = 2
@@ -91,7 +92,7 @@ def test_hb_send_recv_lag(mock_heartbeat_sender, mock_heartbeat_checker):
 def test_hb_extrasystoles(mock_heartbeat_sender):
     """Test that sender can send extrasystoles."""
     hbs, ctx = mock_heartbeat_sender
-    hbs.default_period = 20000
+    hbs.default_heartbeat_period = 20000
     assert HB_PORT not in ctx.packet_queue_out
     hbs.fsm.initialize("")
     time.sleep(0.3)
