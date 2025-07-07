@@ -9,11 +9,11 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
+import zmq
 from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
-from constellation.core.cmdp import CMDPTransmitter, Metric, MetricsType
-from constellation.core.logging import setup_cli_logging
+from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
 
 
@@ -44,6 +44,9 @@ def mock_monitoringsender(mock_zmq_context):
             return 42
 
     m = MyStatProducer(name="mock_sender", interface="*", mon_port=DEFAULT_SEND_PORT)
+    m._add_com_thread()
+    m._start_com_threads()
+    time.sleep(0.1)
     yield m, ctx
     # teardown
     m.reentry()
@@ -54,7 +57,7 @@ def monitoringsender():
     """Create a MonitoringSender instance."""
 
     class MyStatProducer(MonitoringSender):
-        @schedule_metric("Answer", MetricsType.LAST_VALUE, 0.1)
+        @schedule_metric("Answer", MetricsType.LAST_VALUE, 0.5)
         def get_answer(self):
             """The answer to the Ultimate Question"""
             # self.log.info("Got the answer!")
@@ -111,11 +114,17 @@ def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
 
 
 def test_log_monitoring(mock_listener, mock_monitoringsender):
+    """Test that log messages are received, decoded and enqueued by ZeroMQSocketLogListener."""
     listener, stream, sock = mock_listener
     ms, ctx = mock_monitoringsender
+    assert ms._zmq_log_handler, "ZMQ CMDP log handler not properly set up"
+    sock.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
     lr = ms.get_logger("mock_sender")
-    lr.warning("mock warning before start")
+    assert ms._zmq_log_handler in lr.handlers, "ZMQ handler not present"
+    # allow subscription to be picked up
     time.sleep(0.2)
+    lr.warning("mock warning before start")
+    time.sleep(0.1)
     assert len(ctx.packet_queue_out[DEFAULT_SEND_PORT]) == 3
     listener.start()
     time.sleep(0.1)
@@ -131,9 +140,10 @@ def test_log_monitoring(mock_listener, mock_monitoringsender):
 
 
 def test_log_levels(mock_listener, mock_monitoringsender):
-    setup_cli_logging("TRACE")
     ms, ctx = mock_monitoringsender
     listener, stream, sock = mock_listener
+    sock.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
+    time.sleep(0.2)
     lr = ms.get_logger("mock_sender")
     # log a custom level
     lr.trace("mock trace message")
@@ -159,6 +169,8 @@ def test_log_levels(mock_listener, mock_monitoringsender):
 def test_log_exception(mock_listener, mock_monitoringsender):
     """Test use of logging.exception call."""
     listener, stream, sock = mock_listener
+    sock.setsockopt_string(zmq.SUBSCRIBE, "LOG/")
+    time.sleep(0.2)
     ms, ctx = mock_monitoringsender
     lr = ms.get_logger("mock_sender")
     # log an exception
@@ -182,12 +194,14 @@ def test_monitoring_sender_init(mock_listener, mock_monitoringsender):
 
 
 def test_monitoring_sender_loop(mock_listener, mock_monitoringsender):
+    """Test that the MonitoringSender loop works as expected."""
     m, ctx = mock_monitoringsender
-    assert DEFAULT_SEND_PORT not in ctx.packet_queue_out
-    # start metric sender thread
-    m._add_com_thread()
-    m._start_com_threads()
-    time.sleep(0.3)
+    # not subscribed yet, expect nothing in the mock network data stream
+    assert not ctx.packet_queue_out[DEFAULT_SEND_PORT]
+    listener, stream, sock = mock_listener
+    # subscribe
+    sock.setsockopt_string(zmq.SUBSCRIBE, "STAT/")
+    time.sleep(0.2)
     assert b"STAT/GET_ANSWER" in ctx.packet_queue_out[DEFAULT_SEND_PORT]
 
 
@@ -212,3 +226,54 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ), "Expected output metrics csv not found"
     # teardown
     chirp.close()
+
+
+def test_monitoring_subscriptions():
+    """Test the subscription to log messages."""
+    context = zmq.Context()
+    cmdp_socket = context.socket(zmq.XPUB)
+    port = cmdp_socket.bind_to_random_port("tcp://*")
+    pub = CMDPPublisher("subscription_test", cmdp_socket)
+    assert not pub.subscriptions
+    # create socket for subscription
+    socket = context.socket(zmq.SUB)
+    socket.connect(f"tcp://127.0.0.1:{port}")
+    # add timeout to avoid deadlocks
+    socket.setsockopt(zmq.RCVTIMEO, 250)
+    # create test log records
+    log = logging.getLogger()
+    # make log message that will be subscribed to
+    rec = log.makeRecord("TESTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "selected", None, None)
+    # make log message that will only be shown if a log level is subscribed to
+    rec_lvl = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "only if level", None, None)
+    # make a log message that will only be shown if all logs are subscribed to
+    rec_glb = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("DEBUG"), __name__, 42, "only if global", None, None)
+    topics = ["LOG/", "LOG/CRITICAL", "LOG/CRITICAL/TESTLOGS"]
+    for topic in topics:
+        # subscribe to log topic
+        print(f"Subscribing to {topic}")
+        socket.setsockopt_string(zmq.SUBSCRIBE, topic)
+        time.sleep(0.1)
+        pub.update_subscriptions()
+        assert topic in pub.subscriptions.keys(), "Subscription unsuccessful"
+        assert pub.subscriptions[topic] == 1, "Subscription unsuccessful"
+        assert pub.has_log_subscribers(rec), "Subscription unsuccessful"
+        if len(topic.removesuffix("/").split("/")) < 3:
+            assert pub.has_log_subscribers(rec_lvl), "Failed to identify record with same level as subscription"
+        else:
+            assert not pub.has_log_subscribers(rec_lvl), "Failed to suppress log message on same level"
+        if len(topic.removesuffix("/").split("/")) == 1:
+            assert pub.has_log_subscribers(rec_glb), "Failed to pass record while subscribing to all logs"
+        else:
+            assert not pub.has_log_subscribers(rec_glb), "Failed to suppress unrelated log message."
+        # cancel subscription
+        socket.setsockopt_string(zmq.UNSUBSCRIBE, topic)
+        time.sleep(0.1)
+        pub.update_subscriptions()
+        assert topic not in pub.subscriptions.keys(), "Unsubscription unsuccessful"
+        assert not pub.subscriptions
+        assert not pub.has_log_subscribers(rec), "Unsubscription unsuccessful"
+    # teardown
+    cmdp_socket.close()
+    socket.close()
+    context.term()

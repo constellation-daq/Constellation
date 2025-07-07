@@ -216,3 +216,68 @@ class CMDPTransmitter:
             self.msgheader.send(self._socket, meta=meta, flags=flags)
             flags = flags & ~zmq.SNDMORE
             self._socket.send(payload, flags=flags)
+
+
+class CMDPPublisher(CMDPTransmitter):
+    """Class for publishing Constellation monitoring messages via ZMQ."""
+
+    def __init__(self, name: str, socket: zmq.Socket | None):  # type: ignore[type-arg]
+        """Initialize transmitter."""
+        super().__init__(name, socket)
+        self.log_topics: dict[str, str] = {}
+        self.stat_topics: dict[str, str] = {}
+        self.subscriptions: dict[str, int] = {}
+
+    def has_log_subscribers(self, record: logging.LogRecord) -> bool:
+        """Return whether or not we have subscribers for the given log topic."""
+        # do we have a global subscription?
+        if "LOG/" in self.subscriptions.keys():
+            return True
+        topic = f"LOG/{record.levelname}/{record.name}"
+        if topic in self.subscriptions.keys():
+            return True
+        # do we have a subscription to the level??
+        if f"LOG/{record.levelname}" in self.subscriptions.keys():
+            return True
+        return False
+
+    def has_metric_subscribers(self, metric_name: str) -> bool:
+        """Return whether or not we have subscribers for the given metric data topic."""
+        # do we have a global subscription?
+        if "STAT/" in self.subscriptions.keys():
+            return True
+        topic = f"STAT/{metric_name.upper()}"
+        if topic in self.subscriptions.keys():
+            return True
+        print(f"Did not find {metric_name} in {self.subscriptions}")
+        return False
+
+    def update_subscriptions(self) -> None:
+        """Receive a Constellation subscription message and handle that."""
+        if not self._socket:
+            raise RuntimeError("Monitoring ZMQ socket misconfigured")
+
+        while True:
+            try:
+                with self._lock:
+                    msg = self._socket.recv_multipart(flags=zmq.NOBLOCK)
+                    # unpack list, decode string, drop the first character
+                    topic = msg[0].decode()[1:]
+                    # First byte \x01 is subscription, \0x00 is unsubscription
+                    subscribe = bool(msg[0][0])
+                    count = self.subscriptions.get(topic, 0)
+                    print(f"Got a message: {subscribe} {topic}")
+                    if subscribe:
+                        self.subscriptions[topic] = count + 1
+                    else:
+                        # remove key if no subscribers are left
+                        if count - 1 <= 0:
+                            self.subscriptions.pop(topic, None)
+                        else:
+                            # update count
+                            self.subscriptions[topic] = count - 1
+                    # TODO react to requests for available topics
+            except zmq.ZMQError as e:
+                if "Resource temporarily unavailable" not in e.strerror:
+                    raise RuntimeError("CMDPPublisher encountered ZMQ exception") from e
+                break

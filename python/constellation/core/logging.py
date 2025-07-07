@@ -10,7 +10,7 @@ from typing import Any
 
 import coloredlogs  # type: ignore[import-untyped]
 
-from .cmdp import CMDPTransmitter
+from .cmdp import CMDPPublisher
 
 
 class ConstellationLogger(logging.getLoggerClass()):  # type: ignore[misc]
@@ -38,12 +38,13 @@ class ConstellationLogger(logging.getLoggerClass()):  # type: ignore[misc]
 class ZeroMQSocketLogHandler(logging.Handler):
     """This handler sends records to a ZMQ socket."""
 
-    def __init__(self, transmitter: CMDPTransmitter):
+    def __init__(self, transmitter: CMDPPublisher):
         super().__init__()
         self.transmitter = transmitter
 
     def emit(self, record: logging.LogRecord) -> None:
-        self.transmitter.send_log(record)
+        if self.transmitter.has_log_subscribers(record):
+            self.transmitter.send_log(record)
 
     def close(self) -> None:
         if not self.transmitter.closed():

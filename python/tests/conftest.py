@@ -159,6 +159,15 @@ class mocket:
             return self.packet_queue_out
         return self.packet_queue_in
 
+    def _create_queue(self):
+        self._get_queue(True)[self.port] = []
+        self._get_queue(False)[self.port] = []
+
+    def _flip_queues(self):
+        tmp = self.packet_queue_in
+        self.packet_queue_in = self.packet_queue_out
+        self.packet_queue_out = tmp
+
     def send(self, payload, flags=None):
         """Append buf to queue."""
         try:
@@ -225,22 +234,29 @@ class mocket:
 
     def bind(self, host):
         self.port = int(host.split(":")[2])
+        self._create_queue()
         print(f"Bound Mocket on {self.port}")
 
     def bind_to_random_port(self, host):
         self.port = random.randrange(10000, 55555)
+        self._create_queue()
         print(f"Bound Mocket on random port: {self.port}")
         return self.port
 
     def connect(self, host):
         self.port = int(host.split(":")[2])
+        self._create_queue()
         print(f"Bound Mocket on {self.port}")
 
     def has_no_data(self):
         return self.port not in self._get_queue(False) or not self._get_queue(False)[self.port]
 
-    def setsockopt_string(self, *args, **kwargs):
-        pass
+    def setsockopt_string(self, option, value, *args, **kwargs):
+        if option == zmq.SUBSCRIBE:
+            print(f"subscribing to {value}")
+            self.send_multipart([b"\x01" + value.encode()])
+        if option == zmq.UNSUBSCRIBE:
+            self.send_multipart([b"\x00" + value.encode()])
 
     def setsockopt(self, *args, **kwargs):
         pass
