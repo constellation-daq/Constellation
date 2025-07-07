@@ -109,46 +109,50 @@ zmq::multipart_t CDTP2Message::assemble() const {
 }
 
 CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
-    if(frames.size() != 1) [[unlikely]] {
-        throw MessageDecodingError("Wrong number of ZeroMQ frames, exactly one frame expected");
-    }
-    const auto frame = frames.pop();
-
-    // Offset since we decode multiple msgpack objects
-    std::size_t offset = 0;
-
-    // Unpack protocol
-    const auto protocol_identifier = msgpack_unpack_to<std::string>(to_char_ptr(frame.data()), frame.size(), offset);
     try {
-        const auto protocol_recv = get_protocol(protocol_identifier);
-        if(protocol_recv != CDTP2) [[unlikely]] {
-            throw UnexpectedProtocolError(protocol_recv, CDTP2);
+        if(frames.size() != 1) [[unlikely]] {
+            throw MessageDecodingError("Wrong number of ZeroMQ frames, exactly one frame expected");
         }
-    } catch(const std::invalid_argument& error) {
-        throw InvalidProtocolError(protocol_identifier);
+        const auto frame = frames.pop();
+
+        // Offset since we decode multiple msgpack objects
+        std::size_t offset = 0;
+
+        // Unpack protocol
+        const auto protocol_identifier = msgpack_unpack_to<std::string>(to_char_ptr(frame.data()), frame.size(), offset);
+        try {
+            const auto protocol_recv = get_protocol(protocol_identifier);
+            if(protocol_recv != CDTP2) [[unlikely]] {
+                throw UnexpectedProtocolError(protocol_recv, CDTP2);
+            }
+        } catch(const std::invalid_argument& error) {
+            throw InvalidProtocolError(protocol_identifier);
+        }
+
+        // Unpack sender
+        const auto sender = msgpack_unpack_to<std::string>(to_char_ptr(frame.data()), frame.size(), offset);
+
+        // Unpack type
+        const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(frame.data()), frame.size(), offset);
+
+        // Unpack data blocks
+        const auto msgpack_object = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
+        if(msgpack_object->type != msgpack::type::ARRAY) [[unlikely]] {
+            throw MsgpackUnpackError("Error unpacking data", "data blocks are not in an array");
+        }
+        const auto msgpack_data_blocks_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
+        const auto msgpack_data_blocks = std::span(msgpack_data_blocks_raw.ptr, msgpack_data_blocks_raw.size);
+
+        // Create message to append data blocks
+        auto message = CDTP2Message(sender, type, msgpack_data_blocks.size());
+        for(const auto& msgpack_data_block : msgpack_data_blocks) {
+            message.addDataBlock(msgpack_data_block.as<DataBlock>());
+        }
+
+        return message;
+    } catch(const MsgpackUnpackError& e) {
+        throw MessageDecodingError(e.what());
     }
-
-    // Unpack sender
-    const auto sender = msgpack_unpack_to<std::string>(to_char_ptr(frame.data()), frame.size(), offset);
-
-    // Unpack type
-    const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(frame.data()), frame.size(), offset);
-
-    // Unpack data blocks
-    const auto msgpack_object = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
-    if(msgpack_object->type != msgpack::type::ARRAY) [[unlikely]] {
-        throw MsgpackUnpackError("Error unpacking data", "data blocks are not in an array");
-    }
-    const auto msgpack_data_blocks_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
-    const auto msgpack_data_blocks = std::span(msgpack_data_blocks_raw.ptr, msgpack_data_blocks_raw.size);
-
-    // Create message to append data blocks
-    auto message = CDTP2Message(sender, type, msgpack_data_blocks.size());
-    for(const auto& msgpack_data_block : msgpack_data_blocks) {
-        message.addDataBlock(msgpack_data_block.as<DataBlock>());
-    }
-
-    return message;
 }
 
 CDTP2BORMessage::CDTP2BORMessage(std::string sender, Dictionary user_tags, const Configuration& configuration)
