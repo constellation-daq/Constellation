@@ -29,6 +29,11 @@ The first message of a run is the so-called begin-of-run (BOR) message, the last
 This structure enables checks on sending and receiving side, e.g. that the connection is up and running or that all data have
 been transmitted correctly.
 
+```{seealso}
+A detailed technical description, including protocol sequence diagrams, can be found in the
+[protocol description chapter](../../framework_reference/protocols.md#data-transmission) in the framework development guide.
+```
+
 ## Messages
 
 Messages transmitted over the data communication channel of Constellation consist of a header with auxiliary information, and

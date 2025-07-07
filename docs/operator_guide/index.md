@@ -77,6 +77,7 @@ concepts/autonomy
 concepts/logging
 concepts/telemetry
 concepts/data
+concepts/discovery
 glossary
 ```
 
