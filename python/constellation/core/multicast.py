@@ -19,7 +19,7 @@ class MulticastMessage:
 
 
 class MulticastSocket:
-    def __init__(self, interface_addresses: set[str], multicast_address: str, multicast_port: int) -> None:
+    def __init__(self, interface_addresses: list[str], multicast_address: str, multicast_port: int) -> None:
         self._multicast_endpoint = (multicast_address, multicast_port)
 
         # Create send sockets

@@ -123,7 +123,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         :param group: group the Satellite belongs to
         :type group: str
         """
-        super().__init__(name=name, interface=interface, mon_port=mon_port, **kwds)
+        super().__init__(name=name, mon_port=mon_port, **kwds)
         self.group = group
         self._stop_broadcasting = threading.Event()
 

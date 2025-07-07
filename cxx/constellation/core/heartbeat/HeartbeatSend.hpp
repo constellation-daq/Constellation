@@ -11,14 +11,12 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <cstddef>
 #include <functional>
 #include <mutex>
 #include <optional>
 #include <stop_token>
 #include <string>
-#include <string_view>
 #include <thread>
 
 #include <zmq.hpp>
@@ -77,7 +75,7 @@ namespace constellation::heartbeat {
          *
          * @param flags Message flags for this sender
          */
-        void setFlags(protocol::CHP::MessageFlags flags) { default_flags_ = flags; }
+        void setFlags(protocol::CHP::MessageFlags flags) { flags_ = flags; }
 
         /**
          * @brief Update the maximum heartbeat interval to a new value
@@ -105,18 +103,27 @@ namespace constellation::heartbeat {
         /**
          * @brief Send an extrasystole
          *
-         * @param status message to be attached
+         * @param status Message to be attached
          */
-        CNSTLN_API void sendExtrasystole(std::string_view status);
+        CNSTLN_API void sendExtrasystole(std::string status);
 
     private:
         /**
-         * Main loop sending the heartbeats.
+         * @brief Main loop sending the heartbeats
          *
-         * Between heartbeats the thread sleeps and is only woken up for the emission of
-         * extrasystoles at state changes or the next regular heartbeat message after the configured interval
+         * Send heartbeats in regular intervals and checks for subscriptions
+         *
+         * @param stop_token Token to stop thread
          */
         void loop(const std::stop_token& stop_token);
+
+        /**
+         * @brief Send heartbeat
+         *
+         * @param flags CHP message flags
+         * @param status Optional status message
+         */
+        void send_heartbeat(protocol::CHP::MessageFlags flags, std::optional<std::string> status = {});
 
     private:
         /** Publisher socket for emitting heartbeats */
@@ -136,15 +143,10 @@ namespace constellation::heartbeat {
         /** Current heartbeat interval */
         std::atomic<std::chrono::milliseconds> interval_;
         /** Default message flags, defined e.g. by the role of the sender */
-        std::atomic<protocol::CHP::MessageFlags> default_flags_;
-        /** Message flags for next message */
         std::atomic<protocol::CHP::MessageFlags> flags_;
 
-        std::condition_variable cv_;
         std::mutex mutex_;
         std::jthread sender_thread_;
-
-        std::optional<std::string> status_;
     };
 
 } // namespace constellation::heartbeat

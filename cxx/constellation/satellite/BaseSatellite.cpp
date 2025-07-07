@@ -101,8 +101,9 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     set_thread_name(cscp_thread_, "CSCP");
 
     // Register state callback for extrasystoles
-    fsm_.registerStateCallback("extrasystoles",
-                               [&](CSCP::State, std::string_view status) { heartbeat_manager_.sendExtrasystole(status); });
+    fsm_.registerStateCallback("extrasystoles", [&](CSCP::State, std::string_view status) {
+        heartbeat_manager_.sendExtrasystole(std::string(status));
+    });
 
     // Register remote state callback to retrieve information on distant satellites
     fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });

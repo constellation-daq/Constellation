@@ -274,6 +274,10 @@ build:python-3.13:
   script:
     - meson test -C build --suite Constellation --no-rebuild --print-errorlogs
   artifacts:
+    paths:
+      - build/meson-logs/testlog.txt
+    expire_in: 1 week
+    when: on_failure
     reports:
       junit: build/meson-logs/testlog.junit.xml
   <<: *cpp-rules
@@ -284,6 +288,7 @@ build:python-3.13:
     - pip install --no-build-isolation -e .[test,hdf5]
     - pytest --force-sugar --junitxml=junit.xml
   artifacts:
+    expire_in: 1 week
     reports:
       junit: junit.xml
   <<: *python-rules
@@ -323,6 +328,7 @@ test:debian-gcc:
     paths:
       - build
     expire_in: 24 hour
+    when: always
   <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
 test:fedora-clang:
@@ -396,6 +402,7 @@ lint:coverage-py:
     - pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
+    expire_in: 1 week
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -413,6 +420,7 @@ lint:coverage-cpp:
     - ninja -C build coverage-xml
   coverage: '/^\s*lines:\s*\d+.\d+\%/'
   artifacts:
+    expire_in: 1 week
     reports:
       coverage_report:
         coverage_format: cobertura
@@ -473,8 +481,8 @@ lint:clang-scan-build:
   artifacts:
     paths:
       - build/meson-logs/scanbuild
-    when: on_failure
     expire_in: 1 week
+    when: on_failure
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
@@ -588,10 +596,14 @@ docs:html:
   script:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs html
+    - mv docs/build/html html
+    - echo "{\"HTML\":[{\"external_link\":{\"label\":\"Website Preview\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/html/index.html\"}}]}" > website_preview.json
   artifacts:
     paths:
-      - docs/build/html
-    expire_in: 24 hour
+      - html
+    expire_in: 1 week
+    reports:
+      annotations: "website_preview.json"
 
 docs:pdf:
   extends:
@@ -606,9 +618,14 @@ docs:pdf:
   script:
     - pip install --no-build-isolation -e .[docs]
     - make -C docs latexpdf
+    - mkdir pdf && mv docs/build/latex/*.pdf pdf
+    - echo "{\"PDF\":[{\"external_link\":{\"label\":\"Operator Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/operator_guide.pdf\"}},{\"external_link\":{\"label\":\"Application Developer Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/application_development_guide.pdf\"}},{\"external_link\":{\"label\":\"Framework Development Guide\",\"url\":\"https://constellation.pages.desy.de/-/constellation/-/jobs/$CI_JOB_ID/artifacts/pdf/framework_development_guide.pdf\"}}]}" > pdf_documentation.json
   artifacts:
     paths:
-      - docs/build/latex/*.pdf
+      - pdf
+    expire_in: 1 week
+    reports:
+      annotations: "pdf_documentation.json"
 
 docs:spelling:
   extends:
