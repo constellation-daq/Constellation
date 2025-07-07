@@ -131,9 +131,8 @@ Consequently, the data to be transmitted has to be converted into such a {cpp:cl
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
 
 ```{seealso}
-Since the data transmission protocol as well as the event metadata come with additional overhead, the largest data throughput
-depends on the frame size as well as on the number of frames transmitted by a single message. For performance considerations,
-it is advised to read [Increase Data Rate in C++](../howtos/data_transmission_speed.md).
+Data rate benchmarks can be found in the operator guide under
+[Increase Data Rate in C++](..//howtos/data_transmission_speed.md).
 ```
 
 :::
