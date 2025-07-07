@@ -19,6 +19,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/Level.hpp"
@@ -27,14 +28,17 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/protocol/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::string_literals;
 
@@ -341,6 +345,72 @@ TEST_CASE("CDTP2 EOR Packing / Unpacking", "[core][core::message]") {
     const auto eor_message_decoded = CDTP2EORMessage(CDTP2Message::disassemble(zmq_mpm));
     REQUIRE(eor_message_decoded.getUserTags().at("test") == 1234);
     REQUIRE(eor_message_decoded.getRunMetadata().at("run_finished") == "yes"s);
+}
+
+TEST_CASE("CDTP2 Invalid Number of Frames", "[core][core::message]") {
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addstr("msg1");
+    zmq_mpm.addstr("msg2");
+    REQUIRE_THROWS_MATCHES(
+        CDTP2Message::disassemble(zmq_mpm),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 message: Wrong number of ZeroMQ frames, exactly one frame expected"));
+}
+
+TEST_CASE("CDTP2 Unexpected Protocol", "[core][core::message]") {
+    msgpack::sbuffer sbuf {};
+    msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP1));
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CDTP1\" does not match expected identifier \"CDTP2\""));
+}
+
+TEST_CASE("CDTP2 Invalid Protocol", "[core][core::message]") {
+    msgpack::sbuffer sbuf {};
+    msgpack_pack(sbuf, "INVALID");
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(
+        CDTP2Message::disassemble(zmq_mpm), InvalidProtocolError, Message("Invalid protocol identifier \"INVALID\""));
+}
+
+TEST_CASE("CDTP2 Incorrect Message Type", "[core][core::message]") {
+    auto data_message_1 = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    REQUIRE_THROWS_MATCHES(CDTP2BORMessage(std::move(data_message_1)),
+                           IncorrectMessageType,
+                           Message("Message type is incorrect: Not a BOR message"));
+    auto data_message_2 = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    REQUIRE_THROWS_MATCHES(CDTP2EORMessage(std::move(data_message_2)),
+                           IncorrectMessageType,
+                           Message("Message type is incorrect: Not an EOR message"));
+}
+
+TEST_CASE("CDTP2 Invalid Number of Data Blocks", "[core][core::message]") {
+    auto data_message_1 = CDTP2Message("sender", CDTP2Message::Type::BOR, 0);
+    REQUIRE_THROWS_MATCHES(
+        CDTP2BORMessage(std::move(data_message_1)),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 BOR message: Wrong number of data blocks, exactly two data blocks expected"));
+    auto data_message_2 = CDTP2Message("sender", CDTP2Message::Type::EOR, 0);
+    REQUIRE_THROWS_MATCHES(
+        CDTP2EORMessage(std::move(data_message_2)),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 EOR message: Wrong number of data blocks, exactly two data blocks expected"));
+}
+
+TEST_CASE("CDTP2 Invalid Data Blocks", "[core][core::message]") {
+    msgpack::sbuffer sbuf {};
+    msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP2));
+    msgpack_pack(sbuf, "sender");
+    msgpack_pack(sbuf, std::to_underlying(CDTP2Message::Type::DATA));
+    msgpack_pack(sbuf, "not an array");
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
+                           MessageDecodingError,
+                           Message("Error decoding CDTP2 message: Error unpacking data: data blocks are not in an array"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
