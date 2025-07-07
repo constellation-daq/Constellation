@@ -20,7 +20,6 @@ from constellation.core.configuration import Configuration, flatten_config, load
 from constellation.core.controller import BaseController
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
-from constellation.core.logging import setup_cli_logging
 from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
@@ -33,11 +32,6 @@ MON_PORT = 33333
 
 SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
-
-
-@pytest.fixture(autouse=True)
-def setup_logging():
-    setup_cli_logging("DEBUG")
 
 
 class chirpsocket:

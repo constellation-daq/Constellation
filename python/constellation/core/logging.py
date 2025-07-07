@@ -53,25 +53,7 @@ class ZeroMQSocketLogHandler(logging.Handler):
 
 def setup_cli_logging(level: str) -> None:
     """
-    Sets up the CLI logging configuration.
-
-    Defines the following log levels:
-
-    - `logging.NOTSET` : 0
-    - `logging.TRACE` : 5
-    - `logging.DEBUG` : 10
-    - `logging.INFO` : 20
-    - `logging.WARNING` : 30
-    - `logging.STATUS` : 35
-    - `logging.ERROR` : mapped to CRITICAL
-    - `logging.CRITICAL` : 50
+    Sets up the CLI logging configuration (via coloredlogs package).
     """
-    # Set default logger class
-    logging.setLoggerClass(ConstellationLogger)
-    # Add custom log levels
-    logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
-    logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore[attr-defined]
-    logging.STATUS = logging.WARNING + 5  # type: ignore[attr-defined]
-    logging.addLevelName(logging.STATUS, "STATUS")  # type: ignore[attr-defined]
     # Set default log level
     coloredlogs.DEFAULT_LOG_LEVEL = logging.getLevelNamesMapping()[level.upper()]
