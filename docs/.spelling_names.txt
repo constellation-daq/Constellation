@@ -23,3 +23,5 @@ Lund
 DVel
 Perrey
 jemalloc
+Lachnit
+Spannagel
