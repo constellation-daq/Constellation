@@ -13,9 +13,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
+#include <catch2/matchers/catch_matchers_exception.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "constellation/core/message/CHIRPMessage.hpp"
+#include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -59,8 +61,10 @@ TEST_CASE("Detect invalid length in CHIRP message", "[chirp][chirp::message]") {
     std::vector<std::byte> msg_data {};
     msg_data.resize(MESSAGE_LENGTH + 1);
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(msg_data),
-                        Equals("Error decoding message: message length is not " + to_string(MESSAGE_LENGTH) + " bytes"));
+    REQUIRE_THROWS_MATCHES(
+        CHIRPMessage::disassemble(msg_data),
+        MessageDecodingError,
+        Message("Error decoding CHIRP message: message length is not " + to_string(MESSAGE_LENGTH) + " bytes"));
 }
 
 TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]") {
@@ -68,7 +72,9 @@ TEST_CASE("Detect invalid identifier in CHIRP message", "[chirp][chirp::message]
     auto asm_msg = msg.assemble();
     asm_msg[0] = std::byte('X');
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP message"));
+    REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),
+                           MessageDecodingError,
+                           Message("Error decoding CHIRP message: not a CHIRP message"));
 }
 
 TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") {
@@ -76,21 +82,27 @@ TEST_CASE("Detect invalid version in CHIRP message", "[chirp][chirp::message]") 
     auto asm_msg = msg.assemble();
     asm_msg[5] = std::byte('2');
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: not a CHIRP v1 message"));
+    REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),
+                           MessageDecodingError,
+                           Message("Error decoding CHIRP message: not a CHIRP v1 message"));
 }
 
 TEST_CASE("Detect invalid message type in CHIRP message", "[chirp][chirp::message]") {
     auto msg = CHIRPMessage(static_cast<MessageType>(255), "group", "host", DATA, 0);
     auto asm_msg = msg.assemble();
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: message type invalid"));
+    REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),
+                           MessageDecodingError,
+                           Message("Error decoding CHIRP message: message type invalid"));
 }
 
 TEST_CASE("Detect invalid service identifier in CHIRP message", "[chirp][chirp::message]") {
     auto msg = CHIRPMessage(OFFER, "group", "host", static_cast<ServiceIdentifier>(255), 12345);
     auto asm_msg = msg.assemble();
 
-    REQUIRE_THROWS_WITH(CHIRPMessage::disassemble(asm_msg), Equals("Error decoding message: service identifier invalid"));
+    REQUIRE_THROWS_MATCHES(CHIRPMessage::disassemble(asm_msg),
+                           MessageDecodingError,
+                           Message("Error decoding CHIRP message: service identifier invalid"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

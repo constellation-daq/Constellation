@@ -76,7 +76,7 @@ CDTP1Message::Header CDTP1Message::Header::disassemble(std::span<const std::byte
         // Construct header
         return {sender, tags, seq, type};
     } catch(const MsgpackUnpackError& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CDTP1", e.what());
     }
 }
 
@@ -151,8 +151,8 @@ CDTP1Message CDTP1Message::disassemble(zmq::multipart_t& frames) {
     // If BOR / EOR, exactly one frame needed
     if((header.getType() == Type::BOR || header.getType() == Type::EOR) && cdtp_message.getPayload().size() != 1)
         [[unlikely]] {
-        throw MessageDecodingError("Wrong number of frames for " + to_string(header.getType()) +
-                                   ", exactly one payload frame expected");
+        throw MessageDecodingError(
+            "CDTP1", "Wrong number of frames for " + to_string(header.getType()) + ", exactly one payload frame expected");
     }
 
     return cdtp_message;

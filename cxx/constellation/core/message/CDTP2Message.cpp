@@ -111,7 +111,7 @@ zmq::multipart_t CDTP2Message::assemble() const {
 CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
     try {
         if(frames.size() != 1) [[unlikely]] {
-            throw MessageDecodingError("Wrong number of ZeroMQ frames, exactly one frame expected");
+            throw MessageDecodingError("CDTP2", "Wrong number of ZeroMQ frames, exactly one frame expected");
         }
         const auto frame = frames.pop();
 
@@ -151,7 +151,7 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
 
         return message;
     } catch(const MsgpackUnpackError& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CDTP2", e.what());
     }
 }
 
@@ -166,7 +166,7 @@ CDTP2BORMessage::CDTP2BORMessage(CDTP2Message&& message) : CDTP2Message(std::mov
         throw IncorrectMessageType("Not a BOR message");
     }
     if(getDataBlocks().size() != 2) [[unlikely]] {
-        throw MessageDecodingError("Wrong number of data blocks, exactly two data blocks expected");
+        throw MessageDecodingError("CDTP2 BOR", "Wrong number of data blocks, exactly two data blocks expected");
     }
 }
 
@@ -186,6 +186,6 @@ CDTP2EORMessage::CDTP2EORMessage(CDTP2Message&& message) : CDTP2Message(std::mov
         throw IncorrectMessageType("Not an EOR message");
     }
     if(getDataBlocks().size() != 2) [[unlikely]] {
-        throw MessageDecodingError("Wrong number of data blocks, exactly two data blocks expected");
+        throw MessageDecodingError("CDTP2 EOR", "Wrong number of data blocks, exactly two data blocks expected");
     }
 }

@@ -9,7 +9,6 @@
 
 #pragma once
 
-#include <string>
 #include <string_view>
 
 #include "constellation/build.hpp"
@@ -25,8 +24,10 @@ namespace constellation::message {
      */
     class CNSTLN_API MessageDecodingError : public utils::RuntimeError {
     public:
-        explicit MessageDecodingError(const std::string& reason) {
-            error_message_ = "Error decoding message: ";
+        explicit MessageDecodingError(std::string_view protocol, std::string_view reason) {
+            error_message_ = "Error decoding ";
+            error_message_ += protocol;
+            error_message_ += " message: ";
             error_message_ += reason;
         }
 

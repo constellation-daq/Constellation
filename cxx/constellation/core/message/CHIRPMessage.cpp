@@ -102,22 +102,22 @@ CHIRPMessage CHIRPMessage::disassemble(std::span<const std::byte> assembled_mess
 
     // Check size
     if(assembled_message.size() != MESSAGE_LENGTH) {
-        throw MessageDecodingError("message length is not " + utils::to_string(MESSAGE_LENGTH) + " bytes");
+        throw MessageDecodingError("CHIRP", "message length is not " + utils::to_string(MESSAGE_LENGTH) + " bytes");
     }
     // Check protocol identifier
     for(std::size_t n = 0; n < IDENTIFIER.length(); ++n) {
         if(std::to_integer<char>(assembled_message[n]) != IDENTIFIER.at(n)) {
-            throw MessageDecodingError("not a CHIRP message");
+            throw MessageDecodingError("CHIRP", "not a CHIRP message");
         }
     }
     // Check the protocol version
     if(std::to_integer<std::uint8_t>(assembled_message[5]) != VERSION) {
-        throw MessageDecodingError("not a CHIRP v1 message");
+        throw MessageDecodingError("CHIRP", "not a CHIRP v1 message");
     }
     // Message Type
     if(std::to_integer<std::uint8_t>(assembled_message[6]) < std::to_underlying(REQUEST) ||
        std::to_integer<std::uint8_t>(assembled_message[6]) > std::to_underlying(DEPART)) {
-        throw MessageDecodingError("message type invalid");
+        throw MessageDecodingError("CHIRP", "message type invalid");
     }
     chirp_message.type_ = static_cast<MessageType>(assembled_message[6]);
     // Group ID
@@ -131,7 +131,7 @@ CHIRPMessage CHIRPMessage::disassemble(std::span<const std::byte> assembled_mess
     // Service Identifier
     if(std::to_integer<std::uint8_t>(assembled_message[39]) < std::to_underlying(CONTROL) ||
        std::to_integer<std::uint8_t>(assembled_message[39]) > std::to_underlying(DATA)) {
-        throw MessageDecodingError("service identifier invalid");
+        throw MessageDecodingError("CHIRP", "service identifier invalid");
     }
     chirp_message.service_id_ = static_cast<ServiceIdentifier>(assembled_message[39]);
     // Port from network byte order (MSB first)

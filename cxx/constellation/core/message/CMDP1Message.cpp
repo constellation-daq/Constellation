@@ -70,14 +70,14 @@ zmq::multipart_t CMDP1Message::assemble() {
 
 CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     if(frames.size() != 3) {
-        throw MessageDecodingError("Invalid number of message frames");
+        throw MessageDecodingError("CMDP1", "Invalid number of message frames");
     }
 
     // Decode topic
     const auto topic = frames.pop().to_string();
     if(!(topic.starts_with("LOG/") || topic.starts_with("STAT/") || topic.starts_with("LOG?") ||
          topic.starts_with("STAT?"))) {
-        throw MessageDecodingError("Invalid message topic \"" + topic + "\", neither log nor telemetry message");
+        throw MessageDecodingError("CMDP1", "Invalid message topic \"" + topic + "\", neither log nor telemetry message");
     }
 
     // Check if valid log level by trying to decode it
@@ -119,7 +119,7 @@ Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     const auto level_str = topic.substr(4, level_endpos - 4);
     const auto level_opt = enum_cast<Level>(level_str);
     if(!level_opt.has_value()) {
-        throw MessageDecodingError("\"" + to_string(level_str) + "\" is not a valid log level");
+        throw MessageDecodingError("CMDP1", "\"" + to_string(level_str) + "\" is not a valid log level");
     }
 
     return level_opt.value();
@@ -172,7 +172,7 @@ CMDP1StatMessage::CMDP1StatMessage(CMDP1Message&& message) : CMDP1Message(std::m
     try {
         metric_value_ = MetricValue::disassemble(topic, get_payload());
     } catch(const std::invalid_argument& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CMDP1", e.what());
     }
 }
 
@@ -192,7 +192,7 @@ CMDP1Notification::CMDP1Notification(CMDP1Message&& message) : CMDP1Message(std:
     try {
         topics_ = Dictionary::disassemble(get_payload());
     } catch(const std::invalid_argument& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CMDP1", e.what());
     }
 }
 

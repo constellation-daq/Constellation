@@ -198,7 +198,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid number of frames)", "[
 
     REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
                            MessageDecodingError,
-                           Message("Error decoding message: Invalid number of message frames"));
+                           Message("Error decoding CMDP1 message: Invalid number of message frames"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core::message]") {
@@ -212,7 +212,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core:
     REQUIRE_THROWS_MATCHES(
         CMDP1Message::disassemble(log_frames),
         MessageDecodingError,
-        Message("Error decoding message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
+        Message("Error decoding CMDP1 message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][core::message]") {
@@ -225,7 +225,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][c
 
     REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
                            MessageDecodingError,
-                           Message("Error decoding message: \"ERROR\" is not a valid log level"));
+                           Message("Error decoding CMDP1 message: \"ERROR\" is not a valid log level"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -261,7 +261,7 @@ TEST_CASE("Message Assembly / Disassembly (CDTP1, wrong number of frames)", "[co
     REQUIRE_THROWS_MATCHES(
         CDTP1Message::disassemble(frames),
         MessageDecodingError,
-        Message("Error decoding message: Wrong number of frames for BOR, exactly one payload frame expected"));
+        Message("Error decoding CDTP1 message: Wrong number of frames for BOR, exactly one payload frame expected"));
 }
 
 TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
@@ -316,7 +316,7 @@ TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
     // Check for excess frame detection
     REQUIRE_THROWS_MATCHES(CSCP1Message::disassemble(frames),
                            MessageDecodingError,
-                           Message("Error decoding message: Incorrect number of message frames"));
+                           Message("Error decoding CSCP1 message: Incorrect number of message frames"));
 }
 
 TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {
