@@ -23,11 +23,14 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/metrics/Metric.hpp"
+#include "constellation/core/metrics/stat.hpp"
+#include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation::config;
 using namespace constellation::metrics;
+using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 using namespace std::chrono_literals;
@@ -36,12 +39,14 @@ RandomTransmitterSatellite::RandomTransmitterSatellite(std::string_view type, st
     : TransmitterSatellite(type, name), byte_rng_(generate_random_seed()) {
     support_reconfigure();
 
-    register_timed_metric("RATE_LIMITED",
-                          "",
-                          MetricType::LAST_VALUE,
-                          "Counts how often data sending was skipped due the data rate limitations",
-                          5s,
-                          [this]() { return rate_limited_.load(); });
+    register_timed_metric(
+        "RATE_LIMITED",
+        "",
+        MetricType::LAST_VALUE,
+        "Counts the number of loop iterations in which data sending was skipped due the data rate limitations",
+        5s,
+        {State::RUN},
+        [this]() { return rate_limited_.load(); });
 }
 
 std::uint32_t RandomTransmitterSatellite::generate_random_seed() {
@@ -138,7 +143,7 @@ void RandomTransmitterSatellite::running_pregen(const std::stop_token& stop_toke
             continue;
         }
         // Create data
-        auto data_block = newDataBlock(frames.size());
+        auto data_block = newDataBlock(number_of_frames_);
         for(const auto& frame : frames) {
             // Copy vector to frame
             data_block.addFrame({std::vector(frame)});
@@ -148,5 +153,6 @@ void RandomTransmitterSatellite::running_pregen(const std::stop_token& stop_toke
 }
 
 void RandomTransmitterSatellite::stopping() {
+    STAT("RATE_LIMITED", rate_limited_.load());
     LOG_IF(WARNING, rate_limited_ > 0) << "Reached data rate limit " << rate_limited_ << " times";
 }
