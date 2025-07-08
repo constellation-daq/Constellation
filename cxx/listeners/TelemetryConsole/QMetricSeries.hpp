@@ -81,7 +81,7 @@ protected:
     virtual QT_CHART QAbstractSeries* series() const = 0;
 
 private:
-    QGraphicsTextItem value_marker_;
+    QGraphicsTextItem* value_marker_;
 };
 
 class QSplineMetricSeries : public QMetricSeries {

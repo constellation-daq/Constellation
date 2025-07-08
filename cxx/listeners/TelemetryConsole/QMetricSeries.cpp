@@ -23,8 +23,9 @@
 using namespace QtCharts;
 #endif
 
-QMetricSeries::QMetricSeries(QChart* chart) {
-    chart->scene()->addItem(&value_marker_);
+QMetricSeries::QMetricSeries(QChart* chart) : value_marker_(new QGraphicsTextItem()) {
+    // Chart's QGraphicScene takes ownership and will delete upon destruction
+    chart->scene()->addItem(value_marker_);
 }
 
 void QMetricSeries::updateMarker(QChart* chart, const QString& unit) {
@@ -39,9 +40,9 @@ void QMetricSeries::updateMarker(QChart* chart, const QString& unit) {
     const auto scene_pos = chart->mapToPosition(points.last(), series());
 
     // Shift position of last point by bounding box size to right-align
-    value_marker_.setPlainText(QString::number(points.last().y(), 'f', 2) + (unit.isEmpty() ? "" : " " + unit));
-    const auto bounds = value_marker_.boundingRect();
-    value_marker_.setPos(scene_pos.x() - bounds.width(), scene_pos.y() - 10 - bounds.height());
+    value_marker_->setPlainText(QString::number(points.last().y(), 'f', 2) + (unit.isEmpty() ? "" : " " + unit));
+    const auto bounds = value_marker_->boundingRect();
+    value_marker_->setPos(scene_pos.x() - bounds.width(), scene_pos.y() - 10 - bounds.height());
 }
 
 QSplineMetricSeries::QSplineMetricSeries(QChart* chart) : QMetricSeries(chart), spline_(new QSplineSeries()) {
