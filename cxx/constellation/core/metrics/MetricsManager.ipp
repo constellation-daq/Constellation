@@ -15,6 +15,7 @@
 #include <concepts>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -62,6 +63,14 @@ namespace constellation::metrics {
         };
         registerTimedMetric(std::make_shared<TimedMetric>(
             std::move(name), std::move(unit), type, std::move(description), interval, std::move(value_callback_cast)));
+    }
+
+    template <typename T> void MetricsManager::triggerMetric(std::string name, const T& value) {
+        // Only emplace name and value, do the lookup in the run thread
+        std::unique_lock triggered_queue_lock {triggered_queue_mutex_};
+        triggered_queue_.emplace(std::move(name), config::Value::set(value));
+        triggered_queue_lock.unlock();
+        cv_.notify_one();
     }
 
 } // namespace constellation::metrics
