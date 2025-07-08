@@ -188,6 +188,10 @@ Relevant build options are:
   Whether or not to build a set of C++ debugging tools. \
   Possible values are `true` and `false`. \
   Defaults to `true`.
+- `memory_allocator`: \
+  Which memory allocator to use (can improve data transmission performance). \
+  Possible values are `auto`, `jemalloc`, `mimalloc` and `system`. \
+  Defaults to `auto`.
 
 :::::
 :::::{tab-item} Python
