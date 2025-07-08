@@ -42,7 +42,9 @@
 
 #define CNSTLN_BUILD_TYPE "@build_type@"
 
-#define CNSTLN_LTO_STATUS "@lto_enabled@"
+#define CNSTLN_LTO_ENABLED "@lto_enabled@"
+
+#define CNSTLN_MALLOC "@memory_allocator@"
 
 #define CNSTLN_PREFIX "@prefix@"
 

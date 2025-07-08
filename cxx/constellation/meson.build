@@ -17,18 +17,21 @@ pkg = import('pkgconfig')
 build_hpp_data = configuration_data()
 build_hpp_data.set('version', meson.project_version())
 build_hpp_data.set('version_code_name', version_code_name)
+build_hpp_data.set('build_type', get_option('buildtype'))
+build_hpp_data.set('lto_enabled', get_option('b_lto'))
+build_hpp_data.set('memory_allocator', memory_allocator)
 build_hpp_data.set('prefix', get_option('prefix'))
 build_hpp_data.set('libdir', get_option('libdir'))
 build_hpp_data.set('builddir', meson.project_build_root())
 build_hpp_data.set('dso_prefix', dso_prefix)
 build_hpp_data.set('dso_suffix', dso_suffix)
-build_hpp_data.set('build_type', get_option('buildtype'))
-build_hpp_data.set('lto_enabled', get_option('b_lto'))
 build_hpp = configure_file(
   input: 'build.hpp',
   output: 'build.hpp',
   configuration: build_hpp_data,
 )
+
+build_vcs_hpp = vcs_tag(input: 'build_vcs.hpp', output: 'build_vcs.hpp', fallback: '')
 
 install_headers(build_hpp, subdir: 'constellation')
 

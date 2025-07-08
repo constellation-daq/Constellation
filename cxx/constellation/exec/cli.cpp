@@ -25,6 +25,7 @@
 #include <asio.hpp>
 
 #include "constellation/build.hpp"
+#include "constellation/build_vcs.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
@@ -37,26 +38,30 @@ using namespace constellation::networking;
 using namespace constellation::utils;
 
 BaseParser::BaseParser(std::string program)
-    : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL, argparse::default_arguments::help) {}
+    : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL, argparse::default_arguments::help) {
+    // Provide own version printout
+    add_argument("-v", "--version")
+        .action([](const auto& /*unused*/) {
+            const auto vcs_version = std::string(CNSTLN_VERSION_VCS);
+            std::cout << "Constellation " << CNSTLN_VERSION_FULL << "\n"                       //
+                      << (!vcs_version.empty() ? "\tGit version:\t" + vcs_version + "\n" : "") //
+                      << "\tBuild type:\t" << CNSTLN_BUILD_TYPE << "\n"                        //
+                      << "\tLTO enabled:\t" << CNSTLN_LTO_ENABLED << "\n"                      //
+                      << "\tMem allocator:\t" << CNSTLN_MALLOC << "\n"                         //
+                      << std::flush;
+            std::exit(0); // NOLINT(concurrency-mt-unsafe)
+        })
+        .default_value(false)
+        .help("shows version information and exits")
+        .implicit_value(true)
+        .nargs(0);
+}
 
 void BaseParser::setup() {
     // Console log level (-l)
     add_argument("-l", "--level").help("log level").default_value("INFO");
 
     // TODO(stephan.lachnit): module specific console log level
-
-    // Provide own version printout
-    add_argument("-v", "--version")
-        .action([](const auto& /*unused*/) {
-            std::cout << "Constellation " << CNSTLN_VERSION_FULL << "\n"
-                      << "\tBuild type: " << CNSTLN_BUILD_TYPE << "\n"
-                      << "\tLTO enabled: " << CNSTLN_LTO_STATUS << "\n";
-            std::exit(0);
-        })
-        .default_value(false)
-        .help("shows version information")
-        .implicit_value(true)
-        .nargs(0);
 
     // Interfaces (-i)
     try {
