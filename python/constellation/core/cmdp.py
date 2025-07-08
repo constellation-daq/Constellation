@@ -264,7 +264,7 @@ class CMDPPublisher(CMDPTransmitter):
         """Register a LOG topic that subscribers should be notified about."""
         if description is None:
             description = ""
-        self.log_topics[topic] = description
+        self.log_topics[topic.upper()] = description
         if "LOG?" in self.subscriptions.keys():
             self._send_log_notification()
 
@@ -272,7 +272,7 @@ class CMDPPublisher(CMDPTransmitter):
         """Register a STAT topic that subscribers should be notified about."""
         if description is None:
             description = ""
-        self.stat_topics[topic] = description
+        self.stat_topics[topic.upper()] = description
         if "STAT?" in self.subscriptions.keys():
             self._send_stat_notification()
 
