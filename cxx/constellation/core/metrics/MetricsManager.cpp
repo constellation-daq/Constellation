@@ -128,14 +128,6 @@ void MetricsManager::unregisterMetrics() {
     timed_metrics_lock.unlock();
 }
 
-void MetricsManager::triggerMetric(std::string name, Value value) {
-    // Only emplace name and value, do the lookup in the run thread
-    std::unique_lock triggered_queue_lock {triggered_queue_mutex_};
-    triggered_queue_.emplace(std::move(name), std::move(value));
-    triggered_queue_lock.unlock();
-    cv_.notify_one();
-}
-
 std::map<std::string, std::string> MetricsManager::getMetricsDescriptions() const {
     std::map<std::string, std::string> metrics_descriptions {};
     const std::lock_guard metrics_lock {metrics_mutex_};

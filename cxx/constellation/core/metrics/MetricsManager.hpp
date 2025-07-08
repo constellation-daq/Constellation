@@ -117,7 +117,7 @@ namespace constellation::metrics {
          * @param name Name of the metric
          * @param value Value of the metric
          */
-        CNSTLN_API void triggerMetric(std::string name, config::Value value);
+        template <typename T> void triggerMetric(std::string name, const T& value);
 
         /**
          * @brief Update topic subscriptions
