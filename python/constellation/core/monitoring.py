@@ -80,23 +80,37 @@ class MonitoringSender(BaseSatelliteFrame):
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
 
+        # Open ZMQ socket using (X)PUB/SUB pattern. XPUB allows us to handle
+        # subscription messages directly.
         cmdp_socket = self.context.socket(zmq.XPUB)
         if not mon_port:
             self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
         else:
             cmdp_socket.bind(f"tcp://*:{mon_port}")
             self.mon_port = mon_port
+        # Instantiate CMDP publish transmitter and CMDP log handler
         self._cmdp_transmitter = CMDPPublisher(self.name, cmdp_socket)
         self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
+
+        # register all metrics callbacks for CMDP notifications
+        for name, details in self._metrics_callbacks.items():
+            self._cmdp_transmitter.register_stat(name, details["function"].__doc__)
 
         self._zmq_log_handler.setLevel("TRACE")
         # add zmq logging to existing Constellation loggers
         for name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, ConstellationLogger):
-                if self._zmq_log_handler not in logger.handlers:
-                    logger.addHandler(self._zmq_log_handler)
+                self._configure_cmdp_logger(logger)
         # update list of subscribers (both log and metric)
         self._cmdp_transmitter.update_subscriptions()
+
+    def _configure_cmdp_logger(self, logger: ConstellationLogger) -> None:
+        """Configure log handler for CMDP messaging via ZMQ."""
+        if self._zmq_log_handler not in logger.handlers:
+            logger.addHandler(self._zmq_log_handler)
+        for lvl, _numlvl in logging.getLevelNamesMapping().items():
+            topic = "LOG/{lvl}/{name}"
+            self._cmdp_transmitter.register_log(topic, "")
 
     def schedule_metric(
         self,
@@ -125,6 +139,7 @@ class MonitoringSender(BaseSatelliteFrame):
             )
 
         self._metrics_callbacks[name] = {"function": wrapper, "interval": interval}
+        self._cmdp_transmitter.register_stat(name, callback.__doc__)
 
     def send_metric(self, metric: Metric) -> None:
         """Send a single metric via ZMQ."""

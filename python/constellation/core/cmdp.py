@@ -59,6 +59,19 @@ class Metric:
         return f"{self.name}: {self.value} [{self.unit}]{t}"
 
 
+class Notification:
+    """Class to hold information for a Constellation CMDP notification."""
+
+    def __init__(
+        self,
+        prefix: str,
+    ) -> None:
+        self.sender: str = ""
+        self.time: msgpack.Timestamp = msgpack.Timestamp(0)
+        self.topics: dict[str, str] = {}
+        self.topic_prefix: str = prefix
+
+
 def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
     """Receive a Constellation log message."""
     # Read header
@@ -97,6 +110,23 @@ def decode_metric(name: str, topic: str, msg: list[Any]) -> Metric:
     m.time = time
     m.meta = record
     return m
+
+
+def decode_notification(name: str, topic: str, msg: list[bytes]) -> Notification:
+    """Receive a Constellation log message."""
+    # Read header
+    header = MessageHeader(name, Protocol.CMDP1).decode(msg[1])
+    # assert to help mypy determine len of tuple returned
+    assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
+    sender, time, record = header
+    unpacker = msgpack.Unpacker()
+    unpacker.feed(msg[2])
+    topics = unpacker.unpack()
+    n = Notification(topic)
+    n.sender = sender
+    n.time = time
+    n.topics = topics
+    return n
 
 
 class CMDPTransmitter:
@@ -161,7 +191,7 @@ class CMDPTransmitter:
         meta = None
         self._dispatch(topic, payload, meta)
 
-    def recv(self, flags: int = 0) -> logging.LogRecord | Metric | None:
+    def recv(self, flags: int = 0) -> logging.LogRecord | Metric | Notification | None:
         """Receive a Constellation monitoring message and return log or metric."""
         if not self._socket:
             raise RuntimeError("Monitoring ZMQ socket misconfigured")
@@ -177,6 +207,8 @@ class CMDPTransmitter:
             return decode_metric(self.name, topic, msg)
         elif topic.startswith("LOG/"):
             return decode_log(self.name, topic, msg)
+        elif topic.startswith("LOG?") or topic.startswith("STAT?"):
+            return decode_notification(self.name, topic, msg)
         else:
             raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
 
@@ -228,6 +260,22 @@ class CMDPPublisher(CMDPTransmitter):
         self.stat_topics: dict[str, str] = {}
         self.subscriptions: dict[str, int] = {}
 
+    def register_log(self, topic: str, description: str | None = "") -> None:
+        """Register a LOG topic that subscribers should be notified about."""
+        if description is None:
+            description = ""
+        self.log_topics[topic] = description
+        if "LOG?" in self.subscriptions.keys():
+            self._send_log_notification()
+
+    def register_stat(self, topic: str, description: str | None = "") -> None:
+        """Register a STAT topic that subscribers should be notified about."""
+        if description is None:
+            description = ""
+        self.stat_topics[topic] = description
+        if "STAT?" in self.subscriptions.keys():
+            self._send_stat_notification()
+
     def has_log_subscribers(self, record: logging.LogRecord) -> bool:
         """Return whether or not we have subscribers for the given log topic."""
         # do we have a global subscription?
@@ -249,7 +297,6 @@ class CMDPPublisher(CMDPTransmitter):
         topic = f"STAT/{metric_name.upper()}"
         if topic in self.subscriptions.keys():
             return True
-        print(f"Did not find {metric_name} in {self.subscriptions}")
         return False
 
     def update_subscriptions(self) -> None:
@@ -261,23 +308,40 @@ class CMDPPublisher(CMDPTransmitter):
             try:
                 with self._lock:
                     msg = self._socket.recv_multipart(flags=zmq.NOBLOCK)
-                    # unpack list, decode string, drop the first character
-                    topic = msg[0].decode()[1:]
-                    # First byte \x01 is subscription, \0x00 is unsubscription
-                    subscribe = bool(msg[0][0])
-                    count = self.subscriptions.get(topic, 0)
-                    print(f"Got a message: {subscribe} {topic}")
-                    if subscribe:
-                        self.subscriptions[topic] = count + 1
+                # unpack list, decode string, drop the first character
+                topic = msg[0].decode()[1:]
+                # First byte \x01 is subscription, \0x00 is unsubscription
+                subscribe = bool(msg[0][0])
+                count = self.subscriptions.get(topic, 0)
+                # subscription:
+                if subscribe:
+                    self.subscriptions[topic] = count + 1
+                else:
+                    # remove key if no subscribers are left
+                    if count - 1 <= 0:
+                        self.subscriptions.pop(topic, None)
                     else:
-                        # remove key if no subscribers are left
-                        if count - 1 <= 0:
-                            self.subscriptions.pop(topic, None)
-                        else:
-                            # update count
-                            self.subscriptions[topic] = count - 1
-                    # TODO react to requests for available topics
+                        # update count
+                        self.subscriptions[topic] = count - 1
+                # send current notifications if requested
+                if topic.startswith("LOG?") and subscribe:
+                    self._send_log_notification()
+                elif topic.startswith("STAT?") and subscribe:
+                    self._send_stat_notification()
+                # TODO warn about ignored messages
             except zmq.ZMQError as e:
                 if "Resource temporarily unavailable" not in e.strerror:
                     raise RuntimeError("CMDPPublisher encountered ZMQ exception") from e
                 break
+
+    def _send_log_notification(self) -> None:
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(self.log_topics))
+        self._dispatch("LOG?", payload=stream.getvalue())
+
+    def _send_stat_notification(self) -> None:
+        stream = io.BytesIO()
+        packer = msgpack.Packer()
+        stream.write(packer.pack(self.stat_topics))
+        self._dispatch("STAT?", payload=stream.getvalue())

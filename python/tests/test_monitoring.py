@@ -13,7 +13,7 @@ import zmq
 from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
-from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType
+from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, Notification
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
 
 
@@ -203,6 +203,22 @@ def test_monitoring_sender_loop(mock_listener, mock_monitoringsender):
     sock.setsockopt_string(zmq.SUBSCRIBE, "STAT/")
     time.sleep(0.2)
     assert b"STAT/GET_ANSWER" in ctx.packet_queue_out[DEFAULT_SEND_PORT]
+
+
+def test_monitoring_notification(mock_transmitter_a, mock_monitoringsender):
+    """Test that the MonitoringSender loop works as expected."""
+    m, ctx = mock_monitoringsender
+    # not subscribed yet, expect nothing in the mock network data stream
+    assert not ctx.packet_queue_out[DEFAULT_SEND_PORT]
+    cmdptrans, sock = mock_transmitter_a
+    # subscribe
+    sock.setsockopt_string(zmq.SUBSCRIBE, "STAT?")
+    time.sleep(0.2)
+    msg = cmdptrans.recv()
+    assert msg
+    assert isinstance(msg, Notification)
+    assert "get_answer" in msg.topics.keys()
+    assert "Ultimate Question" in msg.topics["get_answer"]
 
 
 @pytest.mark.constellation("monitoring_file_writing")
