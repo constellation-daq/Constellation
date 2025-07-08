@@ -36,7 +36,7 @@ core_lib = library(
     msgpack_cxx_dep,
     spdlog_dep,
     threads_dep,
-    jemalloc_dep,
+    malloc_dep,
   ],
   gnu_symbol_visibility: 'hidden',
   cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
@@ -55,7 +55,7 @@ core_dep = declare_dependency(
     msgpack_cxx_dep,
     spdlog_dep,
     threads_dep,
-    jemalloc_dep,
+    malloc_dep,
   ],
 )
 

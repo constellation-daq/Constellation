@@ -11,6 +11,7 @@
 /fmt-*/
 /libzmq-*/
 /magic_enum-*/
+/mimalloc-*/
 /msgpack-cxx-*/
 /spdlog-*/
 /tomlplusplus-*/

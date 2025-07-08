@@ -69,9 +69,24 @@ threads_dep = dependency('threads')
 dl_dep = dependency('dl', required: false)
 
 # Memory allocator
-jemalloc_dep = dependency('jemalloc', required: get_option('jemalloc'))
-if jemalloc_dep.found()
-  message('Using jemalloc as memory allocator')
+memory_allocator = get_option('memory_allocator')
+malloc_dep = dependency('', required: false)
+if memory_allocator == 'auto' or memory_allocator == 'jemalloc'
+  jemalloc_dep = dependency('jemalloc', required: memory_allocator == 'jemalloc')
+  if jemalloc_dep.found()
+    memory_allocator = 'jemalloc'
+    malloc_dep = jemalloc_dep
+  endif
+endif
+if memory_allocator == 'auto' or memory_allocator == 'mimalloc'
+  mimalloc_dep = dependency('mimalloc', required: memory_allocator == 'mimalloc', allow_fallback: true, default_options: ['warning_level=0', 'werror=false'])
+  if mimalloc_dep.found()
+    memory_allocator = 'mimalloc'
+    malloc_dep = mimalloc_dep
+  endif
+endif
+if malloc_dep.found()
+  message('Using ' + memory_allocator + ' as memory allocator')
 endif
 
 # Compilation arguments and private system dependencies
