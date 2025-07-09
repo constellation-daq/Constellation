@@ -100,17 +100,15 @@ class MonitoringSender(BaseSatelliteFrame):
         # add zmq logging to existing Constellation loggers
         for name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, ConstellationLogger):
-                self._configure_cmdp_logger(logger)
+                self._configure_cmdp_logger(name, logger)
         # update list of subscribers (both log and metric)
         self._cmdp_transmitter.update_subscriptions()
 
-    def _configure_cmdp_logger(self, logger: ConstellationLogger) -> None:
+    def _configure_cmdp_logger(self, name: str, logger: ConstellationLogger) -> None:
         """Configure log handler for CMDP messaging via ZMQ."""
         if self._zmq_log_handler not in logger.handlers:
             logger.addHandler(self._zmq_log_handler)
-        for lvl, _numlvl in logging.getLevelNamesMapping().items():
-            topic = "LOG/{lvl}/{name}"
-            self._cmdp_transmitter.register_log(topic, "")
+        self._cmdp_transmitter.register_log(name, "")
 
     def schedule_metric(
         self,

@@ -217,8 +217,8 @@ def test_monitoring_notification(mock_transmitter_a, mock_monitoringsender):
     msg = cmdptrans.recv()
     assert msg
     assert isinstance(msg, Notification)
-    assert "get_answer" in msg.topics.keys()
-    assert "Ultimate Question" in msg.topics["get_answer"]
+    assert "GET_ANSWER" in msg.topics.keys()
+    assert "Ultimate Question" in msg.topics["GET_ANSWER"]
 
 
 @pytest.mark.constellation("monitoring_file_writing")
