@@ -8,8 +8,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from constellation.core.broadcastmanager import CHIRPBroadcaster, chirp_callback
 from constellation.core.chirp import CHIRPServiceIdentifier
+from constellation.core.chirpmanager import CHIRPBroadcaster, chirp_callback
 from constellation.core.network import get_loopback_interface_name
 
 offer_data_666 = b"CHIRP\x01\x02\xd4fl\x89\x14g7=*b#\xeb4fy\xda\x17\x7f\xd1\xa7t\xc5\xb6/\xd5\xcc$e\x01\x81ir\x04\x02\x9a"

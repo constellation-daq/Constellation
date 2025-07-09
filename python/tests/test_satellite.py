@@ -11,8 +11,8 @@ import zmq
 from conftest import MON_PORT, wait_for_state
 
 from constellation.core import __version__
-from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.chirpmanager import DiscoveredService, chirp_callback
 from constellation.core.chp import CHPRole
 from constellation.core.cmdp import CMDPTransmitter, Notification
 from constellation.core.cscp import CommandTransmitter

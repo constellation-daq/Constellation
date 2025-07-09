@@ -17,8 +17,8 @@ from typing import Any, Callable, Optional, ParamSpec, TypeVar, cast
 import zmq
 
 from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
+from .chirpmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, decode_metric
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler, setup_cli_logging
 

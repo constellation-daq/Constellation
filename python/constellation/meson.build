@@ -4,8 +4,8 @@
 core_files = files(
   'core/__init__.py',
   'core/base.py',
-  'core/broadcastmanager.py',
   'core/chirp.py',
+  'core/chirpmanager.py',
   'core/commandmanager.py',
   'core/chp.py',
   'core/cmdp.py',

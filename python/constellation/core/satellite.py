@@ -14,8 +14,8 @@ from typing import Any, Optional
 
 from . import __version__
 from .base import ConstellationArgumentParser
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
+from .chirpmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration
