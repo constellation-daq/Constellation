@@ -14,6 +14,7 @@ from constellation.core import __version__
 from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.chp import CHPRole
+from constellation.core.cmdp import CMDPTransmitter, Notification
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
 from constellation.core.network import get_loopback_interface_name
@@ -529,3 +530,23 @@ def test_satellite_logs(mock_satellite):
         # flatten the output queue
         flattened = [part for m in ctx.packet_queue_out[MON_PORT] for part in m if isinstance(m, list)]
         assert msg.encode() in flattened, "Message not found in ZMQ output"
+
+
+def test_satellite_log_notifications(mock_satellite):
+    """Test that CMDP notification of all different loggers of a satellite exist."""
+    sat, ctx = mock_satellite
+    # create socket for subscription
+    socket = ctx.socket()
+    socket._flip_queues()
+    socket.connect(f"tcp://127.0.0.1:{MON_PORT}")
+    socket.setsockopt_string(zmq.SUBSCRIBE, "LOG?")
+    cmdpt = CMDPTransmitter("log_notif", socket)
+    time.sleep(0.2)
+    msg = cmdpt.recv()
+    assert isinstance(msg, Notification)
+    loggers = ["chirp", "chp", "cmdp", "cscp", "fsm", "satellite"]
+    for name in loggers:
+        assert name.upper() in msg.topics.keys(), f"Logger {name} not found in Notification response"
+        # remove logger
+        msg.topics.pop(name.upper())
+    assert not msg.topics, f"Found unexpected logger in Notification response: {msg.topics.keys()}"
