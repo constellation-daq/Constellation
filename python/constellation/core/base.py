@@ -32,8 +32,6 @@ from .network import get_interface_names, validate_interface
 # - `logging.ERROR` : mapped to CRITICAL
 # - `logging.CRITICAL` : 50
 
-# Set default logger class
-logging.setLoggerClass(ConstellationLogger)
 # Add custom log levels
 logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
 logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore[attr-defined]
