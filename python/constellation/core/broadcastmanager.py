@@ -185,7 +185,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         if serviceid not in self._chirp_callbacks:
             self.log_chirp.warning("Serviceid %s does not have a registered callback", serviceid)
-        self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
+        self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
     def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None) -> None:
         """Broadcast all registered services matching `serviceid`.
@@ -195,19 +195,19 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
                 self.log_chirp.debug("Broadcasting service OFFER: %s for %s", port, sid)
-                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
+                self._beacon.emit(sid, CHIRPMessageType.OFFER, port)
 
     def broadcast_requests(self) -> None:
         """Broadcast all requests registered via register_request()."""
         for serviceid in self._chirp_callbacks:
             self.log_chirp.debug("Broadcasting service REQUEST for %s", serviceid)
-            self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
+            self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
     def broadcast_depart(self) -> None:
         """Broadcast DEPART for all registered services."""
         for port, sid in self._registered_services.items():
             self.log_chirp.debug("Broadcasting service DEPART on %d for %s", port, sid)
-            self._beacon.broadcast(sid, CHIRPMessageType.DEPART, port)
+            self._beacon.emit(sid, CHIRPMessageType.DEPART, port)
 
     def _discover_service(self, msg: CHIRPMessage) -> None:
         """Add a service to internal list and possibly queue a callback."""

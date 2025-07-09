@@ -310,7 +310,7 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     """Test cmd reception."""
     satellite, _ctx = mock_device_satellite
     assert not satellite.callback_triggered
-    mock_chirp_transmitter.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
+    mock_chirp_transmitter.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     time.sleep(0.5)
     # chirp message has been processed
     assert satellite._beacon._socket._recv_socket.seen >= 1
