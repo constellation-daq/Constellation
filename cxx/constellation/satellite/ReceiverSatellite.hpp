@@ -27,7 +27,6 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CDTP1Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
