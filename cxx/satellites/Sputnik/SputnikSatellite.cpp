@@ -12,7 +12,6 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
-#include <functional>
 #include <stop_token>
 #include <string_view>
 #include <thread>
@@ -38,7 +37,7 @@ SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name)
                      "This example command reads the a device value from the channel number provided as argument. Since this"
                      "will reset the corresponding channel, this can only be done before the run has started.",
                      {State::NEW, State::INIT, State::ORBIT},
-                     std::function<double(int)>([&](int channel) -> double { return 13.8 * channel; }));
+                     [](int channel) { return 13.8 * channel; });
 
     register_timed_metric("BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", 3s, []() { return 42; });
     register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");

@@ -10,7 +10,6 @@
 #include "DevNullReceiverSatellite.hpp"
 
 #include <chrono>
-#include <functional>
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
@@ -29,10 +28,9 @@ DevNullReceiverSatellite::DevNullReceiverSatellite(std::string_view type, std::s
     : ReceiverSatellite(type, name) {
     support_reconfigure();
 
-    register_command("get_data_rate",
-                     "Get data rate during the last run in Gbps",
-                     {State::ORBIT},
-                     std::function<double(void)>([&]() { return data_rate_.load(); }));
+    register_command("get_data_rate", "Get data rate during the last run in Gbps", {State::ORBIT}, [this]() {
+        return data_rate_.load();
+    });
 }
 
 void DevNullReceiverSatellite::starting(std::string_view /* run_identifier */) {
