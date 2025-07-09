@@ -87,6 +87,8 @@ if memory_allocator == 'auto' or memory_allocator == 'mimalloc'
 endif
 if malloc_dep.found()
   message('Using ' + memory_allocator + ' as memory allocator')
+else
+  memory_allocator = 'system'
 endif
 
 # Compilation arguments and private system dependencies
