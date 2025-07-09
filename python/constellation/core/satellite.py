@@ -66,7 +66,7 @@ class Satellite(
         super()._add_com_thread()
         super()._start_com_threads()
 
-        # register broadcast manager
+        # register CHIRP services on offer and request heartbeats
         self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
         self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
         self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)

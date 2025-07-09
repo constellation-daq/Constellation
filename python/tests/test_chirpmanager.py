@@ -20,7 +20,7 @@ offer_data_666 = b"CHIRP\x01\x02\xd4fl\x89\x14g7=*b#\xeb4fy\xda\x17\x7f\xd1\xa7t
 # FIXTURES
 @pytest.fixture
 def mock_bm(mock_chirp_socket):
-    """Create mock BroadcastManager."""
+    """Create mock CHIRPManager."""
     bm = CHIRPManager(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
     bm._add_com_thread()
     bm._start_com_threads()
@@ -31,16 +31,16 @@ def mock_bm(mock_chirp_socket):
 
 @pytest.fixture
 def mock_bm_parent(mock_chirp_socket):
-    """Create mock class inheriting from BroadcastManager."""
+    """Create mock class inheriting from CHIRPManager."""
 
-    class MockBroadcaster(CHIRPManager):
+    class MockCHIRPManager(CHIRPManager):
         callback_triggered = False
 
         @chirp_callback(CHIRPServiceIdentifier.DATA)
         def service_callback(self, service):
             self.callback_triggered = True
 
-    bm = MockBroadcaster(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
+    bm = MockCHIRPManager(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
     bm._add_com_thread()
     bm._start_com_threads()
     yield bm, mock_chirp_socket
@@ -50,19 +50,19 @@ def mock_bm_parent(mock_chirp_socket):
 
 @pytest.fixture
 def mock_bm_alt_parent(mock_chirp_socket):
-    """Create alternative mock class inheriting from BroadcastManager.
+    """Create alternative mock class inheriting from CHIRPManager.
 
     Does not use callback decorator.
 
     """
 
-    class MockAltBroadcaster(CHIRPManager):
+    class MockAltCHIRPManager(CHIRPManager):
         alt_callback_triggered = False
 
         def alt_service_callback(self, service):
             self.alt_callback_triggered = True
 
-    bm = MockAltBroadcaster(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
+    bm = MockAltCHIRPManager(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
     bm._add_com_thread()
     bm._start_com_threads()
     yield bm, mock_chirp_socket
@@ -78,7 +78,7 @@ def test_manager_register(mock_bm):
     bm.emit_offers()
     assert len(sock._packet_queue) == 2
 
-    # broadcast only one of the services
+    # Offer only one of the services
     bm.emit_offers(CHIRPServiceIdentifier.CONTROL)
     assert len(sock._packet_queue) == 3
 
