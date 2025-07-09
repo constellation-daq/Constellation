@@ -27,7 +27,7 @@
 using namespace constellation::log;
 using namespace constellation::utils;
 
-QLogFilter::QLogFilter(QObject* parent) : QSortFilterProxyModel(parent), logger_("QLGRCV"), filter_level_(Level::WARNING) {
+QLogFilter::QLogFilter(QObject* parent) : QSortFilterProxyModel(parent), logger_("MNTR"), filter_level_(Level::WARNING) {
     // Make filtering case-insensitive
     filter_message_.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
 }

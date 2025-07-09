@@ -95,20 +95,20 @@ TEST_CASE("Topic subscriptions", "[listener]") {
     REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG?"));
 
     // Subscribe to new topic
-    listener.subscribeLogTopic("SATELLITE", Level::WARNING);
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/SATELLITE"));
+    listener.subscribeLogTopic("CTRL", Level::WARNING);
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/WARNING/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/STATUS/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), true, "LOG/CRITICAL/CTRL"));
 
     // Check subscribed topics
     REQUIRE_THAT(listener.getLogTopicSubscriptions(),
-                 RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}, {"SATELLITE", Level::WARNING}})));
+                 RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}, {"CTRL", Level::WARNING}})));
 
     // Unsubscribe from a topic
-    listener.unsubscribeLogTopic("SATELLITE");
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/SATELLITE"));
-    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/SATELLITE"));
+    listener.unsubscribeLogTopic("CTRL");
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/WARNING/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/STATUS/CTRL"));
+    REQUIRE(check_sub_message(sender.recv().pop(), false, "LOG/CRITICAL/CTRL"));
 
     // Check subscribed topics again
     REQUIRE_THAT(listener.getLogTopicSubscriptions(), RangeEquals(std::map<std::string, Level>({{"FSM", Level::INFO}})));

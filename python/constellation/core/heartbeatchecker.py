@@ -64,7 +64,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
 
-        self.log_chp = self.get_logger("CHP")
+        self.log_chp = self.get_logger("LINK")
 
         self._heartbeatchecker_callback_lock = threading.Lock()
         self._heartbeat_poller = zmq.Poller()

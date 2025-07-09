@@ -151,7 +151,7 @@ namespace constellation::controller {
         std::unordered_map<protocol::CSCP::State, utils::string_hash_map<std::set<std::string>>> transition_graph_;
 
         /* Logger */
-        log::Logger config_parser_logger_ {"CONF"};
+        log::Logger config_parser_logger_ {"CTRL"};
     };
 
 } // namespace constellation::controller

@@ -38,7 +38,7 @@ class MetricsReceiver : public SubscriberPool<CMDP1StatMessage, ServiceIdentifie
 public:
     using SubscriberPoolT = SubscriberPool<CMDP1StatMessage, ServiceIdentifier::MONITORING>;
     MetricsReceiver(std::string topic = "")
-        : SubscriberPoolT("STAT",
+        : SubscriberPoolT("MNTR",
                           [this](CMDP1StatMessage&& msg) {
                               const std::lock_guard last_message_lock {last_message_mutex_};
                               last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));

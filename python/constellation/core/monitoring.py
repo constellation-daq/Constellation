@@ -75,7 +75,7 @@ class MonitoringSender(BaseSatelliteFrame):
         """Set up logging and metrics transmitters."""
         super().__init__(**kwds)
 
-        self.log_cmdp_s = self.get_logger("CMDP")
+        self.log_cmdp_s = self.get_logger("MNTR")
 
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
@@ -255,7 +255,7 @@ class StatListener(CHIRPBroadcaster):
         """
         super().__init__(name=name, group=group, interface=interface, **kwds)
 
-        self.log_cmdp_l = self.get_logger("CMDP")
+        self.log_cmdp_l = self.get_logger("MNTR")
 
         # Set up the metric poller which will monitor all ZMQ metric subscription sockets
         self._metric_sockets: dict[str, zmq.Socket] = {}  # type: ignore[type-arg]

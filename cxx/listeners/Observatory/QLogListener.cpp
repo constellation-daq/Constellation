@@ -31,8 +31,8 @@ using namespace constellation::gui;
 using namespace constellation::listener;
 
 QLogListener::QLogListener(QObject* parent)
-    : QAbstractListModel(parent), LogListener("LOG", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {
-}
+    : QAbstractListModel(parent),
+      LogListener("MNTR", [this](auto&& arg) { add_message(std::forward<decltype(arg)>(arg)); }) {}
 
 void QLogListener::clearMessages() {
     message_count_.store(0);

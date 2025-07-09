@@ -82,7 +82,7 @@ std::strong_ordering DiscoverCallbackEntry::operator<=>(const DiscoverCallbackEn
 }
 
 Manager::Manager(std::string_view group_name, std::string_view host_name, const std::vector<Interface>& interfaces)
-    : group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("CHIRP") {
+    : group_id_(MD5Hash(group_name)), host_id_(MD5Hash(host_name)), logger_("LINK") {
     LOG(logger_, DEBUG) << "Host ID for satellite " << host_name << " is " << host_id_.to_string();
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 

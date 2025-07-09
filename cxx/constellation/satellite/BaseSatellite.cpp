@@ -66,13 +66,13 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
-    : logger_("SATELLITE"), cscp_rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
+    : logger_("CTRL"), cscp_rep_socket_(*global_zmq_context(), zmq::socket_type::rep),
       cscp_port_(bind_ephemeral_port(cscp_rep_socket_)), satellite_type_(type), satellite_name_(name), fsm_(this),
-      cscp_logger_("CSCP"), heartbeat_manager_(
-                                getCanonicalName(),
-                                [&]() { return fsm_.getState(); },
-                                [&](std::string_view reason) { fsm_.requestInterrupt(reason); },
-                                [&]() { run_degraded_ = true; }) {
+      heartbeat_manager_(
+          getCanonicalName(),
+          [&]() { return fsm_.getState(); },
+          [&](std::string_view reason) { fsm_.requestInterrupt(reason); },
+          [&]() { run_degraded_ = true; }) {
 
     // Check name
     if(!CSCP::is_valid_satellite_name(to_string(name))) {
@@ -91,10 +91,9 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     if(chirp_manager != nullptr) {
         chirp_manager->registerService(CHIRP::CONTROL, cscp_port_);
     } else {
-        LOG(cscp_logger_, WARNING)
-            << "Failed to advertise command receiver on the network, satellite might not be discovered";
+        LOG(logger_, WARNING) << "Failed to advertise command receiver on the network, satellite might not be discovered";
     }
-    LOG(cscp_logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
+    LOG(logger_, INFO) << "Starting to listen to commands on port " << cscp_port_;
 
     // Start receiving CSCP commands
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
@@ -157,9 +156,9 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
         // Try to disamble message
         auto message = CSCP1Message::disassemble(recv_msg);
 
-        LOG(cscp_logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
-                                 << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "")
-                                 << " from " << message.getHeader().getSender();
+        LOG(logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
+                            << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "") << " from "
+                            << message.getHeader().getSender();
 
         return message;
     } catch(const zmq::error_t& e) {
@@ -354,7 +353,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
 
 std::optional<std::pair<std::pair<CSCP1Message::Type, std::string>, PayloadBuffer>>
 BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer& payload) {
-    LOG(cscp_logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
+    LOG(logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
 
     std::pair<CSCP1Message::Type, std::string> return_verb {};
     PayloadBuffer return_payload {};
@@ -366,7 +365,7 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
         }
 
         auto retval = user_commands_.call(fsm_.getState(), std::string(command), args);
-        LOG(cscp_logger_, DEBUG) << "User command \"" << command << "\" succeeded, packing return value.";
+        LOG(logger_, DEBUG) << "User command \"" << command << "\" succeeded, packing return value.";
 
         // Return the call value as payload only if it is not std::monostate
         if(!std::holds_alternative<std::monostate>(retval)) {
@@ -390,10 +389,10 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
         // Any other issue with executing the user command (missing arguments, wrong arguments, ...)
         return_verb = {CSCP1Message::Type::INCOMPLETE, error.what()};
     } catch(const std::exception& error) {
-        LOG(cscp_logger_, DEBUG) << "Caught exception while calling user command \"" << command << "\": " << error.what();
+        LOG(logger_, DEBUG) << "Caught exception while calling user command \"" << command << "\": " << error.what();
         return std::nullopt;
     } catch(...) {
-        LOG(cscp_logger_, DEBUG) << "Caught unknown exception while calling user command \"" << command << "\"";
+        LOG(logger_, DEBUG) << "Caught unknown exception while calling user command \"" << command << "\"";
         return std::nullopt;
     }
 
@@ -414,7 +413,7 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
 
             // Ensure we have a REQUEST message
             if(message.getVerb().first != CSCP1Message::Type::REQUEST) {
-                LOG(cscp_logger_, WARNING) << "Received message via CSCP that is not REQUEST type - ignoring";
+                LOG(logger_, WARNING) << "Received message via CSCP that is not REQUEST type - ignoring";
                 send_reply({CSCP1Message::Type::ERROR, "Can only handle CSCP messages with REQUEST type"});
                 continue;
             }
@@ -449,15 +448,15 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             std::string unknown_command_reply = "Command \"";
             unknown_command_reply += command_string;
             unknown_command_reply += "\" is not known";
-            LOG(cscp_logger_, WARNING) << "Received unknown command \"" << command_string << "\" - ignoring";
+            LOG(logger_, WARNING) << "Received unknown command \"" << command_string << "\" - ignoring";
             send_reply({CSCP1Message::Type::UNKNOWN, std::move(unknown_command_reply)});
 
         } catch(const zmq::error_t& error) {
-            LOG(cscp_logger_, CRITICAL) << "ZeroMQ error while trying to receive a message: " << error.what();
-            LOG(cscp_logger_, CRITICAL) << "Stopping command receiver loop, no further commands can be received";
+            LOG(logger_, CRITICAL) << "ZeroMQ error while trying to receive a message: " << error.what();
+            LOG(logger_, CRITICAL) << "Stopping command receiver loop, no further commands can be received";
             break;
         } catch(const MessageDecodingError& error) {
-            LOG(cscp_logger_, WARNING) << error.what();
+            LOG(logger_, WARNING) << error.what();
             send_reply({CSCP1Message::Type::ERROR, error.what()});
         }
     }

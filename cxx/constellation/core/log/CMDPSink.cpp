@@ -227,7 +227,7 @@ void CMDPSink::enableSending(std::string sender_name) {
     sender_name_ = std::move(sender_name);
 
     // Get CMDP logger
-    logger_ = std::make_unique<Logger>("CMDP");
+    logger_ = std::make_unique<Logger>("LINK");
 
     // Start thread monitoring the socket for subscription messages
     subscription_thread_ = std::jthread(std::bind_front(&CMDPSink::subscription_loop, this));

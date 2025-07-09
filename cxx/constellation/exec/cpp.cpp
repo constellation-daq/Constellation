@@ -47,9 +47,12 @@ extern "C" void signal_handler(int signal) {
     signal_v = signal;
 }
 
-void constellation::exec::constellation_setup_logging(Level default_level) {
+void constellation::exec::constellation_setup_logging(Level default_level, std::string_view default_topic) {
     // Set default log level
     ManagerLocator::getSinkManager().setConsoleLevels(default_level);
+
+    // Set default topic
+    ManagerLocator::getSinkManager().setDefaultTopic(default_topic);
 
     // Log version
     LOG(STATUS) << "Constellation " << CNSTLN_VERSION_FULL;

@@ -72,7 +72,7 @@ QVariant FileSystemModel::data(const QModelIndex& index, int role) const {
 }
 
 MissionControl::MissionControl(std::string controller_name, std::string_view group_name)
-    : runcontrol_(std::move(controller_name)), logger_("GUI"), user_logger_("OP"),
+    : runcontrol_(std::move(controller_name)), logger_("UI"), user_logger_("OP"),
       run_id_validator_(QRegularExpression("^[\\w-]+$"), this), config_file_fs_(&config_file_completer_) {
 
     // Register types used in signals & slots:
@@ -257,6 +257,8 @@ void MissionControl::on_btnInit_clicked() {
         return;
     }
 
+    LOG(user_logger_, INFO) << "Sending transition command `initialize`, configuration file: "
+                            << txtConfigFileName->text().toStdString();
     for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << response.second.getVerb().first;
     }
@@ -278,6 +280,7 @@ void MissionControl::on_btnShutdown_clicked() {
        QMessageBox::Cancel) {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
+        LOG(user_logger_, INFO) << "Sending command `shutdown`";
         for(auto& response : runcontrol_.sendQCommands("shutdown")) {
             LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << response.second.getVerb().first;
         }
@@ -285,24 +288,28 @@ void MissionControl::on_btnShutdown_clicked() {
 }
 
 void MissionControl::on_btnConfig_clicked() {
+    LOG(user_logger_, INFO) << "Sending transition command `launch`";
     for(auto& response : runcontrol_.sendQCommands("launch")) {
         LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
+    LOG(user_logger_, INFO) << "Sending transition command `land`";
     for(auto& response : runcontrol_.sendQCommands("land")) {
         LOG(logger_, DEBUG) << "Land: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
+    LOG(user_logger_, INFO) << "Sending transition command `start`, run identifier: " << current_run_.toStdString();
     for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStop_clicked() {
+    LOG(user_logger_, INFO) << "Sending transition command `stop`";
     for(auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << response.second.getVerb().first;
     }
@@ -324,6 +331,7 @@ void MissionControl::on_btnLoadConf_clicked() {
     const QString filename =
         QFileDialog::getOpenFileName(this, tr("Open File"), usedpath, tr("Configurations (*.conf *.toml *.ini)"));
     if(!filename.isNull()) {
+        LOG(user_logger_, INFO) << "Loaded configuration file " << filename.toStdString();
         txtConfigFileName->setText(filename);
     }
 }
@@ -349,6 +357,8 @@ void MissionControl::on_btnGenConf_clicked() {
     std::ofstream file {filename.toStdString()};
     file << new_cfg.getAsTOML();
     file.close();
+
+    LOG(user_logger_, INFO) << "Stored configuration from running Constellation to file " << filename.toStdString();
 
     // Set selected config to this one:
     txtConfigFileName->setText(filename);
@@ -391,6 +401,7 @@ void MissionControl::update_run_infos() {
 }
 
 void MissionControl::closeEvent(QCloseEvent* event) {
+    LOG(user_logger_, INFO) << "Closing controller";
 
     // Stop the controller:
     runcontrol_.stop();

@@ -9,6 +9,7 @@
 
 #include "SinkManager.hpp"
 
+#include <algorithm>
 #include <ctime>
 #include <memory>
 #include <mutex>
@@ -116,7 +117,7 @@ SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OF
     cmdp_sink_ = std::make_shared<CMDPSink>();
     cmdp_sink_->set_level(to_spdlog_level(TRACE));
 
-    // Create default logger without topic
+    // Create default logger (topic is replaced in setDefaultTopic)
     default_logger_ = create_logger("DEFAULT");
 }
 
@@ -130,6 +131,19 @@ SinkManager::~SinkManager() {
     cmdp_sink_.reset();
     // Run spdlog cleanup
     spdlog::shutdown();
+}
+
+void SinkManager::setDefaultTopic(std::string_view topic) {
+    // Replace default logger
+    default_logger_ = create_logger(topic);
+
+    // Remove old default logger
+    std::unique_lock loggers_lock {loggers_mutex_};
+    const auto it = std::ranges::find(loggers_, "DEFAULT", [](const auto& logger) { return logger->name(); });
+    if(it != loggers_.cend()) {
+        loggers_.erase(it);
+    }
+    loggers_lock.unlock();
 }
 
 void SinkManager::enableCMDPSending(std::string sender_name) {

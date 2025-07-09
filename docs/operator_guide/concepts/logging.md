@@ -51,3 +51,41 @@ Not subscribing to `WARNING`, `STATUS` or `CRITICAL` messages could lead to miss
 logging verbosity levels lower than `INFO` for an extended period of time over the network may have a considerable impact on
 on the bandwidth available to e.g. transmit data.
 ```
+
+## Log Topics
+
+Some verbosity levels can be - no pun intended - very verbose. In order to allow further filtering of messages on the sending
+side, Constellation implements so-called *log topics*. These divide the messages of each verbosity level into sections to
+which loggers can subscribe individually.
+
+Log topics are appended to the verbosity level by a slash, a valid log topic would for example be `WARNING/FSM`. Subscribing
+to this topic would cause the sender to only emit messages of verbosity level `WARNING` **and** the topic `FSM`, so any warning
+relating to the [finite state machine](./satellite.md#the-finite-state-machine) of the satellite.
+
+Log topics can freely be set by the senders, and satellite implementations may add their own topics. There are, however, some
+standardized log topics used by the framework:
+
+* **`<type>`**: Every satellite logs implementation-specific things on a log topic which corresponds to their type. This means
+  that the `Sputnik` satellite, which serves as an example implementation for C++ satellites, will log anything that concerns
+  its functionality on a topic called `SPUTNIK`. Similarly, the Python `Mariner` satellite would log to the `MARINER` topic.
+
+* **`OP`**: This log topic indicates direct action by a human operator. This log topic is typically only emitted by controller
+  instances when e.g. a command is sent to the Constellation or a configuration file path is changed. Some user interfaces also
+  provide a dedicated input for operators to manually send log messages to be stored in the log files.
+
+* **`FSM`**: Any change of the finite state machine is logged under this topic.
+
+* **`CTRL`**: This log topic comprises all control-related messages such as commands sent by controllers and received by
+  satellites, their interpretation and the responses to the controller.
+
+* **`MNTR`**: Monitoring code logs under this topic. This concerns the distribution of log messages and telemetry data as well
+  as the reception thereof. Also subscription messages are logged under this topic.
+
+* **`DATA`**: All information concerning data link communication is logged under this topic. This comprises information such
+  as established data links or issues with opening files on target nodes.
+
+* **`LINK`**: All networking-related log messages are published under this topic. This comprises, among others, satellite
+  heartbeats and network discovery messages.
+
+* **`UI`**: Anything related to user interfaces such as change of button states or the parsing of configurations are logged
+  under this topic.

@@ -54,7 +54,7 @@ using namespace constellation::utils;
 using namespace std::chrono_literals;
 
 FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::string_view name)
-    : Satellite(type, name), LogListener("LOGRECV", [this](auto&& arg) { log_message(std::forward<decltype(arg)>(arg)); }) {
+    : Satellite(type, name), LogListener("MNTR", [this](auto&& arg) { log_message(std::forward<decltype(arg)>(arg)); }) {
 
     register_timed_metric("MSG_TOTAL",
                           "",

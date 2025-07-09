@@ -254,7 +254,6 @@ namespace constellation::satellite {
         std::string satellite_name_;
         FSM fsm_;
 
-        log::Logger cscp_logger_;
         std::jthread cscp_thread_;
         std::atomic_bool terminated_ {false};
 

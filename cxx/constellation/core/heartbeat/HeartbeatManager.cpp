@@ -44,7 +44,7 @@ HeartbeatManager::HeartbeatManager(std::string sender,
     : HeartbeatRecv([this](auto&& arg) { process_heartbeat(std::forward<decltype(arg)>(arg)); }),
       sender_(std::move(sender), state_callback, CHP::MaximumInterval), role_(CHP::Role::DYNAMIC),
       state_callback_(std::move(state_callback)), interrupt_callback_(std::move(interrupt_callback)),
-      degradation_callback_(std::move(degradation_callback)), logger_("CHP"),
+      degradation_callback_(std::move(degradation_callback)), logger_("LINK"),
       watchdog_thread_(std::bind_front(&HeartbeatManager::run, this)) {
     set_thread_name(watchdog_thread_, "HeartbeatManager");
     startPool();

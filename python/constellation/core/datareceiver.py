@@ -41,7 +41,7 @@ class DataReceiver(Satellite):
         super().__init__(*args, **kwargs)
         self.request(CHIRPServiceIdentifier.DATA)
         # logging
-        self.log_cdtp_r = self.get_logger("CDTP")
+        self.log_cdtp_r = self.get_logger("DATA")
 
     def do_initializing(self, config: dict[str, Any]) -> str:
         """Initialize and configure the satellite."""
