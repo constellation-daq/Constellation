@@ -176,6 +176,10 @@ Relevant build options are:
   Build type for the C++ version. \
   Possible values are `debug`, `debugoptimized` and `release`. \
   Defaults to `debug`.
+- `build_satellites`: \
+  Whether to build any satellite or not. \
+  Possible values are `true` and `false`. \
+  Defaults to `true`.
 - `build_gui`: \
   Which Qt version to use for the Graphical User Interface (GUI) library. \
   Possible values are `none` (disables all GUI components), `qt5` and `qt6`. \
