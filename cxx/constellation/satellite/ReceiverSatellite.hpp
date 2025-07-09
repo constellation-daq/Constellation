@@ -43,6 +43,9 @@ namespace constellation::satellite {
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
           private pools::BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
+    public:
+        using BasePoolT = BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull>;
+
     private:
         enum class TransmitterState : std::uint8_t {
             NOT_CONNECTED,
@@ -257,7 +260,6 @@ namespace constellation::satellite {
         void register_diskspace_metric(const std::filesystem::path& path);
 
     private:
-        log::Logger cdtp_logger_;
         std::chrono::seconds data_eor_timeout_ {};
         bool allow_overwriting_ {};
         std::set<std::string> data_transmitters_;
