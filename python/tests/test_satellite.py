@@ -544,7 +544,7 @@ def test_satellite_log_notifications(mock_satellite):
     time.sleep(0.2)
     msg = cmdpt.recv()
     assert isinstance(msg, Notification)
-    loggers = ["chirp", "chp", "cmdp", "cscp", "fsm", "satellite"]
+    loggers = ["ctrl", "fsm", "link", "mntr", "satellite"]
     for name in loggers:
         assert name.upper() in msg.topics.keys(), f"Logger {name} not found in Notification response"
         # remove logger
