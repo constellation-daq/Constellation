@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1425</width>
+    <width>1469</width>
     <height>720</height>
    </rect>
   </property>
@@ -145,7 +145,7 @@
       <item row="1" column="0" colspan="2">
        <widget class="QScrollArea" name="scrollArea">
         <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
+         <enum>QFrame::Shape::NoFrame</enum>
         </property>
         <property name="widgetResizable">
          <bool>true</bool>
@@ -155,8 +155,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>1405</width>
-           <height>588</height>
+           <width>1449</width>
+           <height>585</height>
           </rect>
          </property>
          <layout class="QVBoxLayout" name="placeholderLayout">
@@ -281,7 +281,7 @@
            <item>
             <widget class="QCheckBox" name="checkBoxWindow">
              <property name="text">
-              <string>Slide</string>
+              <string>Window</string>
              </property>
             </widget>
            </item>
@@ -418,8 +418,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1425</width>
-     <height>23</height>
+     <width>1469</width>
+     <height>24</height>
     </rect>
    </property>
   </widget>
