@@ -45,6 +45,7 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
     spinBoxMins->setEnabled(false);
     addMetric->setEnabled(false);
+    metricName->setEnabled(false);
 
     connect(createMetric, &QPushButton::clicked, this, &TelemetryConsole::create_metric);
     connect(addMetric, &QPushButton::clicked, this, &TelemetryConsole::add_metric);
@@ -62,9 +63,13 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
         for(const auto& [topic, desc] : stat_listener_.getAvailableTopics(text.toStdString())) {
             metricName->addItem(QString::fromStdString(topic));
         }
+
+        if(metricName->count() > 0) {
+            metricName->setEnabled(true);
+        }
     });
 
-    // When selecting a metric, offer the "add" button of it exists already as display
+    // When selecting a metric, offer the "add" button if it exists already as display
     connect(metricName, &QComboBox::currentTextChanged, this, [&](const QString& text) {
         const std::lock_guard widgets_lock {metric_widgets_mutex_};
         for(auto& metric : metric_widgets_) {
@@ -153,6 +158,7 @@ void TelemetryConsole::add_metric() {
 
     // Clear inputs for next metric to be added
     metricName->clear();
+    metricName->setEnabled(false);
     metricSender->setCurrentIndex(-1);
 }
 
@@ -178,6 +184,7 @@ void TelemetryConsole::create_metric() {
 
     // Clear inputs for next metric to be added
     metricName->clear();
+    metricName->setEnabled(false);
     metricSender->setCurrentIndex(-1);
 }
 
