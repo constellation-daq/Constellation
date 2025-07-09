@@ -99,8 +99,11 @@ class MonitoringSender(BaseSatelliteFrame):
         self._zmq_log_handler.setLevel("TRACE")
         # add zmq logging to existing Constellation loggers
         for name, logger in logging.root.manager.loggerDict.items():
+            # only configure Constellation's own loggers
             if isinstance(logger, ConstellationLogger):
-                self._configure_cmdp_logger(logger)
+                # only configure logger if we keep a reference to it ourselves
+                if logger in self.__dict__.values():
+                    self._configure_cmdp_logger(logger)
         # update list of subscribers (both log and metric)
         self._cmdp_transmitter.update_subscriptions()
 
