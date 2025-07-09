@@ -134,7 +134,7 @@ class DataSender(Satellite):
 
         # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
-        self.broadcast_offers()
+        self.emit_offers()
 
     def reentry(self) -> None:
         # close the socket

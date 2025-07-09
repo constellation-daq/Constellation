@@ -15,7 +15,7 @@ import zmq
 from . import __version__, __version_code_name__
 from .base import EPILOG, ConstellationArgumentParser
 from .chirp import CHIRPServiceIdentifier, get_uuid
-from .chirpmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
+from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .commandmanager import get_cscp_commands
 from .configuration import flatten_config, load_config
 from .cscp import CommandTransmitter
@@ -264,7 +264,7 @@ class SatelliteResponse:
                         p.pretty(item)
 
 
-class BaseController(CHIRPBroadcaster, HeartbeatChecker):
+class BaseController(CHIRPManager, HeartbeatChecker):
     """Simple controller class to send commands to a Constellation."""
 
     def __init__(self, group: str, **kwargs: Any) -> None:

@@ -18,7 +18,7 @@ import zmq
 
 from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
 from .chirp import CHIRPServiceIdentifier
-from .chirpmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
+from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, decode_metric
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler, setup_cli_logging
 
@@ -242,7 +242,7 @@ class ZeroMQSocketLogListener(QueueListener):
         self._stop_recv.set()
 
 
-class StatListener(CHIRPBroadcaster):
+class StatListener(CHIRPManager):
     """Simple listener class to receive metrics from a Constellation."""
 
     def __init__(self, name: str, group: str, interface: Optional[list[str]], **kwds: Any):

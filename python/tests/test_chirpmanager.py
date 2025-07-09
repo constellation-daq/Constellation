@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from constellation.core.chirp import CHIRPServiceIdentifier
-from constellation.core.chirpmanager import CHIRPBroadcaster, chirp_callback
+from constellation.core.chirpmanager import CHIRPManager, chirp_callback
 from constellation.core.network import get_loopback_interface_name
 
 offer_data_666 = b"CHIRP\x01\x02\xd4fl\x89\x14g7=*b#\xeb4fy\xda\x17\x7f\xd1\xa7t\xc5\xb6/\xd5\xcc$e\x01\x81ir\x04\x02\x9a"
@@ -21,7 +21,7 @@ offer_data_666 = b"CHIRP\x01\x02\xd4fl\x89\x14g7=*b#\xeb4fy\xda\x17\x7f\xd1\xa7t
 @pytest.fixture
 def mock_bm(mock_chirp_socket):
     """Create mock BroadcastManager."""
-    bm = CHIRPBroadcaster(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
+    bm = CHIRPManager(name="mock_satellite", group="mockstellation", interface=[get_loopback_interface_name()])
     bm._add_com_thread()
     bm._start_com_threads()
     yield bm, mock_chirp_socket
@@ -33,7 +33,7 @@ def mock_bm(mock_chirp_socket):
 def mock_bm_parent(mock_chirp_socket):
     """Create mock class inheriting from BroadcastManager."""
 
-    class MockBroadcaster(CHIRPBroadcaster):
+    class MockBroadcaster(CHIRPManager):
         callback_triggered = False
 
         @chirp_callback(CHIRPServiceIdentifier.DATA)
@@ -56,7 +56,7 @@ def mock_bm_alt_parent(mock_chirp_socket):
 
     """
 
-    class MockAltBroadcaster(CHIRPBroadcaster):
+    class MockAltBroadcaster(CHIRPManager):
         alt_callback_triggered = False
 
         def alt_service_callback(self, service):
@@ -75,11 +75,11 @@ def test_manager_register(mock_bm):
     bm, sock = mock_bm
     bm.register_offer(CHIRPServiceIdentifier.HEARTBEAT, 50000)
     bm.register_offer(CHIRPServiceIdentifier.CONTROL, 50001)
-    bm.broadcast_offers()
+    bm.emit_offers()
     assert len(sock._packet_queue) == 2
 
     # broadcast only one of the services
-    bm.broadcast_offers(CHIRPServiceIdentifier.CONTROL)
+    bm.emit_offers(CHIRPServiceIdentifier.CONTROL)
     assert len(sock._packet_queue) == 3
 
 
