@@ -93,7 +93,7 @@ def test_hb_extrasystoles(mock_heartbeat_sender):
     """Test that sender can send extrasystoles."""
     hbs, ctx = mock_heartbeat_sender
     hbs.default_heartbeat_period = 20000
-    assert HB_PORT not in ctx.packet_queue_out
+    assert not ctx.packet_queue_out[HB_PORT]
     hbs.fsm.initialize("")
     time.sleep(0.3)
     hbs.fsm.initialized("")

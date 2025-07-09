@@ -20,7 +20,6 @@ from constellation.core.configuration import Configuration, flatten_config, load
 from constellation.core.controller import BaseController
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
-from constellation.core.logging import setup_cli_logging
 from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
@@ -33,11 +32,6 @@ MON_PORT = 33333
 
 SNDMORE_MARK = "_S/END_"  # Arbitrary marker for SNDMORE flag used in mocket packet queues_
 CHIRP_OFFER_CTRL = b"\x96\xa9CHIRP%x01\x02\xc4\x10\xc3\x941\xda'\x96_K\xa6JU\xac\xbb\xfe\xf1\xac\xc4\x10:\xb9W2E\x01R\xa2\x93|\xddA\x9a%\xb6\x90\x01\xcda\xa9"  # noqa: E501
-
-
-@pytest.fixture(autouse=True)
-def setup_logging():
-    setup_cli_logging("DEBUG")
 
 
 class chirpsocket:
@@ -159,6 +153,15 @@ class mocket:
             return self.packet_queue_out
         return self.packet_queue_in
 
+    def _create_queue(self):
+        self._get_queue(True)[self.port] = []
+        self._get_queue(False)[self.port] = []
+
+    def _flip_queues(self):
+        tmp = self.packet_queue_in
+        self.packet_queue_in = self.packet_queue_out
+        self.packet_queue_out = tmp
+
     def send(self, payload, flags=None):
         """Append buf to queue."""
         try:
@@ -225,22 +228,29 @@ class mocket:
 
     def bind(self, host):
         self.port = int(host.split(":")[2])
+        self._create_queue()
         print(f"Bound Mocket on {self.port}")
 
     def bind_to_random_port(self, host):
         self.port = random.randrange(10000, 55555)
+        self._create_queue()
         print(f"Bound Mocket on random port: {self.port}")
         return self.port
 
     def connect(self, host):
         self.port = int(host.split(":")[2])
+        self._create_queue()
         print(f"Bound Mocket on {self.port}")
 
     def has_no_data(self):
         return self.port not in self._get_queue(False) or not self._get_queue(False)[self.port]
 
-    def setsockopt_string(self, *args, **kwargs):
-        pass
+    def setsockopt_string(self, option, value, *args, **kwargs):
+        if option == zmq.SUBSCRIBE:
+            print(f"subscribing to {value}")
+            self.send_multipart([b"\x01" + value.encode()])
+        if option == zmq.UNSUBSCRIBE:
+            self.send_multipart([b"\x00" + value.encode()])
 
     def setsockopt(self, *args, **kwargs):
         pass

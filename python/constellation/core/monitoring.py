@@ -19,7 +19,7 @@ import zmq
 from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
 from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
-from .cmdp import CMDPTransmitter, Metric, MetricsType, decode_metric
+from .cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, decode_metric
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler, setup_cli_logging
 
 P = ParamSpec("P")
@@ -80,20 +80,38 @@ class MonitoringSender(BaseSatelliteFrame):
         # dict to keep scheduled intervals for fcn polling
         self._metrics_callbacks = get_scheduled_metrics(self)
 
-        cmdp_socket = self.context.socket(zmq.PUB)
+        # Open ZMQ socket using (X)PUB/SUB pattern. XPUB allows us to handle
+        # subscription messages directly.
+        cmdp_socket = self.context.socket(zmq.XPUB)
         if not mon_port:
             self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
         else:
             cmdp_socket.bind(f"tcp://*:{mon_port}")
             self.mon_port = mon_port
-        self._cmdp_transmitter = CMDPTransmitter(self.name, cmdp_socket)
+        # Instantiate CMDP publish transmitter and CMDP log handler
+        self._cmdp_transmitter = CMDPPublisher(self.name, cmdp_socket)
         self._zmq_log_handler = ZeroMQSocketLogHandler(self._cmdp_transmitter)
 
+        # register all metrics callbacks for CMDP notifications
+        for name, details in self._metrics_callbacks.items():
+            self._cmdp_transmitter.register_stat(name, details["function"].__doc__)
+
+        self._zmq_log_handler.setLevel("TRACE")
         # add zmq logging to existing Constellation loggers
         for name, logger in logging.root.manager.loggerDict.items():
+            # only configure Constellation's own loggers
             if isinstance(logger, ConstellationLogger):
-                if self._zmq_log_handler not in logger.handlers:
-                    logger.addHandler(self._zmq_log_handler)
+                # only configure logger if we keep a reference to it ourselves
+                if logger in self.__dict__.values():
+                    self._configure_cmdp_logger(logger)
+        # update list of subscribers (both log and metric)
+        self._cmdp_transmitter.update_subscriptions()
+
+    def _configure_cmdp_logger(self, logger: ConstellationLogger) -> None:
+        """Configure log handler for CMDP messaging via ZMQ."""
+        if self._zmq_log_handler not in logger.handlers:
+            logger.addHandler(self._zmq_log_handler)
+        self._cmdp_transmitter.register_log(logger.name, "")
 
     def schedule_metric(
         self,
@@ -122,6 +140,7 @@ class MonitoringSender(BaseSatelliteFrame):
             )
 
         self._metrics_callbacks[name] = {"function": wrapper, "interval": interval}
+        self._cmdp_transmitter.register_stat(name, callback.__doc__)
 
     def send_metric(self, metric: Metric) -> None:
         """Send a single metric via ZMQ."""
@@ -138,14 +157,21 @@ class MonitoringSender(BaseSatelliteFrame):
     def _add_com_thread(self) -> None:
         """Add the metric sender thread to the communication thread pool."""
         super()._add_com_thread()
-        self._com_thread_pool["metric_sender"] = threading.Thread(target=self._send_metrics, daemon=True)
+        self._com_thread_pool["metric_sender"] = threading.Thread(target=self._publish_cmdp, daemon=True)
         self.log_cmdp_s.debug("Metric sender thread prepared and added to the pool.")
 
-    def _send_metrics(self) -> None:
-        """Metrics sender loop."""
+    def _publish_cmdp(self) -> None:
+        """CMDP publishing loop sending metric data and updating subscriptions."""
         last_update: dict[str, datetime] = {}
         while self._com_thread_evt and not self._com_thread_evt.is_set():
+            # update list of subscribers (both log and metric)
+            self._cmdp_transmitter.update_subscriptions()
+
             for metric_name, param in self._metrics_callbacks.items():
+                # do we have subscribers?
+                if not self._cmdp_transmitter.has_metric_subscribers(metric_name):
+                    continue
+                # is it time to update?
                 update = False
                 try:
                     last = last_update[metric_name]

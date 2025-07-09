@@ -21,6 +21,23 @@ from . import __version__, __version_code_name__
 from .logging import ConstellationLogger
 from .network import get_interface_names, validate_interface
 
+# Defines the following log levels:
+#
+# - `logging.NOTSET` : 0
+# - `logging.TRACE` : 5
+# - `logging.DEBUG` : 10
+# - `logging.INFO` : 20
+# - `logging.WARNING` : 30
+# - `logging.STATUS` : 35
+# - `logging.ERROR` : mapped to CRITICAL
+# - `logging.CRITICAL` : 50
+
+# Add custom log levels
+logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
+logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore[attr-defined]
+logging.STATUS = logging.WARNING + 5  # type: ignore[attr-defined]
+logging.addLevelName(logging.STATUS, "STATUS")  # type: ignore[attr-defined]
+
 
 @atexit.register
 def destroy_satellites() -> None:
@@ -124,11 +141,12 @@ class BaseSatelliteFrame:
     def get_logger(self, name: str) -> ConstellationLogger:
         logging.setLoggerClass(ConstellationLogger)
         logger = cast(ConstellationLogger, logging.getLogger(name))
-        # add zmq handler now if already set up
-        zmqhandler = getattr(self, "_zmq_log_handler", None)
-        if zmqhandler:
-            logger.addHandler(zmqhandler)
-        logger.setLevel(logging.DEBUG)
+        # configure CMDP ZMQ handler now if already set up
+        cmdp_configure = getattr(self, "_configure_cmdp_logger", None)
+        zmq_log_handler = getattr(self, "_zmq_log_handler", None)
+        if zmq_log_handler and cmdp_configure:
+            cmdp_configure(logger)
+        logger.setLevel(logging.TRACE)  # type: ignore[attr-defined]
         coloredlogs.install(logger=logger, level=coloredlogs.DEFAULT_LOG_LEVEL)
         return logger
 
