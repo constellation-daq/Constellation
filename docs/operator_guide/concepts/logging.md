@@ -79,8 +79,11 @@ standardized log topics used by the framework:
 * **`MNTR`**: Monitoring code logs under this topic. This concerns the distribution of log messages and telemetry data as well
   as the reception thereof. Also subscription messages are logged under this topic.
 
+* **`DATA`**: All information concerning data link communication is logged under this topic. This comprises information such
+  as established data links or issues with opening files on target nodes.
+
 * **`LINK`**: All networking-related log messages are published under this topic. This comprises, among others, satellite
-  heartbeats, network discovery messages, and data link communication.
+  heartbeats and network discovery messages.
 
 * **`UI`**: Anything related to user interfaces such as change of button states or the parsing of configurations are logged
   under this topic.

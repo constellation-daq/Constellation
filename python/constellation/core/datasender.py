@@ -122,7 +122,7 @@ class DataSender(Satellite):
         # initialize satellite
         super().__init__(*args, **kwargs)
 
-        self.log_cdtp_s = self.get_logger("LINK")
+        self.log_cdtp_s = self.get_logger("DATA")
 
         ctx = self.context or zmq.Context()
         self.socket = ctx.socket(zmq.PUSH)

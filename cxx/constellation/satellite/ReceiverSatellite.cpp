@@ -59,8 +59,8 @@ using namespace std::chrono_literals;
 
 ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name),
-      BasePool("LINK", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
-      cdtp_logger_("LINK") {
+      BasePool("DATA", [this](CDTP1Message&& message) { this->handle_cdtp_message(std::move(message)); }),
+      cdtp_logger_("DATA") {
 
     register_metric("OUTPUT_FILE", "", MetricType::LAST_VALUE, "Current output file path. Updated when changed.");
 
