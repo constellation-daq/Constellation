@@ -145,7 +145,7 @@ class BaseSatelliteFrame:
         cmdp_configure = getattr(self, "_configure_cmdp_logger", None)
         zmq_log_handler = getattr(self, "_zmq_log_handler", None)
         if zmq_log_handler and cmdp_configure:
-            cmdp_configure(name, logger)
+            cmdp_configure(logger)
         logger.setLevel(logging.TRACE)  # type: ignore[attr-defined]
         coloredlogs.install(logger=logger, level=coloredlogs.DEFAULT_LOG_LEVEL)
         return logger
