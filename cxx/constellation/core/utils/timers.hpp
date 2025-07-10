@@ -34,6 +34,11 @@ namespace constellation::utils {
         void reset() { start_time_ = std::chrono::steady_clock::now(); }
         bool timeoutReached() const { return start_time_ + timeout_ < std::chrono::steady_clock::now(); }
         std::chrono::steady_clock::time_point startTime() const { return start_time_; }
+        std::chrono::nanoseconds runtime() const {
+            const auto now = std::chrono::steady_clock::now();
+            const auto runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(now - start_time_);
+            return runtime > timeout_ ? timeout_ : runtime;
+        }
 
     private:
         std::chrono::steady_clock::time_point start_time_;

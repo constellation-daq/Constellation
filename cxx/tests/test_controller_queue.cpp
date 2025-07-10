@@ -91,6 +91,7 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Initialize and launch satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
@@ -105,6 +106,7 @@ TEST_CASE("Missing Satellite in Queue", "[controller]") {
     REQUIRE_THROWS_MATCHES(queue.append(measurement),
                            QueueError,
                            Message("Measurement queue error: Satellite Dummy.b is unknown to controller"));
+
     // Stop controller
     controller.stop();
     satellite.exit();
@@ -132,6 +134,7 @@ TEST_CASE("Run Queue", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Initialize and launch satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
@@ -192,6 +195,7 @@ TEST_CASE("Set per-measurement conditions", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Initialize and launch satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
@@ -256,6 +260,7 @@ TEST_CASE("Interrupt Queue", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Initialize and launch satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
@@ -331,6 +336,7 @@ TEST_CASE("Clear Queue", "[controller]") {
     while(controller.getConnectionCount() < 1) {
         std::this_thread::sleep_for(50ms);
     }
+    controller.waitReachedState(CSCP::State::NEW, true);
 
     // Initialize and launch satellite, and check that state updates were propagated
     satellite.reactFSM(FSM::Transition::initialize, Configuration());
@@ -352,6 +358,9 @@ TEST_CASE("Clear Queue", "[controller]") {
     queue.waitStateChanged();
     REQUIRE(queue.getState() == MeasurementQueue::State::RUNNING);
     REQUIRE(queue.running());
+
+    // Wait until in RUN state
+    controller.awaitState(CSCP::State::RUN, 1s);
 
     // Start queue again to check nothing happens
     queue.start();

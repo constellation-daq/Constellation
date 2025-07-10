@@ -28,7 +28,6 @@
 #include "constellation/controller/MeasurementCondition.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
-#include "constellation/core/protocol/CSCP_definitions.hpp"
 
 namespace constellation::controller {
 
@@ -182,11 +181,13 @@ namespace constellation::controller {
         void queue_loop(const std::stop_token& stop_token);
 
         /**
-         * @brief Helper to wait for a global state in the constellation. Times out after the configured transition_timeout_
+         * @brief Get map of satellites and the timestamp of their last state change
          *
-         * @param state State to wait for
+         * @param measurement Measurement from which to extract to extract relevant satellites
+         * @return Map of satellites names and the timestamp of their last state change
          */
-        void await_state(protocol::CSCP::State state) const;
+        std::map<std::string, std::chrono::system_clock::time_point>
+        get_last_state_change(const Measurement& measurement) const;
 
         /**
          * @brief Checks all satellite replies for success verbs.
@@ -208,6 +209,13 @@ namespace constellation::controller {
          * @param measurement Current measurement
          */
         void cache_original_values(Measurement& measurement);
+
+        /**
+         * @brief Load current measurement number and total number of measurements
+         *
+         * @return Pair with current measurement number and total number of measurements
+         */
+        std::pair<std::size_t, std::size_t> load_progress() const;
 
     protected:
         /** Queue of measurements */

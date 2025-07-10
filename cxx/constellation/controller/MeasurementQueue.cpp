@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -84,19 +85,21 @@ void MeasurementQueue::append(Measurement measurement, std::shared_ptr<Measureme
         }
     }
 
-    const std::lock_guard measurement_lock {measurement_mutex_};
+    std::unique_lock measurement_lock {measurement_mutex_};
 
     // Use the current default condition of no measurement-specific is provided:
     measurements_.emplace_back(std::move(measurement), (condition == nullptr ? default_condition_ : std::move(condition)));
     measurements_size_++;
+    const auto [progress_current, progress_total] = load_progress();
+    measurement_lock.unlock();
 
     // Report updated progress
-    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+    progress_updated(progress_current, progress_total);
     queue_state_changed(queue_running_ ? State::RUNNING : State::IDLE, "Added measurement");
 }
 
 void MeasurementQueue::clear() {
-    const std::lock_guard measurement_lock {measurement_mutex_};
+    std::unique_lock measurement_lock {measurement_mutex_};
 
     if(measurements_.empty()) {
         return;
@@ -115,10 +118,12 @@ void MeasurementQueue::clear() {
 
     // Reset the sequence counter:
     run_sequence_ = 0;
+    measurements_size_ = measurements_.size();
+    const auto [progress_current, progress_total] = load_progress();
+    measurement_lock.unlock();
 
     // Update progress and report:
-    measurements_size_ = measurements_.size();
-    progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+    progress_updated(progress_current, progress_total);
 
     if(!queue_running_) {
         queue_state_changed(measurements_size_ == 0 ? State::FINISHED : State::IDLE, "Queue cleared");
@@ -126,10 +131,13 @@ void MeasurementQueue::clear() {
 }
 
 double MeasurementQueue::progress() const {
-    if(measurements_size_ == 0 && run_sequence_ == 0) {
+    const auto run_sequence = run_sequence_.load();
+    const auto measurements_size = measurements_size_.load();
+
+    if(measurements_size == 0 && run_sequence == 0) {
         return 0.;
     }
-    return static_cast<double>(run_sequence_) / static_cast<double>(measurements_size_ + run_sequence_);
+    return static_cast<double>(run_sequence) / static_cast<double>(measurements_size + run_sequence);
 }
 
 void MeasurementQueue::start() {
@@ -188,8 +196,11 @@ void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_vi
 void MeasurementQueue::measurement_concluded() {};
 void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
-void MeasurementQueue::await_state(CSCP::State state) const {
-    controller_.awaitState(state, transition_timeout_);
+std::map<std::string, std::chrono::system_clock::time_point>
+MeasurementQueue::get_last_state_change(const Measurement& measurement) const {
+    std::set<std::string> satellites {};
+    std::ranges::for_each(measurement, [&](const auto& p) { satellites.emplace(p.first); });
+    return controller_.getLastStateChange(satellites);
 }
 
 void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
@@ -260,24 +271,35 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
     }
 }
 
+std::pair<std::size_t, std::size_t> MeasurementQueue::load_progress() const {
+    const auto run_sequence = run_sequence_.load();
+    const auto measurements_size = measurements_size_.load();
+    return {run_sequence, measurements_size + run_sequence};
+}
+
 void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
     try {
-        std::unique_lock measurement_lock {measurement_mutex_};
-
-        LOG(logger_, STATUS) << "Started measurement queue";
-        queue_running_ = true;
-        queue_state_changed(State::RUNNING, "Started measurement queue");
+        std::unique_lock measurement_lock {measurement_mutex_, std::defer_lock};
+        std::once_flag queue_started_flag {};
 
         // Loop until either a stop is requested or we run out of measurements:
         while(!stop_token.stop_requested() && !measurements_.empty()) {
+            // Notify that queue has been started
+            std::call_once(queue_started_flag, [this]() {
+                LOG(logger_, STATUS) << "Started measurement queue";
+                queue_running_ = true;
+                queue_state_changed(State::RUNNING, "Started measurement queue");
+            });
+
             // Start a new measurement:
+            measurement_lock.lock();
             auto [measurement, condition] = measurements_.front();
             measurement_lock.unlock();
             LOG(logger_, STATUS) << "Starting new measurement from queue, " << measurement.size()
                                  << " satellite configurations";
 
             // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_);
 
             // Cache current value of the measurement keys and add original value resets:
             cache_original_values(measurement);
@@ -290,11 +312,16 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                     LOG(logger_, DEBUG) << "\t" << k << " = " << v.str();
                 }
             }
+
+            // Get when state was changed before reconfigure command
+            auto last_state_change_before_reconf = get_last_state_change(measurement);
+
+            // Send reconfigure command
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
 
-            // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            // Await ORBIT state while ensuring the states have changed
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_change_before_reconf));
 
             // Start the measurement for all satellites
             LOG(logger_, INFO) << "Starting satellites";
@@ -306,7 +333,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             check_replies(reply_start);
 
             // Wait for RUN state across all
-            await_state(CSCP::State::RUN);
+            controller_.awaitState(CSCP::State::RUN, transition_timeout_);
 
             // Wait for condition to be come true
             condition->await(queue_running_, controller_, logger_);
@@ -317,7 +344,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             check_replies(reply_stop);
 
             // Wait for ORBIT state across all
-            await_state(CSCP::State::ORBIT);
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_);
 
             measurement_lock.lock();
             // Successfully concluded this measurement, pop it - skip if interrupted
@@ -328,19 +355,22 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
                 run_sequence_++;
                 interrupt_counter_ = 0;
             }
+            const auto [progress_current, progress_total] = load_progress();
+            measurement_lock.unlock();
 
             // Report updated progress
-            progress_updated(run_sequence_, measurements_size_ + run_sequence_);
+            progress_updated(progress_current, progress_total);
         }
 
         // Reset the original values collected during the measurement:
         LOG(logger_, INFO) << "Resetting parameters to pre-scan values";
+        auto last_state_change_before_reconf = get_last_state_change(original_values_);
         const auto reply_reset = controller_.sendCommands("reconfigure", original_values_, false);
         check_replies(reply_reset);
         original_values_.clear();
 
-        // Wait for ORBIT state across all
-        await_state(CSCP::State::ORBIT);
+        // Wait for ORBIT state across all while ensuring the states have changed
+        controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_change_before_reconf));
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;
