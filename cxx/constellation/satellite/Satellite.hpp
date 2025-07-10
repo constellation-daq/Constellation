@@ -22,6 +22,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/type.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 
 namespace constellation::satellite {
@@ -235,6 +236,7 @@ namespace constellation::satellite {
          * @param function Function to be registered
          */
         template <typename C>
+            requires utils::is_function_v<C>
         void register_command(std::string_view name,
                               std::string description,
                               std::set<protocol::CSCP::State> allowed_states,

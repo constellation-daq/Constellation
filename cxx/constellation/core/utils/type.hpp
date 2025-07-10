@@ -13,10 +13,12 @@
 #include <chrono>
 #include <concepts>
 #include <cstdlib>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <type_traits>
 #include <typeinfo>
 #include <variant>
@@ -53,6 +55,17 @@ namespace constellation::utils {
     template <typename T> struct is_std_map : std::false_type {};
     template <typename U, typename V> struct is_std_map<std::map<U, V>> : std::true_type {};
     template <typename T> inline constexpr bool is_std_map_v = is_std_map<T>::value;
+
+    // Function traits (see https://stackoverflow.com/q/7943525)
+    template <typename T> struct function_traits; // NOLINT(readability-identifier-naming)
+    template <typename T> struct function_traits : function_traits<decltype(&std::remove_reference_t<T>::operator())> {};
+    template <typename R, typename Cls, typename... Args> struct function_traits<R (Cls::*)(Args...) const> {
+        using function_type = std::function<R(Args...)>;
+        using argument_size = std::tuple_size<std::tuple<Args...>>;
+    };
+    template <typename T, typename = void> struct is_function : std::false_type {};
+    template <typename T> struct is_function<T, std::void_t<typename function_traits<T>::function_type>> : std::true_type {};
+    template <typename T> inline constexpr bool is_function_v = is_function<T>::value;
 
     /// @endcond
 

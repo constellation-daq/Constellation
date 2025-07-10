@@ -61,6 +61,22 @@ Alternatively, commands can also be registered using
                      []() { return 4; });                                // Lambda expression
 ```
 
+````{important}
+When using lambda expressions, parameters have to be typed explicitly.
+The compilation will fail for lambda expression using the `auto` keyword for parameters, meaning
+
+```c++
+[this](const auto& name) { return device_->getVoltage(name); }
+```
+
+has to be replaced with
+
+```c++
+[this](const std::string& name) { return device_->getVoltage(name); }
+```
+
+````
+
 :::
 :::{tab-item} Python
 :sync: python

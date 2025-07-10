@@ -45,6 +45,7 @@ namespace constellation::satellite {
     }
 
     template <typename C>
+        requires utils::is_function_v<C>
     inline void CommandRegistry::add(std::string_view name,
                                      std::string description,
                                      std::set<protocol::CSCP::State> allowed_states,
@@ -63,7 +64,7 @@ namespace constellation::satellite {
         }
 
         // Wrap object into a std::function
-        using function_traits = function_traits<decltype(&C::operator())>;
+        using function_traits = utils::function_traits<C>;
         using function_type = typename function_traits::function_type;
         const auto nargs = function_traits::argument_size::value;
         auto call = Call(Wrapper(function_type(std::move(function))));
