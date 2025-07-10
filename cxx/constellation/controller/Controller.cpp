@@ -405,7 +405,7 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
 void Controller::awaitState(CSCP::State state,
                             std::chrono::seconds timeout,
                             std::map<std::string, std::chrono::system_clock::time_point> last_state_change) const {
-    LOG(logger_, TRACE) << "Awaiting state changed for "
+    LOG(logger_, TRACE) << "Awaiting state change for "
                         << range_to_string(last_state_change, [](const auto& p) { return p.first; }) << " (timeout "
                         << timeout << ")";
 
