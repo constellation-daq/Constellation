@@ -228,7 +228,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         const auto state = msg.getState();
         if(sat->second.state != state) {
             sat->second.state = state;
-            sat->second.last_state_changed = now;
+            sat->second.last_state_change = now;
         }
 
         // Update status message if available
@@ -288,17 +288,17 @@ Dictionary Controller::getConnectionCommands(std::string_view satellite_name) co
 }
 
 std::map<std::string, std::chrono::system_clock::time_point>
-Controller::getLastStateChanged(const std::set<std::string>& satellites) const {
-    std::map<std::string, std::chrono::system_clock::time_point> last_state_changed {};
+Controller::getLastStateChange(const std::set<std::string>& satellites) const {
+    std::map<std::string, std::chrono::system_clock::time_point> last_state_change {};
     const std::lock_guard connection_lock {connection_mutex_};
     for(const auto& satellite : satellites) {
         const auto connection = connections_.find(satellite);
         if(connection == connections_.cend()) {
             throw std::out_of_range("Satellite `" + satellite + "` is unknown to controller");
         }
-        last_state_changed.emplace(connection->first, connection->second.last_state_changed);
+        last_state_change.emplace(connection->first, connection->second.last_state_change);
     }
-    return last_state_changed;
+    return last_state_change;
 }
 
 std::string Controller::getRunIdentifier() {
@@ -386,7 +386,7 @@ bool Controller::isInGlobalState() const {
 }
 
 void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) const {
-    LOG(logger_, TRACE) << "Await state " << state << " (timeout " << timeout << ")";
+    LOG(logger_, TRACE) << "Awaiting state " << state << " (timeout " << timeout << ")";
 
     auto timer = TimeoutTimer(timeout);
     timer.reset();
@@ -404,13 +404,13 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
 
 void Controller::awaitState(CSCP::State state,
                             std::chrono::seconds timeout,
-                            std::map<std::string, std::chrono::system_clock::time_point> last_state_changed) const {
-    LOG(logger_, TRACE) << "Await state changed for "
-                        << range_to_string(last_state_changed, [](const auto& p) { return p.first; }) << " (timeout "
+                            std::map<std::string, std::chrono::system_clock::time_point> last_state_change) const {
+    LOG(logger_, TRACE) << "Awaiting state changed for "
+                        << range_to_string(last_state_change, [](const auto& p) { return p.first; }) << " (timeout "
                         << timeout << ")";
 
     // Copy map so that we can modify it for the next iteration
-    auto last_state_changed_copy = last_state_changed;
+    auto last_state_change_copy = last_state_change;
 
     std::unique_lock connection_lock {connection_mutex_, std::defer_lock};
 
@@ -418,30 +418,30 @@ void Controller::awaitState(CSCP::State state,
     timer.reset();
 
     // Wait until all satellites in last_state_changed sent an extrasystole
-    while(!last_state_changed.empty()) {
-        for(const auto& [satellite, last_changed] : last_state_changed) {
+    while(!last_state_change.empty()) {
+        for(const auto& [satellite, last_change] : last_state_change) {
             // Check that last extrasystole is more recent than the timestamp given in the list
             connection_lock.lock();
             const auto connection = connections_.find(satellite);
             if(connection == connections_.cend()) {
                 throw std::out_of_range("Satellite `" + satellite + "` is unknown to controller");
             }
-            const auto new_last_changed = connection->second.last_state_changed;
+            const auto new_last_change = connection->second.last_state_change;
             connection_lock.unlock();
-            if(new_last_changed > last_changed) {
+            if(new_last_change > last_change) {
                 // New extrasystole found, remove from map for next iteration
-                last_state_changed_copy.erase(satellite);
-                LOG(logger_, TRACE) << "State changed for " << satellite << " registered";
+                last_state_change_copy.erase(satellite);
+                LOG(logger_, TRACE) << "State change registered for " << satellite;
             }
         }
 
         // Copy map with removed entries for next iteration
-        last_state_changed = last_state_changed_copy;
+        last_state_change = last_state_change_copy;
 
         // Check for timeout
         if(timer.timeoutReached()) {
             throw ControllerError("Timed out waiting for global state " + to_string(state) + ": " +
-                                  range_to_string(last_state_changed, [](const auto& p) { return p.first; }) +
+                                  range_to_string(last_state_change, [](const auto& p) { return p.first; }) +
                                   " never changed state");
         }
 

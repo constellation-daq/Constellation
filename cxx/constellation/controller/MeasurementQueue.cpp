@@ -197,10 +197,10 @@ void MeasurementQueue::measurement_concluded() {};
 void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
 std::map<std::string, std::chrono::system_clock::time_point>
-MeasurementQueue::get_last_state_changed(const Measurement& measurement) const {
+MeasurementQueue::get_last_state_change(const Measurement& measurement) const {
     std::set<std::string> satellites {};
     std::ranges::for_each(measurement, [&](const auto& p) { satellites.emplace(p.first); });
-    return controller_.getLastStateChanged(satellites);
+    return controller_.getLastStateChange(satellites);
 }
 
 void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1Message>& replies) const {
@@ -314,14 +314,14 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             }
 
             // Get when state was changed before reconfigure command
-            auto last_state_changed_before_reconf = get_last_state_changed(measurement);
+            auto last_state_change_before_reconf = get_last_state_change(measurement);
 
             // Send reconfigure command
             const auto reply_reconf = controller_.sendCommands("reconfigure", measurement, false);
             check_replies(reply_reconf);
 
             // Await ORBIT state while ensuring the states have changed
-            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_changed_before_reconf));
+            controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_change_before_reconf));
 
             // Start the measurement for all satellites
             LOG(logger_, INFO) << "Starting satellites";
@@ -364,13 +364,13 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
 
         // Reset the original values collected during the measurement:
         LOG(logger_, INFO) << "Resetting parameters to pre-scan values";
-        auto last_state_changed_before_reconf = get_last_state_changed(original_values_);
+        auto last_state_change_before_reconf = get_last_state_change(original_values_);
         const auto reply_reset = controller_.sendCommands("reconfigure", original_values_, false);
         check_replies(reply_reset);
         original_values_.clear();
 
         // Wait for ORBIT state across all while ensuring the states have changed
-        controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_changed_before_reconf));
+        controller_.awaitState(CSCP::State::ORBIT, transition_timeout_, std::move(last_state_change_before_reconf));
 
         LOG(logger_, STATUS) << "Queue ended";
         queue_running_ = false;

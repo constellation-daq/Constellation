@@ -81,7 +81,7 @@ namespace constellation::controller {
             protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {10000};
             std::chrono::system_clock::time_point last_heartbeat {std::chrono::system_clock::now()};
-            std::chrono::system_clock::time_point last_state_changed {}; // NOLINT(readability-redundant-member-init)
+            std::chrono::system_clock::time_point last_state_change {}; // NOLINT(readability-redundant-member-init)
             std::chrono::system_clock::time_point last_checked {std::chrono::system_clock::now()};
             std::uint8_t lives {protocol::CHP::Lives};
         };
@@ -280,7 +280,7 @@ namespace constellation::controller {
          * @return Map of satellites names and the timestamp of their last state change
          */
         std::map<std::string, std::chrono::system_clock::time_point>
-        getLastStateChanged(const std::set<std::string>& satellites) const;
+        getLastStateChange(const std::set<std::string>& satellites) const;
 
         /**
          * @brief Return the current or last run identifier of the constellation

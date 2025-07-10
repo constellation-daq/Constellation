@@ -187,7 +187,7 @@ namespace constellation::controller {
          * @return Map of satellites names and the timestamp of their last state change
          */
         std::map<std::string, std::chrono::system_clock::time_point>
-        get_last_state_changed(const Measurement& measurement) const;
+        get_last_state_change(const Measurement& measurement) const;
 
         /**
          * @brief Checks all satellite replies for success verbs.
