@@ -23,6 +23,7 @@
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::satellite {
 
@@ -79,6 +80,7 @@ namespace constellation::satellite {
     }
 
     template <typename C>
+        requires utils::is_function_v<C>
     void Satellite::register_command(std::string_view name,
                                      std::string description,
                                      std::set<protocol::CSCP::State> allowed_states,

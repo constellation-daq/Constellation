@@ -16,7 +16,6 @@
 #include <set>
 #include <string>
 #include <string_view>
-#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -25,6 +24,7 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
+#include "constellation/core/utils/type.hpp"
 
 namespace constellation::satellite {
 
@@ -47,6 +47,7 @@ namespace constellation::satellite {
          * @param function Function to add
          */
         template <typename C>
+            requires utils::is_function_v<C>
         void add(std::string_view name, std::string description, std::set<protocol::CSCP::State> allowed_states, C function);
 
         /**
@@ -77,13 +78,6 @@ namespace constellation::satellite {
         CNSTLN_API std::map<std::string, std::string> describeCommands() const;
 
     private:
-        // Function traits to extract equivalent function type from lambda
-        template <typename T> struct function_traits;
-        template <typename R, typename Cls, typename... Args> struct function_traits<R (Cls::*)(Args...) const> {
-            using function_type = std::function<R(Args...)>;
-            using argument_size = std::tuple_size<std::tuple<Args...>>;
-        };
-
         // Function alias for std::function used in storage
         using Call = std::function<config::Value(const config::List&)>;
 
