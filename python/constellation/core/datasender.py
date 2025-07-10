@@ -16,8 +16,8 @@ import numpy as np
 import zmq
 
 from .base import EPILOG
-from .broadcastmanager import CHIRPServiceIdentifier
 from .cdtp import CDTPMessageIdentifier, DataTransmitter
+from .chirpmanager import CHIRPServiceIdentifier
 from .configuration import Configuration
 from .error import debug_log, handle_error
 from .logging import setup_cli_logging
@@ -134,7 +134,7 @@ class DataSender(Satellite):
 
         # run CHIRP
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
-        self.broadcast_offers()
+        self.emit_offers()
 
     def reentry(self) -> None:
         # close the socket

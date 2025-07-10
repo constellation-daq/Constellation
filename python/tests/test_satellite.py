@@ -11,8 +11,8 @@ import zmq
 from conftest import MON_PORT, wait_for_state
 
 from constellation.core import __version__
-from constellation.core.broadcastmanager import DiscoveredService, chirp_callback
 from constellation.core.chirp import CHIRPMessageType, CHIRPServiceIdentifier
+from constellation.core.chirpmanager import DiscoveredService, chirp_callback
 from constellation.core.chp import CHPRole
 from constellation.core.cmdp import CMDPTransmitter, Notification
 from constellation.core.cscp import CommandTransmitter
@@ -310,7 +310,7 @@ def test_satellite_chirp_offer(mock_chirp_transmitter, mock_device_satellite):
     """Test cmd reception."""
     satellite, _ctx = mock_device_satellite
     assert not satellite.callback_triggered
-    mock_chirp_transmitter.broadcast(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
+    mock_chirp_transmitter.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     time.sleep(0.5)
     # chirp message has been processed
     assert satellite._beacon._socket._recv_socket.seen >= 1

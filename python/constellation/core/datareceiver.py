@@ -15,9 +15,9 @@ from uuid import UUID
 
 import zmq
 
-from .broadcastmanager import DiscoveredService, chirp_callback
 from .cdtp import CDTPMessage, CDTPMessageIdentifier, DataTransmitter
 from .chirp import CHIRPServiceIdentifier
+from .chirpmanager import DiscoveredService, chirp_callback
 from .cmdp import MetricsType
 from .commandmanager import cscp_requestable
 from .message.cscp1 import CSCP1Message, SatelliteState

@@ -227,7 +227,7 @@ def test_monitoring_file_writing(monitoringlistener, monitoringsender):
     ms = monitoringsender
     assert len(ml._log_listeners) == 0
     chirp = CHIRPBeaconTransmitter("mock_sender", "monitoring_file_writing", interface_addresses=["127.0.0.1"])
-    chirp.broadcast(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, DEFAULT_SEND_PORT)
+    chirp.emit(CHIRPServiceIdentifier.MONITORING, CHIRPMessageType.OFFER, DEFAULT_SEND_PORT)
     # start metric sender thread
     ms._add_com_thread()
     ms._start_com_threads()

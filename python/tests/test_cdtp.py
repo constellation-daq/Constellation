@@ -18,9 +18,9 @@ import zmq
 from conftest import DATA_PORT, check_output, wait_for_state
 
 from constellation.core import __version__
-from constellation.core.broadcastmanager import DiscoveredService
 from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
+from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.datasender import DataSender
 from constellation.core.network import get_loopback_interface_name

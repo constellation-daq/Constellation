@@ -14,8 +14,8 @@ from typing import Any, Optional
 
 from . import __version__
 from .base import ConstellationArgumentParser
-from .broadcastmanager import CHIRPBroadcaster, DiscoveredService, chirp_callback
 from .chirp import CHIRPServiceIdentifier
+from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
 from .configuration import ConfigError, Configuration
@@ -29,7 +29,7 @@ from .monitoring import MonitoringSender
 class Satellite(
     MonitoringSender,
     CommandReceiver,
-    CHIRPBroadcaster,
+    CHIRPManager,
     HeartbeatSender,
     HeartbeatChecker,
 ):
@@ -66,11 +66,11 @@ class Satellite(
         super()._add_com_thread()
         super()._start_com_threads()
 
-        # register broadcast manager
+        # register CHIRP services on offer and request heartbeats
         self.register_offer(CHIRPServiceIdentifier.CONTROL, self.cmd_port)
         self.register_offer(CHIRPServiceIdentifier.HEARTBEAT, self.hb_port)
         self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
-        self.broadcast_offers()
+        self.emit_offers()
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
 
         # register callback for heartbeat checker
@@ -108,7 +108,7 @@ class Satellite(
         """Main Satellite event loop with task handler-routine.
 
         This routine sequentially executes tasks queued by the CommandReceiver
-        or the CHIRPBroadcaster. These tasks come in the form of callbacks to
+        or the CHIRPManager. These tasks come in the form of callbacks to
         e.g. state transitions.
 
         """

@@ -16,9 +16,9 @@ Submodules
    :maxdepth: 1
 
    core.base
-   core.broadcastmanager
    core.cdtp
    core.chirp
+   core.chirpmanager
    core.chp
    core.cmdp
    core.commandmanager
@@ -34,6 +34,7 @@ Submodules
    core.logging
    core.message
    core.monitoring
+   core.multicast
    core.network
    core.protocol
    core.satellite

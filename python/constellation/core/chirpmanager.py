@@ -2,8 +2,7 @@
 SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 
-BroadcastManger module provides classes for managing CHIRP broadcasts within
-Constellation Satellites.
+CHIRPManger module provides classes for managing CHIRP multicasts within Constellation Satellites.
 """
 
 import random
@@ -91,20 +90,20 @@ def get_chirp_callbacks(
     return res
 
 
-class CHIRPBroadcaster(BaseSatelliteFrame):
-    """Manages service discovery and broadcast via the CHIRP protocol.
+class CHIRPManager(BaseSatelliteFrame):
+    """Manages service discovery and sends multicast messages via the CHIRP protocol.
 
-    Listening and reacting to CHIRP broadcasts is implemented in a dedicated
+    Listening and reacting to CHIRP multicast messages is implemented in a dedicated
     thread that can be started after the class has been instantiated.
 
     Discovered services are added to an internal cache. Callback methods can be
     registered either by calling register_request() or by using the
     @chirp_callback() decorator. The callback will be added to the satellite's
     internal task queue once the corresponding service has been offered by other
-    satellites via broadcast.
+    satellites via multicast.
 
     Offered services can be registered via register_offer() and are announced on
-    incoming request broadcasts or via broadcast_offers().
+    incoming request messages or via emit_offers().
 
     """
 
@@ -117,14 +116,14 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
     ):
         """Initialize parameters.
 
-        :param host: Satellite name the BroadcastManager represents
+        :param host: Satellite name this CHIRPManager represents
         :type host: str
         :param group: group the Satellite belongs to
         :type group: str
         """
         super().__init__(name=name, **kwds)
         self.group = group
-        self._stop_broadcasting = threading.Event()
+        self._stop_emitting_chirp = threading.Event()
 
         self.log_chirp = self.get_logger("LINK")
 
@@ -143,10 +142,10 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         )
 
     def _add_com_thread(self) -> None:
-        """Add the CHIRP broadcaster thread to the communication thread pool."""
+        """Add the CHIRP manager thread to the communication thread pool."""
         super()._add_com_thread()
-        self._com_thread_pool["chirp_broadcaster"] = threading.Thread(target=self._run, daemon=True)
-        self.log_chirp.debug("CHIRP broadcaster thread prepared and added to the pool.")
+        self._com_thread_pool["chirp_manager"] = threading.Thread(target=self._run, daemon=True)
+        self.log_chirp.debug("CHIRP manager thread prepared and added to the pool.")
 
     def get_discovered(self, serviceid: CHIRPServiceIdentifier) -> list[DiscoveredService]:
         """Return a list of already discovered services for a given identifier."""
@@ -185,29 +184,29 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
         """
         if serviceid not in self._chirp_callbacks:
             self.log_chirp.warning("Serviceid %s does not have a registered callback", serviceid)
-        self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
+        self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None) -> None:
-        """Broadcast all registered services matching `serviceid`.
+    def emit_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None) -> None:
+        """Emit messages all registered services matching `serviceid`.
 
         Specify None for all registered services.
         """
         for port, sid in self._registered_services.items():
             if not serviceid or serviceid == sid:
-                self.log_chirp.debug("Broadcasting service OFFER: %s for %s", port, sid)
-                self._beacon.broadcast(sid, CHIRPMessageType.OFFER, port)
+                self.log_chirp.debug("Sending service OFFER: %s for %s", port, sid)
+                self._beacon.emit(sid, CHIRPMessageType.OFFER, port)
 
-    def broadcast_requests(self) -> None:
-        """Broadcast all requests registered via register_request()."""
+    def emit_requests(self) -> None:
+        """Emit messages for all requests registered via register_request()."""
         for serviceid in self._chirp_callbacks:
-            self.log_chirp.debug("Broadcasting service REQUEST for %s", serviceid)
-            self._beacon.broadcast(serviceid, CHIRPMessageType.REQUEST)
+            self.log_chirp.debug("Sending service REQUEST for %s", serviceid)
+            self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
-    def broadcast_depart(self) -> None:
-        """Broadcast DEPART for all registered services."""
+    def emit_depart(self) -> None:
+        """Emit DEPART message for all registered services."""
         for port, sid in self._registered_services.items():
-            self.log_chirp.debug("Broadcasting service DEPART on %d for %s", port, sid)
-            self._beacon.broadcast(sid, CHIRPMessageType.DEPART, port)
+            self.log_chirp.debug("Sending service DEPART on %d for %s", port, sid)
+            self._beacon.emit(sid, CHIRPMessageType.DEPART, port)
 
     def _discover_service(self, msg: CHIRPMessage) -> None:
         """Add a service to internal list and possibly queue a callback."""
@@ -262,9 +261,9 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             )
 
     def _run(self) -> None:
-        """Start listening in on broadcast"""
+        """Start listening in on incoming multicast messages"""
         # assert for mypy static type analysis
-        assert isinstance(self._com_thread_evt, threading.Event), "BroadcastManager thread Event no set up"
+        assert isinstance(self._com_thread_evt, threading.Event), "CHIRPManager thread Event no set up"
 
         while not self._com_thread_evt.is_set():
             msg = self._beacon.listen()
@@ -282,7 +281,7 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
             if msg.msgtype == CHIRPMessageType.REQUEST:
                 # wait a short moment to spread out responses somewhat
                 time.sleep(random.random() / 5.0)
-                self.broadcast_offers(serviceid=msg.serviceid)
+                self.emit_offers(serviceid=msg.serviceid)
                 continue
 
             if msg.msgtype == CHIRPMessageType.OFFER:
@@ -293,8 +292,8 @@ class CHIRPBroadcaster(BaseSatelliteFrame):
                 self._depart_service(msg)
                 continue
         # shutdown
-        self.log_chirp.debug("BroadcastManager thread shutting down.")
-        self.broadcast_depart()
+        self.log_chirp.debug("CHIRPManager thread shutting down.")
+        self.emit_depart()
         # it can take a moment for the network buffers to be flushed
         time.sleep(0.5)
         self._beacon.close()

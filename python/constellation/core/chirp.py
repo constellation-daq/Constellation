@@ -132,7 +132,7 @@ class CHIRPMessage:
 
 
 class CHIRPBeaconTransmitter:
-    """Class for broadcasting CHRIP messages.
+    """Class for sending CHIRP multicast messages.
 
     See `docs/protocols/chirp.md` for details.
 
@@ -144,11 +144,11 @@ class CHIRPBeaconTransmitter:
         group: str,
         interface_addresses: list[str],
     ) -> None:
-        """Initialize attributes and open broadcast socket."""
+        """Initialize attributes and open multicast socket."""
         self._host_uuid = get_uuid(name)
         self._group_uuid = get_uuid(group)
 
-        # whether or not to filter broadcasts on group
+        # whether or not to filter multicasts on group
         self._filter_group = True
 
         # Create multicast socket
@@ -166,21 +166,21 @@ class CHIRPBeaconTransmitter:
 
     @property
     def filter(self) -> bool:
-        """Whether or not incoming broadcasts are filtered on group."""
+        """Whether or not incoming messages are filtered on group."""
         return self._filter_group
 
     @filter.setter
     def filter(self, val: bool) -> None:
-        """Whether or not incoming broadcasts are filtered on group."""
+        """Whether or not incoming messages are filtered on group."""
         self._filter_group = val
 
-    def broadcast(
+    def emit(
         self,
         serviceid: CHIRPServiceIdentifier,
         msgtype: CHIRPMessageType,
         port: int = 0,
     ) -> None:
-        """Broadcast a given service."""
+        """Emit a message for the given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
         self._socket.sendMessage(msg.pack())
 
