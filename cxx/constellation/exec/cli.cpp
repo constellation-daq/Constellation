@@ -96,9 +96,9 @@ BaseParser::BaseOptions BaseParser::parse(std::span<const char*> args) {
 
     // Get interfaces
     const auto interface_names = get<std::vector<std::string>>("interface");
-    const auto interfaces = get_interfaces(interface_names);
+    auto interfaces = get_interfaces(interface_names);
 
-    return {level.value(), interfaces};
+    return {level.value(), std::move(interfaces)};
 }
 
 std::string BaseParser::help() const {

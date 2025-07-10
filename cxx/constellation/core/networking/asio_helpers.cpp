@@ -148,7 +148,7 @@ std::vector<Interface> constellation::networking::get_interfaces() {
     return interfaces;
 }
 
-std::vector<Interface> constellation::networking::get_interfaces(std::vector<std::string> interface_names) {
+std::vector<Interface> constellation::networking::get_interfaces(const std::vector<std::string>& interface_names) {
     std::vector<Interface> interfaces {};
     const auto all_interfaces = get_interfaces();
 

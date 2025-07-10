@@ -69,7 +69,7 @@ namespace constellation::satellite {
         auto call = Call(Wrapper(function_type(std::move(function))));
 
         const auto [it, success] =
-            commands_.emplace(name_lc, Command(std::move(call), nargs, std::move(description), allowed_states));
+            commands_.emplace(name_lc, Command(std::move(call), nargs, std::move(description), std::move(allowed_states)));
 
         if(!success) {
             throw utils::LogicError("Command `" + name_lc + "` is already registered");

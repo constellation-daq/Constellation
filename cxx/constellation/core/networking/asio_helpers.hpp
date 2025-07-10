@@ -50,7 +50,7 @@ namespace constellation::networking {
      *
      * @return List of interfaces with matching names
      */
-    CNSTLN_API std::vector<Interface> get_interfaces(std::vector<std::string> interface_names);
+    CNSTLN_API std::vector<Interface> get_interfaces(const std::vector<std::string>& interface_names);
 
     /**
      * @brief Build a URI from an IP address and a port

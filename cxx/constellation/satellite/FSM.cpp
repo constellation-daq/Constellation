@@ -349,12 +349,12 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Check if condition is fulfilled:
                     if(!condition.isSatisfied(remote_state.value())) {
-                        const auto msg = "Awaiting state from " + std::string(condition.getRemote()) +
-                                         ", currently reporting state `" + enum_name(remote_state.value()) + "`";
+                        auto msg = "Awaiting state from " + std::string(condition.getRemote()) +
+                                   ", currently reporting state `" + enum_name(remote_state.value()) + "`";
                         LOG_T(logger_, DEBUG, 1s) << msg;
 
                         // Set status message and emit if new:
-                        set_status(msg);
+                        set_status(std::move(msg));
                         call_state_callbacks(true);
 
                         satisfied = false;
