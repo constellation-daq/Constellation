@@ -184,7 +184,7 @@ build:debian-clang:
     - .debian-clang
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false -Dmemory_allocator=system"
 
 build:debian-clang-libcxx:
   extends:
@@ -193,7 +193,7 @@ build:debian-clang-libcxx:
     - .debian-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none"
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none -Dmemory_allocator=system"
     CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:debian-gcc:
@@ -475,7 +475,7 @@ lint:clang-scan-build:
     CCC_CC: clang
     CCC_CXX: clang++
   script:
-    - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug $(scripts/meson_enable_all_components.sh)
+    - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug -Dmemory_allocator=system $(scripts/meson_enable_all_components.sh)
     - ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:
