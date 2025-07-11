@@ -438,6 +438,25 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 # operational state
                 self.fsm.status = res
 
+    def _is_sending_metrics(self) -> bool:
+        """Determines whether the satellite is ready to send Metrics via CMDP.
+
+        This is checked via the state of the FSM. Override this method to change
+        the behavior when to send out Metrics.
+
+        """
+        # there are several states in which we likely either cannot or do not
+        # want to send out (most) Metrics:
+        if self.fsm.current_state_value in [
+            SatelliteState.NEW,
+            SatelliteState.ERROR,
+            SatelliteState.DEAD,
+            SatelliteState.initializing,
+            SatelliteState.reconfiguring,
+        ]:
+            return False
+        return True
+
     @cscp_requestable
     def get_state(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:
         """Return the current state of the Satellite.
