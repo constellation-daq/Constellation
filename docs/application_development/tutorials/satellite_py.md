@@ -61,7 +61,7 @@ python3 tutorial.py -g myconstellation
 ```
 
 You can now control the satellite by running `Controller -g myconstellation`
-from a different terminal window or by starting the `Observatory`. See the
+from a different terminal window or by starting the graphical `MissionControl` controller. See the
 [Operator's Guide](../../operator_guide/index.md) for details.
 
 In its current form, our tutorial satellite will not yet do much. So let's
