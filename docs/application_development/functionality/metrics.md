@@ -51,9 +51,13 @@ Note that timed metrics can still be triggered manually if desired.
 :::{tab-item} Python
 :sync: python
 
-To send metrics (e.g. readings from a sensor), the `schedule_metric` method can be used. The method takes a metric name,
-the unit, a polling interval, a metric type and a callable function as arguments. The name of the metric will always be
-converted to full caps.
+There are two approaches to send metrics (e.g. readings from a temperature sensor): one is
+via a function decorator and the other is via a scheduling method.
+
+The scheduling method,`schedule_metric`, makes it easy to create metrics
+programmatically at run time. This can be particularly useful in cases where e.g. the number of available channels is only
+known after connecting to the instrument hardware. The method takes a metric name, the unit, a polling interval, a
+metric type and a callable function as arguments. The name of the metric will always be converted to upper-case.
 
 * Metric type: can be `LAST_VALUE`, `ACCUMULATE`, `AVERAGE`, or `RATE`.
 * Polling interval: a float value in seconds, indicating how often the metric is transmitted.
@@ -67,22 +71,39 @@ An example call is shown below:
 self.schedule_metric("Current", "A", MetricsType.LAST_VALUE, 10, self.device.get_current)
 ```
 
-In this example, the callable `self.device.get_current` fetches the current from a power supply every 10 seconds, and returns
-the value `return current`. The same can also be achieved with a function decorator:
+In this example, the callable `self.device.get_current` fetches the current from
+a power supply, is called every 10 seconds, and the value is sent as Metric with
+name `Current`, unit `A` and an indicator for any receiver(s) to only show the
+last value.
+
+Similarly, a metric to can be sent via the `schedule_metric` function decorator:
 
 ```python
 @schedule_metric("A", MetricsType.LAST_VALUE, 10)
 def Current(self) -> Any:
+    """The current as measured by the power supply."""
     if self.device.can_read_current():
         return self.device.get_current()
     return None
 ```
 
-Note that in this case, if `None` is returned, no metric is sent. The name of the metric is taken from the function name.
+In case of the decorator, the name of the metric is taken from the function
+name. Again, if `None` is returned, no metric is sent.
+
+In either case, the doc string of the callable or decorated function serves as a
+description of the Metric and is published via the CMDP `STAT?` notification
+subscription.
+
+When using class methods for retrieving values for the metrics, then the
+decorator can be a convenient way of scheduling them. But if metrics need to be created at run time, then the method is a
+powerful approach to schedule an arbitrary number of metrics.
 
 ```{attention}
-Metrics registered with the function decorator are evaluated even if the satellite is not initialized yet. This means that it
-might be necessary to check the existence of a variable using `hasattr(self, "device")` first.
+Note that any registered Metrics are by default retrieved in any of the Satellite's states, **except** `NEW`, `ERROR` and `initializing` where it is assumed that reliable Metrics cannot be guaranteed.
+
+If you have a Metric that is only valid in fewer than those states, it is advisable to add a check for the current state within the function's body (e.g. `if not self.fsm.current_state_value in [SatelliteState.RUN, SatelliteState.SAFE]: ...`). Simply return `None` in this case.
+
+Should any error occur during the retrieval of a Metric, it will be logged but the Satellite will not be affected otherwise and the Metric will be requested again at the next scheduled interval.
 ```
 
 :::
