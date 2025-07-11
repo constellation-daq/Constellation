@@ -59,7 +59,7 @@ The above command will list all available parameters. To run the satellite as-is
 python3 tutorial.py -g myconstellation
 ```
 
-The satellite can now be controller by running `Controller -g myconstellation`
+The satellite can now be controlled by running `Controller -g myconstellation`
 from a different terminal window or by starting the graphical `MissionControl` controller. More details on operating a
 Constellation are provided in the [Operator's Guide](../../operator_guide/index.md).
 
@@ -135,17 +135,17 @@ satellite.
 
 This particular satellite implementation sets up a network socket to send
 commands via a TCP/IP network connection to a device. In the actual satellite implementation,
-this might be a USB connection, or maybe the hardware has its own Python library that can used to communicate with it.
+this might be a USB connection, or maybe the hardware has its own Python library that communicates with it.
 
 ```{caution}
-The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` as well as 'ERROR' and 'SAFE' states. It should therefore be carefully ensured that e.g. any already open connections are closed before establishing new ones or that the class keeps track of any steps that only needs to perform once (e.g. loading an FPGA bit stream).
+The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` as well as 'ERROR' and 'SAFE' states. It should therefore be carefully ensured that e.g. any already open connections are closed before establishing new ones or that the class keeps track of any steps that only needs to be performed once (e.g. loading an FPGA bit stream).
 ```
 
 Note that the configuration parameters in `do_initialize` are accessed via
 `config.setdefault()`. This method will return the value for the respective key
 and fall back to a default value should no such key be configured.
 
-Any options that ***must*** be provided can also be accessed directly
+Any options that **must** be provided can also be accessed directly
 as with any dictionary, for example `config["my_important_parameter"]`. In this
 case, should the key `my_important_parameter` not be found, an exception will be
 raised. See the section on error handling below for what that entails.
@@ -198,9 +198,9 @@ Be aware that the `ERROR` state could potentially be reached from any other stat
 
 If a satellite is shut down, for example by receiving a termination signal from
 the OS or if you press `Ctrl`-`C` in the terminal window where the satellite
-runs, the method `reentry` will be called. In most circumstances, there is no need not
-need to implement anything satellite-specific for this method. If the satellite however requires this, it should be ensured
-that `super().reentry()` is called as last step of that routine, to ensure that the
+runs, the method `reentry` will be called. In most circumstances, there is no need
+to implement anything satellite-specific for this method. If the satellite however requires this, it should be ensured
+that `super().reentry()` is called as last step of that routine, so that the
 `Satellite` base classes `reentry` methods are executed as well.
 
 ## Installation of a satellite and integration into Constellation
