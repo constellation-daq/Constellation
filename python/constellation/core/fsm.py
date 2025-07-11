@@ -452,7 +452,6 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             SatelliteState.ERROR,
             SatelliteState.DEAD,
             SatelliteState.initializing,
-            SatelliteState.reconfiguring,
         ]:
             return False
         return True
