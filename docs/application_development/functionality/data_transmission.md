@@ -104,9 +104,10 @@ to queue it for transmission, the data have to be inserted into a Queue that is
 available as `self.data_queue` as a tuple consisting of the actual data and the
 metadata (a dictionary).
 
-Be aware that you need to provide the data as
-`bytes` or as `list[bytes]` if you want to use multiple frames. See notes on the
-data format and performance below for more information.
+```{note}
+It should be noted that the data need to be provided as `bytes`, or as `list[bytes]` if it should be send in multiple frames.
+See notes on the data format and performance below for more information.
+```
 
 The full call therefore becomes:
 
@@ -148,17 +149,16 @@ is stored in frames, handled as binary blob and transmitted as such. The message
 frames of data messages are designed for minimum data copy and maximum speed. A
 data message can contain any number of frames.
 
-If you are storing your data in numpy arrays, the `to_bytes` method can be used
-to convert the array into `bytes`.
+When storing data in numpy arrays, the `to_bytes` method can be used to convert the array into `bytes`.
 
-If you would like to use multiple frames, put a list of bytes into the `data_queue`.
+If the data should be sent as multiple frames, a list of bytes has to be added into the `data_queue`.
 
-Note that sending many small packets over the network often suffers from a
-performance penalty due to the additional overhead created by the protocol.
-Consider using multiple frames or concatenating your data into larger binary
-blobs. A future version of the CDTP protocol is currently under development that
-will automatically assemble multiple small messages into larger ones to optimize
-performance.
+```{caution}
+Sending many small packets over the network often suffers from a performance penalty due to the additional overhead created
+by the protocol as well as the TCP/IP communication. It should be considered to use multiple frames or to concatenate the data
+into larger binary blobs. A future version of the CDTP protocol is currently under development that will automatically
+assemble multiple small messages into larger ones to optimize performance.
+```
 
 
 :::
