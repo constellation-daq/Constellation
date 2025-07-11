@@ -111,7 +111,7 @@ data format and performance below for more information.
 The full call therefore becomes:
 
 ```python
-self.data_queue.put(tuple(data: bytes, meta: dict[str, str]))
+self.data_queue.put(tuple(data: bytes, meta: dict[str, Any]))
 ```
 
 More information on the metadata can be found in the final section of this document.
@@ -210,7 +210,8 @@ Constellation provides the option to attach metadata to each message sent by the
 :::{tab-item} Python
 :sync: python
 
-Constellation provides the option to attach metadata to each message sent by the satellite. There are three possibilities:
+Constellation provides the option to attach metadata in the form of dictionaries
+to each message sent by the satellite. There are three possibilities:
 
 * Metadata available at the beginning of the run such as additional hardware
   information or firmware revisions can be attached to the begin-of-run (BOR)
@@ -218,7 +219,7 @@ Constellation provides the option to attach metadata to each message sent by the
 
   ```python
       def do_starting(self, run_identifier:str) -> str:
-        self.BOR = ["a", "list", "of", "meta", "info"]
+        self.BOR = {"something": "interesting", "more_important": "stuff"}
         return "Prepared!"
 
   ```
@@ -230,7 +231,7 @@ Constellation provides the option to attach metadata to each message sent by the
 
   ```python
       def do_stoping(self) -> str:
-        self.EOR = ["a", "list", "of", "meta", "info"]
+        self.BOR = {"something": "interesting", "more_important": "stuff"}
         return "Prepared!"
 
   ```
@@ -241,7 +242,7 @@ Constellation provides the option to attach metadata to each message sent by the
        def do_run(self, run_identifier: str) -> str:
         while not self._state_thread_evt.is_set():
             data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-            meta = {"dtype": f"{data_load.dtype}", "other_info": "12345"}
+            meta = {"dtype": f"{data_load.dtype}", "other_info": 12345}
             self.data_queue.put((data.tobytes(), meta))
         return "Finished acquisition"
 
