@@ -124,11 +124,9 @@ get_channel_reading:  This command reads the current device value from the chann
 :::{tab-item} Python
 :sync: python
 
-To assign a description to a command, simply create a doc string to the
-corresponding function. The description should contain a short summary on the
-first line, followed by an empty line. The remainder of the doc string is
-considered the full description and should include expected arguments and
-anything else relevant to the particular command.
+A description can be assigned to a command by creating a doc string to the corresponding function. The description should
+contain a short summary on the first line, followed by an empty line. The remainder of the doc string is considered the full
+description and should include expected arguments and anything else relevant to the particular command.
 
 :::
 ::::

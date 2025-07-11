@@ -51,15 +51,13 @@ Note that timed metrics can still be triggered manually if desired.
 :::{tab-item} Python
 :sync: python
 
-To send metrics (e.g. readings from a sensor), there are two approaches: one is
+There are two approaches to send metrics (e.g. readings from a temperature sensor): one is
 via a function decorator and the other is via a scheduling method.
 
-The scheduling method,`schedule_metric`, makes it easy to create Metrics
-programmatically at run time. This can be particularly useful in cases where you
-only know e.g. the number of available channels after connecting to your
-hardware device. The method takes a metric name, the unit, a polling interval, a
-metric type and a callable function as arguments. The name of the metric will
-always be converted to full caps.
+The scheduling method,`schedule_metric`, makes it easy to create metrics
+programmatically at run time. This can be particularly useful in cases where e.g. the number of available channels is only
+known after connecting to the instrument hardware. The method takes a metric name, the unit, a polling interval, a
+metric type and a callable function as arguments. The name of the metric will always be converted to upper-case.
 
 * Metric type: can be `LAST_VALUE`, `ACCUMULATE`, `AVERAGE`, or `RATE`.
 * Polling interval: a float value in seconds, indicating how often the metric is transmitted.
@@ -78,8 +76,7 @@ a power supply, is called every 10 seconds, and the value is sent as Metric with
 name `Current`, unit `A` and an indicator for any receiver(s) to only show the
 last value.
 
-Similarly, you can arrange for a Metric to be sent via the `schedule_metric`
-function decorator:
+Similarly, a metric to can be sent via the `schedule_metric` function decorator:
 
 ```python
 @schedule_metric("A", MetricsType.LAST_VALUE, 10)
@@ -97,10 +94,9 @@ In either case, the doc string of the callable or decorated function serves as a
 description of the Metric and is published via the CMDP `STAT?` notification
 subscription.
 
-If you are using class methods for retrieving values for your metrics, then the
-decorator can be a convenient way of scheduling them. But if you need to create
-Metrics at run time, then the method is a powerful approach to schedule an
-arbitrary number of metrics.
+When using class methods for retrieving values for the metrics, then the
+decorator can be a convenient way of scheduling them. But if metrics need to be created at run time, then the method is a
+powerful approach to schedule an arbitrary number of metrics.
 
 ```{attention}
 Any registered Metrics are currently evaluated in any of the Satellite's states. This is in particular true for Metrics registered via the function decorator, as these can be executed even before the satellite is initialized.
