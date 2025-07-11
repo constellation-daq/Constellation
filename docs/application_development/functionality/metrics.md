@@ -103,11 +103,11 @@ Metrics at run time, then the method is a powerful approach to schedule an
 arbitrary number of metrics.
 
 ```{attention}
-Any registered Metrics are currently evaluated in any of the Satellite's states. This is in particular true for Metrics registered via the function decorator, as these can be executed even before the satellite is initialized.
+Note that any registered Metrics are by default retrieved in any of the Satellite's states, **except** `NEW`, `ERROR` and `initializing` where it is assumed that reliable Metrics cannot be guaranteed.
 
-This means that it is advisable to check for appropriate states within the function's body (e.g. `if not self.fsm.current_state_value in [SatelliteState.NEW, SatelliteState.ERROR]: ...`) and check the existence of a variable using `hasattr(self, "device")` first.
+If you have a Metric that is only valid in fewer than those states, it is advisable to add a check for the current state within the function's body (e.g. `if not self.fsm.current_state_value in [SatelliteState.RUN, SatelliteState.SAFE]: ...`). Simply return `None` in this case.
 
-Should an error occur during the retrieval of a Metric, an error will be logged but the Satellite will not be affected otherwise and the Metric will be requested again at the next scheduled interval.
+Should any error occur during the retrieval of a Metric, it will be logged but the Satellite will not be affected otherwise and the Metric will be requested again at the next scheduled interval.
 ```
 
 :::
