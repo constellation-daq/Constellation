@@ -267,9 +267,14 @@ def convert_satellite_readme_gitlab(name: str, project: Project, out_path: pathl
     try:
         website = project.web_url
 
-        # Download README
-        # TODO(simonspa) look if we can get the latest tag and use that as reference
-        markdown = project.files.raw(file_path="README.md", ref="main").decode()
+        # Check if this project has a tag, if not, skip
+        tags = project.tags.list(order_by="updated", sort="desc")
+        if not tags:
+            logger.verbose(f"Skipping {name} because repository does not provide any tag")
+            return None
+
+        # Download README for the latest tag:
+        markdown = project.files.raw(file_path="README.md", ref=tags[0].name).decode()
 
         # Extract category, language and parent classes
         category, language, parent_classes = extract_front_matter(markdown)

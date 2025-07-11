@@ -3,11 +3,11 @@
 
 import json
 import os
-import gitlab
 import pathlib
 import sys
 
 import copy_satellite_docs
+import gitlab
 import latex_helpers
 import sphinx
 import sphinx.util.logging
