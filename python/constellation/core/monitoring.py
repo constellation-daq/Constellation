@@ -164,8 +164,17 @@ class MonitoringSender(BaseSatelliteFrame):
         """CMDP publishing loop sending metric data and updating subscriptions."""
         last_update: dict[str, datetime] = {}
         while self._com_thread_evt and not self._com_thread_evt.is_set():
+            # run loop at intervals
+            time.sleep(0.1)
+
             # update list of subscribers (both log and metric)
             self._cmdp_transmitter.update_subscriptions()
+
+            # if the satellite is not ready for sending metrics then skip ahead
+            # and try again later
+            readyfcn = getattr(self, "_is_sending_metrics", None)
+            if readyfcn and not readyfcn():
+                continue
 
             for metric_name, param in self._metrics_callbacks.items():
                 # do we have subscribers?
@@ -191,7 +200,6 @@ class MonitoringSender(BaseSatelliteFrame):
                         self.log_cmdp_s.error(f"Could not retrieve metric {metric_name}: {repr(e)}")
                     last_update[metric_name] = datetime.now()
 
-            time.sleep(0.1)
         self.log_cmdp_s.info("Monitoring metrics thread shutting down.")
 
     def reentry(self) -> None:
