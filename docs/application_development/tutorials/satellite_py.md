@@ -141,7 +141,7 @@ this might be a USB connection, or maybe your hardware has its own Python
 library you can use to communicate with it.
 
 ```{caution}
-The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` states. You should therefore be careful to ensure that you e.g. close any already open connections before establishing new ones or keep track of any steps that you only need to perform once (e.g. loading an FPGA bitstream).
+The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` as well as 'ERROR' and 'SAFE' states. You should therefore be careful to ensure that you e.g. close any already open connections before establishing new ones or keep track of any steps that you only need to perform once (e.g. loading an FPGA bit stream).
 ```
 
 Note that the configuration parameters in `do_initialize` are accessed via
