@@ -120,6 +120,7 @@ get_channel_reading:  This command reads the current device value from the chann
                       This command can only be called in the following states: NEW, INIT, ORBIT
 ```
 
+:::
 :::{tab-item} Python
 :sync: python
 
