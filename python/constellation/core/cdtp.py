@@ -309,6 +309,10 @@ class DataReceiver:
         return self._running
 
     @property
+    def data_transmitters(self) -> set[str] | None:
+        return self._data_transmitters
+
+    @property
     def eor_timeout(self) -> int:
         """The EOR receiving timeout value (in s)."""
         return self._eor_timeout

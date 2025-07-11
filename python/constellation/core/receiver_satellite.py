@@ -96,6 +96,12 @@ class ReceiverSatellite(Satellite):
             else:
                 self._drc.add_sender(service)
 
+    @property
+    def data_transmitters(self) -> set[str] | None:
+        if self._drc is not None:
+            return self._drc.data_transmitters
+        return None
+
     def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
         """Receive begin-of-run (BOR)"""
         raise NotImplementedError()
