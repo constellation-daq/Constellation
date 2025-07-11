@@ -155,7 +155,7 @@ If the data should be sent as multiple frames, a list of bytes has to be added i
 
 ```{caution}
 Sending many small packets over the network often suffers from a performance penalty due to the additional overhead created
-by the protocol as well as the TCP/IP communication. It should be consider to use multiple frames or to concatenate the data
+by the protocol as well as the TCP/IP communication. It should be considered to use multiple frames or to concatenate the data
 into larger binary blobs. A future version of the CDTP protocol is currently under development that will automatically
 assemble multiple small messages into larger ones to optimize performance.
 ```
