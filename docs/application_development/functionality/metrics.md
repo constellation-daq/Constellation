@@ -84,12 +84,18 @@ function decorator:
 ```python
 @schedule_metric("A", MetricsType.LAST_VALUE, 10)
 def Current(self) -> Any:
+    """The current as measured by the power supply."""
     if self.device.can_read_current():
         return self.device.get_current()
     return None
 ```
 
-In case of the decorator, the name of the metric is taken from the function name. Again, if `None` is returned, no metric is sent.
+In case of the decorator, the name of the metric is taken from the function
+name. Again, if `None` is returned, no metric is sent.
+
+In either case, the doc string of the callable or decorated function serves as a
+description of the Metric and is published via the CMDP `STAT?` notification
+subscription.
 
 If you are using class methods for retrieving values for your metrics, then the
 decorator can be a convenient way of scheduling them. But if you need to create
