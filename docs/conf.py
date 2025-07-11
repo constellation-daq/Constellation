@@ -199,7 +199,7 @@ for glproject in gitlab_satellites.list():
     name = glproject.name
     satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
     if satellite_category:
-        satellites.setdefault(satellite_category, []).append(f"{name} <{slugify(name, lowercase=False)}>")
+        satellites.setdefault(satellite_category, []).append(f"{name} 📦 <{slugify(name, lowercase=False)}>")
 
 # Add external satellites
 ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()
@@ -211,7 +211,7 @@ with ext_satellites_json.open() as ext_satellites_json_file:
         website = satellite_json["website"]
         satellite_category = copy_satellite_docs.convert_satellite_readme_ext(name, readme, website, docsdir / "satellites")
         if satellite_category:
-            satellites.setdefault(satellite_category, []).append(f"{name} <{slugify(name, lowercase=False)}>")
+            satellites.setdefault(satellite_category, []).append(f"{name} 🌐 <{slugify(name, lowercase=False)}>")
 
 # Create tocs for categories
 satellite_tocs = ""
