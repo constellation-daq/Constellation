@@ -88,7 +88,7 @@ docs = [
 cli = ["ipython", "traitlets", "pygments"]
 # Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
-hdf5 = ["h5py"]
+hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 keithley = ["pyserial"]
 lecroy = ["lecrunch3>=3.0.3", "numpy"]

@@ -41,10 +41,6 @@ satellites_files = files(
   'satellites/__init__.py',
 )
 
-tools_files = files(
-  'tools/H5datareader.py',
-)
-
 py.install_sources(core_files,
   subdir: 'constellation/core')
 
@@ -53,9 +49,6 @@ py.install_sources(core_message_files,
 
 py.install_sources(satellites_files,
   subdir: 'constellation/satellites')
-
-py.install_sources(tools_files,
-  subdir: 'constellation/tools')
 
 subdir('satellites')
 
