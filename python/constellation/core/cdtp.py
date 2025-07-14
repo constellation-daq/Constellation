@@ -10,9 +10,9 @@ from __future__ import annotations
 import queue
 import threading
 import time
-from collections import Counter
 from collections.abc import Callable
-from enum import IntEnum, auto
+from dataclasses import dataclass
+from enum import IntEnum, IntFlag, auto
 from typing import Any
 from uuid import UUID
 
@@ -24,10 +24,28 @@ from .chirpmanager import DiscoveredService
 from .message.cdtp2 import CDTP2BORMessage, CDTP2EORMessage, CDTP2Message, DataBlock
 
 
+class RunCondition(IntFlag):
+    """Defines the condition flags of run data as transmitted via CDTP."""
+
+    GOOD = 0x00
+    TAINTED = 0x01
+    INCOMPLETE = 0x02
+    INTERRUPTED = 0x04
+    ABORTED = 0x08
+    DEGRADED = 0x10
+
+
 class TransmitterState(IntEnum):
     NOT_CONNECTED = auto()
     BOR_RECEIVED = auto()
     EOR_RECEIVED = auto()
+
+
+@dataclass
+class TransmitterStateSeq:
+    state: TransmitterState
+    seq: int
+    missed: int
 
 
 class SendTimeoutError(RuntimeError):
@@ -291,7 +309,7 @@ class DataReceiver:
         self._sockets: dict[UUID, zmq.Socket] = {}  # type: ignore[type-arg]
 
         self._data_transmitters = data_transmitters
-        self._data_transmitter_states = dict[str, TransmitterState]()
+        self._data_transmitter_states = dict[str, TransmitterStateSeq]()
         self._bytes_received = 0
 
         self._eor_timeout = 10
@@ -342,31 +360,42 @@ class DataReceiver:
             time_stopped = time.time()
             self.log_cdtp.debug("Starting timeout for EOR arrivals (%ss)", self._eor_timeout)
             # Warn about transmitters that never sent a BOR message
-            data_transmitters_not_connected = {
-                key: value for key, value in self._data_transmitter_states.items() if value == TransmitterState.NOT_CONNECTED
-            }
+            data_transmitters_not_connected = [
+                key for key, value in self._data_transmitter_states.items() if value.state == TransmitterState.NOT_CONNECTED
+            ]
             if len(data_transmitters_not_connected) > 0:
-                self.log_cdtp.warning("BOR message never send from %s", data_transmitters_not_connected.keys())
+                self.log_cdtp.warning("BOR message never send from %s", data_transmitters_not_connected)
             # Loop until all data transmitters that sent a BOR also sent an EOR
             while True:
+                # Filter for data transmitters that did not send an EOR
+                data_transmitters_no_eor = {
+                    key: value
+                    for key, value in self._data_transmitter_states.items()
+                    if value.state == TransmitterState.BOR_RECEIVED
+                }
                 # Check if EOR messages are missing
-                missing_eors = Counter(self._data_transmitter_states.values())[TransmitterState.BOR_RECEIVED]
-                if missing_eors == 0:
+                if len(data_transmitters_no_eor) == 0:
                     break
                 # If timeout reached, throw
                 if time.time() - time_stopped > self._eor_timeout:
                     # Stop thread
                     self._stop_pull_thread()
-                    # Filter for data transmitters that did not send an EOR
-                    data_transmitters_no_eor = [
-                        key for key, value in self._data_transmitter_states.items() if value == TransmitterState.BOR_RECEIVED
-                    ]
+                    # Create substitute EORs
                     self.log_cdtp.warning(
                         "Not all EOR messages received, emitting substitute EOR messages for %s",
                         list(data_transmitters_no_eor.keys()),
                     )
-                    # Create substitute EORs
-                    pass  # TODO
+                    for data_transmitter, state_seq in data_transmitters_no_eor.items():
+                        self.log_cdtp.debug("Creating substitute EOR for %s", data_transmitter)
+                        condition_code = RunCondition.ABORTED
+                        if state_seq.missed > 0:
+                            condition_code |= RunCondition.INCOMPLETE
+                        # TODO: check degraded
+                        run_metadata = {
+                            "condition_code": condition_code.value,
+                            "condition": condition_code.name,
+                        }
+                        self._receive_eor(data_transmitter, {}, run_metadata)
                     # Raise ReceiveTimeoutError so that we can catch this scenario in interrupting
                     raise RecvTimeoutError(f"EOR messages from {list(data_transmitters_no_eor.keys())}", self._eor_timeout)
                 # Sleep a bit to avoid hot-loop
@@ -432,7 +461,7 @@ class DataReceiver:
         self._data_transmitter_states.clear()
         if self._data_transmitters is not None:
             for data_transmitter in self._data_transmitters:
-                self._data_transmitter_states[data_transmitter] = TransmitterState.NOT_CONNECTED
+                self._data_transmitter_states[data_transmitter] = TransmitterStateSeq(TransmitterState.NOT_CONNECTED, 0, 0)
 
     def _handle_cdtp_message(self, msg: CDTP2Message) -> None:
         if msg.type == CDTP2Message.Type.DATA:
@@ -449,12 +478,12 @@ class DataReceiver:
         # If registered in states, raise if already connected
         if (
             msg.sender in self._data_transmitter_states
-            and self._data_transmitter_states[msg.sender] != TransmitterState.NOT_CONNECTED
+            and self._data_transmitter_states[msg.sender].state != TransmitterState.NOT_CONNECTED
         ):
             raise InvalidCDTPMessageType(msg.type, f"already received BOR from {msg.sender}")
 
         # Udate state
-        self._data_transmitter_states[msg.sender] = TransmitterState.BOR_RECEIVED
+        self._data_transmitter_states[msg.sender] = TransmitterStateSeq(TransmitterState.BOR_RECEIVED, 0, 0)
 
         # BOR callback
         self._receive_bor(msg.sender, msg.user_tags, msg.configuration)
@@ -470,8 +499,15 @@ class DataReceiver:
         # Check that BOR was received
         self._check_bor_received(CDTP2Message.Type.DATA, msg.sender)
 
-        # Data callback for each data block
+        # Store iterator of dict to avoid multiple lookups
+        data_transmitter_it = self._data_transmitter_states[msg.sender]
+
         for data_block in msg.data_blocks:
+            # Store sequence number and missed messages
+            data_transmitter_it.missed += data_block.sequence_number - 1 - data_transmitter_it.seq
+            data_transmitter_it.seq = data_block.sequence_number
+
+            # Data block callback
             self._receive_data(msg.sender, data_block)
 
     def _handle_eor_message(self, msg: CDTP2EORMessage) -> None:
@@ -480,16 +516,32 @@ class DataReceiver:
         # Check that BOR was received
         self._check_bor_received(CDTP2Message.Type.EOR, msg.sender)
 
+        # Store iterator of dict to avoid multiple lookups
+        data_transmitter_it = self._data_transmitter_states[msg.sender]
+
         # Update state
-        self._data_transmitter_states[msg.sender] = TransmitterState.EOR_RECEIVED
+        data_transmitter_it.state = TransmitterState.EOR_RECEIVED
+
+        # Check for missed message and update metadata
+        if data_transmitter_it.missed > 0:
+            self._apply_run_condition(msg, RunCondition.INCOMPLETE)
+        # TODO: check degraded
 
         # EOR callback
         self._receive_eor(msg.sender, msg.user_tags, msg.run_metadata)
 
+    def _apply_run_condition(self, msg: CDTP2EORMessage, condition_code: RunCondition) -> None:
+        try:
+            condition_code = RunCondition(msg.run_metadata["condition_code"]) | condition_code
+        except KeyError:
+            pass
+        msg.run_metadata["condition_code"] = condition_code.value
+        msg.run_metadata["condition"] = condition_code.name
+
     def _check_bor_received(self, type: CDTP2Message.Type, sender: str) -> None:
         # If not in states or state not BOR_RECEIVED, throw
         try:
-            if self._data_transmitter_states[sender] == TransmitterState.BOR_RECEIVED:
+            if self._data_transmitter_states[sender].state == TransmitterState.BOR_RECEIVED:
                 return
         except KeyError:
             pass

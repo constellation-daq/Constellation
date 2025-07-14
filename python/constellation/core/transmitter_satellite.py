@@ -5,11 +5,13 @@ SPDX-License-Identifier: EUPL-1.2
 A base module for a Constellation Satellite that sends data.
 """
 
+from datetime import datetime, timezone
 from typing import Any
 
 import zmq
 
-from .cdtp import DataTransmitter, TransmitterState
+from . import __version__, __version_code_name__
+from .cdtp import DataTransmitter, RunCondition, TransmitterState
 from .chirpmanager import CHIRPServiceIdentifier
 from .configuration import Configuration
 from .error import debug_log, handle_error
@@ -23,6 +25,8 @@ class TransmitterSatellite(Satellite):
     def __init__(self, data_port: int, *args: Any, **kwargs: Any):
         self._bor = dict[str, Any]()
         self._eor = dict[str, Any]()
+        self._run_metadata = dict[str, Any]()
+        self._mark_run_tainted = False
 
         # Initialize satellite
         super().__init__(*args, **kwargs)
@@ -78,12 +82,22 @@ class TransmitterSatellite(Satellite):
         self._dtm.eor_timeout = self.config.setdefault("_eor_timeout", 10)
         self._dtm.payload_threshold = self.config.setdefault("_payload_threshold", 128)
         self._dtm.queue_size = self.config.setdefault("_queue_size", 32768)
+        self._data_license = self.config.setdefault("_data_license", "ODC-By-1.0")
 
     def _pre_run_hook(self, run_identifier: str) -> None:
         """Hook run immediately before `do_run()` is called.
 
         Send the BOR message and start the data transmitter.
         """
+        # Run metadata
+        self._run_metadata = {
+            "version": __version__,
+            "version_full": f"Constellation v{__version__} ({__version_code_name__})",
+            "run_id": run_identifier,
+            "time_start": datetime.now(timezone.utc),
+            "license": self._data_license,
+        }
+        self._mark_run_tainted = False
         # Send BOR message
         self._dtm.send_bor(self._bor, self.config.get_applied())
         # Start data transmitter
@@ -96,6 +110,8 @@ class TransmitterSatellite(Satellite):
 
         Stops the data transmitter and sends the EOR message after `do_stopping()` has finished.
         """
+        self._update_run_metadata(RunCondition.GOOD)
+
         res: str = super()._wrap_stop(payload)
 
         # Stop data transmitter
@@ -103,7 +119,7 @@ class TransmitterSatellite(Satellite):
         # Check for exceptions
         self._dtm.check_exception()
         # Send EOR message
-        self._dtm.send_eor(self._eor, {})
+        self._dtm.send_eor(self._eor, self._run_metadata)
 
         return res
 
@@ -114,6 +130,8 @@ class TransmitterSatellite(Satellite):
 
         Stops the data transmitter and sends the EOR message after `do_interrupting()` has finished.
         """
+        self._update_run_metadata(RunCondition.INTERRUPTED)
+
         res: str = super()._wrap_interrupt(payload)
 
         # Stop data transmitter
@@ -122,7 +140,7 @@ class TransmitterSatellite(Satellite):
         self._dtm.check_exception()
         # Send EOR message if BOR was sent
         if self._dtm.state == TransmitterState.BOR_RECEIVED:
-            self._dtm.send_eor(self._eor, {})
+            self._dtm.send_eor(self._eor, self._run_metadata)
 
         return res
 
@@ -133,6 +151,9 @@ class TransmitterSatellite(Satellite):
 
         Stops the data transmitter and sends the EOR message after `do_failure()` has finished.
         """
+        self.mark_run_tainted()
+        self._update_run_metadata(RunCondition.ABORTED)
+
         res: str = super()._wrap_failure()
 
         # Stop data transmitter
@@ -140,9 +161,18 @@ class TransmitterSatellite(Satellite):
         # No need to check for exceptions, we are already in error
         # Send EOR message if BOR was sent
         if self._dtm.state == TransmitterState.BOR_RECEIVED:
-            self._dtm.send_eor(self._eor, {})
+            self._dtm.send_eor(self._eor, self._run_metadata)
 
         return res
+
+    def _update_run_metadata(self, condition_code: RunCondition) -> None:
+        """Update run metadata at the end of a run"""
+        self._run_metadata["time_end"] = datetime.now(timezone.utc)
+        if self._mark_run_tainted:
+            condition_code |= RunCondition.TAINTED
+        # TODO: check degraded
+        self._run_metadata["condition_code"] = condition_code.value
+        self._run_metadata["condition"] = condition_code.name
 
     def check_rate_limited(self) -> bool:
         """Check if the satellite is currently rate limited"""
@@ -155,6 +185,10 @@ class TransmitterSatellite(Satellite):
     def send_data_block(self, data_block: DataBlock) -> None:
         """Queue a data block for sending"""
         self._dtm.send_data_block(data_block)
+
+    def mark_run_tainted(self) -> None:
+        """Mark the current run as tainted"""
+        self._mark_run_tainted = True
 
     def do_run(self, run_identifier: str) -> str:
         """Perform the data acquisition and enqueue the results.
