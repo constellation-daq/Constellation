@@ -3,6 +3,7 @@
 
 FROM gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
 ARG SRC_DIR "."
+ENV PKG_CONFIG_PATH /usr/local/lib64/pkgconfig
 
 # Set up and build Constellation
 RUN meson setup build -Dcxx_tests=disabled -Dbuild_gui=none -Dbuildtype=release -Db_lto=true -Db_lto_mode=thin ${SRC_DIR}
