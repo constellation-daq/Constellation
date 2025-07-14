@@ -8,7 +8,7 @@ finite state machine.
 
 ```{seealso}
 This how-to describes the procedure of implementing a new Constellation satellite in C++. For Python look [here](./satellite_py.md)
-and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
+and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/satellites/microsat/).
 ```
 
 ## Implementing the FSM Transitions

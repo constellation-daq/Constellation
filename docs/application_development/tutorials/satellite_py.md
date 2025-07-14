@@ -9,7 +9,7 @@ There are also multiple [read-made satellites](https://gitlab.desy.de/constellat
 
 ```{seealso}
 This how-to describes the procedure of implementing a new satellite for Constellation in Python. For C++ look [here](./satellite_cxx.md)
-and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/microsat/).
+and for the microcontroller implementation, please refer to the [MicroSat project](https://gitlab.desy.de/constellation/satellites/microsat/).
 ```
 
 ## The basic satellite class structure
