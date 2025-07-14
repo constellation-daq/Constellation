@@ -11,3 +11,6 @@ RUN meson install -C build
 
 # Minify image
 RUN rm -rf ${SRC_DIR} build/
+
+# Set entry point to satellite executable
+ENTRYPOINT ["Satellite"]
