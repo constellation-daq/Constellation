@@ -193,8 +193,12 @@ for path in satellite_files:
 
 # Retrieve satellites from Constellation organization:
 gl = gitlab.Gitlab("https://gitlab.desy.de")
-gitlab_satellites = gl.groups.get("26685").projects
-for glproject in gitlab_satellites.list():
+gitlab_satellites = []
+try:
+    gitlab_satellites = gl.groups.get("26685").projects.list()
+except Exception as e:
+    logger.warning(f"Failed to connect to GitLab: {e}")
+for glproject in gitlab_satellites:
     glproject = gl.projects.get(glproject.id)
     name = glproject.name
     satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
