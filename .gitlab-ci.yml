@@ -666,6 +666,19 @@ deploy:release:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v.*/
 
+deploy:docker:
+  extends:
+    - .deploy
+  image: gcr.io/kaniko-project/executor:debug
+  script:
+    - >-
+      /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/etc/Dockerfile"
+      --destination "${CI_REGISTRY_IMAGE}/constellation:latest"
+      --build-arg "SRC_DIR=${CI_PROJECT_DIR}"
+      --no-push
+
 deploy:zenodo:
   extends:
     - .deploy
