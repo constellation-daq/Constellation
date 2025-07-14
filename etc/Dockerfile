@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-FROM gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
+FROM gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
 ARG SRC_DIR "."
 
 # Set up and build Constellation
