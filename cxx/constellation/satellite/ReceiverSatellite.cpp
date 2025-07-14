@@ -329,7 +329,6 @@ void ReceiverSatellite::stopping_receiver() {
             for(const auto& data_transmitter : data_transmitters_no_eor) {
                 LOG(BasePoolT::pool_logger_, DEBUG) << "Creating substitute EOR for " << data_transmitter.first;
                 auto run_metadata = Dictionary();
-                run_metadata["run_id"] = getRunIdentifier();
                 auto condition_code = CDTP::RunCondition::ABORTED;
                 if(data_transmitter.second.missed > 0) {
                     condition_code |= CDTP::RunCondition::INCOMPLETE;
