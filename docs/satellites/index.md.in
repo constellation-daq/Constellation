@@ -8,5 +8,6 @@ Satellites from three different sources are listed here:
 * Satellites marked with "🌐" are developed independently from the Constellation main development team. The satellite descriptions are generated from external sources which have been submitted for inclusion on these websites by their respective developers.
 
 Detailed descriptions of how to implement new satellites in either C++ or Python can be found in [the application developer guide](../application_development/index).
+Whether new satellites may be added to the main repository or should remain independent depends on a number of criteria, which are documented [here](../application_development/intro/listing).
 
 SATELLITES
