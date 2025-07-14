@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <stop_token>
+#include <string>
 #include <string_view>
 #include <thread>
 #include <utility>
@@ -52,6 +53,8 @@ namespace constellation::satellite {
 
         /**
          * @brief Queue data block for sending created with `newDataBlock()`
+         *
+         * @note This call might block if current data rate limited
          *
          * @param data_block Data block to send
          */
@@ -215,6 +218,13 @@ namespace constellation::satellite {
          * @param stop_token Stop token
          */
         void sending_loop(const std::stop_token& stop_token);
+
+        /**
+         * @brief Handle failure in `sending_loop`
+         *
+         * @param reason Reason for failure
+         */
+        void send_failure(const std::string& reason);
 
     private:
         zmq::socket_t cdtp_push_socket_;

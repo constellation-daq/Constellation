@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <numeric>
 #include <stop_token>
 #include <string>
@@ -340,11 +341,11 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         try {
             const auto sent = message.assemble().send(cdtp_push_socket_);
             if(!sent) [[unlikely]] {
-                getFSM().requestFailure("Failed to send message: data timeout reached");
+                send_failure("data timeout reached");
                 return;
             }
         } catch(const zmq::error_t& error) {
-            getFSM().requestFailure("Failed to send message: "s + error.what());
+            send_failure(error.what());
             return;
         }
 
@@ -353,4 +354,19 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         current_payload_bytes = 0;
         message.clearBlocks();
     }
+}
+
+void TransmitterSatellite::send_failure(const std::string& reason) {
+    // Request failure as async future
+    auto failure_fut =
+        std::async(std::launch::async, [this, &reason]() { getFSM().requestFailure("Failed to send message: " + reason); });
+    // While still in RUN state, pop queue to avoid deadlock with block queue push
+    while(getState() == CSCP::State::RUN) {
+        while(!data_block_queue_.was_empty()) {
+            data_block_queue_.pop();
+        }
+        std::this_thread::yield();
+    }
+    // Join future
+    failure_fut.get();
 }
