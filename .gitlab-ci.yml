@@ -677,7 +677,8 @@ deploy:docker:
       --dockerfile "${CI_PROJECT_DIR}/etc/Dockerfile"
       --destination "${CI_REGISTRY_IMAGE}/constellation:latest"
       --build-arg "SRC_DIR=${CI_PROJECT_DIR}"
-      --no-push
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v.*/
 
 deploy:zenodo:
   extends:
