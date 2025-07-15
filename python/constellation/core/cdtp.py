@@ -72,7 +72,7 @@ class PushThread(threading.Thread):
             msg.clear_data_blocks()
         except zmq.error.Again:
             self.exc = SendTimeoutError("DATA message", self._dtm._data_timeout)
-            self._dtm.log_cdtp.critical("%s", self.exc)
+            self._dtm._failure_cb(str(self.exc))
 
     def run(self) -> None:
         last_sent = time.time()
@@ -117,7 +117,13 @@ class PushThread(threading.Thread):
 class DataTransmitter:
     """Base class for sending CDTP messages via ZMQ."""
 
-    def __init__(self, name: str, socket: zmq.Socket, logger: ConstellationLogger):  # type: ignore[type-arg]
+    def __init__(
+        self,
+        name: str,
+        socket: zmq.Socket,  # type: ignore[type-arg]
+        logger: ConstellationLogger,
+        failure_cb: Callable[[str], None],
+    ):
         self._name = name
         self._socket = socket
         self.log_cdtp = logger
@@ -129,6 +135,7 @@ class DataTransmitter:
         self._queue = queue.Queue[DataBlock](self._queue_size)
         self._stopevt = threading.Event()
         self._push_thread: PushThread | None = None
+        self._failure_cb = failure_cb
 
         self._data_timeout: int = -1
         self._bor_timeout: int = -1

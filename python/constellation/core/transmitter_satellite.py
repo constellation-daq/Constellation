@@ -44,7 +44,7 @@ class TransmitterSatellite(Satellite):
         self.log_cdtp.info(f"Publishing data on port {self.data_port}")
 
         # Create data transmitter
-        self._dtm = DataTransmitter(self.name, self._cdtp_socket, self.log_cdtp)
+        self._dtm = DataTransmitter(self.name, self._cdtp_socket, self.log_cdtp, self._failure_callback)
 
         # Register CHIRP service
         self.register_offer(CHIRPServiceIdentifier.DATA, self.data_port)
@@ -116,8 +116,6 @@ class TransmitterSatellite(Satellite):
 
         # Stop data transmitter
         self._dtm.stop_sending()
-        # Check for exceptions
-        self._dtm.check_exception()
         # Send EOR message
         self._dtm.send_eor(self._eor, self._run_metadata)
 
@@ -136,8 +134,6 @@ class TransmitterSatellite(Satellite):
 
         # Stop data transmitter
         self._dtm.stop_sending()
-        # Check for exceptions
-        self._dtm.check_exception()
         # Send EOR message if BOR was sent
         if self._dtm.state == TransmitterState.BOR_RECEIVED:
             self._dtm.send_eor(self._eor, self._run_metadata)
@@ -146,7 +142,7 @@ class TransmitterSatellite(Satellite):
 
     @handle_error
     @debug_log
-    def _wrap_failure(self) -> str:
+    def _wrap_failure(self, payload: Any) -> str:
         """Wrapper for the 'interrupting' transitional state of the FSM.
 
         Stops the data transmitter and sends the EOR message after `do_failure()` has finished.
@@ -154,16 +150,20 @@ class TransmitterSatellite(Satellite):
         self.mark_run_tainted()
         self._update_run_metadata(RunCondition.ABORTED)
 
-        res: str = super()._wrap_failure()
+        res: str = super()._wrap_failure(payload)
 
         # Stop data transmitter
         self._dtm.stop_sending()
-        # No need to check for exceptions, we are already in error
         # Send EOR message if BOR was sent
         if self._dtm.state == TransmitterState.BOR_RECEIVED:
             self._dtm.send_eor(self._eor, self._run_metadata)
 
         return res
+
+    def _failure_callback(self, err_msg: str) -> None:
+        """Failure callback for data transmitter"""
+        self._transition("failure", err_msg, thread=False)
+        self.log_cdtp.critical(err_msg)
 
     def _update_run_metadata(self, condition_code: RunCondition) -> None:
         """Update run metadata at the end of a run"""
