@@ -56,9 +56,9 @@ class H5DataWriter(ReceiverSatellite):
     def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
         grp = self.outfile.create_group(sender).create_group("BOR")
         # Add user tags
-        grp.create_group("user_tags").attrs.update(user_tags)
+        grp.create_group("user_tags").attrs.update(self._attrs_convert(user_tags))
         # Add configuration
-        grp.create_group("configuration").attrs.update(configuration)
+        grp.create_group("configuration").attrs.update(self._attrs_convert(configuration))
         # If in SWMR mode then we must create datasets in advance
         if self.swmr_mode:
             self._swmr_create_dataset(sender)
@@ -67,13 +67,13 @@ class H5DataWriter(ReceiverSatellite):
         if not self.swmr_mode:
             grp = self.outfile[sender].create_group("EOR")  # type: ignore
             # add user tags
-            grp.create_group("user_tags").attrs.update(user_tags)
+            grp.create_group("user_tags").attrs.update(self._attrs_convert(user_tags))
             # add run metadata
-            grp.create_group("run_metadata").attrs.update(run_metadata)
+            grp.create_group("run_metadata").attrs.update(self._attrs_convert(run_metadata))
         else:
             # Encode EOR as json buffer
-            eor_user_tags = np.frombuffer(json.dumps(user_tags).encode("utf-8"), dtype=np.uint8)
-            eor_run_meta = np.frombuffer(json.dumps(run_metadata).encode("utf-8"), dtype=np.uint8)
+            eor_user_tags = np.frombuffer(self._json_dumpb(user_tags), dtype=np.uint8)
+            eor_run_meta = np.frombuffer(self._json_dumpb(run_metadata), dtype=np.uint8)
             dset_user_tags: h5py.Dataset = self.outfile[sender]["EOR"]["user_tags"]  # type: ignore
             dset_run_meta: h5py.Dataset = self.outfile[sender]["EOR"]["run_metadata"]  # type: ignore
             # Resize if needed
@@ -133,7 +133,7 @@ class H5DataWriter(ReceiverSatellite):
 
         # Create group for data block
         data_grp = grp.create_group(f"data_{data_block.sequence_number:09}")
-        data_grp.attrs.update(data_block.tags)
+        data_grp.attrs.update(self._attrs_convert(data_block.tags))
 
         # Extract numpy data type if specified
         dtype = data_block.tags.get("dtype", np.uint8)
@@ -183,7 +183,7 @@ class H5DataWriter(ReceiverSatellite):
             dataidx_dset.resize(dataidx_dset.shape[0] + 100, axis=0)
         dataidx_dset[counts] = data_idx
 
-        meta = np.frombuffer(json.dumps(tags, separators=(",", ":")).encode("utf-8"), dtype=np.uint8)
+        meta = np.frombuffer(self._json_dumpb(tags), dtype=np.uint8)
         new_idx = meta_idx + meta.shape[0]
         if new_idx >= meta_dset.shape[0]:
             # extend meta dataset by at least 1kB to avoid frequent resizes
@@ -238,7 +238,21 @@ class H5DataWriter(ReceiverSatellite):
             "swmr_mode": self.swmr_mode,
         }
         grp = outfile.create_group(self.name)
-        grp.attrs.update(metadata)
+        grp.attrs.update(self._attrs_convert(metadata))
+
+    def _json_dumpb(self, obj: Any) -> bytes:
+        """Dumps object to JSON with `str` as fallback and encoded to bytes"""
+        return json.dumps(obj, separators=(",", ":"), default=str).encode("utf-8")
+
+    def _attrs_convert(self, meta: dict[str, Any]) -> dict[str, Any]:
+        """Convert dictionary values such that they can be stored as attributes"""
+
+        def _convert(value: Any) -> Any:
+            if isinstance(value, datetime.datetime):
+                return str(value)
+            return value
+
+        return {key: _convert(value) for key, value in meta.items()}
 
     @schedule_metric("bool", MetricsType.LAST_VALUE, 5)
     def concurrent_reading_enabled(self) -> bool | None:
