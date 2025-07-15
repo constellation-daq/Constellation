@@ -459,17 +459,13 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
        data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP2Message::Type::EOR, "did not receive BOR from " + std::string(sender));
     }
+
     auto metadata = eor_message.getRunMetadata();
 
-    // Mark run as incomplete if there are missed messages:
-    if(data_transmitter_it->second.missed > 0) {
-        auto condition_code = CDTP::RunCondition::INCOMPLETE;
-        if(is_run_degraded()) {
-            condition_code |= CDTP::RunCondition::DEGRADED;
-        }
+    const auto apply_run_condition = [&metadata](CDTP::RunCondition condition_code) {
         auto condition_code_it = metadata.find("condition_code");
         if(condition_code_it != metadata.end()) {
-            // Add INCOMPLETE flag to existing condition
+            // Add flag to existing condition
             condition_code |= condition_code_it->second.get<CDTP::RunCondition>();
             condition_code_it->second = condition_code;
         } else {
@@ -477,6 +473,16 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
         }
         // Overwrite existing human-readable run condition
         metadata.insert_or_assign("condition", enum_name(condition_code));
+    };
+
+    // Mark run as incomplete if there are missed messages
+    if(data_transmitter_it->second.missed > 0) {
+        apply_run_condition(CDTP::RunCondition::INCOMPLETE);
+    }
+
+    // Mark run as degraded if there run degraded
+    if(is_run_degraded()) {
+        apply_run_condition(CDTP::RunCondition::DEGRADED);
     }
 
     data_transmitter_it->second.state = TransmitterState::EOR_RECEIVED;
