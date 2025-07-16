@@ -24,10 +24,10 @@ def handle_error(func: Callable[..., Any]) -> Callable[..., Any]:
             err_msg += f"Not possible in {exc.state.name} state."
             raise RuntimeError(err_msg) from exc
         except Exception as exc:
-            err_msg = f"Unable to execute {func.__name__}: {repr(exc)}"
             # set the FSM into failure
+            err_msg = f"Unable to execute {func.__name__}: {repr(exc)}"
             self.fsm.failure(err_msg)
-            self._wrap_failure()
+            self._wrap_failure(err_msg)
             self.log.critical(err_msg + traceback.format_exc())
             return None
 
