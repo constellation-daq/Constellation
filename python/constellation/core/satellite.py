@@ -148,8 +148,9 @@ class Satellite(
             SatelliteState.SAFE,
             SatelliteState.ERROR,
         ]:
-            self.fsm.failure("Performing controlled re-entry and self-destruction.")
-            self._wrap_failure()
+            err_msg = "Performing controlled re-entry and self-destruction."
+            self.fsm.failure(err_msg)
+            self._wrap_failure(err_msg)
         super().reentry()
 
     # --------------------------- #
@@ -361,7 +362,7 @@ class Satellite(
         return "Finished acquisition."
 
     @debug_log
-    def _wrap_failure(self, *_args: Any, **_kwargs: Any) -> str:
+    def _wrap_failure(self, payload: Any) -> str:
         """Wrapper for the 'ERROR' state of the FSM.
 
         This method performs the basic Satellite transition before passing
@@ -440,12 +441,10 @@ class Satellite(
             f"caught {args.exc_type} with value \
             {args.exc_value} in thread {args.thread} and traceback {tb}."
         )
-        self._wrap_failure()
         # change internal state
-        self.fsm.failure(
-            f"Thread {args.thread} failed. Caught exception {args.exc_type} \
-            with value {args.exc_value}."
-        )
+        err_msg = f"Thread {args.thread} failed. Caught exception {args.exc_type} with value {args.exc_value}."
+        self.fsm.failure(err_msg)
+        self._wrap_failure(err_msg)
 
     # -------------------------- #
     # ----- device methods ----- #
