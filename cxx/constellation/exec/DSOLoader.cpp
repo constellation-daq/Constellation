@@ -97,6 +97,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& h
 
     // Get found path with highest priority
     const std::filesystem::path library_path = possible_paths.front();
+    LOG(TRACE) << "Loading library " << library_path.filename() << " from " << library_path.parent_path();
 
     // Get actual DSO name from path
     dso_name_ = library_path.stem().string().substr(std::string(CNSTLN_DSO_PREFIX).size());
@@ -116,7 +117,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& h
     }
 #endif
 
-    LOG(DEBUG) << "Loaded shared library " << library_path.filename();
+    LOG(DEBUG) << "Loaded library " << library_path.filename();
 }
 
 DSOLoader::~DSOLoader() {
