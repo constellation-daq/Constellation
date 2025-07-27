@@ -489,6 +489,7 @@ lint:clang-scan-build:
 lint:coverity-scan:
   extends:
     - .lint
+    - .cpp-hi-load
     - .ubuntu-24.04
   needs:
     - job: build:ubuntu-24.04
@@ -510,7 +511,6 @@ lint:coverity-scan:
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
-  <<: *cpp-hi-load
 
 # format stage
 
