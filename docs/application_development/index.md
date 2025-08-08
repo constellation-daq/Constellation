@@ -17,6 +17,7 @@ Features, protocols and the behavior of individual components may still change.
 ```{toctree}
 :caption: Introduction
 
+intro/tools
 intro/listing
 ```
 
