@@ -79,7 +79,11 @@ def mock_sender_satellite(mock_zmq_context, mock_chirp_transmitter):
             return "done"
 
         def do_starting(self, payload: Any):
-            self.BOR = "set in do_starting()"
+            self.BOR = self.BOR | {"additional_status": "set in do_starting()"}
+            return "done"
+
+        def do_stopping(self):
+            self.EOR = {"final_status": "set in do_stopping()"}
             return "done"
 
         def do_run(self, payload: Any):
@@ -278,6 +282,8 @@ def test_sending_package(
         if BOR:
             assert msg.msgtype == CDTPMessageIdentifier.BOR
             assert msg.payload["_role"] == "DYNAMIC"
+            assert msg.meta["additional_status"] == "set in do_starting()"
+            assert msg.meta["status"] == "set at initialization"
             BOR = False
         else:
             assert msg.msgtype == CDTPMessageIdentifier.DAT
@@ -294,6 +300,7 @@ def test_sending_package(
     # EOR
     msg = rx.recv()
     assert msg.msgtype == CDTPMessageIdentifier.EOR
+    assert msg.meta["final_status"] == "set in do_stopping()"
     assert transmitter.payload_id == 10
 
 
@@ -344,7 +351,7 @@ def test_receive_writing_package(
             # receiver should still be in 'stopping' as no EOR has been sent
             assert receiver.fsm.current_state_value.name == "stopping", "Receiver stopped before receiving EORE"
             # send EORE
-            tx.send_end({"mock_end": f"whatanend{run_num}"})
+            tx.send_end({"mock_end_payload": f"whatanend{run_num}"}, {"mock_end_meta": f"EOR{run_num}"})
             wait_for_state(receiver.fsm, "ORBIT", 1)
             assert receiver.run_identifier == str(run_num)
 
@@ -361,7 +368,8 @@ def test_receive_writing_package(
             assert bor in h5file["simple_sender"].keys()
             assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
             assert eor in h5file["simple_sender"].keys()
-            assert "whatanend" in str(h5file["simple_sender"][eor]["mock_end"][()], encoding="utf-8")
+            assert "whatanend" in str(h5file["simple_sender"][eor]["mock_end_payload"][()], encoding="utf-8")
+            assert "EOR" in str(h5file["simple_sender"][eor]["mock_end_meta"][()], encoding="utf-8")
             assert set(dat).issubset(h5file["simple_sender"].keys()), "Data packets missing in file"
             assert (payload == h5file["simple_sender"][dat[0]]).all()
             # interpret the uint8 values again as uint16:
@@ -437,7 +445,7 @@ def test_receive_writing_swmr_mode(
             # stop
             commander.request_get_response("stop")
             # send EORE
-            tx.send_end({"mock_end": f"whatanend{run_num}"})
+            tx.send_end({"mock_end_payload": f"whatanend{run_num}"}, {"mock_end_meta": f"EOR{run_num}"})
             wait_for_state(receiver.fsm, "ORBIT", 1)
             assert receiver._swmr_mode_enabled is False
             assert receiver.run_identifier == str(run_num)
@@ -455,6 +463,7 @@ def test_receive_writing_swmr_mode(
             assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
             assert eor in h5file["simple_sender"].keys()
             assert "whatanend" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
+            assert f"EOR{run_num}" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
             assert "data" in h5file["simple_sender"].keys(), "Data missing in file"
             # interpret the uint8 values again as int16 and compare packets:
             for i, payload in enumerate(payloads):
