@@ -75,11 +75,14 @@ class H5DataWriter(DataReceiver):
         """Write EOR to file"""
         if not self.swmr_mode:
             grp = outfile[item.name].create_group("EOR")
-            # add meta information as attributes
+            # add meta information as attributes, merging payload (non-user EOR)
+            # and meta (user-set EOR):
             grp.update(item.payload)
+            grp.update(item.meta)
         else:
-            # encode EOR as bytes
-            eor = np.frombuffer(json.dumps(item.payload).encode("utf-8"), dtype=np.uint8)
+            # encode EOR as bytes, merging payload (non-user EOR) and meta
+            # (user-set EOR):
+            eor = np.frombuffer(json.dumps(item.payload | item.meta).encode("utf-8"), dtype=np.uint8)
             dset = outfile[item.name]["EOR"]
             # resize if needed
             if eor.shape[0] > dset.shape[0]:
