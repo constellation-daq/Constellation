@@ -22,9 +22,9 @@ pip install pyserial git+https://gitlab.com/hperrey/pycaenhv.git@master
 
 Note that this is a fork of the original `pycaenhv` package ([original package
 source can be found here](https://github.com/vasoto/pycaenhv)) which additional
-features. Once these have been upstreamed ([see this upstreaming
-PR](https://github.com/vasoto/pycaenhv/pull/6)), the original package can be
-used.
+features. Once these have been merged into the upstream sources ([see this
+upstreaming PR](https://github.com/vasoto/pycaenhv/pull/6)), the original
+package can be used.
 
 ## Parameters
 
