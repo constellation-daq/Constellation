@@ -67,7 +67,7 @@ class CaenHV(Satellite):
         self._configure_monitoring(metrics_poll_interval)
         return f"Connected to crate and configured {len(crate.boards)} boards"
 
-    def _set_configuration_on_board(self, configuration: Configuration):
+    def _set_configuration_on_board(self, configuration: Configuration) -> None:
         # process configuration
         config_keys = configuration.get_keys()
         with self.caen as crate:
@@ -108,13 +108,12 @@ class CaenHV(Satellite):
                             chno,
                             val,
                         )
-            return crate
 
     def do_reconfigure(self, partial_config: Configuration) -> str:
         """Reconfigure the HV module"""
-        crate = self._set_configuration_on_board(partial_config)
+        self._set_configuration_on_board(partial_config)
         self._power_up(partial_config)
-        return f"Reconfigured {len(crate.boards)} boards"
+        return "Reconfigured available boards"
 
     def do_launching(self) -> str:
         """Power up the HV."""
