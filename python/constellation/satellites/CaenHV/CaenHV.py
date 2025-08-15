@@ -22,7 +22,7 @@ from .lib_caen_ndt1470 import CaenNDT1470Manager
 class CaenHV(Satellite):
     """Satellite controlling a CAEN HV crate via `pycaenhv` library.
 
-    Supported models include SY5527.
+    Supported models include SY5527 and NDT1470.
 
     """
 

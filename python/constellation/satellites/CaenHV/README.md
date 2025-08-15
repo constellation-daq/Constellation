@@ -7,7 +7,9 @@ description: "Satellite controlling a CAEN high-voltage crate such as the SY5527
 
 ## Description
 
-This Satellite allows to control CAEN high-voltage crates such as the SY5527 and the inserted modules.
+This Satellite allows to control CAEN high-voltage crates such as the SY5527
+with its inserted modules as well as desktop high-voltage supplies such as the
+NDT1470.
 
 ## Requirements
 
@@ -17,6 +19,12 @@ yet. The packages can be installed via:
 ```sh
 pip install pyserial git+https://gitlab.com/hperrey/pycaenhv.git@master
 ```
+
+Note that this is a fork of the original `pycaenhv` package ([original package
+source can be found here](https://github.com/vasoto/pycaenhv)) which additional
+features. Once these have been upstreamed ([see this upstreaming
+PR](https://github.com/vasoto/pycaenhv/pull/6)), the original package can be
+used.
 
 ## Parameters
 
