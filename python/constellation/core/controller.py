@@ -393,6 +393,15 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                 raise Exception(f"ERROR state detected while waiting for state {target.name}")
             time.sleep(0.1)
 
+    def await_satellites(self, satellites: list[str], timeout: int = 60) -> None:
+        """Blocks until all desired satellites are connected."""
+        self.log.info("Awaiting %d satellites", len(satellites))
+        start = time.time()
+        while not set(satellites).issubset(self._constellation.satellites.keys()):
+            if time.time() - start > timeout:
+                raise Exception(f"Timeout after {timeout}s while waiting for {len(satellites)} satellites")
+            time.sleep(0.1)
+
     @property
     def constellation(self) -> SatelliteArray:
         """Returns the currently active SatelliteArray of controlled Satellites."""

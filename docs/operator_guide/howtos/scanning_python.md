@@ -45,10 +45,10 @@ for ivl in range(0, 100, 10):
     recfg = {"interval": ivl}
     constellation.Sputnik.reconfigure(recfg)
 
-    # Wait until ll states are back in the ORBIT state
+    # Wait until all states are back in the ORBIT state
     ctrl.await_state(SatelliteState.ORBIT)
 
-    # Repeat this measurement four times:
+    # Repeat this measurement four times
     for run in range(1, 4):
         # Start the run
         constellation.start(f"i{ivl}_r{run}")
@@ -70,15 +70,12 @@ parameter) and when any satellite is in the ERROR state.
 It is also possible to create a standalone script which can be run without the IPython console:
 
 ```python
-import time
-
 from constellation.core.configuration import load_config
 from constellation.core.controller import ScriptableController
 
 # Settings
 config_file_path = "/path/to/config.toml"
 group_name = "edda"
-n_satellites = 1
 
 # Create controller
 ctrl = ScriptableController(group_name)
@@ -88,9 +85,7 @@ constellation = ctrl.constellation
 cfg = load_config(config_file_path)
 
 # Wait until all satellites are connected
-while len(constellation.satellites) < n_satellites:
-    print("Waiting for satellites...")
-    time.sleep(0.5)
+ctrl.await_satellites(["Sputnik.s1", "Sputnik.s2"])
 
 # Initialize and reconfigure loop goes here as above
 ```
