@@ -35,7 +35,9 @@ import time
 
 # Initialize and launch the Constellation with the configuration read from a file
 constellation.initialize(cfg)
+ctrl.await_state(SatelliteState.INIT)
 constellation.launch()
+ctrl.await_state(SatelliteState.ORBIT)
 
 # Start a parameter scan for the key "interval"
 for ivl in range(0, 100, 10):
