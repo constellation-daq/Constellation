@@ -493,6 +493,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                         init_state=init_state,
                     )
                     break
+            self.log.info("Satellite %s.%s connected", cls, name)
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
