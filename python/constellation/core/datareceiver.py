@@ -10,7 +10,7 @@ import pathlib
 import sys
 import threading
 from functools import partial
-from typing import Any, Tuple
+from typing import Any
 from uuid import UUID
 
 import zmq
@@ -29,7 +29,7 @@ class DataReceiver(Satellite):
 
     def __init__(self, *args: Any, **kwargs: Any):
         # define our attributes
-        self._pull_interfaces: dict[UUID, Tuple[str, int]] = {}
+        self._pull_interfaces: dict[UUID, tuple[str, int]] = {}
         self._pull_sockets: dict[UUID, zmq.Socket] = {}  # type: ignore[type-arg]
         self.poller: zmq.Poller | None = None
         self.run_identifier = ""
@@ -187,7 +187,7 @@ class DataReceiver(Satellite):
         return "Finished cleanup."
 
     @cscp_requestable
-    def get_data_sources(self, _request: CSCP1Message | None = None) -> Tuple[str, list[str], None]:
+    def get_data_sources(self, _request: CSCP1Message | None = None) -> tuple[str, list[str], None]:
         """Get list of connected data sources.
 
         No payload argument.

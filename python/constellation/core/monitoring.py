@@ -8,11 +8,12 @@ import os
 import pathlib
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 from logging.handlers import QueueListener
 from queue import Empty, Queue
-from typing import Any, Callable, Optional, ParamSpec, TypeVar, cast
+from typing import Any, ParamSpec, TypeVar, cast
 
 import zmq
 
@@ -253,7 +254,7 @@ class ZeroMQSocketLogListener(QueueListener):
 class StatListener(CHIRPManager):
     """Simple listener class to receive metrics from a Constellation."""
 
-    def __init__(self, name: str, group: str, interface: Optional[list[str]], **kwds: Any):
+    def __init__(self, name: str, group: str, interface: list[str] | None, **kwds: Any):
         """Initialize values.
 
         Arguments:
@@ -422,7 +423,7 @@ class MonitoringListener(StatListener):
 
 
 class FileMonitoringListener(MonitoringListener):
-    def __init__(self, name: str, group: str, interface: Optional[list[str]], output_path: str):
+    def __init__(self, name: str, group: str, interface: list[str] | None, output_path: str):
         self.output_path = pathlib.Path(output_path)
         try:
             os.makedirs(self.output_path)

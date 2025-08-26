@@ -10,7 +10,7 @@ import time
 import traceback
 from concurrent.futures import Future
 from queue import Empty
-from typing import Any, Optional
+from typing import Any
 
 from . import __version__
 from .base import ConstellationArgumentParser
@@ -42,7 +42,7 @@ class Satellite(
         cmd_port: int,
         hb_port: int,
         mon_port: int,
-        interface: Optional[list[str]],
+        interface: list[str] | None,
     ):
         """Set up class attributes."""
         super().__init__(

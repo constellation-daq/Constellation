@@ -6,10 +6,11 @@ SPDX-License-Identifier: EUPL-1.2
 import re
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone
 from threading import Event
-from typing import Any, Callable
+from typing import Any
 
 from statemachine import StateMachine
 from statemachine.exceptions import TransitionNotAllowed

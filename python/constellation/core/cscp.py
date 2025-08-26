@@ -6,7 +6,7 @@ Module implementing the Constellation Satellite Control Protocol.
 """
 
 from threading import Lock
-from typing import Any, Optional
+from typing import Any
 
 import zmq
 
@@ -21,11 +21,11 @@ class CommandTransmitter:
         self._socket = socket
         self._lock = Lock()
 
-    def send_request(self, command: str, payload: Any = None, tags: Optional[dict[str, Any]] = None) -> None:
+    def send_request(self, command: str, payload: Any = None, tags: dict[str, Any] | None = None) -> None:
         """Send a command request to a Satellite with an optional payload."""
         self._dispatch((CSCP1Message.Type.REQUEST, command), payload, tags, zmq.NOBLOCK)
 
-    def request_get_response(self, command: str, payload: Any = None, tags: Optional[dict[str, Any]] = None) -> CSCP1Message:
+    def request_get_response(self, command: str, payload: Any = None, tags: dict[str, Any] | None = None) -> CSCP1Message:
         """Send a command request to a Satellite and return response."""
         self.send_request(command, payload, tags)
         msg = self.get_message()
@@ -40,7 +40,7 @@ class CommandTransmitter:
         response: str,
         type: CSCP1Message.Type,
         payload: Any = None,
-        tags: Optional[dict[str, Any]] = None,
+        tags: dict[str, Any] | None = None,
     ) -> None:
         """Send a reply to a previous command with an optional payload."""
         self._dispatch((type, response), payload, tags, flags=zmq.NOBLOCK)
@@ -63,7 +63,7 @@ class CommandTransmitter:
         return CSCP1Message.disassemble(frames)
 
     def _dispatch(
-        self, verb: tuple[CSCP1Message.Type, str], payload: Any = None, tags: Optional[dict[str, Any]] = None, flags: int = 0
+        self, verb: tuple[CSCP1Message.Type, str], payload: Any = None, tags: dict[str, Any] | None = None, flags: int = 0
     ) -> None:
         message = CSCP1Message(self._name, verb, tags=tags)
         if payload is not None:

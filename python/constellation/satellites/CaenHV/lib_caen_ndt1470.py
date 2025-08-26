@@ -13,7 +13,7 @@ HV crate series is used whenever possible.
 import socket
 import threading
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 import serial  # type: ignore[import-untyped]
 
@@ -309,7 +309,7 @@ class CaenNDT1470Manager:
             # TCP/IP
             try:
                 buffer = self._handle.recv(1024).decode()
-            except socket.error as e:
+            except OSError as e:
                 raise RuntimeError(f"Socket communication error: {repr(e)}") from e
         elif isinstance(self._handle, serial.Serial):
             # serial
@@ -351,7 +351,7 @@ class CaenHVBoard:
         self.num_channels = num_channels
         # Get the number of channels for this board
         # Populate channels information
-        self.channels: List[Channel] = [Channel(self, ch) for ch in range(self.num_channels)]
+        self.channels: list[Channel] = [Channel(self, ch) for ch in range(self.num_channels)]
 
     @property
     def handle(self) -> socket.socket | serial.Serial | None:
@@ -385,7 +385,7 @@ class Channel:
         return tuple(self.parameters.keys())
 
     @property
-    def status(self) -> List[str]:
+    def status(self) -> list[str]:
         """Decodes channel status"""
         status_raw: int = self.board.module.command(self.board.slot, self.index, "STAT")
         return status_unpack(status_raw)
@@ -441,7 +441,7 @@ class Channel:
 class ChannelParameter:
     """Parameter of CAEN HV/LV board channel"""
 
-    def __init__(self, channel: Channel, name: str, attributes: Dict) -> None:
+    def __init__(self, channel: Channel, name: str, attributes: dict) -> None:
         self.channel = channel
         self.name = name
         # Set available attributes for a given parameter

@@ -6,8 +6,9 @@ This module provides error handling decorators and exceptions.
 """
 
 import traceback
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from statemachine.exceptions import TransitionNotAllowed
 

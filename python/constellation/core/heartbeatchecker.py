@@ -5,8 +5,9 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable, Optional
+from typing import Any
 from uuid import UUID
 
 import zmq
@@ -72,7 +73,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self._remote_heatbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
         self._heartbeatchecker_socket_lock = threading.Lock()
 
-    def register_heartbeat_callback(self, callback: Optional[Callable[[str, SatelliteState], None]] = None) -> None:
+    def register_heartbeat_callback(self, callback: Callable[[str, SatelliteState], None] | None = None) -> None:
         self._heartbeatchecker_callback = callback
 
     def _add_com_thread(self) -> None:
@@ -86,8 +87,8 @@ class HeartbeatChecker(BaseSatelliteFrame):
         host: UUID,
         address: str,
         name: str = "",
-        context: Optional[zmq.Context] = None,  # type: ignore[type-arg]
-        init_state: Optional[dict[str, Any]] = None,
+        context: zmq.Context | None = None,  # type: ignore[type-arg]
+        init_state: dict[str, Any] | None = None,
     ) -> threading.Event:
         """Register a heartbeat check for a specific Satellite.
 

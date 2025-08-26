@@ -5,10 +5,11 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
+from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
 from queue import Empty
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any
 
 import zmq
 
@@ -83,7 +84,7 @@ class SatelliteArray:
     def __init__(
         self,
         group: str,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]],
+        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
     ):
         self.group = group
         self._handler = handler
@@ -139,7 +140,7 @@ class SatelliteArray:
         # clear from dict
         self._satellites.pop(f"{cls}.{name}")
 
-    def _get_name_from_uuid(self, uuid: str) -> Tuple[str, str]:
+    def _get_name_from_uuid(self, uuid: str) -> tuple[str, str]:
         s = [sat for sat in self._satellites.values() if sat._uuid == uuid]
         if not s:
             raise KeyError("No Satellite with that UUID known.")
@@ -150,7 +151,7 @@ class SatelliteArray:
     def _add_cmds(
         self,
         obj: Any,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]],
+        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
         cmds: dict[str, str],
     ) -> None:
         try:
@@ -192,7 +193,7 @@ class CommandWrapper:
 
     def __init__(
         self,
-        handler: Callable[[str, str, str, Any], Tuple[str, Any, Optional[dict[str, Any]]]],
+        handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
         sat: str,
         satcls: str,
         cmd: str,
@@ -203,7 +204,7 @@ class CommandWrapper:
         self.satcls = satcls
         self.cmd = cmd
 
-    def call(self, payload: Any = None) -> Tuple[str, Any, Optional[dict[str, Any]]]:
+    def call(self, payload: Any = None) -> tuple[str, Any, dict[str, Any] | None]:
         """Perform call. This doc string will be overwritten."""
         return self.fcn(sat=self.sat, satcls=self.satcls, cmd=self.cmd, payload=payload)  # type: ignore[call-arg]
 
@@ -213,7 +214,7 @@ class SatelliteResponse:
 
     def __init__(self) -> None:
         self.success: bool = True
-        self.meta: Optional[dict[str, Any]] = None
+        self.meta: dict[str, Any] | None = None
         self.payload: Any = None
         self.errmsg: str = ""
         self.msg: str = ""
@@ -277,7 +278,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         """
         super().__init__(group=group, **kwargs)
 
-        self._transmitters: Dict[str, CommandTransmitter] = {}
+        self._transmitters: dict[str, CommandTransmitter] = {}
         # lookup table for uuids to (cls, name) tuple
         self._uuid_lookup: dict[str, tuple[str, str]] = {}
 
@@ -761,7 +762,7 @@ class ScriptableController(BaseController):
         group: str,
         log_level: str = "INFO",
         name: str = "ScriptableController",
-        interface: Optional[list[str]] = None,
+        interface: list[str] | None = None,
     ) -> None:
         # Initialize logging first
         setup_cli_logging(log_level)

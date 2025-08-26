@@ -41,7 +41,7 @@ def find_satellite_header(language: str, directory: pathlib.Path) -> tuple[pathl
     elif language == "Python":
         main_py_file = directory / "__main__.py"
         if main_py_file.exists():
-            with open(main_py_file, "r") as file:
+            with open(main_py_file) as file:
                 content = file.read()
                 # Search for an import statement that imports the desired class  (e.g. `from .Mariner import Mariner`)
                 match = re.search(r"from\s+\.(\w+)\s+import\s+(\w+)", content)
@@ -58,7 +58,7 @@ def extract_parent_classes(language: str, satellite_header: pathlib.Path, satell
     """
     Extract the parent classes from the C++ header file or Python __main__ file
     """
-    with open(satellite_header, "r") as file:
+    with open(satellite_header) as file:
         content = file.read()
         if language == "C++":
             # Regular expression to find the parent class in C++ inheritance declaration

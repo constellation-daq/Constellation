@@ -8,7 +8,7 @@ Module implementing the Constellation communication protocols.
 import io
 import time
 from enum import StrEnum
-from typing import Any, Tuple
+from typing import Any
 
 import msgpack  # type: ignore[import-untyped]
 import zmq
@@ -45,13 +45,13 @@ class MessageHeader:
 
     def recv(
         self, socket: zmq.Socket, flags: int = 0  # type: ignore[type-arg]
-    ) -> Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, int, int, dict[str, Any] | None]:
+    ) -> tuple[str, msgpack.Timestamp, dict[str, Any] | None] | tuple[str, int, int, dict[str, Any] | None]:
         """Receive header from socket and return all decoded fields."""
         return self.decode(socket.recv())
 
     def decode(
         self, header: Any
-    ) -> Tuple[str, msgpack.Timestamp, dict[str, Any] | None] | Tuple[str, int, int, dict[str, Any] | None]:
+    ) -> tuple[str, msgpack.Timestamp, dict[str, Any] | None] | tuple[str, int, int, dict[str, Any] | None]:
         """Decode header string and return host, timestamp and meta map."""
         unpacker = msgpack.Unpacker()
         unpacker.feed(header)

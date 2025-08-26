@@ -8,7 +8,6 @@ from __future__ import annotations
 import io
 import time
 from enum import Enum, IntFlag, auto
-from typing import Tuple
 
 import msgpack  # type: ignore[import-untyped]
 import zmq
@@ -57,7 +56,7 @@ class CHPRole(Enum):
         return bool(flags & self.flags())
 
 
-def CHPDecodeMessage(msg: list[bytes]) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
+def CHPDecodeMessage(msg: list[bytes]) -> tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
     """Decode a CHP binary message.
 
     Returns host, timestamp, state, interval and status if available.
@@ -122,7 +121,7 @@ class CHPTransmitter:
 
     def recv(
         self, flags: int = zmq.NOBLOCK
-    ) -> Tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None] | Tuple[None, None, None, None, None]:
+    ) -> tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None] | tuple[None, None, None, None, None]:
         """Receive a heartbeat via CHP."""
         try:
             msg = self._socket.recv_multipart(flags)

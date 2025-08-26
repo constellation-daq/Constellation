@@ -8,8 +8,9 @@ CHIRPManger module provides classes for managing CHIRP multicasts within Constel
 import random
 import threading
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Optional, ParamSpec, TypeVar
+from typing import Any, ParamSpec, TypeVar
 from uuid import UUID
 
 from .base import BaseSatelliteFrame
@@ -111,7 +112,7 @@ class CHIRPManager(BaseSatelliteFrame):
         self,
         name: str,
         group: str,
-        interface: Optional[list[str]],
+        interface: list[str] | None,
         **kwds: Any,
     ):
         """Initialize parameters.
@@ -186,7 +187,7 @@ class CHIRPManager(BaseSatelliteFrame):
             self.log_chirp.warning("Serviceid %s does not have a registered callback", serviceid)
         self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
-    def emit_offers(self, serviceid: Optional[CHIRPServiceIdentifier] = None) -> None:
+    def emit_offers(self, serviceid: CHIRPServiceIdentifier | None = None) -> None:
         """Emit messages all registered services matching `serviceid`.
 
         Specify None for all registered services.
