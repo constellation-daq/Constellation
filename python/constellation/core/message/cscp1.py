@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum, IntEnum
 from io import BytesIO
-from typing import Any, Optional
+from typing import Any
 
 import msgpack  # type: ignore[import-untyped]
 
@@ -81,7 +81,7 @@ class CSCP1Message:
         """Previously received message is invalid"""
 
     def __init__(
-        self, sender: str, verb: tuple[Type, str], time: Optional[datetime] = None, tags: Optional[dict[str, Any]] = None
+        self, sender: str, verb: tuple[Type, str], time: datetime | None = None, tags: dict[str, Any] | None = None
     ):
         self._protocol = Protocol.CSCP1
         self._sender = sender

@@ -6,7 +6,7 @@ MessagePack decoding helpers
 """
 
 from enum import IntEnum
-from typing import Type, TypeVar
+from typing import TypeVar
 
 import msgpack  # type: ignore[import-untyped]
 
@@ -16,7 +16,7 @@ T = TypeVar("T")
 T_IE = TypeVar("T_IE", bound=IntEnum)
 
 
-def msgpack_unpack_to(unpacker: msgpack.Unpacker, target_type: Type[T]) -> T:
+def msgpack_unpack_to(unpacker: msgpack.Unpacker, target_type: type[T]) -> T:
     value = None
     try:
         value = unpacker.unpack()
@@ -27,7 +27,7 @@ def msgpack_unpack_to(unpacker: msgpack.Unpacker, target_type: Type[T]) -> T:
     return value
 
 
-def msgpack_unpack_to_int_enum(unpacker: msgpack.Unpacker, target_type: Type[T_IE]) -> T_IE:
+def msgpack_unpack_to_int_enum(unpacker: msgpack.Unpacker, target_type: type[T_IE]) -> T_IE:
     assert issubclass(target_type, IntEnum)
     value = msgpack_unpack_to(unpacker, int)
     try:

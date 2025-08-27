@@ -9,7 +9,7 @@ import datetime
 import json
 import os
 import pathlib
-from typing import Any, Tuple
+from typing import Any
 
 import h5py  # type: ignore[import-untyped]
 import numpy as np
@@ -66,7 +66,7 @@ class H5DataWriter(DataReceiver):
     def get_concurrent_reading_status(
         self,
         _request: CSCP1Message,
-    ) -> Tuple[str, None, None]:
+    ) -> tuple[str, None, None]:
         if self._swmr_mode_enabled:
             return "enabled", None, None
         return "not (yet) enabled", None, None
@@ -299,5 +299,5 @@ class H5DataWriter(DataReceiver):
         """Add metadata such as version information to file."""
         grp = outfile.create_group(self.name)
         grp["constellation_version"] = __version__
-        grp["date_utc"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        grp["date_utc"] = datetime.datetime.now(datetime.UTC).isoformat()
         grp["swmr_mode"] = self.swmr_mode

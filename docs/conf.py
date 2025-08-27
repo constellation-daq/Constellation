@@ -227,8 +227,8 @@ for category, satellites_list in sorted(satellites.items()):
 
 # Add tocs to satellites index.md.in
 with (
-    open("satellites/index.md.in", "rt") as index_in,
-    open("satellites/index.md", "wt") as index_out,
+    open("satellites/index.md.in") as index_in,
+    open("satellites/index.md", "w") as index_out,
 ):
     for line in index_in:
         line = line.replace("SATELLITES", satellite_tocs)

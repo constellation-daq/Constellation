@@ -8,8 +8,9 @@ Constellation Satellites.
 
 import threading
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, ParamSpec, Tuple, TypeVar
+from typing import Any, ParamSpec, TypeVar
 
 import zmq
 from statemachine.exceptions import TransitionNotAllowed
@@ -208,7 +209,7 @@ class CommandReceiver(BaseSatelliteFrame):
         self._cmds[method] = doc
 
     @cscp_requestable
-    def get_commands(self, _request: CSCP1Message | None = None) -> Tuple[str, dict[str, str], None]:
+    def get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
         """Return all commands supported by the Satellite.
 
         No payload argument.
@@ -226,7 +227,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(public_cmds)} commands known", public_cmds, None
 
     @cscp_requestable
-    def _get_commands(self, _request: CSCP1Message | None = None) -> Tuple[str, dict[str, str], None]:
+    def _get_commands(self, _request: CSCP1Message | None = None) -> tuple[str, dict[str, str], None]:
         """Return all hidden commands supported by the Satellite.
 
         No payload argument.
@@ -244,7 +245,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return f"{len(hidden_cmds)} commands known", hidden_cmds, None
 
     @cscp_requestable
-    def get_name(self, _request: CSCP1Message) -> Tuple[str, None, None]:
+    def get_name(self, _request: CSCP1Message) -> tuple[str, None, None]:
         """Return the canonical name of the Satellite.
 
         No payload argument.
@@ -253,7 +254,7 @@ class CommandReceiver(BaseSatelliteFrame):
         return self.name, None, None
 
     @cscp_requestable
-    def shutdown(self, _request: CSCP1Message) -> Tuple[str, None, None]:
+    def shutdown(self, _request: CSCP1Message) -> tuple[str, None, None]:
         """Queue the Satellite's reentry.
 
         No payload argument.

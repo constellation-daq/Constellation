@@ -81,7 +81,7 @@ class Configuration:
 def _adjust_config_value(value: Any) -> Any:
     """Adjust TOML config values for internal use"""
     if isinstance(value, datetime.time):
-        return datetime.datetime.combine(datetime.date.today(), value).astimezone(datetime.timezone.utc)
+        return datetime.datetime.combine(datetime.date.today(), value).astimezone(datetime.UTC)
     return value
 
 

@@ -7,7 +7,6 @@ Constellation interface
 """
 
 import datetime
-import socket
 import struct
 from typing import Any
 
@@ -87,10 +86,10 @@ class LeCroySatellite(DataSender):
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
                 self.data_queue.put((event_payload.tobytes(), {"dtype": f"{event_payload.dtype}"}))
-            except socket.timeout:
+            except TimeoutError:
                 self.log.warning("Timeout encountered while retrieving the sequence.")
                 continue
-            except (socket.error, struct.error) as e:
+            except (OSError, struct.error) as e:
                 self.log.error(str(e))
                 self._scope.clear()
                 continue
@@ -124,7 +123,7 @@ class LeCroySatellite(DataSender):
         if self._sequence_mode:
             self._scope.set_sequence_mode(self._num_sequences)
         self._settings = self._scope.get_settings()
-        self.log.debug("Scope settings: {}".format(self._settings))
+        self.log.debug(f"Scope settings: {self._settings}")
         if b"ON" in self._settings["SEQUENCE"]:  # waveforms sequencing enabled
             sequence_count = int(self._settings["SEQUENCE"].split(b",")[1])
             self.log.info(f"Configured scope with sequence count = {sequence_count}")

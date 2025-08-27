@@ -89,7 +89,7 @@ def mock_sender_satellite(mock_zmq_context, mock_chirp_transmitter):
         def do_run(self, payload: Any):
             self.payload_id = 0
             while self.payload_id < 10:
-                payload = f"mock payload {self.payload_id}".encode("utf-8")
+                payload = f"mock payload {self.payload_id}".encode()
                 self.data_queue.put((payload, {}))
                 self.payload_id += 1
                 time.sleep(0.02)
@@ -146,7 +146,7 @@ class MockSenderSatellite(DataSender):
         """Send a few packets, then wait until stopped."""
         self.payload_id = 0
         while self.payload_id < 10 and not self._state_thread_evt.is_set():
-            payload = f"mock payload {self.payload_id}".encode("utf-8")
+            payload = f"mock payload {self.payload_id}".encode()
             self.data_queue.put((payload, {}))
             self.payload_id += 1
             time.sleep(0.01)
