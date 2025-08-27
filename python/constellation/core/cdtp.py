@@ -75,6 +75,7 @@ class PushThread(threading.Thread):
             self._dtm._failure_cb(str(self.exc))
 
     def run(self) -> None:
+        """Thread method pushing data messages"""
         last_sent = time.time()
         current_payload_bytes = 0
 
@@ -282,6 +283,7 @@ class PullThread(threading.Thread):
         self.exc: BaseException | None = None
 
     def run(self) -> None:
+        """Thread method pulling data messages"""
         try:
             while not self._drc._stopevt.is_set():
                 with self._drc._poller_lock:

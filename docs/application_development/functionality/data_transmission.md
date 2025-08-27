@@ -41,7 +41,7 @@ sendDataBlock(std::move(data_block));
 ```
 
 If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
-transitions into the `ERROR` state.
+transitions into the {bdg-secondary}`ERROR` state.
 
 It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
 on the hardware or software level (e.g. dropping data):
@@ -58,106 +58,78 @@ By default, no data is dropped and a sequence number scheme is implemented to en
 :::{tab-item} Python
 :sync: python
 
-Any satellite that wishes to send data should inherit from the `DataSender`
-class instead of from the `Satellite` base class. This will provide additional
-facilities to queue data which will be transmitted via CDTP to a `DataReceiver`
-such as the `H5DataWriter`. The transmission is limited to the `RUN` state,
-however. Any data sending must therefore be limited to the `do_run` method:
+Any satellite that wishes to transmit measurement data for storage should inherit from the
+{py:class}`TransmitterSatellite <core.transmitter_satellite.TransmitterSatellite>` class instead of the regular
+{py:class}`Satellite <core.satellite.Satellite>` class.
+This class implements the connection and transmission to data receivers in the Constellation in a transparent way.
+
+Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always preceded by a begin-of-run (BOR) message sent
+by the framework after the {py:func}`do_starting() <core.satellite.Satellite.do_starting>` function has successfully been
+executed, and it is followed by a end-of-run (EOR) message send automatically after the
+{py:func}`do_stopping() <core.satellite.Satellite.do_stopping>` function has succeeded.
+
+Data is sent in three steps. First, a data block is created. Subsequently, data frames are added to the message:
 
 ```python
-class RandomDataSender(DataSender):
-    """Satellite which sends a numpy array with random values via CDTP."""
-
-    def do_run(self, run_identifier: str) -> str:
-        """Example implementation that generates random values."""
-        # Timestamp when started
-        t0 = time.time_ns()
-        # Track number of packets sent
-        num = 0
-
-        # Run loop
-        while not self._state_thread_evt.is_set():
-            # Calculate our demo samples.
-            # In a real application, this data could
-            # e.g. come from a hardware device.
-            samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-            fs = random.uniform(0, 3)
-            data_load = np.sin(2 * np.pi * fs * samples)
-            # Put our data samples into the queue:
-            self.data_queue.put((data_load.tobytes(), {"dtype": f"{data_load.dtype}"}))
-            if num%10 == 0:
-                self.log_cdtp_s.debug(f"Queueing data packet {num}")
-            num += 1
-            time.sleep(0.25)
-
-        t1 = time.time_ns()
-        self.log_cdtp_s.info(f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0) / 1000000000}s")
-        return "Finished acquisition"
+data_block = self.new_data_block()
+data_block.add_frame(frame_0)
+data_block.add_frame(frame_1)
 ```
 
-This example implements a satellite that sends arrays of random data. In order
-to queue it for transmission, the data have to be inserted into a Queue that is
-available as `self.data_queue` as a tuple consisting of the actual data and the
-metadata (a dictionary).
-
-```{note}
-It should be noted that the data need to be provided as `bytes`, or as `list[bytes]` if it should be send in multiple frames.
-See notes on the data format and performance below for more information.
-```
-
-The full call therefore becomes:
+Finally, the message is sent to the connected receiver:
 
 ```python
-self.data_queue.put(tuple(data: bytes, meta: dict[str, Any]))
+self.send_data_block(data_block)
 ```
 
-More information on the metadata can be found in the final section of this document.
+If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
+transitions into the {bdg-secondary}`ERROR` state.
+
+It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
+on the hardware or software level (e.g. dropping data):
+
+```python
+if self.check_rate_limited():
+    self.device.set_busy()
+}
+```
+
+By default, no data is dropped and a sequence number scheme is implemented to ensure the completeness of the data.
 
 :::
 ::::
 
 ## Data Format & Performance
 
-::::{tab-set}
-:::{tab-item} C++
-:sync: cxx
-
 Constellation makes no assumption on the data stored in message frames. All data is stored in frames, handled as binary blob
 and transmitted as such. The message frames of data messages are designed for minimum data copy and maximum speed.
 A data message can contain any number of frames.
 
-The {cpp:func}`DataBlock::addFrame() <constellation::satellite::TransmitterSatellite::DataBlock::addFrame()>` function takes so-called payload buffer as argument.
+::::{tab-set}
+:::{tab-item} C++
+:sync: cxx
+
+The {cpp:func}`DataBlock::addFrame() <constellation::satellite::TransmitterSatellite::DataBlock::addFrame()>` method takes so-called payload buffer as argument.
 Consequently, the data to be transmitted has to be converted into such a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
-
-```{seealso}
-Data rate benchmarks can be found in the operator guide under
-[Increase Data Rate in C++](..//howtos/data_transmission_speed.md).
-```
 
 :::
 :::{tab-item} Python
 :sync: python
 
-Constellation makes no assumption on the data stored in message frames. All data
-is stored in frames, handled as binary blob and transmitted as such. The message
-frames of data messages are designed for minimum data copy and maximum speed. A
-data message can contain any number of frames.
+The {py:func}`DataBlock.add_frame() <core.message.cdtp2.DataBlock.add_frame>` method takes a {py:class}`bytes` object as argument.
 
-When storing data in numpy arrays, the `to_bytes` method can be used to convert the array into `bytes`.
-
-If the data should be sent as multiple frames, a list of bytes has to be added into the `data_queue`.
-
-```{caution}
-Sending many small packets over the network often suffers from a performance penalty due to the additional overhead created
-by the protocol as well as the TCP/IP communication. It should be considered to use multiple frames or to concatenate the data
-into larger binary blobs. A future version of the CDTP protocol is currently under development that will automatically
-assemble multiple small messages into larger ones to optimize performance.
+```{tip}
+If the data to be sent is stored in a numpy array, it can be converted into a {py:class}`bytes` object using the `tobytes()` method.
 ```
-
 
 :::
 ::::
+
+```{seealso}
+Data rate benchmarks can be found in the operator guide under
+[Increase Data Rate in C++](..//howtos/data_transmission_speed.md).
+```
 
 ## Metadata
 
@@ -176,7 +148,7 @@ Constellation provides the option to attach metadata to each message sent by the
   }
   ```
 
-  In addition to these user-provided tags, the payload of the BOR message contains the full satellite configuration.
+  In addition to these user-provided tags, the BOR message also contains the full satellite configuration.
 
 * Similarly, for metadata only available at the end of the run such as aggregate statistics, end-of-run (EOR) tags can be set
   in the `stopping()` function:
@@ -208,39 +180,37 @@ Constellation provides the option to attach metadata to each message sent by the
 Constellation provides the option to attach metadata in the form of dictionaries
 to each message sent by the satellite. There are three possibilities:
 
-* Metadata available at the beginning of the run such as additional hardware
-  information or firmware revisions can be attached to the begin-of-run (BOR)
-  message. This can be done at any time but latest in the `do_starting` method:
+* Metadata available at the beginning of the run such as additional hardware information or firmware revisions can be attached
+  to the begin-of-run (BOR) message. This has to be performed in the {py:func}`do_starting() <core.satellite.Satellite.do_starting>` method:
 
   ```python
-      def do_starting(self, run_identifier:str) -> str:
-        self.BOR = {"something": "interesting", "more_important": "stuff"}
-        return "Prepared!"
-
+  def do_starting(self, run_identifier: str) -> str:
+      self.bor = {"something": "interesting", "more_important": "stuff"}
+      return "Started"
   ```
 
   In addition to these user-provided tags, the payload of the BOR message contains the full satellite configuration.
 
-* Similarly, for metadata only available at the end of the run such as aggregate
-  statistics, end-of-run (EOR) tags can be set latest in the `do_stopping` method:
+* Similarly, for metadata only available at the end of the run such as aggregate statistics, end-of-run (EOR) tags can be set
+  in the {py:func}`do_stopping() <core.satellite.Satellite.do_stopping>` method:
 
   ```python
-      def do_stoping(self) -> str:
-        self.BOR = {"something": "interesting", "more_important": "stuff"}
-        return "Prepared!"
-
+  def do_stoping(self) -> str:
+      self.eor = {"something": "interesting", "more_important": "stuff"}
+      return "Stopped"
   ```
 
 * Finally, metadata can be attached to each individual data message sent during the run:
 
   ```python
-       def do_run(self, run_identifier: str) -> str:
-        while not self._state_thread_evt.is_set():
-            data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-            meta = {"dtype": f"{data_load.dtype}", "other_info": 12345}
-            self.data_queue.put((data.tobytes(), meta))
-        return "Finished acquisition"
-
+  def do_run(self, run_identifier: str) -> str:
+      while not self._state_thread_evt.is_set():
+          data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
+          tags = {"dtype": str(data.dtype), "other_info": 12345}
+          data_block = self.new_data_block(tags)
+          data_block.add_frame(data.tobytes())
+          self.send_data_block(data_block)
+      return "Finished run"
    ```
 
 :::

@@ -86,7 +86,7 @@ class CDTP2Message:
         """End-of-run message"""
         EOR = 0x2
 
-    def __init__(self, sender: str, type: Type) -> None:
+    def __init__(self, sender: str, type: CDTP2Message.Type) -> None:
         self._protocol = Protocol.CDTP2
         self._sender = sender
         self._type = type
@@ -100,7 +100,7 @@ class CDTP2Message:
         return self._sender
 
     @property
-    def type(self) -> Type:
+    def type(self) -> CDTP2Message.Type:
         return self._type
 
     @property

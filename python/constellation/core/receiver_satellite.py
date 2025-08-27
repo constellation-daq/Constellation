@@ -115,6 +115,10 @@ class ReceiverSatellite(Satellite):
         raise NotImplementedError()
 
     def do_run(self, run_identifier: str) -> str:
+        """Run loop
+
+        NOTE: This must not be overridden by receiver satellite implementations!
+        """
         assert self._drc is not None
         assert self._state_thread_evt is not None
         while not self._state_thread_evt.is_set():

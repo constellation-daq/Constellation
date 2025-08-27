@@ -81,7 +81,11 @@ class CSCP1Message:
         """Previously received message is invalid"""
 
     def __init__(
-        self, sender: str, verb: tuple[Type, str], time: datetime | None = None, tags: dict[str, Any] | None = None
+        self,
+        sender: str,
+        verb: tuple[CSCP1Message.Type, str],
+        time: datetime | None = None,
+        tags: dict[str, Any] | None = None,
     ):
         self._protocol = Protocol.CSCP1
         self._sender = sender
@@ -103,11 +107,11 @@ class CSCP1Message:
         return self._tags
 
     @property
-    def verb(self) -> tuple[Type, str]:
+    def verb(self) -> tuple[CSCP1Message.Type, str]:
         return self._verb
 
     @property
-    def verb_type(self) -> Type:
+    def verb_type(self) -> CSCP1Message.Type:
         return self._verb[0]
 
     @property
