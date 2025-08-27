@@ -184,7 +184,9 @@ class Satellite(
         # call device-specific user-routine
         try:
             self._pre_initializing_hook(self.config)
-            init_msg: str = self.do_initializing(self.config)
+            init_msg: str | None = self.do_initializing(self.config)
+            if not isinstance(init_msg, str):
+                init_msg = "Initialized"
             if self.config.has_unused_values():
                 for key in self.config.get_unused_keys():
                     self.log_satellite.warning("Satellite ignored configuration value: '%s'", key)
@@ -208,13 +210,13 @@ class Satellite(
         self.role = CHPRole[self.config.setdefault("_role", "DYNAMIC").upper()]
 
     @debug_log
-    def do_initializing(self, config: Configuration) -> str:
+    def do_initializing(self, config: Configuration) -> str | None:
         """Method for the device-specific code of 'initializing' transition.
 
         This should set configuration variables.
 
         """
-        return "Initialized."
+        return "Initialized"
 
     @handle_error
     @debug_log
@@ -225,12 +227,15 @@ class Satellite(
         control to the device-specific public method.
 
         """
-        return str(self.do_launching())
+        msg: str | None = self.do_launching()
+        if not isinstance(msg, str):
+            msg = "Launched"
+        return msg
 
     @debug_log
-    def do_launching(self) -> str:
+    def do_launching(self) -> str | None:
         """Prepare Satellite for data acquisitions."""
-        return "Launched."
+        return "Launched"
 
     @handle_error
     @debug_log
@@ -245,7 +250,9 @@ class Satellite(
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the exististance of the method to
         # determine the reaction to a `reconfigure` CSCP command.
-        init_msg: str = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
+        init_msg: str | None = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
+        if not isinstance(init_msg, str):
+            init_msg = "Reconfigured"
 
         # update config
         self.config.update(partial_config.get_dict(), partial_config.get_unused_keys())
@@ -266,13 +273,15 @@ class Satellite(
         control to the device-specific public method.
 
         """
-        res: str = self.do_landing()
-        return res
+        msg: str | None = self.do_landing()
+        if not isinstance(msg, str):
+            msg = "Landed"
+        return msg
 
     @debug_log
     def do_landing(self) -> str:
         """Return Satellite to Initialized state."""
-        return "Landed."
+        return "Landed"
 
     @handle_error
     @debug_log
@@ -297,7 +306,7 @@ class Satellite(
     @debug_log
     def do_stopping(self) -> str:
         """Stop the data acquisition."""
-        return "Acquisition stopped."
+        return "Stopped"
 
     @handle_error
     @debug_log
@@ -310,14 +319,18 @@ class Satellite(
         """
         self.run_identifier = run_identifier
         self.log_satellite.info(f"Starting run '{run_identifier}'")
-        res: str = self.do_starting(run_identifier)
+        msg: str | None = self.do_starting(run_identifier)
+        if not isinstance(msg, str):
+            msg = ""
         # allow inheriting classes to execute code just before do_run is called:
         self._pre_run_hook(run_identifier)
         # complete transitional state
-        self.fsm.complete(res)
+        self.fsm.complete(msg)
         # continue to execute DAQ in this thread
-        res = self.do_run(run_identifier)
-        return res
+        msg = self.do_run(run_identifier)
+        if not isinstance(msg, str):
+            msg = ""
+        return msg
 
     @debug_log
     def _pre_run_hook(self, run_identifier: str) -> None:
@@ -330,12 +343,12 @@ class Satellite(
         pass
 
     @debug_log
-    def do_starting(self, run_identifier: str) -> str:
+    def do_starting(self, run_identifier: str) -> str | None:
         """Final preparation for acquisition."""
-        return "Finished preparations, starting."
+        return "Started"
 
     @debug_log
-    def do_run(self, run_identifier: str) -> str:
+    def do_run(self, run_identifier: str) -> str | None:
         """The acquisition event loop.
 
         This method will be started by the Satellite and run in a thread. It
@@ -359,7 +372,7 @@ class Satellite(
         assert isinstance(self._state_thread_evt, threading.Event), "Transition thread Event not set up correctly"
         while not self._state_thread_evt.is_set():
             time.sleep(0.2)
-        return "Finished acquisition."
+        return "Finished RUN"
 
     @debug_log
     def _wrap_failure(self, payload: Any) -> str:
@@ -426,7 +439,7 @@ class Satellite(
         """
         self.do_stopping()
         self.do_landing()
-        return "Interrupted."
+        return "Interrupted"
 
     def _thread_exception(self, args: Any) -> None:
         """Handle exceptions in threads.
