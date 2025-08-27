@@ -29,7 +29,7 @@ def handle_error(func: Callable[..., Any]) -> Callable[..., Any]:
             err_msg = f"Unable to execute {func.__name__}: {repr(exc)}"
             self.fsm.failure(err_msg)
             self._wrap_failure(err_msg)
-            self.log.critical(err_msg + traceback.format_exc())
+            self.log.critical(err_msg + "\n" + traceback.format_exc())
             return None
 
     return wrapper
