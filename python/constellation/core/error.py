@@ -22,11 +22,11 @@ def handle_error(func: Callable[..., Any]) -> Callable[..., Any]:
             return func(self, *args, **kwargs)
         except TransitionNotAllowed as exc:
             err_msg = f"Unable to execute {func.__name__} to transition to {exc.event}: "
-            err_msg += f"Not possible in {exc.state.name} state."
+            err_msg += f"Not possible in {exc.state.name} state"
             raise RuntimeError(err_msg) from exc
         except Exception as exc:
             # set the FSM into failure
-            err_msg = f"Unable to execute {func.__name__}: {repr(exc)}"
+            err_msg = f"{type(exc).__name__} in {func.__name__}: {exc}"
             self.fsm.failure(err_msg)
             self._wrap_failure(err_msg)
             self.log.critical(err_msg + "\n" + traceback.format_exc())
@@ -42,12 +42,7 @@ def debug_log(func: Callable[..., Any]) -> Callable[..., Any]:
     def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
         self.log.trace("-> Entering %s.%s with args: %s", type(self).__name__, func.__name__, args)
         output = func(self, *args, **kwargs)
-        self.log.trace(
-            "<- Exiting %s.%s with output: %s",
-            type(self).__name__,
-            func.__name__,
-            output,
-        )
+        self.log.trace("<- Exiting %s.%s with output: %s", type(self).__name__, func.__name__, output)
         return output
 
     return wrapper
