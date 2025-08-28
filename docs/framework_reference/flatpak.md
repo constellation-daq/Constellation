@@ -51,18 +51,11 @@ modules:
     config-opts:
       - -Dbuildtype=release
       - -Db_lto=true
-      - -Dimpl_py=disabled
       - -Dcxx_tools=false
       - -Dcxx_tests=disabled
-      - -Dbuild_gui=qt6
-      - -Dcontroller_missioncontrol=true
-      - -Dlistener_observatory=true
       - -Dsatellite_dev_null_receiver=true
-      - -Dsatellite_eudaq_native_writer=true
-      - -Dsatellite_flight_recorder=true
       - -Dsatellite_mattermost=true
       - -Dsatellite_random_transmitter=true
-      - -Dsatellite_sputnik=true
     sources:
       - type: dir
         path: ..
