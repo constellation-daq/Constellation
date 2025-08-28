@@ -29,7 +29,7 @@ def handle_error(func: Callable[..., Any]) -> Callable[..., Any]:
             err_msg = f"{type(exc).__name__} in {func.__name__}: {exc}"
             self.fsm.failure(err_msg)
             self._wrap_failure(err_msg)
-            self.log.critical(err_msg + "\n" + traceback.format_exc())
+            self.log.critical(err_msg, extra={"traceback": traceback.format_exc().rstrip()})
             return None
 
     return wrapper

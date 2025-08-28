@@ -176,6 +176,9 @@ class CMDPTransmitter:
             "processName": record.processName,
             "process": record.process,
         }
+        tb: str | None = getattr(record, "traceback", None)
+        if tb:
+            meta["traceback"] = tb
         payload = record.getMessage().encode()
         self._dispatch(topic, payload, meta)
 

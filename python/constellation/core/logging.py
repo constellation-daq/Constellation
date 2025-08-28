@@ -8,7 +8,7 @@ This module provides a base class for Constellation Satellite modules.
 import logging
 from typing import Any
 
-from rich.console import Console
+from rich.console import Console, ConsoleRenderable
 from rich.logging import RichHandler
 from rich.theme import Theme
 
@@ -72,6 +72,15 @@ class ZeroMQSocketLogHandler(logging.Handler):
             self.transmitter.close()
 
 
+class ConstellationRichHandler(RichHandler):
+    def render_message(self, record: logging.LogRecord, message: str) -> ConsoleRenderable:
+        """Render message text"""
+        tb: str | None = getattr(record, "traceback", None)
+        if tb:
+            message += "\n" + tb
+        return super().render_message(record, message)
+
+
 def setup_cli_logging(level: str) -> None:
     """Sets up the CLI logging configuration"""
     # Get log level integer
@@ -89,7 +98,7 @@ def setup_cli_logging(level: str) -> None:
             "logging.level.critical": "bold red",
         }
     )
-    handler = RichHandler(
+    handler = ConstellationRichHandler(
         level=levelno,
         console=Console(theme=console_theme),
         show_path=False,
