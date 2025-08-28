@@ -84,7 +84,7 @@ docs = [
     "python-slugify",
 ]
 # Feature components
-cli = ["ipython"]
+cli = ["ipython", "traitlets", "pygments"]
 # Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py"]

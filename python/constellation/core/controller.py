@@ -670,7 +670,8 @@ def main(args: Any = None) -> None:
 
     """
     from IPython.terminal.embed import InteractiveShellEmbed
-    from IPython.terminal.prompts import Prompts, Token
+    from IPython.terminal.prompts import Prompts
+    from pygments.token import Token
     from traitlets.config.loader import Config
 
     parser = ConstellationArgumentParser(description=main.__doc__, epilog=EPILOG)
