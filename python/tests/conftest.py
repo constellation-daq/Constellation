@@ -519,9 +519,8 @@ def check_output(capsys, caplog) -> None:
     Expects the fixtures capsys and caplog being passed to it.
 
     """
-    # FIXME the coloredlogs package writes to stderr by default, making the test below meaningless
-    # captured = capsys.readouterr()
-    # assert not captured.err, "Error messages were produced, please check printed output of test."
+    captured = capsys.readouterr()
+    assert not captured.err, "Error messages were produced, please check printed output of test."
     for record in caplog.records:
         assert record.levelname != "CRITICAL", "Critical error messages were logged"
         assert record.levelname != "ERROR", "Error messages were logged"

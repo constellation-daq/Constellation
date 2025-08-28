@@ -32,8 +32,8 @@ dependencies = [
     "msgpack",
     "python-statemachine>=2.3.3",
     "numpy",
-    "coloredlogs",
     "psutil",
+    "rich",
 ]
 
 [project.scripts]

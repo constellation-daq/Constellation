@@ -14,29 +14,11 @@ from argparse import ArgumentParser
 from queue import Queue
 from typing import Any, cast
 
-import coloredlogs  # type: ignore[import-untyped]
 import zmq
 
 from . import __version__, __version_code_name__
 from .logging import ConstellationLogger
 from .network import get_interface_names, validate_interface
-
-# Defines the following log levels:
-#
-# - `logging.NOTSET` : 0
-# - `logging.TRACE` : 5
-# - `logging.DEBUG` : 10
-# - `logging.INFO` : 20
-# - `logging.WARNING` : 30
-# - `logging.STATUS` : 35
-# - `logging.ERROR` : mapped to CRITICAL
-# - `logging.CRITICAL` : 50
-
-# Add custom log levels
-logging.TRACE = logging.DEBUG - 5  # type: ignore[attr-defined]
-logging.addLevelName(logging.TRACE, "TRACE")  # type: ignore[attr-defined]
-logging.STATUS = logging.WARNING + 5  # type: ignore[attr-defined]
-logging.addLevelName(logging.STATUS, "STATUS")  # type: ignore[attr-defined]
 
 
 @atexit.register
@@ -148,7 +130,6 @@ class BaseSatelliteFrame:
         if zmq_log_handler and cmdp_configure:
             cmdp_configure(logger)
         logger.setLevel(logging.TRACE)  # type: ignore[attr-defined]
-        coloredlogs.install(logger=logger, level=coloredlogs.DEFAULT_LOG_LEVEL)
         return logger
 
     def _add_com_thread(self) -> None:

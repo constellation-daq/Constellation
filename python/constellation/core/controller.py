@@ -669,6 +669,7 @@ def main(args: Any = None) -> None:
     Constellation group via IPython terminal.
 
     """
+    import rich.pretty
     from IPython.terminal.embed import InteractiveShellEmbed
     from IPython.terminal.prompts import Prompts
     from pygments.token import Token
@@ -756,8 +757,10 @@ def main(args: Any = None) -> None:
         exit_msg="Have a nice day!",
     )
 
-    # You can then call ipshell() anywhere you need it (with an optional
-    # message):
+    # Install Rich REPL
+    rich.pretty.install()
+
+    # Start IPython shell
     ipshell()
 
 
