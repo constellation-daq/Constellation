@@ -133,6 +133,8 @@ class Satellite(
                 # nothing to process
                 pass
             except KeyboardInterrupt:
+                # break line before logging to avoid broken line due to ctrl+c
+                print()
                 self.log_satellite.warning("Satellite caught KeyboardInterrupt, shutting down.")
                 # time to shut down
                 break
