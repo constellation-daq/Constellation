@@ -26,7 +26,7 @@ def destroy_satellites() -> None:
     """Close down connections and perform orderly re-entry."""
     for sat in SATELLITE_LIST:
         try:
-            sat.reentry()
+            sat.terminate()
         except Exception:
             pass
     SATELLITE_LIST.clear()
@@ -169,6 +169,9 @@ class BaseSatelliteFrame:
         """Orderly destroy the satellite."""
         self.log.debug("Stopping all communication threads.")
         self._stop_com_threads()
+
+    def terminate(self) -> None:
+        self.reentry()
         self.log.debug("Terminating ZMQ context.")
         self.context.term()
 

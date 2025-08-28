@@ -212,9 +212,10 @@ class MonitoringSender(BaseSatelliteFrame):
             if isinstance(logger, ConstellationLogger):
                 if self._zmq_log_handler in logger.handlers:
                     logger.removeHandler(self._zmq_log_handler)
-        self._zmq_log_handler.close()
         # pass tear-down on to base class
         super().reentry()
+        # Close sockets
+        self._zmq_log_handler.close()
 
 
 class ZeroMQSocketLogListener(QueueListener):
