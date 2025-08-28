@@ -149,6 +149,12 @@ under the following conditions:
 * The CHP instance reports that a previously tracked remote satellite became unavailable
 * The CHP instance reports that the state of a tracked remote satellite changed to `ERROR` or `SAFE`
 
+## Logging
+
+The map in the header of a log message MAY contain key-value pairs with keys `filename`, `lineno`, `funcName` and `thread` containing the values for the filename as string, the line number as integer, the function name as string and the thread ID as integer of the executed source code location emitting the log message.
+
+If the log message is produced by an exception, the map in the header of a log message MAY contain a key-value pair with key `traceback` containing a human-readable traceback leading to the exception as string.
+
 ## Data Sending and Receiving
 
 BOR and EOR messages of [CDTP](./protocols.md#data-transmission) allow for the transport of both user-supplied information in the form of header tags and framework-generated
