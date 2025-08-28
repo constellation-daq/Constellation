@@ -272,14 +272,14 @@ void CMDPSink::disableSending() {
 void CMDPSink::sink_it_(const spdlog::details::log_msg& msg) {
     // Create message header
     auto msghead = CMDP1Message::Header(sender_name_, msg.time);
-    // Add source and thread information only at TRACE level:
-    if(from_spdlog_level(msg.level) <= TRACE) {
+    // Add source and thread information at DEBUG, TRACE and CRITICAL
+    if(from_spdlog_level(msg.level) <= DEBUG || from_spdlog_level(msg.level) == CRITICAL) {
         msghead.setTag("thread", static_cast<std::int64_t>(msg.thread_id));
         // Add log source if not empty
-        if(!msg.source.empty()) {
+        if(!msg.source.empty()) [[likely]] {
             msghead.setTag("filename", get_rel_file_path(msg.source.filename));
             msghead.setTag("lineno", static_cast<std::int64_t>(msg.source.line));
-            msghead.setTag("funcname", std::string_view(msg.source.funcname));
+            msghead.setTag("funcName", std::string_view(msg.source.funcname));
         }
     }
 
