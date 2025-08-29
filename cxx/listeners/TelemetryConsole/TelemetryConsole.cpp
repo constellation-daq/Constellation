@@ -40,6 +40,8 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
     setupUi(this);
 
+    setWindowTitle("Constellation TelemetryConsole " CNSTLN_VERSION_FULL);
+
     // Set up header bar:
     cnstlnName->setText(QString::fromStdString("<font color=gray><b>" + std::string(group_name) + "</b></font>"));
 
