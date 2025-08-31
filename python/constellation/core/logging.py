@@ -89,7 +89,7 @@ def setup_cli_logging(level: str) -> None:
     format = "[%(name)s] %(message)s"
     console_theme = Theme(
         {
-            "logging.level.trace": "gray3",
+            "logging.level.trace": "gray62",
             "logging.level.debug": "cyan",
             "logging.level.info": "bold cyan",
             "logging.level.warning": "bold yellow",
