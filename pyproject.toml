@@ -32,8 +32,8 @@ dependencies = [
     "msgpack",
     "python-statemachine>=2.3.3",
     "numpy",
-    "coloredlogs",
     "psutil",
+    "rich",
 ]
 
 [project.scripts]
@@ -59,7 +59,7 @@ dev = [
     "build",
     "black",
     "flake8", "flake8-pyproject",
-    "mypy", "types-psutil",
+    "mypy", "types-psutil", "types-pygments",
     "isort",
 ]
 test = [
@@ -84,7 +84,7 @@ docs = [
     "python-slugify",
 ]
 # Feature components
-cli = ["ipython"]
+cli = ["ipython", "traitlets", "pygments"]
 # Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py"]

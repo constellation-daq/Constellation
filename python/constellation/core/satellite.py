@@ -133,6 +133,8 @@ class Satellite(
                 # nothing to process
                 pass
             except KeyboardInterrupt:
+                # break line before logging to avoid broken line due to ctrl+c
+                print()
                 self.log_satellite.warning("Satellite caught KeyboardInterrupt, shutting down.")
                 # time to shut down
                 break
@@ -449,10 +451,14 @@ class Satellite(
         Intended to be installed as threading.excepthook.
 
         """
-        tb = "".join(traceback.format_tb(args.exc_traceback))
-        self.log_satellite.fatal(
-            f"caught {args.exc_type} with value \
-            {args.exc_value} in thread {args.thread} and traceback {tb}."
+        tb = (
+            "Traceback (most recent call last):\n"
+            + "".join(traceback.format_tb(args.exc_traceback))
+            + f"{args.exc_type.__name__}: {args.exc_value}"
+        )
+        self.log_satellite.critical(
+            f"{args.exc_type.__name__} in {args.thread._name}: {args.exc_value}",
+            extra={"traceback": tb},
         )
         # change internal state
         err_msg = f"Thread {args.thread} failed. Caught exception {args.exc_type} with value {args.exc_value}."

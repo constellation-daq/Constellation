@@ -79,14 +79,14 @@ def decode_log(name: str, topic: str, msg: list[bytes]) -> logging.LogRecord:
     # assert to help mypy determine len of tuple returned
     assert len(header) == 3, "Header decoding resulted in too many values for CMDP."
     sender, time, record = header
+    level_name = topic.split("/")[1]
     # assert to help mypy determine type
     assert isinstance(record, dict)
     # receive payload
     record["msg"] = msg[2].decode()
-    record["created"] = time.to_datetime().timestamp()
     record["name"] = sender
-    record["levelname"] = topic.split("/")[1]
-    record["levelno"] = logging.getLevelName(topic.split("/")[1])
+    record["levelname"] = level_name
+    record["levelno"] = logging.getLevelNamesMapping()[level_name]
     return logging.makeLogRecord(record)
 
 
@@ -161,11 +161,6 @@ class CMDPTransmitter:
         # of the LogRecord, allowing to reconstruct the message on the other
         # end.
         meta = {
-            "name": record.name,
-            # msgpck cannot serialize args, so need for format message now
-            "msg": record.getMessage(),
-            "levelname": record.levelname,
-            "levelno": record.levelno,
             "pathname": record.pathname,
             "filename": record.filename,
             "module": record.module,
@@ -181,6 +176,9 @@ class CMDPTransmitter:
             "processName": record.processName,
             "process": record.process,
         }
+        tb: str | None = getattr(record, "traceback", None)
+        if tb:
+            meta["traceback"] = tb
         payload = record.getMessage().encode()
         self._dispatch(topic, payload, meta)
 
