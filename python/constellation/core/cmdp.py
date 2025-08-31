@@ -170,8 +170,6 @@ class CMDPTransmitter:
             "threadName": record.threadName,
             "process": record.process,
             "processName": record.processName,
-            "exc_info": record.exc_info,
-            "stack_info": record.stack_info,
             "created": record.created,
             "msecs": record.msecs,
             "relativeCreated": record.relativeCreated,
