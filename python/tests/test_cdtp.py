@@ -1,135 +1,147 @@
 """
-SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 SPDX-License-Identifier: EUPL-1.2
 """
 
-import os
-import pathlib
-import random
 import threading
 import time
-from tempfile import TemporaryDirectory
 from typing import Any
 
-import h5py
-import numpy as np
 import pytest
 import zmq
-from conftest import DATA_PORT, check_output, wait_for_state
+from conftest import DATA_PORT, wait_for_state
 
-from constellation.core import __version__
-from constellation.core.cdtp import CDTPMessageIdentifier, DataTransmitter
+from constellation.core.cdtp import (
+    DataReceiver,
+    DataTransmitter,
+    InvalidCDTPMessageType,
+    RecvTimeoutError,
+    RunCondition,
+    TransmitterState,
+)
 from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
-from constellation.core.datasender import DataSender
+from constellation.core.logging import ConstellationLogger
+from constellation.core.message.cdtp2 import DataBlock
+from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
-from constellation.satellites.H5DataWriter.H5DataWriter import H5DataWriter
-
-MON_PORT = 22222
-CMD_PORT = 10101
-FILE_NAME = "mock_file_{run_identifier}.h5"
+from constellation.core.receiver_satellite import ReceiverSatellite
+from constellation.core.transmitter_satellite import TransmitterSatellite
 
 
 @pytest.fixture
-def data_transmitter():
-    ctx = zmq.Context()
-    socket = ctx.socket(zmq.PUSH)
-    socket.bind(f"tcp://127.0.0.1:{DATA_PORT}")
-    t = DataTransmitter("simple_sender", socket)
+def mock_data_transmitter(mock_socket_sender):
+    mock_socket_sender.port = DATA_PORT
+    t = DataTransmitter("mock_transmitter", mock_socket_sender, ConstellationLogger("mock_transmitter"), lambda x: None)
     yield t
-    # teardown
-    socket.close()
-    ctx.term()
+
+
+class MockDataReceiver(DataReceiver):
+    def __init__(
+        self,
+        context: zmq.Context,  # type: ignore[type-arg]
+        data_transmitters: set[str] | None,
+    ):
+        super().__init__(
+            context, ConstellationLogger("mock_receiver"), self.store_bor, self.store_data, self.store_eor, data_transmitters
+        )
+        self.last_bors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+        self.last_data_blocks: list[tuple[str, DataBlock]] = []
+        self.last_eors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+
+    def store_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]):
+        self.last_bors.append((sender, user_tags, configuration))
+
+    def store_data(self, sender: str, data_block: DataBlock):
+        self.last_data_blocks.append((sender, data_block))
+
+    def store_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
+        self.last_eors.append((sender, user_tags, run_metadata))
 
 
 @pytest.fixture
-def commander():
-    ctx = zmq.Context()
-    socket = ctx.socket(zmq.REQ)
-    socket.connect(f"tcp://127.0.0.1:{CMD_PORT}")
-    commander = CommandTransmitter("cmd", socket)
-    yield commander
-    # teardown
-    socket.close()
-    ctx.term()
-
-
-@pytest.fixture
-def data_receiver():
-    ctx = zmq.Context()
-    socket = ctx.socket(zmq.PULL)
-    socket.connect(f"tcp://127.0.0.1:{DATA_PORT}")
-    r = DataTransmitter("simple_receiver", socket)
+def mock_data_receiver(mock_poller):
+    ctx, poller = mock_poller
+    r = MockDataReceiver(
+        ctx,
+        {"mock_transmitter", "mock_transmitter_2"},
+    )
     yield r
-    # teardown
-    socket.close()
-    ctx.term()
+
+
+class DummyTransmitterSatellite(TransmitterSatellite):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.throw_run = False
+
+    def do_starting(self, run_identifier: str) -> str:
+        self.bor = {"dummy": True}
+        return "Started"
+
+    def do_stopping(self) -> str:
+        self.eor = {"data_collected": False}
+        return "Stopped"
+
+    def do_run(self, run_identifier: str) -> str:
+        if self.throw_run:
+            time.sleep(0.05)
+            raise Exception("throwing in RUN as requested")
+        return "Finished run"
 
 
 @pytest.fixture
-def mock_sender_satellite(mock_zmq_context, mock_chirp_transmitter):
-    """Mock a Satellite for a specific device, ie. a class inheriting from Satellite."""
-    ctx = mock_zmq_context()
-    ctx.flip_queues()
-
-    class MockSenderSatellite(DataSender):
-        def do_initializing(self, config):
-            self.BOR = {"status": "set at initialization"}
-            return "done"
-
-        def do_starting(self, payload: Any):
-            self.BOR = self.BOR | {"additional_status": "set in do_starting()"}
-            return "done"
-
-        def do_stopping(self):
-            self.EOR = {"final_status": "set in do_stopping()"}
-            return "done"
-
-        def do_run(self, payload: Any):
-            self.payload_id = 0
-            while self.payload_id < 10:
-                payload = f"mock payload {self.payload_id}".encode()
-                self.data_queue.put((payload, {}))
-                self.payload_id += 1
-                time.sleep(0.02)
-            return "Send finished"
-
-    s = MockSenderSatellite(
-        name="mydevice1",
+def transmitter_satellite():
+    s = DummyTransmitterSatellite(
+        name="mock_receiver",
         group="mockstellation",
-        cmd_port=CMD_PORT,
-        mon_port=22222,
-        hb_port=33333,
+        cmd_port=11111,
+        hb_port=22222,
+        mon_port=33333,
         data_port=DATA_PORT,
         interface=[get_loopback_interface_name()],
     )
     t = threading.Thread(target=s.run_satellite)
     t.start()
     # give the threads a chance to start
-    time.sleep(0.1)
+    time.sleep(0.2)
     yield s
     # teardown
-    s.reentry()
+    s.terminate()
+
+
+class DummyReceiverSatellite(ReceiverSatellite):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.throw_run = False
+        self.last_bors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+        self.last_data_blocks: list[tuple[str, DataBlock]] = []
+        self.last_eors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
+
+    def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]):
+        self.last_bors.append((sender, user_tags, configuration))
+
+    def receive_data(self, sender: str, data_block: DataBlock):
+        self.last_data_blocks.append((sender, data_block))
+
+    def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
+        self.last_eors.append((sender, user_tags, run_metadata))
+
+    def do_run(self, run_identifier: str) -> str:
+        if self.throw_run:
+            time.sleep(0.05)
+            raise Exception("throwing in RUN as requested")
+        return super().do_run(run_identifier)
 
 
 @pytest.fixture
 def receiver_satellite():
-    """A receiver Satellite."""
-
-    class MockReceiverSatellite(H5DataWriter):
-        def do_initializing(self, config: dict[str, Any]) -> str:
-            res = super().do_initializing(config)
-            # configure monitoring with higher frequency
-            self._configure_monitoring(0.1)
-            return res
-
-    s = MockReceiverSatellite(
+    s = DummyReceiverSatellite(
         name="mock_receiver",
         group="mockstellation",
-        cmd_port=CMD_PORT,
-        mon_port=MON_PORT,
-        hb_port=33333,
+        cmd_port=11112,
+        hb_port=22223,
+        mon_port=33334,
         interface=[get_loopback_interface_name()],
     )
     t = threading.Thread(target=s.run_satellite)
@@ -138,528 +150,481 @@ def receiver_satellite():
     time.sleep(0.2)
     yield s
     # teardown
-    s.reentry()
-
-
-class MockSenderSatellite(DataSender):
-    def do_run(self, payload: any):
-        """Send a few packets, then wait until stopped."""
-        self.payload_id = 0
-        while self.payload_id < 10 and not self._state_thread_evt.is_set():
-            payload = f"mock payload {self.payload_id}".encode()
-            self.data_queue.put((payload, {}))
-            self.payload_id += 1
-            time.sleep(0.01)
-        while not self._state_thread_evt.is_set():
-            time.sleep(0.002)
-        return "Send finished"
+    s.terminate()
 
 
 @pytest.fixture
-def sender_satellite():
-    """A sender Satellite."""
-
-    s = MockSenderSatellite(
-        name="mock_sender",
-        group="mockstellation",
-        mon_port=MON_PORT,
-        data_port=DATA_PORT,
-        cmd_port=CMD_PORT,
-        hb_port=33333,
-        interface=[get_loopback_interface_name()],
-    )
-    t = threading.Thread(target=s.run_satellite)
-    t.start()
-    # give the threads a chance to start
-    time.sleep(0.2)
-    yield s
-    # teardown
-    s.reentry()
-
-
-@pytest.fixture
-def sender_satellite_array():
-    """Fixture creating multiple sender Satellites."""
-
-    sats = []
-    for i in range(4):
-        s = MockSenderSatellite(
-            name=f"mock_sender{i}",
-            group="mockstellation",
-            mon_port=MON_PORT + i + 1,
-            cmd_port=CMD_PORT + i + 1,
-            hb_port=33333 + i + 1,
-            data_port=DATA_PORT + i + 1,
-            interface=[get_loopback_interface_name()],
-        )
-        t = threading.Thread(target=s.run_satellite)
-        t.start()
-        sats.append(s)
-        # give the threads a chance to start
-        time.sleep(0.2)
-    yield sats
-    for s in sats:
-        s.reentry()
-
-
-def test_datatransmitter(mock_data_transmitter: DataTransmitter, mock_data_receiver: DataTransmitter):
-    sender = mock_data_transmitter
-    rx = mock_data_receiver
-
-    # string
-    payload = "mock payload"
-    sender.send_start(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.BOR
-
-    # simple list
-    payload = ["mock payload", "more mock data"]
-    sender.send_data(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.DAT
-
-    # bytes
-    payload = np.arange(0, 1000).tobytes()
-    sender.send_data(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.DAT
-
-    # multi-frame bytes
-    payload = [np.arange(0, 1000).tobytes(), np.arange(10000, 20000).tobytes()]
-    sender.send_data(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.DAT
-
-    payload = None
-    sender.send_data(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.DAT
-
-    payload = {"mock": True}
-    sender.send_end(payload)
-    msg = rx.recv()
-    assert msg is not None
-    assert msg.payload == payload
-    assert msg.msgtype == CDTPMessageIdentifier.EOR
-
-
-def test_sending_package(
-    mock_zmq_context,
-    mock_sender_satellite,
-    mock_data_transmitter,
-):
-    ctx = mock_zmq_context()
-    mock = ctx.socket()
-    mock.port = CMD_PORT
-
-    commander = CommandTransmitter("cmd", mock)
-    transmitter = mock_sender_satellite
-    rx = mock_data_transmitter
-
-    assert not transmitter.BOR
-    commander.send_request("initialize", {"mock key": "mock argument string"})
-    wait_for_state(transmitter.fsm, "INIT")
-    assert transmitter.BOR == {"status": "set at initialization"}
-    commander.send_request("launch")
-    wait_for_state(transmitter.fsm, "ORBIT")
-    commander.send_request("start", "100102")
-    wait_for_state(transmitter.fsm, "RUN")
-    assert transmitter.fsm.current_state_value.name == "RUN", "Could not set up test environment"
-
-    BOR = True
-    for idx in range(11):
-        msg = rx.recv()
-        if BOR:
-            assert msg.msgtype == CDTPMessageIdentifier.BOR
-            assert msg.payload["_role"] == "DYNAMIC"
-            assert msg.meta["additional_status"] == "set in do_starting()"
-            assert msg.meta["status"] == "set at initialization"
-            BOR = False
-        else:
-            assert msg.msgtype == CDTPMessageIdentifier.DAT
-            assert msg.payload.decode("utf-8") == f"mock payload {idx - 1}"
-            # assert msg.sequence_number == idx, "Sequence number not expected order"
-            # assert msg.name == "mock sender"
-
-    time.sleep(0.2)
-    # still in RUN?
-    assert transmitter.fsm.current_state_value.name == "RUN", "Ended RUN state early"
-    # go to stop to send EOR
-    commander.send_request("stop", "")
-    wait_for_state(transmitter.fsm, "ORBIT")
-    # EOR
-    msg = rx.recv()
-    assert msg.msgtype == CDTPMessageIdentifier.EOR
-    assert msg.meta["final_status"] == "set in do_stopping()"
-    assert transmitter.payload_id == 10
-
-
-def test_receive_writing_package(
-    receiver_satellite,
-    data_transmitter,
-    commander,
-):
-    """Test receiving and writing data, verify state machine of DataSender."""
-    service = DiscoveredService(
-        get_uuid("simple_sender"),
-        CHIRPServiceIdentifier.DATA,
-        "127.0.0.1",
-        port=DATA_PORT,
-    )
-
-    receiver = receiver_satellite
-    tx = data_transmitter
-    with TemporaryDirectory() as tmpdir:
-        commander.request_get_response("initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir})
-        wait_for_state(receiver.fsm, "INIT", 1)
-        receiver._add_sender(service)
-        commander.request_get_response("launch")
-        wait_for_state(receiver.fsm, "ORBIT", 1)
-
-        payload = np.array(np.arange(1000), dtype=np.int16)
-        assert receiver.run_identifier == ""
-
-        for run_num in range(1, 4):
-            # Send new data to handle
-            tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
-            # send once as byte array with and once w/o dtype
-            tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
-            tx.send_data(payload.tobytes())
-            time.sleep(0.1)
-
-            # Running satellite
-            commander.request_get_response("start", str(run_num))
-            wait_for_state(receiver.fsm, "RUN", 1)
-            timeout = 0.5
-            while not receiver.active_satellites or timeout < 0:
-                time.sleep(0.05)
-                timeout -= 0.05
-            assert len(receiver.active_satellites) == 1, "No BOR received!"
-            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
-            commander.request_get_response("stop")
-            time.sleep(0.5)
-            # receiver should still be in 'stopping' as no EOR has been sent
-            assert receiver.fsm.current_state_value.name == "stopping", "Receiver stopped before receiving EORE"
-            # send EORE
-            tx.send_end({"mock_end_payload": f"whatanend{run_num}"}, {"mock_end_meta": f"EOR{run_num}"})
-            wait_for_state(receiver.fsm, "ORBIT", 1)
-            assert receiver.run_identifier == str(run_num)
-
-            # Does file exist and has it been written to?
-            bor = "BOR"
-            eor = "EOR"
-            dat = [f"data_{run_num}_{i:09}" for i in range(1, 3)]
-
-            fn = FILE_NAME.format(run_identifier=run_num)
-            assert os.path.exists(os.path.join(tmpdir, fn))
-            h5file = h5py.File(tmpdir / pathlib.Path(fn))
-            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 0
-            assert "simple_sender" in h5file.keys()
-            assert bor in h5file["simple_sender"].keys()
-            assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
-            assert eor in h5file["simple_sender"].keys()
-            assert "whatanend" in str(h5file["simple_sender"][eor]["mock_end_payload"][()], encoding="utf-8")
-            assert "EOR" in str(h5file["simple_sender"][eor]["mock_end_meta"][()], encoding="utf-8")
-            assert set(dat).issubset(h5file["simple_sender"].keys()), "Data packets missing in file"
-            assert (payload == h5file["simple_sender"][dat[0]]).all()
-            # interpret the uint8 values again as uint16:
-            assert (payload == np.array(h5file["simple_sender"][dat[1]]).view(np.uint16)).all()
-            assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
-            h5file.close()
-
-
-def test_receive_writing_swmr_mode(
-    receiver_satellite,
-    data_transmitter,
-    commander,
-):
-    """Test receiving and writing data, verify state machine of DataSender."""
-    service = DiscoveredService(
-        get_uuid("simple_sender"),
-        CHIRPServiceIdentifier.DATA,
-        "127.0.0.1",
-        port=DATA_PORT,
-    )
-
-    receiver = receiver_satellite
-    tx = data_transmitter
-    with TemporaryDirectory() as tmpdir:
-        commander.request_get_response(
-            "initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir, "allow_concurrent_reading": True}
-        )
-        wait_for_state(receiver.fsm, "INIT", 1)
-        receiver._add_sender(service)
-        commander.request_get_response("launch")
-        wait_for_state(receiver.fsm, "ORBIT", 1)
-
-        assert receiver.run_identifier == ""
-
-        # check swmr status via cscp
-        msg = commander.request_get_response("get_concurrent_reading_status")
-        assert msg.verb_msg.lower().startswith("not")
-
-        for run_num in range(1, 4):
-            # Send new data to handle
-            tx.send_start({"mock_cfg": run_num, "other_val": "mockval"})
-            # send once as byte array with and once w/o dtype
-            payload_sizes = []
-            payloads = []
-            for p in range(10):
-                # send random-sized payloads
-                psize = int(random.random() * 100000)
-                payload = np.array(np.arange(psize), dtype=np.int16)
-                if p % 2 == 0:
-                    # send with meta info
-                    tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}", "moreinfo": "a very special payload"})
-                else:
-                    # send without meta info
-                    tx.send_data(payload.tobytes())
-                payload_sizes.append(psize)
-                payloads.append(payload)
-            time.sleep(0.1)
-
-            assert receiver._swmr_mode_enabled is False
-            # Running satellite
-            commander.request_get_response("start", str(run_num))
-            wait_for_state(receiver.fsm, "RUN", 1)
-            timeout = 0.5
-            while not receiver.active_satellites or not receiver._swmr_mode_enabled or timeout < 0:
-                time.sleep(0.05)
-                timeout -= 0.05
-            assert len(receiver.active_satellites) == 1, "No BOR received!"
-            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
-            assert receiver._swmr_mode_enabled is True
-            # check swmr status via cscp
-            msg = commander.request_get_response("get_concurrent_reading_status")
-            assert msg.verb_msg.lower().startswith("enabled")
-            # stop
-            commander.request_get_response("stop")
-            # send EORE
-            tx.send_end({"mock_end_payload": f"whatanend{run_num}"}, {"mock_end_meta": f"EOR{run_num}"})
-            wait_for_state(receiver.fsm, "ORBIT", 1)
-            assert receiver._swmr_mode_enabled is False
-            assert receiver.run_identifier == str(run_num)
-
-            # Does file exist and has it been written to?
-            bor = "BOR"
-            eor = "EOR"
-
-            fn = FILE_NAME.format(run_identifier=run_num)
-            assert os.path.exists(os.path.join(tmpdir, fn))
-            h5file = h5py.File(tmpdir / pathlib.Path(fn))
-            assert h5file["MockReceiverSatellite.mock_receiver"]["swmr_mode"][()] == 1
-            assert "simple_sender" in h5file.keys()
-            assert bor in h5file["simple_sender"].keys()
-            assert h5file["simple_sender"][bor]["mock_cfg"][()] == run_num
-            assert eor in h5file["simple_sender"].keys()
-            assert "whatanend" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
-            assert f"EOR{run_num}" in str(h5file["simple_sender"][eor][()], encoding="utf-8")
-            assert "data" in h5file["simple_sender"].keys(), "Data missing in file"
-            # interpret the uint8 values again as int16 and compare packets:
-            for i, payload in enumerate(payloads):
-                idx = h5file["simple_sender"]["data_idx"][i]
-                if i > 0:
-                    prev = h5file["simple_sender"]["data_idx"][i - 1]
-                else:
-                    prev = 0
-                loaded = np.array(h5file["simple_sender"]["data"][prev:idx]).view(np.int16)
-                assert (payload == loaded).all(), "Could not reconstruct correct payload values"
-                # meta data
-                idx = h5file["simple_sender"]["meta_idx"][i]
-                if i > 0:
-                    prev = h5file["simple_sender"]["meta_idx"][i - 1]
-                else:
-                    prev = 0
-                loaded = str(h5file["simple_sender"]["meta"][prev:idx], encoding="utf-8")
-                if i % 2 == 0:
-                    assert "a very special payload" in loaded
-                else:
-                    assert loaded == "{}"
-            # check that remainder of idx values is 0: (resized but unused)
-            i += 1
-            while i < h5file["simple_sender"]["data_idx"].shape[0]:
-                assert h5file["simple_sender"]["data_idx"][i] == 0
-                i += 1
-            assert h5file["MockReceiverSatellite.mock_receiver"]["constellation_version"][()] == __version__.encode()
-            h5file.close()
-
-
-def test_fail_sending_bor(commander, sender_satellite):
-    """Test a run failing due to missing data receiver."""
-    sender = sender_satellite
-    # set timeout value for BOR to 1s
-    commander.request_get_response("initialize", {"_bor_timeout": 1})
-    wait_for_state(sender.fsm, "INIT", 1)
-    commander.request_get_response("launch")
-    wait_for_state(sender.fsm, "ORBIT", 1)
-    commander.request_get_response("start", "no_receiver_run")
-    # no receiver present, sending BOR should fail
-    wait_for_state(sender.fsm, "ERROR", 2)
-
-
-def test_fail_sending_eor(commander, sender_satellite, data_receiver):
-    """Test a run failing due to missing data receiver at EOR."""
-    sender = sender_satellite
-    rx = data_receiver
-    # set timeout value for BOR to 1s
-    commander.request_get_response("initialize", {"_eor_timeout": 1})
-    wait_for_state(sender.fsm, "INIT", 1)
-    commander.request_get_response("launch")
-    wait_for_state(sender.fsm, "ORBIT", 1)
-    commander.request_get_response("start", "no_receiver_at_end_of_run")
-    msg = rx.recv()
-    assert msg.msgtype == CDTPMessageIdentifier.BOR
-    wait_for_state(sender.fsm, "RUN", 1)
-    time.sleep(1)
-    for i in range(10):
-        msg = rx.recv()
-        assert msg.msgtype == CDTPMessageIdentifier.DAT
-    # close connection
-    #
-    # NOTE this will make sends fail with "zmq.error.Again: Resource temporarily
-    # unavailable", NOT a timeout. As pytest does not support our exception
-    # hooks, the pusher thread dies silently and the timeout waiting for the EOR
-    # event will kick in.
-    rx._socket.close()
-    time.sleep(0.2)
-    commander.request_get_response("stop")
-    # no receiver active, sending EOR should fail
-    wait_for_state(sender.fsm, "ERROR", 2)
-
-
-def test_receiver_stats(
-    receiver_satellite,
-    monitoringlistener,
-    commander,
-):
-    """Test the stats sent by DataReceiver are received via CMDP."""
-    dp = 23242
+def cmd_transmitter():
     ctx = zmq.Context()
-    socket = ctx.socket(zmq.PUSH)
-    socket.bind(f"tcp://127.0.0.1:{dp}")
-    tx = DataTransmitter("simple_sender", socket)
+    socket_1 = ctx.socket(zmq.REQ)
+    socket_1.connect("tcp://127.0.0.1:11111")
+    cmd_tx_1 = CommandTransmitter("cmd_tx_1", socket_1)
+    socket_2 = ctx.socket(zmq.REQ)
+    socket_2.connect("tcp://127.0.0.1:11112")
+    cmd_tx_2 = CommandTransmitter("cmd_tx_2", socket_2)
+    yield cmd_tx_1, cmd_tx_2
+    # teardown
+    cmd_tx_1.close()
+    cmd_tx_2.close()
+    ctx.term()
 
-    service = DiscoveredService(
-        get_uuid("simple_sender"),
-        CHIRPServiceIdentifier.DATA,
-        "127.0.0.1",
-        port=dp,
-    )
 
+def test_datatransmitter_cov(mock_data_transmitter: DataTransmitter):
+    transmitter = mock_data_transmitter
+    transmitter.check_exception()
+    assert transmitter.state == TransmitterState.NOT_CONNECTED
+    assert not transmitter.check_rate_limited()
+    transmitter.new_data_block()
+    assert transmitter.sequence_number == 1
+    transmitter.bor_timeout = 2
+    assert transmitter.bor_timeout == 2
+    transmitter.eor_timeout = 3
+    assert transmitter.eor_timeout == 3
+    transmitter.data_timeout = 1
+    assert transmitter.data_timeout == 1
+    transmitter.payload_threshold = 64
+    assert transmitter.payload_threshold == 64
+    transmitter.queue_size = 65536
+    assert transmitter.queue_size == 65536
+
+
+def test_datareceiver_cov(mock_data_receiver: DataReceiver):
+    receiver = mock_data_receiver
+    receiver.check_exception()
+    assert receiver.bytes_received == 0
+    assert not receiver.running
+    assert receiver.data_transmitters is not None
+    receiver.eor_timeout = 3
+    assert receiver.eor_timeout == 3
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+    receiver.remove_sender(tx_service)
+
+
+def test_data_transmission(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
+    transmitter = mock_data_transmitter
+    receiver = mock_data_receiver
+
+    # Start receiver, add service for sender
+    receiver.start_receiving()
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+
+    # Send BOR and start transmitter
+    bor_tags = {"tag1": 1}
+    bor_config = {"tag2": 2}
+    transmitter.send_bor(bor_tags, bor_config)
+    transmitter.start_sending()
+
+    # Wait for BOR
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+    bor_rx_sender, bor_rx_tags, bor_rx_config = receiver.last_bors[-1]
+    assert bor_rx_sender == "mock_transmitter"
+    assert bor_rx_tags == bor_tags
+    assert bor_rx_config == bor_config
+
+    # Send data block
+    data = b"1234"
+    data_tags = {"dummy": True}
+    data_block = transmitter.new_data_block(data_tags)
+    data_block.add_frame(data)
+    transmitter.send_data_block(data_block)
+
+    # Wait for data block
+    timeout = 1.0
+    while len(receiver.last_data_blocks) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_data_blocks) == 1, "Data not received"
+    data_rx_sender, data_rx_data_block = receiver.last_data_blocks[-1]
+    assert data_rx_sender == "mock_transmitter"
+    assert data_rx_data_block.sequence_number == 1
+    assert data_rx_data_block.tags == data_tags
+    assert len(data_rx_data_block.frames) == 1
+    assert data_rx_data_block.frames[0] == data
+    assert receiver.bytes_received == len(data)
+
+    # Stop transmitter and send EOR
+    transmitter.check_exception()
+    transmitter.stop_sending()
+    eor_tags = {"tag3": 3}
+    eor_run_meta = {"tag4": 4}
+    transmitter.send_eor(eor_tags, eor_run_meta)
+
+    # Wait for EOR
+    timeout = 1.0
+    while len(receiver.last_eors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_eors) == 1, "EOR not received"
+    eor_rx_sender, eor_rx_tags, eor_rx_run_meta = receiver.last_eors[-1]
+    assert eor_rx_sender == "mock_transmitter"
+    assert eor_rx_tags == eor_tags
+    assert eor_rx_run_meta == eor_run_meta
+
+    # Stop receiver
+    receiver.check_exception()
+    receiver.stop_receiving()
+
+
+def test_datareceiver_no_eor(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
+    transmitter = mock_data_transmitter
+    receiver = mock_data_receiver
+
+    # Set EOR timeout
+    receiver.eor_timeout = 0
+
+    # Start receiver, add service for sender
+    receiver.start_receiving()
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+
+    # Send BOR
+    transmitter.send_bor({}, {})
+
+    # Wait for BOR
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+
+    # Remove transmitter
+    receiver.remove_sender(tx_service)
+
+    # Stop receiver -> throws due to missing EOR
+    with pytest.raises(RecvTimeoutError) as excinfo:
+        receiver.stop_receiving()
+    assert "Failed receiving EOR messages from ['mock_transmitter'] after 0s" in str(excinfo)
+
+
+def test_datareceiver_double_bor(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
+    transmitter = mock_data_transmitter
+    receiver = mock_data_receiver
+
+    # Start receiver, add service for sender
+    receiver.start_receiving()
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+
+    # Send BOR
+    transmitter.send_bor({}, {})
+
+    # Wait for BOR
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+
+    # Send another BOR
+    transmitter.send_bor({}, {})
+
+    # Wait until exception is set
+    timeout = 1.0
+    assert receiver._pull_thread is not None
+    while receiver._pull_thread.exc is None and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert receiver._pull_thread.exc is not None
+
+    # Check exception
+    with pytest.raises(InvalidCDTPMessageType) as excinfo:
+        receiver.check_exception()
+    assert "Error handling CDTP message with type BOR: already received BOR from mock_transmitter" in str(excinfo)
+
+
+def test_datareceiver_no_bor(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
+    transmitter = mock_data_transmitter
+    receiver = mock_data_receiver
+
+    # Start receiver, add service for sender
+    receiver.start_receiving()
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+
+    # Send EOR
+    transmitter.send_eor({}, {})
+
+    # Wait until exception is set
+    timeout = 1.0
+    assert receiver._pull_thread is not None
+    while receiver._pull_thread.exc is None and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert receiver._pull_thread.exc is not None
+
+    # Check exception
+    with pytest.raises(InvalidCDTPMessageType) as excinfo:
+        receiver.check_exception()
+    assert "Error handling CDTP message with type EOR: did not receive BOR from mock_transmitter" in str(excinfo)
+
+
+def test_datareceiver_missed_data(mock_data_transmitter: DataTransmitter, mock_data_receiver: MockDataReceiver):
+    transmitter = mock_data_transmitter
+    receiver = mock_data_receiver
+
+    # Adjust data timeout and payload threshold
+    transmitter.data_timeout = 0
+    transmitter.payload_threshold = 0
+
+    # Start receiver, add service for sender
+    receiver.start_receiving()
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver.add_sender(tx_service)
+
+    # Send BOR and start transmitter
+    transmitter.send_bor({}, {})
+    transmitter.start_sending()
+
+    # Wait for BOR
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+
+    # Send first data block
+    data_block = transmitter.new_data_block()
+    data_block.add_frame(b"123")
+    transmitter.send_data_block(data_block)
+
+    # Send second data block while skipping a sequence number
+    data_block = transmitter.new_data_block()
+    data_block._sequence_number += 1
+    data_block.add_frame(b"789")
+    transmitter.send_data_block(data_block)
+
+    # Wait for data blocks
+    timeout = 1.0
+    while len(receiver.last_data_blocks) < 2 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_data_blocks) == 2, "Data not received"
+
+    # Stop transmitter and send EOR
+    transmitter.stop_sending()
+    transmitter.send_eor({}, {})
+
+    # Wait for EOR
+    timeout = 1.0
+    while len(receiver.last_eors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_eors) == 1, "EOR not received"
+
+    # Check condition code
+    eor_exp_run_condition = RunCondition.INCOMPLETE
+    eor_rx_sender, eor_rx_tags, eor_rx_run_meta = receiver.last_eors[-1]
+    assert "condition_code" in eor_rx_run_meta.keys()
+    assert eor_rx_run_meta["condition_code"] == eor_exp_run_condition.value
+    assert eor_rx_run_meta["condition"] == eor_exp_run_condition.name
+
+    # Stop receiver
+    receiver.stop_receiving()
+
+
+def test_data_satellites(
+    transmitter_satellite: DummyTransmitterSatellite, receiver_satellite: DummyReceiverSatellite, cmd_transmitter
+):
+    transmitter = transmitter_satellite
     receiver = receiver_satellite
-    ml, tmpdir = monitoringlistener
-    commander.request_get_response("initialize", {"_file_name_pattern": FILE_NAME, "_output_path": tmpdir})
+    cmd_tx, cmd_rx = cmd_transmitter
+
+    # Initialize
+    cmd_tx.request_get_response(
+        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+    )
+    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    wait_for_state(transmitter.fsm, "INIT", 1)
     wait_for_state(receiver.fsm, "INIT", 1)
-    receiver._add_sender(service)
-    commander.request_get_response("launch")
+
+    # Launch
+    cmd_tx.request_get_response("launch")
+    cmd_rx.request_get_response("launch")
+    wait_for_state(transmitter.fsm, "ORBIT", 1)
     wait_for_state(receiver.fsm, "ORBIT", 1)
 
-    payload = np.array(np.arange(1000), dtype=np.int16)
+    # Start receiver
+    cmd_rx.request_get_response("start", "test_run_1")
+    wait_for_state(receiver.fsm, "RUN")
 
-    for run_num in range(1, 3):
-        # Send new data to handle
-        tx.send_start({"mock_cfg": 1, "other_val": "mockval"})
-        # send once as byte array with and once w/o dtype
-        tx.send_data(payload.tobytes(), {"dtype": f"{payload.dtype}"})
-        tx.send_data(payload.tobytes())
+    # Add sender
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver._add_sender_callback(tx_service)
 
-        # Running satellite
-        commander.request_get_response("start", str(run_num))
-        wait_for_state(receiver.fsm, "RUN", 1)
-        time.sleep(0.2)
-        commander.request_get_response("stop")
-        # send EOR
-        tx.send_end({"mock_end": 22})
-        wait_for_state(receiver.fsm, "ORBIT", 1)
-    timeout = 4
-    while timeout > 0 and not len(ml._metric_sockets) > 0:
-        time.sleep(0.005)
-        timeout -= 0.005
-    assert len(receiver.receiver_stats) == 2
-    assert len(receiver._metrics_callbacks) > 1
-    assert len(ml._metric_sockets) == 1
-    assert os.path.exists(os.path.join(tmpdir, "stats")), "Stats output directory not created"
-    statfile = os.path.join(tmpdir, "stats", "MockReceiverSatellite.mock_receiver.nbytes.csv")
-    timeout = 5
-    while timeout > 0 and not os.path.exists(statfile):
-        time.sleep(0.005)
-        timeout -= 0.005
-    assert os.path.exists(statfile), "Expected output metrics csv not found"
-    # close thread and connections to allow temp dir to be removed
-    ml._log_listening_shutdown()
-    ml._metrics_listening_shutdown()
+    # Start transmitter
+    cmd_tx.request_get_response("start", "test_run_1")
+    wait_for_state(transmitter.fsm, "RUN")
+
+    # Wait until BOR is received
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+
+    # Check BOR
+    bor_rx_sender, bor_rx_tags, bor_rx_config = receiver.last_bors[-1]
+    assert bor_rx_tags == {"dummy": True}
+    assert bor_rx_config["_payload_threshold"] == 0
+
+    # Send data
+    data = b"123"
+    data_block = transmitter.new_data_block()
+    data_block.add_frame(data)
+    transmitter.send_data_block(data_block)
+
+    # Wait until data block is received
+    timeout = 1.0
+    while len(receiver.last_data_blocks) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_data_blocks) == 1, "Data not received"
+
+    # Check data block
+    data_rx_sender, data_rx_data_block = receiver.last_data_blocks[-1]
+    assert len(data_rx_data_block.frames) == 1
+    assert data_rx_data_block.frames[0] == data
+
+    # Some calls for transmitter coverage
+    transmitter.mark_run_tainted()
+    assert not transmitter.check_rate_limited()
+
+    # Stop transmitter
+    cmd_tx.request_get_response("stop")
+    wait_for_state(transmitter.fsm, "ORBIT")
+
+    # Wait until EOR is received
+    timeout = 1.0
+    while len(receiver.last_eors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_eors) == 1, "EOR not received"
+
+    # Check EOR
+    eor_exp_run_condition = RunCondition.TAINTED
+    eor_rx_sender, eor_rx_tags, eor_rx_meta = receiver.last_eors[-1]
+    assert eor_rx_tags == {"data_collected": False}
+    assert eor_rx_meta["run_id"] == "test_run_1"
+    assert eor_rx_meta["condition_code"] == eor_exp_run_condition.value
+    assert eor_rx_meta["condition"] == eor_exp_run_condition.name
+
+    # Some calls for receiver coverage
+    tx_service.alive = False
+    receiver._add_sender_callback(tx_service)
+    assert receiver.data_transmitters is None
+
+    # Stop receiver
+    cmd_rx.request_get_response("stop")
+    wait_for_state(receiver.fsm, "ORBIT")
+
+    # Land
+    cmd_tx.request_get_response("land")
+    cmd_rx.request_get_response("land")
+    wait_for_state(transmitter.fsm, "INIT")
+    wait_for_state(receiver.fsm, "INIT")
 
 
-def test_receive_many_satellites_interrupt(
-    capsys,
-    caplog,
-    controller,
-    receiver_satellite,
-    sender_satellite_array,
+def test_data_satellites_transmitter_failure(
+    transmitter_satellite: DummyTransmitterSatellite, receiver_satellite: DummyReceiverSatellite, cmd_transmitter
 ):
-    """Test receiving and writing data from multiple satellites and interrupting."""
+    transmitter = transmitter_satellite
     receiver = receiver_satellite
-    # list of all satellites
-    all_sats = [*sender_satellite_array, receiver]
-    # allow chirp phase to conclude
-    timeout = 4
-    while timeout > 0 and len(controller.constellation.satellites) < len(all_sats):
-        timeout -= 0.005
-        time.sleep(0.005)
-    assert len(controller.constellation.satellites) == len(all_sats), "Test setup failed"
-    with TemporaryDirectory() as tmpdir:
-        for run_num in range(2):
-            # initialize
-            res = controller.constellation.initialize(
-                {
-                    "_file_name_pattern": FILE_NAME,
-                    "_output_path": tmpdir,
-                    "_eor_timeout": 60,  # ensure that the datareceiver waits for EOR
-                }
-            )
-            for msg in res.values():
-                assert msg.success
-            for sat in all_sats:
-                wait_for_state(sat.fsm, "INIT", 4)
-            res = controller.constellation.launch()
-            for msg in res.values():
-                assert msg.success
-            for sat in all_sats:
-                wait_for_state(sat.fsm, "ORBIT", 4)
+    cmd_tx, cmd_rx = cmd_transmitter
 
-            res = controller.constellation.start(str(run_num))
-            for msg in res.values():
-                assert msg.success
-            for sat in all_sats:
-                wait_for_state(sat.fsm, "RUN", 4)
-            timeout = 4
-            while timeout > 0 and len(receiver.active_satellites) < len(sender_satellite_array):
-                time.sleep(0.005)
-                timeout -= 0.005
-            assert len(receiver.active_satellites) == len(sender_satellite_array), "Not enough BORs received!"
-            assert receiver.fsm.current_state_value.name == "RUN", "Could not set up test environment"
-            time.sleep(0.2)  # send more data
-            # still in run?
-            for sat in all_sats:
-                wait_for_state(sat.fsm, "RUN", 1)
+    # Set transmitter to throw in RUN
+    transmitter.throw_run = True
 
-            # interrupt single satellite
-            sat = getattr(controller.constellation.MockSenderSatellite, "mock_sender1")
-            sat._interrupt()
-            for sat in all_sats:
-                wait_for_state(sat.fsm, "SAFE", 3)
-            # datareceiver waits for EOR for 60, so we should have received then
-            # now
-            fn = FILE_NAME.format(run_identifier=run_num)
-            assert os.path.exists(os.path.join(tmpdir, fn))
-            check_output(capsys, caplog)
+    # Initialize
+    cmd_tx.request_get_response(
+        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+    )
+    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    wait_for_state(transmitter.fsm, "INIT", 1)
+    wait_for_state(receiver.fsm, "INIT", 1)
+
+    # Launch
+    cmd_tx.request_get_response("launch")
+    cmd_rx.request_get_response("launch")
+    wait_for_state(transmitter.fsm, "ORBIT", 1)
+    wait_for_state(receiver.fsm, "ORBIT", 1)
+
+    # Start receiver
+    cmd_rx.request_get_response("start", "test_run_1")
+    wait_for_state(receiver.fsm, "RUN")
+
+    # Add sender
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver._add_sender_callback(tx_service)
+
+    # Start transmitter
+    cmd_tx.request_get_response("start", "test_run_1")
+    wait_for_state(transmitter.fsm, "RUN")
+
+    # Wait until BOR is received
+    timeout = 1.0
+    while len(receiver.last_bors) < 1 and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert len(receiver.last_bors) == 1, "BOR not received"
+
+    # Wait until receiver in SAFE
+    wait_for_state(transmitter.fsm, "ERROR")
+    wait_for_state(receiver.fsm, "SAFE")
+
+    # Check EOR
+    assert len(receiver.last_eors) == 1, "EOR not received"
+    eor_exp_run_condition = RunCondition.TAINTED | RunCondition.ABORTED
+    eor_rx_sender, eor_rx_tags, eor_rx_meta = receiver.last_eors[-1]
+    assert eor_rx_meta["condition_code"] == eor_exp_run_condition.value
+    assert eor_rx_meta["condition"] == eor_exp_run_condition.name
+
+
+def test_data_satellites_receiver_failure(
+    transmitter_satellite: DummyTransmitterSatellite, receiver_satellite: DummyReceiverSatellite, cmd_transmitter
+):
+    transmitter = transmitter_satellite
+    receiver = receiver_satellite
+    cmd_tx, cmd_rx = cmd_transmitter
+
+    # Set receiver to throw in RUN
+    receiver.throw_run = True
+
+    # Initialize
+    cmd_tx.request_get_response(
+        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+    )
+    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    wait_for_state(transmitter.fsm, "INIT", 1)
+    wait_for_state(receiver.fsm, "INIT", 1)
+
+    # Launch
+    cmd_tx.request_get_response("launch")
+    cmd_rx.request_get_response("launch")
+    wait_for_state(transmitter.fsm, "ORBIT", 1)
+    wait_for_state(receiver.fsm, "ORBIT", 1)
+
+    # Start receiver
+    cmd_rx.request_get_response("start", "test_run_1")
+    wait_for_state(receiver.fsm, "RUN")
+
+    # Add sender
+    tx_service = DiscoveredService(get_uuid("mock_transmitter"), CHIRPServiceIdentifier.DATA, "127.0.0.1", DATA_PORT)
+    receiver._add_sender_callback(tx_service)
+
+    # Start transmitter
+    cmd_tx.request_get_response("start", "test_run_1")
+    wait_for_state(transmitter.fsm, "RUN")
+
+    # Wait until transmitter in SAFE or ERROR
+    wait_for_state(receiver.fsm, "ERROR")
+    timeout = 2.0
+    while transmitter.fsm.current_state_value not in [SatelliteState.SAFE, SatelliteState.ERROR] and timeout > 0:
+        time.sleep(0.05)
+        timeout -= 0.05
+    assert transmitter.fsm.current_state_value in [SatelliteState.SAFE, SatelliteState.ERROR]

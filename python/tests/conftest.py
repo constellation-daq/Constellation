@@ -14,7 +14,6 @@ from unittest.mock import Mock, patch
 import pytest
 import zmq
 
-from constellation.core.cdtp import DataTransmitter
 from constellation.core.chirp import CHIRP_PORT, CHIRPBeaconTransmitter
 from constellation.core.configuration import Configuration, flatten_config, load_config
 from constellation.core.controller import BaseController
@@ -345,49 +344,37 @@ def mock_cmd_transmitter(mock_socket_sender):
 
 
 @pytest.fixture
-def mock_data_transmitter(mock_socket_sender):
-    mock_socket_sender.port = DATA_PORT
-    t = DataTransmitter("mock_sender", mock_socket_sender)
-    yield t
+def mock_poller(mock_zmq_context):
+    """Create a mock poller."""
 
+    with patch("constellation.core.heartbeatchecker.zmq.Poller") as hbcpoller:
+        with patch("constellation.core.cdtp.zmq.Poller") as drcpoller:
+            ctx = mock_zmq_context()
+            ctx.flip_queues()  # flip bidirectional queues
+            mockets = ctx._known_sockets
 
-@pytest.fixture
-def mock_data_receiver(mock_socket_receiver):
-    mock_socket_receiver.port = DATA_PORT
-    r = DataTransmitter("mock_receiver", mock_socket_receiver)
-    yield r
-
-
-@pytest.fixture
-def mock_heartbeat_poller(mock_zmq_context):
-    """Create a mock HeartbeatChecker poller."""
-
-    with patch("constellation.core.heartbeatchecker.zmq.Poller") as mock_p:
-        ctx = mock_zmq_context()
-        ctx.flip_queues()  # flip bidirectional queues
-        mockets = ctx._known_sockets
-
-        def poll(*args, **kwargs):
-            """Poll known sockets mimicking a ZMQ Poller."""
-            res = [[m, 1] for m in mockets if not m.has_no_data()]
-            timeout = 0.05
-            while not res and timeout > 0:
-                time.sleep(0.01)
-                timeout -= 0.01
+            def poll(*args, **kwargs):
+                """Poll known sockets mimicking a ZMQ Poller."""
                 res = [[m, 1] for m in mockets if not m.has_no_data()]
-            return res
+                timeout = 0.05
+                while not res and timeout > 0:
+                    time.sleep(0.01)
+                    timeout -= 0.01
+                    res = [[m, 1] for m in mockets if not m.has_no_data()]
+                return res
 
-        mock_poller = Mock()
-        mock_poller.poll.side_effect = poll
-        mock_poller.cscp_command = False
-        mock_p.return_value = mock_poller
-        yield ctx, mock_poller
+            mock_poller = Mock()
+            mock_poller.poll.side_effect = poll
+            mock_poller.cscp_command = False
+            hbcpoller.return_value = mock_poller
+            drcpoller.return_value = mock_poller
+            yield ctx, mock_poller
 
 
 @pytest.fixture
-def mock_heartbeat_checker(mock_heartbeat_poller):
+def mock_heartbeat_checker(mock_poller):
     """Create a mock HeartbeatChecker instance."""
-    ctx, poller = mock_heartbeat_poller
+    ctx, poller = mock_poller
     hbc = HeartbeatChecker("mock_hbchecker")
     hbc._add_com_thread()
     hbc._start_com_threads()
@@ -415,7 +402,7 @@ def mock_satellite(mock_zmq_context, mock_chirp_socket):
 
 
 @pytest.fixture
-def mock_controller(mock_zmq_context, mock_chirp_socket, mock_heartbeat_poller):
+def mock_controller(mock_zmq_context, mock_chirp_socket, mock_poller):
     """Create a mock Controller base instance."""
     ctx = mock_zmq_context()
 
