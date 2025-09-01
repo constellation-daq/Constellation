@@ -116,8 +116,6 @@ Possible values MAY be the time of sending the message or the time of generation
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
 
-If the log level is `TRACE`, the map SHOULD contain key-value pairs with keys `thread`, `filename`, `lineno`, and `funcname` containing the values for the thread ID as integer, the filename as string, the line number as integer and the function name as string of the source code location of the CMDP sending host emitting the log message.
-
 ### Log Message Payload
 
 The log message payload frame SHALL consist of the log message encoded as a UTF8 string.

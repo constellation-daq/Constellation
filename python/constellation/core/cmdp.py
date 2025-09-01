@@ -161,20 +161,17 @@ class CMDPTransmitter:
         # of the LogRecord, allowing to reconstruct the message on the other
         # end.
         meta = {
-            "pathname": record.pathname,
             "filename": record.filename,
-            "module": record.module,
-            "exc_text": record.exc_text,
-            "stack_info": record.stack_info,
+            "pathname": record.pathname,
             "lineno": record.lineno,
             "funcName": record.funcName,
-            "created": record.created,
-            "msecs": record.msecs,
-            "relativeCreated": record.relativeCreated,
+            "module": record.module,
             "thread": record.thread,
             "threadName": record.threadName,
-            "processName": record.processName,
             "process": record.process,
+            "processName": record.processName,
+            "created": record.created,
+            "msecs": record.msecs,
         }
         tb: str | None = getattr(record, "traceback", None)
         if tb:
