@@ -284,8 +284,9 @@ class PullThread(threading.Thread):
     def run(self) -> None:
         try:
             while not self._drc._stopevt.is_set():
-                sockets_ready = dict(self._drc._poller.poll(timeout=50))
-                self._drc._poller_events = len(sockets_ready)
+                with self._drc._poller_lock:
+                    sockets_ready = dict(self._drc._poller.poll(timeout=50))
+                    self._drc._poller_events = len(sockets_ready)
                 for socket in sockets_ready.keys():
                     frames = socket.recv_multipart()
                     msg = CDTP2Message.disassemble(frames)
@@ -313,6 +314,7 @@ class DataReceiver:
         self._receive_eor = receive_eor_cb
         self._poller = zmq.Poller()
         self._poller_events = 0
+        self._poller_lock = threading.Lock()
         self._sockets: dict[UUID, zmq.Socket] = {}  # type: ignore[type-arg]
 
         self._data_transmitters = data_transmitters
@@ -448,21 +450,24 @@ class DataReceiver:
             self._remove_socket(service.host_uuid)
 
     def _add_socket(self, uuid: UUID, address: str, port: int) -> None:
-        socket = self._context.socket(zmq.PULL)
-        socket.connect(f"tcp://{address}:{port}")
-        self._sockets[uuid] = socket
-        self._poller.register(socket, zmq.POLLIN)
+        with self._poller_lock:
+            socket = self._context.socket(zmq.PULL)
+            socket.connect(f"tcp://{address}:{port}")
+            self._sockets[uuid] = socket
+            self._poller.register(socket, zmq.POLLIN)
 
     def _remove_socket(self, uuid: UUID) -> None:
-        socket = self._sockets.pop(uuid)
-        self._poller.unregister(socket)
-        socket.close()
-
-    def _reset_sockets(self) -> None:
-        for socket in self._sockets.values():
+        with self._poller_lock:
+            socket = self._sockets.pop(uuid)
             self._poller.unregister(socket)
             socket.close()
-        self._sockets.clear()
+
+    def _reset_sockets(self) -> None:
+        with self._poller_lock:
+            for socket in self._sockets.values():
+                self._poller.unregister(socket)
+                socket.close()
+            self._sockets.clear()
 
     def _reset_data_transmitter_states(self) -> None:
         self._data_transmitter_states.clear()
