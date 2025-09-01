@@ -172,7 +172,6 @@ class CMDPTransmitter:
             "processName": record.processName,
             "created": record.created,
             "msecs": record.msecs,
-            "relativeCreated": record.relativeCreated,
         }
         tb: str | None = getattr(record, "traceback", None)
         if tb:
