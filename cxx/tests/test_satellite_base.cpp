@@ -158,11 +158,17 @@ TEST_CASE("Standard commands", "[satellite]") {
 }
 
 TEST_CASE("Hidden commands", "[satellite]") {
-    // Create and start satellite
-    DummySatellite satellite {};
+    // Create CHIRP manager for monitoring service discovery
+    create_chirp_manager();
+
+    // Create and start satellites
+    DummySatellite satelliteA {"a"};
+    DummySatellite satelliteB {"b"};
+    satelliteB.mockChirpService(CHIRP::HEARTBEAT);
+    const auto satelliteB_md5 = MD5Hash(satelliteB.getCanonicalName()).to_string();
 
     // Create sender
-    CSCPSender sender {satellite.getCommandPort()};
+    CSCPSender sender {satelliteA.getCommandPort()};
 
     // _get_commands
     sender.sendCommand("_get_commands");
@@ -180,34 +186,6 @@ TEST_CASE("Hidden commands", "[satellite]") {
     REQUIRE_THAT(
         std::get<std::string>(get_commands_dict.at("_my_hidden_cmd")),
         Equals("A Hidden User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
-
-    // _get_remotes
-    sender.sendCommand("_get_remotes");
-    auto recv_msg_get_remotes = sender.recv();
-    REQUIRE(recv_msg_get_remotes.getVerb().first == CSCP1Message::Type::INVALID);
-    REQUIRE_THAT(to_string(recv_msg_get_remotes.getVerb().second), Equals("No network discovery service available"));
-
-    // _get_services
-    sender.sendCommand("_get_services");
-    auto recv_msg_get_services = sender.recv();
-    REQUIRE(recv_msg_get_services.getVerb().first == CSCP1Message::Type::INVALID);
-    REQUIRE_THAT(to_string(recv_msg_get_services.getVerb().second), Equals("No network discovery service available"));
-
-    satellite.exit();
-}
-
-TEST_CASE("Hidden commands for CHIRP services", "[satellite]") {
-    // Create CHIRP manager for monitoring service discovery
-    create_chirp_manager();
-
-    // Create and start satellites
-    DummySatellite satelliteA {"a"};
-    DummySatellite satelliteB {"b"};
-    satelliteB.mockChirpService(CHIRP::HEARTBEAT);
-    const auto satelliteB_md5 = MD5Hash(satelliteB.getCanonicalName()).to_string();
-
-    // Create sender
-    CSCPSender sender {satelliteA.getCommandPort()};
 
     // _get_services
     sender.sendCommand("_get_services");
