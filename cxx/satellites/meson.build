@@ -1,6 +1,11 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+# Check if building satellites is enabled
+if not get_option('build_satellites')
+  subdir_done()
+endif
+
 # List containing satellites as [type, sources, dependencies]
 satellites_to_build = []
 
