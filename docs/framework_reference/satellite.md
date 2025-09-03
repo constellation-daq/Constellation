@@ -164,4 +164,4 @@ information in the payload:
 * The EOR message contains user-provided metadata tags in its header and a framework-generated dictionary with internal run
   metadata such as total transmitted bytes, run identifier, or timestamp of the run end.
 
-If a data sending satellite provide the relevant information, it should add `timestamp_begin` and `timestamp_end` tags to DATA messages in [CDTP](./protocols.md#data-transmission), containing integer values with the timestamps in picoseconds counted since the start of the measurement marking the begin and end of this data block, respectively.
+If a data sending satellite provide the relevant information, it should add `timestamp_begin` and `timestamp_end` tags to DATA messages in [CDTP](./protocols.md#data-transmission), containing integer values with the timestamps in picoseconds counted since the start of the measurement marking the begin and end of this data record, respectively.

@@ -72,28 +72,25 @@ Data are received through the callbacks `receive_bor`, `receive_data` and `recei
 As the names indicate, these callbacks separate between the three message types known to Constellation for data transfer.
 The information provided to the callbacks differs:
 
-* The `receive_bor` callback provides the message header information with user-defined tags alongside the decoded satellite
-  configuration of the sending satellite as taken from the BOR message payload.
-* The `receive_data` callback provides direct access to the data message, comprising the header with user-defined tags as
-  well as the payload frames.
-* Finally, the `receive_eor` callback provides access to the message header with user-defined tags and the decoded
-  dictionary of run metadata assembled by the sending satellite.
+* The `receive_bor` callback provides access to the sender's name, a dictionary with user-defined and the configuration of
+  the sending satellite.
+* The `receive_data` callback provides access to the sender's name and the data record.
+* Finally, the `receive_eor` callback provides access to to the sender's name, a dictionary with user-defined and the run
+  metadata of the sending satellite collected by the framework.
 
 A simplified example implementation of these callbacks can be found below. Here, the callbacks are merely logging information
 taken from the received messages, and discard the data.
 
 ```cpp
-void MyWriterSatellite::receive_bor(const CDTP1Message::Header& header, Configuration config) {
-    LOG(INFO) << "Received BOR from " << header.getSender() << " with config" << config.getDictionary().to_string();
+void MyWriterSatellite::receive_bor(std::string_view sender, const Dictionary& user_tags, const Configuration& config) {
+    LOG(INFO) << "Received BOR from " << sender << " with config" << config.getDictionary().to_string();
 }
 
-void MyWriterSatellite::receive_data(CDTP1Message data_message) {
-    const auto& header = data_message.getHeader();
-    LOG(DEBUG) << "Received data message from " << header.getSender()
-               << " with " << data_message.countPayloadFrames() << " frames";
+void MyWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
+    LOG(DEBUG) << "Received data record from " << sender << " with " << data_record.getBlocks() << " blocks";
 }
 
-void MyWriterSatellite::receive_eor(const CDTP1Message::Header& header, Dictionary run_metadata) {
-    LOG(INFO) << "Received EOR from " << header.getSender() << " with metadata" << run_metadata.to_string();
+void MyWriterSatellite::receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) {
+    LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
 }
 ```

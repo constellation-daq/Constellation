@@ -228,8 +228,8 @@ interval = 3000
 _bor_timeout = 10
 _data_timeout = 10
 _eor_timeout = 10
-frame_size = 1024
-number_of_frames = 1
+block_size = 1024
+number_of_blocks = 1
 pregen = false
 seed = 3641936878
 

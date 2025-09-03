@@ -86,9 +86,9 @@ class LeCroySatellite(TransmitterSatellite):
                     )  # already transform to V
                     event_payload = np.append(event_payload, trg_offsets)
                     event_payload = np.append(event_payload, wave_array)
-                data_block = self.new_data_block({"dtype": f"{event_payload.dtype}"})
-                data_block.add_frame(event_payload.tobytes())
-                self.send_data_block(data_block)
+                data_record = self.new_data_record({"dtype": f"{event_payload.dtype}"})
+                data_record.add_block(event_payload.tobytes())
+                self.send_data_record(data_record)
             except TimeoutError:
                 self.log.warning("Timeout encountered while retrieving the sequence.")
                 continue

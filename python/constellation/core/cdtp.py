@@ -21,7 +21,7 @@ import zmq
 from .base import ConstellationLogger
 from .chirp import get_uuid
 from .chirpmanager import DiscoveredService
-from .message.cdtp2 import CDTP2BORMessage, CDTP2EORMessage, CDTP2Message, DataBlock
+from .message.cdtp2 import CDTP2BORMessage, CDTP2EORMessage, CDTP2Message, DataRecord
 
 
 class RunCondition(IntFlag):
@@ -64,12 +64,12 @@ class PushThread(threading.Thread):
     def _send(self, msg: CDTP2Message) -> None:
         try:
             self._dtm.log_cdtp.trace(
-                "Sending data blocks from %s to %s",
-                msg.data_blocks[0].sequence_number,
-                msg.data_blocks[-1].sequence_number,
+                "Sending data records from %s to %s",
+                msg.data_records[0].sequence_number,
+                msg.data_records[-1].sequence_number,
             )
             self._dtm._send_message(msg)
-            msg.clear_data_blocks()
+            msg.clear_data_records()
         except zmq.error.Again:
             self.exc = SendTimeoutError("DATA message", self._dtm._data_timeout)
             self._dtm._failure_cb(str(self.exc))
@@ -87,11 +87,11 @@ class PushThread(threading.Thread):
 
         while not self._dtm._stopevt.is_set() and self.exc is None:
             try:
-                # Get data block from queue
-                data_block = self._dtm._queue.get_nowait()
+                # Get data record from queue
+                data_record = self._dtm._queue.get_nowait()
                 # Add to message
-                current_payload_bytes += data_block.count_payload_bytes()
-                msg.add_data_block(data_block)
+                current_payload_bytes += data_record.count_payload_bytes()
+                msg.add_data_record(data_record)
                 self._dtm._queue.task_done()
                 # If threshold not reached, continue
                 if current_payload_bytes < payload_threshold_b:
@@ -133,7 +133,7 @@ class DataTransmitter:
 
         self._queue_size = 32768
         self._payload_threshold = 128
-        self._queue = queue.Queue[DataBlock](self._queue_size)
+        self._queue = queue.Queue[DataRecord](self._queue_size)
         self._stopevt = threading.Event()
         self._push_thread: PushThread | None = None
         self._failure_cb = failure_cb
@@ -197,14 +197,14 @@ class DataTransmitter:
         """Check if the satellite is currently rate limited"""
         return self._queue.full()
 
-    def new_data_block(self, tags: dict[str, Any] | None = None) -> DataBlock:
-        """Return new data block for sending"""
+    def new_data_record(self, tags: dict[str, Any] | None = None) -> DataRecord:
+        """Return new data record for sending"""
         self._sequence_number += 1
-        return DataBlock(self._sequence_number, tags)
+        return DataRecord(self._sequence_number, tags)
 
-    def send_data_block(self, data_block: DataBlock) -> None:
-        """Queue a data block for sending"""
-        self._queue.put(data_block, block=False)
+    def send_data_record(self, data_record: DataRecord) -> None:
+        """Queue a data record for sending"""
+        self._queue.put(data_record, block=False)
 
     def send_bor(self, user_tags: dict[str, Any], configuration: dict[str, Any], flags: int = 0) -> None:
         # Adjust send timeout for BOR message
@@ -239,7 +239,7 @@ class DataTransmitter:
         # Reset sequence number, stop event and re-create queue
         self._sequence_number = 0
         self._stopevt.clear()
-        self._queue = queue.Queue[DataBlock](self._queue_size)
+        self._queue = queue.Queue[DataRecord](self._queue_size)
         # Set send timeout for DATA messages
         self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._data_timeout)
         # Start sending thread
@@ -305,7 +305,7 @@ class DataReceiver:
         context: zmq.Context,  # type: ignore[type-arg]
         logger: ConstellationLogger,
         receive_bor_cb: Callable[[str, dict[str, Any], dict[str, Any]], None],
-        receive_data_cb: Callable[[str, DataBlock], None],
+        receive_data_cb: Callable[[str, DataRecord], None],
         receive_eor_cb: Callable[[str, dict[str, Any], dict[str, Any]], None],
         data_transmitters: set[str] | None,
     ):
@@ -504,10 +504,10 @@ class DataReceiver:
 
     def _handle_data_message(self, msg: CDTP2Message) -> None:
         self.log_cdtp.trace(
-            "Received data message from %s with data blocks from %s to %s",
+            "Received data message from %s with data records from %s to %s",
             msg.sender,
-            msg.data_blocks[0].sequence_number,
-            msg.data_blocks[-1].sequence_number,
+            msg.data_records[0].sequence_number,
+            msg.data_records[-1].sequence_number,
         )
 
         # Check that BOR was received
@@ -516,13 +516,13 @@ class DataReceiver:
         # Store iterator of dict to avoid multiple lookups
         data_transmitter_it = self._data_transmitter_states[msg.sender]
 
-        for data_block in msg.data_blocks:
+        for data_record in msg.data_records:
             # Store sequence number and missed messages
-            data_transmitter_it.missed += data_block.sequence_number - 1 - data_transmitter_it.seq
-            data_transmitter_it.seq = data_block.sequence_number
+            data_transmitter_it.missed += data_record.sequence_number - 1 - data_transmitter_it.seq
+            data_transmitter_it.seq = data_record.sequence_number
 
-            # Data block callback
-            self._receive_data(msg.sender, data_block)
+            # Data record callback
+            self._receive_data(msg.sender, data_record)
 
     def _handle_eor_message(self, msg: CDTP2EORMessage) -> None:
         self.log_cdtp.info("Received EOR from %s with run metadata %s", msg.sender, msg.run_metadata)

@@ -7,7 +7,7 @@ import time
 from typing import Any
 
 from constellation.core.commandmanager import cscp_requestable
-from constellation.core.message.cdtp2 import DataBlock
+from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.receiver_satellite import ReceiverSatellite
 
@@ -39,7 +39,7 @@ class PyDevNullReceiver(ReceiverSatellite):
     def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
         pass
 
-    def receive_data(self, sender: str, data_block: DataBlock) -> None:
+    def receive_data(self, sender: str, data_record: DataRecord) -> None:
         pass
 
     def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:

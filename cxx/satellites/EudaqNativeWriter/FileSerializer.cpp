@@ -70,9 +70,9 @@ void FileSerializer::write_tags(const Dictionary& dict) {
 }
 
 void FileSerializer::write_blocks(const std::vector<PayloadBuffer>& payload) {
-    LOG(DEBUG) << "Writing " << payload.size() << " data blocks";
+    LOG(DEBUG) << "Writing " << payload.size() << " data records";
 
-    // EUDAQ expects a map with frame number as key and vector of uint8_t as value:
+    // EUDAQ expects a map with block number as key and vector of uint8_t as value:
     write_int(static_cast<std::uint32_t>(payload.size()));
     for(std::uint32_t key = 0; key < static_cast<std::uint32_t>(payload.size()); key++) {
         write_block(key, payload.at(key));
@@ -81,9 +81,9 @@ void FileSerializer::write_blocks(const std::vector<PayloadBuffer>& payload) {
 
 void FileSerializer::write_block(std::uint32_t key, const PayloadBuffer& payload) {
     write_int(key);
-    const auto frame = payload.span();
-    write_int(static_cast<std::uint32_t>(frame.size_bytes()));
-    write(frame);
+    const auto data = payload.span();
+    write_int(static_cast<std::uint32_t>(data.size_bytes()));
+    write(data);
 }
 
 void FileSerializer::serialize_header(std::string_view sender,
@@ -149,17 +149,17 @@ void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& u
         eudaq_event_descriptors_.emplace(sender, descriptor);
     }
 
-    // Check for tag describing treatment of frames:
-    const auto frames_as_blocks_it = user_tags.find("frames_as_blocks");
-    if(frames_as_blocks_it != user_tags.end()) {
-        const auto frames_as_blocks = frames_as_blocks_it->second.get<bool>();
-        LOG(INFO) << "Sender " << sender << " requests treatment of frames as "
-                  << (frames_as_blocks ? "blocks" : "sub-events");
-        frames_as_blocks_.emplace(sender, frames_as_blocks);
+    // Check for tag describing treatment of blocks
+    const auto write_as_blocks_it = user_tags.find("write_as_blocks");
+    if(write_as_blocks_it != user_tags.end()) {
+        const auto write_as_blocks = write_as_blocks_it->second.get<bool>();
+        LOG(INFO) << "Sender " << sender << " requests treatment of blocks as "
+                  << (write_as_blocks ? "blocks" : "sub-events");
+        write_as_blocks_.emplace(sender, write_as_blocks);
     } else {
         LOG(WARNING) << "BOR message of " << sender
-                     << " does not provide information on frame treatment - defaulting to \"frames as sub-events\"";
-        frames_as_blocks_.emplace(sender, false);
+                     << " does not provide information on block treatment - defaulting to \"blocks as sub-events\"";
+        write_as_blocks_.emplace(sender, false);
     }
 }
 
@@ -177,7 +177,7 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender,
     default: std::unreachable();
     }
 
-    // Parse BOR tags to set event descriptor and frame handling
+    // Parse BOR tags to set event descriptor and block handling
     if(type == CDTP2Message::Type::BOR) {
         parse_bor_tags(sender, user_tags);
     }
@@ -190,37 +190,37 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender,
     write_int<std::uint32_t>(0);
 }
 
-void FileSerializer::serializeDataBlock(std::string_view sender, const CDTP2Message::DataBlock& data_block) {
-    LOG(DEBUG) << "Writing data event " << data_block.getSequenceNumber();
+void FileSerializer::serializeDataRecord(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
+    LOG(DEBUG) << "Writing data event " << data_record.getSequenceNumber();
 
-    serialize_header(sender, data_block.getSequenceNumber(), data_block.getTags());
+    serialize_header(sender, data_record.getSequenceNumber(), data_record.getTags());
 
-    const auto frames_as_blocks_it = frames_as_blocks_.find(sender);
-    if(frames_as_blocks_it->second) {
-        // Interpret multiple frames as individual blocks of EUDAQ data:
+    const auto write_as_blocks_it = write_as_blocks_.find(sender);
+    if(write_as_blocks_it->second) {
+        // Interpret multiple blocks as individual blocks of EUDAQ data:
 
         // Write block data:
-        write_blocks(data_block.getFrames());
+        write_blocks(data_record.getBlocks());
 
         // Zero sub-events:
         write_int<std::uint32_t>(0);
     } else {
-        // Interpret each payload frame as a EUDAQ sub-event:
+        // Interpret each payload block as a EUDAQ sub-event:
 
         // Write zero blocks:
         write_blocks({});
 
         // Write subevents:
-        const auto& payload = data_block.getFrames();
+        const auto& payload = data_record.getBlocks();
         write_int(static_cast<std::uint32_t>(payload.size()));
 
-        for(const auto& frame : payload) {
+        for(const auto& block : payload) {
             // Repeat the event header of this event - FIXME adjust event number!
-            serialize_header(sender, data_block.getSequenceNumber(), data_block.getTags());
+            serialize_header(sender, data_record.getSequenceNumber(), data_record.getTags());
 
             // Write number of blocks and the block itself
             write_int<std::uint32_t>(1);
-            write_block(0, frame);
+            write_block(0, block);
 
             // Zero sub-sub-events:
             write_int<std::uint32_t>(0);

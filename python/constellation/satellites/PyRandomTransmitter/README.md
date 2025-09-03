@@ -10,5 +10,5 @@ category: "Developer Tools"
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `frame_size` | Unsigned integer | Size of a data frame in bytes | `1024` |
-| `number_of_frames` | Unsigned integer | Number of data frames per data message | `1` |
+| `block_size` | Unsigned integer | Size of a data block in bytes | `1024` |
+| `number_of_blocks` | Unsigned integer | Number of data blocks per data message | `1` |

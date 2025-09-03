@@ -42,30 +42,32 @@ namespace constellation::satellite {
     class CNSTLN_API TransmitterSatellite : public Satellite {
     public:
         /**
-         * @brief Create new data block for attaching data frames
+         * @brief Create new data record
          *
          * @note This function increases the CDTP sequence number.
-         * @note To send the data block, use `sendDataBlock()`.
+         * @note To send the data record, use `sendDataRecord()`.
          *
-         * @param frames Number of data block frames to reserve
+         * @param blocks Number of data record blocks to reserve
          */
-        message::CDTP2Message::DataBlock newDataBlock(std::size_t frames = 1);
+        message::CDTP2Message::DataRecord newDataRecord(std::size_t blocks = 1);
 
         /**
-         * @brief Queue data block for sending created with `newDataBlock()`
+         * @brief Queue data record for sending created with `newDataRecord()`
          *
          * @note This call might block if current data rate limited
          *
-         * @param data_block Data block to send
+         * @param data_record Data record to send
          */
-        void sendDataBlock(message::CDTP2Message::DataBlock&& data_block) { data_block_queue_.push(std::move(data_block)); }
+        void sendDataRecord(message::CDTP2Message::DataRecord&& data_record) {
+            data_record_queue_.push(std::move(data_record));
+        }
 
         /**
          * @brief Check if sending is data rate limited
          *
          * @return True if sending data is currently limited, false otherwise
          */
-        bool checkDataRateLimited() const { return data_block_queue_.was_full(); }
+        bool checkDataRateLimited() const { return data_record_queue_.was_full(); }
 
         /**
          * @brief Mark this run data as tainted
@@ -208,12 +210,12 @@ namespace constellation::satellite {
         /**
          * @brief Stop sending thread
          *
-         * @note Requires running function to be already stopped such that no new data blocks are queued.
+         * @note Requires running function to be already stopped such that no new data records are queued.
          */
         void stop_sending_loop();
 
         /**
-         * @brief Sending loop sending data blocks from the queue
+         * @brief Sending loop sending data records from the queue
          *
          * @param stop_token Stop token
          */
@@ -238,12 +240,12 @@ namespace constellation::satellite {
         unsigned data_queue_size_ {};
 
         // Atomic Queue Type: Maximize Throughput, Enable total order, disable Single-Producer-Single-Consumer
-        using AtomicQueueT = atomic_queue::AtomicQueueB2<message::CDTP2Message::DataBlock,
-                                                         std::allocator<message::CDTP2Message::DataBlock>,
+        using AtomicQueueT = atomic_queue::AtomicQueueB2<message::CDTP2Message::DataRecord,
+                                                         std::allocator<message::CDTP2Message::DataRecord>,
                                                          true,
                                                          true,
                                                          false>;
-        AtomicQueueT data_block_queue_;
+        AtomicQueueT data_record_queue_;
         std::uint64_t seq_ {};
         std::jthread sending_thread_;
 
@@ -254,8 +256,8 @@ namespace constellation::satellite {
         bool mark_run_tainted_ {false};
 
         std::atomic_size_t bytes_transmitted_;
-        std::atomic_size_t data_blocks_transmitted_;
-        std::atomic_size_t frames_transmitted_;
+        std::atomic_size_t data_records_transmitted_;
+        std::atomic_size_t blocks_transmitted_;
         std::atomic_size_t messages_transmitted_;
     };
 

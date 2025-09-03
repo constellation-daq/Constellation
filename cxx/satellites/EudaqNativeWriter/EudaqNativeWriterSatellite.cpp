@@ -86,9 +86,9 @@ void EudaqNativeWriterSatellite::receive_bor(std::string_view sender,
     serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::BOR, user_tags, config.getDictionary());
 }
 
-void EudaqNativeWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataBlock& data_block) {
+void EudaqNativeWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
     LOG(DEBUG) << "Received data message from " << sender;
-    serializer_->serializeDataBlock(sender, data_block);
+    serializer_->serializeDataRecord(sender, data_record);
 
     // Flush if necessary and reset timer
     if(flush_timer_.timeoutReached()) {

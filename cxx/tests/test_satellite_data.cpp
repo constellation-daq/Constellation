@@ -56,11 +56,11 @@ protected:
         bor_tag_map_.emplace(sender, user_tags);
         bor_received_ = true;
     }
-    void receive_data(std::string_view sender, const CDTP2Message::DataBlock& data_block) override {
+    void receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) override {
         const auto sender_str = std::string(sender);
         const std::lock_guard map_lock {map_mutex_};
         last_data_map_.erase(sender_str);
-        last_data_map_.emplace(sender, copy_block(data_block));
+        last_data_map_.emplace(sender, copy_record(data_record));
         data_received_ = true;
     }
     void receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) override {
@@ -103,7 +103,7 @@ public:
         const std::lock_guard map_lock {map_mutex_};
         return bor_tag_map_.at(sender);
     }
-    const CDTP2Message::DataBlock& getLastData(const std::string& sender) {
+    const CDTP2Message::DataRecord& getLastData(const std::string& sender) {
         const std::lock_guard map_lock {map_mutex_};
         return last_data_map_.at(sender);
     }
@@ -117,15 +117,15 @@ public:
     }
 
 private:
-    static CDTP2Message::DataBlock copy_block(const CDTP2Message::DataBlock& data_block) {
-        // Data blocks cannot be copied for good reason, but we need to for testing purposes
-        CDTP2Message::DataBlock block_copy {
-            data_block.getSequenceNumber(), data_block.getTags(), data_block.getFrames().size()};
-        for(const auto& frame : data_block.getFrames()) {
-            std::vector<std::byte> frame_copy {frame.span().begin(), frame.span().end()};
-            block_copy.addFrame(std::move(frame_copy));
+    static CDTP2Message::DataRecord copy_record(const CDTP2Message::DataRecord& data_record) {
+        // Data records cannot be copied for good reason, but we need to for testing purposes
+        CDTP2Message::DataRecord record_copy {
+            data_record.getSequenceNumber(), data_record.getTags(), data_record.getBlocks().size()};
+        for(const auto& block : data_record.getBlocks()) {
+            std::vector<std::byte> block_copy {block.span().begin(), block.span().end()};
+            record_copy.addBlock(std::move(block_copy));
         }
-        return block_copy;
+        return record_copy;
     }
 
 private:
@@ -135,7 +135,7 @@ private:
     std::atomic_bool eor_received_ {false};
     std::map<std::string, Configuration> bor_map_;
     std::map<std::string, Dictionary> bor_tag_map_;
-    std::map<std::string, CDTP2Message::DataBlock> last_data_map_;
+    std::map<std::string, CDTP2Message::DataRecord> last_data_map_;
     std::map<std::string, Dictionary> eor_map_;
     std::map<std::string, Dictionary> eor_tag_map_;
 };
@@ -145,10 +145,10 @@ public:
     Transmitter(std::string_view name = "t1") : DummySatellite<TransmitterSatellite>(name) {}
 
     template <typename T> void sendData(T data) {
-        auto data_block = newDataBlock();
-        data_block.addFrame(std::move(data));
-        data_block.addTag("test", 1);
-        sendDataBlock(std::move(data_block));
+        auto data_record = newDataRecord();
+        data_record.addBlock(std::move(data));
+        data_record.addTag("test", 1);
+        sendDataRecord(std::move(data_record));
     }
 };
 
@@ -295,14 +295,14 @@ TEST_CASE("Successful run", "[satellite]") {
     const auto& bor_tags = receiver.getBORTags(transmitter.getCanonicalName());
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
-    // Send a data frame
+    // Send a data
     transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
     REQUIRE_FALSE(transmitter.checkDataRateLimited());
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_block = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_block.getFrames().size() == 1);
-    REQUIRE(data_block.getTags().at("test") == 1);
+    const auto& data_record = receiver.getLastData(transmitter.getCanonicalName());
+    REQUIRE(data_record.getBlocks().size() == 1);
+    REQUIRE(data_record.getTags().at("test") == 1);
 
     // Set a tag for EOR
     transmitter.setEORTag("buggy_events", 10);
@@ -361,13 +361,13 @@ TEST_CASE("Tainted run", "[satellite]") {
     receiver.awaitBOR();
     REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
 
-    // Send a data frame
+    // Send a data
     transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
-    const auto& data_block = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_block.getFrames().size() == 1);
-    REQUIRE(data_block.getTags().at("test") == 1);
+    const auto& data_record = receiver.getLastData(transmitter.getCanonicalName());
+    REQUIRE(data_record.getBlocks().size() == 1);
+    REQUIRE(data_record.getTags().at("test") == 1);
 
     // Mark run as tainted:
     transmitter.markRunTainted();

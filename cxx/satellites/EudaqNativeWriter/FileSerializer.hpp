@@ -82,16 +82,16 @@ public:
                                const constellation::config::Dictionary& framework_tags);
 
     /**
-     * @brief Function to serialize data block
-     * @details This function takes Constellation CDTP data blocks and serializes them to the EUDAQ native binary
-     * format. It first serializes header information of the event and then writes the data frames either as blocks
-     * of the event or as sub-events, depending on the settings. For sub-events, the main header of the CDTP
-     * block is repeated.
+     * @brief Function to serialize data record
+     * @details This function takes Constellation CDTP data records and serializes them to the EUDAQ native binary
+     * format. It first serializes header information of the event and then writes the data blocks either as blocks
+     * of the event or as sub-events, depending on the settings. For sub-events, the dictionary of the data record
+     * is repeated.
      *
      * @param sender Canonical name of the sending satellite
-     * @param data_block CDTP data block
+     * @param data_record CDTP data record
      */
-    void serializeDataBlock(std::string_view sender, const constellation::message::CDTP2Message::DataBlock& data_block);
+    void serializeDataRecord(std::string_view sender, const constellation::message::CDTP2Message::DataRecord& data_record);
 
 private:
     /**
@@ -107,16 +107,16 @@ private:
                           const constellation::config::Dictionary& tags,
                           std::uint32_t flags = 0x0);
 
-    /** Set eudaq event descriptors and frame handling from BOR tags */
+    /** Set eudaq event descriptors and block handling from BOR tags */
     void parse_bor_tags(std::string_view sender, const constellation::config::Dictionary& user_tags);
 
     /** Write data to file */
     void write(std::span<const std::byte> data);
 
-    /** Write EUDAQ event data blocks to file */
+    /** Write EUDAQ event data records to file */
     void write_blocks(const std::vector<constellation::message::PayloadBuffer>& payload);
 
-    /** Write a single EUDAQ event data block to file */
+    /** Write a single EUDAQ event data record to file */
     void write_block(std::uint32_t key, const constellation::message::PayloadBuffer& payload);
 
     /** Write integers of different sizes to file */
@@ -146,5 +146,5 @@ private:
     std::uint32_t run_sequence_;
 
     constellation::utils::string_hash_map<std::string> eudaq_event_descriptors_;
-    constellation::utils::string_hash_map<bool> frames_as_blocks_;
+    constellation::utils::string_hash_map<bool> write_as_blocks_;
 };

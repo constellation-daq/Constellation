@@ -119,12 +119,12 @@ namespace constellation::satellite {
                                  const config::Configuration& config) = 0;
 
         /**
-         * @brief Receive and handle data block
+         * @brief Receive and handle data record
          *
          * @param sender Canonical name of the sending satellite
-         * @param data_block Data block containing the user tags and payload
+         * @param data_record Data record containing the user tags and payload
          */
-        virtual void receive_data(std::string_view sender, const message::CDTP2Message::DataBlock& data_block) = 0;
+        virtual void receive_data(std::string_view sender, const message::CDTP2Message::DataRecord& data_record) = 0;
 
         /**
          * @brief Receive and handle End-of-Run (EOR) message

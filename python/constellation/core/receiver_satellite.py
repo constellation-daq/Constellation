@@ -13,7 +13,7 @@ from .chirp import CHIRPServiceIdentifier
 from .chirpmanager import DiscoveredService, chirp_callback
 from .configuration import Configuration
 from .error import debug_log, handle_error
-from .message.cdtp2 import DataBlock
+from .message.cdtp2 import DataRecord
 from .satellite import Satellite
 
 
@@ -106,7 +106,7 @@ class ReceiverSatellite(Satellite):
         """Receive begin-of-run (BOR)"""
         raise NotImplementedError()
 
-    def receive_data(self, sender: str, data_block: DataBlock) -> None:
+    def receive_data(self, sender: str, data_record: DataRecord) -> None:
         """Receive data"""
         raise NotImplementedError()
 

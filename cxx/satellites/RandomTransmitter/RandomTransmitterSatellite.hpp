@@ -39,7 +39,7 @@ private:
     std::uint32_t seed_ {};
     std::independent_bits_engine<std::default_random_engine, std::numeric_limits<std::uint8_t>::digits, std::uint8_t>
         byte_rng_;
-    std::uint64_t frame_size_ {};
-    std::uint32_t number_of_frames_ {};
+    std::uint64_t block_size_ {};
+    std::uint32_t number_of_blocks_ {};
     std::atomic_size_t rate_limited_;
 };
