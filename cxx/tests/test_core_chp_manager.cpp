@@ -45,7 +45,7 @@ public:
                   interrupt_message_ = std::string(status);
                   interrupt_received_.store(true);
               },
-              [&]() {
+              [&](std::string_view /*reason*/) {
                   const std::lock_guard lock {mutex_};
                   degraded_received_.store(true);
               }) {}
