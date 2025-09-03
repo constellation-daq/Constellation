@@ -71,7 +71,7 @@ def CHPDecodeMessage(msg: list[bytes]) -> tuple[str, msgpack.Timestamp, int, CHP
     name = unpacker.unpack()
     timestamp = unpacker.unpack()
     state = unpacker.unpack()
-    flags = unpacker.unpack()
+    flags = CHPMessageFlags(unpacker.unpack())
     interval = unpacker.unpack()
 
     status = None
