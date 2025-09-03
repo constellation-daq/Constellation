@@ -93,7 +93,7 @@ class Satellite(
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
-    def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
+    def _add_satellite_heartbeat(self, service: DiscoveredService) -> None:
         """Callback method registering satellite's heartbeat."""
         if service.alive:
             self.log_satellite.debug(f"Registering new host for heartbeats at {service.address}:{service.port}")

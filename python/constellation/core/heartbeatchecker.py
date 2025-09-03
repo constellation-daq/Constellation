@@ -69,7 +69,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         self._heartbeat_poller = zmq.Poller()
 
         # dict to keep states mapped to socket
-        self._remote_heatbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
+        self._remote_heartbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
         self._heartbeatchecker_socket_lock = threading.Lock()
 
     def _add_com_thread(self) -> None:
@@ -95,7 +95,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         Returns threading.Event that will be set when a failure occurs.
 
         """
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             if host == hb.host:
                 self.log_chp.warning(f"Heartbeating for {hb.name} already registered, replacing connection!")
                 self.unregister_heartbeat_host(host)
@@ -115,11 +115,11 @@ class HeartbeatChecker(BaseSatelliteFrame):
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         evt = threading.Event()
-        self._remote_heatbeat_states[socket] = HeartbeatState(host, name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
+        self._remote_heartbeat_states[socket] = HeartbeatState(host, name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
         # set initial state
         if init_state:
-            self._remote_heatbeat_states[socket].state = init_state["state"]
-            self._remote_heatbeat_states[socket].last_statechange = init_state["last_changed"]
+            self._remote_heartbeat_states[socket].state = init_state["state"]
+            self._remote_heartbeat_states[socket].last_statechange = init_state["last_changed"]
 
         with self._heartbeatchecker_socket_lock:
             self._heartbeat_poller.register(socket, zmq.POLLIN)
@@ -131,7 +131,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         """Unregister a heartbeat check for a specific Satellite."""
         s: zmq.Socket | None = None  # type: ignore[type-arg]
         h: HeartbeatState | None = None
-        for socket, hb in self._remote_heatbeat_states.items():
+        for socket, hb in self._remote_heartbeat_states.items():
             if hb.host == host:
                 h = hb
                 s = socket
@@ -140,7 +140,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             return
         with self._heartbeatchecker_socket_lock:
             self._heartbeat_poller.unregister(s)
-            self._remote_heatbeat_states.pop(s)
+            self._remote_heartbeat_states.pop(s)
             s.close()
         self.log_chp.info("Removed heartbeat check for %s", h.name)
         # Check for MARK_DEGRADED flag and mark run degraded
@@ -153,14 +153,14 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def heartbeat_host_is_registered(self, host: UUID) -> bool:
         """Check whether a given Satellite is already registered."""
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             if hb.host == host:
                 return True
         return False
 
     def heartbeat_name_is_registered(self, name: str) -> bool:
         """Check whether a given Satellite is already registered."""
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             if hb.name == name:
                 return True
         return False
@@ -169,7 +169,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def heartbeat_states(self) -> dict[str, SatelliteState]:
         """Return a dictionary of the monitored Satellites' state."""
         res = {}
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             res[hb.name] = hb.state
         return res
 
@@ -177,7 +177,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def heartbeat_state_changes(self) -> dict[str, datetime]:
         """Return a dictionary of the times of the last state changes."""
         res = {}
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             res[hb.name] = hb.last_statechange
         return res
 
@@ -185,7 +185,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def fail_events(self) -> dict[str, threading.Event]:
         """Return a dictionary of Events triggered for failed Satellites."""
         res = {}
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             if hb.failed.is_set():
                 res[hb.name] = hb.failed
         return res
@@ -197,7 +197,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             for socket in sockets_ready.keys():
                 binmsg = socket.recv_multipart()
                 name, timestamp, state, flags, interval, status = CHPDecodeMessage(binmsg)
-                hb = self._remote_heatbeat_states[socket]
+                hb = self._remote_heartbeat_states[socket]
                 # update values
                 hb.name = name
                 hb.refresh(timestamp.to_datetime())
@@ -247,7 +247,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         last_check = datetime.now(timezone.utc)
 
         # refresh all tokens
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             hb.refresh()
 
         # assert for mypy static type analysis
@@ -259,7 +259,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
             # regularly check for stale connections and missed heartbeats
             if (datetime.now(timezone.utc) - last_check).total_seconds() > 0.3:
-                for hb in self._remote_heatbeat_states.values():
+                for hb in self._remote_heartbeat_states.values():
                     if hb.lives > 0 and hb.seconds_since_refresh > (hb.interval / 1000) * 1.5 and not hb.failed.is_set():
                         # no message after 150% of the interval, subtract life
                         hb.lives -= 1
@@ -303,12 +303,12 @@ class HeartbeatChecker(BaseSatelliteFrame):
     def get_failed(self) -> list[str]:
         """Get a list of the names of all failed Satellites."""
         res = list[str]()
-        for hb in self._remote_heatbeat_states.values():
+        for hb in self._remote_heartbeat_states.values():
             if hb.failed.is_set():
                 res.append(hb.name)
         return res
 
     def close(self) -> None:
-        for socket in self._remote_heatbeat_states.keys():
+        for socket in self._remote_heartbeat_states.keys():
             socket.close()
-        self._remote_heatbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
+        self._remote_heartbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
