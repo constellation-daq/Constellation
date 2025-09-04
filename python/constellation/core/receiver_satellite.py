@@ -11,9 +11,11 @@ from typing import Any
 from .cdtp import DataReceiver, RecvTimeoutError
 from .chirp import CHIRPServiceIdentifier
 from .chirpmanager import DiscoveredService, chirp_callback
+from .cmdp import MetricsType
 from .configuration import Configuration
 from .error import debug_log, handle_error
 from .message.cdtp2 import DataRecord
+from .monitoring import schedule_metric
 from .satellite import Satellite
 
 
@@ -95,6 +97,12 @@ class ReceiverSatellite(Satellite):
                 self._drc.remove_sender(service)
             else:
                 self._drc.add_sender(service)
+
+    @schedule_metric("B", MetricsType.LAST_VALUE, 10)
+    def received_bytes(self) -> int | None:
+        if self._drc is not None and self._drc.running:
+            return self._drc.bytes_received
+        return None
 
     @property
     def data_transmitters(self) -> set[str] | None:

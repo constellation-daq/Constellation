@@ -69,6 +69,8 @@ class PushThread(threading.Thread):
                 msg.data_records[-1].sequence_number,
             )
             self._dtm._send_message(msg)
+            self._dtm._bytes_transmitted += msg.count_payload_bytes()
+            self._dtm._records_transmitted += 1
             msg.clear_data_records()
         except zmq.error.Again:
             self.exc = SendTimeoutError("DATA message", self._dtm._data_timeout)
@@ -129,6 +131,8 @@ class DataTransmitter:
         self._socket = socket
         self.log_cdtp = logger
         self._sequence_number = 0
+        self._bytes_transmitted = 0
+        self._records_transmitted = 0
         self._state = TransmitterState.NOT_CONNECTED
 
         self._queue_size = 32768
@@ -145,6 +149,14 @@ class DataTransmitter:
     @property
     def sequence_number(self) -> int:
         return self._sequence_number
+
+    @property
+    def bytes_transmitted(self) -> int:
+        return self._bytes_transmitted
+
+    @property
+    def records_transmitted(self) -> int:
+        return self._records_transmitted
 
     @property
     def state(self) -> TransmitterState:
@@ -236,9 +248,11 @@ class DataTransmitter:
         msg.assemble().send(self._socket, flags)
 
     def start_sending(self) -> None:
-        # Reset sequence number, stop event and re-create queue
-        self._sequence_number = 0
+        # Reset stop event, sequence number, bytes transmitted and re-create queue
         self._stopevt.clear()
+        self._sequence_number = 0
+        self._bytes_transmitted = 0
+        self._records_transmitted = 0
         self._queue = queue.Queue[DataRecord](self._queue_size)
         # Set send timeout for DATA messages
         self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._data_timeout)
