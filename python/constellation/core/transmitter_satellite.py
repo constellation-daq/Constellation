@@ -13,9 +13,11 @@ import zmq
 from . import __version__, __version_code_name__
 from .cdtp import DataTransmitter, RunCondition, TransmitterState
 from .chirpmanager import CHIRPServiceIdentifier
+from .cmdp import MetricsType
 from .configuration import Configuration
 from .error import debug_log, handle_error
 from .message.cdtp2 import DataRecord
+from .monitoring import schedule_metric
 from .satellite import Satellite, SatelliteArgumentParser
 
 
@@ -173,6 +175,18 @@ class TransmitterSatellite(Satellite):
         # TODO: check degraded
         self._run_metadata["condition_code"] = condition_code.value
         self._run_metadata["condition"] = condition_code.name
+
+    @schedule_metric("B", MetricsType.LAST_VALUE, 10)
+    def tx_bytes(self) -> int | None:
+        if self._dtm is not None and self._dtm.state == TransmitterState.BOR_RECEIVED:
+            return self._dtm.bytes_transmitted
+        return None
+
+    @schedule_metric("", MetricsType.LAST_VALUE, 10)
+    def tx_records(self) -> int | None:
+        if self._dtm is not None and self._dtm.state == TransmitterState.BOR_RECEIVED:
+            return self._dtm.records_transmitted
+        return None
 
     def check_rate_limited(self) -> bool:
         """Check if the satellite is currently rate limited"""

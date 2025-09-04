@@ -258,7 +258,6 @@ namespace constellation::satellite {
         std::atomic_size_t bytes_transmitted_;
         std::atomic_size_t data_records_transmitted_;
         std::atomic_size_t blocks_transmitted_;
-        std::atomic_size_t messages_transmitted_;
     };
 
 } // namespace constellation::satellite
