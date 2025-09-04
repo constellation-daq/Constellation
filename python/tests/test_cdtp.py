@@ -23,7 +23,7 @@ from constellation.core.chirp import CHIRPServiceIdentifier, get_uuid
 from constellation.core.chirpmanager import DiscoveredService
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.logging import ConstellationLogger
-from constellation.core.message.cdtp2 import DataBlock
+from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.receiver_satellite import ReceiverSatellite
@@ -47,14 +47,14 @@ class MockDataReceiver(DataReceiver):
             context, ConstellationLogger("mock_receiver"), self.store_bor, self.store_data, self.store_eor, data_transmitters
         )
         self.last_bors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
-        self.last_data_blocks: list[tuple[str, DataBlock]] = []
+        self.last_data_records: list[tuple[str, DataRecord]] = []
         self.last_eors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
 
     def store_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]):
         self.last_bors.append((sender, user_tags, configuration))
 
-    def store_data(self, sender: str, data_block: DataBlock):
-        self.last_data_blocks.append((sender, data_block))
+    def store_data(self, sender: str, data_record: DataRecord):
+        self.last_data_records.append((sender, data_record))
 
     def store_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
         self.last_eors.append((sender, user_tags, run_metadata))
@@ -115,14 +115,14 @@ class DummyReceiverSatellite(ReceiverSatellite):
         super().__init__(*args, **kwargs)
         self.throw_run = False
         self.last_bors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
-        self.last_data_blocks: list[tuple[str, DataBlock]] = []
+        self.last_data_records: list[tuple[str, DataRecord]] = []
         self.last_eors: list[tuple[str, dict[str, Any], dict[str, Any]]] = []
 
     def receive_bor(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]):
         self.last_bors.append((sender, user_tags, configuration))
 
-    def receive_data(self, sender: str, data_block: DataBlock):
-        self.last_data_blocks.append((sender, data_block))
+    def receive_data(self, sender: str, data_record: DataRecord):
+        self.last_data_records.append((sender, data_record))
 
     def receive_eor(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]):
         self.last_eors.append((sender, user_tags, run_metadata))
@@ -174,7 +174,7 @@ def test_datatransmitter_cov(mock_data_transmitter: DataTransmitter):
     transmitter.check_exception()
     assert transmitter.state == TransmitterState.NOT_CONNECTED
     assert not transmitter.check_rate_limited()
-    transmitter.new_data_block()
+    transmitter.new_data_record()
     assert transmitter.sequence_number == 1
     transmitter.bor_timeout = 2
     assert transmitter.bor_timeout == 2
@@ -227,25 +227,25 @@ def test_data_transmission(mock_data_transmitter: DataTransmitter, mock_data_rec
     assert bor_rx_tags == bor_tags
     assert bor_rx_config == bor_config
 
-    # Send data block
+    # Send data record
     data = b"1234"
     data_tags = {"dummy": True}
-    data_block = transmitter.new_data_block(data_tags)
-    data_block.add_frame(data)
-    transmitter.send_data_block(data_block)
+    data_record = transmitter.new_data_record(data_tags)
+    data_record.add_block(data)
+    transmitter.send_data_record(data_record)
 
-    # Wait for data block
+    # Wait for data record
     timeout = 1.0
-    while len(receiver.last_data_blocks) < 1 and timeout > 0:
+    while len(receiver.last_data_records) < 1 and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert len(receiver.last_data_blocks) == 1, "Data not received"
-    data_rx_sender, data_rx_data_block = receiver.last_data_blocks[-1]
+    assert len(receiver.last_data_records) == 1, "Data not received"
+    data_rx_sender, data_rx_data_record = receiver.last_data_records[-1]
     assert data_rx_sender == "mock_transmitter"
-    assert data_rx_data_block.sequence_number == 1
-    assert data_rx_data_block.tags == data_tags
-    assert len(data_rx_data_block.frames) == 1
-    assert data_rx_data_block.frames[0] == data
+    assert data_rx_data_record.sequence_number == 1
+    assert data_rx_data_record.tags == data_tags
+    assert len(data_rx_data_record.blocks) == 1
+    assert data_rx_data_record.blocks[0] == data
     assert receiver.bytes_received == len(data)
 
     # Stop transmitter and send EOR
@@ -388,23 +388,23 @@ def test_datareceiver_missed_data(mock_data_transmitter: DataTransmitter, mock_d
         timeout -= 0.05
     assert len(receiver.last_bors) == 1, "BOR not received"
 
-    # Send first data block
-    data_block = transmitter.new_data_block()
-    data_block.add_frame(b"123")
-    transmitter.send_data_block(data_block)
+    # Send first data record
+    data_record = transmitter.new_data_record()
+    data_record.add_block(b"123")
+    transmitter.send_data_record(data_record)
 
-    # Send second data block while skipping a sequence number
-    data_block = transmitter.new_data_block()
-    data_block._sequence_number += 1
-    data_block.add_frame(b"789")
-    transmitter.send_data_block(data_block)
+    # Send second data record while skipping a sequence number
+    data_record = transmitter.new_data_record()
+    data_record._sequence_number += 1
+    data_record.add_block(b"789")
+    transmitter.send_data_record(data_record)
 
-    # Wait for data blocks
+    # Wait for data records
     timeout = 1.0
-    while len(receiver.last_data_blocks) < 2 and timeout > 0:
+    while len(receiver.last_data_records) < 2 and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert len(receiver.last_data_blocks) == 2, "Data not received"
+    assert len(receiver.last_data_records) == 2, "Data not received"
 
     # Stop transmitter and send EOR
     transmitter.stop_sending()
@@ -475,21 +475,21 @@ def test_data_satellites(
 
     # Send data
     data = b"123"
-    data_block = transmitter.new_data_block()
-    data_block.add_frame(data)
-    transmitter.send_data_block(data_block)
+    data_record = transmitter.new_data_record()
+    data_record.add_block(data)
+    transmitter.send_data_record(data_record)
 
-    # Wait until data block is received
+    # Wait until data record is received
     timeout = 1.0
-    while len(receiver.last_data_blocks) < 1 and timeout > 0:
+    while len(receiver.last_data_records) < 1 and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert len(receiver.last_data_blocks) == 1, "Data not received"
+    assert len(receiver.last_data_records) == 1, "Data not received"
 
-    # Check data block
-    data_rx_sender, data_rx_data_block = receiver.last_data_blocks[-1]
-    assert len(data_rx_data_block.frames) == 1
-    assert data_rx_data_block.frames[0] == data
+    # Check data record
+    data_rx_sender, data_rx_data_record = receiver.last_data_records[-1]
+    assert len(data_rx_data_record.blocks) == 1
+    assert data_rx_data_record.blocks[0] == data
 
     # Some calls for transmitter coverage
     transmitter.mark_run_tainted()

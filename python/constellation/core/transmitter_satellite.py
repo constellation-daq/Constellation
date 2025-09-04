@@ -15,7 +15,7 @@ from .cdtp import DataTransmitter, RunCondition, TransmitterState
 from .chirpmanager import CHIRPServiceIdentifier
 from .configuration import Configuration
 from .error import debug_log, handle_error
-from .message.cdtp2 import DataBlock
+from .message.cdtp2 import DataRecord
 from .satellite import Satellite, SatelliteArgumentParser
 
 
@@ -178,13 +178,13 @@ class TransmitterSatellite(Satellite):
         """Check if the satellite is currently rate limited"""
         return self._dtm.check_rate_limited()
 
-    def new_data_block(self, tags: dict[str, Any] | None = None) -> DataBlock:
-        """Return new data block for sending"""
-        return self._dtm.new_data_block(tags)
+    def new_data_record(self, tags: dict[str, Any] | None = None) -> DataRecord:
+        """Return new data record for sending"""
+        return self._dtm.new_data_record(tags)
 
-    def send_data_block(self, data_block: DataBlock) -> None:
-        """Queue a data block for sending"""
-        self._dtm.send_data_block(data_block)
+    def send_data_record(self, data_record: DataRecord) -> None:
+        """Queue a data record for sending"""
+        self._dtm.send_data_record(data_record)
 
     def mark_run_tainted(self) -> None:
         """Mark the current run as tainted"""

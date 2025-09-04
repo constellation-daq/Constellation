@@ -66,8 +66,8 @@ A group is created for each transmitter with its canonical name. In this group f
 
 The BOR and EOR groups contain two empty datasets, one called `user_tags` containing the user provided tags for those message, and one called `configuration` for the BOR or `run_meta` for the EOR respectively. The configuration and run metadata are added as attributes to those datasets.
 
-Each data group contains the tags of the data block as attributes and contains a dataset for each frame contained in the data block (`frame_XX`). By default data is stored with the `uint8` data type.
-The data type might differ if the data block contained a `dtype` tag, in which case `numpy` is used to extract store data with the given data type.
+Each data group contains the tags of the data record as attributes and contains a dataset for each block contained in the data record (`block_XX`). By default data is stored with the `uint8` data type.
+The data type might differ if the data record contained a `dtype` tag, in which case `numpy` is used to extract store data with the given data type.
 
 Additionally, a group for the receiver is created. It contains three attributes: `constellation_version`, `date_utc` and `swmr_mode`.
 
@@ -82,10 +82,10 @@ In SWMR mode no need datasets can be created, thus all datasets for a transmitte
 ```
 
 Once all BOR messages have been received, the file will be set to SWMR mode
-After this, incoming data will be appended to the `data` dataset instead of new datasets being created for each data block.
-Individual data blocks can be separated using the `data_idx` dataset, which contains the indices where the data block ends.
-Similarly, metadata contained in the data blocks will be appended to the `meta` dataset encoded as json, with indices stored in the `meta_idx` dataset.
-If a data block contains multiple frames, the are appended and a `frame_lengths` entry is added the the metadata, which can be used to extract the individual frames.
+After this, incoming data will be appended to the `data` dataset instead of new datasets being created for each data record.
+Individual data records can be separated using the `data_idx` dataset, which contains the indices where the data record ends.
+Similarly, metadata contained in the data records will be appended to the `meta` dataset encoded as json, with indices stored in the `meta_idx` dataset.
+If a data record contains multiple block, the are appended and a `block_lengths` entry is added the the metadata, which can be used to extract the individual blocks.
 
 EOR messages are encoded as JSON instead of using attributes.
 
@@ -112,7 +112,7 @@ dset_meta = h5file[sender]["meta"]
 dset_data_idx = h5file[sender]["data_idx"]
 dset_meta_idx = h5file[sender]["meta_idx"]
 
-# Loop over each data block
+# Loop over each data record
 prev_data = 0
 prev_meta = 0
 i = 0
@@ -132,10 +132,10 @@ for i in range(dset_data_idx.shape[0]):
 
     # Now load actual data
     idx = dset_data_idx[i]
-    data_raw = np.split(np.array(dset_data[prev_data:idx], dtype=np.uint8), np.cumsum(tags["frame_lengths"])[:-1])
-    data = [raw_frame.view(dtype) for raw_frame in data_raw]
+    data_raw = np.split(np.array(dset_data[prev_data:idx], dtype=np.uint8), np.cumsum(tags["block_lengths"])[:-1])
+    data = [raw_block.view(dtype) for raw_block in data_raw]
     prev_data = idx
-    print(f"Data block #{i} loaded with metadata {tags} and data {data}")
+    print(f"Data record #{i} loaded with metadata {tags} and data {data}")
 ```
 
 ## Parameters

@@ -54,7 +54,7 @@ constexpr unsigned ATOMIC_QUEUE_DEFAULT_SIZE = 32768;
 TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), cdtp_push_socket_(*global_zmq_context(), zmq::socket_type::push),
       cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_queue_size_(ATOMIC_QUEUE_DEFAULT_SIZE),
-      data_block_queue_(data_queue_size_) {
+      data_record_queue_(data_queue_size_) {
 
     register_timed_metric("TRANSMITTED_BYTES",
                           "B",
@@ -63,20 +63,20 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_transmitted_.load(); });
-    register_timed_metric("TRANSMITTED_FRAMES",
+    register_timed_metric("TRANSMITTED_BLOCKS",
                           "",
                           MetricType::LAST_VALUE,
-                          "Number of frames transmitted by this satellite in the current run",
+                          "Number of blocks transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
-                          [this]() { return frames_transmitted_.load(); });
-    register_timed_metric("TRANSMITTED_DATA_BLOCKS",
+                          [this]() { return blocks_transmitted_.load(); });
+    register_timed_metric("TRANSMITTED_RECORDS",
                           "",
                           MetricType::LAST_VALUE,
-                          "Number of data blocks transmitted by this satellite in the current run",
+                          "Number of data records transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
-                          [this]() { return data_blocks_transmitted_.load(); });
+                          [this]() { return data_records_transmitted_.load(); });
     register_timed_metric("TRANSMITTED_MESSAGES",
                           "",
                           MetricType::LAST_VALUE,
@@ -108,9 +108,9 @@ void TransmitterSatellite::set_send_timeout(std::chrono::milliseconds timeout) {
     }
 }
 
-CDTP2Message::DataBlock TransmitterSatellite::newDataBlock(std::size_t frames) {
+CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks) {
     // Increase sequence counter and return new message
-    return {++seq_, {}, frames};
+    return {++seq_, {}, blocks};
 }
 
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
@@ -123,8 +123,8 @@ void TransmitterSatellite::initializing_transmitter(Configuration& config) {
     data_payload_threshold_ = config.get<std::size_t>("_payload_threshold", 128);
     LOG(cdtp_logger_, DEBUG) << "Payload threshold for sending off data messages: " << data_payload_threshold_ << "KiB";
     data_queue_size_ = config.get<unsigned>("_queue_size", ATOMIC_QUEUE_DEFAULT_SIZE);
-    data_block_queue_ = AtomicQueueT(data_queue_size_);
-    LOG(cdtp_logger_, DEBUG) << "Queue size for data blocks: " << data_queue_size_;
+    data_record_queue_ = AtomicQueueT(data_queue_size_);
+    LOG(cdtp_logger_, DEBUG) << "Queue size for data records: " << data_queue_size_;
 
     data_license_ = config.get<std::string>("_data_license", "ODC-By-1.0");
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
@@ -149,8 +149,8 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
     }
     if(partial_config.has("_queue_size")) {
         data_queue_size_ = partial_config.get<unsigned>("_queue_size");
-        data_block_queue_ = AtomicQueueT(data_queue_size_);
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured queue size for data blocks: " << data_queue_size_;
+        data_record_queue_ = AtomicQueueT(data_queue_size_);
+        LOG(cdtp_logger_, DEBUG) << "Reconfigured queue size for data records: " << data_queue_size_;
     }
     if(partial_config.has("_data_license")) {
         data_license_ = partial_config.get<std::string>("_data_license");
@@ -161,12 +161,12 @@ void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partia
 void TransmitterSatellite::starting_transmitter(std::string_view run_identifier, const config::Configuration& config) {
     // Reset telemetry
     bytes_transmitted_ = 0;
-    frames_transmitted_ = 0;
-    data_blocks_transmitted_ = 0;
+    blocks_transmitted_ = 0;
+    data_records_transmitted_ = 0;
     messages_transmitted_ = 0;
     STAT("TRANSMITTED_BYTES", 0);
-    STAT("TRANSMITTED_FRAMES", 0);
-    STAT("TRANSMITTED_DATA_BLOCKS", 0);
+    STAT("TRANSMITTED_BLOCKS", 0);
+    STAT("TRANSMITTED_RECORDS", 0);
     STAT("TRANSMITTED_MESSAGES", 0);
 
     // Reset run metadata and sequence counter
@@ -270,8 +270,8 @@ void TransmitterSatellite::failure_transmitter(CSCP::State previous_state) {
 }
 
 void TransmitterSatellite::stop_sending_loop() {
-    // Wait until data block queue is empty if sending thread still running
-    while(sending_thread_.joinable() && !data_block_queue_.was_empty()) {
+    // Wait until data record queue is empty if sending thread still running
+    while(sending_thread_.joinable() && !data_record_queue_.was_empty()) {
         std::this_thread::yield();
     }
     // Stop sending thread and join
@@ -280,8 +280,8 @@ void TransmitterSatellite::stop_sending_loop() {
         sending_thread_.join();
     }
     // Clear the queue (in case sending thread failed before the queue was empty)
-    while(!data_block_queue_.was_empty()) {
-        data_block_queue_.pop();
+    while(!data_record_queue_.was_empty()) {
+        data_record_queue_.pop();
     }
 }
 
@@ -293,19 +293,19 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
     const auto data_payload_threshold_b = data_payload_threshold_ * 1024;
 
     // Preallocate message (assume worst case 8B scenario)
-    const auto max_data_blocks = (data_payload_threshold_b / 8) + 1;
-    auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_blocks);
+    const auto max_data_records = (data_payload_threshold_b / 8) + 1;
+    auto message = CDTP2Message(getCanonicalName(), CDTP2Message::Type::DATA, max_data_records);
 
     // Note: stop_sending_loop ensure that queue is empty before stop_request is called
     while(!stop_token.stop_requested()) {
         // Try popping an element from the queue
-        CDTP2Message::DataBlock data_block;
-        const auto popped = data_block_queue_.try_pop(data_block);
+        CDTP2Message::DataRecord data_record;
+        const auto popped = data_record_queue_.try_pop(data_record);
 
         // If popped handle block, otherwise check for timeout
         if(popped) {
-            current_payload_bytes += data_block.countPayloadBytes();
-            message.addDataBlock(std::move(data_block));
+            current_payload_bytes += data_record.countPayloadBytes();
+            message.addDataRecord(std::move(data_record));
 
             // If threshold not reached, continue
             if(current_payload_bytes < data_payload_threshold_b) {
@@ -325,16 +325,16 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         }
 
         // Log and update telemetry
-        const auto& current_data_blocks = message.getDataBlocks();
-        LOG(cdtp_logger_, TRACE) << "Sending data blocks from " << current_data_blocks.front().getSequenceNumber() << " to "
-                                 << current_data_blocks.back().getSequenceNumber() << " (" << current_payload_bytes
-                                 << " bytes)";
+        const auto& current_data_records = message.getDataRecords();
+        LOG(cdtp_logger_, TRACE) << "Sending data records from " << current_data_records.front().getSequenceNumber()
+                                 << " to " << current_data_records.back().getSequenceNumber() << " ("
+                                 << current_payload_bytes << " bytes)";
         bytes_transmitted_ += current_payload_bytes;
-        frames_transmitted_ += std::transform_reduce(
-            current_data_blocks.begin(), current_data_blocks.end(), 0UL, std::plus(), [](const auto& data_block) {
-                return data_block.getFrames().size();
+        blocks_transmitted_ += std::transform_reduce(
+            current_data_records.begin(), current_data_records.end(), 0UL, std::plus(), [](const auto& data_record) {
+                return data_record.getBlocks().size();
             });
-        data_blocks_transmitted_ += current_data_blocks.size();
+        data_records_transmitted_ += current_data_records.size();
         ++messages_transmitted_;
 
         // Send message
@@ -362,8 +362,8 @@ void TransmitterSatellite::send_failure(const std::string& reason) {
         std::async(std::launch::async, [this, &reason]() { getFSM().requestFailure("Failed to send message: " + reason); });
     // While still in RUN state, pop queue to avoid deadlock with block queue push
     while(getState() == CSCP::State::RUN) {
-        while(!data_block_queue_.was_empty()) {
-            data_block_queue_.pop();
+        while(!data_record_queue_.was_empty()) {
+            data_record_queue_.pop();
         }
         std::this_thread::yield();
     }

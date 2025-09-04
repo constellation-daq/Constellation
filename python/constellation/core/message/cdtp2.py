@@ -19,17 +19,17 @@ from .msgpack_helpers import msgpack_unpack_to, msgpack_unpack_to_int_enum
 from .multipart import MultipartMessage
 
 
-class DataBlock:
-    """Data block containing a tags and a frames with binary data"""
+class DataRecord:
+    """Data record containing a tags and block with binary data"""
 
     def __init__(self, sequence_number: int, tags: dict[str, Any] | None = None) -> None:
         self._sequence_number = sequence_number
         self._tags = tags if tags is not None else {}
-        self._frames = list[bytes]()
+        self._blocks = list[bytes]()
 
-    def add_frame(self, data: bytes) -> None:
-        """Add a data frame to the data block"""
-        self._frames.append(data)
+    def add_block(self, data: bytes) -> None:
+        """Add a block of data to the data record"""
+        self._blocks.append(data)
 
     @property
     def sequence_number(self) -> int:
@@ -40,35 +40,35 @@ class DataBlock:
         return self._tags
 
     @property
-    def frames(self) -> list[bytes]:
-        return self._frames
+    def blocks(self) -> list[bytes]:
+        return self._blocks
 
     def count_payload_bytes(self) -> int:
-        return sum([len(frame) for frame in self._frames])
+        return sum([len(block) for block in self._blocks])
 
     def pack(self, stream: BytesIO, packer: msgpack.Packer) -> None:
         stream.write(packer.pack_array_header(3))
         stream.write(packer.pack(self._sequence_number))
         stream.write(packer.pack(self._tags))
-        stream.write(packer.pack_array_header(len(self._frames)))
-        for frame in self._frames:
-            stream.write(packer.pack(frame))
+        stream.write(packer.pack_array_header(len(self._blocks)))
+        for block in self._blocks:
+            stream.write(packer.pack(block))
 
     @staticmethod
-    def unpack(array: list[Any]) -> DataBlock:
+    def unpack(array: list[Any]) -> DataRecord:
         if len(array) != 3:
-            raise MessageDecodingError("Data block array has wrong size")
-        sequence_number, tags, frames = array
+            raise MessageDecodingError("Data record array has wrong size")
+        sequence_number, tags, blocks = array
         if type(sequence_number) is not int:
             raise MessageDecodingError("Sequence number is not an int")
         if type(tags) is not dict:
-            raise MessageDecodingError("TODO")
-        if type(frames) is not list or any([type(frame) is not bytes for frame in frames]):
-            raise MessageDecodingError("TODO")
-        data_block = DataBlock(sequence_number, tags)
-        for frame in frames:
-            data_block.add_frame(frame)
-        return data_block
+            raise MessageDecodingError("Record tags are not a dict")
+        if type(blocks) is not list or any([type(block) is not bytes for block in blocks]):
+            raise MessageDecodingError("Data blocks are not a list of bytes")
+        data_record = DataRecord(sequence_number, tags)
+        for block in blocks:
+            data_record.add_block(block)
+        return data_record
 
 
 class CDTP2Message:
@@ -90,10 +90,10 @@ class CDTP2Message:
         self._protocol = Protocol.CDTP2
         self._sender = sender
         self._type = type
-        self._data_blocks = list[DataBlock]()
+        self._data_records = list[DataRecord]()
 
-    def add_data_block(self, data_block: DataBlock) -> None:
-        self._data_blocks.append(data_block)
+    def add_data_record(self, data_record: DataRecord) -> None:
+        self._data_records.append(data_record)
 
     @property
     def sender(self) -> str:
@@ -104,14 +104,14 @@ class CDTP2Message:
         return self._type
 
     @property
-    def data_blocks(self) -> list[DataBlock]:
-        return self._data_blocks
+    def data_records(self) -> list[DataRecord]:
+        return self._data_records
 
     def count_payload_bytes(self) -> int:
-        return sum([data_block.count_payload_bytes() for data_block in self._data_blocks])
+        return sum([data_record.count_payload_bytes() for data_record in self._data_records])
 
-    def clear_data_blocks(self) -> None:
-        self._data_blocks.clear()
+    def clear_data_records(self) -> None:
+        self._data_records.clear()
 
     def assemble(self) -> MultipartMessage:
         stream = BytesIO()
@@ -122,9 +122,9 @@ class CDTP2Message:
         stream.write(packer.pack(self._sender))
         stream.write(packer.pack(self._type.value))
         # Pack payload
-        stream.write(packer.pack_array_header(len(self._data_blocks)))
-        for data_block in self._data_blocks:
-            data_block.pack(stream, packer)
+        stream.write(packer.pack_array_header(len(self._data_records)))
+        for data_record in self._data_records:
+            data_record.pack(stream, packer)
 
         return MultipartMessage([stream])
 
@@ -145,20 +145,20 @@ class CDTP2Message:
             raise UnexpectedProtocolError(protocol, Protocol.CDTP2)
         sender = msgpack_unpack_to(unpacker, str)
         type = msgpack_unpack_to_int_enum(unpacker, CDTP2Message.Type)
-        # Unpack array of data blocks
-        data_blocks = []
-        raw_data_blocks = msgpack_unpack_to(unpacker, list)
-        for entry in raw_data_blocks:
-            data_blocks.append(DataBlock.unpack(entry))
+        # Unpack array of data records
+        data_records = []
+        raw_data_records = msgpack_unpack_to(unpacker, list)
+        for entry in raw_data_records:
+            data_records.append(DataRecord.unpack(entry))
 
         # Assemble and return message
         msg = CDTP2Message(sender, type)
-        for data_block in data_blocks:
-            msg.add_data_block(data_block)
+        for data_record in data_records:
+            msg.add_data_record(data_record)
         return msg
 
     def __str__(self) -> str:
-        return f"CDTP2 {self._type.name} message with {len(self._data_blocks)} data blocks"
+        return f"CDTP2 {self._type.name} message with {len(self._data_records)} data records"
 
 
 class CDTP2BORMessage(CDTP2Message):
@@ -166,25 +166,25 @@ class CDTP2BORMessage(CDTP2Message):
 
     def __init__(self, sender: str, user_tags: dict[str, Any], configuration: dict[str, Any]) -> None:
         super().__init__(sender, CDTP2Message.Type.BOR)
-        self.add_data_block(DataBlock(0, user_tags))
-        self.add_data_block(DataBlock(1, configuration))
+        self.add_data_record(DataRecord(0, user_tags))
+        self.add_data_record(DataRecord(1, configuration))
 
     @staticmethod
     def cast(msg: CDTP2Message) -> CDTP2BORMessage:
         if msg.type != CDTP2Message.Type.BOR:
             raise MessageDecodingError("Not a BOR message")
-        if len(msg._data_blocks) != 2:
-            raise MessageDecodingError("Wrong number of data blocks, exactly two data blocks expected")
+        if len(msg._data_records) != 2:
+            raise MessageDecodingError("Wrong number of data records, exactly two data records expected")
         msg.__class__ = CDTP2BORMessage
         return msg  # type: ignore[return-value]
 
     @property
     def user_tags(self) -> dict[str, Any]:
-        return self._data_blocks[0].tags
+        return self._data_records[0].tags
 
     @property
     def configuration(self) -> dict[str, Any]:
-        return self._data_blocks[1].tags
+        return self._data_records[1].tags
 
 
 class CDTP2EORMessage(CDTP2Message):
@@ -192,22 +192,22 @@ class CDTP2EORMessage(CDTP2Message):
 
     def __init__(self, sender: str, user_tags: dict[str, Any], run_metadata: dict[str, Any]) -> None:
         super().__init__(sender, CDTP2Message.Type.EOR)
-        self.add_data_block(DataBlock(0, user_tags))
-        self.add_data_block(DataBlock(1, run_metadata))
+        self.add_data_record(DataRecord(0, user_tags))
+        self.add_data_record(DataRecord(1, run_metadata))
 
     @staticmethod
     def cast(msg: CDTP2Message) -> CDTP2EORMessage:
         if msg.type != CDTP2Message.Type.EOR:
             raise MessageDecodingError("Not a EOR message")
-        if len(msg._data_blocks) != 2:
-            raise MessageDecodingError("Wrong number of data blocks, exactly two data blocks expected")
+        if len(msg._data_records) != 2:
+            raise MessageDecodingError("Wrong number of data records, exactly two data records expected")
         msg.__class__ = CDTP2EORMessage
         return msg  # type: ignore[return-value]
 
     @property
     def user_tags(self) -> dict[str, Any]:
-        return self._data_blocks[0].tags
+        return self._data_records[0].tags
 
     @property
     def run_metadata(self) -> dict[str, Any]:
-        return self._data_blocks[1].tags
+        return self._data_records[1].tags

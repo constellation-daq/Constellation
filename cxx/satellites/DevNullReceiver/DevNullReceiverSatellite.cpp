@@ -57,7 +57,7 @@ void DevNullReceiverSatellite::receive_bor(std::string_view /*sender*/,
     // Drop message
 }
 
-void DevNullReceiverSatellite::receive_data(std::string_view /*sender*/, const CDTP2Message::DataBlock& /*data_block*/) {
+void DevNullReceiverSatellite::receive_data(std::string_view /*sender*/, const CDTP2Message::DataRecord& /*data_record*/) {
     // Drop message
 }
 

@@ -8,8 +8,8 @@ Since data from detectors is often fairly small, Constellation is optimized for 
 together to larger messages. This grouping is implemented directly in the framework and the grouped data is split again
 before being stored, thus being entirely transparent when implementing a new satellite.
 
-```{figure} Frame_Size_vs_Data_Rate.svg
-Benchmark Frame Size vs Data Rate
+```{figure} Data_Rate_vs_Block_Size.svg
+Benchmark Data Rate vs Block Size
 ```
 
 For all but the most extreme scenarios, Constellation can saturate a 10G network link using an optimized C++ build and a

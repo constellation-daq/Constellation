@@ -17,7 +17,7 @@ import numpy as np
 from constellation.core import __version__
 from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
-from constellation.core.message.cdtp2 import DataBlock
+from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
 from constellation.core.receiver_satellite import ReceiverSatellite
@@ -85,11 +85,11 @@ class H5DataWriter(ReceiverSatellite):
             dset_user_tags[0 : eor_user_tags.shape[0]] = eor_user_tags
             dset_run_meta[0 : eor_run_meta.shape[0]] = eor_run_meta
 
-    def receive_data(self, sender: str, data_block: DataBlock) -> None:
+    def receive_data(self, sender: str, data_record: DataRecord) -> None:
         if self.swmr_mode:
-            self._write_data_append(sender, data_block)
+            self._write_data_append(sender, data_record)
         else:
-            self._write_data_create_dataset(sender, data_block)
+            self._write_data_create_dataset(sender, data_record)
         # time to flush data to file?
         if self.flush_interval > 0 and (datetime.datetime.now() - self.last_flush).total_seconds() > self.flush_interval:
             self.outfile.flush()
@@ -127,22 +127,22 @@ class H5DataWriter(ReceiverSatellite):
             self._swmr_mode_enabled = True
             self.log.info("Enabled SWMR mode for file '%s'.", self.outfile.filename)
 
-    def _write_data_create_dataset(self, sender: str, data_block: DataBlock) -> None:
+    def _write_data_create_dataset(self, sender: str, data_record: DataRecord) -> None:
         """Write payload of item into a new Dataset."""
         grp: h5py.Group = self.outfile[sender]  # type: ignore[assignment]
 
-        # Create group for data block
-        data_grp = grp.create_group(f"data_{data_block.sequence_number:09}")
-        data_grp.attrs.update(self._attrs_convert(data_block.tags))
+        # Create group for data record
+        data_grp = grp.create_group(f"data_{data_record.sequence_number:09}")
+        data_grp.attrs.update(self._attrs_convert(data_record.tags))
 
         # Extract numpy data type if specified
-        dtype = data_block.tags.get("dtype", np.uint8)
+        dtype = data_record.tags.get("dtype", np.uint8)
 
-        # Store each frame as dataset
-        for frame_idx, frame in enumerate(data_block.frames):
-            data_grp.create_dataset(f"frame_{frame_idx:02}", data=np.frombuffer(frame, dtype=dtype), chunks=True)
+        # Store each block as dataset
+        for block_idx, block in enumerate(data_record.blocks):
+            data_grp.create_dataset(f"block_{block_idx:02}", data=np.frombuffer(block, dtype=dtype), chunks=True)
 
-    def _write_data_append(self, sender: str, data_block: DataBlock) -> None:
+    def _write_data_append(self, sender: str, data_record: DataRecord) -> None:
         """Write payload of item by appending existing Dataset."""
         grp: h5py.Group = self.outfile[sender]  # type: ignore[assignment]
 
@@ -153,18 +153,18 @@ class H5DataWriter(ReceiverSatellite):
         metaidx_dset: h5py.DataSet = grp["meta_idx"]  # type: ignore[assignment]
         data_idx, meta_idx, counts = self._swmr_idx[sender]
 
-        # Append frames into a single dataset of uint8 type
+        # Append blocks into a single dataset of uint8 type
         data = np.array([], dtype=np.uint8)
-        frame_lengths = []
-        for frame in data_block.frames:
-            len_frame = len(frame)
-            frame_lengths.append(len_frame)
-            data.resize(len(data) + len_frame)
-            data[-len_frame:] = np.frombuffer(frame, dtype=np.uint8)
+        block_lengths = []
+        for block in data_record.blocks:
+            len_block = len(block)
+            block_lengths.append(len_block)
+            data.resize(len(data) + len_block)
+            data[-len_block:] = np.frombuffer(block, dtype=np.uint8)
 
-        # Extract tags and add frame lengths to it
-        tags = data_block.tags
-        tags["frame_lengths"] = frame_lengths
+        # Extract tags and add block lengths to it
+        tags = data_record.tags
+        tags["block_lengths"] = block_lengths
 
         # Check whether we need to resize
         new_idx = data_idx + data.shape[0]

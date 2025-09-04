@@ -281,37 +281,37 @@ TEST_CASE("CDTP2 DATA Packing / Unpacking", "[core][core::message]") {
     const std::vector<std::int32_t> vec_3 {3, 1, 4, 1, 5, 9};
     // Create DATA message
     auto data_message = CDTP2Message("sender", CDTP2Message::Type::DATA, 2);
-    auto data_block_1 = CDTP2Message::DataBlock(1, {{{"block", 1}}});
-    data_block_1.addFrame({std::vector(vec_1)});
-    REQUIRE(data_block_1.countPayloadBytes() == 16);
-    data_message.addDataBlock(std::move(data_block_1));
-    auto data_block_2 = CDTP2Message::DataBlock(2, {{{"block", 2}}}, 2);
-    data_block_2.addTag("vecs", "2&3");
-    data_block_2.addFrame({std::vector(vec_2)});
-    data_block_2.addFrame({std::vector(vec_3)});
-    REQUIRE(data_block_2.countPayloadBytes() == 44);
-    data_message.addDataBlock(std::move(data_block_2));
+    auto data_record_1 = CDTP2Message::DataRecord(1, {{{"block", 1}}});
+    data_record_1.addBlock({std::vector(vec_1)});
+    REQUIRE(data_record_1.countPayloadBytes() == 16);
+    data_message.addDataRecord(std::move(data_record_1));
+    auto data_record_2 = CDTP2Message::DataRecord(2, {{{"block", 2}}}, 2);
+    data_record_2.addTag("vecs", "2&3");
+    data_record_2.addBlock({std::vector(vec_2)});
+    data_record_2.addBlock({std::vector(vec_3)});
+    REQUIRE(data_record_2.countPayloadBytes() == 44);
+    data_message.addDataRecord(std::move(data_record_2));
     REQUIRE(data_message.countPayloadBytes() == 60);
     auto zmq_mpm = data_message.assemble();
     // Decode DATA message
     const auto data_message_decoded = CDTP2Message::disassemble(zmq_mpm);
     REQUIRE_THAT(std::string(data_message_decoded.getSender()), Equals("sender"));
     REQUIRE(data_message_decoded.getType() == CDTP2Message::Type::DATA);
-    REQUIRE(data_message_decoded.getDataBlocks().size() == 2);
-    const auto& data_block_1_decoded = data_message_decoded.getDataBlocks().at(0);
-    REQUIRE(data_block_1_decoded.getSequenceNumber() == 1);
-    REQUIRE(data_block_1_decoded.getTags().at("block") == 1);
-    REQUIRE(data_block_1_decoded.countPayloadBytes() == 16);
-    REQUIRE(data_block_1_decoded.getFrames().size() == 1);
-    REQUIRE_THAT(data_block_1_decoded.getFrames().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_1)).span()));
-    const auto& data_block_2_decoded = data_message_decoded.getDataBlocks().at(1);
-    REQUIRE(data_block_2_decoded.getSequenceNumber() == 2);
-    REQUIRE(data_block_2_decoded.getTags().at("block") == 2);
-    REQUIRE(data_block_2_decoded.getTags().at("vecs") == "2&3"s);
-    REQUIRE(data_block_2_decoded.countPayloadBytes() == 44);
-    REQUIRE(data_block_2_decoded.getFrames().size() == 2);
-    REQUIRE_THAT(data_block_2_decoded.getFrames().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_2)).span()));
-    REQUIRE_THAT(data_block_2_decoded.getFrames().at(1).span(), RangeEquals(PayloadBuffer(std::vector(vec_3)).span()));
+    REQUIRE(data_message_decoded.getDataRecords().size() == 2);
+    const auto& data_record_1_decoded = data_message_decoded.getDataRecords().at(0);
+    REQUIRE(data_record_1_decoded.getSequenceNumber() == 1);
+    REQUIRE(data_record_1_decoded.getTags().at("block") == 1);
+    REQUIRE(data_record_1_decoded.countPayloadBytes() == 16);
+    REQUIRE(data_record_1_decoded.getBlocks().size() == 1);
+    REQUIRE_THAT(data_record_1_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_1)).span()));
+    const auto& data_record_2_decoded = data_message_decoded.getDataRecords().at(1);
+    REQUIRE(data_record_2_decoded.getSequenceNumber() == 2);
+    REQUIRE(data_record_2_decoded.getTags().at("block") == 2);
+    REQUIRE(data_record_2_decoded.getTags().at("vecs") == "2&3"s);
+    REQUIRE(data_record_2_decoded.countPayloadBytes() == 44);
+    REQUIRE(data_record_2_decoded.getBlocks().size() == 2);
+    REQUIRE_THAT(data_record_2_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_2)).span()));
+    REQUIRE_THAT(data_record_2_decoded.getBlocks().at(1).span(), RangeEquals(PayloadBuffer(std::vector(vec_3)).span()));
 }
 
 TEST_CASE("CDTP2 BOR Packing / Unpacking", "[core][core::message]") {
@@ -387,20 +387,20 @@ TEST_CASE("CDTP2 Incorrect Message Type", "[core][core::message]") {
                            Message("Message type is incorrect: Not an EOR message"));
 }
 
-TEST_CASE("CDTP2 Invalid Number of Data Blocks", "[core][core::message]") {
+TEST_CASE("CDTP2 Invalid Number of Data Records", "[core][core::message]") {
     auto data_message_1 = CDTP2Message("sender", CDTP2Message::Type::BOR, 0);
     REQUIRE_THROWS_MATCHES(
         CDTP2BORMessage(std::move(data_message_1)),
         MessageDecodingError,
-        Message("Error decoding CDTP2 BOR message: Wrong number of data blocks, exactly two data blocks expected"));
+        Message("Error decoding CDTP2 BOR message: Wrong number of data records, exactly two data records expected"));
     auto data_message_2 = CDTP2Message("sender", CDTP2Message::Type::EOR, 0);
     REQUIRE_THROWS_MATCHES(
         CDTP2EORMessage(std::move(data_message_2)),
         MessageDecodingError,
-        Message("Error decoding CDTP2 EOR message: Wrong number of data blocks, exactly two data blocks expected"));
+        Message("Error decoding CDTP2 EOR message: Wrong number of data records, exactly two data records expected"));
 }
 
-TEST_CASE("CDTP2 Invalid Data Blocks", "[core][core::message]") {
+TEST_CASE("CDTP2 Invalid Data Records", "[core][core::message]") {
     msgpack::sbuffer sbuf {};
     msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP2));
     msgpack_pack(sbuf, "sender");
@@ -410,7 +410,7 @@ TEST_CASE("CDTP2 Invalid Data Blocks", "[core][core::message]") {
     zmq_mpm.addmem(sbuf.data(), sbuf.size());
     REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
                            MessageDecodingError,
-                           Message("Error decoding CDTP2 message: Error unpacking data: data blocks are not in an array"));
+                           Message("Error decoding CDTP2 message: Error unpacking data: data records are not in an array"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

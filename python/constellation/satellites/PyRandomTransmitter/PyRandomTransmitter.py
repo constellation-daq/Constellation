@@ -12,13 +12,13 @@ from constellation.core.transmitter_satellite import TransmitterSatellite
 
 class PyRandomTransmitter(TransmitterSatellite):
     def do_initializing(self, config: Configuration) -> None:
-        self._frame_size = config.setdefault("frame_size", 1024)
-        self._number_of_frames = config.setdefault("number_of_frames", 1)
+        self._block_size = config.setdefault("block_size", 1024)
+        self._number_of_blocks = config.setdefault("number_of_blocks", 1)
 
     def do_launching(self) -> None:
-        self._frames = []
-        for _ in range(self._number_of_frames):
-            self._frames.append(random.randbytes(self._frame_size))
+        self._blocks = []
+        for _ in range(self._number_of_blocks):
+            self._blocks.append(random.randbytes(self._block_size))
 
     def do_run(self, run_identifier: str) -> str:
         while not self._state_thread_evt.is_set():
@@ -27,8 +27,8 @@ class PyRandomTransmitter(TransmitterSatellite):
                 time.sleep(0.001)
                 continue
             # Send data
-            data_block = self.new_data_block()
-            for frame in self._frames:
-                data_block.add_frame(frame)
-            self.send_data_block(data_block)
+            data_record = self.new_data_record()
+            for block in self._blocks:
+                data_record.add_block(block)
+            self.send_data_record(data_record)
         return "Finished run"

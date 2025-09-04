@@ -20,14 +20,14 @@ Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always pr
 by the framework after the `starting()` function has successfully been executed, and it is followed by a end-of-run (EOR)
 message send automatically after the `stopping()` function has succeeded.
 
-Data is sent in three steps. First, a data block is created, optionally allocating the number of frames it will contain if
-known already. Subsequently, these frames are added to the message:
+Data is sent in three steps. First, a data record is created, optionally allocating the number of blocks it will contain if
+known already. Subsequently, these blocks are added to the message:
 
 ```cpp
-// Creating a new data message with two frames pre-allocated:
-auto data_block = newDataBlock(2);
-data_block.addFrame(std::move(frame0));
-data_block.addFrame(std::move(frame1));
+// Creating a new data message with two blocks pre-allocated:
+auto data_record = newDataRecord(2);
+data_record.addBlock(std::move(data_0));
+data_record.addBlock(std::move(data_1));
 ```
 
 ```{hint}
@@ -37,7 +37,7 @@ C++ Move semantics `std::move` are strongly encouraged here in order to avoid co
 Finally, the message is sent to the connected receiver:
 
 ```cpp
-sendDataBlock(std::move(data_block));
+sendDataRecord(std::move(data_record));
 ```
 
 If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
@@ -68,18 +68,18 @@ by the framework after the {py:func}`do_starting() <core.satellite.Satellite.do_
 executed, and it is followed by a end-of-run (EOR) message send automatically after the
 {py:func}`do_stopping() <core.satellite.Satellite.do_stopping>` function has succeeded.
 
-Data is sent in three steps. First, a data block is created. Subsequently, data frames are added to the message:
+Data is sent in three steps. First, a data record is created. Subsequently, data blocks are added to the message:
 
 ```python
-data_block = self.new_data_block()
-data_block.add_frame(frame_0)
-data_block.add_frame(frame_1)
+data_record = self.new_data_record()
+data_record.add_block(data_0)
+data_record.add_block(data_1)
 ```
 
 Finally, the message is sent to the connected receiver:
 
 ```python
-self.send_data_block(data_block)
+self.send_data_record(data_record)
 ```
 
 If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
@@ -101,15 +101,14 @@ By default, no data is dropped and a sequence number scheme is implemented to en
 
 ## Data Format & Performance
 
-Constellation makes no assumption on the data stored in message frames. All data is stored in frames, handled as binary blob
-and transmitted as such. The message frames of data messages are designed for minimum data copy and maximum speed.
-A data message can contain any number of frames.
+Constellation makes no assumption on the data stored in data records. All data is stored in block, handled as binary blob
+and transmitted as such. A data record can contain any number of blocks.
 
 ::::{tab-set}
 :::{tab-item} C++
 :sync: cxx
 
-The {cpp:func}`DataBlock::addFrame() <constellation::satellite::TransmitterSatellite::DataBlock::addFrame()>` method takes so-called payload buffer as argument.
+The {cpp:func}`DataRecord::addBlock() <constellation::satellite::TransmitterSatellite::DataRecord::addBlock()>` method takes so-called payload buffer as argument.
 Consequently, the data to be transmitted has to be converted into such a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
 
@@ -117,7 +116,7 @@ For the most common C++ ranges like `std::vector` or `std::array`, moving the ob
 :::{tab-item} Python
 :sync: python
 
-The {py:func}`DataBlock.add_frame() <core.message.cdtp2.DataBlock.add_frame>` method takes a {py:class}`bytes` object as argument.
+The {py:func}`DataRecord.add_block() <core.message.cdtp2.DataRecord.add_block>` method takes a {py:class}`bytes` object as argument.
 
 ```{tip}
 If the data to be sent is stored in a numpy array, it can be converted into a {py:class}`bytes` object using the `tobytes()` method.
@@ -166,7 +165,7 @@ Constellation provides the option to attach metadata to each message sent by the
 
   ```cpp
   // Create a new message
-  auto msg = newDataBlock();
+  auto msg = newDataRecord();
 
   // Add timestamps in picoseconds
   msg.addTag("timestamp_begin", ts_start_pico);
@@ -207,9 +206,9 @@ to each message sent by the satellite. There are three possibilities:
       while not self._state_thread_evt.is_set():
           data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
           tags = {"dtype": str(data.dtype), "other_info": 12345}
-          data_block = self.new_data_block(tags)
-          data_block.add_frame(data.tobytes())
-          self.send_data_block(data_block)
+          data_record = self.new_data_record(tags)
+          data_record.add_block(data.tobytes())
+          self.send_data_record(data_record)
       return "Finished run"
    ```
 

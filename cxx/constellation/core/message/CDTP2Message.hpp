@@ -45,40 +45,40 @@ namespace constellation::message {
         };
 
         /**
-         * @brief Data block representing a data point
+         * @brief Data record representing a data point
          */
-        class DataBlock {
+        class DataRecord {
         public:
-            DataBlock() = default;
+            DataRecord() = default;
 
             /**
-             * @brief Constructs a data block
+             * @brief Constructs a data record
              *
-             * @param sequence_number Sequence number of the data block
-             * @param tags Dictionary containing metainformation of the data block
-             * @param frames Optional number of frames to reserve
+             * @param sequence_number Sequence number of the data record
+             * @param tags Dictionary containing metainformation of the data record
+             * @param blocks Optional number of blocks to reserve
              */
-            DataBlock(std::uint64_t sequence_number, config::Dictionary tags, std::size_t frames = 1)
+            DataRecord(std::uint64_t sequence_number, config::Dictionary tags, std::size_t blocks = 1)
                 : sequence_number_(sequence_number), tags_(std::move(tags)) {
-                frames_.reserve(frames);
+                blocks_.reserve(blocks);
             }
 
             /**
-             * @brief Get the sequence number of the data block
+             * @brief Get the sequence number of the data record
              *
              * @return Sequence number
              */
             std::uint64_t getSequenceNumber() const { return sequence_number_; }
 
             /**
-             * @brief Get the dictionary containing the metainformation of the data block
+             * @brief Get the dictionary containing the metainformation of the data record
              *
-             * @return Tags of the data block
+             * @return Tags of the data record
              */
             const config::Dictionary& getTags() const { return tags_; }
 
             /**
-             * @brief Add a tag to the metainformation of the data block
+             * @brief Add a tag to the metainformation of the data record
              *
              * @param key Name of the tag
              * @param value Value of the tag
@@ -86,21 +86,21 @@ namespace constellation::message {
             template <typename T> void addTag(const std::string& key, const T& value) { tags_[key] = value; }
 
             /**
-             * @brief Get the attached frames of the data block
+             * @brief Get the attached blocks of the data record
              *
-             * @return Vector containing payload frames
+             * @return Vector containing payload blocks
              */
-            const std::vector<PayloadBuffer>& getFrames() const { return frames_; }
+            const std::vector<PayloadBuffer>& getBlocks() const { return blocks_; }
 
             /**
-             * @brief Add a frame to the data block
+             * @brief Add a block to the data record
              *
-             * @param payload Payload buffer to be added as frame
+             * @param payload Payload buffer to be added as block
              */
-            void addFrame(PayloadBuffer&& payload) { frames_.emplace_back(std::move(payload)); }
+            void addBlock(PayloadBuffer&& payload) { blocks_.emplace_back(std::move(payload)); }
 
             /**
-             * @brief Count the number of bytes contained in the frames
+             * @brief Count the number of bytes contained in the blocks
              *
              * @return Size of the payload in bytes
              */
@@ -113,7 +113,7 @@ namespace constellation::message {
         private:
             std::uint64_t sequence_number_ {};
             config::Dictionary tags_;
-            std::vector<PayloadBuffer> frames_;
+            std::vector<PayloadBuffer> blocks_;
         };
 
     public:
@@ -125,7 +125,7 @@ namespace constellation::message {
          * @param blocks Optional number of blocks to reserve
          */
         CDTP2Message(std::string sender, Type type, std::size_t blocks = 1) : sender_(std::move(sender)), type_(type) {
-            data_blocks_.reserve(blocks);
+            data_records_.reserve(blocks);
         }
 
         /**
@@ -143,30 +143,30 @@ namespace constellation::message {
         Type getType() const { return type_; }
 
         /**
-         * @brief Get the data blocks attached to the message
+         * @brief Get the data records attached to the message
          *
-         * @return Vector containing the data blocks
+         * @return Vector containing the data records
          */
-        const std::vector<DataBlock>& getDataBlocks() const { return data_blocks_; }
+        const std::vector<DataRecord>& getDataRecords() const { return data_records_; }
 
         /**
-         * @brief Add a data block to the message
+         * @brief Add a data record to the message
          *
-         * @param data_block Data block
+         * @param data_record Data record
          */
-        void addDataBlock(DataBlock&& data_block) { data_blocks_.emplace_back(std::move(data_block)); }
+        void addDataRecord(DataRecord&& data_record) { data_records_.emplace_back(std::move(data_record)); }
 
         /**
-         * @brief Count the number of payload bytes contained in each data block
+         * @brief Count the number of payload bytes contained in each data record
          *
          * @return Size of the payload in bytes
          */
         CNSTLN_API std::size_t countPayloadBytes() const;
 
         /**
-         * @brief Clear data blocks attached to message
+         * @brief Clear data records attached to message
          */
-        void clearBlocks() { data_blocks_.clear(); }
+        void clearBlocks() { data_records_.clear(); }
 
         /**
          * @brief Assemble full message for ZeroMQ
@@ -184,7 +184,7 @@ namespace constellation::message {
         CNSTLN_API static CDTP2Message disassemble(zmq::multipart_t& frames);
 
     private:
-        std::vector<DataBlock> data_blocks_;
+        std::vector<DataRecord> data_records_;
         std::string sender_;
         Type type_;
     };
@@ -217,7 +217,7 @@ namespace constellation::message {
          *
          * @return Dictionary containing the user tags
          */
-        const config::Dictionary& getUserTags() const { return getDataBlocks().at(0).getTags(); }
+        const config::Dictionary& getUserTags() const { return getDataRecords().at(0).getTags(); }
 
         /**
          * @brief Get the configuration of the sender
@@ -227,8 +227,8 @@ namespace constellation::message {
         CNSTLN_API config::Configuration getConfiguration() const;
 
     private:
-        using CDTP2Message::addDataBlock;
-        using CDTP2Message::getDataBlocks;
+        using CDTP2Message::addDataRecord;
+        using CDTP2Message::getDataRecords;
     };
 
     /**
@@ -257,18 +257,18 @@ namespace constellation::message {
          *
          * @return Dictionary containing the user tags
          */
-        const config::Dictionary& getUserTags() const { return getDataBlocks().at(0).getTags(); }
+        const config::Dictionary& getUserTags() const { return getDataRecords().at(0).getTags(); }
 
         /**
          * @brief Get the run metadata
          *
          * @return Dictionary containing the run metadata
          */
-        const config::Dictionary& getRunMetadata() const { return getDataBlocks().at(1).getTags(); }
+        const config::Dictionary& getRunMetadata() const { return getDataRecords().at(1).getTags(); }
 
     private:
-        using CDTP2Message::addDataBlock;
-        using CDTP2Message::getDataBlocks;
+        using CDTP2Message::addDataRecord;
+        using CDTP2Message::getDataRecords;
     };
 
 } // namespace constellation::message

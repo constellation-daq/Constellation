@@ -54,13 +54,13 @@ The second string SHOULD contain the name of the sending CDTP host.
 
 The message type identifier SHALL be either `%x00` (dubbed ‘DATA‘ for data), `%x01` (dubbed ‘BOR’ for begin-of-run), or `%x02` (dubbed ‘EOR’ for end-of-run).
 
-The array shall contain any number of ‘Data Blocks’, which will be described below.
+The array shall contain any number of ‘Data Records’, which will be described below.
 
-### Data Blocks
+### Data Records
 
-A data block represent a measurement point. It is an object encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification. It consists of an array with a fixed length of 3, containing an integer, a map and an array.
+A data record represent a measurement point. It is an object encoded according to the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification. It consists of an array with a fixed length of 3, containing an integer, a map and an array.
 
-The integer SHALL contain the data block sequence number. It SHOULD be monotonically incremented number that represents the number of data blocks in DATA messages sent since the beginning of the measurement, starting with 1.
+The integer SHALL contain the data record sequence number. It SHOULD be monotonically incremented number that represents the number of data records in DATA messages sent since the beginning of the measurement, starting with 1.
 
 The map MAY contain a sequence of key-value pairs.
 The key MUST be of string-type and the values MAY be any of the types supported by the [MessagePack](https://github.com/msgpack/msgpack/blob/master/spec.md) specification.
@@ -69,8 +69,8 @@ The array MAY contain any number of byte arrays, representing the measurement da
 
 ### BOR and EOR Messages
 
-BOR and EOR type messages SHALL contain exactly two data blocks which SHALL NOT contain any measurement data.
+BOR and EOR type messages SHALL contain exactly two data records which SHALL NOT contain any measurement data.
 
-For BOR type messages, the map of the second data block SHALL contain the configuration of the CDTP sender host.
+For BOR type messages, the map of the second data record SHALL contain the configuration of the CDTP sender host.
 
-For EOR type messages, the map of the second data block MAY contain additional meta information of the measurement run.
+For EOR type messages, the map of the second data record MAY contain additional meta information of the measurement run.

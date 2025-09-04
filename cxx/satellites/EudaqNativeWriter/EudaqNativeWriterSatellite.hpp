@@ -49,8 +49,8 @@ protected:
                      const constellation::config::Dictionary& user_tags,
                      const constellation::config::Configuration& config) final;
 
-    /** Callback for receiving data blocks in a DATA message */
-    void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataBlock& data_block) final;
+    /** Callback for receiving data records in a DATA message */
+    void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataRecord& data_record) final;
 
     /** Callback for receiving a EOR message */
     void receive_eor(std::string_view sender,

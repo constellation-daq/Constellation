@@ -37,53 +37,53 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
-std::size_t CDTP2Message::DataBlock::countPayloadBytes() const {
-    return std::transform_reduce(frames_.begin(), frames_.end(), 0UL, std::plus(), [](const auto& payload_buffer) {
+std::size_t CDTP2Message::DataRecord::countPayloadBytes() const {
+    return std::transform_reduce(blocks_.begin(), blocks_.end(), 0UL, std::plus(), [](const auto& payload_buffer) {
         return payload_buffer.span().size();
     });
 }
 
-void CDTP2Message::DataBlock::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
+void CDTP2Message::DataRecord::msgpack_pack(msgpack::packer<msgpack::sbuffer>& msgpack_packer) const {
     // Array of sequence number, tags and array of byte arrays
     msgpack_packer.pack_array(3);
     msgpack_packer.pack_fix_uint64(sequence_number_);
     msgpack_packer.pack(tags_);
-    msgpack_packer.pack_array(frames_.size());
-    for(const auto& frame : frames_) {
-        msgpack_packer.pack_bin(frame.span().size());
-        msgpack_packer.pack_bin_body(to_char_ptr(frame.span().data()), frame.span().size());
+    msgpack_packer.pack_array(blocks_.size());
+    for(const auto& block : blocks_) {
+        msgpack_packer.pack_bin(block.span().size());
+        msgpack_packer.pack_bin_body(to_char_ptr(block.span().data()), block.span().size());
     }
 }
 
-void CDTP2Message::DataBlock::msgpack_unpack(const msgpack::object& msgpack_object) {
+void CDTP2Message::DataRecord::msgpack_unpack(const msgpack::object& msgpack_object) {
     // Decode as array
     if(msgpack_object.type != msgpack::type::ARRAY) [[unlikely]] {
-        throw MsgpackUnpackError("Error unpacking data", "data block is not an array");
+        throw MsgpackUnpackError("Error unpacking data", "data record is not an array");
     }
     const auto msgpack_array_raw = msgpack_object.via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
     const auto msgpack_array = std::span(msgpack_array_raw.ptr, msgpack_array_raw.size);
     // Contains three objects
     if(msgpack_array.size() != 3) [[unlikely]] {
-        throw MsgpackUnpackError("Error unpacking data", "data block array has wrong size");
+        throw MsgpackUnpackError("Error unpacking data", "data record array has wrong size");
     }
     // Sequence number, tags and array of byte arrays
     sequence_number_ = msgpack_array[0].as<std::uint64_t>();
     tags_ = msgpack_array[1].as<Dictionary>();
     if(msgpack_array[2].type != msgpack::type::ARRAY) [[unlikely]] {
-        throw MsgpackUnpackError("Error unpacking data", "data block frame is not an array");
+        throw MsgpackUnpackError("Error unpacking data", "data record blocks is not an array");
     }
     // Move byte arrays into payload buffers
-    const auto msgpack_frames_array_raw = msgpack_array[2].via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
-    const auto msgpack_frames_array = std::span(msgpack_frames_array_raw.ptr, msgpack_frames_array_raw.size);
-    frames_.reserve(msgpack_frames_array.size());
-    for(const auto& frame : msgpack_frames_array) {
-        frames_.emplace_back(frame.as<std::vector<std::byte>>());
+    const auto msgpack_blocks_array_raw = msgpack_array[2].via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
+    const auto msgpack_blocks_array = std::span(msgpack_blocks_array_raw.ptr, msgpack_blocks_array_raw.size);
+    blocks_.reserve(msgpack_blocks_array.size());
+    for(const auto& block : msgpack_blocks_array) {
+        blocks_.emplace_back(block.as<std::vector<std::byte>>());
     }
 }
 
 std::size_t CDTP2Message::countPayloadBytes() const {
-    return std::transform_reduce(data_blocks_.begin(), data_blocks_.end(), 0UL, std::plus(), [](const auto& data_block) {
-        return data_block.countPayloadBytes();
+    return std::transform_reduce(data_records_.begin(), data_records_.end(), 0UL, std::plus(), [](const auto& data_record) {
+        return data_record.countPayloadBytes();
     });
 }
 
@@ -96,10 +96,10 @@ zmq::multipart_t CDTP2Message::assemble() const {
     msgpack_packer.pack(sender_);
     msgpack_packer.pack(std::to_underlying(type_));
 
-    // Pack data blocks as array
-    msgpack_packer.pack_array(data_blocks_.size());
-    for(const auto& data_block : data_blocks_) {
-        msgpack_packer.pack(data_block);
+    // Pack data records as array
+    msgpack_packer.pack_array(data_records_.size());
+    for(const auto& data_record : data_records_) {
+        msgpack_packer.pack(data_record);
     }
 
     // Create zero-copy payload
@@ -135,18 +135,18 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
         // Unpack type
         const auto type = msgpack_unpack_to_enum<Type>(to_char_ptr(frame.data()), frame.size(), offset);
 
-        // Unpack data blocks
+        // Unpack data records
         const auto msgpack_object = msgpack::unpack(to_char_ptr(frame.data()), frame.size(), offset);
         if(msgpack_object->type != msgpack::type::ARRAY) [[unlikely]] {
-            throw MsgpackUnpackError("Error unpacking data", "data blocks are not in an array");
+            throw MsgpackUnpackError("Error unpacking data", "data records are not in an array");
         }
-        const auto msgpack_data_blocks_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
-        const auto msgpack_data_blocks = std::span(msgpack_data_blocks_raw.ptr, msgpack_data_blocks_raw.size);
+        const auto msgpack_data_records_raw = msgpack_object->via.array; // NOLINT(cppcoreguidelines-pro-type-union-access)
+        const auto msgpack_data_records = std::span(msgpack_data_records_raw.ptr, msgpack_data_records_raw.size);
 
-        // Create message to append data blocks
-        auto message = CDTP2Message(sender, type, msgpack_data_blocks.size());
-        for(const auto& msgpack_data_block : msgpack_data_blocks) {
-            message.addDataBlock(msgpack_data_block.as<DataBlock>());
+        // Create message to append data records
+        auto message = CDTP2Message(sender, type, msgpack_data_records.size());
+        for(const auto& msgpack_data_record : msgpack_data_records) {
+            message.addDataRecord(msgpack_data_record.as<DataRecord>());
         }
 
         return message;
@@ -157,35 +157,35 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
 
 CDTP2BORMessage::CDTP2BORMessage(std::string sender, Dictionary user_tags, const Configuration& configuration)
     : CDTP2Message(std::move(sender), Type::BOR, 2) {
-    addDataBlock({0, std::move(user_tags), 0});
-    addDataBlock({1, configuration.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED), 0});
+    addDataRecord({0, std::move(user_tags), 0});
+    addDataRecord({1, configuration.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED), 0});
 }
 
 CDTP2BORMessage::CDTP2BORMessage(CDTP2Message&& message) : CDTP2Message(std::move(message)) {
     if(getType() != Type::BOR) [[unlikely]] {
         throw IncorrectMessageType("Not a BOR message");
     }
-    if(getDataBlocks().size() != 2) [[unlikely]] {
-        throw MessageDecodingError("CDTP2 BOR", "Wrong number of data blocks, exactly two data blocks expected");
+    if(getDataRecords().size() != 2) [[unlikely]] {
+        throw MessageDecodingError("CDTP2 BOR", "Wrong number of data records, exactly two data records expected");
     }
 }
 
 CDTP2EORMessage::CDTP2EORMessage(std::string sender, Dictionary user_tags, Dictionary run_metadata)
     : CDTP2Message(std::move(sender), Type::EOR, 2) {
-    addDataBlock({0, std::move(user_tags), 0});
-    addDataBlock({1, std::move(run_metadata), 0});
+    addDataRecord({0, std::move(user_tags), 0});
+    addDataRecord({1, std::move(run_metadata), 0});
 }
 
 Configuration CDTP2BORMessage::getConfiguration() const {
     // Return as configuration and mark config keys as used
-    return {getDataBlocks().at(1).getTags(), true};
+    return {getDataRecords().at(1).getTags(), true};
 }
 
 CDTP2EORMessage::CDTP2EORMessage(CDTP2Message&& message) : CDTP2Message(std::move(message)) {
     if(getType() != Type::EOR) [[unlikely]] {
         throw IncorrectMessageType("Not an EOR message");
     }
-    if(getDataBlocks().size() != 2) [[unlikely]] {
-        throw MessageDecodingError("CDTP2 EOR", "Wrong number of data blocks, exactly two data blocks expected");
+    if(getDataRecords().size() != 2) [[unlikely]] {
+        throw MessageDecodingError("CDTP2 EOR", "Wrong number of data records, exactly two data records expected");
     }
 }

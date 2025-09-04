@@ -424,9 +424,9 @@ void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
 
 void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
     const auto sender = data_message.getSender();
-    LOG(BasePoolT::pool_logger_, TRACE) << "Received data message from " << sender << " with data blocks from "
-                                        << data_message.getDataBlocks().front().getSequenceNumber() << " to "
-                                        << data_message.getDataBlocks().back().getSequenceNumber();
+    LOG(BasePoolT::pool_logger_, TRACE) << "Received data message from " << sender << " with data records from "
+                                        << data_message.getDataRecords().front().getSequenceNumber() << " to "
+                                        << data_message.getDataRecords().back().getSequenceNumber();
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     const auto data_transmitter_it = data_transmitter_states_.find(sender);
@@ -435,15 +435,15 @@ void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
        data_transmitter_it->second.state != TransmitterState::BOR_RECEIVED) [[unlikely]] {
         throw InvalidCDTPMessageType(CDTP2Message::Type::DATA, "did not receive BOR from " + std::string(sender));
     }
-    // Iterate over data blocks
-    for(const auto& data_block : data_message.getDataBlocks()) {
+    // Iterate over data records
+    for(const auto& data_record : data_message.getDataRecords()) {
         // Store sequence number and missed messages
-        data_transmitter_it->second.missed += data_block.getSequenceNumber() - 1 - data_transmitter_it->second.seq;
-        data_transmitter_it->second.seq = data_block.getSequenceNumber();
+        data_transmitter_it->second.missed += data_record.getSequenceNumber() - 1 - data_transmitter_it->second.seq;
+        data_transmitter_it->second.seq = data_record.getSequenceNumber();
     }
     data_transmitter_states_lock.unlock();
-    for(const auto& data_block : data_message.getDataBlocks()) {
-        receive_data(data_message.getSender(), data_block);
+    for(const auto& data_record : data_message.getDataRecords()) {
+        receive_data(data_message.getSender(), data_record);
     }
 }
 

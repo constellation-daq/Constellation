@@ -29,7 +29,7 @@ protected:
     void receive_bor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,
                      const constellation::config::Configuration& config) final;
-    void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataBlock& data_block) final;
+    void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataRecord& data_record) final;
     void receive_eor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,
                      const constellation::config::Dictionary& run_metadata) final;
