@@ -12,7 +12,7 @@ This satellite creates random data and sends it out as fast as possible, allowin
 Random data can either be generated continuously during the run or once at the beginning of the run, which is faster.
 
 When data sending is limited because the framework or the receiver cannot handle the data rate, the transmitter will sleep
-for 1ms. This is tracked in the `RATE_LIMITED` metric.
+for 1ms. The duty cycle resulting from this is tracked in the `DUTY_CYCLE` metric.
 
 ## Building
 
@@ -36,4 +36,4 @@ meson configure build -Dsatellite_random_transmitter=true
 
 | Metric | Description | Value Type | Metric Type | Interval |
 |--------|-------------|------------|-------------|----------|
-| `RATE_LIMITED` | Counts the number of loop iterations in which data sending was skipped due the data rate limitations | Integer | `LAST_VALUE` | 5s |
+| `DUTY_CYCLE` | Total duty cycle of the run loop | Integer | `LAST_VALUE` | 5s |

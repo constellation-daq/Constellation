@@ -42,4 +42,5 @@ private:
     std::uint64_t block_size_ {};
     std::uint32_t number_of_blocks_ {};
     std::atomic_size_t rate_limited_;
+    std::atomic_size_t loop_iterations_;
 };

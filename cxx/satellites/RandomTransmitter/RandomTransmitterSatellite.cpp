@@ -40,13 +40,9 @@ RandomTransmitterSatellite::RandomTransmitterSatellite(std::string_view type, st
     support_reconfigure();
 
     register_timed_metric(
-        "RATE_LIMITED",
-        "",
-        MetricType::LAST_VALUE,
-        "Counts the number of loop iterations in which data sending was skipped due the data rate limitations",
-        5s,
-        {State::RUN},
-        [this]() { return rate_limited_.load(); });
+        "DUTY_CYCLE", "", MetricType::LAST_VALUE, "Total duty cycle of the run loop", 5s, {State::RUN}, [this]() {
+            return 1. - (static_cast<double>(rate_limited_.load()) / static_cast<double>(loop_iterations_.load()));
+        });
 }
 
 std::uint32_t RandomTransmitterSatellite::generate_random_seed() {
@@ -87,6 +83,7 @@ void RandomTransmitterSatellite::starting(std::string_view run_identifier) {
     std::seed_seq seed_seq {seed_};
     byte_rng_.seed(seed_seq);
     rate_limited_ = 0;
+    loop_iterations_ = 0;
     LOG(INFO) << "Starting run " << run_identifier << " with seed " << to_string(seed_);
 }
 
@@ -100,6 +97,7 @@ void RandomTransmitterSatellite::running(const std::stop_token& stop_token) {
 
 void RandomTransmitterSatellite::running_rnggen(const std::stop_token& stop_token) {
     while(!stop_token.stop_requested()) {
+        ++loop_iterations_;
         // Skip sending if data rate limited
         if(checkDataRateLimited()) {
             ++rate_limited_;
@@ -135,6 +133,7 @@ void RandomTransmitterSatellite::running_pregen(const std::stop_token& stop_toke
     LOG(INFO) << "Generation of random data complete";
     // Actual sending loop
     while(!stop_token.stop_requested()) {
+        ++loop_iterations_;
         // Skip sending if data rate limited
         if(checkDataRateLimited()) {
             ++rate_limited_;
@@ -152,6 +151,10 @@ void RandomTransmitterSatellite::running_pregen(const std::stop_token& stop_toke
 }
 
 void RandomTransmitterSatellite::stopping() {
-    STAT("RATE_LIMITED", rate_limited_.load());
-    LOG_IF(WARNING, rate_limited_ > 0) << "Reached data rate limit " << rate_limited_ << " times";
+    const auto rate_limited = rate_limited_.load();
+    const auto loop_iterations = loop_iterations_.load();
+    const auto duty_cycle = 1. - (static_cast<double>(rate_limited) / static_cast<double>(loop_iterations));
+    STAT("DUTY_CYCLE", duty_cycle);
+    LOG_IF(WARNING, rate_limited > 0) << "Reached data rate limit " << rate_limited << " times out of " << loop_iterations
+                                      << " loop iterations, leading to a duty cycle of " << duty_cycle;
 }
