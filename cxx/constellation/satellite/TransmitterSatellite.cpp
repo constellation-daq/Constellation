@@ -56,21 +56,21 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
       cdtp_port_(bind_ephemeral_port(cdtp_push_socket_)), cdtp_logger_("DATA"), data_queue_size_(ATOMIC_QUEUE_DEFAULT_SIZE),
       data_record_queue_(data_queue_size_) {
 
-    register_timed_metric("TRANSMITTED_BYTES",
+    register_timed_metric("TX_BYTES",
                           "B",
                           MetricType::LAST_VALUE,
                           "Number of bytes transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_transmitted_.load(); });
-    register_timed_metric("TRANSMITTED_BLOCKS",
+    register_timed_metric("TX_BLOCKS",
                           "",
                           MetricType::LAST_VALUE,
                           "Number of blocks transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return blocks_transmitted_.load(); });
-    register_timed_metric("TRANSMITTED_RECORDS",
+    register_timed_metric("TX_RECORDS",
                           "",
                           MetricType::LAST_VALUE,
                           "Number of data records transmitted by this satellite in the current run",
@@ -156,9 +156,9 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
     bytes_transmitted_ = 0;
     blocks_transmitted_ = 0;
     data_records_transmitted_ = 0;
-    STAT("TRANSMITTED_BYTES", 0);
-    STAT("TRANSMITTED_BLOCKS", 0);
-    STAT("TRANSMITTED_RECORDS", 0);
+    STAT("TX_BYTES", 0);
+    STAT("TX_BLOCKS", 0);
+    STAT("TX_RECORDS", 0);
 
     // Reset run metadata and sequence counter
     seq_ = 0;

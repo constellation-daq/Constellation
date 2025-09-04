@@ -177,13 +177,13 @@ class TransmitterSatellite(Satellite):
         self._run_metadata["condition"] = condition_code.name
 
     @schedule_metric("B", MetricsType.LAST_VALUE, 10)
-    def transmitted_bytes(self) -> int | None:
+    def tx_bytes(self) -> int | None:
         if self._dtm is not None and self._dtm.state == TransmitterState.BOR_RECEIVED:
             return self._dtm.bytes_transmitted
         return None
 
     @schedule_metric("", MetricsType.LAST_VALUE, 10)
-    def transmitted_records(self) -> int | None:
+    def tx_records(self) -> int | None:
         if self._dtm is not None and self._dtm.state == TransmitterState.BOR_RECEIVED:
             return self._dtm.records_transmitted
         return None
