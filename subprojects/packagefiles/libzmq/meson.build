@@ -544,6 +544,7 @@ libzmq_dep = declare_dependency(
   compile_args: libzmq_flags_public,
   dependencies: libzmq_deps_public,
 )
+meson.override_dependency('libzmq', libzmq_dep)
 
 install_headers('include/zmq.h', 'include/zmq_utils.h')
 

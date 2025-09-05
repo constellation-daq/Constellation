@@ -1,13 +1,13 @@
 [wrap-file]
-directory = cppzmq-4.10.0
-source_url = https://github.com/zeromq/cppzmq/archive/refs/tags/v4.10.0.tar.gz
-source_filename = cppzmq-4.10.0.tar.gz
-source_hash = c81c81bba8a7644c84932225f018b5088743a22999c6d82a2b5f5cd1e6942b74
-patch_filename = cppzmq_4.10.0-3_patch.zip
-patch_url = https://wrapdb.mesonbuild.com/v2/cppzmq_4.10.0-3/get_patch
-patch_hash = b2690c36bd3f0dc0d7f31d8e0e8eec12a7942f09f616d61a7556fb096731df69
-source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/cppzmq_4.10.0-3/cppzmq-4.10.0.tar.gz
-wrapdb_version = 4.10.0-3
+directory = cppzmq-4.11.0
+source_url = https://github.com/zeromq/cppzmq/archive/refs/tags/v4.11.0.tar.gz
+source_filename = cppzmq-4.11.0.tar.gz
+source_hash = 0fff4ff311a7c88fdb76fceefba0e180232d56984f577db371d505e4d4c91afd
+patch_filename = cppzmq_4.11.0-2_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/cppzmq_4.11.0-2/get_patch
+patch_hash = 016b9a499694e6f1aadb8859ac8362fce20526292b9e196c868edeaacc7fb958
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/cppzmq_4.11.0-2/cppzmq-4.11.0.tar.gz
+wrapdb_version = 4.11.0-2
 
 [provide]
-cppzmq = cppzmq_dep
+dependency_names = cppzmq
