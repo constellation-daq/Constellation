@@ -3,7 +3,7 @@
 ## Data
 
 Data are sent via the [CDTP protocol](../../../protocols/cdtp.md), where data are send in *data records*, consisting of
-blocks containing binary data. It is up to the implementation to decide how to organize the data. Additionally, each message
+blocks containing binary data. It is up to the implementation to decide how to organize the data. Additionally, each record
 can contain metadata in form of tags (key-value pairs) in the record header.
 
 ### Transmitting Data

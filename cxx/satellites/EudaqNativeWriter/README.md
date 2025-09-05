@@ -18,8 +18,8 @@ satellites should set in order to ensure the data can be correctly decoded:
   encoding, for example `TluRawDataEvent` for data sent by the AIDA TLU. If this tag is not set, the satellite falls back
   to using the *name* portion of the canonical name of the sender. This can be used to improve interoperability of
   satellites which do not set these tags explicitly.
-* EUDAQ2 knows data records per event as well as sub-events, while Constellation data record always consist of a dictionary
-  and any number of data block. In order to encode this data correctly to EUDAQ2 native binary format, the sending satellite
+* EUDAQ2 knows data blocks per event as well as sub-events, while Constellation data records always consist of a dictionary
+  and any number of data blocks. In order to encode this data correctly to EUDAQ2 native binary format, the sending satellite
   should specify if the Constellation data blocks should be interpreted as as individual *data blocks* or as *sub-events* in
   the resulting EUDAQ2 native binary event by setting the BOR tag `write_as_blocks` to either `true` or `false`, respectively.
   If the tag is not provided, this satellite defaults to interpreting them as sub-events, repeating the dictionary for all of
