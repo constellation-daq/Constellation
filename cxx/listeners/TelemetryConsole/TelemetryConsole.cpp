@@ -29,6 +29,7 @@
 #include <QVector>
 #include <QWidget>
 
+#include "constellation/build.hpp"
 #include "constellation/core/utils/enum.hpp"
 
 #include "QMetricDisplay.hpp"
