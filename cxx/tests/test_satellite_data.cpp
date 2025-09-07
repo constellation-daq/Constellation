@@ -295,9 +295,9 @@ TEST_CASE("Successful run", "[satellite]") {
     const auto& bor_tags = receiver.getBORTags(transmitter.getCanonicalName());
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
 
-    // Send a data
+    // Send data
     transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
-    REQUIRE_FALSE(transmitter.checkDataRateLimited());
+    REQUIRE(transmitter.canSendRecord());
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
     const auto& data_record = receiver.getLastData(transmitter.getCanonicalName());

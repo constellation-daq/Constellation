@@ -188,9 +188,9 @@ class TransmitterSatellite(Satellite):
             return self._dtm.records_transmitted
         return None
 
-    def check_rate_limited(self) -> bool:
-        """Check if the satellite is currently rate limited"""
-        return self._dtm.check_rate_limited()
+    def can_send_record(self) -> bool:
+        """Check if a data record can be send immediately"""
+        return self._dtm.can_send_record()
 
     def new_data_record(self, tags: dict[str, Any] | None = None) -> DataRecord:
         """Return new data record for sending"""

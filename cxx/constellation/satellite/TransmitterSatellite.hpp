@@ -63,11 +63,14 @@ namespace constellation::satellite {
         }
 
         /**
-         * @brief Check if sending is data rate limited
+         * @brief Check if a data record can be send immediately
          *
-         * @return True if sending data is currently limited, false otherwise
+         * @note If this functions returns false, the available data rate of the data transmission connection is too low for
+         *       the rate at which the satellite is sending data.
+         *
+         * @return True if a data record send immediately, false otherwise
          */
-        bool checkDataRateLimited() const { return data_record_queue_.was_full(); }
+        bool canSendRecord() const { return !data_record_queue_.was_full(); }
 
         /**
          * @brief Mark this run data as tainted

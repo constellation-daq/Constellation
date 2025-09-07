@@ -23,7 +23,7 @@ class PyRandomTransmitter(TransmitterSatellite):
     def do_run(self, run_identifier: str) -> str:
         while not self._state_thread_evt.is_set():
             # Check if rate limited
-            if self.check_rate_limited():
+            if not self.can_send_record():
                 time.sleep(0.001)
                 continue
             # Send data

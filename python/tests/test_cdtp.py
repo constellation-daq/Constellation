@@ -173,7 +173,7 @@ def test_datatransmitter_cov(mock_data_transmitter: DataTransmitter):
     transmitter = mock_data_transmitter
     transmitter.check_exception()
     assert transmitter.state == TransmitterState.NOT_CONNECTED
-    assert not transmitter.check_rate_limited()
+    assert transmitter.can_send_record()
     transmitter.new_data_record()
     assert transmitter.sequence_number == 1
     transmitter.bor_timeout = 2
@@ -493,7 +493,7 @@ def test_data_satellites(
 
     # Some calls for transmitter coverage
     transmitter.mark_run_tainted()
-    assert not transmitter.check_rate_limited()
+    assert transmitter.can_send_record()
 
     # Stop transmitter
     cmd_tx.request_get_response("stop")

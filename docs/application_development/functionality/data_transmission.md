@@ -44,15 +44,23 @@ If the transmitter fails to send the data within a configured time window, an ex
 transitions into the {bdg-secondary}`ERROR` state.
 
 It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
-on the hardware or software level (e.g. dropping data):
+on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately:
 
 ```cpp
-if(checkDataRateLimited()) {
+if(!canSendRecord()) {
   device->set_busy();
 }
 ```
 
-By default, no data is dropped and a sequence number scheme is implemented to ensure the completeness of the data.
+The framework does not drop data itself and a sequence number scheme is implemented to ensure the completeness of the data.
+Data can be dropped in the satellite by creating a new data record and discarding the old one. Runs where this happened will
+be marked as `INCOMPLETE` in the run metadata.
+
+```{note}
+It is not required to check if a record can be sent immediately before every call to to send a data record if no explicit
+action is be taken. If a record can not be sent immediately, the sending function will block until the record can be sent or
+the run is aborted due to a data sending timeout.
+```
 
 :::
 :::{tab-item} Python
@@ -86,15 +94,23 @@ If the transmitter fails to send the data within a configured time window, an ex
 transitions into the {bdg-secondary}`ERROR` state.
 
 It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
-on the hardware or software level (e.g. dropping data):
+on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately::
 
 ```python
-if self.check_rate_limited():
+if not self.can_send_record():
     self.device.set_busy()
 }
 ```
 
-By default, no data is dropped and a sequence number scheme is implemented to ensure the completeness of the data.
+The framework does not drop data itself and a sequence number scheme is implemented to ensure the completeness of the data.
+Data can be dropped in the satellite by creating a new data record and discarding the old one. Runs where this happened will
+be marked as `INCOMPLETE` in the run metadata.
+
+```{note}
+It is not required to check if a record can be sent immediately before every call to to send a data record if no explicit
+action is be taken. If a record can not be sent immediately, the sending function will block until the record can be sent or
+the run is aborted due to a data sending timeout.
+```
 
 :::
 ::::

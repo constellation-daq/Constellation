@@ -99,7 +99,7 @@ void RandomTransmitterSatellite::running_rnggen(const std::stop_token& stop_toke
     while(!stop_token.stop_requested()) {
         ++loop_iterations_;
         // Skip sending if data rate limited
-        if(checkDataRateLimited()) {
+        if(!canSendRecord()) {
             ++rate_limited_;
             std::this_thread::sleep_for(1ms);
             continue;
@@ -135,7 +135,7 @@ void RandomTransmitterSatellite::running_pregen(const std::stop_token& stop_toke
     while(!stop_token.stop_requested()) {
         ++loop_iterations_;
         // Skip sending if data rate limited
-        if(checkDataRateLimited()) {
+        if(!canSendRecord()) {
             ++rate_limited_;
             std::this_thread::sleep_for(1ms);
             continue;

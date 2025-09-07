@@ -205,9 +205,9 @@ class DataTransmitter:
     def queue_size(self, new_queue_size: int) -> None:
         self._queue_size = new_queue_size
 
-    def check_rate_limited(self) -> bool:
-        """Check if the satellite is currently rate limited"""
-        return self._queue.full()
+    def can_send_record(self) -> bool:
+        """Check if a data record can be send immediately"""
+        return not self._queue.full()
 
     def new_data_record(self, tags: dict[str, Any] | None = None) -> DataRecord:
         """Return new data record for sending"""
