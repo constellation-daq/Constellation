@@ -27,7 +27,7 @@
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -41,11 +41,10 @@ namespace constellation::satellite {
      */
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
-          private pools::BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
-    public:
-        using BasePoolT = BasePool<message::CDTP1Message, protocol::CHIRP::DATA, zmq::socket_type::pull>;
-
+          private pools::BasePool<message::CDTP2Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
     private:
+        using BasePoolT = BasePool<message::CDTP2Message, protocol::CHIRP::DATA, zmq::socket_type::pull>;
+
         enum class TransmitterState : std::uint8_t {
             NOT_CONNECTED,
             BOR_RECEIVED,
@@ -111,27 +110,32 @@ namespace constellation::satellite {
         /**
          * @brief Receive and handle Begin-of-Run (BOR) message
          *
-         * @param header Header of the BOR message containing e.g. the sender name
-         * @param config Configuration of the sending satellite to be stored
+         * @param sender Canonical name of the sending satellite
+         * @param user_tags Dictionary with the user tags of the sending satellite
+         * @param config Configuration of the sending satellite
          */
-        virtual void receive_bor(const message::CDTP1Message::Header& header, config::Configuration config) = 0;
+        virtual void receive_bor(std::string_view sender,
+                                 const config::Dictionary& user_tags,
+                                 const config::Configuration& config) = 0;
 
         /**
-         * @brief Receive and handle data message
+         * @brief Receive and handle data record
          *
-         * @note Any tags in the header should be stored next to the payload frames.
-         *
-         * @param data_message Data message containing the header and the payload
+         * @param sender Canonical name of the sending satellite
+         * @param data_record Data record containing the user tags and payload
          */
-        virtual void receive_data(message::CDTP1Message data_message) = 0;
+        virtual void receive_data(std::string_view sender, const message::CDTP2Message::DataRecord& data_record) = 0;
 
         /**
          * @brief Receive and handle End-of-Run (EOR) message
          *
-         * @param header Header of the EOR message containing e.g. the sender name
-         * @param run_metadata Dictionary with run meta data of the sending satellite to be stored
+         * @param sender Canonical name of the sending satellite
+         * @param user_tags Dictionary with the user tags of the sending satellite
+         * @param run_metadata Dictionary with run meta data of the sending satellite
          */
-        virtual void receive_eor(const message::CDTP1Message::Header& header, config::Dictionary run_metadata) = 0;
+        virtual void receive_eor(std::string_view sender,
+                                 const config::Dictionary& user_tags,
+                                 const config::Dictionary& run_metadata) = 0;
 
         /**
          * @brief Get amount of payload data received from all transmitters in the current run
@@ -226,7 +230,7 @@ namespace constellation::satellite {
          *
          * @param message Received CDTP message
          */
-        void handle_cdtp_message(message::CDTP1Message&& message);
+        void handle_cdtp_message(message::CDTP2Message&& message);
 
         /**
          * @brief Handle BOR message before passing it to `receive_bor()`
@@ -234,7 +238,7 @@ namespace constellation::satellite {
          * @param bor_message Received CDTP BOR message
          * @throw InvalidCDTPMessageType If already a BOR received
          */
-        void handle_bor_message(message::CDTP1Message bor_message);
+        void handle_bor_message(const message::CDTP2BORMessage& bor_message);
 
         /**
          * @brief Handle DATA message before passing it to `receive_data()`
@@ -242,7 +246,7 @@ namespace constellation::satellite {
          * @param data_message Received CDTP DATA message
          * @throw InvalidCDTPMessageType If no BOR received yet
          */
-        void handle_data_message(message::CDTP1Message data_message);
+        void handle_data_message(const message::CDTP2Message& data_message);
 
         /**
          * @brief Handle EOR message before passing it to `receive_eor()`
@@ -250,7 +254,7 @@ namespace constellation::satellite {
          * @param eor_message Received CDTP EOR message
          * @throw InvalidCDTPMessageType If no BOR received yet
          */
-        void handle_eor_message(message::CDTP1Message eor_message);
+        void handle_eor_message(const message::CDTP2EORMessage& eor_message);
 
         /**
          * @brief Register or update metrics for available disk space

@@ -11,3 +11,4 @@ Protocols
    CSCP <cscp>
    CMDP <cmdp>
    CDTP <cdtp>
+   retired/index

@@ -1,54 +1,29 @@
 # Increase Data Rate in C++
 
-Constellation allows sending data messages with multiple binary "payloads" or "frames" per message. If the total payload
-of a message is small, the header of that message becomes significant and can lead to low data rates.
+Data transmission speed over the network does not only depend on the data throughout, but also on the TCP message throughput.
+As the payload for each message gets smaller, the data transmission speed typically decreases as the overhead of sending
+a TCP message becomes relevant.
 
-To increase the data rate, two things can be done:
+Since data from detectors is often fairly small, Constellation is optimized for small data sizes (1KiB) by grouping data
+together to larger messages. This grouping is implemented directly in the framework and the grouped data is split again
+before being stored, thus being entirely transparent when implementing a new satellite.
 
-- bundle data together to create larger frames
-- attach multiple frames to a single message
+```{figure} Data_Rate_vs_Block_Size.svg
+Benchmark Data Rate vs Block Size
+```
 
-## Impact of Larger Frames
+For all but the most extreme scenarios, Constellation can saturate a 10G network link using an optimized C++ build and a
+custom memory allocator like [jemalloc](https://jemalloc.net/) or [mimalloc](https://microsoft.github.io/mimalloc/).
+While mimalloc is enabled by default, jemalloc provides slightly better performance but has to be installed separately.
 
-The maximum data rate scales roughly linearly with the frame size until a certain limit is reached, either on the generation
-by the sending side or due to a network interface limitation. Below a benchmark is shown using the
-[`RandomTransmitter`](../../satellites/RandomTransmitter) and [`DevNullReceiver`](../../satellites/DevNullReceiver)
-satellites. In a `debugoptimized` build, at a frame size of 16KiB the [`RandomTransmitter`](../../satellites/RandomTransmitter)
-cannot generate random data faster than the [`DevNullReceiver`](../../satellites/DevNullReceiver) can receive.
+An optimized build using jemalloc can be created via:
 
-```{figure} bench_frame_size_vs_data_rate.png
-Benchmark Frame Size vs Data Rate
+```sh
+meson setup build_opt -Dbuildtype=release -Db_lto=true -Dc_args=-march=native -Dcpp_args=-march=native -Dmemory_allocator=jemalloc -Dwrap_mode=forcefallback -Dcxx_tests=disabled
 ```
 
 ```{note}
-Benchmarks shown here should not be taken at face value since they heavily depend on the specs of the system generating
-these benchmarks.
-```
-
-Note that debug builds can be significantly slower, particular on the sending side. A `debugoptimized` or `release` build is
-recommend for production.
-
-## Impact of more Frames per Message
-
-If larger frame sizes are not possible, an alternative is appending multiple smaller frames to a message. This does not scale
-as effectively as increasing the frame size, but still gives a significant improvement. In the benchmark below frames with a
-size of 64 Bytes are added to a single message.
-
-```{figure} bench_number_of_frames_vs_data_rate.png
-Benchmark Number of Frames vs Data Rate
-```
-
-Appending multiple frames can be done like this:
-
-```c++
-// Create a new message and reserve space for 10 frames
-auto msg = newDataMessage(10);
-// Add data from detector to message until no more data comes
-try {
-    for(int i = 0; i < 10; ++i) {
-        msg.addFrame(readDataFromDetector());
-    }
-catch(const NoMoreDataError& error) {}
-// Send message
-const auto sent = sendDataMessage(msg);
+When building external satellites using Meson, it is important to set the `buildtype`, `b_lto`, `c_args` and `cpp_args`
+options in that project as well. The custom memory allocator will be used automatically when Constellation is built with
+that option.
 ```

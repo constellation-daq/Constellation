@@ -32,7 +32,6 @@ using namespace constellation::message;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 
-// Similar to CDTP1Header::disassemble in CDTP1Header.cpp, check when modifying
 BaseHeader BaseHeader::disassemble(Protocol protocol, std::span<const std::byte> data) {
     try {
         // Offset since we decode four separate msgpack objects
@@ -62,7 +61,7 @@ BaseHeader BaseHeader::disassemble(Protocol protocol, std::span<const std::byte>
         // Construct header
         return {protocol, sender, time, tags};
     } catch(const MsgpackUnpackError& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError(get_readable_protocol(protocol), e.what());
     }
 }
 

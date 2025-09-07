@@ -38,7 +38,7 @@ using namespace std::string_view_literals;
 
 CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
     if(frames.empty() || frames.size() > 2) {
-        throw MessageDecodingError("Wrong number of frames for CHP1 message");
+        throw MessageDecodingError("CHP1", "Wrong number of frames for CHP1 message");
     }
 
     try {
@@ -86,7 +86,7 @@ CHP1Message CHP1Message::disassemble(zmq::multipart_t& frames) {
         // Construct message
         return {sender, state, interval, flags, status, time};
     } catch(const MsgpackUnpackError& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CHP1", e.what());
     }
 }
 

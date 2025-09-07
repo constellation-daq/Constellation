@@ -10,27 +10,35 @@
 #include <numbers>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 #include <zmq.hpp>
+#include <zmq_addon.hpp>
 
+#include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/protocol/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::string_literals;
 
@@ -45,15 +53,6 @@ TEST_CASE("Basic Header Functions", "[core][core::message]") {
     REQUIRE(cscp1_header.getTime() == tp);
     REQUIRE(cscp1_header.getTags().empty());
     REQUIRE_THAT(cscp1_header.to_string(), ContainsSubstring("CSCP1"));
-}
-
-TEST_CASE("Basic Header Functions (CDTP1)", "[core][core::message]") {
-    const CDTP1Message::Header cdtp1_header {"senderCDTP", 0, CDTP1Message::Type::BOR};
-
-    REQUIRE_THAT(to_string(cdtp1_header.getSender()), Equals("senderCDTP"));
-    REQUIRE(cdtp1_header.getType() == CDTP1Message::Type::BOR);
-    REQUIRE(cdtp1_header.getTags().empty());
-    REQUIRE_THAT(cdtp1_header.to_string(), ContainsSubstring("CDTP1"));
 }
 
 TEST_CASE("Header String Output", "[core][core::message]") {
@@ -78,15 +77,6 @@ TEST_CASE("Header String Output", "[core][core::message]") {
     REQUIRE_THAT(string_out, ContainsSubstring("test_d: 1.5"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_s: String"));
     REQUIRE_THAT(string_out, ContainsSubstring("test_t: 1970-01-01 00:00:00.000000"));
-}
-
-TEST_CASE("Header String Output (CDTP1)", "[core][core::message]") {
-    const CDTP1Message::Header cdtp1_header {"senderCMDP", 1234, CDTP1Message::Type::DATA};
-
-    const auto string_out = cdtp1_header.to_string();
-
-    REQUIRE_THAT(string_out, ContainsSubstring("Type:   DATA"));
-    REQUIRE_THAT(string_out, ContainsSubstring("Seq No: 1234"));
 }
 
 TEST_CASE("Header Packing / Unpacking", "[core][core::message]") {
@@ -137,10 +127,6 @@ TEST_CASE("Header Packing / Unpacking (invalid protocol)", "[core][core::message
     REQUIRE_THROWS_MATCHES(CMDP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
                            InvalidProtocolError,
                            Message("Invalid protocol identifier \"INVALID\""));
-    // CDTP1 has separate header implementation, also test this:
-    REQUIRE_THROWS_MATCHES(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
-                           InvalidProtocolError,
-                           Message("Invalid protocol identifier \"INVALID\""));
 }
 
 TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
@@ -154,10 +140,6 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
     REQUIRE_THROWS_MATCHES(CMDP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
                            UnexpectedProtocolError,
                            Message("Received protocol \"CSCP1\" does not match expected identifier \"CMDP1\""));
-    // CDTP1 has separate header implementation, also test this:
-    REQUIRE_THROWS_MATCHES(CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
-                           UnexpectedProtocolError,
-                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CDTP1\""));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1)", "[core][core::message]") {
@@ -193,7 +175,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid number of frames)", "[
 
     REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
                            MessageDecodingError,
-                           Message("Error decoding message: Invalid number of message frames"));
+                           Message("Error decoding CMDP1 message: Invalid number of message frames"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core::message]") {
@@ -207,7 +189,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core:
     REQUIRE_THROWS_MATCHES(
         CMDP1Message::disassemble(log_frames),
         MessageDecodingError,
-        Message("Error decoding message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
+        Message("Error decoding CMDP1 message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][core::message]") {
@@ -220,7 +202,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][c
 
     REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
                            MessageDecodingError,
-                           Message("Error decoding message: \"ERROR\" is not a valid log level"));
+                           Message("Error decoding CMDP1 message: \"ERROR\" is not a valid log level"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -233,30 +215,6 @@ TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
 
     REQUIRE_THAT(cscp1_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCSCP"));
     REQUIRE(cscp1_msg2.getVerb().first == CSCP1Message::Type::SUCCESS);
-}
-
-TEST_CASE("Message Assembly / Disassembly (CDTP1)", "[core][core::message]") {
-    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA}, 1};
-    REQUIRE(cdtp1_msg.getPayload().empty());
-
-    auto frames = cdtp1_msg.assemble();
-    auto cdtp1_msg2 = CDTP1Message::disassemble(frames);
-
-    REQUIRE_THAT(cdtp1_msg2.getHeader().to_string(), ContainsSubstring("Sender: senderCDTP"));
-    REQUIRE(cdtp1_msg2.getPayload().empty());
-}
-
-TEST_CASE("Message Assembly / Disassembly (CDTP1, wrong number of frames)", "[core][core::message]") {
-    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::BOR}, 2};
-    cdtp1_msg.addPayload("frame1"s);
-    cdtp1_msg.addPayload("frame2"s);
-
-    auto frames = cdtp1_msg.assemble();
-
-    REQUIRE_THROWS_MATCHES(
-        CDTP1Message::disassemble(frames),
-        MessageDecodingError,
-        Message("Error decoding message: Wrong number of frames for BOR, exactly one payload frame expected"));
 }
 
 TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
@@ -311,47 +269,148 @@ TEST_CASE("Message Payload (CSCP1, too many frames)", "[core][core::message]") {
     // Check for excess frame detection
     REQUIRE_THROWS_MATCHES(CSCP1Message::disassemble(frames),
                            MessageDecodingError,
-                           Message("Error decoding message: Incorrect number of message frames"));
+                           Message("Error decoding CSCP1 message: Incorrect number of message frames"));
 }
 
-TEST_CASE("Message Payload (CDTP1)", "[core][core::message]") {
-    CDTP1Message cdtp1_msg {{"senderCDTP", 1234, CDTP1Message::Type::DATA}, 3};
+// CDTP2
 
-    // Add payload frame
-    for(int i = 0; i < 3; i++) {
-        msgpack::sbuffer sbuf_header {};
-        msgpack::pack(sbuf_header, "this is fine");
-        cdtp1_msg.addPayload(std::move(sbuf_header));
-    }
-
-    REQUIRE(cdtp1_msg.countPayloadBytes() == 39);
-
-    // Assemble and disassemble message
-    auto frames = cdtp1_msg.assemble();
-    auto cdtp1_msg2 = CDTP1Message::disassemble(frames);
-
-    // Retrieve payload
-    const auto& data = cdtp1_msg2.getPayload();
-    REQUIRE(data.size() == 3);
-
-    const auto front_span = data.front().span();
-    REQUIRE_THAT(msgpack_unpack_to<std::string>(to_char_ptr(front_span.data()), front_span.size()), Equals("this is fine"));
+TEST_CASE("CDTP2 DATA Packing / Unpacking", "[core][core::message]") {
+    // Create some dummy data
+    const std::vector<std::int32_t> vec_1 {1, 2, 3, 4};
+    const std::vector<std::int32_t> vec_2 {5, 6, 7, 8, 9};
+    const std::vector<std::int32_t> vec_3 {3, 1, 4, 1, 5, 9};
+    // Create DATA message
+    auto data_message = CDTP2Message("sender", CDTP2Message::Type::DATA, 2);
+    auto data_record_1 = CDTP2Message::DataRecord(1, {{{"block", 1}}});
+    data_record_1.addBlock({std::vector(vec_1)});
+    REQUIRE(data_record_1.countPayloadBytes() == 16);
+    data_message.addDataRecord(std::move(data_record_1));
+    auto data_record_2 = CDTP2Message::DataRecord(2, {{{"block", 2}}}, 2);
+    data_record_2.addTag("vecs", "2&3");
+    data_record_2.addBlock({std::vector(vec_2)});
+    data_record_2.addBlock({std::vector(vec_3)});
+    REQUIRE(data_record_2.countPayloadBytes() == 44);
+    data_message.addDataRecord(std::move(data_record_2));
+    REQUIRE(data_message.countPayloadBytes() == 60);
+    auto zmq_mpm = data_message.assemble();
+    // Decode DATA message
+    const auto data_message_decoded = CDTP2Message::disassemble(zmq_mpm);
+    REQUIRE_THAT(std::string(data_message_decoded.getSender()), Equals("sender"));
+    REQUIRE(data_message_decoded.getType() == CDTP2Message::Type::DATA);
+    REQUIRE(data_message_decoded.getDataRecords().size() == 2);
+    const auto& data_record_1_decoded = data_message_decoded.getDataRecords().at(0);
+    REQUIRE(data_record_1_decoded.getSequenceNumber() == 1);
+    REQUIRE(data_record_1_decoded.getTags().at("block") == 1);
+    REQUIRE(data_record_1_decoded.countPayloadBytes() == 16);
+    REQUIRE(data_record_1_decoded.getBlocks().size() == 1);
+    REQUIRE_THAT(data_record_1_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_1)).span()));
+    const auto& data_record_2_decoded = data_message_decoded.getDataRecords().at(1);
+    REQUIRE(data_record_2_decoded.getSequenceNumber() == 2);
+    REQUIRE(data_record_2_decoded.getTags().at("block") == 2);
+    REQUIRE(data_record_2_decoded.getTags().at("vecs") == "2&3"s);
+    REQUIRE(data_record_2_decoded.countPayloadBytes() == 44);
+    REQUIRE(data_record_2_decoded.getBlocks().size() == 2);
+    REQUIRE_THAT(data_record_2_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_2)).span()));
+    REQUIRE_THAT(data_record_2_decoded.getBlocks().at(1).span(), RangeEquals(PayloadBuffer(std::vector(vec_3)).span()));
 }
 
-TEST_CASE("Packing / Unpacking (CDTP1)", "[core][core::message]") {
-    constexpr std::uint64_t seq_no = 1234;
-    const CDTP1Message::Header cdtp1_header {"senderCDTP", seq_no, CDTP1Message::Type::EOR};
+TEST_CASE("CDTP2 BOR Packing / Unpacking", "[core][core::message]") {
+    // Create dummy user tags and configuration
+    Dictionary user_tags {};
+    user_tags["test"] = 1234;
+    Configuration config {};
+    config.set("used", "this is used", true);
+    config.set("unused", "this is not used", false);
+    // Create BOR message
+    const auto bor_message = CDTP2BORMessage("sender", user_tags, config);
+    auto zmq_mpm = bor_message.assemble();
+    // Decode BOR message and check content
+    const auto bor_message_decoded = CDTP2BORMessage(CDTP2Message::disassemble(zmq_mpm));
+    REQUIRE(bor_message_decoded.getUserTags().at("test") == 1234);
+    const auto config_decoded = bor_message_decoded.getConfiguration();
+    REQUIRE(config_decoded.get<std::string>("used") == "this is used");
+    REQUIRE_FALSE(config_decoded.has("unused"));
+}
 
-    // Pack header
+TEST_CASE("CDTP2 EOR Packing / Unpacking", "[core][core::message]") {
+    // Create dummy user tags and run metadata
+    Dictionary user_tags {};
+    user_tags["test"] = 1234;
+    Dictionary run_metadata {};
+    run_metadata["run_finished"] = "yes";
+    // Create EOR message
+    const auto eor_message = CDTP2EORMessage("sender", user_tags, run_metadata);
+    auto zmq_mpm = eor_message.assemble();
+    // Decode EOR message and check content
+    const auto eor_message_decoded = CDTP2EORMessage(CDTP2Message::disassemble(zmq_mpm));
+    REQUIRE(eor_message_decoded.getUserTags().at("test") == 1234);
+    REQUIRE(eor_message_decoded.getRunMetadata().at("run_finished") == "yes"s);
+}
+
+TEST_CASE("CDTP2 Invalid Number of Frames", "[core][core::message]") {
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addstr("msg1");
+    zmq_mpm.addstr("msg2");
+    REQUIRE_THROWS_MATCHES(
+        CDTP2Message::disassemble(zmq_mpm),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 message: Wrong number of ZeroMQ frames, exactly one frame expected"));
+}
+
+TEST_CASE("CDTP2 Unexpected Protocol", "[core][core::message]") {
     msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, cdtp1_header);
+    msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP1));
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
+                           UnexpectedProtocolError,
+                           Message("Received protocol \"CDTP1\" does not match expected identifier \"CDTP2\""));
+}
 
-    // Unpack header
-    const auto cdtp1_header_unpacked = CDTP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()});
+TEST_CASE("CDTP2 Invalid Protocol", "[core][core::message]") {
+    msgpack::sbuffer sbuf {};
+    msgpack_pack(sbuf, "INVALID");
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(
+        CDTP2Message::disassemble(zmq_mpm), InvalidProtocolError, Message("Invalid protocol identifier \"INVALID\""));
+}
 
-    // Compare unpacked header
-    REQUIRE(cdtp1_header_unpacked.getType() == CDTP1Message::Type::EOR);
-    REQUIRE(cdtp1_header_unpacked.getSequenceNumber() == seq_no);
+TEST_CASE("CDTP2 Incorrect Message Type", "[core][core::message]") {
+    auto data_message_1 = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    REQUIRE_THROWS_MATCHES(CDTP2BORMessage(std::move(data_message_1)),
+                           IncorrectMessageType,
+                           Message("Message type is incorrect: Not a BOR message"));
+    auto data_message_2 = CDTP2Message("sender", CDTP2Message::Type::DATA, 0);
+    REQUIRE_THROWS_MATCHES(CDTP2EORMessage(std::move(data_message_2)),
+                           IncorrectMessageType,
+                           Message("Message type is incorrect: Not an EOR message"));
+}
+
+TEST_CASE("CDTP2 Invalid Number of Data Records", "[core][core::message]") {
+    auto data_message_1 = CDTP2Message("sender", CDTP2Message::Type::BOR, 0);
+    REQUIRE_THROWS_MATCHES(
+        CDTP2BORMessage(std::move(data_message_1)),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 BOR message: Wrong number of data records, exactly two data records expected"));
+    auto data_message_2 = CDTP2Message("sender", CDTP2Message::Type::EOR, 0);
+    REQUIRE_THROWS_MATCHES(
+        CDTP2EORMessage(std::move(data_message_2)),
+        MessageDecodingError,
+        Message("Error decoding CDTP2 EOR message: Wrong number of data records, exactly two data records expected"));
+}
+
+TEST_CASE("CDTP2 Invalid Data Records", "[core][core::message]") {
+    msgpack::sbuffer sbuf {};
+    msgpack_pack(sbuf, get_protocol_identifier(Protocol::CDTP2));
+    msgpack_pack(sbuf, "sender");
+    msgpack_pack(sbuf, std::to_underlying(CDTP2Message::Type::DATA));
+    msgpack_pack(sbuf, "not an array");
+    zmq::multipart_t zmq_mpm {};
+    zmq_mpm.addmem(sbuf.data(), sbuf.size());
+    REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
+                           MessageDecodingError,
+                           Message("Error decoding CDTP2 message: Error unpacking data: data records are not in an array"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

@@ -29,13 +29,13 @@ corresponding Constellation satellite skeleton. The following table helps in fin
 | `RunLoop`      | `running`               | Equivalent with the difference that instead of keeping track of the running via a custom variable (like `m_running`) often found in EUDAQ Producers, Constellation provides a stop token.
 | `DoReset`      | -                       | In EUDAQ, this command puts the producer back into the initial state. In contrast, resetting a satellite in Constellation means calling its `initializing` method again.
 | `DoTerminate`  | Destructor              | The EUDAQ equivalent of the `terminate` action in Constellation is the `shutdown` command which can only be triggered when not running or in orbit. The corresponding code should be placed in the destructor of the satellite.
-| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because metrics are transmitted differently, more similar to log messages. More information can be found [here](../functionality/metrics.md).
+| `DoStatus`     | -                       | In Constellation no `DoStatus` equivalent exists because metrics are transmitted differently, more similar to log messages. More information can be found in the [metrics section](../functionality/metrics.md).
 
 ## Transmitting Data
 
-Data in EUDAQ is transmitted as `RawEvent` objects. There is the possibility of adding multiple so-called data blocks to a single
-event, as well as the option to store events as sub-events of others. The creation, outfitting and sending of a message in EUDAQ
-follows roughly this pattern:
+Data in EUDAQ is transmitted as `RawEvent` objects. There is the possibility of adding multiple so-called data blocks to a
+single event, as well as the option to store events as sub-events of others. The creation, outfitting and sending of a
+message in EUDAQ follows roughly this pattern:
 
 ```cpp
 // Create new event and set its ID
@@ -49,19 +49,19 @@ event->SetTag("my_tag", std::to_string(my_value));
 SendEvent(std::move(event));
 ```
 
-Constellation data messages consist of a header with metadata such as the sending satellite and the continuous message sequence,
-and any number of frames with binary data. These frames can be likened to the EUDAQ data blocks. A concept akin to sub-events
-does not exits in Constellation. Knowing this, the above sequence would translate to the following satellite code:
+In Constellation, data records follow a similar pattern to EUDAQ events. Each record may contain any number of data blocks
+with binary data. A concept akin to sub-events however does not exits in Constellation. Knowing this, the above sequence
+would translate to the following satellite code:
 
 ```cpp
-// Create new message, message sequence is handled by Constellation
-auto msg = newDataMessage();
-// Add data to the message
-msg.addFrame(std::move(data));
+// Create new data record, message sequence is handled by Constellation
+auto data_record = newDataRecord();
+// Add data to the data record
+data_record.addBlock(std::move(data));
 // Possibly add a tag
-msg.addTag("my_tag", my_value)
-// Send the message
-sendDataMessage(msg);
+data_record.addTag("my_tag", my_value)
+// Send the data record
+sendDataRecord(data_record);
 ```
 
 It should be noted that tag values in EUDAQ are limited to `std::string` while Constellation tags can hold any configuration

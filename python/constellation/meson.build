@@ -13,8 +13,6 @@ core_files = files(
   'core/cdtp.py',
   'core/controller.py',
   'core/configuration.py',
-  'core/datareceiver.py',
-  'core/datasender.py',
   'core/error.py',
   'core/fsm.py',
   'core/heartbeatchecker.py',
@@ -25,12 +23,15 @@ core_files = files(
   'core/network.py',
   'core/protocol.py',
   'core/py.typed',
+  'core/receiver_satellite.py',
   'core/satellite.py',
+  'core/transmitter_satellite.py',
 )
 
 core_message_files = files(
   'core/message/__init__.py',
   'core/message/cscp1.py',
+  'core/message/cdtp2.py',
   'core/message/exceptions.py',
   'core/message/msgpack_helpers.py',
   'core/message/multipart.py',
@@ -38,10 +39,6 @@ core_message_files = files(
 
 satellites_files = files(
   'satellites/__init__.py',
-)
-
-tools_files = files(
-  'tools/H5datareader.py',
 )
 
 py.install_sources(core_files,
@@ -52,9 +49,6 @@ py.install_sources(core_message_files,
 
 py.install_sources(satellites_files,
   subdir: 'constellation/satellites')
-
-py.install_sources(tools_files,
-  subdir: 'constellation/tools')
 
 subdir('satellites')
 

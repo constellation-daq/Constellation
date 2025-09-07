@@ -606,7 +606,7 @@ TEST_CASE("Catch wrong number of frames", "[satellite]") {
     auto recv_msg_wrong_frames = sender.recv();
     REQUIRE(recv_msg_wrong_frames.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_wrong_frames.getVerb().second),
-                 Equals("Error decoding message: Incorrect number of message frames"));
+                 Equals("Error decoding CSCP1 message: Incorrect number of message frames"));
 
     satellite.exit();
 }

@@ -14,7 +14,7 @@
 #include <string_view>
 
 #include "constellation/build.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -167,7 +167,7 @@ namespace constellation::satellite {
      */
     class CNSTLN_API InvalidCDTPMessageType : public satellite::SatelliteError {
     public:
-        explicit InvalidCDTPMessageType(message::CDTP1Message::Type type, std::string_view reason) {
+        explicit InvalidCDTPMessageType(message::CDTP2Message::Type type, std::string_view reason) {
             error_message_ = "Error handling CDTP message with type ";
             error_message_ += utils::enum_name(type);
             error_message_ += ": ";

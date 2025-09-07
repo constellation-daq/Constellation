@@ -16,6 +16,7 @@ import zmq
 
 class Protocol(StrEnum):
     CDTP1 = "CDTP\x01"
+    CDTP2 = "CDTP\x02"
     CSCP1 = "CSCP\x01"
     CMDP1 = "CMDP\x01"
     CHP1 = "CHP\x01"

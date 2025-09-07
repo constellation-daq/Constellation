@@ -15,7 +15,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/message/CDTP1Message.hpp"
+#include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 
@@ -51,14 +51,18 @@ void DevNullReceiverSatellite::stopping() {
                 << data_rate << " Gbps)";
 }
 
-void DevNullReceiverSatellite::receive_bor(const CDTP1Message::Header& header, Configuration config) {
-    LOG(INFO) << "Received BOR from " << header.getSender() << " with config" << config.getDictionary().to_string();
-}
-
-void DevNullReceiverSatellite::receive_data(CDTP1Message /*data_message*/) {
+void DevNullReceiverSatellite::receive_bor(std::string_view /*sender*/,
+                                           const Dictionary& /*user_tags*/,
+                                           const Configuration& /*config*/) {
     // Drop message
 }
 
-void DevNullReceiverSatellite::receive_eor(const CDTP1Message::Header& header, Dictionary run_metadata) {
-    LOG(INFO) << "Received EOR from " << header.getSender() << " with metadata" << run_metadata.to_string();
+void DevNullReceiverSatellite::receive_data(std::string_view /*sender*/, const CDTP2Message::DataRecord& /*data_record*/) {
+    // Drop message
+}
+
+void DevNullReceiverSatellite::receive_eor(std::string_view /*sender*/,
+                                           const Dictionary& /*user_tags*/,
+                                           const Dictionary& /*run_metadata*/) {
+    // Drop message
 }

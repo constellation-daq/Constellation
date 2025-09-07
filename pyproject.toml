@@ -39,7 +39,6 @@ dependencies = [
 [project.scripts]
 Controller = "constellation.core.controller:main"
 Monitor = "constellation.core.monitoring:main"
-DemoDataSender = "constellation.core.datasender:main"
 # 3rd-party Satellites
 SatelliteCaenHV = "constellation.satellites.CaenHV.__main__:main"
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.__main__:main"
@@ -48,6 +47,8 @@ SatelliteKeithley = "constellation.satellites.Keithley.__main__:main"
 SatelliteLakeShore218 = "constellation.satellites.LakeShore218.__main__:main"
 SatelliteLeCroy = "constellation.satellites.LeCroy.__main__:main"
 SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
+SatellitePyDevNullReceiver = "constellation.satellites.PyDevNullReceiver.__main__:main"
+SatellitePyRandomTransmitter = "constellation.satellites.PyRandomTransmitter.__main__:main"
 
 [project.urls]
 Homepage = "https://constellation.pages.desy.de/"
@@ -87,7 +88,7 @@ docs = [
 cli = ["ipython", "traitlets", "pygments"]
 # Satellite components
 caenhv = ["pycaenhv>=0.03", "pyserial"]
-hdf5 = ["h5py"]
+hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 keithley = ["pyserial"]
 lecroy = ["lecrunch3>=3.0.3", "numpy"]

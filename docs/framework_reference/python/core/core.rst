@@ -25,8 +25,6 @@ Submodules
    core.configuration
    core.controller
    core.cscp
-   core.datareceiver
-   core.datasender
    core.error
    core.fsm
    core.heartbeatchecker
@@ -37,4 +35,6 @@ Submodules
    core.multicast
    core.network
    core.protocol
+   core.receiver_satellite
    core.satellite
+   core.transmitter_satellite

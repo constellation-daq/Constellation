@@ -6,6 +6,14 @@ description: "A satellite that transmits random data"
 category: "Developer Tools"
 ---
 
+## Description
+
+This satellite creates random data and sends it out as fast as possible, allowing to test the network performance.
+Random data can either be generated continuously during the run or once at the beginning of the run, which is faster.
+
+When data sending is limited because the framework or the receiver cannot handle the data rate, the transmitter will sleep
+for 1ms. The duty cycle resulting from this is tracked in the `DUTY_CYCLE` metric.
+
 ## Building
 
 The RandomTransmitter satellite has no additional dependencies.
@@ -21,5 +29,11 @@ meson configure build -Dsatellite_random_transmitter=true
 |-----------|------|-------------|---------------|
 | `pregen` | Bool | Use pre-generated data | `false` |
 | `seed` | Unsigned 32-bit integer | Seed for the random engine | Random |
-| `frame_size` | Unsigned integer | Size of a data frame in bytes | `1024` |
-| `number_of_frames` | Unsigned integer | Number of data frames per data message | `1` |
+| `block_size` | Unsigned integer | Size of a data block in bytes | `1024` |
+| `number_of_blocks` | Unsigned integer | Number of data blocks per data message | `1` |
+
+## Metrics
+
+| Metric | Description | Value Type | Metric Type | Interval |
+|--------|-------------|------------|-------------|----------|
+| `DUTY_CYCLE` | Total duty cycle of the run loop | Integer | `LAST_VALUE` | 5s |

@@ -54,7 +54,7 @@ zmq::multipart_t CSCP1Message::assemble(bool keep_payload) {
 
 CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
     if(frames.size() < 2 || frames.size() > 3) {
-        throw MessageDecodingError("Incorrect number of message frames");
+        throw MessageDecodingError("CSCP1", "Incorrect number of message frames");
     }
 
     // Decode header
@@ -78,6 +78,6 @@ CSCP1Message CSCP1Message::disassemble(zmq::multipart_t& frames) {
 
         return cscp1_message;
     } catch(const MsgpackUnpackError& e) {
-        throw MessageDecodingError(e.what());
+        throw MessageDecodingError("CSCP1", e.what());
     }
 }

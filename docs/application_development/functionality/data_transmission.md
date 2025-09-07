@@ -16,153 +16,135 @@ Any satellite that wishes to transmit measurement data for storage should inheri
 {cpp:class}`Satellite <constellation::satellite::Satellite>` class.
 This class implements the connection and transmission to data receivers in the Constellation in a transparent way.
 
-Data will only be transmitted in the `RUN` state. It is always preceded by a begin-of-run (BOR) message sent by the framework
-after the `starting()` function has successfully been executed, and it is followed by a end-of-run (EOR) message send
-automatically after the `stopping()` function has succeeded.
+Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always preceded by a begin-of-run (BOR) message sent
+by the framework after the `starting()` function has successfully been executed, and it is followed by a end-of-run (EOR)
+message send automatically after the `stopping()` function has succeeded.
 
-Data messages are created and sent in three steps. First, the data message is created, optionally allocating the number of
-frames it will contain if known already. Subsequently, these frames are added to the message:
+Data is sent in three steps. First, a data record is created, optionally allocating the number of blocks it will contain if
+known already. Subsequently, these blocks are added to the message:
 
 ```cpp
-// Creating a new data message with two frames pre-allocated:
-auto msg = newDataMessage(2);
-msg.addFrame(std::move(frame0));
-msg.addFrame(std::move(frame1));
+// Creating a new data message with two blocks pre-allocated:
+auto data_record = newDataRecord(2);
+data_record.addBlock(std::move(data_0));
+data_record.addBlock(std::move(data_1));
 ```
 
 ```{hint}
 C++ Move semantics `std::move` are strongly encouraged here in order to avoid copying memory as described below.
 ```
 
-Finally, the message is send to the connected receiver via one of the following two methods:
+Finally, the message is sent to the connected receiver:
 
-* The data can be sent with a pre-configured timeout. If the transmitter fails to send the data within this configured time
-  window, an exception is thrown and the satellite transitions into the `ERROR` state. This is the most commonly used method
-  of transmitting data and ensuring that there is no data loss.
+```cpp
+sendDataRecord(std::move(data_record));
+```
 
-  ```cpp
-  sendDataMessage(msg);
-  ```
+If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
+transitions into the {bdg-secondary}`ERROR` state.
 
-* The second option is to handle potential issues in transmitting the data in satellite code. In this case, the message
-  should be sent via
+It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
+on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately:
 
-  ```cpp
-  auto sent = trySendDataMessage(msg);
-  ```
+```cpp
+if(!canSendRecord()) {
+  device->set_busy();
+}
+```
 
-  The boolean return value indicates if the sending was successful or failed. Either another attempt of sending the message
-  can be undertaken, or the message can be discarded. It should be noted that the {cpp:func}`trySendDataMessage() <constellation::satellite::TransmitterSatellite::trySendDataMessage()>` method is annotated
-  with the `[[nodiscard]]` keyword, indicating that the return value cannot be discarded and *has* to be used.
+The framework does not drop data itself and a sequence number scheme is implemented to ensure the completeness of the data.
+Data can be dropped in the satellite by creating a new data record and discarding the old one. Runs where this happened will
+be marked as `INCOMPLETE` in the run metadata.
 
-Data messages contain a header with the canonical name of the sending satellite, the current system time when creating the
-message and a continuous sequence number. This means there is no need to separately count messages in user code.
+```{note}
+It is not required to check if a record can be sent immediately before every call to to send a data record if no explicit
+action is be taken. If a record can not be sent immediately, the sending function will block until the record can be sent or
+the run is aborted due to a data sending timeout.
+```
 
 :::
 :::{tab-item} Python
 :sync: python
 
-Any satellite that wishes to send data should inherit from the `DataSender`
-class instead of from the `Satellite` base class. This will provide additional
-facilities to queue data which will be transmitted via CDTP to a `DataReceiver`
-such as the `H5DataWriter`. The transmission is limited to the `RUN` state,
-however. Any data sending must therefore be limited to the `do_run` method:
+Any satellite that wishes to transmit measurement data for storage should inherit from the
+{py:class}`TransmitterSatellite <core.transmitter_satellite.TransmitterSatellite>` class instead of the regular
+{py:class}`Satellite <core.satellite.Satellite>` class.
+This class implements the connection and transmission to data receivers in the Constellation in a transparent way.
+
+Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always preceded by a begin-of-run (BOR) message sent
+by the framework after the {py:func}`do_starting() <core.satellite.Satellite.do_starting>` function has successfully been
+executed, and it is followed by a end-of-run (EOR) message send automatically after the
+{py:func}`do_stopping() <core.satellite.Satellite.do_stopping>` function has succeeded.
+
+Data is sent in three steps. First, a data record is created. Subsequently, data blocks are added to the message:
 
 ```python
-class RandomDataSender(DataSender):
-    """Satellite which sends a numpy array with random values via CDTP."""
-
-    def do_run(self, run_identifier: str) -> str:
-        """Example implementation that generates random values."""
-        # Timestamp when started
-        t0 = time.time_ns()
-        # Track number of packets sent
-        num = 0
-
-        # Run loop
-        while not self._state_thread_evt.is_set():
-            # Calculate our demo samples.
-            # In a real application, this data could
-            # e.g. come from a hardware device.
-            samples = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-            fs = random.uniform(0, 3)
-            data_load = np.sin(2 * np.pi * fs * samples)
-            # Put our data samples into the queue:
-            self.data_queue.put((data_load.tobytes(), {"dtype": f"{data_load.dtype}"}))
-            if num%10 == 0:
-                self.log_cdtp_s.debug(f"Queueing data packet {num}")
-            num += 1
-            time.sleep(0.25)
-
-        t1 = time.time_ns()
-        self.log_cdtp_s.info(f"total time for {num} evt / {num * len(data_load) / 1024 / 1024}MB: {(t1 - t0) / 1000000000}s")
-        return "Finished acquisition"
+data_record = self.new_data_record()
+data_record.add_block(data_0)
+data_record.add_block(data_1)
 ```
 
-This example implements a satellite that sends arrays of random data. In order
-to queue it for transmission, the data have to be inserted into a Queue that is
-available as `self.data_queue` as a tuple consisting of the actual data and the
-metadata (a dictionary).
+Finally, the message is sent to the connected receiver:
+
+```python
+self.send_data_record(data_record)
+```
+
+If the transmitter fails to send the data within a configured time window, an exception is thrown and the satellite
+transitions into the {bdg-secondary}`ERROR` state.
+
+It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
+on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately::
+
+```python
+if not self.can_send_record():
+    self.device.set_busy()
+}
+```
+
+The framework does not drop data itself and a sequence number scheme is implemented to ensure the completeness of the data.
+Data can be dropped in the satellite by creating a new data record and discarding the old one. Runs where this happened will
+be marked as `INCOMPLETE` in the run metadata.
 
 ```{note}
-It should be noted that the data need to be provided as `bytes`, or as `list[bytes]` if it should be send in multiple frames.
-See notes on the data format and performance below for more information.
+It is not required to check if a record can be sent immediately before every call to to send a data record if no explicit
+action is be taken. If a record can not be sent immediately, the sending function will block until the record can be sent or
+the run is aborted due to a data sending timeout.
 ```
-
-The full call therefore becomes:
-
-```python
-self.data_queue.put(tuple(data: bytes, meta: dict[str, Any]))
-```
-
-More information on the metadata can be found in the final section of this document.
 
 :::
 ::::
 
 ## Data Format & Performance
 
+Constellation makes no assumption on the data stored in data records. All data is stored in block, handled as binary blob
+and transmitted as such. A data record can contain any number of blocks.
+
 ::::{tab-set}
 :::{tab-item} C++
 :sync: cxx
 
-Constellation makes no assumption on the data stored in message frames. All data is stored in frames, handled as binary blob
-and transmitted as such. The message frames of data messages are designed for minimum data copy and maximum speed.
-A data message can contain any number of frames.
-
-The {cpp:func}`DataMessage::addFrame() <constellation::satellite::TransmitterSatellite::DataMessage::addFrame()>` function takes so-called payload buffer as argument.
+The {cpp:func}`DataRecord::addBlock() <constellation::satellite::TransmitterSatellite::DataRecord::addBlock()>` method takes so-called payload buffer as argument.
 Consequently, the data to be transmitted has to be converted into such a {cpp:class}`PayloadBuffer <constellation::message::PayloadBuffer>`.
 For the most common C++ ranges like `std::vector` or `std::array`, moving the object into the payload buffer with `std::move()` is sufficient.
-
-```{seealso}
-Since the data transmission protocol as well as the event metadata come with additional overhead, the largest data throughput
-depends on the frame size as well as on the number of frames transmitted by a single message. For performance considerations,
-it is advised to read [Increase Data Rate in C++](../howtos/data_transmission_speed.md).
-```
 
 :::
 :::{tab-item} Python
 :sync: python
 
-Constellation makes no assumption on the data stored in message frames. All data
-is stored in frames, handled as binary blob and transmitted as such. The message
-frames of data messages are designed for minimum data copy and maximum speed. A
-data message can contain any number of frames.
+The {py:func}`DataRecord.add_block() <core.message.cdtp2.DataRecord.add_block>` method takes a {py:class}`bytes` object as argument.
 
-When storing data in numpy arrays, the `to_bytes` method can be used to convert the array into `bytes`.
-
-If the data should be sent as multiple frames, a list of bytes has to be added into the `data_queue`.
-
-```{caution}
-Sending many small packets over the network often suffers from a performance penalty due to the additional overhead created
-by the protocol as well as the TCP/IP communication. It should be considered to use multiple frames or to concatenate the data
-into larger binary blobs. A future version of the CDTP protocol is currently under development that will automatically
-assemble multiple small messages into larger ones to optimize performance.
+```{tip}
+If the data to be sent is stored in a numpy array, it can be converted into a {py:class}`bytes` object using the `tobytes()` method.
 ```
-
 
 :::
 ::::
+
+```{seealso}
+Data rate benchmarks can be found in the application developer guide under
+[Increase Data Rate in C++](..//howtos/data_transmission_speed.md).
+```
 
 ## Metadata
 
@@ -181,7 +163,7 @@ Constellation provides the option to attach metadata to each message sent by the
   }
   ```
 
-  In addition to these user-provided tags, the payload of the BOR message contains the full satellite configuration.
+  In addition to these user-provided tags, the BOR message also contains the full satellite configuration.
 
 * Similarly, for metadata only available at the end of the run such as aggregate statistics, end-of-run (EOR) tags can be set
   in the `stopping()` function:
@@ -199,7 +181,7 @@ Constellation provides the option to attach metadata to each message sent by the
 
   ```cpp
   // Create a new message
-  auto msg = newDataMessage();
+  auto msg = newDataRecord();
 
   // Add timestamps in picoseconds
   msg.addTag("timestamp_begin", ts_start_pico);
@@ -213,39 +195,37 @@ Constellation provides the option to attach metadata to each message sent by the
 Constellation provides the option to attach metadata in the form of dictionaries
 to each message sent by the satellite. There are three possibilities:
 
-* Metadata available at the beginning of the run such as additional hardware
-  information or firmware revisions can be attached to the begin-of-run (BOR)
-  message. This can be done at any time but latest in the `do_starting` method:
+* Metadata available at the beginning of the run such as additional hardware information or firmware revisions can be attached
+  to the begin-of-run (BOR) message. This has to be performed in the {py:func}`do_starting() <core.satellite.Satellite.do_starting>` method:
 
   ```python
-      def do_starting(self, run_identifier:str) -> str:
-        self.BOR = {"something": "interesting", "more_important": "stuff"}
-        return "Prepared!"
-
+  def do_starting(self, run_identifier: str) -> str:
+      self.bor = {"something": "interesting", "more_important": "stuff"}
+      return "Started"
   ```
 
   In addition to these user-provided tags, the payload of the BOR message contains the full satellite configuration.
 
-* Similarly, for metadata only available at the end of the run such as aggregate
-  statistics, end-of-run (EOR) tags can be set latest in the `do_stopping` method:
+* Similarly, for metadata only available at the end of the run such as aggregate statistics, end-of-run (EOR) tags can be set
+  in the {py:func}`do_stopping() <core.satellite.Satellite.do_stopping>` method:
 
   ```python
-      def do_stoping(self) -> str:
-        self.BOR = {"something": "interesting", "more_important": "stuff"}
-        return "Prepared!"
-
+  def do_stoping(self) -> str:
+      self.eor = {"something": "interesting", "more_important": "stuff"}
+      return "Stopped"
   ```
 
 * Finally, metadata can be attached to each individual data message sent during the run:
 
   ```python
-       def do_run(self, run_identifier: str) -> str:
-        while not self._state_thread_evt.is_set():
-            data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-            meta = {"dtype": f"{data_load.dtype}", "other_info": 12345}
-            self.data_queue.put((data.tobytes(), meta))
-        return "Finished acquisition"
-
+  def do_run(self, run_identifier: str) -> str:
+      while not self._state_thread_evt.is_set():
+          data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
+          tags = {"dtype": str(data.dtype), "other_info": 12345}
+          data_record = self.new_data_record(tags)
+          data_record.add_block(data.tobytes())
+          self.send_data_record(data_record)
+      return "Finished run"
    ```
 
 :::

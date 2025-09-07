@@ -672,6 +672,12 @@ std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_s
         receiver_ptr->ReceiverSatellite::failure_receiver();
     }
 
+    // failure from transmitter comes first to ensure EOR is sent
+    auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
+    if(transmitter_ptr != nullptr) {
+        transmitter_ptr->TransmitterSatellite::failure_transmitter(previous_state);
+    }
+
     failure(previous_state, reason);
 
     // Reset user status

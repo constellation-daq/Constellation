@@ -14,6 +14,9 @@ asio_dep = declare_dependency(
   compile_args: ['-DASIO_STANDALONE=1', '-DASIO_HAS_SNPRINTF=1'],
 )
 
+# atomic_queue
+atomic_queue_dep = dependency('atomic_queue', default_options: ['tests=false'])
+
 # ZeroMQ with draft API
 libzmq_sys_has_draft_api_poller = false
 # Check system libzmq (we cannot use dependency since we would have to overwrite it)
@@ -42,11 +45,9 @@ cppzmq_sp_default_options = [
   'tests=disabled',
 ]
 if not libzmq_sys_has_draft_api_poller
-  # Override libzmq and cppzmq dependencies to always use fallback, regardless of meson settings
-  libzmq_sp = subproject('libzmq', default_options: libzmq_sp_default_options)
-  meson.override_dependency('libzmq', libzmq_sp.get_variable('libzmq_dep'))
-  cppzmq_sp = subproject('cppzmq', default_options: cppzmq_sp_default_options)
-  meson.override_dependency('cppzmq', cppzmq_sp.get_variable('cppzmq_dep'))
+  # Run libzmq and cppzmq subprojects to override dependencies regardless of meson settings
+  subproject('libzmq', default_options: libzmq_sp_default_options)
+  subproject('cppzmq', default_options: cppzmq_sp_default_options)
 endif
 # Get libzmq dependency first and then cppzmq dependency to ensure libzmq is setup up correctly with draft API
 dependency('libzmq', default_options: libzmq_sp_default_options)
