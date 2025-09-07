@@ -303,7 +303,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
                 continue;
             }
         } else {
-            // Skip send timeout is not reached yet
+            // Skip if send timeout is not reached yet
             if(!send_timer.timeoutReached()) {
                 std::this_thread::yield();
                 continue;

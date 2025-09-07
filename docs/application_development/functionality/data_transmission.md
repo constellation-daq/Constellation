@@ -142,7 +142,7 @@ If the data to be sent is stored in a numpy array, it can be converted into a {p
 ::::
 
 ```{seealso}
-Data rate benchmarks can be found in the operator guide under
+Data rate benchmarks can be found in the application developer guide under
 [Increase Data Rate in C++](..//howtos/data_transmission_speed.md).
 ```
 
