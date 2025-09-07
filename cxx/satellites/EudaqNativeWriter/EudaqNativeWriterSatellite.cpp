@@ -27,6 +27,8 @@
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 
+#include "FileSerializer.hpp"
+
 using namespace constellation::config;
 using namespace constellation::message;
 using namespace constellation::protocol;
