@@ -55,7 +55,7 @@ markdownlint.............................................................Passed
 reuse lint-file..........................................................Passed
 ```
 
-Here, the creation of the commit has been prevented because one of the checks has failed - in this case the check to not commit to the `main branch`.
+Here, the creation of the commit has been prevented because one of the checks has failed - in this case the check to not commit to the `main` branch.
 New changes resolving the reported issues have to be added to the commit diff before attempting to commit anew.
 
 Sometimes it is necessary to temporarily skip these checks for a specific commit.
