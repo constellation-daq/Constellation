@@ -23,6 +23,7 @@ listener_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [core_dep],
 )
+meson.override_dependency('ConstellationListener', listener_dep)
 
 pkg.generate(listener_lib,
   description: 'Constellation listener library',

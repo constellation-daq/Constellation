@@ -24,6 +24,7 @@ exec_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [core_dep, satellite_dep, argparse_dep],
 )
+meson.override_dependency('ConstellationExec', exec_dep)
 
 pkg.generate(exec_lib,
   description: 'Constellation exec library',

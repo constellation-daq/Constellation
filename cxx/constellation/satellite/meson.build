@@ -27,6 +27,7 @@ satellite_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [core_dep, atomic_queue_dep, cppzmq_dep],
 )
+meson.override_dependency('ConstellationSatellite', satellite_dep)
 
 pkg.generate(satellite_lib,
   description: 'Constellation satellite library',

@@ -58,6 +58,7 @@ core_dep = declare_dependency(
     malloc_dep,
   ],
 )
+meson.override_dependency('ConstellationCore', core_dep)
 
 pkg.generate(core_lib,
   description: 'Constellation core library',
