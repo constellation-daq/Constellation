@@ -172,7 +172,8 @@ class TransmitterSatellite(Satellite):
         self._run_metadata["time_end"] = datetime.now(timezone.utc)
         if self._mark_run_tainted:
             condition_code |= RunCondition.TAINTED
-        # TODO: check degraded
+        if self.run_degraded:
+            condition_code |= RunCondition.DEGRADED
         self._run_metadata["condition_code"] = condition_code.value
         self._run_metadata["condition"] = condition_code.name
 

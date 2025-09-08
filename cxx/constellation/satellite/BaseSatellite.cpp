@@ -72,7 +72,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
           getCanonicalName(),
           [&]() { return fsm_.getState(); },
           [&](std::string_view reason) { fsm_.requestInterrupt(reason); },
-          [&]() { run_degraded_ = true; }) {
+          [&](std::string_view reason) { mark_degraded(reason); }) {
 
     // Check name
     if(!CSCP::is_valid_satellite_name(to_string(name))) {
@@ -520,6 +520,13 @@ std::string BaseSatellite::get_user_status_or(std::string message) {
     return status;
 }
 
+void BaseSatellite::mark_degraded(std::string_view reason) {
+    if(CSCP::is_one_of_states<CSCP::State::starting, CSCP::State::RUN>(fsm_.getState()) && !run_degraded_) {
+        run_degraded_ = true;
+        LOG(logger_, WARNING) << "Marking run as degraded: " << reason;
+    }
+}
+
 void BaseSatellite::apply_internal_config(const Configuration& config) {
 
     if(config.has("_heartbeat_interval")) {
@@ -593,7 +600,13 @@ std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configurat
 }
 
 std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_identifier) {
-    starting(run_identifier);
+    // Reset degradation marker
+    run_degraded_ = false;
+
+    // Store run identifier
+    run_identifier_ = std::move(run_identifier);
+
+    starting(run_identifier_);
 
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
@@ -602,14 +615,8 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
 
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
-        transmitter_ptr->TransmitterSatellite::starting_transmitter(run_identifier, config_);
+        transmitter_ptr->TransmitterSatellite::starting_transmitter(run_identifier_, config_);
     }
-
-    // Store run identifier
-    run_identifier_ = std::move(run_identifier);
-
-    // Reset degradation marker:
-    run_degraded_ = false;
 
     return {get_user_status_or("Satellite started run " + run_identifier_ + " successfully")};
 }

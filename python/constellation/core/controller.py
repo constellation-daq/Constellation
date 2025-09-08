@@ -418,7 +418,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
-    def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
+    def _add_satellite_heartbeat(self, service: DiscoveredService) -> None:
         """Callback method registering satellite's heartbeat."""
         if not service.alive:
             return

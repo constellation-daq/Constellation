@@ -137,6 +137,13 @@ namespace constellation::satellite {
          */
         bool terminated() const { return terminated_.load(); }
 
+    protected:
+        /**
+         * @brief Helper to check whether the current or past run has been marked as degraded
+         * @return True if the run has been marked as degraded, false otherwise
+         */
+        bool is_run_degraded() const { return run_degraded_.load(); }
+
     private:
         /**
          * @brief Get the next CSCP command
@@ -213,6 +220,11 @@ namespace constellation::satellite {
          */
         void set_user_status(std::string message);
 
+        /**
+         * @brief Helper to mark a run as degraded
+         */
+        void mark_degraded(std::string_view reason);
+
     public:
         /// @cond doxygen_suppress
         virtual void initializing(config::Configuration& config) = 0;
@@ -239,12 +251,6 @@ namespace constellation::satellite {
 
     protected:
         log::Logger logger_; // NOLINT(misc-non-private-member-variables-in-classes)
-
-        /**
-         * @brief Helper to check whether the current or past run has been marked as degraded
-         * @return True if the run has been marked as degraded, false otherwise
-         */
-        bool is_run_degraded() const { return run_degraded_.load(); }
 
     private:
         zmq::socket_t cscp_rep_socket_;

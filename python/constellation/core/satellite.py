@@ -57,6 +57,7 @@ class Satellite(
         self.log_satellite = self.get_logger("CTRL")
 
         self.run_identifier: str = ""
+        self.run_degraded: bool = False
         self.config = Configuration({})
 
         # give monitoring a chance to start up and catch early messages
@@ -72,9 +73,6 @@ class Satellite(
         self.register_offer(CHIRPServiceIdentifier.MONITORING, self.mon_port)
         self.emit_offers()
         self.request(CHIRPServiceIdentifier.HEARTBEAT)
-
-        # register callback for heartbeat checker
-        self.register_heartbeat_callback(self._heartbeat_interrupt)
 
         # Check whether the Satellite has a reconfigure state implemented.
         # If so, add the command to the list of available commands.
@@ -95,7 +93,7 @@ class Satellite(
 
     @debug_log
     @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
-    def _add_satellite_heatbeat(self, service: DiscoveredService) -> None:
+    def _add_satellite_heartbeat(self, service: DiscoveredService) -> None:
         """Callback method registering satellite's heartbeat."""
         if service.alive:
             self.log_satellite.debug(f"Registering new host for heartbeats at {service.address}:{service.port}")
@@ -154,6 +152,21 @@ class Satellite(
             self.fsm.failure(err_msg)
             self._wrap_failure(err_msg)
         super().reentry()
+
+    @handle_error
+    @debug_log
+    def _heartbeat_interrupt(self, reason: str) -> None:
+        try:
+            self.log_satellite.debug("Attempting to interrupt")
+            self._transition("interrupt", None, thread=False)
+        except Exception:
+            # Interrupt not allowed, continue
+            pass
+
+    def _mark_degraded(self, reason: str) -> None:
+        if self.fsm.current_state_value in [SatelliteState.starting, SatelliteState.RUN] and not self.run_degraded:
+            self.run_degraded = True
+            self.log_satellite.warning("Marking run as degraded: %s", reason)
 
     # --------------------------- #
     # ----- satellite commands ----- #
@@ -319,6 +332,7 @@ class Satellite(
         control to the device-specific public method.
 
         """
+        self.run_degraded = False
         self.run_identifier = run_identifier
         self.log_satellite.info(f"Starting run '{run_identifier}'")
         msg: str | None = self.do_starting(run_identifier)
@@ -405,12 +419,6 @@ class Satellite(
     def fail_gracefully(self) -> str:
         """Method called when reaching 'ERROR' state."""
         return "Failed gracefully."
-
-    @handle_error
-    @debug_log
-    def _heartbeat_interrupt(self, name: str, State: SatelliteState) -> None:
-        self.log_satellite.debug("Interrupting")
-        self._transition("interrupt", None, thread=False)
 
     @handle_error
     @debug_log
