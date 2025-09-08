@@ -41,6 +41,7 @@ gui_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [core_dep, controller_dep, qt_dep],
 )
+meson.override_dependency('ConstellationGUI', gui_dep)
 
 pkg.generate(gui_lib,
   description: 'Constellation GUI library',

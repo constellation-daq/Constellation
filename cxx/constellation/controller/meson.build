@@ -24,6 +24,7 @@ controller_dep = declare_dependency(
   include_directories: constellation_inc,
   dependencies: [core_dep, cppzmq_dep],
 )
+meson.override_dependency('ConstellationController', controller_dep)
 
 pkg.generate(controller_lib,
   description: 'Constellation controller library',
