@@ -23,7 +23,7 @@ In all other cases (i.e. hardware control for a niche system, large control code
 ## Listing an External Satellite in the Library
 
 Satellites not part of the main Constellation repository can still be listed in the Satellite Library as externally available component.
-To add a satellite to the library, a README file that complies with the conventions for COnstellation satellite documentation must be publicly accessible and an entry has to be added to the [external_satellites.json](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/satellites/external_satellites.json) file in the main Constellation repository, containing the following keys:
+To add a satellite to the library, a README file that complies with the conventions for Constellation satellite documentation must be publicly accessible and an entry has to be added to the [external_satellites.json](https://gitlab.desy.de/constellation/constellation/-/blob/main/docs/satellites/external_satellites.json) file in the main Constellation repository, containing the following keys:
 
 ```json
 {
