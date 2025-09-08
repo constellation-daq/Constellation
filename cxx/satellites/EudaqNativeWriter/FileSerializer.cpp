@@ -163,10 +163,7 @@ void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& u
     }
 }
 
-void FileSerializer::serializeDelimiterMsg(std::string_view sender,
-                                           CDTP2Message::Type type,
-                                           const Dictionary& user_tags,
-                                           const Dictionary& framework_tags) {
+void FileSerializer::serializeDelimiterMsg(std::string_view sender, CDTP2Message::Type type, const Dictionary& tags) {
     LOG(DEBUG) << "Writing delimiter event";
 
     // Set correct flags for BORE and EORE:
@@ -179,11 +176,11 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender,
 
     // Parse BOR tags to set event descriptor and block handling
     if(type == CDTP2Message::Type::BOR) {
-        parse_bor_tags(sender, user_tags);
+        parse_bor_tags(sender, tags);
     }
 
     // Serialize header with event flags
-    serialize_header(sender, 0, framework_tags, flags);
+    serialize_header(sender, 0, tags, flags);
 
     // BORE/EORE does not contain data - write empty blocks and empty subevent count:
     write_blocks({});

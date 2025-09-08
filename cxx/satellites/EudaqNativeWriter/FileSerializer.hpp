@@ -73,13 +73,11 @@ public:
      *
      * @param sender Sender name
      * @param type Message type
-     * @param user_tags User tags
-     * @param framework_tags Framework tags
+     * @param tags Framework and user tags
      */
     void serializeDelimiterMsg(std::string_view sender,
                                constellation::message::CDTP2Message::Type type,
-                               const constellation::config::Dictionary& user_tags,
-                               const constellation::config::Dictionary& framework_tags);
+                               const constellation::config::Dictionary& tags);
 
     /**
      * @brief Function to serialize data record

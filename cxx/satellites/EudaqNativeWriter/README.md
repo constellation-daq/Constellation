@@ -27,9 +27,9 @@ satellites should set in order to ensure the data can be correctly decoded:
 
 BOR and EOR messages which arrive before the start of a run and after its end are treated differently from regular data
 messages. The corresponding EUDAQ events are marked as BORE and EORE, respectively. The header of the EUDAQ event will
-contain the dictionary of the corresponding Constellation data records, which is the satellite configuration for the BOR
-message and the run metadata for the EOR message. The additional header tags of the Constellation messages are not stored but
-only used for configuration of the serializer as described above.
+contain all information from the corresponding Constellation data records. For the BOR, this is the user-provided tags as
+well as the additional `EUDAQ_CONFIG` key containing a string representation of the satellite configuration. For the EOR, the
+user-provided tags and the framework-provided metadata are merged into a single dictionary.
 
 The data events can contain the following header flags which will be interpreted and translated to the corresponding EUDAQ
 flags or event configurations:

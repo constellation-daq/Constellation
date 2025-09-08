@@ -85,7 +85,12 @@ void EudaqNativeWriterSatellite::receive_bor(std::string_view sender,
                                              const Dictionary& user_tags,
                                              const Configuration& config) {
     LOG(INFO) << "Received BOR from " << sender << " with config" << config.getDictionary().to_string();
-    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::BOR, user_tags, config.getDictionary());
+
+    // Add the configuration as single key to the BOR tags:
+    auto header_tags = user_tags;
+    header_tags["EUDAQ_CONFIG"] = config.getDictionary().to_string();
+
+    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::BOR, header_tags);
 }
 
 void EudaqNativeWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
@@ -103,5 +108,10 @@ void EudaqNativeWriterSatellite::receive_eor(std::string_view sender,
                                              const Dictionary& user_tags,
                                              const Dictionary& run_metadata) {
     LOG(INFO) << "Received EOR from " << sender << " with metadata" << run_metadata.to_string();
-    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::EOR, user_tags, run_metadata);
+
+    // Merge user tags and metadata:
+    auto merged_tags = user_tags;
+    merged_tags.insert(run_metadata.begin(), run_metadata.end());
+
+    serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::EOR, merged_tags);
 }
