@@ -7,7 +7,7 @@ if not get_option('listener_observatory')
 endif
 
 if get_option('build_gui') == 'none'
-  warning('Skipping Observatory since build_gui is set to none')
+  message('Skipping Observatory since build_gui is set to none')
   subdir_done()
 endif
 
