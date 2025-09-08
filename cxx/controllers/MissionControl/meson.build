@@ -6,7 +6,7 @@ if not get_option('controller_missioncontrol')
 endif
 
 if get_option('build_gui') == 'none'
-  warning('Skipping MissionControl since build_gui is set to none')
+  message('Skipping MissionControl since build_gui is set to none')
   subdir_done()
 endif
 
