@@ -25,6 +25,7 @@
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
 
 using namespace constellation::config;
