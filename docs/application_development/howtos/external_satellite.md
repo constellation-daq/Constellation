@@ -1,7 +1,7 @@
 # Building External Satellites
 
-External satellites are satellites that have their implementation not in the Constellation repository, but in some downstream
-code base. This is typically the case for highly specialized satellites such as detector prototypes.
+External satellites are satellites that are not included in the main Constellation repository but live in a separate location.
+More information on how to determine where to place a new satellite can be found in the [introduction](../intro/listing.md).
 
 ## Installing Constellation
 
@@ -52,9 +52,9 @@ source venv/bin/activate
 :::
 ::::
 
-## Starting from a Satellite Template
+## Starting from a Template
 
-Constellation provides [template satellites](https://gitlab.desy.de/constellation/templates) for Python and for C++ with the
+Constellation provides [satellite template](https://gitlab.desy.de/constellation/templates) for Python and for C++ with the
 [Meson](https://mesonbuild.com/) and [CMake](https://cmake.org/) build systems, which can be used as a starting point.
 On GitHub, new repositories can be created from the template repositories using the green `Use this template` button.
 
