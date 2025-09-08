@@ -203,24 +203,6 @@ to implement anything satellite-specific for this method. If the satellite howev
 that `super().reentry()` is called as last step of that routine, so that the
 `Satellite` base classes `reentry` methods are executed as well.
 
-## Installation of a satellite and integration into Constellation
-
-To make the satellite accessible via the command line and install it as part of Constellation, the `main` function needs to be moved into a file named `__main__.py`. Both this file and the satellite's module should be placed in their own directory under `python/constellation/satellites`  As the `main` function is very interchangeable between different satellites (except for the satellite name), the corresponding file can be copied e.g. from the `Mariner`` satellite.
-
-All additional Python files have to be included in a `meson.build` file.  Again, the respective file from the `Mariner` satellite can be used as a template.
-The path to the folder which includes the satellite files then needs to be included the `meson.build` file in
-`python/constellation/satellites`.
-
-To create an executable for the satellite (i.e. an entry point), the main function can be added to `[project.scripts]` in the `pyprojects.toml`
-file in the root directory. For the Mariner satellite, this is done via the line:
-
-```TOML
-SatelliteMariner = "constellation.satellites.Mariner.__main__:main"
-```
-
-By then running `pip install --no-build-isolation -e .` in the root directory,
-the satellite is available to the command line, e.g. as `SatelliteMariner`.
-
 ## Troubleshooting
 
 ### Satellite base functionality not working as expected

@@ -153,8 +153,8 @@ This can be done via:
 meson install -C build
 ```
 
-For details on installing Constellation for external satellites, see
-[Building External Satellites](../../application_development/howtos/external_satellite.md).
+Details on installing Constellation for developing satellites can be found in the
+[Application Developer Guide](../../application_development/tutorials/templates.md#installing-constellation).
 
 ## Build Options
 

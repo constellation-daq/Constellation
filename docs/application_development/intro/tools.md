@@ -1,7 +1,8 @@
 # Development Tools
 
-In the following, some tools that come in handy for the development of satellites for Constellation of the framework itself are described.
-These tools are pre-configured in the [satellite project templates](templates), and are also used in the same or a very similar configuration in the main Constellation repository.
+In the following, some tools that come in handy for the development of satellites for Constellation of the framework itself
+are described. These tools are pre-configured in the [satellite project templates](../tutorials/templates.md), and are also
+used in the same or a very similar configuration in the main Constellation repository.
 
 Their goal is to ensure a coherent code base in terms of style, naming conventions and best practices.
 A detailed description of the formatting and naming conventions chosen for the main Constellation repository can be found in the [Framework Development Guide](/framework_reference/naming).
