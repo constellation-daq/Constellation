@@ -86,7 +86,7 @@ void FileSerializer::write_block(std::uint32_t key, const PayloadBuffer& payload
     write(data);
 }
 
-void FileSerializer::serialize_header(std::string_view sender,
+void FileSerializer::serialize_header(std::string_view sender_lc,
                                       std::uint64_t sequence_number,
                                       const constellation::config::Dictionary& tags,
                                       std::uint32_t flags) {
@@ -116,7 +116,7 @@ void FileSerializer::serialize_header(std::string_view sender,
                                               : static_cast<std::uint32_t>(sequence_number));
 
     // Writing ExtendWord (event description, used to identify decoder later on)
-    const auto& descriptor = eudaq_event_descriptors_.find(sender)->second;
+    const auto& descriptor = eudaq_event_descriptors_.find(sender_lc)->second;
     write_int(cstr2hash(descriptor.c_str()));
 
     // Timestamps from header tags if available - we get them in ps form the Constellation header tags and write them in ns
@@ -134,19 +134,21 @@ void FileSerializer::serialize_header(std::string_view sender,
 }
 
 void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& user_tags) {
+    const auto sender_lc = transform(sender, ::tolower);
+
     // Check for event type flag:
     const auto eudaq_event_it = user_tags.find("eudaq_event");
     if(eudaq_event_it != user_tags.end()) {
         const auto eudaq_event = eudaq_event_it->second.get<std::string>();
         LOG(INFO) << "Using EUDAQ event type " << std::quoted(eudaq_event) << " for sender " << sender;
-        eudaq_event_descriptors_.emplace(sender, eudaq_event);
+        eudaq_event_descriptors_.emplace(sender_lc, eudaq_event);
     } else {
         // Take event descriptor tag from sender name:
         const auto separator_pos = sender.find_first_of('.');
         const auto descriptor = sender.substr(separator_pos + 1);
         LOG(WARNING) << "BOR message of " << sender << " does not provide EUDAQ event type - will use sender name "
                      << descriptor << " instead";
-        eudaq_event_descriptors_.emplace(sender, descriptor);
+        eudaq_event_descriptors_.emplace(sender_lc, descriptor);
     }
 
     // Check for tag describing treatment of blocks
@@ -155,16 +157,17 @@ void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& u
         const auto write_as_blocks = write_as_blocks_it->second.get<bool>();
         LOG(INFO) << "Sender " << sender << " requests treatment of blocks as "
                   << (write_as_blocks ? "blocks" : "sub-events");
-        write_as_blocks_.emplace(sender, write_as_blocks);
+        write_as_blocks_.emplace(sender_lc, write_as_blocks);
     } else {
         LOG(WARNING) << "BOR message of " << sender
                      << " does not provide information on block treatment - defaulting to \"blocks as sub-events\"";
-        write_as_blocks_.emplace(sender, false);
+        write_as_blocks_.emplace(sender_lc, false);
     }
 }
 
 void FileSerializer::serializeDelimiterMsg(std::string_view sender, CDTP2Message::Type type, const Dictionary& tags) {
-    LOG(DEBUG) << "Writing delimiter event";
+    LOG(DEBUG) << "Writing delimiter event for " << sender;
+    const auto sender_lc = transform(sender, ::tolower);
 
     // Set correct flags for BORE and EORE:
     std::uint32_t flags = 0;
@@ -180,7 +183,7 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender, CDTP2Message
     }
 
     // Serialize header with event flags
-    serialize_header(sender, 0, tags, flags);
+    serialize_header(sender_lc, 0, tags, flags);
 
     // BORE/EORE does not contain data - write empty blocks and empty subevent count:
     write_blocks({});
@@ -188,11 +191,12 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender, CDTP2Message
 }
 
 void FileSerializer::serializeDataRecord(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
-    LOG(DEBUG) << "Writing data event " << data_record.getSequenceNumber();
+    LOG(DEBUG) << "Writing data event " << data_record.getSequenceNumber() << " for " << sender;
+    const auto sender_lc = transform(sender, ::tolower);
 
-    serialize_header(sender, data_record.getSequenceNumber(), data_record.getTags());
+    serialize_header(sender_lc, data_record.getSequenceNumber(), data_record.getTags());
 
-    const auto write_as_blocks_it = write_as_blocks_.find(sender);
+    const auto write_as_blocks_it = write_as_blocks_.find(sender_lc);
     if(write_as_blocks_it->second) {
         // Interpret multiple blocks as individual blocks of EUDAQ data:
 
@@ -213,7 +217,7 @@ void FileSerializer::serializeDataRecord(std::string_view sender, const CDTP2Mes
 
         for(const auto& block : payload) {
             // Repeat the event header of this event - FIXME adjust event number!
-            serialize_header(sender, data_record.getSequenceNumber(), data_record.getTags());
+            serialize_header(sender_lc, data_record.getSequenceNumber(), data_record.getTags());
 
             // Write number of blocks and the block itself
             write_int<std::uint32_t>(1);

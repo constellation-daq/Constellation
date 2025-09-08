@@ -95,12 +95,12 @@ private:
     /**
      * @brief Function to serialize a EUDAQ event header
      *
-     * @param sender Sender name
+     * @param sender_lc Low-case sender name
      * @param sequence_number Message sequence number
      * @param tags Tags to be serialized, either header tags of payload dictionaries
      * @param flags EUDAQ flags to mark the event with
      */
-    void serialize_header(std::string_view sender,
+    void serialize_header(std::string_view sender_lc,
                           std::uint64_t sequence_number,
                           const constellation::config::Dictionary& tags,
                           std::uint32_t flags = 0x0);
