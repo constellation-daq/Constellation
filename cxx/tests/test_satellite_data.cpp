@@ -15,8 +15,6 @@
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers.hpp>
-#include <catch2/matchers/catch_matchers_exception.hpp>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -33,7 +31,6 @@
 #include "chirp_mock.hpp"
 #include "dummy_satellite.hpp"
 
-using namespace Catch::Matchers;
 using namespace constellation;
 using namespace constellation::config;
 using namespace constellation::message;
