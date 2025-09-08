@@ -45,7 +45,7 @@
       </sizepolicy>
      </property>
      <property name="title">
-      <string>Verb</string>
+      <string>Response</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
