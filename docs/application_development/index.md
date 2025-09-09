@@ -18,6 +18,7 @@ Features, protocols and the behavior of individual components may still change.
 :caption: Introduction
 
 intro/listing
+intro/tools
 ```
 
 ```{raw} latex
@@ -27,6 +28,7 @@ intro/listing
 ```{toctree}
 :caption: 📚 Tutorials
 
+tutorials/templates
 tutorials/satellite_cxx
 tutorials/satellite_py
 ```
@@ -52,7 +54,7 @@ functionality/custom_commands
 ```{toctree}
 :caption: 📖 How-To Guides
 
-howtos/external_satellite
+howtos/migrate_external_satellite
 howtos/port_eudaq
 howtos/data_transmission_speed
 ```
