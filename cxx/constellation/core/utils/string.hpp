@@ -44,6 +44,16 @@ namespace constellation::utils {
         return out;
     }
 
+    /** Add backtick quotes to a string */
+    inline std::string quoted(std::string_view str) {
+        return "`" + std::string(str) + "`";
+    }
+
+    /** Define defined literal "_quoted" operator */
+    inline std::string operator"" _quoted(const char* text, std::size_t len) {
+        return "`" + std::string(text, len) + "`";
+    }
+
     /** Converts a string-like object to a string */
     template <typename S>
         requires std::convertible_to<S, std::string_view>
