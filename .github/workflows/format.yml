@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-name: Constellation GitHub CI Pipeline - Formatting
+name: Formatting
 
 on:
   push:
