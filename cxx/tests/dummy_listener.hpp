@@ -8,7 +8,6 @@
 
 #include <chrono>
 #include <deque>
-#include <iomanip>
 #include <mutex>
 #include <string_view>
 #include <thread>
@@ -16,6 +15,7 @@
 
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/listener/CMDPListener.hpp"
 
 class DummyListener : public constellation::listener::CMDPListener {
@@ -41,8 +41,8 @@ public:
 
 private:
     void handle_message(constellation::message::CMDP1Message&& message) {
-        LOG(DEBUG) << "Received message with topic " << std::quoted(message.getTopic()) << " from "
-                   << std::quoted(message.getHeader().getSender());
+        LOG(DEBUG) << "Received message with topic " << constellation::utils::quote(message.getTopic()) << " from "
+                   << constellation::utils::quote(message.getHeader().getSender());
         const std::lock_guard messages_lock {messages_mutex_};
         messages_.emplace_back(std::move(message));
     }

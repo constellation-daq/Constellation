@@ -8,7 +8,6 @@
  */
 
 #include <chrono> // IWYU pragma: keep
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -27,6 +26,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::config;
@@ -51,7 +51,7 @@ namespace {
         if(args.size() >= 2) {
             group = args[1];
         }
-        LOG(logger, STATUS) << "Using constellation group " << std::quoted(group);
+        LOG(logger, STATUS) << "Using constellation group " << quote(group);
 
         const std::string name = "dummy_controller";
 

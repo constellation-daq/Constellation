@@ -16,7 +16,6 @@
 #include <exception>
 #include <functional>
 #include <future>
-#include <iomanip>
 #include <mutex>
 #include <optional>
 #include <stop_token>
@@ -278,7 +277,7 @@ void FSM::call_state_callbacks(bool only_with_status) {
             try {
                 callback(state_.load(), status);
             } catch(...) {
-                LOG(logger_, WARNING) << "State callback " << std::quoted(id) << " threw an exception";
+                LOG(logger_, WARNING) << "State callback " << quote(id) << " threw an exception";
             }
         }));
     }

@@ -13,7 +13,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <functional>
-#include <iomanip>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -70,10 +69,10 @@ void MetricsManager::registerMetric(std::shared_ptr<Metric> metric) {
         std::unique_lock timed_metrics_lock {timed_metrics_mutex_};
         timed_metrics_.erase(name);
         timed_metrics_lock.unlock();
-        LOG(logger_, DEBUG) << "Replaced already registered metric " << std::quoted(name);
+        LOG(logger_, DEBUG) << "Replaced already registered metric " << quote(name);
     }
 
-    LOG(logger_, DEBUG) << "Successfully registered metric " << std::quoted(name);
+    LOG(logger_, DEBUG) << "Successfully registered metric " << quote(name);
 }
 
 void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
@@ -86,7 +85,7 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
     ManagerLocator::getSinkManager().sendMetricNotification();
 
     if(!inserted) {
-        LOG(logger_, DEBUG) << "Replaced already registered metric " << std::quoted(name);
+        LOG(logger_, DEBUG) << "Replaced already registered metric " << quote(name);
     }
 
     // Now also add to timed metrics map
@@ -94,7 +93,7 @@ void MetricsManager::registerTimedMetric(std::shared_ptr<TimedMetric> metric) {
     timed_metrics_.insert_or_assign(name, TimedMetricEntry(std::move(metric)));
     timed_metrics_lock.unlock();
 
-    LOG(logger_, DEBUG) << "Successfully registered timed metric " << std::quoted(name);
+    LOG(logger_, DEBUG) << "Successfully registered timed metric " << quote(name);
 
     // Trigger loop to send timed metric immediately
     cv_.notify_one();
@@ -152,15 +151,15 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         while(!triggered_queue_.empty()) {
             auto [name, value] = std::move(triggered_queue_.front());
             triggered_queue_.pop();
-            LOG(logger_, TRACE) << "Looking for queued metric " << std::quoted(name);
+            LOG(logger_, TRACE) << "Looking for queued metric " << quote(name);
             const std::lock_guard metrics_lock {metrics_mutex_};
             auto metric_it = metrics_.find(name);
             if(metric_it != metrics_.end()) {
-                LOG(logger_, TRACE) << "Sending metric " << std::quoted(name) << ": " << value.str() << " ["
+                LOG(logger_, TRACE) << "Sending metric " << quote(name) << ": " << value.str() << " ["
                                     << metric_it->second->unit() << "]";
                 ManagerLocator::getSinkManager().sendCMDPMetric({metric_it->second, std::move(value)});
             } else {
-                LOG(logger_, WARNING) << "Metric " << std::quoted(name) << " is not registered";
+                LOG(logger_, WARNING) << "Metric " << quote(name) << " is not registered";
             }
         }
         triggered_queue_lock.unlock();
@@ -176,12 +175,12 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(timed_metric.timeoutReached() && shouldStat(name)) {
                 auto value = timed_metric->currentValue();
                 if(value.has_value()) {
-                    LOG(logger_, TRACE) << "Sending metric " << std::quoted(timed_metric->name()) << ": "
-                                        << value.value().str() << " [" << timed_metric->unit() << "]";
+                    LOG(logger_, TRACE) << "Sending metric " << quote(timed_metric->name()) << ": " << value.value().str()
+                                        << " [" << timed_metric->unit() << "]";
                     ManagerLocator::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
-                    LOG(logger_, TRACE) << "Not sending metric " << std::quoted(timed_metric->name()) << ": no value";
+                    LOG(logger_, TRACE) << "Not sending metric " << quote(timed_metric->name()) << ": no value";
                 }
             }
             // Update time point until we have to wait (if not in the past)

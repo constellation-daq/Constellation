@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <iomanip>
 #include <map>
 #include <mutex>
 #include <set>
@@ -24,10 +23,12 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::listener;
 using namespace constellation::message;
+using namespace constellation::utils;
 
 CMDPListener::CMDPListener(std::string_view log_topic, std::function<void(CMDP1Message&&)> callback)
     : SubscriberPoolT(log_topic, [this](auto&& arg) { handle_message(std::forward<decltype(arg)>(arg)); }),
@@ -68,7 +69,7 @@ void CMDPListener::host_disconnected(const chirp::DiscoveredService& service) {
     available_topics_lock.unlock();
 
     // Notify of disconnected sender
-    LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(name) << " disconnected";
+    LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(name) << " disconnected";
     sender_disconnected(name);
 }
 
@@ -91,11 +92,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(sender) << " connected";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(sender) << " connected";
             sender_connected(sender);
         }
         if(new_topics) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << std::quoted(sender) << " updated";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << quote(sender) << " updated";
             topics_changed(sender);
         }
     } else {
@@ -114,11 +115,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << std::quoted(sender) << " connected";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(sender) << " connected";
             sender_connected(sender);
         }
         if(new_topic) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << std::quoted(sender) << " updated";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << quote(sender) << " updated";
             topics_changed(sender);
         }
 

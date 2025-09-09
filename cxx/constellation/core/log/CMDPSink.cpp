@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <iomanip>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -150,7 +149,7 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
 
     // Only accept valid levels
     if(!level.has_value()) {
-        LOG(*logger_, TRACE) << "Invalid log level " << std::quoted(level_str) << ", ignoring";
+        LOG(*logger_, TRACE) << "Invalid log level " << quote(level_str) << ", ignoring";
         return;
     }
 
@@ -159,8 +158,7 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
     const auto topic_uc = transform(topic, ::toupper);
 
     // Adjust subscription counter
-    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
-                         << std::quoted(topic_uc);
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic " << quote(topic_uc);
     // Note: new counter automatically initialized to zero
     auto& counter = log_subscriptions_[topic_uc][level.value()];
     if(subscribe) {
@@ -184,7 +182,7 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
         }
     }
 
-    LOG(*logger_, TRACE) << "Lowest global log level: " << std::quoted(enum_name(cmdp_global_level));
+    LOG(*logger_, TRACE) << "Lowest global log level: " << quote(enum_name(cmdp_global_level));
 
     // Update subscriptions
     ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));
@@ -196,8 +194,7 @@ void CMDPSink::handle_stat_subscriptions(bool subscribe, std::string_view body) 
     const auto topic_uc = transform(topic, ::toupper);
 
     // Adjust subcrption counter
-    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic "
-                         << std::quoted(topic_uc);
+    LOG(*logger_, TRACE) << (subscribe ? "In" : "De") << "crementing subscription counter for topic " << quote(topic_uc);
     // Note: new counter automatically initialized to zero
     auto& counter = stat_subscriptions_[topic_uc];
     if(subscribe) {
