@@ -60,7 +60,7 @@ namespace {
         chirp_manager->sendRequest(CHIRP::ServiceIdentifier::CONTROL);
         ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
 
-        LOG(logger, STATUS) << "Starting controller \"" << name << "\"";
+        LOG(logger, STATUS) << "Starting controller " << quote(name);
         Controller controller {name};
         controller.start();
 
@@ -92,7 +92,7 @@ namespace {
                 msgpack::sbuffer sbuf {};
                 msgpack::pack(sbuf, run_identifier);
                 send_msg.addPayload(std::move(sbuf));
-                LOG(logger, DEBUG) << "Added run identifier \"" << run_identifier << "\" to message";
+                LOG(logger, DEBUG) << "Added run identifier " << quote(run_identifier) << " to message";
             }
 
             auto responses = controller.sendCommands(send_msg);

@@ -94,9 +94,8 @@ namespace constellation::satellite {
     class CNSTLN_API UnknownUserCommand : public UserCommandError {
     public:
         explicit UnknownUserCommand(const std::string& command) {
-            error_message_ = "Unknown command \"";
-            error_message_ += command;
-            error_message_ += "\"";
+            error_message_ = "Unknown command ";
+            error_message_ += utils::quote(command);
         }
     };
 
@@ -123,9 +122,9 @@ namespace constellation::satellite {
     class CNSTLN_API MissingUserCommandArguments : public UserCommandError {
     public:
         explicit MissingUserCommandArguments(const std::string& command, std::size_t args_expected, std::size_t args_given) {
-            error_message_ = "Command \"";
-            error_message_ += command;
-            error_message_ += "\" expects ";
+            error_message_ = "Command ";
+            error_message_ += utils::quote(command);
+            error_message_ += " expects ";
             error_message_ += utils::to_string(args_expected);
             error_message_ += " arguments but ";
             error_message_ += utils::to_string(args_given);
@@ -140,11 +139,10 @@ namespace constellation::satellite {
     class CNSTLN_API InvalidUserCommandArguments : public UserCommandError {
     public:
         explicit InvalidUserCommandArguments(std::string_view argtype, std::string_view valuetype) {
-            error_message_ = "Mismatch of argument type \"";
-            error_message_ += argtype;
-            error_message_ += "\" to provided type \"";
-            error_message_ += valuetype;
-            error_message_ += "\"";
+            error_message_ = "Mismatch of argument type ";
+            error_message_ += utils::quote(argtype);
+            error_message_ += " to provided type ";
+            error_message_ += utils::quote(valuetype);
         }
     };
 
@@ -155,9 +153,9 @@ namespace constellation::satellite {
     class CNSTLN_API InvalidUserCommandResult : public UserCommandError {
     public:
         explicit InvalidUserCommandResult(std::string_view argtype) {
-            error_message_ = "Error casting function return type \"";
-            error_message_ += argtype;
-            error_message_ += "\" to dictionary value";
+            error_message_ = "Error casting function return type ";
+            error_message_ += utils::quote(argtype);
+            error_message_ += " to dictionary value";
         }
     };
 
