@@ -331,7 +331,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Fail if the satellite to which this condition applies is not present in the constellation
                     if(!remote_state.has_value()) {
-                        error_message = "Dependent remote satellite " + std::string(condition.getRemote()) + " not present";
+                        error_message = "Dependent remote satellite " + quote(condition.getRemote()) + " not present";
                         LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
                         set_status("Critical failure: " + error_message);
                         return false;

@@ -385,7 +385,7 @@ TEST_CASE("Catch unknown command", "[satellite]") {
     sender.send(wrong_type_msg);
     auto recv_msg_wrong_type = sender.recv();
     REQUIRE(recv_msg_wrong_type.getVerb().first == CSCP1Message::Type::UNKNOWN);
-    REQUIRE_THAT(to_string(recv_msg_wrong_type.getVerb().second), Equals("Command \"get_names\" is not known"));
+    REQUIRE_THAT(to_string(recv_msg_wrong_type.getVerb().second), Equals("Command `get_names` is not known"));
 
     satellite.exit();
 }
@@ -428,7 +428,7 @@ TEST_CASE("Catch invalid protocol", "[satellite]") {
 
     auto recv_msg_invalid_proto = sender.recv();
     REQUIRE(recv_msg_invalid_proto.getVerb().first == CSCP1Message::Type::ERROR);
-    REQUIRE_THAT(to_string(recv_msg_invalid_proto.getVerb().second), Equals("Invalid protocol identifier \"INVALID\""));
+    REQUIRE_THAT(to_string(recv_msg_invalid_proto.getVerb().second), Equals("Invalid protocol identifier `INVALID`"));
 
     satellite.exit();
 }
@@ -455,7 +455,7 @@ TEST_CASE("Catch unexpected protocol", "[satellite]") {
     auto recv_msg_wrong_proto = sender.recv();
     REQUIRE(recv_msg_wrong_proto.getVerb().first == CSCP1Message::Type::ERROR);
     REQUIRE_THAT(to_string(recv_msg_wrong_proto.getVerb().second),
-                 Equals("Received protocol \"CMDP1\" does not match expected identifier \"CSCP1\""));
+                 Equals("Received protocol `CMDP1` does not match expected identifier `CSCP1`"));
 
     satellite.exit();
 }
@@ -543,7 +543,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     auto recv_msg_wrongarg = sender.recv();
     REQUIRE(recv_msg_wrongarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_wrongarg.getVerb().second),
-                 StartsWith("Mismatch of argument type \"int\" to provided type \"std::chrono::system_clock::time_point"));
+                 StartsWith("Mismatch of argument type `int` to provided type `std::chrono::system_clock::time_point"));
 
     // my_usr_cmd_arg with wrong number of argument
     auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
@@ -556,7 +556,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     auto recv_msg_manyarg = sender.recv();
     REQUIRE(recv_msg_manyarg.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_manyarg.getVerb().second),
-                 Equals("Command \"my_cmd_arg\" expects 1 arguments but 2 given"));
+                 Equals("Command `my_cmd_arg` expects 1 arguments but 2 given"));
 
     // my_usr_state from wrong state
     sender.sendCommand("my_cmd_state");
@@ -583,7 +583,7 @@ TEST_CASE("Catch incorrect user command return value", "[satellite]") {
     auto recv_msg_invalid_return = sender.recv();
     REQUIRE(recv_msg_invalid_return.getVerb().first == CSCP1Message::Type::INCOMPLETE);
     REQUIRE_THAT(to_string(recv_msg_invalid_return.getVerb().second),
-                 Equals("Error casting function return type \"std::array<int, 1>\" to dictionary value"));
+                 Equals("Error casting function return type `std::array<int, 1>` to dictionary value"));
 
     satellite.exit();
 }

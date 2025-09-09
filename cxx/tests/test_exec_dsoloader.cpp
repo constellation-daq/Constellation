@@ -38,7 +38,7 @@ TEST_CASE("Try loading missing library", "[exec][exec::dsoloader]") {
 
     REQUIRE_THROWS_MATCHES(DSOLoader("MissingLib"),
                            DSOLoadingError,
-                           Message("Error while loading shared library \"MissingLib\": Could not find " +
+                           Message("Error while loading shared library `MissingLib`: Could not find " +
                                    DSOLoader::to_dso_file_name("MissingLib")));
 }
 

@@ -126,7 +126,7 @@ TEST_CASE("Header Packing / Unpacking (invalid protocol)", "[core][core::message
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_MATCHES(CMDP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
                            InvalidProtocolError,
-                           Message("Invalid protocol identifier \"INVALID\""));
+                           Message("Invalid protocol identifier `INVALID`"));
 }
 
 TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::message]") {
@@ -139,7 +139,7 @@ TEST_CASE("Header Packing / Unpacking (unexpected protocol)", "[core][core::mess
     // Check for wrong protocol to be picked up
     REQUIRE_THROWS_MATCHES(CMDP1Message::Header::disassemble({to_byte_ptr(sbuf.data()), sbuf.size()}),
                            UnexpectedProtocolError,
-                           Message("Received protocol \"CSCP1\" does not match expected identifier \"CMDP1\""));
+                           Message("Received protocol `CSCP1` does not match expected identifier `CMDP1`"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1)", "[core][core::message]") {
@@ -189,7 +189,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid topic)", "[core][core:
     REQUIRE_THROWS_MATCHES(
         CMDP1Message::disassemble(log_frames),
         MessageDecodingError,
-        Message("Error decoding CMDP1 message: Invalid message topic \"INVALID/TOPIC\", neither log nor telemetry message"));
+        Message("Error decoding CMDP1 message: Invalid message topic `INVALID/TOPIC`, neither log nor telemetry message"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][core::message]") {
@@ -202,7 +202,7 @@ TEST_CASE("Message Assembly / Disassembly (CMDP1, invalid log level)", "[core][c
 
     REQUIRE_THROWS_MATCHES(CMDP1Message::disassemble(log_frames),
                            MessageDecodingError,
-                           Message("Error decoding CMDP1 message: \"ERROR\" is not a valid log level"));
+                           Message("Error decoding CMDP1 message: `ERROR` is not a valid log level"));
 }
 
 TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
@@ -364,7 +364,7 @@ TEST_CASE("CDTP2 Unexpected Protocol", "[core][core::message]") {
     zmq_mpm.addmem(sbuf.data(), sbuf.size());
     REQUIRE_THROWS_MATCHES(CDTP2Message::disassemble(zmq_mpm),
                            UnexpectedProtocolError,
-                           Message("Received protocol \"CDTP1\" does not match expected identifier \"CDTP2\""));
+                           Message("Received protocol `CDTP1` does not match expected identifier `CDTP2`"));
 }
 
 TEST_CASE("CDTP2 Invalid Protocol", "[core][core::message]") {
@@ -373,7 +373,7 @@ TEST_CASE("CDTP2 Invalid Protocol", "[core][core::message]") {
     zmq::multipart_t zmq_mpm {};
     zmq_mpm.addmem(sbuf.data(), sbuf.size());
     REQUIRE_THROWS_MATCHES(
-        CDTP2Message::disassemble(zmq_mpm), InvalidProtocolError, Message("Invalid protocol identifier \"INVALID\""));
+        CDTP2Message::disassemble(zmq_mpm), InvalidProtocolError, Message("Invalid protocol identifier `INVALID`"));
 }
 
 TEST_CASE("CDTP2 Incorrect Message Type", "[core][core::message]") {
