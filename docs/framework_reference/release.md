@@ -48,6 +48,15 @@ The release on GitLab is created when an annotated tag (`git tag -s` or `git tag
 After the tag pipelines finished and the release is created on GitLab, the release should be edited to add the URL to the
 release notes as release asset.
 
+## Update Satellite Templates
+
+After the release, the code of the [satellite templates](https://gitlab.desy.de/constellation/templates) should be updated
+if there any breaking changes in the release.
+
+Any changes to configuration files (such as `.clang-tidy` for example) in the main repository should be updated in the template repositories as well. This is also a good moment to update the pre-commit hooks.
+
+For the Meson template, the wrap file located under `subprojects/constellation.wrap` should be updated to the new release.
+
 ## Releasing on Flathub
 
 The new release should be pushed to the [Flathub repository](https://github.com/flathub/de.desy.constellation).
