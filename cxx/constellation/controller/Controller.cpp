@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <functional>
 #include <future>
-#include <iomanip>
 #include <iterator>
 #include <map>
 #include <mutex>
@@ -131,7 +130,7 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             } catch(const zmq::error_t& e) {
                 LOG(logger_, WARNING) << "Error closing socket" << it->second.uri << ": " << e.what();
             }
-            LOG(logger_, DEBUG) << "Satellite " << std::quoted(it->first) << " at " << uri << " departed";
+            LOG(logger_, DEBUG) << "Satellite " << quote(it->first) << " at " << uri << " departed";
             connections_.erase(it);
             connection_count_.store(connections_.size());
 
@@ -174,10 +173,10 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
             connection_count_.store(connections_.size());
 
             if(!success) {
-                LOG(logger_, WARNING) << "Not adding remote satellite " << std::quoted(name) << " at " << uri
+                LOG(logger_, WARNING) << "Not adding remote satellite " << quote(name) << " at " << uri
                                       << ", a satellite with the same canonical name was already registered";
             } else {
-                LOG(logger_, DEBUG) << "Registered remote satellite " << std::quoted(name) << " at " << uri;
+                LOG(logger_, DEBUG) << "Registered remote satellite " << quote(name) << " at " << uri;
 
                 // Trigger method for propagation of connection list updates in derived controller classes
                 propagate_update(UpdateType::ADDED, std::distance(connections_.begin(), it), connections_.size());
@@ -210,7 +209,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
         const auto& status = msg.getStatus();
         LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()          //
                             << ", flags " << enum_name(msg.getFlags())                         //
-                            << (status.has_value() ? ", status `" + status.value() + "`" : "") //
+                            << (status.has_value() ? ", status " + quote(status.value()) : "") //
                             << ", next message in " << msg.getInterval().count();              //
 
         const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
@@ -294,7 +293,7 @@ Controller::getLastStateChange(const std::set<std::string>& satellites) const {
     for(const auto& satellite : satellites) {
         const auto connection = connections_.find(satellite);
         if(connection == connections_.cend()) {
-            throw std::out_of_range("Satellite `" + satellite + "` is unknown to controller");
+            throw std::out_of_range("Satellite " + quote(satellite) + " is unknown to controller");
         }
         last_state_change.emplace(connection->first, connection->second.last_state_change);
     }
@@ -335,8 +334,7 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
                 const auto& header = recv_msg.getHeader();
                 if(state == CSCP::State::RUN && header.hasTag("last_changed")) {
                     const auto timestamp = header.getTag<std::chrono::system_clock::time_point>("last_changed");
-                    LOG(logger_, DEBUG) << "Run started for " << std::quoted(header.getSender()) << " at "
-                                        << to_string(timestamp);
+                    LOG(logger_, DEBUG) << "Run started for " << quote(header.getSender()) << " at " << to_string(timestamp);
                     // Use latest available timestamp:
                     time = std::max(timestamp, time.value_or(timestamp));
                 }
@@ -424,7 +422,7 @@ void Controller::awaitState(CSCP::State state,
             connection_lock.lock();
             const auto connection = connections_.find(satellite);
             if(connection == connections_.cend()) {
-                throw std::out_of_range("Satellite `" + satellite + "` is unknown to controller");
+                throw std::out_of_range("Satellite " + quote(satellite) + " is unknown to controller");
             }
             const auto new_last_change = connection->second.last_state_change;
             connection_lock.unlock();

@@ -60,7 +60,7 @@ int constellation::exec::satellite_main(std::span<const char*> args,
         try {
             loaded_satellite = load_cpp_satellite(satellite_type_v);
         } catch(const DSOLoaderError& error) {
-            LOG(CRITICAL) << "Error loading satellite type `" + satellite_type_v.type_name + "`: " + error.what();
+            LOG(CRITICAL) << "Error loading satellite type " + quote(satellite_type_v.type_name) + ": " + error.what();
             return 1;
         }
 

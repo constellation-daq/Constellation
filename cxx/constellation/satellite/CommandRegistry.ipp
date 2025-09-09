@@ -52,7 +52,7 @@ namespace constellation::satellite {
                                      C function) {
         const auto name_lc = utils::transform(name, ::tolower);
         if(!protocol::CSCP::is_valid_command_name(name_lc)) {
-            throw utils::LogicError("Command name `" + name_lc + "` is invalid");
+            throw utils::LogicError("Command name " + utils::quote(name_lc) + " is invalid");
         }
 
         if(utils::enum_cast<protocol::CSCP::StandardCommand>(name_lc).has_value()) {
@@ -73,7 +73,7 @@ namespace constellation::satellite {
             commands_.emplace(name_lc, Command(std::move(call), nargs, std::move(description), std::move(allowed_states)));
 
         if(!success) {
-            throw utils::LogicError("Command `" + name_lc + "` is already registered");
+            throw utils::LogicError("Command " + utils::quote(name_lc) + " is already registered");
         }
     }
 

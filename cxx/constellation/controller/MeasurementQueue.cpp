@@ -252,7 +252,7 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
             // Insert the key if it has not been registered yet, use the original value obtained from the configuration:
             const auto& [it, inserted] = value_cache.try_emplace(key, config.at(key));
             LOG_IF(logger_, INFO, inserted)
-                << "Cached original value `" << key << " = " << config.at(key).str() << "` from satellite " << satellite;
+                << "Cached original value " << quote(key + " = " + config.at(key).str()) << " from satellite " << satellite;
         }
 
         // Add all original values which are not part of the measurement anymore and drop them from the cache

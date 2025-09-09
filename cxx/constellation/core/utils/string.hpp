@@ -45,12 +45,12 @@ namespace constellation::utils {
     }
 
     /** Add backtick quotes to a string */
-    inline std::string quoted(std::string_view str) {
+    inline std::string quote(std::string_view str) {
         return "`" + std::string(str) + "`";
     }
 
     /** Define defined literal "_quoted" operator */
-    inline std::string operator"" _quoted(const char* text, std::size_t len) {
+    inline std::string operator"" _quote(const char* text, std::size_t len) {
         return "`" + std::string(text, len) + "`";
     }
 
