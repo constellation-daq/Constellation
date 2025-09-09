@@ -25,6 +25,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
 using namespace constellation::log;

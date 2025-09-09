@@ -20,6 +20,7 @@
 #include <asio.hpp>
 
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/exec/cli.hpp"
 #include "constellation/exec/cpp.hpp"
 #include "constellation/exec/exceptions.hpp"

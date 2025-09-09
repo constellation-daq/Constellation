@@ -14,6 +14,7 @@
 #include <charconv>
 #include <chrono>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <ranges>
@@ -50,7 +51,7 @@ namespace constellation::utils {
     }
 
     /** Define defined literal "_quoted" operator */
-    inline std::string operator"" _quote(const char* text, std::size_t len) {
+    inline std::string operator""_quote(const char* text, std::size_t len) {
         return "`" + std::string(text, len) + "`";
     }
 
