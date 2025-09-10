@@ -5,7 +5,7 @@ name: Build & Test
 
 on:
   push:
-    branches: [ '**' ]
+    branches: ["**"]
   pull_request:
 
 env:
@@ -20,6 +20,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Configure
         run: |
@@ -51,6 +54,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
       - name: Configure
         run: |
           meson setup build -Dcxx_tests=enabled -Dbuildtype=debug
@@ -75,33 +81,31 @@ jobs:
   build-test-python:
     name: Python Build & Test
     runs-on: ubuntu-latest
-    container: python:3.11
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
       - name: Set up Python Venv
         uses: getsentry/action-setup-venv@v2.2.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache-dependency-path: pyproject.toml
           install-cmd: |
             pip install --upgrade pip setuptools meson-python meson ninja
-            pip install --no-build-isolation -e .[dev]
-            pip install --no-build-isolation -e .[test]
 
-      - name: Build
-        run: |
-          git config --global safe.directory "*"
-          python -m build
+      - name: Install Constellation
+        run: pip install --no-build-isolation -e .[test]
 
       - name: Test
         run: |
-          pytest --junitxml=pytest-results.xml
+          pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: python-test-results
-          path: pytest-results.xml
+          path: coverage.xml

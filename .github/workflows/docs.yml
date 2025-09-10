@@ -5,7 +5,7 @@ name: Documentation
 
 on:
   push:
-    branches: [ '**' ]
+    branches: ["**"]
   pull_request:
 
 jobs:
@@ -14,16 +14,22 @@ jobs:
     container:
       image: gitlab.desy.de:5555/constellation/build-images/fedora-sphinx
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
 
       - name: Set up Python Venv
         uses: getsentry/action-setup-venv@v2.2.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
           cache-dependency-path: pyproject.toml
           install-cmd: |
             pip install --upgrade pip setuptools meson-python meson ninja
-            pip install --no-build-isolation -e ".[docs]"
+
+      - name: Install Constellation
+        run: pip install --no-build-isolation -e .[docs]
 
       - name: Generate Doxygen
         run: |
