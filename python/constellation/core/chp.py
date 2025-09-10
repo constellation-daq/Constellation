@@ -8,6 +8,7 @@ from __future__ import annotations
 import io
 import time
 from enum import Enum, IntFlag, auto
+from threading import Lock
 
 import msgpack  # type: ignore[import-untyped]
 import zmq
@@ -88,6 +89,7 @@ class CHPTransmitter:
         """Initialize transmitter."""
         self.name = name
         self._socket = socket
+        self._socket_lock = Lock()
 
     def send(self, state: int, interval: int, msgflags: CHPMessageFlags, status: str | None = None, flags: int = 0) -> None:
         """Send state and interval via CHP."""
@@ -103,17 +105,18 @@ class CHPTransmitter:
         if status:
             flags = zmq.SNDMORE | flags
 
-        self._socket.send(stream.getbuffer(), flags=flags)
-
-        if status:
-            flags = flags & ~zmq.SNDMORE
-            self._socket.send_string(status, flags)
+        with self._socket_lock:
+            self._socket.send(stream.getbuffer(), flags=flags)
+            if status:
+                flags = flags & ~zmq.SNDMORE
+                self._socket.send_string(status, flags)
 
     def parse_subscriptions(self) -> int:
         subscriptions: int = 0
         while True:
             try:
-                msg = self._socket.recv(zmq.NOBLOCK)
+                with self._socket_lock:
+                    msg = self._socket.recv(zmq.NOBLOCK)
                 subscriptions += 1 if msg == b"\x01" else -1
             except zmq.ZMQError:
                 break
@@ -124,7 +127,8 @@ class CHPTransmitter:
     ) -> tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None] | tuple[None, None, None, None, None]:
         """Receive a heartbeat via CHP."""
         try:
-            msg = self._socket.recv_multipart(flags)
+            with self._socket_lock:
+                msg = self._socket.recv_multipart(flags)
         except zmq.ZMQError as e:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
@@ -133,4 +137,5 @@ class CHPTransmitter:
 
     def close(self) -> None:
         """Close the socket of the transmitter."""
-        self._socket.close()
+        with self._socket_lock:
+            self._socket.close()
