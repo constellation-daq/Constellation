@@ -30,3 +30,5 @@ Platformio
 Timepix
 jemalloc
 mimalloc
+systemd
+polkit
