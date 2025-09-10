@@ -29,6 +29,8 @@ def test_satellite_access_via_array(mock_controller, mock_satellite):
     while timeout > 0 and len(ctrl.constellation.satellites) < 1:
         time.sleep(0.05)
         timeout -= 0.05
+    assert len(ctrl.constellation.satellites) == 1
+
     res = ctrl.constellation.Satellite.mock_satellite.get_state()
     assert res.msg == "NEW"
 
@@ -40,6 +42,7 @@ def test_ctrl_reconfigure_cmd_missing(mock_controller, mock_satellite):
     while timeout > 0 and len(ctrl.constellation.satellites) < 1:
         time.sleep(0.05)
         timeout -= 0.05
+    assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
 
     with pytest.raises(AttributeError):
         ctrl.constellation.reconfigure({})
@@ -58,6 +61,7 @@ def test_ctrl_reconfigure_call(mock_controller, mock_example_satellite):
     while timeout > 0 and len(ctrl.constellation.satellites) < 1:
         time.sleep(0.05)
         timeout -= 0.05
+    assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
 
     # cannot call reconfigure when in 'NEW'
     res = ctrl.constellation.MockExampleSatellite.reconfigure({})
@@ -92,7 +96,8 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
     while timeout > 0 and len(ctrl.states) < 1:
         time.sleep(0.05)
         timeout -= 0.05
-    assert timeout > 0, "Timed out while waiting for Satellite to be found."
+    assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
+
     assert ctrl.states["Satellite.mock_satellite"] == SatelliteState.NEW
     assert ctrl.state_changes["Satellite.mock_satellite"] == satellite.fsm.last_changed
 
@@ -105,6 +110,8 @@ def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawco
     while timeout > 0 and len(ctrl.constellation.satellites) < 1:
         time.sleep(0.05)
         timeout -= 0.05
+    assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
+
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize(rawconfig)
     assert res.msg == "transitioning"
     time.sleep(0.1)
