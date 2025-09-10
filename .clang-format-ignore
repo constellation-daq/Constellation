@@ -3,3 +3,6 @@
 
 # Ignore external files
 cxx/constellation/core/external/*
+
+# Ignore subprojects
+subprojects/*

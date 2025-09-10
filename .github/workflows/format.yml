@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+name: Formatting
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  lint-python:
+    name: Python Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Set up Python Venv
+        uses: getsentry/action-setup-venv@v2.2.0
+        with:
+          python-version: "3.11"
+          cache-dependency-path: pyproject.toml
+          install-cmd: |
+            pip install --upgrade pip black flake8 flake8-pyproject
+
+      - name: Run black
+        run: black --check python/
+
+      - name: Run flake8
+        run: flake8 python/
+
+  format-cpp:
+    name: C++ Format Check (clang-format)
+    runs-on: ubuntu-latest
+    container:
+      image: gitlab.desy.de:5555/constellation/build-images/debian-clang
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Run clang-format check
+        run: |
+          meson setup build -Dcxx_tests=enabled
+          ninja -C build clang-format-check
+
+  reuse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install reuse tool
+        run: |
+          python3 -m pip install --upgrade pip reuse
+      - name: Run reuse lint
+        run: |
+          reuse lint
+
+  codespell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install codespell
+        run: |
+          python3 -m pip install --upgrade pip codespell
+      - name: Run codespell
+        run: |
+          codespell

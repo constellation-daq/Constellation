@@ -1,0 +1,111 @@
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+name: Build & Test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+env:
+  CCACHE_DIR: ${{ github.workspace }}/.cache/ccache
+
+jobs:
+  build-test-cpp-gcc:
+    name: C++ Build & Test (Ubuntu 24.04 GCC)
+    runs-on: ubuntu-latest
+    container:
+      image: gitlab.desy.de:5555/constellation/build-images/ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Configure
+        run: |
+          meson setup build -Dcxx_tests=enabled -Dbuildtype=debug
+
+      - name: Build
+        run: |
+          meson compile -C build
+
+      - name: Test
+        run: |
+          meson test -C build --print-errorlogs
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-gcc-test-logs
+          path: |
+            build/meson-logs/testlog.txt
+            build/meson-logs/testlog.junit.xml
+
+  build-test-cpp-clang:
+    name: C++ Build & Test (Fedora Clang)
+    runs-on: ubuntu-latest
+    container:
+      image: gitlab.desy.de:5555/constellation/build-images/fedora-clang
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Configure
+        run: |
+          meson setup build -Dcxx_tests=enabled -Dbuildtype=debug
+
+      - name: Build
+        run: |
+          meson compile -C build
+
+      - name: Test
+        run: |
+          meson test -C build --print-errorlogs
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-clang-test-logs
+          path: |
+            build/meson-logs/testlog.txt
+            build/meson-logs/testlog.junit.xml
+
+  build-test-python:
+    name: Python Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Ignore git ownership warnings
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Set up Python Venv
+        uses: getsentry/action-setup-venv@v2.2.0
+        with:
+          python-version: "3.11"
+          cache-dependency-path: pyproject.toml
+          install-cmd: |
+            pip install --upgrade pip setuptools meson-python meson ninja
+
+      - name: Install Constellation
+        run: pip install --no-build-isolation -e .[test]
+
+      - name: Test
+        run: |
+          pytest --force-sugar --cov --cov-report term --cov-report xml:coverage.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-results
+          path: coverage.xml
