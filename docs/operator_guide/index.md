@@ -48,6 +48,7 @@ Features, protocols and the behavior of individual components may still change.
 
 get_started/install_from_flathub
 get_started/install_from_pypi
+get_started/install_from_docker.md
 get_started/install_from_source
 ```
 
