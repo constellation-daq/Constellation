@@ -400,7 +400,10 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         start = time.time()
         while not set(satellites).issubset(self._constellation.satellites.keys()):
             if time.time() - start > timeout:
-                raise Exception(f"Timeout after {timeout}s while waiting for {len(satellites)} satellites")
+                not_found = ", ".join(set(satellites).difference(self._constellation.satellites.keys()))
+                raise Exception(
+                    f"Timeout after {timeout}s while waiting for {len(satellites)} satellites: could not find {not_found}"
+                )
             time.sleep(0.1)
 
     @property
@@ -490,14 +493,14 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                 pass
 
             # extract canonical name
-            type, name = msg.sender.split(".", maxsplit=1)
-            canonical_name = f"{type}.{name}"
+            sat_type, sat_name = msg.sender.split(".", maxsplit=1)
+            canonical_name = f"{sat_type}.{sat_name}"
 
             # add satellite heartbeat
             self._add_satellite_heartbeat(canonical_name, service.host_uuid, ct)
 
             # add satellite to constellation
-            sat = self._constellation._add_satellite(name, type, msg.payload, hidden_cmds)
+            sat = self._constellation._add_satellite(sat_name, sat_type, msg.payload, hidden_cmds)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
@@ -505,7 +508,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                     str(service.host_uuid),
                 )
             uuid = str(service.host_uuid)
-            self._uuid_lookup[uuid] = (type, name)
+            self._uuid_lookup[uuid] = (sat_type, sat_name)
             self._transmitters[uuid] = ct
 
             self.log.info("Satellite %s connected", canonical_name)
