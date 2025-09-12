@@ -521,6 +521,8 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
+        if self.heartbeat_host_is_registered(service.host_uuid):
+            self.unregister_heartbeat_host(service.host_uuid)
         self.log.debug(
             "Departure of %s, known as %s.%s",
             service.host_uuid,
