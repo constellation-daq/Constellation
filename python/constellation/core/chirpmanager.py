@@ -65,7 +65,7 @@ class DiscoveredService:
     def __eq__(self, other: object) -> bool:
         """Comparison operator for network-related properties."""
         if isinstance(other, DiscoveredService):
-            return bool(self.host_uuid == other.host_uuid and self.serviceid == other.serviceid and self.port == other.port)
+            return bool(self.host_uuid == other.host_uuid and self.serviceid == other.serviceid)
         return NotImplemented
 
     def __str__(self) -> str:
@@ -210,30 +210,41 @@ class CHIRPManager(BaseSatelliteFrame):
     def _discover_service(self, msg: CHIRPMessage) -> None:
         """Add a service to internal list and possibly queue a callback."""
         service = DiscoveredService(msg.host_uuid, msg.serviceid, msg.from_address, msg.port)
-        if service in self.discovered_services:
-            self.log_chirp.debug(
-                "Service already discovered: %s on host %s:%s",
-                msg.serviceid,
-                msg.from_address,
-                msg.port,
-            )
-            # NOTE we might want to call the callback method for this service
-            # anyway, in case this host was down (without sending DEPART) and is
-            # now reconnecting. But then the bookkeeping has to be done higher up.
-        else:
-            # add service to internal list and queue callback (if registered)
+        already_discovered = False
+        for discovered_service in self.discovered_services:
+            if service == discovered_service:
+                # Check if new port if service already discovered
+                if service.port != discovered_service.port:
+                    # Assume old host is dead
+                    self.log_chirp.warning(
+                        "%s has new port %d for %s service, assuming service has been replaced",
+                        msg.host_uuid,
+                        msg.port,
+                        msg.serviceid.name,
+                    )
+                    # Remove old service
+                    self.discovered_services.remove(discovered_service)
+                    discovered_service.alive = False
+                    self._call_callbacks(discovered_service)
+                else:
+                    self.log_chirp.debug(
+                        "Service already discovered: %s on host %s:%s",
+                        msg.serviceid.name,
+                        msg.from_address,
+                        msg.port,
+                    )
+                    already_discovered = True
+                break
+        if not already_discovered:
+            # add service to internal list and queue callback
             self.log_chirp.debug(
                 "Received new OFFER for service: %s on host %s:%s",
                 msg.serviceid.name,
                 msg.from_address,
                 msg.port,
             )
-            try:
-                callback = self._chirp_callbacks[msg.serviceid]
-                self.task_queue.put((callback, [service]))
-            except KeyError:
-                self.log_chirp.debug("No callback for service %s set up.", msg.serviceid)
             self.discovered_services.append(service)
+            self._call_callbacks(service)
 
     def _depart_service(self, msg: CHIRPMessage) -> None:
         """Depart with a service."""
@@ -247,17 +258,20 @@ class CHIRPManager(BaseSatelliteFrame):
             )
             # indicate that service is no longer with us
             service.alive = False
-            try:
-                callback = self._chirp_callbacks[msg.serviceid]
-                self.task_queue.put((callback, [service]))
-            except KeyError:
-                self.log_chirp.debug("No callback for service %s set up.", msg.serviceid)
+            self._call_callbacks(service)
         except ValueError:
             self.log_chirp.debug(
                 "Received depart for service %s on host %s: Not in use.",
                 msg.serviceid,
                 msg.from_address,
             )
+
+    def _call_callbacks(self, service: DiscoveredService) -> None:
+        try:
+            callback = self._chirp_callbacks[service.serviceid]
+            self.task_queue.put((callback, [service]))
+        except KeyError:
+            self.log_chirp.debug("No callback for service %s set up.", service.serviceid)
 
     def _run(self) -> None:
         """Start listening in on incoming multicast messages"""
