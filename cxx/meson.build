@@ -80,7 +80,7 @@ if memory_allocator == 'auto' or memory_allocator == 'jemalloc'
   endif
 endif
 if memory_allocator == 'auto' or memory_allocator == 'mimalloc'
-  mimalloc_dep = dependency('mimalloc', required: memory_allocator == 'mimalloc', allow_fallback: true, default_options: ['warning_level=0', 'werror=false'])
+  mimalloc_dep = dependency('mimalloc', required: memory_allocator == 'mimalloc', allow_fallback: true, default_options: ['warning_level=0', 'werror=false', 'b_ndebug=true'])
   if mimalloc_dep.found()
     memory_allocator = 'mimalloc'
     malloc_dep = mimalloc_dep
