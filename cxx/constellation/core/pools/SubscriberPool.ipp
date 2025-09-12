@@ -13,7 +13,6 @@
 
 #include <algorithm>
 #include <functional>
-#include <iomanip>
 #include <mutex>
 #include <string_view>
 #include <utility>
@@ -24,6 +23,7 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::pools {
 
@@ -42,11 +42,11 @@ namespace constellation::pools {
             if(socket_it != BasePoolT::get_sockets().end()) {
                 if(subscribe) {
                     BasePoolT::pool_logger_.log(TRACE)
-                        << "Subscribing to " << std::quoted(topic) << " for " << socket_it->first.to_uri();
+                        << "Subscribing to " << utils::quote(topic) << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::subscribe, topic);
                 } else {
                     BasePoolT::pool_logger_.log(TRACE)
-                        << "Unsubscribing from " << std::quoted(topic) << " for " << socket_it->first.to_uri();
+                        << "Unsubscribing from " << utils::quote(topic) << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::unsubscribe, topic);
                 }
             }
@@ -64,11 +64,11 @@ namespace constellation::pools {
             for(auto& [host, socket] : BasePoolT::get_sockets()) {
                 if(subscribe) {
                     BasePoolT::pool_logger_.log(TRACE)
-                        << "Subscribing to " << std::quoted(topic) << " for " << host.to_uri();
+                        << "Subscribing to " << utils::quote(topic) << " for " << host.to_uri();
                     socket.set(zmq::sockopt::subscribe, topic);
                 } else {
                     BasePoolT::pool_logger_.log(TRACE)
-                        << "Unsubscribing from " << std::quoted(topic) << " for " << host.to_uri();
+                        << "Unsubscribing from " << utils::quote(topic) << " for " << host.to_uri();
                     socket.set(zmq::sockopt::unsubscribe, topic);
                 }
             }

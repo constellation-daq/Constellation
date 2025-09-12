@@ -10,7 +10,6 @@
 #include "StatListener.hpp"
 
 #include <functional>
-#include <iomanip>
 #include <set>
 #include <string>
 #include <string_view>
@@ -19,6 +18,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/utils/std_future.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/listener/CMDPListener.hpp"
 
 using namespace constellation::listener;
@@ -37,12 +37,12 @@ std::string_view StatListener::demangle_topic(std::string_view topic) {
 }
 
 void StatListener::subscribeMetric(const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << std::quoted(metric);
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << quote(metric);
     CMDPListener::subscribeTopic("STAT/" + metric);
 }
 
 void StatListener::unsubscribeMetric(const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << std::quoted(metric);
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << quote(metric);
     CMDPListener::unsubscribeTopic("STAT/" + metric);
 }
 
@@ -59,13 +59,12 @@ std::set<std::string> StatListener::getMetricSubscriptions() {
 }
 
 void StatListener::subscribeMetric(const std::string& host, const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << std::quoted(metric) << " for host "
-                                        << host;
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << quote(metric) << " for host " << host;
     CMDPListener::subscribeExtraTopic(host, "STAT/" + metric);
 }
 
 void StatListener::unsubscribeMetric(const std::string& host, const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << std::quoted(metric) << " for host "
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << quote(metric) << " for host "
                                         << host;
     CMDPListener::unsubscribeExtraTopic(host, "STAT/" + metric);
 }

@@ -77,7 +77,7 @@ CMDP1Message CMDP1Message::disassemble(zmq::multipart_t& frames) {
     const auto topic = frames.pop().to_string();
     if(!(topic.starts_with("LOG/") || topic.starts_with("STAT/") || topic.starts_with("LOG?") ||
          topic.starts_with("STAT?"))) {
-        throw MessageDecodingError("CMDP1", "Invalid message topic \"" + topic + "\", neither log nor telemetry message");
+        throw MessageDecodingError("CMDP1", "Invalid message topic " + quote(topic) + ", neither log nor telemetry message");
     }
 
     // Check if valid log level by trying to decode it
@@ -119,7 +119,7 @@ Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     const auto level_str = topic.substr(4, level_endpos - 4);
     const auto level_opt = enum_cast<Level>(level_str);
     if(!level_opt.has_value()) {
-        throw MessageDecodingError("CMDP1", "\"" + to_string(level_str) + "\" is not a valid log level");
+        throw MessageDecodingError("CMDP1", quote(to_string(level_str)) + " is not a valid log level");
     }
 
     return level_opt.value();

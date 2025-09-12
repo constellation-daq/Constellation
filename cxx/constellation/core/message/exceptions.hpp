@@ -14,6 +14,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::message {
     /**
@@ -44,9 +45,8 @@ namespace constellation::message {
     class CNSTLN_API InvalidProtocolError : public MessageDecodingError {
     public:
         explicit InvalidProtocolError(std::string_view protocol) {
-            error_message_ = "Invalid protocol identifier \"";
-            error_message_ += protocol;
-            error_message_ += "\"";
+            error_message_ = "Invalid protocol identifier ";
+            error_message_ += utils::quote(protocol);
         }
     };
 
@@ -59,11 +59,10 @@ namespace constellation::message {
     class CNSTLN_API UnexpectedProtocolError : public MessageDecodingError {
     public:
         explicit UnexpectedProtocolError(protocol::Protocol prot_recv, protocol::Protocol prot_exp) {
-            error_message_ = "Received protocol \"";
-            error_message_ += get_readable_protocol(prot_recv);
-            error_message_ += "\" does not match expected identifier \"";
-            error_message_ += get_readable_protocol(prot_exp);
-            error_message_ += "\"";
+            error_message_ = "Received protocol ";
+            error_message_ += utils::quote(get_readable_protocol(prot_recv));
+            error_message_ += " does not match expected identifier ";
+            error_message_ += utils::quote(get_readable_protocol(prot_exp));
         }
     };
 

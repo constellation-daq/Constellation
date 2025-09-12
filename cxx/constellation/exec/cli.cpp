@@ -90,7 +90,7 @@ BaseParser::BaseOptions BaseParser::parse(std::span<const char*> args) {
     const auto level_str = get("level");
     const auto level = enum_cast<Level>(level_str);
     if(!level.has_value()) {
-        throw CommandLineInterfaceError("`" + level_str + "` is not a valid log level, possible value are " +
+        throw CommandLineInterfaceError(quote(level_str) + " is not a valid log level, possible value are " +
                                         list_enum_names<Level>());
     }
 

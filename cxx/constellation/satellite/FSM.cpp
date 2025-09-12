@@ -16,7 +16,6 @@
 #include <exception>
 #include <functional>
 #include <future>
-#include <iomanip>
 #include <mutex>
 #include <optional>
 #include <stop_token>
@@ -278,7 +277,7 @@ void FSM::call_state_callbacks(bool only_with_status) {
             try {
                 callback(state_.load(), status);
             } catch(...) {
-                LOG(logger_, WARNING) << "State callback " << std::quoted(id) << " threw an exception";
+                LOG(logger_, WARNING) << "State callback " << quote(id) << " threw an exception";
             }
         }));
     }
@@ -332,7 +331,7 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Fail if the satellite to which this condition applies is not present in the constellation
                     if(!remote_state.has_value()) {
-                        error_message = "Dependent remote satellite " + std::string(condition.getRemote()) + " not present";
+                        error_message = "Dependent remote satellite " + quote(condition.getRemote()) + " not present";
                         LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
                         set_status("Critical failure: " + error_message);
                         return false;
@@ -340,8 +339,8 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Check if state is ERROR:
                     if(remote_state.value() == State::ERROR) {
-                        error_message = "Dependent remote satellite " + std::string(condition.getRemote()) +
-                                        " reports state `" + enum_name(remote_state.value()) + "`";
+                        error_message = "Dependent remote satellite " + quote(condition.getRemote()) + " reports state " +
+                                        quote(enum_name(remote_state.value()));
                         LOG(logger_, CRITICAL) << "Critical failure: " << error_message;
                         set_status("Critical failure: " + error_message);
                         return false;
@@ -349,8 +348,8 @@ template <typename Func, typename... Args> bool FSM::call_satellite_function(Fun
 
                     // Check if condition is fulfilled:
                     if(!condition.isSatisfied(remote_state.value())) {
-                        auto msg = "Awaiting state from " + std::string(condition.getRemote()) +
-                                   ", currently reporting state `" + enum_name(remote_state.value()) + "`";
+                        auto msg = "Awaiting state from " + quote(condition.getRemote()) + ", currently reporting state " +
+                                   quote(enum_name(remote_state.value()));
                         LOG_T(logger_, DEBUG, 1s) << msg;
 
                         // Set status message and emit if new:
@@ -431,8 +430,8 @@ void FSM::initialize_fsm(Configuration& config) {
         if(config.has(key)) {
             const auto remotes = config.getArray<std::string>(key);
 
-            LOG(logger_, INFO) << "Registering condition for transitional state `" << state << "` and remotes "
-                               << range_to_string(remotes);
+            LOG(logger_, INFO) << "Registering condition for transitional state " << quote(to_string(state))
+                               << " and remotes " << quote(range_to_string(remotes));
 
             std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
                 // Check that names are valid

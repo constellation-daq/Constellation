@@ -10,7 +10,6 @@
 #include <chrono> // IWYU pragma: keep
 #include <csignal>
 #include <functional>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <span>
@@ -56,7 +55,7 @@ namespace {
         if(args.size() >= 2) {
             group = args[1];
         }
-        std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
+        std::cout << "Using constellation group " << quote(group) << "\n" << std::flush;
 
         auto chirp_manager = std::make_unique<chirp::Manager>(group, "chp_receiver", get_interfaces());
         chirp_manager->start();

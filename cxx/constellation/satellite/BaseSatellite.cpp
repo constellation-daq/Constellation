@@ -156,8 +156,8 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
         // Try to disamble message
         auto message = CSCP1Message::disassemble(recv_msg);
 
-        LOG(logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb \""
-                            << message.getVerb().second << "\"" << (message.hasPayload() ? " and a payload" : "") << " from "
+        LOG(logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb "
+                            << quote(message.getVerb().second) << (message.hasPayload() ? " and a payload" : "") << " from "
                             << message.getHeader().getSender();
 
         return message;
@@ -353,7 +353,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
 
 std::optional<std::pair<std::pair<CSCP1Message::Type, std::string>, PayloadBuffer>>
 BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer& payload) {
-    LOG(logger_, DEBUG) << "Attempting to handle command \"" << command << "\" as user command";
+    LOG(logger_, DEBUG) << "Attempting to handle command " << quote(command) << " as user command";
 
     std::pair<CSCP1Message::Type, std::string> return_verb {};
     PayloadBuffer return_payload {};
@@ -365,7 +365,7 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
         }
 
         auto retval = user_commands_.call(fsm_.getState(), std::string(command), args);
-        LOG(logger_, DEBUG) << "User command \"" << command << "\" succeeded, packing return value.";
+        LOG(logger_, DEBUG) << "User command " << quote(command) << " succeeded, packing return value.";
 
         // Return the call value as payload only if it is not std::monostate
         if(!std::holds_alternative<std::monostate>(retval)) {
@@ -389,10 +389,10 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
         // Any other issue with executing the user command (missing arguments, wrong arguments, ...)
         return_verb = {CSCP1Message::Type::INCOMPLETE, error.what()};
     } catch(const std::exception& error) {
-        LOG(logger_, DEBUG) << "Caught exception while calling user command \"" << command << "\": " << error.what();
+        LOG(logger_, DEBUG) << "Caught exception while calling user command " << quote(command) << ": " << error.what();
         return std::nullopt;
     } catch(...) {
-        LOG(logger_, DEBUG) << "Caught unknown exception while calling user command \"" << command << "\"";
+        LOG(logger_, DEBUG) << "Caught unknown exception while calling user command " << quote(command);
         return std::nullopt;
     }
 
@@ -445,10 +445,10 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
             }
 
             // Command is not known
-            std::string unknown_command_reply = "Command \"";
-            unknown_command_reply += command_string;
-            unknown_command_reply += "\" is not known";
-            LOG(logger_, WARNING) << "Received unknown command \"" << command_string << "\" - ignoring";
+            std::string unknown_command_reply = "Command ";
+            unknown_command_reply += quote(command_string);
+            unknown_command_reply += " is not known";
+            LOG(logger_, WARNING) << "Received unknown command " << quote(command_string) << " - ignoring";
             send_reply({CSCP1Message::Type::UNKNOWN, std::move(unknown_command_reply)});
 
         } catch(const zmq::error_t& error) {

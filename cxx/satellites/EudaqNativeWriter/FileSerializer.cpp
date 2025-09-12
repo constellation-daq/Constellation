@@ -141,7 +141,7 @@ void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& u
     const auto eudaq_event_it = user_tags.find("eudaq_event");
     if(eudaq_event_it != user_tags.end()) {
         const auto eudaq_event = eudaq_event_it->second.get<std::string>();
-        LOG(INFO) << "Using EUDAQ event type " << std::quoted(eudaq_event) << " for sender " << sender;
+        LOG(INFO) << "Using EUDAQ event type " << quote(eudaq_event) << " for sender " << sender;
         eudaq_event_descriptors_.emplace(sender_lc, eudaq_event);
     } else {
         // Take event descriptor tag from sender name:
@@ -160,8 +160,8 @@ void FileSerializer::parse_bor_tags(std::string_view sender, const Dictionary& u
                   << (write_as_blocks ? "blocks" : "sub-events");
         write_as_blocks_.emplace(sender_lc, write_as_blocks);
     } else {
-        LOG(WARNING) << "BOR message of " << sender
-                     << " does not provide information on block treatment - defaulting to \"blocks as sub-events\"";
+        LOG(WARNING) << "BOR message of " << sender << " does not provide information on block treatment - defaulting to "
+                     << "blocks as sub-events"_quote;
         write_as_blocks_.emplace(sender_lc, false);
     }
 }

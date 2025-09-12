@@ -69,11 +69,11 @@ void MattermostSatellite::initializing(Configuration& config) {
 }
 
 void MattermostSatellite::starting(std::string_view run_identifier) {
-    send_message("@channel Run `" + std::string(run_identifier) + "` started");
+    send_message("@channel Run " + quote(run_identifier) + " started");
 }
 
 void MattermostSatellite::stopping() {
-    send_message("@channel Run `" + std::string(getRunIdentifier()) + "` stopped");
+    send_message("@channel Run " + quote(getRunIdentifier()) + " stopped");
 }
 
 void MattermostSatellite::interrupting(State previous_state, std::string_view reason) {

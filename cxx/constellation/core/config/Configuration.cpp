@@ -12,7 +12,6 @@
 #include <cstddef>
 #include <filesystem>
 #include <initializer_list>
-#include <iomanip>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -107,8 +106,8 @@ void Configuration::setAlias(const std::string& new_key, const std::string& old_
     const auto old_key_lc = utils::transform(old_key, ::tolower);
     config_[new_key_lc] = config_.at(old_key_lc);
 
-    LOG_IF(WARNING, warn) << "Parameter " << std::quoted(old_key) << " is deprecated and superseded by "
-                          << std::quoted(new_key);
+    LOG_IF(WARNING, warn) << "Parameter " << utils::quote(old_key) << " is deprecated and superseded by "
+                          << utils::quote(new_key);
 }
 
 std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {

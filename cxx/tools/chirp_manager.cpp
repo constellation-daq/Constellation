@@ -11,7 +11,6 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdint>
-#include <iomanip>
 #include <iostream>
 #include <optional>
 #include <ranges>
@@ -84,7 +83,7 @@ namespace {
         if(args.size() >= 2) {
             group = args[1];
         }
-        std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
+        std::cout << "Using constellation group " << quote(group) << "\n" << std::flush;
         if(args.size() >= 3) {
             name = args[2];
         }
@@ -129,7 +128,7 @@ namespace {
             }
             auto cmd_opt = enum_cast<Command>(cmd_split[0]);
             if(!cmd_opt.has_value()) {
-                std::cout << std::quoted(cmd_split[0]) << " is not a valid command\n" << std::flush;
+                std::cout << quote(cmd_split[0]) << " is not a valid command\n" << std::flush;
                 continue;
             }
             auto cmd = cmd_opt.value();

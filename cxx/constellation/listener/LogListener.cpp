@@ -10,7 +10,6 @@
 #include "LogListener.hpp"
 
 #include <functional>
-#include <iomanip>
 #include <map>
 #include <optional>
 #include <string>
@@ -83,7 +82,7 @@ void LogListener::subscribeLogTopic(const std::string& log_topic, log::Level lev
         LOG(BasePoolT::pool_logger_, WARNING) << "Ignoring subscription to empty topic";
         return;
     }
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to topic " << std::quoted(log_topic) << " with level " << level;
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to topic " << quote(log_topic) << " with level " << level;
     CMDPListener::multiscribeTopics(generate_topics(log_topic, level, false), generate_topics(log_topic, level));
 }
 
@@ -93,7 +92,7 @@ void LogListener::unsubscribeLogTopic(const std::string& log_topic) {
         LOG(BasePoolT::pool_logger_, WARNING) << "Ignoring unsubscription from empty topic";
         return;
     }
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from topic " << std::quoted(log_topic);
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from topic " << quote(log_topic);
     CMDPListener::multiscribeTopics(generate_topics(log_topic, Level::TRACE), {});
 }
 
@@ -117,14 +116,13 @@ std::map<std::string, Level> LogListener::getLogTopicSubscriptions() {
 }
 
 void LogListener::subscribeExtaLogTopic(const std::string& host, const std::string& log_topic, log::Level level) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra topic " << std::quoted(log_topic) << " with level " << level
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra topic " << quote(log_topic) << " with level " << level
                                         << " for host " << host;
     CMDPListener::multiscribeExtraTopics(host, generate_topics(log_topic, level, false), generate_topics(log_topic, level));
 }
 
 void LogListener::unsubscribeExtraLogTopic(const std::string& host, const std::string& log_topic) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra topic " << std::quoted(log_topic) << " for host "
-                                        << host;
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra topic " << quote(log_topic) << " for host " << host;
     CMDPListener::multiscribeExtraTopics(host, generate_topics(log_topic, Level::TRACE), {});
 }
 

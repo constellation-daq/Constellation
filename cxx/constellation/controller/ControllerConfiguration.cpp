@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include <iomanip>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -54,7 +53,7 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
 
     // Convert to absolute path
     const auto file_path_abs = std::filesystem::canonical(path);
-    LOG(config_parser_logger_, DEBUG) << "Parsing configuration file " << std::quoted(file_path_abs.string());
+    LOG(config_parser_logger_, DEBUG) << "Parsing configuration file " << quote(file_path_abs.string());
 
     const std::ifstream file {file_path_abs};
     std::ostringstream buffer {};
@@ -335,7 +334,7 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
 
             const auto dependents = Configuration(config).getArray<std::string>(key);
             LOG(config_parser_logger_, DEBUG)
-                << "Registering dependency for transitional state `" << to_string(state) << "` of " << canonical_name
+                << "Registering dependency for transitional state " << quote(to_string(state)) << " of " << canonical_name
                 << " with dependents " << range_to_string(dependents);
             std::ranges::for_each(dependents, register_dependency);
         }
@@ -351,7 +350,7 @@ void ControllerConfiguration::validate() const {
 
         if(check_transition_deadlock(transition)) {
             LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
-            throw ConfigFileValidationError("Cyclic dependency for transition `" + to_string(transition) + "`");
+            throw ConfigFileValidationError("Cyclic dependency for transition " + quote(to_string(transition)));
         }
     }
     // No deadlock in any transition

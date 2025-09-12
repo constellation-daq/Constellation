@@ -257,8 +257,8 @@ void MissionControl::on_btnInit_clicked() {
         return;
     }
 
-    LOG(user_logger_, INFO) << "Sending transition command `initialize`, configuration file: "
-                            << txtConfigFileName->text().toStdString();
+    LOG(user_logger_, INFO) << "Sending transition command " << "initialize"_quote
+                            << ", configuration file: " << txtConfigFileName->text().toStdString();
     for(auto& response : runcontrol_.sendQCommands("initialize", configs.value())) {
         LOG(logger_, DEBUG) << "Initialize: " << response.first << ": " << response.second.getVerb().first;
     }
@@ -280,7 +280,7 @@ void MissionControl::on_btnShutdown_clicked() {
        QMessageBox::Cancel) {
         LOG(logger_, DEBUG) << "Aborted satellite shutdown";
     } else {
-        LOG(user_logger_, INFO) << "Sending command `shutdown`";
+        LOG(user_logger_, INFO) << "Sending command " << "shutdown"_quote;
         for(auto& response : runcontrol_.sendQCommands("shutdown")) {
             LOG(logger_, DEBUG) << "Shutdown: " << response.first << ": " << response.second.getVerb().first;
         }
@@ -288,28 +288,29 @@ void MissionControl::on_btnShutdown_clicked() {
 }
 
 void MissionControl::on_btnConfig_clicked() {
-    LOG(user_logger_, INFO) << "Sending transition command `launch`";
+    LOG(user_logger_, INFO) << "Sending transition command " << "launch"_quote;
     for(auto& response : runcontrol_.sendQCommands("launch")) {
         LOG(logger_, DEBUG) << "Launch: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnLand_clicked() {
-    LOG(user_logger_, INFO) << "Sending transition command `land`";
+    LOG(user_logger_, INFO) << "Sending transition command " << "land"_quote;
     for(auto& response : runcontrol_.sendQCommands("land")) {
         LOG(logger_, DEBUG) << "Land: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStart_clicked() {
-    LOG(user_logger_, INFO) << "Sending transition command `start`, run identifier: " << current_run_.toStdString();
+    LOG(user_logger_, INFO) << "Sending transition command " << "start"_quote
+                            << ", run identifier: " << current_run_.toStdString();
     for(auto& response : runcontrol_.sendQCommands("start", current_run_.toStdString())) {
         LOG(logger_, DEBUG) << "Start: " << response.first << ": " << response.second.getVerb().first;
     }
 }
 
 void MissionControl::on_btnStop_clicked() {
-    LOG(user_logger_, INFO) << "Sending transition command `stop`";
+    LOG(user_logger_, INFO) << "Sending transition command " << "stop"_quote;
     for(auto& response : runcontrol_.sendQCommands("stop")) {
         LOG(logger_, DEBUG) << "Stop: " << response.first << ": " << response.second.getVerb().first;
     }

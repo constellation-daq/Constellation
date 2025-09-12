@@ -8,7 +8,6 @@
  */
 
 #include <chrono>
-#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -23,6 +22,7 @@
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/string.hpp"
 
 using namespace constellation;
 using namespace constellation::heartbeat;
@@ -45,7 +45,7 @@ namespace {
         if(args.size() >= 2) {
             group = args[1];
         }
-        std::cout << "Using constellation group " << std::quoted(group) << "\n" << std::flush;
+        std::cout << "Using constellation group " << quote(group) << "\n" << std::flush;
         if(args.size() >= 3) {
             name = args[2];
         }

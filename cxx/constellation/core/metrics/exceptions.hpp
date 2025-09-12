@@ -11,6 +11,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::metrics {
     /**
@@ -20,9 +21,9 @@ namespace constellation::metrics {
     class CNSTLN_API InvalidMetricValueException : public utils::LogicError {
     public:
         explicit InvalidMetricValueException(std::string_view name, std::string_view type) {
-            error_message_ = "Metric \"";
-            error_message_ += name;
-            error_message_ = "\" with type ";
+            error_message_ = "Metric ";
+            error_message_ += utils::quote(name);
+            error_message_ = " with type ";
             error_message_ += type;
             error_message_ += " cannot be cast to metric value";
         }
