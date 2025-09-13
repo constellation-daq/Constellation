@@ -12,7 +12,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
-#include <iomanip>
 #include <ios>
 #include <span>
 #include <string_view>
