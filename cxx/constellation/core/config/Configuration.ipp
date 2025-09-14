@@ -11,6 +11,7 @@
 
 #include "Configuration.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -44,6 +45,14 @@ namespace constellation::config {
         }
     }
 
+    template <typename T> std::optional<T> Configuration::getOptional(const std::string& key) const {
+        try {
+            return get<T>(key);
+        } catch(const MissingKeyError&) {
+            return std::nullopt;
+        }
+    }
+
     template <typename T> T Configuration::get(const std::string& key, const T& def) {
         setDefault<T>(key, def);
         return get<T>(key);
@@ -59,6 +68,14 @@ namespace constellation::config {
         }
     }
 
+    template <typename T> std::optional<std::vector<T>> Configuration::getOptionalArray(const std::string& key) const {
+        try {
+            return getArray<T>(key);
+        } catch(const MissingKeyError&) {
+            return std::nullopt;
+        }
+    }
+
     template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) {
         return get<std::vector<T>>(key, def);
     }
@@ -66,6 +83,15 @@ namespace constellation::config {
     template <typename T> std::set<T> Configuration::getSet(const std::string& key) const {
         const auto vec = getArray<T>(key);
         return {vec.begin(), vec.end()};
+    }
+
+    template <typename T> std::optional<std::set<T>> Configuration::getOptionalSet(const std::string& key) const {
+        try {
+            const auto vec = getArray<T>(key);
+            return std::set<T>(vec.begin(), vec.end());
+        } catch(const MissingKeyError&) {
+            return std::nullopt;
+        }
     }
 
     template <typename T> std::set<T> Configuration::getSet(const std::string& key, const std::set<T>& def) {
