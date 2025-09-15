@@ -672,7 +672,7 @@ deploy:release:
     - vm-runner
   script:
     - mkdir -p .layercache && echo ".layercache" >> .dockerignore
-    - docker buildx build -t ${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:nightly -f ${DOCKER_FILE} --network host --cache-from type=local,src=./.layercache --cache-to type=local,dest=./.layercache .
+    - docker buildx build --output type=image,name=${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:nightly,compression=zstd -f ${DOCKER_FILE} --network host --cache-from type=local,src=./.layercache,compression=zstd --cache-to type=local,dest=./.layercache,compression=zstd .
     - |
       if [ -n "$CI_COMMIT_TAG" ]; then
         docker tag ${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:nightly ${CI_REGISTRY_IMAGE}/${DOCKER_IMAGE_NAME}:${CI_COMMIT_TAG}
