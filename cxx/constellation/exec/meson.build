@@ -29,6 +29,7 @@ meson.override_dependency('ConstellationExec', exec_dep)
 pkg.generate(exec_lib,
   description: 'Constellation exec library',
   variables: ['bindir=${prefix}/'+get_option('bindir')],
+  uninstalled_variables: ['bindir=${prefix}/'+get_option('bindir')],
   extra_cflags: constellation_args,
   libraries: [core_dep, satellite_dep],
 )
