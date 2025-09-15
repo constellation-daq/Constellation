@@ -100,6 +100,13 @@ namespace constellation::message {
             void addBlock(PayloadBuffer&& payload) { blocks_.emplace_back(std::move(payload)); }
 
             /**
+             * @brief Count the number of attached blocks of the data record
+             *
+             * @return Number of attached blocks
+             */
+            CNSTLN_API std::size_t countBlocks() const { return blocks_.size(); }
+
+            /**
              * @brief Count the number of bytes contained in the blocks
              *
              * @return Size of the payload in bytes
