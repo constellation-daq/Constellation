@@ -21,3 +21,4 @@ The following authors, in alphabetical order, have developed or contributed to C
 * Aditya Saroha, SJC Institute of Technology, [ext-adityasaroha456](https://gitlab.desy.de/ext-adityasaroha456)
 * Annika Vauth, Universität Hamburg, [annika.vauth](https://gitlab.desy.de/annika.vauth)
 * Håkan Wennlöf, Deutsches Elektronen-Synchrotron DESY, [hwennlof](https://gitlab.desy.de/hwennlof)
+* David Leppla-Weber, Deutsches Elektronen-Synchrotron DESY, [david.leppla-weber](https://gitlab.desy.de/david.leppla-weber)
