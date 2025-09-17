@@ -27,7 +27,7 @@ A typical service file should then look like this:
 Description=Constellation Satellite
 
 [Service]
-Type=simple
+Type=exec
 User=USERNAME
 EnvironmentFile=/home/USERNAME/some/known/path/env
 ExecStart=/home/USERNAME/path/to/venv/bin/SatelliteSomething -g $CONSTELLATION_GROUP -n %i
