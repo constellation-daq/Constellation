@@ -13,7 +13,7 @@ System services should therefore be preferred, if possible.
 
 ## Prerequisites
 
-It is assumed, that you already have your satellite installed within a python virtual environment at `/home/USERNAME/path/to/venv`.
+It is assumed, that the satellite to be run as systemd service is installed within a python virtual environment at `/home/USERNAME/path/to/venv`.
 
 ## Writing the systemd service file
 
@@ -33,12 +33,12 @@ EnvironmentFile=/home/USERNAME/some/known/path/env
 ExecStart=/home/USERNAME/path/to/venv/bin/SatelliteSomething -g $CONSTELLATION_GROUP -n %i
 ```
 
-To use systemd's template syntax, save it as `SatelliteSomething@.service` - the important part being the `@` at the end of the name.
+To use systemd's template syntax, it has to be saved as `SatelliteSomething@.service` - the important part being the `@` at the end of the name.
 
-- `Description` should be adapted for your satellite.
-- `User` is required to run the service as a non-root user. Replace `USERNAME`
-  with the user that created the python virtual environment in which the
-  satellite is installed.
+- `Description` should be adapted for the specific satellite.
+- `User` is required to run the service as a non-root user. `USERNAME` needs to
+  be replaced with the user that created the python virtual environment in
+  which the satellite is installed.
 - [`EnvironmentFile`](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html#EnvironmentFile=)
   allows to specify a file containing additional environment variables to load.
   The file `/home/USERNAME/some/known/path/env` should contain a single line
@@ -46,17 +46,17 @@ To use systemd's template syntax, save it as `SatelliteSomething@.service` - the
   defined dynamically without modifying the service file. It is of course also
   possible to hard code the constellation group and remove that line.
 - `ExecStart` is then the command to be executed when the service is started.
-  It should point to your satellite within your python virtual environment. The
+  It should point to the satellite within the python virtual environment. The
   constellation group is read from the environment and the satellite name from
   the `%i` service template parameter.
 
-To run the satellite as system service, write the file to `/etc/systemd/system/`.
-To use it as a user service, write it to `~/.local/share/systemd/user/`.
-When used as a user service, remove the `User=USERNAME` line, it will be started as the user that created the service.
+To run the satellite as system service, the file has to be written to `/etc/systemd/system/`.
+To use it as a user service, it has to be written to `~/.local/share/systemd/user/`.
+When used as a user service, the `User=USERNAME` line should be removed, it will be started as the user that created the service.
 
 ## Using the service
 
-If you have just written the service file, you might have to first reload the systemd unit list:
+If the service file was just written, it is necessary to first reload the systemd unit list:
 
 ```sh
 systemctl daemon-reload
@@ -68,9 +68,9 @@ or
 systemctl --user daemon-reload
 ```
 
-depending on whether you are using a system or user service.
+depending on whether a system or user service is being used.
 
-As a system service, you can then start the service by running the following as root:
+A system service can then be started by running the following as root:
 
 ```sh
 systemctl start SatelliteSomething@SatelliteName.service
@@ -84,11 +84,11 @@ systemctl start --user SatelliteSomething@SatelliteName.service
 
 Other useful commands are `systemctl stop` to stop the service, `systemctl status` to display its current status and the last lines of its output and `systemctl enable` to automatically start the service on startup. The `--user` flag needs to be added to every command in the case a user service is used.
 
-Note that systemd only manages the satellite process. You will still need a constellation controller to actually initialize and launch the satellite.
+Note that systemd only manages the satellite process. A constellation controller is still needed to actually initialize and launch the satellite.
 
 ## Managing a system service as a user
 
-To not require super user privileges to start your constellation satellites, it might be useful to allow a specific non-privileged user to manage the satellite services.
+To not require super user privileges to start the constellation satellites, it might be useful to allow a specific non-privileged user to manage the satellite services.
 
 On most Linux distributions, this can be achieved using a polkit rule such as:
 
@@ -103,4 +103,4 @@ polkit.addRule(function(action, subject) {
 ```
 
 This has to be saved as `anything.rules` to `/etc/polkit-1/rules.d/`. It allows the user `USERNAME` to manage any systemd service whose name starts with `Satellite`.
-Of course, this also requires you to be consistent with your service file names such that every satellite service starts with `Satellite`.
+Of course, this also requires consistent service file names such that every satellite service starts with `Satellite`.
