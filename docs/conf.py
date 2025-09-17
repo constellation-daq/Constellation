@@ -191,31 +191,38 @@ for path in satellite_files:
     satellite_type, satellite_category = copy_satellite_docs.convert_satellite_readme_repo(path, docsdir / "satellites")
     satellites.setdefault(satellite_category, []).append(f"{satellite_type} <{slugify(satellite_type, lowercase=False)}>")
 
-# Retrieve satellites from Constellation organization:
-gl = gitlab.Gitlab("https://gitlab.desy.de")
-gitlab_satellites = []
-try:
-    gitlab_satellites = gl.groups.get("26685").projects.list()
-except Exception as e:
-    logger.warning(f"Failed to connect to GitLab: {e}")
-for glproject in gitlab_satellites:
-    glproject = gl.projects.get(glproject.id)
-    name = glproject.name
-    satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
-    if satellite_category:
-        satellites.setdefault(satellite_category, []).append(f"{name} 📦 <{slugify(name, lowercase=False)}>")
-
-# Add external satellites
-ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()
-with ext_satellites_json.open() as ext_satellites_json_file:
-    ext_satellites = json.load(ext_satellites_json_file)["external_satellites"]
-    for satellite_json in ext_satellites:
-        name = satellite_json["name"]
-        readme = satellite_json["readme"]
-        website = satellite_json["website"]
-        satellite_category = copy_satellite_docs.convert_satellite_readme_ext(name, readme, website, docsdir / "satellites")
+# Remove news from toc if news/index.md does not exist
+document_ext_satellites = os.getenv("DOC_EXTERNAL_SATELLITES", "true").lower() == "true"
+if not document_ext_satellites:
+    logger.info("Building documentation without external satellites", color="yellow")
+else:
+    # Retrieve satellites from Constellation organization:
+    gl = gitlab.Gitlab("https://gitlab.desy.de")
+    gitlab_satellites = []
+    try:
+        gitlab_satellites = gl.groups.get("26685").projects.list()
+    except Exception as e:
+        logger.warning(f"Failed to connect to GitLab: {e}")
+    for glproject in gitlab_satellites:
+        glproject = gl.projects.get(glproject.id)
+        name = glproject.name
+        satellite_category = copy_satellite_docs.convert_satellite_readme_gitlab(name, glproject, docsdir / "satellites")
         if satellite_category:
-            satellites.setdefault(satellite_category, []).append(f"{name} 🌐 <{slugify(name, lowercase=False)}>")
+            satellites.setdefault(satellite_category, []).append(f"{name} 📦 <{slugify(name, lowercase=False)}>")
+
+    # Add external satellites
+    ext_satellites_json = pathlib.Path("satellites/external_satellites.json").resolve()
+    with ext_satellites_json.open() as ext_satellites_json_file:
+        ext_satellites = json.load(ext_satellites_json_file)["external_satellites"]
+        for satellite_json in ext_satellites:
+            name = satellite_json["name"]
+            readme = satellite_json["readme"]
+            website = satellite_json["website"]
+            satellite_category = copy_satellite_docs.convert_satellite_readme_ext(
+                name, readme, website, docsdir / "satellites"
+            )
+            if satellite_category:
+                satellites.setdefault(satellite_category, []).append(f"{name} 🌐 <{slugify(name, lowercase=False)}>")
 
 # Create tocs for categories
 satellite_tocs = ""
