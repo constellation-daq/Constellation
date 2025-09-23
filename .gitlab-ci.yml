@@ -194,8 +194,8 @@ build:debian-clang-libcxx:
     - .cpp-hi-load
     - .debian-clang
   variables:
-    BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "--wrap-mode=forcefallback -Dbuild_gui=none"
+    BUILD_TYPE: "debugoptimized"
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none"
     CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:fedora-clang:
@@ -205,7 +205,7 @@ build:fedora-clang:
     - .fedora-clang
   variables:
     BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address,thread -Db_lundef=false -Dmemory_allocator=system"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false -Dmemory_allocator=system"
 
 build:fedora-gcc:
   extends:
