@@ -76,14 +76,17 @@ variables:
   before_script:
     - source /opt/rh/gcc-toolset-14/enable
 
+.alma10:
+  image: gitlab.desy.de:5555/constellation/build-images/alma10:latest
+
 .debian-clang:
   image: gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
 
-.debian-gcc:
-  image: gitlab.desy.de:5555/constellation/build-images/debian-gcc:latest
-
 .fedora-clang:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
+
+.fedora-gcc:
+  image: gitlab.desy.de:5555/constellation/build-images/fedora-gcc:latest
 
 .fedora-mingw:
   image: gitlab.desy.de:5555/constellation/build-images/fedora-mingw:latest
@@ -153,7 +156,7 @@ variables:
     - *meson-wrap-cache
     - *ccache
   script:
-    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS} $(eval ${BUILD_SCRIPTS})
+    - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_components.sh) -Dbuildtype=${BUILD_TYPE} ${BUILD_OPTIONS}
     - meson compile -C build ${NINJA_OPTIONS}
   artifacts:
     paths:
@@ -174,17 +177,16 @@ build:alma9-gcc14:
     - .cpp-hi-load
     - .alma9-gcc14
   variables:
-    BUILD_TYPE: "release"
-    BUILD_OPTIONS: "-Db_lto=true -Db_lto_mode=thin -Dbuild_gui=qt5"
+    BUILD_TYPE: "debug"
+    BUILD_OPTIONS: "-Dbuild_gui=qt5"
 
-build:debian-clang:
+build:alma10:
   extends:
     - .build-cpp
     - .cpp-hi-load
-    - .debian-clang
+    - .alma10
   variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address -Db_lundef=false -Dmemory_allocator=system"
 
 build:debian-clang-libcxx:
   extends:
@@ -192,19 +194,9 @@ build:debian-clang-libcxx:
     - .cpp-hi-load
     - .debian-clang
   variables:
-    BUILD_TYPE: "debugoptimized"
-    BUILD_OPTIONS: "--wrap-mode=forcefallback -Db_sanitize=thread -Db_lundef=false -Dbuild_gui=none -Dmemory_allocator=system"
-    CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
-
-build:debian-gcc:
-  extends:
-    - .build-cpp
-    - .cpp-hi-load
-    - .debian-gcc
-  variables:
     BUILD_TYPE: "debug"
-    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_coverage=true"
-  <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
+    BUILD_OPTIONS: "--wrap-mode=forcefallback -Dbuild_gui=none"
+    CXXFLAGS: "-stdlib=libc++ -fexperimental-library"
 
 build:fedora-clang:
   extends:
@@ -213,6 +205,17 @@ build:fedora-clang:
     - .fedora-clang
   variables:
     BUILD_TYPE: "debugoptimized"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_sanitize=address,thread -Db_lundef=false -Dmemory_allocator=system"
+
+build:fedora-gcc:
+  extends:
+    - .build-cpp
+    - .cpp-hi-load
+    - .fedora-gcc
+  variables:
+    BUILD_TYPE: "debug"
+    BUILD_OPTIONS: "-Dcpp_std=c++23 -Db_coverage=true"
+  <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
 build:fedora-mingw:
   extends:
@@ -233,7 +236,7 @@ build:ubuntu-22.04:
       policy: pull-push
     - *ccache
   variables:
-    BUILD_TYPE: "debugoptimized"
+    BUILD_TYPE: "debug"
     BUILD_OPTIONS: "-Dbuild_gui=qt5"
     CXXFLAGS: "-Wno-deprecated-enum-enum-conversion"
 
@@ -301,12 +304,12 @@ test:alma9-gcc14:
     - job: build:alma9-gcc14
       artifacts: true
 
-test:debian-clang:
+test:alma10:
   extends:
     - .test-cpp
-    - .debian-clang
+    - .alma10
   needs:
-    - job: build:debian-clang
+    - job: build:alma10
       artifacts: true
 
 test:debian-clang-libcxx:
@@ -317,20 +320,6 @@ test:debian-clang-libcxx:
     - job: build:debian-clang-libcxx
       artifacts: true
 
-test:debian-gcc:
-  extends:
-    - .test-cpp
-    - .debian-gcc
-  needs:
-    - job: build:debian-gcc
-      artifacts: true
-  artifacts:
-    paths:
-      - build
-    expire_in: 24 hour
-    when: always
-  <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
-
 test:fedora-clang:
   extends:
     - .test-cpp
@@ -338,6 +327,20 @@ test:fedora-clang:
   needs:
     - job: build:fedora-clang
       artifacts: true
+
+test:fedora-gcc:
+  extends:
+    - .test-cpp
+    - .fedora-gcc
+  needs:
+    - job: build:fedora-gcc
+      artifacts: true
+  artifacts:
+    paths:
+      - build
+    expire_in: 24 hour
+    when: always
+  <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
 test:ubuntu-22.04:
   extends:
@@ -412,9 +415,9 @@ lint:coverage-py:
 lint:coverage-cpp:
   extends:
     - .lint
-    - .debian-gcc
+    - .fedora-gcc
   needs:
-    - job: test:debian-gcc
+    - job: test:fedora-gcc
       artifacts: true
   script:
     - ninja -C build coverage-xml
@@ -439,10 +442,10 @@ lint:mypy:
 lint:clang-tidy:
   extends:
     - .lint
-    - .debian-clang
+    - .fedora-clang
     - .cpp-hi-load
   needs:
-    - job: build:debian-clang
+    - job: build:fedora-clang
       artifacts: true
   script:
     - ninja -C build clang-tidy
@@ -452,10 +455,10 @@ lint:clang-tidy:
 lint:clang-tidy-diff:
   extends:
     - .lint
-    - .debian-clang
+    - .fedora-clang
     - .cpp-hi-load
   needs:
-    - job: build:debian-clang
+    - job: build:fedora-clang
       artifacts: true
   script:
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
@@ -467,9 +470,9 @@ lint:clang-tidy-diff:
 lint:clang-scan-build:
   extends:
     - .lint
-    - .debian-clang
+    - .fedora-clang
   needs:
-    - job: build:debian-clang
+    - job: build:fedora-clang
       artifacts: false
   variables:
     CCC_CC: clang
@@ -549,7 +552,7 @@ format:flake8:
 format:clang-format:
   extends:
     - .format
-    - .debian-clang
+    - .fedora-clang
   script:
     - meson setup build -Dcxx_tests=enabled $(scripts/meson_enable_all_satellites.sh)
     - ninja -C build clang-format-check
@@ -563,8 +566,10 @@ format:reuse:
 format:codespell:
   extends:
     - .format
-    - .debian-gcc
+    - .python-venv
+    - .python-3.11
   script:
+    - pip install codespell
     - codespell
 
 # docs stage
