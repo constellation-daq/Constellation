@@ -117,7 +117,7 @@ private:
     static CDTP2Message::DataRecord copy_record(const CDTP2Message::DataRecord& data_record) {
         // Data records cannot be copied for good reason, but we need to for testing purposes
         CDTP2Message::DataRecord record_copy {
-            data_record.getSequenceNumber(), data_record.getTags(), data_record.getBlocks().size()};
+            data_record.getSequenceNumber(), data_record.getTags(), data_record.countBlocks()};
         for(const auto& block : data_record.getBlocks()) {
             std::vector<std::byte> block_copy {block.span().begin(), block.span().end()};
             record_copy.addBlock(std::move(block_copy));
@@ -298,7 +298,7 @@ TEST_CASE("Successful run", "[satellite]") {
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
     const auto& data_record = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_record.getBlocks().size() == 1);
+    REQUIRE(data_record.countBlocks() == 1);
     REQUIRE(data_record.getTags().at("test") == 1);
 
     // Set a tag for EOR
@@ -363,7 +363,7 @@ TEST_CASE("Tainted run", "[satellite]") {
     // Wait a bit for data to be handled by receiver
     receiver.awaitData();
     const auto& data_record = receiver.getLastData(transmitter.getCanonicalName());
-    REQUIRE(data_record.getBlocks().size() == 1);
+    REQUIRE(data_record.countBlocks() == 1);
     REQUIRE(data_record.getTags().at("test") == 1);
 
     // Mark run as tainted:

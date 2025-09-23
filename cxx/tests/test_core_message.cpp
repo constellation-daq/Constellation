@@ -302,14 +302,14 @@ TEST_CASE("CDTP2 DATA Packing / Unpacking", "[core][core::message]") {
     REQUIRE(data_record_1_decoded.getSequenceNumber() == 1);
     REQUIRE(data_record_1_decoded.getTags().at("block") == 1);
     REQUIRE(data_record_1_decoded.countPayloadBytes() == 16);
-    REQUIRE(data_record_1_decoded.getBlocks().size() == 1);
+    REQUIRE(data_record_1_decoded.countBlocks() == 1);
     REQUIRE_THAT(data_record_1_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_1)).span()));
     const auto& data_record_2_decoded = data_message_decoded.getDataRecords().at(1);
     REQUIRE(data_record_2_decoded.getSequenceNumber() == 2);
     REQUIRE(data_record_2_decoded.getTags().at("block") == 2);
     REQUIRE(data_record_2_decoded.getTags().at("vecs") == "2&3"s);
     REQUIRE(data_record_2_decoded.countPayloadBytes() == 44);
-    REQUIRE(data_record_2_decoded.getBlocks().size() == 2);
+    REQUIRE(data_record_2_decoded.countBlocks() == 2);
     REQUIRE_THAT(data_record_2_decoded.getBlocks().at(0).span(), RangeEquals(PayloadBuffer(std::vector(vec_2)).span()));
     REQUIRE_THAT(data_record_2_decoded.getBlocks().at(1).span(), RangeEquals(PayloadBuffer(std::vector(vec_3)).span()));
 }

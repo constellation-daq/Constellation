@@ -323,7 +323,7 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
         bytes_transmitted_ += current_payload_bytes;
         blocks_transmitted_ += std::transform_reduce(
             current_data_records.begin(), current_data_records.end(), 0UL, std::plus(), [](const auto& data_record) {
-                return data_record.getBlocks().size();
+                return data_record.countBlocks();
             });
         data_records_transmitted_ += current_data_records.size();
 
