@@ -32,6 +32,9 @@ MulticastSocket::MulticastSocket(const std::vector<Interface>& interfaces,
                                  asio::ip::port_type multicast_port)
     : recv_socket_(io_context_), multicast_endpoint_(multicast_address, multicast_port) {
 
+    // Receive endpoint using any address and multicast port
+    const asio::ip::udp::endpoint recv_endpoint {asio::ip::address_v4::any(), multicast_port};
+
     // Create send sockets
     send_sockets_.reserve(interfaces.size());
     for(const auto& interface : interfaces) {
@@ -68,7 +71,7 @@ MulticastSocket::MulticastSocket(const std::vector<Interface>& interfaces,
     recv_socket_.set_option(asio::ip::multicast::enable_loopback(true));
 
     // Bind socket
-    recv_socket_.bind(multicast_endpoint_);
+    recv_socket_.bind(recv_endpoint);
 
     // Join multicast group on each interface
     for(const auto& interface : interfaces) {

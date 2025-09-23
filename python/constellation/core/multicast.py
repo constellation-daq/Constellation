@@ -22,6 +22,9 @@ class MulticastSocket:
     def __init__(self, interface_addresses: list[str], multicast_address: str, multicast_port: int) -> None:
         self._multicast_endpoint = (multicast_address, multicast_port)
 
+        # Receive endpoint using any address and multicast port
+        recv_endpoint = ("0.0.0.0", multicast_port)
+
         # Create send sockets
         self._send_sockets = list[socket.socket]()
         for interface_address in interface_addresses:
@@ -55,7 +58,7 @@ class MulticastSocket:
         self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
 
         # Bind socket
-        self._recv_socket.bind(self._multicast_endpoint)
+        self._recv_socket.bind(recv_endpoint)
 
         # Join multicast group on each interface
         for interface_address in interface_addresses:
