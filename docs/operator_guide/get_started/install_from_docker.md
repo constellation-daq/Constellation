@@ -20,7 +20,7 @@ Without `--network host` network discovery does not work.
 In the [container registry](https://gitlab.desy.de/constellation/constellation/container_registry), two images are available:
 
 - `constellation`: based on Ubuntu 24.04
-- `constellation_ci`: based on Debian Sid, containing development files and tools for building external C++ satellites
+- `constellation_ci`: based on Fedora, containing development files and tools for building external C++ satellites
 
 The following tags are available for each images:
 
