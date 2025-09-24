@@ -190,8 +190,7 @@ QMap<QString, QVariant> QController::getQDetails(const QModelIndex& index) const
 }
 
 QVariant QController::headerData(int column, Qt::Orientation orientation, int role) const {
-    if(role == Qt::DisplayRole && orientation == Qt::Horizontal && column >= 0 &&
-       column < static_cast<int>(headers_.size())) {
+    if(role == Qt::DisplayRole && orientation == Qt::Horizontal && column >= 0 && std::cmp_less(column, headers_.size())) {
         return QString::fromStdString(headers_.at(column));
     }
     return {};

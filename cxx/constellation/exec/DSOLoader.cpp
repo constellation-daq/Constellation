@@ -9,7 +9,6 @@
 
 #include "DSOLoader.hpp"
 
-#include <cstdio>
 #include <filesystem>
 #include <string>
 #include <vector>
