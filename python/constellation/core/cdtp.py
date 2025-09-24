@@ -36,6 +36,8 @@ class RunCondition(IntFlag):
 
 
 class TransmitterState(IntEnum):
+    """Possible states of a transmitter with respect to having received BOR/EOR."""
+
     NOT_CONNECTED = auto()
     BOR_RECEIVED = auto()
     EOR_RECEIVED = auto()
@@ -43,6 +45,8 @@ class TransmitterState(IntEnum):
 
 @dataclass
 class TransmitterStateSeq:
+    """Class recording state, current sequence number and missed messages of a Transmitter."""
+
     state: TransmitterState
     seq: int
     missed: int
