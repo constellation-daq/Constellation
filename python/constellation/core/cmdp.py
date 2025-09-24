@@ -255,12 +255,11 @@ class CMDPTransmitter:
             return None
         if topic.startswith("STAT/"):
             return decode_metric(self.name, topic, msg)
-        elif topic.startswith("LOG/"):
+        if topic.startswith("LOG/"):
             return decode_log(self.name, topic, msg)
-        elif topic.startswith("LOG?") or topic.startswith("STAT?"):
+        if topic.startswith("LOG?") or topic.startswith("STAT?"):
             return decode_notification(self.name, topic, msg)
-        else:
-            raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
+        raise RuntimeError(f"CMDPTransmitter cannot decode messages of topic '{topic}'")
 
     def closed(self) -> bool:
         """Return whether socket is closed or not."""
