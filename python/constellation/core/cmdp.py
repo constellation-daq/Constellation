@@ -299,6 +299,7 @@ class CMDPPublisher(CMDPTransmitter):
         if not self._socket:
             raise RuntimeError("Monitoring ZMQ socket misconfigured")
 
+        # Run until there are no more messages to process:
         while True:
             try:
                 with self._lock:
@@ -323,7 +324,8 @@ class CMDPPublisher(CMDPTransmitter):
                     self._send_log_notification()
                 elif topic.startswith("STAT?") and subscribe:
                     self._send_stat_notification()
-                # TODO warn about ignored messages
+                else:
+                    raise ValueError(f"Unknown topic '{topic}'")
             except zmq.ZMQError as e:
                 if "Resource temporarily unavailable" not in e.strerror:
                     raise RuntimeError("CMDPPublisher encountered ZMQ exception") from e

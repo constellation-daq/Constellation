@@ -169,7 +169,10 @@ class MonitoringSender(BaseSatelliteFrame):
             time.sleep(0.1)
 
             # update list of subscribers (both log and metric)
-            self._cmdp_transmitter.update_subscriptions()
+            try:
+                self._cmdp_transmitter.update_subscriptions()
+            except ValueError as exc:
+                self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
 
             # if the satellite is not ready for sending metrics then skip ahead
             # and try again later
