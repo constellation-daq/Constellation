@@ -154,13 +154,12 @@ class H5DataWriter(ReceiverSatellite):
         data_idx, meta_idx, counts = self._swmr_idx[sender]
 
         # Append blocks into a single dataset of uint8 type
-        data = np.array([], dtype=np.uint8)
-        block_lengths = []
+        block_lengths = [len(block) for block in data_record.blocks]
+        data = np.empty(sum(block_lengths), dtype=np.uint8)
+        idx = 0
         for block in data_record.blocks:
-            len_block = len(block)
-            block_lengths.append(len_block)
-            data.resize(len(data) + len_block)
-            data[-len_block:] = np.frombuffer(block, dtype=np.uint8)
+            data[idx : idx + len(block)] = np.frombuffer(block, dtype=np.uint8)
+            idx += len(block)
 
         # Extract tags and add block lengths to it
         tags = data_record.tags
