@@ -17,12 +17,12 @@ in order of increasing solid angle they take up in the sky.
 
 The new version and code name need to be adjusted in the top-level `meson.build` file before the release.
 
-## Publishing the Release Notes
+## Writing the Release Notes
 
-The release notes need to be created in the [website repository](https://gitlab.desy.de/constellation/constellation.pages.desy.de).
+The release notes need to be written in the [website repository](https://gitlab.desy.de/constellation/constellation.pages.desy.de).
 
 ```{note}
-The release notes should be published before the release changes are merged into the main repository.
+The release notes should be published right after the release has been tagged the main repository.
 ```
 
 ## Updating the Metadata
@@ -38,7 +38,9 @@ The metadata file located in `docs/etc` needs to be updated with a new release e
 </release>
 ```
 
-Note that the URL with the release notes needs to be updated to the published release notes.
+```{note}
+The URL for the release notes needs to match with the prepared release notes.
+```
 
 ## Creating the Release
 
