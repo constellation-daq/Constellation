@@ -142,7 +142,6 @@ class BaseSatelliteFrame:
 
         """
         self.log.debug("Satellite Base class _add_thread called")
-        pass
 
     def _start_com_threads(self) -> None:
         """Start all background communication threads."""
