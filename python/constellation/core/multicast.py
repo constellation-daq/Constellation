@@ -6,6 +6,7 @@ This module provides a multicast socket.
 """
 
 import socket
+import sys
 from dataclasses import dataclass
 
 MESSAGE_BUFFER = 1024
@@ -21,6 +22,9 @@ class MulticastMessage:
 class MulticastSocket:
     def __init__(self, interface_addresses: list[str], multicast_address: str, multicast_port: int) -> None:
         self._multicast_endpoint = (multicast_address, multicast_port)
+
+        # Receive endpoint using any address and multicast port
+        recv_endpoint = ("0.0.0.0", multicast_port)
 
         # Create send sockets
         self._send_sockets = list[socket.socket]()
@@ -48,6 +52,10 @@ class MulticastSocket:
         # Ensure socket can be bound by other programs
         self._recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
+        # Set SO_REUSEPORT on MacOS to mirror C++ asio behavior
+        if sys.platform == "darwin":
+            self._recv_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+
         # Set Multicast TTL (aka network hops)
         self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, MULTICAST_TTL)
 
@@ -55,7 +63,7 @@ class MulticastSocket:
         self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 1)
 
         # Bind socket
-        self._recv_socket.bind(self._multicast_endpoint)
+        self._recv_socket.bind(recv_endpoint)
 
         # Join multicast group on each interface
         for interface_address in interface_addresses:
