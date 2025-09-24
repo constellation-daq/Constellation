@@ -125,6 +125,7 @@ class BaseSatelliteFrame:
         SATELLITE_LIST.append(self)
 
     def get_logger(self, name: str) -> ConstellationLogger:
+        """Get the ConstellationLogger instance and ensure it is configured properly."""
         logging.setLoggerClass(ConstellationLogger)
         logger = cast(ConstellationLogger, logging.getLogger(name))
         # configure CMDP ZMQ handler now if already set up
@@ -173,6 +174,7 @@ class BaseSatelliteFrame:
         self._stop_com_threads()
 
     def terminate(self) -> None:
+        """Order destroy the satellite *and* terminate the ZMQ context."""
         self.reentry()
         self.log.debug("Terminating ZMQ context.")
         self.context.term()
