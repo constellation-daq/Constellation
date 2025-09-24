@@ -12,6 +12,7 @@
 #include <iterator>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <QDialog>
 #include <QString>
@@ -72,7 +73,7 @@ void QResponseDialog::show_as_dictionary(const Dictionary& dict) {
     ui_->responseTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     auto it = dict.begin();
-    for(int idx = 0; idx < static_cast<int>(dict.size()); idx++) {
+    for(int idx = 0; std::cmp_less(idx, dict.size()); idx++) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->first)));
@@ -89,7 +90,7 @@ void QResponseDialog::show_as_list(const List& list) {
     ui_->responseTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     auto it = list.begin();
-    for(int idx = 0; idx < static_cast<int>(list.size()); idx++) {
+    for(int idx = 0; std::cmp_less(idx, list.size()); idx++) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
         ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->str())));

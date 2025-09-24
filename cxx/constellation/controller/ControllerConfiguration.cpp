@@ -368,12 +368,12 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     // Recursive depth first search:
     auto dfs = [&](const auto& self, const std::string& satellite) { // NOLINT(misc-no-recursion)
         // Cycle detected (deadlock)
-        if(recursion_stack.find(satellite) != recursion_stack.end()) {
+        if(recursion_stack.contains(satellite)) {
             return true;
         }
 
         // Satellite already processed
-        if(visited.find(satellite) != visited.end()) {
+        if(visited.contains(satellite)) {
             return false;
         }
 
@@ -400,7 +400,7 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     // Traverse each satellite for the given transition
     for(const auto& pair : transition_graph_.at(transition)) {
         const std::string& satellite = pair.first;
-        if(visited.find(satellite) == visited.end()) {
+        if(!visited.contains(satellite)) {
             if(dfs(dfs, satellite)) {
                 // Deadlock detected in this transition
                 return true;

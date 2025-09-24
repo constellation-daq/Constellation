@@ -58,7 +58,7 @@ QVariant QLogMessage::operator[](int column) const {
 }
 
 QString QLogMessage::columnName(int column) {
-    if(column < 0 || column >= static_cast<int>(headers_.size())) {
+    if(column < 0 || std::cmp_greater_equal(column, headers_.size())) {
         return {};
     }
     return headers_.at(column);

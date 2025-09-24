@@ -11,6 +11,7 @@
 
 #include <iterator>
 #include <string>
+#include <utility>
 
 #include <QDialog>
 #include <QPainter>
@@ -90,7 +91,7 @@ void QConnectionDialog::show_commands(const Dictionary& dict) {
     ui_->commandTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
     auto it = dict.begin();
-    for(int idx = 0; idx < static_cast<int>(dict.size()); idx++) {
+    for(int idx = 0; std::cmp_less(idx, dict.size()); idx++) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         ui_->commandTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->first)));
