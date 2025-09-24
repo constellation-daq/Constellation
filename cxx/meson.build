@@ -34,6 +34,7 @@ endif
 libzmq_sp_default_options = [
   'drafts=true',
   'websockets=disabled',
+  'libbsd=disabled',
   'curve=false',
   'openpgm=disabled',
   'norm=disabled',

@@ -1,9 +1,7 @@
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-FROM gitlab.desy.de:5555/constellation/build-images/debian-clang:latest
-
-ENV PKG_CONFIG_PATH /usr/local/lib64/pkgconfig
+FROM gitlab.desy.de:5555/constellation/build-images/fedora-clang:latest
 
 # Set up and build Constellation
 RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /constellation \

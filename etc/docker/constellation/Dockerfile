@@ -9,8 +9,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Update image
 RUN apt-get update && apt-get full-upgrade --autoremove -y
 
+# Install git and SSL certificates
+RUN apt-get install --no-install-recommends -y git ca-certificates netbase
+
 # Install Meson and GCC toolchain
-RUN apt-get install --no-install-recommends -y meson g++ git ca-certificates netbase
+RUN apt-get install --no-install-recommends -y meson g++
 
 # Set up and build Constellation
 RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /constellation \
@@ -25,7 +28,7 @@ RUN --mount=type=bind,rw,source=.,target=/constellation meson setup build /const
     && meson compile -C build \
     && meson install -C build --tags runtime
 
-# Remove build artifacts and toolchain
+# Remove build artifacts, toolchain, and git
 RUN rm -rf build
 RUN apt-get remove --auto-remove --purge -y meson g++ git
 
