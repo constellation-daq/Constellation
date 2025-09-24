@@ -10,6 +10,7 @@ from datetime import datetime
 from enum import Enum
 from queue import Empty
 from typing import Any
+from uuid import UUID
 
 import zmq
 
@@ -399,7 +400,10 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         start = time.time()
         while not set(satellites).issubset(self._constellation.satellites.keys()):
             if time.time() - start > timeout:
-                raise Exception(f"Timeout after {timeout}s while waiting for {len(satellites)} satellites")
+                not_found = ", ".join(set(satellites).difference(self._constellation.satellites.keys()))
+                raise Exception(
+                    f"Timeout after {timeout}s while waiting for {len(satellites)} satellites: could not find {not_found}"
+                )
             time.sleep(0.1)
 
     @property
@@ -417,25 +421,38 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             self._add_satellite(service)
 
     @debug_log
-    @chirp_callback(CHIRPServiceIdentifier.HEARTBEAT)
-    def _add_satellite_heartbeat(self, service: DiscoveredService) -> None:
+    def _add_satellite_heartbeat(self, canonical_name: str, uuid: UUID, ct: CommandTransmitter) -> None:
         """Callback method registering satellite's heartbeat."""
-        if not service.alive:
-            return
-        uuid = str(service.host_uuid)
-        if uuid in self._transmitters:
-            # get current state with last_changed timestamp
-            msg = self._transmitters[uuid].request_get_response("get_state")
-            init_state = {"state": SatelliteState[msg.verb_msg], "last_changed": msg.tags["last_changed"]}
-            # we are controlling this satellite
-            if not self.heartbeat_host_is_registered(service.host_uuid):
-                name, cls = self.constellation._get_name_from_uuid(uuid)
+
+        # get current state and timestamp of last change
+        msg = ct.request_get_response("get_state")
+        init_state = {"state": SatelliteState[msg.verb_msg], "last_changed": msg.tags["last_changed"]}
+
+        # wait until heartbeat service is discovered
+        timeout = 1.0
+        while timeout > 0.0 and uuid not in [
+            hbservice.host_uuid for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT)
+        ]:
+            time.sleep(0.05)
+            timeout -= 0.05
+
+        # check if heartbeat service for satellite is known already
+        hb_registered = False
+        for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
+            if hbservice.host_uuid == uuid:
+                if self.heartbeat_host_is_registered(uuid):
+                    self.unregister_heartbeat_host(uuid)
                 self.register_heartbeat_host(
-                    host=service.host_uuid,
-                    address=f"tcp://{service.address}:{service.port}",
-                    name=f"{cls}.{name}",
+                    host=uuid,
+                    address=f"tcp://{hbservice.address}:{hbservice.port}",
+                    name=canonical_name,
                     init_state=init_state,
                 )
+                hb_registered = True
+                break
+
+        if not hb_registered:
+            self.log.warning("Could not find HEARTBEAT service for %s, state information not available", canonical_name)
 
     def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
@@ -475,9 +492,15 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             except RuntimeError:
                 pass
 
-            # get canonical name
-            cls, name = msg.sender.split(".", maxsplit=1)
-            sat = self._constellation._add_satellite(name, cls, msg.payload, hidden_cmds)
+            # extract canonical name
+            sat_type, sat_name = msg.sender.split(".", maxsplit=1)
+            canonical_name = f"{sat_type}.{sat_name}"
+
+            # add satellite heartbeat
+            self._add_satellite_heartbeat(canonical_name, service.host_uuid, ct)
+
+            # add satellite to constellation
+            sat = self._constellation._add_satellite(sat_name, sat_type, msg.payload, hidden_cmds)
             if sat._uuid != str(service.host_uuid):
                 self.log.warning(
                     "UUIDs do not match: expected %s but received %s",
@@ -485,24 +508,10 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                     str(service.host_uuid),
                 )
             uuid = str(service.host_uuid)
-            self._uuid_lookup[uuid] = (cls, name)
+            self._uuid_lookup[uuid] = (sat_type, sat_name)
             self._transmitters[uuid] = ct
-            # get current state and timestamp of last change
-            msg = ct.request_get_response("get_state")
-            init_state = {"state": SatelliteState[msg.verb_msg], "last_changed": msg.tags["last_changed"]}
-            # check if heartbeat service for satellite is known already
-            for hbservice in self.get_discovered(CHIRPServiceIdentifier.HEARTBEAT):
-                if hbservice.host_uuid == service.host_uuid:
-                    if self.heartbeat_host_is_registered(service.host_uuid):
-                        self.unregister_heartbeat_host(service.host_uuid)
-                    self.register_heartbeat_host(
-                        host=service.host_uuid,
-                        address=f"tcp://{hbservice.address}:{hbservice.port}",
-                        name=f"{cls}.{name}",
-                        init_state=init_state,
-                    )
-                    break
-            self.log.info("Satellite %s.%s connected", cls, name)
+
+            self.log.info("Satellite %s connected", canonical_name)
         except RuntimeError as e:
             self.log.error("Could not add Satellite %s: %s", service.host_uuid, repr(e))
 
@@ -515,6 +524,8 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             self._constellation._remove_satellite(uuid)
         except KeyError:
             pass
+        if self.heartbeat_host_is_registered(service.host_uuid):
+            self.unregister_heartbeat_host(service.host_uuid)
         self.log.debug(
             "Departure of %s, known as %s.%s",
             service.host_uuid,
@@ -643,9 +654,13 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
     def reentry(self) -> None:
         """Stop the controller."""
-        self.log.debug("Stopping controller.")
+        self.log.debug("Stopping controller")
+
         if getattr(self, "_task_handler_event", None):
             self._task_handler_event.set()
+
+        super().reentry()
+
         try:
             for _name, cmd_tm in self._transmitters.items():
                 cmd_tm.close()
@@ -653,9 +668,9 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             # ignore errors; this avoids spurious error messages if e.g. the
             # initialization of the class fails
             pass
+
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join(timeout=1)
-        super().reentry()
 
     def _repr_pretty_(self, p: Any, cycle: bool) -> None:
         nsat = len(self.constellation.satellites)

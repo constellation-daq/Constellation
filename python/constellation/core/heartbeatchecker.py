@@ -309,6 +309,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         return res
 
     def close(self) -> None:
-        for socket in self._remote_heartbeat_states.keys():
-            socket.close()
-        self._remote_heartbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
+        with self._heartbeatchecker_socket_lock:
+            for socket in self._remote_heartbeat_states.keys():
+                socket.close()
+            self._remote_heartbeat_states = dict[zmq.Socket, HeartbeatState]()  # type: ignore[type-arg]
