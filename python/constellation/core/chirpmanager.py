@@ -183,6 +183,8 @@ class CHIRPManager(BaseSatelliteFrame):
         any incoming OFFERS will go unnoticed.
 
         """
+        if serviceid not in self._chirp_callbacks:
+            self.log_chirp.debug("Emitted REQUEST for %s does not have a registered callback", serviceid)
         self._beacon.emit(serviceid, CHIRPMessageType.REQUEST)
 
     def emit_offers(self, serviceid: CHIRPServiceIdentifier | None = None) -> None:
