@@ -19,8 +19,8 @@ CHIRP_HEADER = "CHIRP\x01"
 
 def get_uuid(name: str) -> UUID:
     """Return the UUID for a string using MD5 hashing."""
-    hash = md5(name.encode(), usedforsecurity=False)
-    return UUID(bytes=hash.digest())
+    val = md5(name.encode(), usedforsecurity=False)
+    return UUID(bytes=val.digest())
 
 
 class CHIRPServiceIdentifier(Enum):
@@ -94,14 +94,14 @@ class CHIRPMessage:
 
     def pack(self) -> bytes:
         """Serialize message to raw bytes."""
-        bytes = io.BytesIO()
-        bytes.write(CHIRP_HEADER.encode())
-        bytes.write(self.msgtype.value.to_bytes(length=1))
-        bytes.write(self.group_uuid.bytes)
-        bytes.write(self.host_uuid.bytes)
-        bytes.write(self.serviceid.value.to_bytes(length=1))
-        bytes.write(self.port.to_bytes(length=2, byteorder="big"))
-        return bytes.getvalue()
+        res = io.BytesIO()
+        res.write(CHIRP_HEADER.encode())
+        res.write(self.msgtype.value.to_bytes(length=1))
+        res.write(self.group_uuid.bytes)
+        res.write(self.host_uuid.bytes)
+        res.write(self.serviceid.value.to_bytes(length=1))
+        res.write(self.port.to_bytes(length=2, byteorder="big"))
+        return res.getvalue()
 
     def unpack(self, msg: bytes) -> None:
         """Decode from bytes."""
