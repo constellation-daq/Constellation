@@ -37,7 +37,7 @@ jobs:
     name: C++ Format Check (clang-format)
     runs-on: ubuntu-latest
     container:
-      image: gitlab.desy.de:5555/constellation/build-images/debian-clang
+      image: gitlab.desy.de:5555/constellation/build-images/fedora-clang
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,24 +50,18 @@ jobs:
           meson setup build -Dcxx_tests=enabled
           ninja -C build clang-format-check
 
-  reuse:
+  format-reuse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install reuse tool
-        run: |
-          python3 -m pip install --upgrade pip reuse
-      - name: Run reuse lint
-        run: |
-          reuse lint
+      - uses: actions/checkout@v4
 
-  codespell:
+      - name: REUSE Compliance Check
+        uses: fsfe/reuse-action@v5
+
+  format-codespell:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Install codespell
-        run: |
-          python3 -m pip install --upgrade pip codespell
-      - name: Run codespell
-        run: |
-          codespell
+      - uses: actions/checkout@v4
+
+      - name: Codespell Check
+        uses: codespell-project/actions-codespell@v2
