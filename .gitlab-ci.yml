@@ -448,6 +448,7 @@ lint:clang-tidy:
     - job: build:fedora-clang
       artifacts: true
   script:
+    - meson subprojects download msgpackc-cxx
     - ninja -C build clang-tidy
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
@@ -461,6 +462,7 @@ lint:clang-tidy-diff:
     - job: build:fedora-clang
       artifacts: true
   script:
+    - meson subprojects download msgpackc-cxx
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | /usr/share/clang/clang-tidy-diff.py -p 1 -path build -j $MESON_NUM_PROCESSES
   rules:
