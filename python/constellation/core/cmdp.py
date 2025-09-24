@@ -314,7 +314,7 @@ class CMDPPublisher(CMDPTransmitter):
         if description is None:
             description = ""
         self.log_topics[topic.upper()] = description
-        if "LOG?" in self.subscriptions.keys():
+        if "LOG?" in self.subscriptions:
             self._send_log_notification()
 
     def register_stat(self, topic: str, description: str | None = "") -> None:
@@ -322,29 +322,29 @@ class CMDPPublisher(CMDPTransmitter):
         if description is None:
             description = ""
         self.stat_topics[topic.upper()] = description
-        if "STAT?" in self.subscriptions.keys():
+        if "STAT?" in self.subscriptions:
             self._send_stat_notification()
 
     def has_log_subscribers(self, record: logging.LogRecord) -> bool:
         """Return whether or not we have subscribers for the given log topic."""
         # do we have a global subscription?
-        if "LOG/" in self.subscriptions.keys():
+        if "LOG/" in self.subscriptions:
             return True
         topic = f"LOG/{record.levelname}/{record.name}"
-        if topic in self.subscriptions.keys():
+        if topic in self.subscriptions:
             return True
         # do we have a subscription to the level??
-        if f"LOG/{record.levelname}" in self.subscriptions.keys():
+        if f"LOG/{record.levelname}" in self.subscriptions:
             return True
         return False
 
     def has_metric_subscribers(self, metric_name: str) -> bool:
         """Return whether or not we have subscribers for the given metric data topic."""
         # do we have a global subscription?
-        if "STAT/" in self.subscriptions.keys():
+        if "STAT/" in self.subscriptions:
             return True
         topic = f"STAT/{metric_name.upper()}"
-        if topic in self.subscriptions.keys():
+        if topic in self.subscriptions:
             return True
         return False
 
