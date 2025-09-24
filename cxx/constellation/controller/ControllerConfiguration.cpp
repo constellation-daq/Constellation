@@ -398,18 +398,18 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     };
 
     // Traverse each satellite for the given transition
-    for(const auto& pair : transition_graph_.at(transition)) {
-        const std::string& satellite = pair.first;
+    const auto deadlock = std::ranges::any_of(transition_graph_.at(transition), [&](const auto& p) {
+        const std::string& satellite = p.first;
         if(!visited.contains(satellite)) {
             if(dfs(dfs, satellite)) {
                 // Deadlock detected in this transition
                 return true;
             }
         }
-    }
+        return false;
+    });
 
-    // No deadlock detected in this transition
-    return false;
+    return deadlock;
 }
 
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
