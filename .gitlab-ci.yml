@@ -450,6 +450,8 @@ lint:clang-tidy:
   script:
     - meson subprojects download msgpackc-cxx
     - ninja -C build clang-tidy
+  cache:
+    - *meson-wrap-cache
   rules:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
 
@@ -465,6 +467,8 @@ lint:clang-tidy-diff:
     - meson subprojects download msgpackc-cxx
     - git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
     - git diff -U0 origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME -- | /usr/share/clang/clang-tidy-diff.py -p 1 -path build -j $MESON_NUM_PROCESSES
+  cache:
+    - *meson-wrap-cache
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       <<: *cpp-rules-changes
@@ -488,6 +492,8 @@ lint:clang-scan-build:
       - build/meson-logs/scanbuild
     expire_in: 1 week
     when: on_failure
+  cache:
+    - *meson-wrap-cache
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
   <<: *cpp-hi-load
@@ -515,6 +521,8 @@ lint:coverity-scan:
       --form token=$COVERITY_SCAN_TOKEN --form email=$GITLAB_USER_EMAIL
       --form file=@cov-int.tgz --form version="$CI_COMMIT_REF_NAME"
       --form description="$CI_COMMIT_REF_NAME / $CI_COMMIT_SHA / $CI_PIPELINE_ID"
+  cache:
+    - *meson-wrap-cache
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule"
 
