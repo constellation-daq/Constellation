@@ -159,13 +159,12 @@ class CHIRPManager(BaseSatelliteFrame):
     def register_request(
         self,
         serviceid: CHIRPServiceIdentifier,
-        callback: Callable[[B, DiscoveredService], None],
+        callback: Callable[[BaseSatelliteFrame, DiscoveredService], None],
     ) -> None:
         """Register new callback for ServiceIdentifier."""
         if serviceid in self._chirp_callbacks:
             self.log_chirp.warning("Overwriting CHIRP callback")
-        # FIXME the following assignment triggers an error with mypy
-        self._chirp_callbacks[serviceid] = callback  # type: ignore[assignment]
+        self._chirp_callbacks[serviceid] = callback
         # make a callback if a service has already been discovered
         for known in self.get_discovered(serviceid):
             self.task_queue.put((callback, [known]))
