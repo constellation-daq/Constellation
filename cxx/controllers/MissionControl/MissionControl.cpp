@@ -347,8 +347,12 @@ void MissionControl::on_btnGenConf_clicked() {
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
-    const QString filename = QFileDialog::getSaveFileName(
-        this, tr("Save File"), QFileInfo(txtConfigFileName->text()).path(), tr("Configurations (*.conf *.toml *.ini)"));
+    QString selected_filter;
+    const QString filename = QFileDialog::getSaveFileName(this,
+                                                          tr("Save File"),
+                                                          QFileInfo(txtConfigFileName->text()).path(),
+                                                          "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)",
+                                                          &selected_filter);
 
     if(filename.isNull()) {
         return;
@@ -356,7 +360,11 @@ void MissionControl::on_btnGenConf_clicked() {
 
     // Store to file:
     std::ofstream file {filename.toStdString()};
-    file << new_cfg.getAsTOML();
+    if(selected_filter.contains("*.yaml")) {
+        file << new_cfg.getAsYAML();
+    } else {
+        file << new_cfg.getAsTOML();
+    }
     file.close();
 
     LOG(user_logger_, INFO) << "Stored configuration from running Constellation to file " << filename.toStdString();
