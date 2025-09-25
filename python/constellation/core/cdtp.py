@@ -221,27 +221,31 @@ class DataTransmitter:
     def send_bor(self, user_tags: dict[str, Any], configuration: dict[str, Any], flags: int = 0) -> None:
         # Adjust send timeout for BOR message
         self.log_cdtp.debug("Sending BOR message with timeout %ss", self._bor_timeout)
-        self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._bor_timeout)
+        timeout = 1000 * self._bor_timeout if self._bor_timeout >= 0 else -1
+        self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         try:
             self._send_message(CDTP2BORMessage(self._name, user_tags, configuration), flags)
         except zmq.error.Again as e:
             self._state = TransmitterState.NOT_CONNECTED
             raise RuntimeError(f"Timed out sending BOR after {self._bor_timeout}s") from e
         self._state = TransmitterState.BOR_RECEIVED
-        self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._data_timeout)
+        timeout = 1000 * self._data_timeout if self._data_timeout >= 0 else -1
+        self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         self.log_cdtp.debug("Sent BOR message")
 
     def send_eor(self, user_tags: dict[str, Any], run_metadata: dict[str, Any], flags: int = 0) -> None:
         # Adjust send timeout for EOR message
         self.log_cdtp.debug("Sending EOR message with timeout %ss", self._eor_timeout)
-        self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._eor_timeout)
+        timeout = 1000 * self._eor_timeout if self._eor_timeout >= 0 else -1
+        self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         try:
             self._send_message(CDTP2EORMessage(self._name, user_tags, run_metadata), flags)
         except zmq.error.Again as e:
             self._state = TransmitterState.NOT_CONNECTED
             raise RuntimeError(f"Timed out sending EOR after {self._eor_timeout}s") from e
         self._state = TransmitterState.EOR_RECEIVED
-        self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._data_timeout)
+        timeout = 1000 * self._data_timeout if self._data_timeout >= 0 else -1
+        self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         self.log_cdtp.debug("Sent EOR message")
 
     def _send_message(self, msg: CDTP2Message, flags: int = 0) -> None:
@@ -255,7 +259,8 @@ class DataTransmitter:
         self._records_transmitted = 0
         self._queue = queue.Queue[DataRecord](self._queue_size)
         # Set send timeout for DATA messages
-        self._socket.setsockopt(zmq.SNDTIMEO, 1000 * self._data_timeout)
+        timeout = 1000 * self._data_timeout if self._data_timeout >= 0 else -1
+        self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         # Start sending thread
         self.log_cdtp.debug("Starting push thread")
         self._push_thread = PushThread(self)
