@@ -103,9 +103,11 @@ class SatelliteArray:
         return self._satellites[f"{sat_class}.{sat_name}"]
 
     def _add_class(
-        self, name: str, commands: dict[str, Any], hidden_commands: dict[str, str] = {}
+        self, name: str, commands: dict[str, Any], hidden_commands: dict[str, str] | None = None
     ) -> SatelliteClassCommLink:
         """Add a new class to the array."""
+        if not hidden_commands:
+            hidden_commands = {}
         try:
             cl: SatelliteClassCommLink = getattr(self, name)
             return cl
@@ -119,9 +121,11 @@ class SatelliteArray:
         return cl
 
     def _add_satellite(
-        self, name: str, cls: str, commands: dict[str, str], hidden_commands: dict[str, str] = {}
+        self, name: str, cls: str, commands: dict[str, str], hidden_commands: dict[str, str] | None = None
     ) -> SatelliteCommLink:
         """Add a new Satellite."""
+        if not hidden_commands:
+            hidden_commands = {}
         try:
             cl: SatelliteClassCommLink = getattr(self, cls)
         except AttributeError:
