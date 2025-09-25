@@ -5,6 +5,7 @@
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
+| `_max_heartbeat_interval` | Unsigned integer | Maximum interval in seconds between heartbeats to be sent to other Constellation components. The time between heartbeat is adjusted automatically according to the number of nodes in the Constellation but will never exceed this value. | `30` |
 | `_role` | Role name | Role this satellite should take in the Constellation. Accepted values are `ESSENTIAL`, `DYNAMIC`, `TRANSIENT` and `NONE`. | `DYNAMIC` |
 
 #### Transition Orchestration

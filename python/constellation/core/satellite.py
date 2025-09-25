@@ -223,6 +223,7 @@ class Satellite(
 
         """
         self.role = CHPRole[self.config.setdefault("_role", "DYNAMIC").upper()]
+        self.max_heartbeat_interval = self.config.setdefault("_max_heartbeat_interval", 30)
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str | None:
