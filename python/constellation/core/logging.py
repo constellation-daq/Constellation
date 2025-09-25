@@ -86,7 +86,7 @@ def setup_cli_logging(level: str) -> None:
     # Get log level integer
     levelno = logging.getLevelNamesMapping()[level.upper()]
     # Logging format
-    format = "[%(name)s] %(message)s"
+    logformat = "[%(name)s] %(message)s"
     console_theme = Theme(
         {
             "logging.level.trace": "gray62",
@@ -107,6 +107,6 @@ def setup_cli_logging(level: str) -> None:
         log_time_format="|%Y-%m-%d %H:%M:%S|",
     )
     # Logging configuration
-    logging.basicConfig(format=format, handlers=[handler])
+    logging.basicConfig(format=logformat, handlers=[handler])
     # Set ConstellationLogger as default logging class
     logging.setLoggerClass(ConstellationLogger)
