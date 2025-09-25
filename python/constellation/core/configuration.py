@@ -114,7 +114,7 @@ def flatten_config(
     sat_class: str,
     sat_name: str | None = None,
 ) -> dict[str, Any]:
-    """Get configuration of satellite. Specify category to only get part of configuration."""
+    """Get configuration of satellite."""
 
     res = {}
 
@@ -122,31 +122,28 @@ def flatten_config(
     config = make_lowercase(config)
     sat_class = sat_class.lower()
     # set global values
-    for category in ["constellation", "satellites"]:
-        try:
-            for key, value in config[category].items():
-                if not isinstance(value, dict):
-                    res[key] = _adjust_config_value(value)
-        except KeyError:
-            pass
+    try:
+        for key, value in config.items():
+            if not isinstance(value, dict):
+                res[key] = _adjust_config_value(value)
+    except KeyError:
+        pass
 
     # set class values
-    for category in ["constellation", "satellites"]:
-        try:
-            for key, value in config[category][sat_class].items():
-                if not isinstance(value, dict):
-                    res[key] = _adjust_config_value(value)
-        except KeyError:
-            pass
+    try:
+        for key, value in config[sat_class].items():
+            if not isinstance(value, dict):
+                res[key] = _adjust_config_value(value)
+    except KeyError:
+        pass
 
     if sat_name:
         sat_name = sat_name.lower()
-        for category in ["constellation", "satellites"]:
-            try:
-                for key, value in config[category][sat_class][sat_name].items():
-                    if not isinstance(value, dict):
-                        res[key] = _adjust_config_value(value)
-            except KeyError:
-                pass
+        try:
+            for key, value in config[sat_class][sat_name].items():
+                if not isinstance(value, dict):
+                    res[key] = _adjust_config_value(value)
+        except KeyError:
+            pass
 
     return res
