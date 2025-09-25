@@ -133,7 +133,7 @@ TEST_CASE("Convert to TOML", "[controller]") {
 
     // Get as TOML
     const auto toml = config.getAsTOML();
-    REQUIRE_THAT(toml, ContainsSubstring("[satellites.dummy.added]"));
+    REQUIRE_THAT(toml, ContainsSubstring("[dummy.added]"));
     REQUIRE_THAT(toml, ContainsSubstring("bool = true"));
     REQUIRE_THAT(toml, ContainsSubstring("int = 123"));
     REQUIRE_THAT(toml, ContainsSubstring("double = 1.0"));
