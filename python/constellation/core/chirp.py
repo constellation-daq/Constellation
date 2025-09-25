@@ -182,11 +182,11 @@ class CHIRPBeaconTransmitter:
     ) -> None:
         """Emit a message for the given service."""
         msg = CHIRPMessage(msgtype, self._group_uuid, self._host_uuid, serviceid, port)
-        self._socket.sendMessage(msg.pack())
+        self._socket.send_message(msg.pack())
 
     def listen(self) -> CHIRPMessage | None:
         """Listen in on CHIRP port and return message if data was received."""
-        multicast_message = self._socket.recvMessage()
+        multicast_message = self._socket.recv_message()
         if multicast_message is None:
             return None
 
