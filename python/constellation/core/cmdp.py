@@ -379,7 +379,8 @@ class CMDPPublisher(CMDPTransmitter):
                 elif topic.startswith("STAT?") and subscribe:
                     self._send_stat_notification()
                 else:
-                    raise ValueError(f"Unknown topic '{topic}'")
+                    if not topic.startswith("STAT") and not topic.startswith("LOG"):
+                        raise ValueError(f"Unknown topic '{topic}'")
             except zmq.ZMQError as e:
                 if "Resource temporarily unavailable" not in e.strerror:
                     raise RuntimeError("CMDPPublisher encountered ZMQ exception") from e
