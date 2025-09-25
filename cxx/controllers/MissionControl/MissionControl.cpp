@@ -330,7 +330,7 @@ void MissionControl::on_btnLog_clicked() {
 void MissionControl::on_btnLoadConf_clicked() {
     const QString usedpath = QFileInfo(txtConfigFileName->text()).path();
     const QString filename =
-        QFileDialog::getOpenFileName(this, tr("Open File"), usedpath, tr("Configurations (*.conf *.toml *.ini)"));
+        QFileDialog::getOpenFileName(this, tr("Open File"), usedpath, "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)");
     if(!filename.isNull()) {
         LOG(user_logger_, INFO) << "Loaded configuration file " << filename.toStdString();
         txtConfigFileName->setText(filename);
@@ -375,7 +375,7 @@ void MissionControl::on_btnGenConf_clicked() {
 
 void MissionControl::update_button_states(CSCP::State state) {
 
-    const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$))");
+    const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$|\.yaml$))");
     auto m = rx_conf.match(txtConfigFileName->text());
 
     using enum CSCP::State;
@@ -562,7 +562,7 @@ std::optional<std::map<std::string, Controller::CommandPayload>> MissionControl:
             return {};
         }
         return payloads;
-    } catch(const ControllerError& error) {
+    } catch(const std::exception& error) {
         QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + error.what()));
         return {};
     }
