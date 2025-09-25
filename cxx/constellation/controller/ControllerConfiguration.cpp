@@ -30,6 +30,7 @@
 #endif
 
 #include <toml++/toml.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -147,7 +148,98 @@ ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(st
 }
 
 std::string ControllerConfiguration::getAsYAML() const {
-    return {};
+
+    // Validate the configuration
+    try {
+        validate();
+    } catch(const ConfigFileValidationError& error) {
+        LOG(config_parser_logger_, WARNING) << error.what();
+    }
+
+    auto get_yaml_array = [&](auto&& val) -> YAML::Node {
+        YAML::Node arr;
+
+        using T = std::decay_t<decltype(val)>::value_type;
+        for(const auto& v : val) {
+            arr.push_back(static_cast<T>(v));
+        }
+        return arr;
+    };
+
+    auto get_yaml_value = [&](const Value& value) -> YAML::Node {
+        YAML::Node node;
+
+        if(std::holds_alternative<bool>(value)) {
+            node = value.get<bool>();
+        } else if(std::holds_alternative<std::int64_t>(value)) {
+            node = value.get<std::int64_t>();
+        } else if(std::holds_alternative<double>(value)) {
+            node = value.get<double>();
+        } else if(std::holds_alternative<std::string>(value)) {
+            node = value.get<std::string>();
+        } else if(std::holds_alternative<std::vector<bool>>(value)) {
+            node = get_yaml_array(value.get<std::vector<bool>>());
+        } else if(std::holds_alternative<std::vector<std::string>>(value)) {
+            node = get_yaml_array(value.get<std::vector<std::string>>());
+        } else if(std::holds_alternative<std::vector<double>>(value)) {
+            node = get_yaml_array(value.get<std::vector<double>>());
+        } else if(std::holds_alternative<std::vector<std::int64_t>>(value)) {
+            node = get_yaml_array(value.get<std::vector<std::int64_t>>());
+        }
+
+        return node;
+    };
+
+    YAML::Emitter out;
+    // Use flow-style for arrays:
+    out.SetSeqFormat(YAML::Flow);
+
+    // Global dictionary:
+    out << YAML::BeginMap;
+
+    // FIXME for arrays we could use YAML::Flow for [...] display instead of list
+
+    // Add the global configuration keys
+    for(const auto& [key, value] : global_config_) {
+        out << YAML::Key << key;
+        out << YAML::Value << get_yaml_value(value);
+    }
+
+    // Add type config, cache them as nodes for later modification
+    std::map<std::string, YAML::Node> type_nodes;
+    for(const auto& [type, config] : type_configs_) {
+        type_nodes.emplace(type, YAML::Node());
+
+        // Add type config keys
+        for(const auto& [key, value] : config) {
+            type_nodes[type][key] = get_yaml_value(value);
+        }
+    }
+
+    // Append satellite configs to the type nodes:
+    for(const auto& [canonical_name, config] : satellite_configs_) {
+        const auto pos = canonical_name.find_first_of('.', 0);
+        const auto type = canonical_name.substr(0, pos);
+        const auto name = canonical_name.substr(pos + 1);
+
+        // Add satellite config keys
+        YAML::Node node;
+        for(const auto& [key, value] : config) {
+            node[key] = get_yaml_value(value);
+        }
+        type_nodes[type][name] = node;
+    }
+
+    for(const auto& [key, node] : type_nodes) {
+        out << YAML::Key << key;
+        out << YAML::Value << node;
+    }
+
+    LOG_IF(config_parser_logger_, WARNING, !out.good()) << "Emitter error: " << out.GetLastError();
+
+    // End global dictionary
+    out << YAML::EndMap;
+    return out.c_str();
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
