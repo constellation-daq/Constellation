@@ -59,7 +59,18 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     std::ostringstream buffer {};
     buffer << file.rdbuf();
 
-    parse_toml(buffer.view());
+    const auto type = detect_config_type(buffer.view());
+    switch(type) {
+    case FileType::TOML: {
+        parse_toml(buffer.view());
+        break;
+    }
+    case FileType::YAML: {
+        parse_yaml(buffer.view());
+        break;
+    }
+    default: std::unreachable();
+    }
 
     // Build the dependency graph from all satellite configurations
     for(const auto& [name, cfg] : satellite_configs_) {
@@ -70,8 +81,19 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     validate();
 }
 
-ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
-    parse_toml(toml);
+ControllerConfiguration::ControllerConfiguration(std::string_view config) {
+    const auto type = detect_config_type(config);
+    switch(type) {
+    case FileType::TOML: {
+        parse_toml(config);
+        break;
+    }
+    case FileType::YAML: {
+        parse_yaml(config);
+        break;
+    }
+    default: std::unreachable();
+    }
 
     // Build the dependency graph from all satellite configurations
     for(const auto& [name, cfg] : satellite_configs_) {
@@ -80,6 +102,52 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 
     // Validate the configuration
     validate();
+}
+
+ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(std::string_view config) {
+
+    std::size_t pos = 0;
+    while(pos < config.size()) {
+        // Find end of line
+        auto end = config.find_first_of("\r\n", pos);
+        if(end == std::string_view::npos) {
+            break;
+        }
+
+        // Get line, trim leading spaces
+        std::string_view line = config.substr(pos, end - pos);
+        const auto first_char_pos = line.find_first_not_of(" \t");
+
+        if(first_char_pos != std::string_view::npos) {
+            line = line.substr(first_char_pos);
+
+            if(line.starts_with("---")) {
+                return FileType::YAML;
+            }
+            if(line.starts_with('[')) {
+                return FileType::TOML;
+            }
+            if(line.find(':') != std::string_view::npos && line.find('=') == std::string_view::npos) {
+                return FileType::YAML;
+            }
+            if(line.find('=') != std::string_view::npos) {
+                return FileType::TOML;
+            }
+        }
+
+        // Move to next line
+        pos = config.find_first_of("\n", end);
+        if(pos == std::string_view::npos) {
+            break;
+        }
+        ++pos;
+    }
+
+    throw ConfigFileParseError("Could not detect configuration file format");
+}
+
+std::string ControllerConfiguration::getAsYAML() const {
+    return {};
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
@@ -155,6 +223,8 @@ std::string ControllerConfiguration::getAsTOML() const {
 
     return oss.str();
 }
+
+void ControllerConfiguration::parse_yaml(std::string_view /*yaml*/) {}
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {
     toml::table tbl {};
