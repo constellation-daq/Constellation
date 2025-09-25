@@ -529,9 +529,9 @@ void BaseSatellite::mark_degraded(std::string_view reason) {
 
 void BaseSatellite::apply_internal_config(const Configuration& config) {
 
-    if(config.has("_heartbeat_interval")) {
+    if(config.has("_max_heartbeat_interval")) {
         const auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::seconds(config.get<std::uint64_t>("_heartbeat_interval")));
+            std::chrono::seconds(config.get<std::uint64_t>("_max_heartbeat_interval")));
         LOG(logger_, INFO) << "Updating maximum heartbeat interval to " + to_string(interval);
         heartbeat_manager_.setMaximumInterval(interval);
     }
