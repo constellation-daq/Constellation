@@ -114,8 +114,8 @@ class H5DataWriter(ReceiverSatellite):
         dset_meta_idx.attrs["CLASS"] = "INDEX"
         # EOR as json
         eor_grp = grp.create_group("EOR")
-        dset = eor_grp.create_dataset("user_tags", (1000,), maxshape=(None,), dtype=np.uint8, chunks=(1000,))
-        dset = eor_grp.create_dataset("run_metadata", (1000,), maxshape=(None,), dtype=np.uint8, chunks=(1000,))
+        eor_grp.create_dataset("user_tags", (1000,), maxshape=(None,), dtype=np.uint8, chunks=(1000,))
+        eor_grp.create_dataset("run_metadata", (1000,), maxshape=(None,), dtype=np.uint8, chunks=(1000,))
 
         # Add sender and reset book keeping indices
         self._swmr_bor_sent.add(sender)
