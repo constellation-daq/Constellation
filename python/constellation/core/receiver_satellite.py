@@ -20,7 +20,7 @@ from .satellite import Satellite
 
 
 class ReceiverSatellite(Satellite):
-    """Constellation Satellite which can send data via CDTP"""
+    """Constellation Satellite which can receive data via CDTP"""
 
     def __init__(self, *args: Any, **kwargs: Any):
         self._drc: DataReceiver | None = None
