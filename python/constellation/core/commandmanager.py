@@ -264,7 +264,7 @@ class CommandReceiver(BaseSatelliteFrame):
 
         # initialize shutdown with delay (so that CSCP response reaches
         # Controller)
-        def reentry_timer(sat: BaseSatelliteFrame) -> None:
+        def reentry_timer(_sat: BaseSatelliteFrame) -> None:
             time.sleep(0.5)
             sys.exit(0)
 
