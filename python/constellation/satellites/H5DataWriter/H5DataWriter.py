@@ -33,8 +33,9 @@ class H5DataWriter(ReceiverSatellite):
         self.swmr_mode: bool = self.config.setdefault("allow_concurrent_reading", False)
         if self.swmr_mode and self.data_transmitters is None:
             raise RuntimeError("SWMR mode require list of known data transmitters")
-        # Book keeping for swmr file indices
+        # Book keeping for swmr file indices and datasets
         self._swmr_idx: dict[str, list[int]] = {}
+        self._swmr_dset: dict[str, tuple[h5py.Group, h5py.Dataset, h5py.Dataset, h5py.Dataset, h5py.Dataset]] = {}
         self._swmr_bor_sent: set[str] = set()
         self._swmr_mode_enabled: bool = False
         swmr_mode_str = "enabled" if self.swmr_mode else "disabled"
@@ -103,14 +104,14 @@ class H5DataWriter(ReceiverSatellite):
         dset = grp.create_dataset("data", (32000,), maxshape=(None,), dtype=np.uint8, chunks=(32000,))
         dset.attrs["CLASS"] = "DETECTOR_DATA"
         # Index dataset to store position inside the 'data' dataset.
-        dset = grp.create_dataset("data_idx", (100,), maxshape=(None,), dtype=np.uint64)
-        dset.attrs["CLASS"] = "INDEX"
+        dset_idx = grp.create_dataset("data_idx", (100,), maxshape=(None,), dtype=np.uint64)
+        dset_idx.attrs["CLASS"] = "INDEX"
         # Meta data, stored in binary format
-        dset = grp.create_dataset("meta", (32000,), maxshape=(None,), dtype=np.uint8, chunks=(32000,))
-        dset.attrs["CLASS"] = "META_DATA"
+        dset_meta = grp.create_dataset("meta", (32000,), maxshape=(None,), dtype=np.uint8, chunks=(32000,))
+        dset_meta.attrs["CLASS"] = "META_DATA"
         # Index dataset to store position inside the 'meta' dataset.
-        dset = grp.create_dataset("meta_idx", (100,), maxshape=(None,), dtype=np.uint64)
-        dset.attrs["CLASS"] = "INDEX"
+        dset_meta_idx = grp.create_dataset("meta_idx", (100,), maxshape=(None,), dtype=np.uint64)
+        dset_meta_idx.attrs["CLASS"] = "INDEX"
         # EOR as json
         eor_grp = grp.create_group("EOR")
         dset = eor_grp.create_dataset("user_tags", (1000,), maxshape=(None,), dtype=np.uint8, chunks=(1000,))
@@ -119,6 +120,7 @@ class H5DataWriter(ReceiverSatellite):
         # Add sender and reset book keeping indices
         self._swmr_bor_sent.add(sender)
         self._swmr_idx[sender] = [0, 0, 0]
+        self._swmr_dset[sender] = (grp, dset, dset_idx, dset_meta, dset_meta_idx)
 
         # Check if ready to switch on SWMR mode
         if self._swmr_bor_sent == self.data_transmitters:
@@ -144,13 +146,8 @@ class H5DataWriter(ReceiverSatellite):
 
     def _write_data_append(self, sender: str, data_record: DataRecord) -> None:
         """Write payload of item by appending existing Dataset."""
-        grp: h5py.Group = self.outfile[sender]  # type: ignore[assignment]
-
-        # Get SWMR datasets
-        data_dset: h5py.DataSet = grp["data"]  # type: ignore[assignment]
-        dataidx_dset: h5py.DataSet = grp["data_idx"]  # type: ignore[assignment]
-        meta_dset: h5py.DataSet = grp["meta"]  # type: ignore[assignment]
-        metaidx_dset: h5py.DataSet = grp["meta_idx"]  # type: ignore[assignment]
+        # Get SWMR datasets from our cache
+        grp, data_dset, dataidx_dset, meta_dset, metaidx_dset = self._swmr_dset[sender]
         data_idx, meta_idx, counts = self._swmr_idx[sender]
 
         # Append blocks into a single dataset of uint8 type
