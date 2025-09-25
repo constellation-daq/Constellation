@@ -456,7 +456,7 @@ class FileMonitoringListener(MonitoringListener):
         fname = f"stats/{metric.sender}.{metric.name.lower()}.csv"
         path = self.output_path / fname
         ts = metric.time.to_unix()
-        with open(path, "a") as csv:
+        with open(path, "a", encoding="utf-8") as csv:
             csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
 
     def reentry(self) -> None:

@@ -294,11 +294,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def _heartbeat_interrupt(self, reason: str) -> None:
         """Called when interrupting due to heartbeats"""
-        pass
 
     def _mark_degraded(self, reason: str) -> None:
         """Called when marking a run degraded"""
-        pass
 
     def get_failed(self) -> list[str]:
         """Get a list of the names of all failed Satellites."""

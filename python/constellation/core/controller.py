@@ -460,7 +460,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
     def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
-        if str(service.host_uuid) in self._uuid_lookup.keys():
+        if str(service.host_uuid) in self._uuid_lookup:
             self.log.error(
                 "Satellite with name '%s.%s' already connected! Please ensure "
                 "unique Satellite names or you will not be able to communicate with all!",
@@ -553,7 +553,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat for sat in self._constellation.satellites.values()]
+            targets = list(self._constellation.satellites.values())
             self.log.debug("Sending %s to all %s connected Satellites.", cmd, len(targets))
         elif not sat:
             targets = [sat for sat in self._constellation.satellites.values() if sat._class_name == satcls]
@@ -618,14 +618,13 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             if sat:
                 # simplify return value for single satellite
                 return sat_response
-            else:
-                # append
-                res[str(target)] = sat_response
+            # append
+            res[str(target)] = sat_response
         return res
 
     def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
         """Pre-processes payload for specific commands."""
-        if cmd == "initialize" or cmd == "reconfigure":
+        if cmd in ("initialize", "reconfigure"):
             # payload needs to be a flat dictionary, but we want to allow to
             # supply a full config -- flatten it here
             try:
@@ -635,9 +634,9 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                     cfg = flatten_config(payload, cls, name)
                     self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
                     return cfg
-            except AttributeError:
-                self.log.warning("Command needs a (valid) configuration dict.")
-                raise RuntimeError("Command needs a (valid) configuration dict.")
+            except AttributeError as exc:
+                self.log.warning("Command needs a (valid) configuration dict (error: %s).", exc)
+                raise RuntimeError("Command needs a (valid) configuration dict.") from exc
         return payload
 
     def _run_task_handler(self) -> None:
@@ -716,7 +715,8 @@ def main(args: Any = None) -> None:
     print("         > constellation.get_state?\n")
 
     if cfg_file:
-        cfg = load_config(cfg_file)  # noqa
+        # make configuration available to the user
+        cfg = load_config(cfg_file)  # noqa  # pylint: disable=unused-variable
         print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
 
     print("   Happy hacking! :)\n")

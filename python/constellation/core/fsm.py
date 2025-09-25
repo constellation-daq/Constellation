@@ -122,6 +122,7 @@ class SatelliteFSM(StateMachine):
 
 
 class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
+    """Mixin-class for handling the different states of the Satellite."""
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)

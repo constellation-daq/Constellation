@@ -72,5 +72,6 @@ class CommandTransmitter:
             message.assemble().send(self._socket, flags)
 
     def close(self) -> None:
+        """Close the network socket."""
         with self._lock:
             self._socket.close()
