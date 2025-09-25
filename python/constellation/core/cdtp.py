@@ -62,6 +62,8 @@ class PushThread(threading.Thread):
         self.exc: SendTimeoutError | None = None
 
     def _send(self, msg: CDTP2Message) -> None:
+        if not msg.data_records:
+            return
         try:
             self._dtm.log_cdtp.trace(
                 "Sending data records from %s to %s",
@@ -115,6 +117,7 @@ class PushThread(threading.Thread):
                 self._send(msg)
                 last_sent = time.time()
                 current_payload_bytes = 0
+        self._send(msg)
 
 
 class DataTransmitter:
