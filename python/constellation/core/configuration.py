@@ -13,8 +13,6 @@ from typing import Any
 class ConfigError(Exception):
     """Exception class for general issues with the configuration."""
 
-    pass
-
 
 class Configuration:
     """Class to track configuration variables and requests."""
@@ -104,9 +102,8 @@ def make_lowercase(obj: dict[str, Any]) -> dict[str, Any]:
         for k, v in obj.items():
             ret[k.lower()] = make_lowercase(v)
         return ret
-    else:
-        # anything else
-        return obj
+    # anything else
+    return obj
 
 
 def flatten_config(
