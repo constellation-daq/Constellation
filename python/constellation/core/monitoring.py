@@ -211,7 +211,7 @@ class MonitoringSender(BaseSatelliteFrame):
         # remove all ZMQ log handlers
         self.log_cmdp_s.debug("Shutting down ZMQ logging.")
         # add zmq logging to existing Constellation loggers
-        for name, logger in logging.root.manager.loggerDict.items():
+        for _name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, ConstellationLogger):
                 if self._zmq_log_handler in logger.handlers:
                     logger.removeHandler(self._zmq_log_handler)

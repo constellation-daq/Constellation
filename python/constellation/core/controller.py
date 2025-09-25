@@ -676,7 +676,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join(timeout=1)
 
-    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    def _repr_pretty_(self, p: Any, _cycle: bool) -> None:
         nsat = len(self.constellation.satellites)
         p.text(f"Controller(group='{self.group}') for {nsat} Satellites, current state is {self.state.name}")
 
@@ -731,7 +731,7 @@ def main(args: Any = None) -> None:
     class ControllerPrompt(Prompts):
         """Customized prompt."""
 
-        def in_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+        def in_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
             return [
                 (Token, ""),
                 # show version
@@ -760,7 +760,7 @@ def main(args: Any = None) -> None:
                 ),
             ]
 
-        def out_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+        def out_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
             return []
 
     ipython_cfg = Config()
