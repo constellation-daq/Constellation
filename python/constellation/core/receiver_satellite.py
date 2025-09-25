@@ -37,7 +37,7 @@ class ReceiverSatellite(Satellite):
         if data_transmitters:
             if not isinstance(data_transmitters, list) or not all([isinstance(t, str) for t in data_transmitters]):
                 msg = "The '_data_transmitters' configuration parameter needs to be a list of strings "
-                msg += '(e.g. \'["detector_satellite", "camera_satellite"]\')'
+                msg += '(e.g. \'["TachyonDetector.array1", "XRayCamera.cam1"]\')'
                 raise ValueError(msg)
             data_transmitters = set(data_transmitters)
         # Create data receiver
