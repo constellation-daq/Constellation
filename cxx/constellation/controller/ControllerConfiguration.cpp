@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -288,8 +289,79 @@ std::string ControllerConfiguration::getAsTOML() const {
     return oss.str();
 }
 
-void ControllerConfiguration::parse_yaml(std::string_view /*yaml*/) {
-    throw ConfigFileParseError("nope");
+void ControllerConfiguration::parse_yaml(std::string_view yaml) {
+    auto root_node = YAML::Load(std::string(yaml));
+
+    // Root node needs to be a map:
+    if(!root_node.IsMap()) {
+        throw ConfigFileParseError("Expected map as root node");
+    }
+
+    auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
+        LOG(config_parser_logger_, TRACE) << "Reading key " << key;
+        if(node.IsMap()) {
+            LOG(config_parser_logger_, TRACE) << "Skipping map for key " << key;
+            return {};
+        }
+
+        if(node.IsSequence()) {
+            // FIXME parse sequence - look at first item and do same checks
+
+            // If not returned yet then unknown type
+            throw ConfigFileTypeError(key, "Unknown type");
+        } else if(node.IsScalar()) {
+
+            const std::string& val = node.as<std::string>();
+            // Check for boolean
+            if(transform(val, ::tolower) == "true") {
+                return true;
+            }
+            if(transform(val, ::tolower) == "false") {
+                return false;
+            }
+
+            // Integer contains only digits and possibly a sign
+            static const std::regex int_regex(R"(^-?\d+$)");
+            if(std::regex_match(val, int_regex)) {
+                try {
+                    return std::stoll(val);
+                } catch(...) {
+                    throw ConfigFileTypeError(key, "Integer out of range");
+                }
+            }
+
+            // Floating point must contain a dot (.)
+            static const std::regex float_regex(R"(^-?\d*\.\d+$)");
+            if(std::regex_match(val, float_regex)) {
+                try {
+                    return std::stod(val);
+                } catch(...) {
+                    throw ConfigFileTypeError(key, "Floating point value out of range");
+                }
+            }
+
+            // Otherwise return as string
+            return val;
+        }
+
+        // If not returned yet then unknown type
+        throw ConfigFileTypeError(key, "Unknown type");
+    };
+
+    // Loop over all keys:
+    for(const auto& node : root_node) {
+        const auto key = node.first.as<std::string>();
+
+        // Check if the node is a map and represents a satellite type:
+        if(node.IsMap()) {
+
+        } else {
+            const auto value = parse_value(key, node.second);
+            if(value.has_value()) {
+                global_config_.emplace(transform(key, ::tolower), value.value());
+            }
+        }
+    }
 }
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {
