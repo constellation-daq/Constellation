@@ -5,56 +5,38 @@
 # Used for testing configuration setup
 
 # The layers of a configuration file should consist of:
-# [Category] -> [Class] -> [Device]
+# [Class] -> [Device]
 
-[constellation]
-# General system settings for network
+# General settings
 name = "myconstellation"
+verbosity = "DEBUG"
 
-[constellation.mocksat]
-# Class-specific system settings for network
+[mocksat]
+# Class-specific system settings
 _role = "none"
 _conditional_transition_timeout = 30
 _max_heartbeat_interval = 25
-
-[constellation.mocksat.device2]
-# Device-specific system settings for network
-_role = "essential"
-start_after = "mocksat.device1"
-parameter1 = "nothing"
-
-[constellation.H5DataReceiverWriter]
-some_key = "some_value"
-
-[controller]
-# General system settings for controller
-constellation_name = "myconstellation"
-show_extra_stuff = true
-scan = "something"
-
-
-[satellites]
-# General system settings for satellites
-verbosity = "DEBUG"
-
-[satellites.mocksat]
-# Class-specific system settings for satellites
+# Class-specific settings for satellites
 current_limit = 5
 ampere = 2
 
-[satellites.mocksat.device1]
-# Device-specific system settings for satellites
+[mocksat.device1]
+# Device-specific settings for satellites
 voltage = 5000
 
-[satellites.mocksat.device2]
-# Device-specific system settings for satelli
+[mocksat.device2]
+# Device-specific system settings
+_role = "essential"
+start_after = "mocksat.device1"
+# Device-specific settings for satellite
 voltage = 3000
 parameter1 = "a lot"
 
-[satellites.H5DataReceiverWriter]
+[H5DataReceiverWriter]
+some_key = "some_value"
 name_format = "test_data_{date}.h5"
 
-[satellites.MockExampleSatellite]
+[MockExampleSatellite]
 _role = "DYNAMIC"
 _conditional_transition_timeout = 30
 _max_heartbeat_interval = 25

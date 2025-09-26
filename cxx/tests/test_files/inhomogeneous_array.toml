@@ -3,5 +3,4 @@
 
 # Config file with inhomogeneous array
 
-[satellites]
 array = [true, 3.14]

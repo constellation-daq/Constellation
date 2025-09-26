@@ -131,14 +131,11 @@ std::string ControllerConfiguration::getAsTOML() const {
     };
 
     // The global TOML table
-    toml::table tbl;
-
-    // Add global config:
-    tbl.emplace("satellites", get_toml_table(global_config_));
+    toml::table tbl = get_toml_table(global_config_);
 
     // Add type config:
     for(const auto& [type, config] : type_configs_) {
-        tbl["satellites"].as_table()->emplace(type, get_toml_table(config));
+        tbl.emplace(type, get_toml_table(config));
     }
 
     // Add individual satellites sections:
@@ -146,8 +143,8 @@ std::string ControllerConfiguration::getAsTOML() const {
         const auto pos = canonical_name.find_first_of('.', 0);
         const auto type = canonical_name.substr(0, pos);
         const auto name = canonical_name.substr(pos + 1);
-        tbl["satellites"].as_table()->emplace(type, toml::table {});
-        tbl["satellites"][type].as_table()->emplace(name, get_toml_table(config));
+        tbl.emplace(type, toml::table {});
+        tbl[type].as_table()->emplace(name, get_toml_table(config));
     }
 
     // Clean up table a bit:
@@ -264,55 +261,48 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
         throw ConfigFileTypeError(key.str(), "Unknown type");
     };
 
-    // Find satellites base node
-    if(const auto& node = tbl.at_path("satellites")) {
+    // Loop over all nodes:
+    tbl.for_each([&](const toml::key& global_key, auto&& global_val) {
+        // Check if this is a table and represents a satellite type:
+        if constexpr(toml::is_table<decltype(global_val)>) {
+            LOG(config_parser_logger_, DEBUG) << "Found satellite type sub-node " << global_key;
+            auto type_lc = transform(global_key.str(), ::tolower);
+            Dictionary dict_type {};
 
-        // Loop over all nodes:
-        node.as_table()->for_each([&](const toml::key& global_key, auto&& global_val) {
-            // Check if this is a table and represents a satellite type:
-            if constexpr(toml::is_table<decltype(global_val)>) {
-                LOG(config_parser_logger_, DEBUG) << "Found satellite type sub-node " << global_key;
-                auto type_lc = transform(global_key.str(), ::tolower);
-                Dictionary dict_type {};
+            global_val.as_table()->for_each([&](const toml::key& type_key, auto&& type_val) {
+                // Check if this is a table and represents an individual satellite
+                if constexpr(toml::is_table<decltype(type_val)>) {
+                    LOG(config_parser_logger_, DEBUG) << "Found satellite name sub-node " << type_key;
+                    auto canonical_name_lc = type_lc + "." + transform(type_key.str(), ::tolower);
+                    Dictionary dict_name {};
 
-                global_val.as_table()->for_each([&](const toml::key& type_key, auto&& type_val) {
-                    // Check if this is a table and represents an individual satellite
-                    if constexpr(toml::is_table<decltype(type_val)>) {
-                        LOG(config_parser_logger_, DEBUG) << "Found satellite name sub-node " << type_key;
-                        auto canonical_name_lc = type_lc + "." + transform(type_key.str(), ::tolower);
-                        Dictionary dict_name {};
-
-                        type_val.as_table()->for_each([&](const toml::key& name_key, auto&& name_val) {
-                            const auto value = parse_value(name_key, name_val);
-                            if(value.has_value()) {
-                                dict_name.emplace(transform(name_key, ::tolower), value.value());
-                            }
-                        });
-
-                        // Add satellite dictionary
-                        satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
-
-                    } else {
-                        const auto value = parse_value(type_key, type_val);
+                    type_val.as_table()->for_each([&](const toml::key& name_key, auto&& name_val) {
+                        const auto value = parse_value(name_key, name_val);
                         if(value.has_value()) {
-                            dict_type.emplace(transform(type_key.str(), ::tolower), value.value());
+                            dict_name.emplace(transform(name_key, ::tolower), value.value());
                         }
+                    });
+
+                    // Add satellite dictionary
+                    satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
+
+                } else {
+                    const auto value = parse_value(type_key, type_val);
+                    if(value.has_value()) {
+                        dict_type.emplace(transform(type_key.str(), ::tolower), value.value());
                     }
-                });
-
-                // Add type dictionary
-                type_configs_.emplace(std::move(type_lc), std::move(dict_type));
-            } else {
-                const auto value = parse_value(global_key, global_val);
-                if(value.has_value()) {
-                    global_config_.emplace(transform(global_key.str(), ::tolower), value.value());
                 }
-            }
-        });
+            });
 
-    } else {
-        LOG(config_parser_logger_, WARNING) << "Could not find base node for satellites";
-    }
+            // Add type dictionary
+            type_configs_.emplace(std::move(type_lc), std::move(dict_type));
+        } else {
+            const auto value = parse_value(global_key, global_val);
+            if(value.has_value()) {
+                global_config_.emplace(transform(global_key.str(), ::tolower), value.value());
+            }
+        }
+    });
 }
 
 void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_name) {
