@@ -28,7 +28,7 @@ class HeartbeatSender(SatelliteStateHandler):
     ) -> None:
 
         super().__init__(name=name, **kwargs)
-        self.default_heartbeat_period = 30000
+        self._default_heartbeat_period = 30000
         self.minimum_heartbeat_period = 500
         self._heartbeat_period = 500
         self._subscribers = 0
@@ -59,6 +59,17 @@ class HeartbeatSender(SatelliteStateHandler):
     def role(self, new_role: CHPRole) -> None:
         self._role = new_role
 
+    @property
+    def max_heartbeat_interval(self) -> int:
+        # Convert to seconds before returning
+        return int(self._default_heartbeat_period / 1000)
+
+    @max_heartbeat_interval.setter
+    def max_heartbeat_interval(self, new_period: int) -> None:
+        # Convert to milliseconds before setting
+        self.log_chp_s.debug(f"Adjusting maximum heartbeat interval to {new_period} seconds.")
+        self._default_heartbeat_period = new_period * 1000
+
     def _add_com_thread(self) -> None:
         """Add the heartbeat thread to the communication thread pool."""
         super()._add_com_thread()
@@ -78,7 +89,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 # Update number of subscribers and the associated heartbeat period
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
-                    self.default_heartbeat_period,
+                    self._default_heartbeat_period,
                     max(
                         self.minimum_heartbeat_period,
                         int(self.minimum_heartbeat_period * math.sqrt(max(self._subscribers, 1) - 1) * 3),

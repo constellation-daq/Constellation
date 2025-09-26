@@ -15,6 +15,7 @@ name = "myconstellation"
 # Class-specific system settings for network
 _role = "none"
 _conditional_transition_timeout = 30
+_max_heartbeat_interval = 25
 
 [constellation.mocksat.device2]
 # Device-specific system settings for network
@@ -56,6 +57,7 @@ name_format = "test_data_{date}.h5"
 [satellites.MockExampleSatellite]
 _role = "DYNAMIC"
 _conditional_transition_timeout = 30
+_max_heartbeat_interval = 25
 magic = "True"
 mode = "passionate"
 voltage = 10
