@@ -17,6 +17,7 @@
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
+using namespace constellation::utils;
 
 MissingKeyError::MissingKeyError(std::string_view key) {
     error_message_ = "Key ";
@@ -51,15 +52,9 @@ InvalidTypeError::InvalidTypeError(std::string_view key,
     }
 }
 
-InvalidValueError::InvalidValueError(const Configuration& config, const std::string& key, std::string_view reason)
-    : InvalidValueError(config.getText(key), key, reason) {}
-
-InvalidValueError::InvalidValueError(const std::string& value, const std::string& key, std::string_view reason) {
-    error_message_ = "Value " + utils::quote(value) + " of key " + utils::quote(key) + " is not valid";
-    if(!reason.empty()) {
-        error_message_ += ": ";
-        error_message_ += reason;
-    }
+InvalidValueError::InvalidValueError(std::string_view key, std::string_view reason) {
+    error_message_ = "Value of key " + utils::quote(key) + " is not valid: ";
+    error_message_ += reason;
 }
 
 InvalidCombinationError::InvalidCombinationError(const Configuration& config,
@@ -78,4 +73,9 @@ InvalidCombinationError::InvalidCombinationError(const Configuration& config,
         error_message_ += ": ";
         error_message_ += reason;
     }
+}
+
+InvalidUpdateError::InvalidUpdateError(std::string_view key, std::string_view reason) {
+    error_message_ = "Failed to update value of key " + quote(key) + ": ";
+    error_message_ += reason;
 }

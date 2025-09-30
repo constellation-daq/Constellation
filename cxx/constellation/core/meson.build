@@ -5,9 +5,8 @@ core_src = files(
   'chirp/MulticastSocket.cpp',
   'chirp/Manager.cpp',
   'config/Configuration.cpp',
-  'config/Dictionary.cpp',
-  'config/Value.cpp',
   'config/exceptions.cpp',
+  'config/value_types.cpp',
   'heartbeat/HeartbeatManager.cpp',
   'heartbeat/HeartbeatSend.cpp',
   'log/CMDPSink.cpp',
@@ -76,10 +75,9 @@ install_headers(
 install_headers(
   'config/Configuration.hpp',
   'config/Configuration.ipp',
-  'config/Dictionary.hpp',
-  'config/Value.hpp',
-  'config/Value.ipp',
   'config/exceptions.hpp',
+  'config/value_types.hpp',
+  'config/value_types.ipp',
   subdir: 'constellation/core/config',
 )
 

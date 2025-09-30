@@ -68,7 +68,7 @@ namespace constellation::config {
         InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type, std::string_view reason = "");
     };
 
-    // Forward declaration of Configuration class
+    // Forward declaration of Configuration
     class Configuration;
 
     /**
@@ -82,19 +82,10 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid value
-         * @param config Configuration object containing the invalid value
          * @param key Name of the problematic key
-         * @param reason Reason why the value is invalid (empty if no explicit reason)
+         * @param reason Reason why the value is invalid
          */
-        InvalidValueError(const Configuration& config, const std::string& key, std::string_view reason = "");
-
-        /**
-         * @brief Construct an error for an invalid value
-         * @param value invalid value
-         * @param key Name of the problematic key
-         * @param reason Reason why the value is invalid (empty if no explicit reason)
-         */
-        InvalidValueError(const std::string& value, const std::string& key, std::string_view reason = "");
+        InvalidValueError(std::string_view key, std::string_view reason);
     };
 
     /**
@@ -115,6 +106,23 @@ namespace constellation::config {
         InvalidCombinationError(const Configuration& config,
                                 std::initializer_list<std::string> keys,
                                 std::string_view reason = "");
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Indicates an error when updating a configuration
+     *
+     * Should be raised if a configuration is updated but the updated value is invalid given the current configuration, such
+     * as switching the type.
+     */
+    class CNSTLN_API InvalidUpdateError : public ConfigurationError {
+    public:
+        /**
+         * @brief Construct an error for an invalid update
+         * @param key Name of the problematic key
+         * @param reason Reason why the updated value is invalid
+         */
+        InvalidUpdateError(std::string_view key, std::string_view reason);
     };
 
 } // namespace constellation::config

@@ -2,148 +2,369 @@
  * @file
  * @brief Implementation of configuration
  *
- * @copyright Copyright (c) 2024 DESY and the Constellation authors.
+ * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
 
 #include "Configuration.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <filesystem>
 #include <initializer_list>
+#include <iterator>
 #include <stdexcept>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <variant>
 #include <vector>
 
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/utils/casts.hpp"
+#include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
+using namespace constellation::message;
+using namespace constellation::utils;
 
-Configuration::Configuration(const Dictionary& dict, bool mark_used) {
-    for(const auto& [key, val] : dict) {
-        config_.emplace(utils::transform(key, ::tolower), ConfigValue(val, mark_used));
+// NOLINTBEGIN(misc-no-recursion)
+Section::Section(std::string prefix, Dictionary* dictionary) : prefix_(std::move(prefix)), dictionary_(dictionary) {
+    // Convert dictionary to lowercase
+    convert_lowercase();
+    // Create configuration section for any nested dictionaries in the dictionary
+    create_section_tree();
+}
+// NOLINTEND(misc-no-recursion)
+
+void Section::convert_lowercase() {
+    // Iterate over nodes
+    auto it = dictionary_->begin();
+    while(it != dictionary_->end()) {
+        // Convert key to lowercase and check if different
+        const auto& key = it->first;
+        const auto key_lc = transform(key, ::tolower);
+        if(key_lc != key) {
+            // Extract node to avoid iterator invalidation
+            auto node = dictionary_->extract(it);
+            // Change key to lowercase and insert back into map
+            node.key() = key_lc;
+            const auto insert_res = dictionary_->insert(std::move(node));
+            // Check that node was insert, if not there were duplicate keys
+            if(!insert_res.inserted) {
+                throw InvalidKeyError(prefix_ + key, "key defined twice");
+            }
+        }
+        // Advance iterator
+        ++it;
     }
-};
+}
 
-std::size_t Configuration::count(std::initializer_list<std::string> keys) const {
+// NOLINTBEGIN(misc-no-recursion)
+void Section::create_section_tree() {
+    for(auto& [key, value] : *dictionary_) {
+        // Check for dictionaries
+        if(std::holds_alternative<Dictionary>(value)) {
+            auto& dict = value.get<Dictionary>();
+
+            // Create and store new nested configuration section
+            const auto sub_prefix = prefix_ + key + ".";
+            section_tree_.try_emplace(key, sub_prefix, &dict);
+        }
+    }
+}
+// NOLINTEND(misc-no-recursion)
+
+bool Section::has(std::string_view key) const {
+    const auto key_lc = transform(key, ::tolower);
+    return dictionary_->contains(key_lc);
+}
+
+std::size_t Section::count(std::initializer_list<std::string_view> keys) const {
     if(keys.size() == 0) {
-        throw std::invalid_argument("list of keys cannot be empty");
+        throw std::invalid_argument("list of keys to count cannot be empty");
     }
 
     std::size_t found = 0;
     for(const auto& key : keys) {
         if(has(key)) {
-            found++;
+            ++found;
         }
     }
     return found;
 }
 
-std::string Configuration::getText(const std::string& key) const {
-    try {
-        const auto& dictval = config_.at(utils::transform(key, ::tolower));
-        dictval.markUsed();
-        return dictval.str();
-    } catch(std::out_of_range& e) {
-        throw MissingKeyError(key);
-    }
-}
-
-/**
- * For a relative path the absolute path of the configuration file is prepended. Absolute paths are not changed.
- */
-std::filesystem::path Configuration::getPath(const std::string& key, bool check_exists) const {
-    try {
-        return path_to_absolute(get<std::string>(key), check_exists);
-    } catch(std::invalid_argument& e) {
-        throw InvalidValueError(getText(key), key, e.what());
-    }
-}
-/**
- * For a relative path the absolute path of the configuration file is prepended. Absolute paths are not changed.
- */
-std::filesystem::path Configuration::getPathWithExtension(const std::string& key,
-                                                          const std::string& extension,
-                                                          bool check_exists) const {
-    try {
-        return path_to_absolute(std::filesystem::path(get<std::string>(key)).replace_extension(extension), check_exists);
-    } catch(std::invalid_argument& e) {
-        throw InvalidValueError(getText(key), key, e.what());
-    }
-}
-/**
- * For all relative paths the absolute path of the configuration file is prepended. Absolute paths are not changed.
- */
-std::vector<std::filesystem::path> Configuration::getPathArray(const std::string& key, bool check_exists) const {
-    const auto vals = getArray<std::string>(key);
-    std::vector<std::filesystem::path> path_array {};
-    path_array.reserve(vals.size());
-
-    // Convert all paths to absolute
-    try {
-        for(const auto& path : vals) {
-            path_array.emplace_back(path_to_absolute(path, check_exists));
-        }
-    } catch(std::invalid_argument& e) {
-        throw InvalidValueError(getText(key), key, e.what());
-    }
-    return path_array;
-}
-
-/**
- *  The alias is only used if new key does not exist but old key does. The old key is automatically marked as used.
- */
-void Configuration::setAlias(const std::string& new_key, const std::string& old_key, bool warn) {
-    if(!has(old_key) || has(new_key)) {
+void Section::setAlias(std::string_view new_key, std::string_view old_key, bool warn) const {
+    if(!has(old_key)) {
         return;
     }
 
-    const auto new_key_lc = utils::transform(new_key, ::tolower);
-    const auto old_key_lc = utils::transform(old_key, ::tolower);
-    config_[new_key_lc] = config_.at(old_key_lc);
+    const auto new_key_lc = transform(new_key, ::tolower);
+    const auto old_key_lc = transform(old_key, ::tolower);
+    (*dictionary_)[new_key_lc] = std::move(dictionary_->at(old_key_lc));
+    dictionary_->erase(old_key_lc);
 
-    LOG_IF(WARNING, warn) << "Parameter " << utils::quote(old_key) << " is deprecated and superseded by "
-                          << utils::quote(new_key);
+    LOG_IF(WARNING, warn) << "Parameter " << quote(old_key) << " is deprecated and superseded by " << quote(new_key);
 }
 
-std::filesystem::path Configuration::path_to_absolute(std::filesystem::path path, bool canonicalize_path) {
-    // If not a absolute path, make it an absolute path
-    if(!path.is_absolute()) {
-        // Get current directory and append the relative path
-        path = std::filesystem::current_path() / path;
-    }
+namespace {
+    std::filesystem::path path_to_absolute(std::filesystem::path path, bool check_exists) {
+        // If not a absolute path, make it an absolute path
+        if(!path.is_absolute()) {
+            // Get current directory and append the relative path
+            path = std::filesystem::current_path() / path;
+        }
 
-    // Normalize path only if we have to check if it exists
-    // NOTE: This throws an error if the path does not exist
-    if(canonicalize_path) {
-        try {
+        // Check if the path exists
+        const auto exists = std::filesystem::exists(path);
+        if(check_exists && !exists) {
+            throw std::invalid_argument("path " + quote(path.string()) + " not found");
+        }
+
+        // Normalize path if the path exists
+        if(exists) {
             path = std::filesystem::canonical(path);
-        } catch(std::filesystem::filesystem_error&) {
-            throw std::invalid_argument("path " + path.string() + " not found");
+        }
+
+        return path;
+    }
+} // namespace
+
+std::filesystem::path Section::getPath(std::string_view key, bool check_exists) const {
+    const auto path_str = get<std::string>(key);
+    try {
+        return path_to_absolute(path_str, check_exists);
+    } catch(std::invalid_argument& e) {
+        throw InvalidValueError(prefix_ + utils::to_string(key), e.what());
+    }
+}
+
+std::vector<std::filesystem::path> Section::getPathArray(std::string_view key, bool check_exists) const {
+    std::vector<std::filesystem::path> out {};
+    const auto path_str_arr = getArray<std::string>(key);
+    out.reserve(path_str_arr.size());
+    for(const auto& path_str : path_str_arr) {
+        try {
+            out.emplace_back(path_to_absolute(path_str, check_exists));
+        } catch(std::invalid_argument& e) {
+            throw InvalidValueError(prefix_ + utils::to_string(key), e.what());
         }
     }
-    return path;
+    return out;
 }
 
-std::size_t Configuration::size(Group group, Usage usage) const {
-    std::size_t size = 0;
-    for_each(group, usage, [&](const std::string&, const Value&) { ++size; });
-    return size;
-}
+const Section& Section::getSection(std::string_view key) const {
+    const auto key_lc = transform(key, ::tolower);
 
-Dictionary Configuration::getDictionary(Group group, Usage usage) const {
-    Dictionary result {};
-    for_each(group, usage, [&](const std::string& key, const Value& val) { result.emplace(key, val); });
-    return result;
-}
-
-void Configuration::update(const Configuration& other) {
-    // We only update the used keys from the other configuration
-    for(const auto& [key, value] : other.getDictionary(Group::ALL, Usage::USED)) {
-        set(key, value, true);
+    // Try to get configuration section from tree
+    try {
+        return section_tree_.at(key_lc);
+    } catch(const std::out_of_range&) {
+        const auto it = dictionary_->find(key_lc);
+        if(it != dictionary_->cend()) {
+            throw InvalidTypeError(prefix_ + utils::to_string(key), it->second.demangle(), "Section");
+        }
+        throw MissingKeyError(prefix_ + utils::to_string(key));
     }
+}
+
+std::vector<std::string> Section::getKeys() const {
+    std::vector<std::string> out {};
+    std::ranges::for_each(*dictionary_, [&](const auto& p) { out.emplace_back(p.first); });
+    return out;
+}
+
+std::string Section::getText(std::string_view key) const {
+    const auto key_lc = transform(key, ::tolower);
+    try {
+        return dictionary_->at(key_lc).to_string();
+    } catch(const std::out_of_range&) {
+        throw MissingKeyError(prefix_ + utils::to_string(key));
+    }
+}
+
+namespace {
+    // NOLINTNEXTLINE(misc-no-recursion)
+    inline std::string dictionary_to_string(const Dictionary& dictionary,
+                                            std::size_t indent,
+                                            Section::ConfigurationGroup configuration_group) {
+        std::string out {};
+        const auto indent_str = std::string(indent, ' ');
+        for(const auto& [key, value] : dictionary) {
+
+            // Filter keys if requested
+            const auto key_internal = key.starts_with('_');
+            if((key_internal && configuration_group == Section::ConfigurationGroup::USER) ||
+               (!key_internal && configuration_group == Section::ConfigurationGroup::INTERNAL)) {
+                continue;
+            }
+
+            if(std::holds_alternative<Dictionary>(value)) {
+                // If dictionary, increase indent and call recursively
+                const auto& new_dictionary = value.get<Dictionary>();
+                out += indent_str + key + ":\n";
+                out += dictionary_to_string(new_dictionary, indent + 2, configuration_group);
+            } else {
+                // Otherwise, add directly
+                out += indent_str + key + ": " + value.to_string() + "\n";
+            }
+        }
+        return out;
+    }
+} // namespace
+
+std::string Section::to_string(ConfigurationGroup configuration_group) const {
+    auto out = dictionary_to_string(*dictionary_, 2, configuration_group);
+
+    // Remove last newline
+    if(!out.empty()) {
+        out.resize(out.size() - 1);
+    }
+
+    return out;
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+std::vector<std::string> Section::removeUnusedEntries() {
+    std::vector<std::string> unused_keys {};
+    std::vector<std::string> unused_keys_to_remove {};
+    for(const auto& [key, value] : *dictionary_) {
+        if(std::holds_alternative<Dictionary>(value)) {
+            // If dictionary, remove unused key from there
+            auto& sub_dict = section_tree_.at(key);
+            auto sub_unused_keys = sub_dict.removeUnusedEntries();
+            std::ranges::move(sub_unused_keys, std::back_inserter(unused_keys));
+            // If dictionary now empty, erase it
+            if(sub_dict.empty()) {
+                section_tree_.erase(key);
+                unused_keys_to_remove.emplace_back(key);
+            }
+        } else {
+            // Otherwise, check if unused and store key
+            if(!used_keys_.contains(key)) {
+                unused_keys.emplace_back(prefix_ + key);
+                unused_keys_to_remove.emplace_back(key);
+            }
+        }
+    }
+    // Remove unused keys
+    std::ranges::for_each(unused_keys_to_remove, [this](const auto& key) { dictionary_->erase(key); });
+    return unused_keys;
+}
+
+namespace {
+    // NOLINTNEXTLINE(misc-no-recursion)
+    void validate_update(const Dictionary& dictionary, const Dictionary& other_dictionary) {
+        for(const auto& [other_key, other_value] : other_dictionary) {
+            // Check that key is also in dictionary
+            const auto entry_it = dictionary.find(other_key);
+            if(entry_it == dictionary.cend()) {
+                throw InvalidUpdateError(other_key, "key does not exist in current configuration");
+            }
+            const auto& value = entry_it->second;
+            // Check that values has the same type
+            if(value.index() != other_value.index()) {
+                throw InvalidUpdateError(other_key,
+                                         "cannot change type from " + quote(value.demangle()) + " to " +
+                                             quote(other_value.demangle()));
+            }
+            if(std::holds_alternative<Scalar>(value)) {
+                const auto& scalar = value.get<Scalar>();
+                const auto& other_scalar = other_value.get<Scalar>();
+                // Compare scalar type
+                if(scalar.index() != other_scalar.index()) {
+                    throw InvalidUpdateError(other_key,
+                                             "cannot change type from " + quote(scalar.demangle()) + " to " +
+                                                 quote(other_scalar.demangle()));
+                }
+            } else if(std::holds_alternative<Array>(value)) {
+                const auto& array = value.get<Array>();
+                const auto& other_array = other_value.get<Array>();
+                // If array, check that elements have the same type (if not empty)
+                if(!array.empty() && !other_array.empty() && array.index() != other_array.index()) {
+                    throw InvalidUpdateError(other_key,
+                                             "cannot change type from " + quote(array.demangle()) + " to " +
+                                                 quote(other_array.demangle()));
+                }
+            } else if(std::holds_alternative<Dictionary>(value)) {
+                validate_update(value.get<Dictionary>(), other_value.get<Dictionary>());
+            } else {
+                std::unreachable();
+            }
+        }
+    }
+} // namespace
+
+void Section::update(const Section& other) {
+    // Validate update beforehand
+    validate_update(*dictionary_, *other.dictionary_);
+
+    // Update values without validating again
+    update_impl(other);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void Section::update_impl(const Section& other) {
+    for(const auto& [other_key, other_value] : *other.dictionary_) {
+        auto entry_it = dictionary_->find(other_key);
+        const auto& key = entry_it->first;
+        const auto& value = entry_it->second;
+        if(std::holds_alternative<Dictionary>(value)) {
+            // If dictionary, update recursively
+            section_tree_.at(key).update_impl(other.getSection(other_key));
+        } else {
+            entry_it->second = other_value;
+        }
+    }
+}
+
+RootDictionaryHolder::RootDictionaryHolder(Dictionary dictionary) : root_dictionary_(std::move(dictionary)) {}
+
+Configuration::Configuration() : Section("", &root_dictionary_) {}
+
+Configuration::Configuration(Dictionary root_dictionary)
+    : RootDictionaryHolder(std::move(root_dictionary)), Section("", &root_dictionary_) {}
+
+// NOLINTNEXTLINE(bugprone-exception-escape): Exception not possible since root dict is empty during section construction
+Configuration::Configuration(Configuration&& other) noexcept
+    : RootDictionaryHolder(std::move(other.root_dictionary_)), Section(std::move(other.prefix_), &other.root_dictionary_) {
+    // Note: Section was constructed with moved and thus empty root dictionary to avoid creating
+    //       configuration section tree again in the Section constructor
+    // Exchange root dictionaries
+    dictionary_ = &root_dictionary_;
+    other.dictionary_ = &other.root_dictionary_;
+    // Move used keys and configuration section tree
+    used_keys_ = std::move(other.used_keys_);
+    section_tree_ = std::move(other.section_tree_);
+}
+
+Configuration& Configuration::operator=(Configuration&& other) noexcept {
+    // Move root dictionary
+    root_dictionary_ = std::move(other.root_dictionary_);
+    // Exchange root dictionaries
+    dictionary_ = &root_dictionary_;
+    other.dictionary_ = &other.root_dictionary_;
+    // Move prefix, used keys and configuration section tree
+    prefix_ = std::move(other.prefix_);
+    used_keys_ = std::move(other.used_keys_);
+    section_tree_ = std::move(other.section_tree_);
+
+    return *this;
+}
+
+PayloadBuffer Configuration::assemble() const {
+    msgpack::sbuffer sbuf {};
+    ::msgpack_pack(sbuf, root_dictionary_);
+    return {std::move(sbuf)};
+}
+
+Configuration Configuration::disassemble(const PayloadBuffer& message) {
+    return {msgpack_unpack_to<Dictionary>(to_char_ptr(message.span().data()), message.span().size())};
 }
