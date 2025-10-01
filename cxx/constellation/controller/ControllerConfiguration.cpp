@@ -351,17 +351,17 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         }
 
         if(node.IsScalar()) {
-            bool retval_bool {};
+            bool retval_bool {}; // NOLINT(misc-const-correctness)
             if(YAML::convert<bool>::decode(node, retval_bool)) {
                 return retval_bool;
             }
 
-            std::int64_t retval_int {};
+            std::int64_t retval_int {}; // NOLINT(misc-const-correctness)
             if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
                 return retval_int;
             }
 
-            double retval_float {};
+            double retval_float {}; // NOLINT(misc-const-correctness)
             if(YAML::convert<double>::decode(node, retval_float)) {
                 return retval_float;
             }
