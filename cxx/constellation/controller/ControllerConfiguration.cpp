@@ -292,8 +292,8 @@ std::string ControllerConfiguration::getAsTOML() const {
 void ControllerConfiguration::parse_yaml(std::string_view yaml) {
     auto root_node = YAML::Load(std::string(yaml));
 
-    // Root node needs to be a map:
-    if(!root_node.IsMap()) {
+    // Root node needs to be a map or empty:
+    if(!root_node.IsMap() && !root_node.IsNull()) {
         throw ConfigFileParseError("Expected map as root node");
     }
 

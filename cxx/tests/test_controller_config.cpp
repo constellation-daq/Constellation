@@ -36,7 +36,7 @@ namespace {
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
-TEST_CASE("Non-existing TOML file", "[controller]") {
+TEST_CASE("Non-existing configuration file", "[controller]") {
     const auto test_file = std::filesystem::path("non-existing.toml");
     REQUIRE_THROWS_MATCHES(ControllerConfiguration(test_file),
                            ConfigFileNotFoundError,
@@ -45,6 +45,11 @@ TEST_CASE("Non-existing TOML file", "[controller]") {
 
 TEST_CASE("Invalid TOML file", "[controller]") {
     const auto test_file = test_files_dir() / "invalid_toml.txt";
+    REQUIRE_THROWS_AS(ControllerConfiguration(test_file), ConfigFileParseError);
+}
+
+TEST_CASE("Invalid YAML file", "[controller]") {
+    const auto test_file = test_files_dir() / "invalid_config.yaml";
     REQUIRE_THROWS_AS(ControllerConfiguration(test_file), ConfigFileParseError);
 }
 
@@ -140,10 +145,15 @@ TEST_CASE("Valid YAML file", "[controller]") {
 }
 
 TEST_CASE("No global section", "[controller]") {
-    const std::string_view toml_string = "# Config without global section";
-    const ControllerConfiguration config {toml_string, ControllerConfiguration::FileType::TOML};
-    const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
-    REQUIRE(global_config.empty());
+    const std::string_view config_string = "# Config without global section";
+
+    const ControllerConfiguration config_toml {config_string, ControllerConfiguration::FileType::TOML};
+    const auto global_config_toml = config_toml.getSatelliteConfiguration("NotA.Satellite");
+    REQUIRE(global_config_toml.empty());
+
+    const ControllerConfiguration config_yaml {config_string, ControllerConfiguration::FileType::YAML};
+    const auto global_config_yaml = config_yaml.getSatelliteConfiguration("NotA.Satellite");
+    REQUIRE(global_config_yaml.empty());
 }
 
 TEST_CASE("Adding satellite configuration", "[controller]") {
