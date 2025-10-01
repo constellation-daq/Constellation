@@ -317,6 +317,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                     return retval_bool;
                 }
             } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as bool";
             }
 
             try {
@@ -325,6 +326,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                     return retval_int;
                 }
             } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as int";
             }
 
             try {
@@ -333,6 +335,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                     return retval_float;
                 }
             } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as float";
             }
 
             // Otherwise return as string vector:
@@ -340,17 +343,17 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         }
 
         if(node.IsScalar()) {
-            bool retval_bool;
+            bool retval_bool = false;
             if(YAML::convert<bool>::decode(node, retval_bool)) {
                 return retval_bool;
             }
 
-            std::int64_t retval_int;
+            std::int64_t retval_int = 0;
             if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
                 return retval_int;
             }
 
-            double retval_float;
+            double retval_float = NAN;
             if(YAML::convert<double>::decode(node, retval_float)) {
                 return retval_float;
             }
