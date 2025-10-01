@@ -34,6 +34,8 @@ namespace constellation::controller {
     public:
         /** File type of the configuration */
         enum class FileType : std::uint8_t {
+            /** Unknown configuration file type */
+            UNKNOWN,
             /** TOML configuration file */
             TOML,
             /** YAML configuration file */
@@ -49,12 +51,13 @@ namespace constellation::controller {
          * @brief Construct a controller configuration and parse dictionaries from a string
          *
          * @param config Configuration data as string
+         * @param type Type of configuration to be parsed
          *
          * @throws ConfigFileNotFoundError if the configuration file could not be found or opened
          * @throws ConfigFileParseError if the configuration file could not be parsed as valid file format
          * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
-        CNSTLN_API ControllerConfiguration(std::string_view config);
+        CNSTLN_API ControllerConfiguration(std::string_view config, FileType type);
 
         /**
          * @brief Construct a controller configuration and parse dictionaries from a configuration file
@@ -112,7 +115,7 @@ namespace constellation::controller {
         CNSTLN_API void validate() const;
 
     private:
-        FileType detect_config_type(std::string_view config);
+        FileType detect_config_type(const std::filesystem::path& file);
 
         /**
          * @brief Parse a string view with TOML data into dictionaries

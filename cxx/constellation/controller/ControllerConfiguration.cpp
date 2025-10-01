@@ -60,16 +60,17 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     std::ostringstream buffer {};
     buffer << file.rdbuf();
 
-    const auto type = detect_config_type(buffer.view());
+    const auto type = detect_config_type(path);
     switch(type) {
-    case FileType::TOML: {
-        parse_toml(buffer.view());
-        break;
-    }
     case FileType::YAML: {
         parse_yaml(buffer.view());
         break;
     }
+    case FileType::UNKNOWN:
+    case FileType::TOML: {
+        parse_toml(buffer.view());
+        break;
+    }
     default: std::unreachable();
     }
 
@@ -82,17 +83,18 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     validate();
 }
 
-ControllerConfiguration::ControllerConfiguration(std::string_view config) {
-    const auto type = detect_config_type(config);
+ControllerConfiguration::ControllerConfiguration(std::string_view config, ControllerConfiguration::FileType type) {
+
     switch(type) {
-    case FileType::TOML: {
-        parse_toml(config);
-        break;
-    }
     case FileType::YAML: {
         parse_yaml(config);
         break;
     }
+    case FileType::UNKNOWN:
+    case FileType::TOML: {
+        parse_toml(config);
+        break;
+    }
     default: std::unreachable();
     }
 
@@ -105,46 +107,16 @@ ControllerConfiguration::ControllerConfiguration(std::string_view config) {
     validate();
 }
 
-ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(std::string_view config) {
+ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(const std::filesystem::path& file) {
+    const auto ext = transform(file.extension().string(), ::tolower);
 
-    std::size_t pos = 0;
-    while(pos < config.size()) {
-        // Find end of line
-        auto end = config.find_first_of("\r\n", pos);
-        if(end == std::string_view::npos) {
-            break;
-        }
-
-        // Get line, trim leading spaces
-        std::string_view line = config.substr(pos, end - pos);
-        const auto first_char_pos = line.find_first_not_of(" \t");
-
-        if(first_char_pos != std::string_view::npos) {
-            line = line.substr(first_char_pos);
-
-            if(line.starts_with("---")) {
-                return FileType::YAML;
-            }
-            if(line.starts_with('[')) {
-                return FileType::TOML;
-            }
-            if(line.find(':') != std::string_view::npos && line.find('=') == std::string_view::npos) {
-                return FileType::YAML;
-            }
-            if(line.find('=') != std::string_view::npos) {
-                return FileType::TOML;
-            }
-        }
-
-        // Move to next line
-        pos = config.find_first_of("\n", end);
-        if(pos == std::string_view::npos) {
-            break;
-        }
-        ++pos;
+    if(ext == ".yaml" || ext == ".yml") {
+        return FileType::YAML;
+    } else if(ext == ".toml") {
+        return FileType::TOML;
     }
 
-    throw ConfigFileParseError("Could not detect configuration file format");
+    return FileType::UNKNOWN;
 }
 
 std::string ControllerConfiguration::getAsYAML() const {
@@ -316,7 +288,9 @@ std::string ControllerConfiguration::getAsTOML() const {
     return oss.str();
 }
 
-void ControllerConfiguration::parse_yaml(std::string_view /*yaml*/) {}
+void ControllerConfiguration::parse_yaml(std::string_view /*yaml*/) {
+    throw ConfigFileParseError("nope");
+}
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {
     toml::table tbl {};
