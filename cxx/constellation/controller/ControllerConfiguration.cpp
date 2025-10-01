@@ -297,7 +297,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         throw ConfigFileParseError("Expected map as root node");
     }
 
-    auto parse_key = [&](const YAML::Node node) -> std::string {
+    auto parse_key = [&](const YAML::Node& node) -> std::string {
         try {
             return node.as<std::string>();
         } catch(const YAML::Exception& e) {
