@@ -348,12 +348,10 @@ void MissionControl::on_btnGenConf_clicked() {
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
-    QString selected_filter;
     const QString filename = QFileDialog::getSaveFileName(this,
                                                           tr("Save File"),
                                                           QFileInfo(txtConfigFileName->text()).path(),
-                                                          "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)",
-                                                          &selected_filter);
+                                                          "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)");
 
     if(filename.isNull()) {
         return;
@@ -361,7 +359,7 @@ void MissionControl::on_btnGenConf_clicked() {
 
     // Store to file:
     std::ofstream file {filename.toStdString()};
-    if(selected_filter.contains("*.yaml")) {
+    if(filename.endsWith(".yaml", Qt::CaseInsensitive) || filename.endsWith(".yml", Qt::CaseInsensitive)) {
         file << new_cfg.getAsYAML();
     } else {
         file << new_cfg.getAsTOML();
