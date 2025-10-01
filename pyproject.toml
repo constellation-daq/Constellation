@@ -35,6 +35,7 @@ dependencies = [
     "numpy",
     "psutil",
     "rich",
+    "pyyaml",
 ]
 
 [project.scripts]
