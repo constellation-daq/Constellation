@@ -99,7 +99,7 @@ TEST_CASE("Valid TOML file", "[controller]") {
 
 TEST_CASE("No global section", "[controller]") {
     const std::string_view toml_string = "# Config without global section";
-    const ControllerConfiguration config {toml_string};
+    const ControllerConfiguration config {toml_string, ControllerConfiguration::FileType::TOML};
     const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
     REQUIRE(global_config.empty());
 }
@@ -144,7 +144,7 @@ TEST_CASE("Convert to TOML", "[controller]") {
     REQUIRE_THAT(toml, ContainsSubstring("str_arr = [ 'Hello', 'World' ]"));
 
     // Parse TOML
-    const ControllerConfiguration config2 {std::string_view(toml)};
+    const ControllerConfiguration config2 {std::string_view(toml), ControllerConfiguration::FileType::TOML};
     const auto dict2 = config.getSatelliteConfiguration("Dummy.Added");
     REQUIRE(dict2.at("bool").get<bool>() == true);
     REQUIRE(dict2.at("int").get<int>() == 123);
