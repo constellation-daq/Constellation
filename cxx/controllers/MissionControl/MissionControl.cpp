@@ -377,7 +377,7 @@ void MissionControl::update_button_states(CSCP::State state) {
     // Check for config file existence
     const auto config_path = txtConfigFileName->text();
     const auto file_info = QFileInfo(config_path);
-    bool config_exists = file_info.exists() && file_info.isFile();
+    const auto config_exists = file_info.exists() && file_info.isFile();
     txtConfigFileName->setStyleSheet(config_exists ? "" : "color: red;");
 
     // Enable/disable state buttons
