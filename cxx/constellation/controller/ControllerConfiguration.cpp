@@ -113,7 +113,8 @@ ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(co
 
     if(ext == ".yaml" || ext == ".yml") {
         return FileType::YAML;
-    } else if(ext == ".toml") {
+    }
+    if(ext == ".toml") {
         return FileType::TOML;
     }
 
@@ -309,7 +310,9 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
 
             // If not returned yet then unknown type
             throw ConfigFileTypeError(key, "Unknown type");
-        } else if(node.IsScalar()) {
+        }
+
+        if(node.IsScalar()) {
 
             const std::string& val = node.as<std::string>();
             // Check for boolean

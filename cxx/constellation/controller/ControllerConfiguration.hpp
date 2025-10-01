@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 #include <set>
 #include <string>
@@ -115,7 +116,7 @@ namespace constellation::controller {
         CNSTLN_API void validate() const;
 
     private:
-        FileType detect_config_type(const std::filesystem::path& file);
+        static FileType detect_config_type(const std::filesystem::path& file);
 
         /**
          * @brief Parse a string view with TOML data into dictionaries
