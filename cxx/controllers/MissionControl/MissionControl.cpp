@@ -376,11 +376,15 @@ void MissionControl::on_btnGenConf_clicked() {
 
 void MissionControl::update_button_states(CSCP::State state) {
 
-    const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$|\.yaml$))");
-    auto m = rx_conf.match(txtConfigFileName->text());
+    // Check for config file existence
+    const auto config_path = txtConfigFileName->text();
+    const auto file_info = QFileInfo(config_path);
+    bool config_exists = file_info.exists() && file_info.isFile();
+    txtConfigFileName->setStyleSheet(config_exists ? "" : "color: red;");
 
+    // Enable/disable state buttons
     using enum CSCP::State;
-    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
+    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && config_exists);
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
     btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
