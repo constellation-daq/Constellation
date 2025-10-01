@@ -15,7 +15,6 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -300,51 +299,65 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
 
     auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
         LOG(config_parser_logger_, TRACE) << "Reading key " << key;
+
         if(node.IsMap()) {
             LOG(config_parser_logger_, TRACE) << "Skipping map for key " << key;
             return {};
         }
 
         if(node.IsSequence()) {
-            // FIXME parse sequence - look at first item and do same checks
+            // Return monostate for empty array:
+            if(node.size() == 0) {
+                return std::monostate();
+            }
 
-            // If not returned yet then unknown type
-            throw ConfigFileTypeError(key, "Unknown type");
+            // The conversion code for vectors doesn't do any checks, hence it also doesn't return false when it fails.
+            try {
+                std::vector<bool> retval_bool;
+                if(YAML::convert<std::vector<bool>>::decode(node, retval_bool)) {
+                    return retval_bool;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+            }
+
+            try {
+                std::vector<std::int64_t> retval_int;
+                if(YAML::convert<std::vector<std::int64_t>>::decode(node, retval_int)) {
+                    return retval_int;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+            }
+
+            try {
+                std::vector<double> retval_float;
+                if(YAML::convert<std::vector<double>>::decode(node, retval_float)) {
+                    return retval_float;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+            }
+
+            // Otherwise return as string vector:
+            return node.as<std::vector<std::string>>();
         }
 
         if(node.IsScalar()) {
-
-            const std::string& val = node.as<std::string>();
-            // Check for boolean
-            if(transform(val, ::tolower) == "true") {
-                return true;
-            }
-            if(transform(val, ::tolower) == "false") {
-                return false;
+            bool retval_bool;
+            if(YAML::convert<bool>::decode(node, retval_bool)) {
+                return retval_bool;
             }
 
-            // Integer contains only digits and possibly a sign
-            static const std::regex int_regex(R"(^-?\d+$)");
-            if(std::regex_match(val, int_regex)) {
-                try {
-                    return std::stoll(val);
-                } catch(...) {
-                    throw ConfigFileTypeError(key, "Integer out of range");
-                }
+            std::int64_t retval_int;
+            if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
+                return retval_int;
             }
 
-            // Floating point must contain a dot (.)
-            static const std::regex float_regex(R"(^-?\d*\.\d+$)");
-            if(std::regex_match(val, float_regex)) {
-                try {
-                    return std::stod(val);
-                } catch(...) {
-                    throw ConfigFileTypeError(key, "Floating point value out of range");
-                }
+            double retval_float;
+            if(YAML::convert<double>::decode(node, retval_float)) {
+                return retval_float;
             }
 
             // Otherwise return as string
-            return val;
+            return node.as<std::string>();
         }
 
         // If not returned yet then unknown type
@@ -356,8 +369,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         const auto key = node.first.as<std::string>();
 
         // Check if the node is a map and represents a satellite type:
-        if(node.IsMap()) {
-
+        if(node.second.IsMap()) {
         } else {
             const auto value = parse_value(key, node.second);
             if(value.has_value()) {
