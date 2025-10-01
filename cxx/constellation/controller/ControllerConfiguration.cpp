@@ -297,6 +297,14 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         throw ConfigFileParseError("Expected map as root node");
     }
 
+    auto parse_key = [&](const YAML::Node node) -> std::string {
+        try {
+            return node.as<std::string>();
+        } catch(const YAML::Exception& e) {
+            throw ConfigFileParseError("Keys need to be strings");
+        }
+    };
+
     auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
         LOG(config_parser_logger_, TRACE) << "Reading key " << key;
         if(node.IsMap()) {
@@ -343,17 +351,17 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
         }
 
         if(node.IsScalar()) {
-            bool retval_bool = false;
+            bool retval_bool {};
             if(YAML::convert<bool>::decode(node, retval_bool)) {
                 return retval_bool;
             }
 
-            std::int64_t retval_int = 0;
+            std::int64_t retval_int {};
             if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
                 return retval_int;
             }
 
-            double retval_float = NAN;
+            double retval_float {};
             if(YAML::convert<double>::decode(node, retval_float)) {
                 return retval_float;
             }
@@ -368,7 +376,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
 
     // Loop over all keys:
     for(const auto& node : root_node) {
-        const auto key = node.first.as<std::string>();
+        const auto key = parse_key(node.first);
 
         // Check if the node is a map and represents a satellite type:
         if(node.second.IsMap()) {
@@ -377,7 +385,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
             Dictionary dict_type {};
 
             for(const auto& type_node : node.second) {
-                const auto type_key = type_node.first.as<std::string>();
+                const auto type_key = parse_key(type_node.first);
 
                 if(type_node.second.IsMap()) {
 
@@ -385,7 +393,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                     Dictionary dict_name {};
 
                     for(const auto& name_node : type_node.second) {
-                        const auto name_key = name_node.first.as<std::string>();
+                        const auto name_key = parse_key(name_node.first);
 
                         if(name_node.second.IsMap()) {
                             LOG(CRITICAL) << "not supported, map in " << name_node.first;
