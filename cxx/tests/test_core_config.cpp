@@ -518,6 +518,22 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
     REQUIRE_THROWS_AS(config.set("key", std::array<int, 5> {1, 2, 3, 4, 5}), InvalidTypeError);
 }
 
+TEST_CASE("Using Optional Key Access", "[core][core::config]") {
+    const Configuration config {};
+
+    // Read invalid key regularly and as optional
+    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
+    REQUIRE_FALSE(config.getOptional<bool>("invalidkey").has_value());
+
+    // Read invalid key for array regularly and as optional
+    REQUIRE_THROWS_MATCHES(config.getArray<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
+    REQUIRE_FALSE(config.getOptionalArray<bool>("invalidkey").has_value());
+
+    // Read invalid key for set regularly and as optional
+    REQUIRE_THROWS_MATCHES(config.getSet<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
+    REQUIRE_FALSE(config.getOptionalSet<bool>("invalidkey").has_value());
+}
+
 TEST_CASE("Value Overflow & Invalid Conversions", "[core][core::config]") {
 
     const std::size_t val = std::numeric_limits<std::size_t>::max();

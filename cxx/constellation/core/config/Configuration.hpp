@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <initializer_list>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -139,6 +140,18 @@ namespace constellation::config {
         template <typename T> T get(const std::string& key) const;
 
         /**
+         * @brief Get an optional with value of a key in requested type if available
+         * @param key Key to get value of
+         * @return Optional holding the value of the key in the type of the requested template parameter if available
+         *
+         * @note Keys are handled case-insensitively
+         *
+         * @throws InvalidTypeError If the conversion to the requested type did not succeed
+         * @throws InvalidTypeError If an overflow happened while converting the key
+         */
+        template <typename T> std::optional<T> getOptional(const std::string& key) const;
+
+        /**
          * @brief Get value of a key in requested type or default value if it does not exists
          * @param key Key to get value of
          * @param def Default value to set if key is not defined
@@ -167,6 +180,19 @@ namespace constellation::config {
         template <typename T> std::vector<T> getArray(const std::string& key) const;
 
         /**
+         * @brief Get an optional with the values for a key containing an array if available. This will also attempt to read
+         *        the configuration key as single value and will return a vector with one entry if succeeding
+         * @param key Key to get values of
+         * @return Optional with a list of values in the array in the requested template parameter if available
+         *
+         * @note Keys are handled case-insensitively
+         *
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
+         */
+        template <typename T> std::optional<std::vector<T>> getOptionalArray(const std::string& key) const;
+
+        /**
          * @brief Get values for a key containing an array or default array if it does not exists
          * @param key Key to get values of
          * @param def Default value array to set if key is not defined
@@ -192,6 +218,19 @@ namespace constellation::config {
          * @throws InvalidKeyError If an overflow happened while converting the key
          */
         template <typename T> std::set<T> getSet(const std::string& key) const;
+
+        /**
+         * @brief Get an optional with values for a key containing a set if available
+         * @param key Key to get values of
+         * @return Optional with a set of values in the requested template parameter if available
+         *
+         * @note Keys are handled case-insensitively
+         *
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidKeyError If the conversion to the requested type did not succeed
+         * @throws InvalidKeyError If an overflow happened while converting the key
+         */
+        template <typename T> std::optional<std::set<T>> getOptionalSet(const std::string& key) const;
 
         /**
          * @brief Get values for a key containing a set or default set if it does not exists
