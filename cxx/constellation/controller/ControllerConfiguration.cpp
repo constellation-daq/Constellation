@@ -299,7 +299,6 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
 
     auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
         LOG(config_parser_logger_, TRACE) << "Reading key " << key;
-
         if(node.IsMap()) {
             LOG(config_parser_logger_, TRACE) << "Skipping map for key " << key;
             return {};
@@ -370,6 +369,39 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
 
         // Check if the node is a map and represents a satellite type:
         if(node.second.IsMap()) {
+
+            auto type_lc = transform(key, ::tolower);
+            Dictionary dict_type {};
+
+            for(const auto& type_node : node.second) {
+                const auto type_key = type_node.first.as<std::string>();
+
+                if(type_node.second.IsMap()) {
+
+                    auto canonical_name_lc = type_lc + "." + transform(type_key, ::tolower);
+                    Dictionary dict_name {};
+
+                    for(const auto& name_node : type_node.second) {
+                        const auto name_key = name_node.first.as<std::string>();
+
+                        if(name_node.second.IsMap()) {
+                            LOG(CRITICAL) << "not supported, map in " << name_node.first;
+                        } else {
+                            const auto value = parse_value(name_key, name_node.second);
+                            if(value.has_value()) {
+                                dict_name.emplace(transform(name_key, ::tolower), value.value());
+                            }
+                        }
+                    }
+                    satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
+                } else {
+                    const auto value = parse_value(type_key, type_node.second);
+                    if(value.has_value()) {
+                        dict_type.emplace(transform(type_key, ::tolower), value.value());
+                    }
+                }
+            }
+            type_configs_.emplace(std::move(type_lc), std::move(dict_type));
         } else {
             const auto value = parse_value(key, node.second);
             if(value.has_value()) {

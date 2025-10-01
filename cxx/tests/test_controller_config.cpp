@@ -97,6 +97,48 @@ TEST_CASE("Valid TOML file", "[controller]") {
     REQUIRE(config.hasSatelliteConfiguration("duMMy.d1"));
 }
 
+TEST_CASE("Valid YAML file", "[controller]") {
+    const auto test_file = test_files_dir() / "good_config.yaml";
+    const ControllerConfiguration config {test_file};
+
+    // Global only
+    const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
+    REQUIRE(global_config.at("bool").get<bool>() == true);
+    REQUIRE(global_config.at("string").get<std::string>() == "global");
+    REQUIRE(global_config.at("int").get<int>() == -42);
+    REQUIRE(global_config.at("float").get<double>() == 3.14);
+    REQUIRE(global_config.at("array_bool").get<std::vector<bool>>() == std::vector<bool>({true, false, false, true}));
+    REQUIRE(global_config.at("array_string").get<std::vector<std::string>>() ==
+            std::vector<std::string>({"global1", "global2"}));
+    REQUIRE(global_config.at("array_int").get<std::vector<int>>() == std::vector<int>({1, 2, 3}));
+    REQUIRE(global_config.at("array_float").get<std::vector<double>>() == std::vector<double>({0.1}));
+    REQUIRE(std::holds_alternative<std::monostate>(global_config.at("empty_array")));
+
+    // Global + Type
+    const auto section_config = config.getSatelliteConfiguration("Dummy.NotASatellite");
+    REQUIRE(section_config.at("bool").get<bool>() == true);
+    REQUIRE(section_config.at("type").get<std::string>() == "Dummy");
+    REQUIRE(section_config.at("string").get<std::string>() == "type");
+
+    // Global + Type + Satellite
+    const auto d1_config = config.getSatelliteConfiguration("Dummy.D1");
+    REQUIRE(d1_config.at("bool").get<bool>() == true);
+    REQUIRE(d1_config.at("type").get<std::string>() == "Dummy");
+    REQUIRE(d1_config.at("string").get<std::string>() == "D1");
+    REQUIRE(d1_config.at("satellite").get<bool>() == true);
+
+    // Case-insensitivity check
+    const auto d2_config = config.getSatelliteConfiguration("Dummy.D2");
+    REQUIRE(d2_config.at("bool").get<bool>() == true);
+    REQUIRE(d2_config.at("type").get<std::string>() == "Dummy");
+    REQUIRE(d2_config.at("string").get<std::string>() == "D2");
+    REQUIRE(d2_config.at("satellite").get<bool>() == true);
+
+    // Check if config is available
+    REQUIRE(config.hasSatelliteConfiguration("Dummy.D1"));
+    REQUIRE(config.hasSatelliteConfiguration("duMMy.d1"));
+}
+
 TEST_CASE("No global section", "[controller]") {
     const std::string_view toml_string = "# Config without global section";
     const ControllerConfiguration config {toml_string, ControllerConfiguration::FileType::TOML};
