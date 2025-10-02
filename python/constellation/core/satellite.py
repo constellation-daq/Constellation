@@ -523,7 +523,8 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "--cscp",
             type=int,
             help="The port to listen on for commands sent via the "
-            "Constellation Satellite Control Protocol (default: %(default)s).",
+            "Constellation Satellite Control Protocol. "
+            "A random port will be selected if none is specified.",
         )
         self.network.add_argument(
             "--mon-port",
@@ -531,12 +532,15 @@ class SatelliteArgumentParser(ConstellationArgumentParser):
             "--cmdp",
             type=int,
             help="The port to provide data via the "
-            "Constellation Monitoring Distribution Protocol (default: %(default)s).",
+            "Constellation Monitoring Distribution Protocol. "
+            "A random port will be selected if none is specified.",
         )
         self.network.add_argument(
             "--hb-port",
             "--heartbeat-port",
             "--chp",
             type=int,
-            help="The port for sending heartbeats via the " "Constellation Heartbeat Protocol (default: %(default)s).",
+            help="The port for sending heartbeats via the "
+            "Constellation Heartbeat Protocol. "
+            "A random port will be selected if none is specified.",
         )
