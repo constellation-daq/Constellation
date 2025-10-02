@@ -379,7 +379,12 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
     for(const auto& node : root_node) {
         const auto key = parse_key(node.first);
 
-        // Check if the node is a map and represents a satellite type:
+        // Empty key, skip
+        if(node.second.IsNull()) {
+            continue;
+        }
+
+        // Node is a map and represents a satellite type
         if(node.second.IsMap()) {
 
             auto type_lc = transform(key, ::tolower);
@@ -388,6 +393,12 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
             for(const auto& type_node : node.second) {
                 const auto type_key = parse_key(type_node.first);
 
+                // Empty key, skip
+                if(type_node.second.IsNull()) {
+                    continue;
+                }
+
+                // Node is a map and represents a satellite instance
                 if(type_node.second.IsMap()) {
 
                     auto canonical_name_lc = type_lc + "." + transform(type_key, ::tolower);
