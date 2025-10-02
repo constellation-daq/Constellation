@@ -58,13 +58,14 @@ def get_interface_names() -> list[str]:
     return interface_names
 
 
-def validate_interface(interface: str) -> str:
+def validate_interface(interface_name: str) -> str:
     """Validate that the provided interface exists.
 
     interface :: name of an existing network interface.
 
     Raises ValueError if the interface does not exist.
     """
-    if interface in get_interface_names():
-        return interface
-    raise argparse.ArgumentTypeError(f"`{interface}` is not valid a network interface name.")
+    for if_name in get_interface_names():
+        if interface_name.lower() == if_name.lower():
+            return if_name
+    raise argparse.ArgumentTypeError(f"`{interface_name}` is not valid a network interface name.")
