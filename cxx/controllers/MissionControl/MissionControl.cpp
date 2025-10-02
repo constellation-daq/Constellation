@@ -330,8 +330,8 @@ void MissionControl::on_btnLog_clicked() {
 
 void MissionControl::on_btnLoadConf_clicked() {
     const QString usedpath = QFileInfo(txtConfigFileName->text()).path();
-    const QString filename =
-        QFileDialog::getOpenFileName(this, tr("Open File"), usedpath, "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)");
+    const QString filename = QFileDialog::getOpenFileName(
+        this, tr("Open File"), usedpath, "Configuration Files (*.toml *.yaml *.yml);;All Files (*.*)");
     if(!filename.isNull()) {
         LOG(user_logger_, INFO) << "Loaded configuration file " << filename.toStdString();
         txtConfigFileName->setText(filename);
