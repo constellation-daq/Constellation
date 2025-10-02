@@ -93,7 +93,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
     satellite, _ctx = mock_satellite
     ctrl, _ctx = mock_controller
     timeout = 4
-    while timeout > 0 and len(ctrl.states) < 1:
+    while timeout > 0 and (len(ctrl.states) < 1 or len(ctrl.constellation.satellites) < 1):
         time.sleep(0.05)
         timeout -= 0.05
     assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
