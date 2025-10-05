@@ -202,7 +202,7 @@ namespace constellation::message {
         /**
          * @return Metric value
          */
-        CNSTLN_API const metrics::MetricValue& getMetric() const { return metric_value_; }
+        const metrics::MetricValue& getMetric() const { return metric_value_; }
 
         /**
          * Disassemble stats message from ZeroMQ frames
@@ -242,7 +242,7 @@ namespace constellation::message {
         /**
          * @return List of topics
          */
-        CNSTLN_API const config::Dictionary& getTopics() const { return topics_; }
+        const config::Dictionary& getTopics() const { return topics_; }
 
         /**
          * Disassemble stats message from ZeroMQ frames
