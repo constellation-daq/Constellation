@@ -32,8 +32,6 @@ namespace constellation::controller {
      */
     class ControllerConfiguration {
     public:
-        CNSTLN_API virtual ~ControllerConfiguration() = default;
-
         /**
          * @brief Default constructor with empty configuration dictionaries
          */
@@ -60,6 +58,8 @@ namespace constellation::controller {
          * @throws ConfigFileTypeError if the configuration file contained invalid value types
          */
         CNSTLN_API explicit ControllerConfiguration(const std::filesystem::path& path);
+
+        ~ControllerConfiguration() = default;
 
         /// @cond doxygen_suppress
         ControllerConfiguration(const ControllerConfiguration& other) = delete;

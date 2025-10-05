@@ -104,7 +104,7 @@ namespace constellation::message {
              *
              * @return Number of attached blocks
              */
-            CNSTLN_API std::size_t countBlocks() const { return blocks_.size(); }
+            std::size_t countBlocks() const { return blocks_.size(); }
 
             /**
              * @brief Count the number of bytes contained in the blocks

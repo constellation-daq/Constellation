@@ -23,6 +23,7 @@ core_src = files(
   'metrics/MetricsManager.cpp',
   'networking/asio_helpers.cpp',
   'networking/zmq_helpers.cpp',
+  'utils/ManagerLocator.cpp',
 )
 
 core_lib = library(
