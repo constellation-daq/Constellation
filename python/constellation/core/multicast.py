@@ -42,7 +42,7 @@ class MulticastSocket:
             send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_LOOP, 0 if interface_address != "127.0.0.1" else 1)
 
             # Set interface address
-            send_socket.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_IF, socket.inet_aton(interface_address))
+            send_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_IF, socket.inet_aton(interface_address))
 
             self._send_sockets.append(send_socket)
 
@@ -68,7 +68,7 @@ class MulticastSocket:
         # Join multicast group on each interface
         for interface_address in interface_addresses:
             ip_mreq = socket.inet_aton(multicast_address) + socket.inet_aton(interface_address)
-            self._recv_socket.setsockopt(socket.SOL_IP, socket.IP_ADD_MEMBERSHIP, ip_mreq)
+            self._recv_socket.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, ip_mreq)
 
         # Set receive timeout
         self._recv_socket.settimeout(0.05)
