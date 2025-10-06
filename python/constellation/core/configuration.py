@@ -92,7 +92,6 @@ def load_config(path: str) -> dict[str, Any]:
         raise FileNotFoundError(f"Configuration file not found: {path}")
 
     _, ext = os.path.splitext(path.lower())
-    print(f"EXT {ext}")
 
     try:
         with open(path, "rb") as f:
@@ -108,7 +107,7 @@ def load_config(path: str) -> dict[str, Any]:
     except yaml.YAMLError as e:
         raise ValueError(f"Failed to parse YAML file: {e}") from e
     except Exception as e:
-        raise RuntimeError(f"Failed to load configuration file: {e}") from e
+        raise RuntimeError(f"Failed to load configuration file: {repr(e)}") from e
 
 
 def make_lowercase(obj: dict[str, Any]) -> dict[str, Any]:

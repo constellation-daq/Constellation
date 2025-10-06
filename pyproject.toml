@@ -62,7 +62,7 @@ dev = [
     "build",
     "black",
     "flake8", "flake8-pyproject",
-    "mypy", "types-psutil", "types-pygments",
+    "mypy", "types-psutil", "types-pygments", "types-PyYAML",
     "isort",
 ]
 test = [
