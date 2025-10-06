@@ -10,7 +10,7 @@ import tomllib
 import typing
 from typing import Any, cast
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 
 
 class ConfigError(Exception):
