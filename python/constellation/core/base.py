@@ -10,7 +10,7 @@ import logging
 import re
 import socket
 import threading
-from argparse import ArgumentParser
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from queue import Queue
 from typing import Any, cast
 
@@ -36,6 +36,8 @@ class ConstellationArgumentParser(ArgumentParser):
     """Customized Argument parser providing basic Satellite options."""
 
     def __init__(self, *args: Any, **kwargs: Any):
+        # use a formatter that shows the default values:
+        kwargs["formatter_class"] = ArgumentDefaultsHelpFormatter
         super().__init__(*args, **kwargs)
         # generic arguments
         self.add_argument(
@@ -74,8 +76,9 @@ class ConstellationArgumentParser(ArgumentParser):
             type=validate_interface,
             choices=get_interface_names(),
             action="append",
-            default=None,
-            help=f"The network interfaces to announce this satellite to. (default: {get_interface_names()}s).",
+            help="The network interfaces to announce this satellite to via CHIRP. "
+            "Specify multiple interfaces by using the argument repeatedly. "
+            "Defaults to using all available interfaces if none was provided.",
         )
 
 
