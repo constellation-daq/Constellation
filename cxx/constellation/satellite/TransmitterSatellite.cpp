@@ -315,35 +315,52 @@ void TransmitterSatellite::sending_loop(const std::stop_token& stop_token) {
             }
         }
 
-        // Log and update telemetry
-        const auto& current_data_records = message.getDataRecords();
-        LOG(cdtp_logger_, TRACE) << "Sending data records from " << current_data_records.front().getSequenceNumber()
-                                 << " to " << current_data_records.back().getSequenceNumber() << " ("
-                                 << current_payload_bytes << " bytes)";
-        bytes_transmitted_ += current_payload_bytes;
-        blocks_transmitted_ += std::transform_reduce(
-            current_data_records.begin(), current_data_records.end(), 0UL, std::plus(), [](const auto& data_record) {
-                return data_record.countBlocks();
-            });
-        data_records_transmitted_ += current_data_records.size();
-
         // Send message
-        try {
-            const auto sent = message.assemble().send(cdtp_push_socket_);
-            if(!sent) [[unlikely]] {
-                send_failure("data timeout reached");
-                return;
-            }
-        } catch(const zmq::error_t& error) {
-            send_failure(error.what());
+        const auto success = send_data(message, current_payload_bytes);
+        if(!success) [[unlikely]] {
             return;
         }
 
-        // Reset timer and counter, clear blocks
+        // Reset timer and counter
         send_timer.reset();
         current_payload_bytes = 0;
-        message.clearBlocks();
     }
+
+    // Send remaining data blocks
+    if(!message.getDataRecords().empty()) {
+        send_data(message, current_payload_bytes);
+    }
+}
+
+bool TransmitterSatellite::send_data(CDTP2Message& message, std::size_t current_payload_bytes) {
+    // Log and update telemetry
+    const auto& current_data_records = message.getDataRecords();
+    LOG(cdtp_logger_, TRACE) << "Sending data records from " << current_data_records.front().getSequenceNumber() << " to "
+                             << current_data_records.back().getSequenceNumber() << " (" << current_payload_bytes
+                             << " bytes)";
+    bytes_transmitted_ += current_payload_bytes;
+    blocks_transmitted_ += std::transform_reduce(
+        current_data_records.begin(), current_data_records.end(), 0UL, std::plus(), [](const auto& data_record) {
+            return data_record.countBlocks();
+        });
+    data_records_transmitted_ += current_data_records.size();
+
+    // Send message
+    try {
+        const auto sent = message.assemble().send(cdtp_push_socket_);
+        if(!sent) [[unlikely]] {
+            send_failure("data timeout reached");
+            return false;
+        }
+    } catch(const zmq::error_t& error) {
+        send_failure(error.what());
+        return false;
+    }
+
+    // Clear blocks
+    message.clearBlocks();
+
+    return true;
 }
 
 void TransmitterSatellite::send_failure(const std::string& reason) {
