@@ -225,6 +225,15 @@ namespace constellation::satellite {
         void sending_loop(const std::stop_token& stop_token);
 
         /**
+         * @brief Send CDTP DATA message
+         *
+         * @param message Reference to data message
+         * @param current_payload_bytes Size of the payload of the message in bytes
+         * @return True if the message was sent successfully, false otherwise
+         */
+        bool send_data(message::CDTP2Message& message, std::size_t current_payload_bytes);
+
+        /**
          * @brief Handle failure in `sending_loop`
          *
          * @param reason Reason for failure
