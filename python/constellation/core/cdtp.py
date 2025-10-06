@@ -61,20 +61,23 @@ class PushThread(threading.Thread):
         self._dtm = dtm
         self.exc: SendTimeoutError | None = None
 
-    def _send(self, msg: CDTP2Message) -> None:
+    def _send(self, msg: CDTP2Message, current_payload_bytes: int) -> bool:
         try:
             self._dtm.log_cdtp.trace(
-                "Sending data records from %s to %s",
+                "Sending data records from %s to %s (%d bytes)",
                 msg.data_records[0].sequence_number,
                 msg.data_records[-1].sequence_number,
+                current_payload_bytes,
             )
             self._dtm._send_message(msg)
-            self._dtm._bytes_transmitted += msg.count_payload_bytes()
-            self._dtm._records_transmitted += 1
+            self._dtm._bytes_transmitted += current_payload_bytes
+            self._dtm._records_transmitted += len(msg.data_records)
             msg.clear_data_records()
         except zmq.error.Again:
             self.exc = SendTimeoutError("DATA message", self._dtm._data_timeout)
             self._dtm._failure_cb(str(self.exc))
+            return False
+        return True
 
     def run(self) -> None:
         """Thread method pushing data messages"""
@@ -98,10 +101,6 @@ class PushThread(threading.Thread):
                 # If threshold not reached, continue
                 if current_payload_bytes < payload_threshold_b:
                     continue
-                # Send message
-                self._send(msg)
-                last_sent = time.time()
-                current_payload_bytes = 0
             except queue.Empty:
                 # Continue if send timeout is not reached yet
                 if time.time() - last_sent < 0.5:
@@ -111,12 +110,17 @@ class PushThread(threading.Thread):
                 if current_payload_bytes == 0:
                     last_sent = time.time()
                     continue
-                # Otherwise send message
-                self._send(msg)
-                last_sent = time.time()
-                current_payload_bytes = 0
+
+            # Send message
+            success = self._send(msg, current_payload_bytes)
+            if not success:
+                return
+            last_sent = time.time()
+            current_payload_bytes = 0
+
+        # Send remaining records
         if msg.data_records:
-            self._send(msg)
+            _ = self._send(msg, current_payload_bytes)
 
 
 class DataTransmitter:
