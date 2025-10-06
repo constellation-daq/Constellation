@@ -186,14 +186,14 @@ namespace constellation::satellite {
          *
          * @param timeout Timeout, -1 is infinite (block until sent)
          */
-        void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
+        CNSTLN_LOCAL void set_send_timeout(std::chrono::milliseconds timeout = std::chrono::milliseconds(-1));
 
         /**
          * @brief Send the EOR message
          *
          * @throw SendTimeoutError If EOR send timeout is reached
          */
-        void send_eor();
+        CNSTLN_LOCAL void send_eor();
 
         /**
          * @brief Set tag for the run metadata send as payload of the EOR message
@@ -208,21 +208,21 @@ namespace constellation::satellite {
          * @param conditions Input conditions
          * @return Amended conditions
          */
-        protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
+        CNSTLN_LOCAL protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
 
         /**
          * @brief Stop sending thread
          *
          * @note Requires running function to be already stopped such that no new data records are queued.
          */
-        void stop_sending_loop();
+        CNSTLN_LOCAL void stop_sending_loop();
 
         /**
          * @brief Sending loop sending data records from the queue
          *
          * @param stop_token Stop token
          */
-        void sending_loop(const std::stop_token& stop_token);
+        CNSTLN_LOCAL void sending_loop(const std::stop_token& stop_token);
 
         /**
          * @brief Send CDTP DATA message
@@ -231,14 +231,14 @@ namespace constellation::satellite {
          * @param current_payload_bytes Size of the payload of the message in bytes
          * @return True if the message was sent successfully, false otherwise
          */
-        bool send_data(message::CDTP2Message& message, std::size_t current_payload_bytes);
+        CNSTLN_LOCAL bool send_data(message::CDTP2Message& message, std::size_t current_payload_bytes);
 
         /**
          * @brief Handle failure in `sending_loop`
          *
          * @param reason Reason for failure
          */
-        void send_failure(const std::string& reason);
+        CNSTLN_LOCAL void send_failure(const std::string& reason);
 
     private:
         zmq::socket_t cdtp_push_socket_;
