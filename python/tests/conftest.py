@@ -426,16 +426,22 @@ def controller():
 
 
 @pytest.fixture
-def rawconfig():
+def rawconfig_toml():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cfg.toml")
     yield load_config(path)
 
 
 @pytest.fixture
-def config(rawconfig):
+def rawconfig_yaml():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_cfg.yaml")
+    yield load_config(path)
+
+
+@pytest.fixture
+def config(rawconfig_toml):
     """Fixture for specific configuration"""
     config = flatten_config(
-        rawconfig,
+        rawconfig_toml,
         "mocksat",
         "device2",
     )
