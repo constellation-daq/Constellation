@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Stat Listener wrapper
+ * @brief Qt Wrapper for Stat Listener
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -20,6 +20,13 @@
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/listener/StatListener.hpp"
 
+/**
+ * @class QStatListener
+ * @brief Qt Wrapper around the StatListener
+ * @details This wrapper class implements a callback function for CMDP message reception which re-emits the message as
+ *          Qt signal such that UI element slots can be directly connected. The telemetry message value is converted into a
+ *          QVariant for display. For Qt5 compatibility, this is explicitly done for timestamps, vectors and strings.
+ */
 class QStatListener : public QObject, public constellation::listener::StatListener {
     Q_OBJECT
 

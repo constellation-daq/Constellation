@@ -403,8 +403,9 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
 
     std::unique_lock widgets_lock {metric_widgets_mutex_};
 
-    // Clear old layout of any widgets are present
+    // Change settings only if widgets are present
     if(!metric_widgets_.isEmpty()) {
+        // Clear old layout
         gui_settings_.beginGroup("dashboard");
         gui_settings_.remove("");
         gui_settings_.endGroup();

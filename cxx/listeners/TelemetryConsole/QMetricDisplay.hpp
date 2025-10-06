@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Metric chart display Widget
+ * @brief Metric Chart Display Widget
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -39,8 +39,8 @@
 /**
  * @class QMetricDisplay
  * @brief Base class for displaying an auto-updating chart view of a given metric
- * @details The metric values are added via the update slot, the widget provides button for requesting its deletion as well
- * as for resetting of the data
+ * @details The metric values are added via the update slot, the widget provides buttons for requesting its deletion as well
+ *          as for resetting of the displayed data
  */
 class QMetricDisplay : public QFrame {
     Q_OBJECT

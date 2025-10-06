@@ -26,8 +26,8 @@
 #include "ui_TelemetryConsole.h"
 
 /**
- * \class TelemetryConsole
- * \brief Main window of the Telemetry Console metric UI
+ * @class TelemetryConsole
+ * @brief Main window of the Telemetry Console metric UI
  * @details This class implements the Qt QMainWindow component of the Telemetry Console metrics UI, connects signals to
  * the slots of different UI elements and takes care of the dashboard layout.
  */

@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Stat Listener Implementation
+ * @brief Implementation of the Qt Wrapper for Stat Listener
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".

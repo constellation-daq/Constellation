@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief Metric chart display Widget
+ * @brief Metric Series
  *
  * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
@@ -84,6 +84,10 @@ private:
     QGraphicsTextItem* value_marker_;
 };
 
+/**
+ * @class QSplineMetricSeries
+ * @brief Time series which displays data as spline interpolation
+ */
 class QSplineMetricSeries : public QMetricSeries {
 public:
     QSplineMetricSeries(QT_CHART QChart* chart);
@@ -96,6 +100,10 @@ private:
     QT_CHART QSplineSeries* spline_;
 };
 
+/**
+ * @class QScatterMetricSeries
+ * @brief Time series which displays data as scatter plot
+ */
 class QScatterMetricSeries : public QMetricSeries {
 public:
     QScatterMetricSeries(QT_CHART QChart* chart);
@@ -108,6 +116,10 @@ private:
     QT_CHART QScatterSeries* scatter_;
 };
 
+/**
+ * @class QAreaMetricSeries
+ * @brief Time series which displays data as colored area between data points and the axis
+ */
 class QAreaMetricSeries : public QMetricSeries {
 public:
     QAreaMetricSeries(QT_CHART QChart* chart);
