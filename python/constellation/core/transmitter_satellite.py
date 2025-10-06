@@ -235,5 +235,6 @@ class TransmitterSatelliteArgumentParser(SatelliteArgumentParser):
             "--data-port",
             "--cdtp-port",
             type=int,
-            help="The port for sending data via the Constellation Data Transfer Protocol (default: %(default)s).",
+            help="The port for sending data via the Constellation Data Transfer Protocol. "
+            "A random port will be selected if none is specified.",
         )
