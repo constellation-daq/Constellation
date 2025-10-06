@@ -6,7 +6,7 @@ if not get_option('satellite_mattermost')
 endif
 
 # cpr might require curl and openssl, disable test and unnecessary features in case fallback is used
-dependency('openssl', default_options: ['warning_level=0', 'werror=false'])
+dependency('openssl', default_options: ['default_library=static', 'warning_level=0', 'werror=false'])
 dependency('libcurl', default_options: [
   'tool=disabled',
   'tests=disabled',
@@ -50,9 +50,10 @@ dependency('libcurl', default_options: [
   'smtp=disabled',
   'telnet=disabled',
   'tftp=disabled',
+  'default_library=static',
   'warning_level=0',
 ])
-cpr_dep = dependency('cpr', default_options: ['tests=disabled', 'warning_level=0'])
+cpr_dep = dependency('cpr', default_options: ['tests=disabled', 'default_library=static', 'warning_level=0'])
 
 satellite_type = 'Mattermost'
 
