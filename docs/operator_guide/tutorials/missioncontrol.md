@@ -49,17 +49,17 @@ MissionControl main window with satellites in NEW state
 To initialize the satellites, the following configuration file is used:
 
 ```toml
-[satellites.Sputnik]
+[Sputnik]
 interval = 3000
 
-[satellites.Sputnik.One]
+[Sputnik.One]
 interval = 2500
 
-[satellites.Sputnik.Two]
+[Sputnik.Two]
 
-[satellites.RandomTransmitter.Sender]
+[RandomTransmitter.Sender]
 
-[satellites.EudaqNativeWriter.Receiver]
+[EudaqNativeWriter.Receiver]
 _data_transmitters = ["Sender"]
 output_directory = "/tmp/test"
 ```
@@ -75,8 +75,7 @@ the initialization can be continued by clicking {bdg-primary}`Ok`.
 
 ```{hint}
 Any satellites not explicitly mentioned will still be initialized. The configuration is generated from the global
-`[satellites]` section and from the type specific section, e.g. `[satellites.Sputnik]`. If these do not exist, an empty
-configuration is sent.
+section and from the type specific section, e.g. `[Sputnik]`. If these do not exist, an empty configuration is sent.
 ```
 
 After the initializing, all satellites besides the `EudaqNativeWriter` are now in the {bdg-secondary}`INIT` state. The
@@ -109,19 +108,19 @@ should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, whic
 `RandomTransmitter.Sender`. In order to correct this and allow a successful initialization, the file should be adapted as follows:
 
 ```toml
-[satellites.Sputnik]
+[Sputnik]
 interval = 3000
 
-[satellites.Sputnik.One]
+[Sputnik.One]
 interval = 2500
 
-[satellites.Sputnik.Two]
+[Sputnik.Two]
 
-[satellites.Sputnik.Three]
+[Sputnik.Three]
 
-[satellites.RandomTransmitter.Sender]
+[RandomTransmitter.Sender]
 
-[satellites.EudaqNativeWriter.Receiver]
+[EudaqNativeWriter.Receiver]
 _data_transmitters = ["RandomTransmitter.Sender"]
 output_directory = "/tmp/test"
 ```
@@ -215,16 +214,16 @@ Constellation itself. This can be achieved by clicking the {bdg-primary}`Deduce`
 For the Constellation started and configured in this tutorial, this will store a configuration file with the following content:
 
 ```toml
-[satellites.sputnik.one]
+[sputnik.one]
 interval = 2500
 
-[satellites.sputnik.two]
+[sputnik.two]
 interval = 3000
 
-[satellites.sputnik.three]
+[sputnik.three]
 interval = 3000
 
-[satellites.randomtransmitter.sender]
+[randomtransmitter.sender]
 _bor_timeout = 10
 _data_timeout = 10
 _eor_timeout = 10
@@ -233,7 +232,7 @@ number_of_blocks = 1
 pregen = false
 seed = 3641936878
 
-[satellites.eudaqnativewriter.receiver]
+[eudaqnativewriter.receiver]
 _allow_overwriting = false
 _data_transmitters = [ 'RandomTransmitter.Sender' ]
 _eor_timeout = 10

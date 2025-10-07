@@ -123,7 +123,7 @@ define reuse policy and attribution requirements as suggested by the [FAIR princ
 The data license can be configured for every transmitter satellite by adding the `_data_license` key to its configuration:
 
 ```toml
-[satellites.MySatellite.Name]
+[MySatellite.Name]
 _data_license = "ODC-By-1.0"
 ```
 
