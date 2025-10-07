@@ -480,12 +480,9 @@ lint:clang-scan-build:
   needs:
     - job: build:fedora-clang
       artifacts: false
-  variables:
-    CCC_CC: clang
-    CCC_CXX: clang++
   script:
     - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug -Dmemory_allocator=system $(etc/scripts/meson_enable_all_components.sh)
-    - ninja -C build scan-build
+    - CCC_CC=clang CCC_CXX=clang++ ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:
     paths:
@@ -686,22 +683,38 @@ deploy:bundle-mingw-artifacts:
       - mingw_artifacts
     expire_in: 1 week
 
-deploy:release:
+deploy:bundle-release-artifacts:
   extends:
     - .deploy
   image: tollerort.desy.de/hub.docker.com/alpine:latest
-  variables:
-    GITLAB_HOST: $CI_SERVER_URL
   script:
-    - apk add git meson tar xz glab
+    - apk add git meson tar xz
     - etc/scripts/create_source_dist.sh
     - CODENAME=$(grep version_code_name meson.build | sed -E "s%version_code_name = '([^']+)'%\1%")
-    - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST --api-protocol $CI_SERVER_PROTOCOL
-    - glab release create $CI_COMMIT_TAG "Constellation-${CI_COMMIT_TAG}.tar.xz#Full source code" --name "Constellation ${CI_COMMIT_TAG} - ${CODENAME}"
+    - echo "CODENAME=$CODENAME" >> .env
   artifacts:
     paths:
       - Constellation-*.tar.xz
     expire_in: 24 hour
+    reports:
+      dotenv: .env
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v.*/
+
+deploy:release:
+  extends:
+    - .deploy
+  image:
+    name: "tollerort.desy.de/hub.docker.com/gitlab/glab"
+    entrypoint: [""]
+  variables:
+    GITLAB_HOST: $CI_SERVER_URL
+  needs:
+    - job: deploy:bundle-release-artifacts
+      artifacts: true
+  script:
+    - glab auth login --job-token $CI_JOB_TOKEN --hostname $CI_SERVER_HOST --api-protocol $CI_SERVER_PROTOCOL
+    - glab release create $CI_COMMIT_TAG "Constellation-${CI_COMMIT_TAG}.tar.xz#Full source code" --name "Constellation ${CI_COMMIT_TAG} - ${CODENAME}"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v.*/
 
