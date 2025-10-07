@@ -60,6 +60,7 @@ Installation <get_started/installation>
 tutorials/single_satellite
 tutorials/missioncontrol
 tutorials/observatory
+tutorials/env_variables
 ```
 
 ```{raw} latex
