@@ -152,6 +152,7 @@ install_headers(
 install_headers(
   'utils/casts.hpp',
   'utils/enum.hpp',
+  'utils/env.hpp',
   'utils/exceptions.hpp',
   'utils/ManagerLocator.hpp',
   'utils/msgpack.hpp',
