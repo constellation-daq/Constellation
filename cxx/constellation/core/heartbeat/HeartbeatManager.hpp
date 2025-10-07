@@ -116,7 +116,7 @@ namespace constellation::heartbeat {
          *
          * @param interval New maximum heartbeat interval
          */
-        CNSTLN_API void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
+        void setMaximumInterval(std::chrono::milliseconds interval) { sender_.setMaximumInterval(interval); }
 
         /**
          * @brief Get ephemeral port to which the CHP socket is bound

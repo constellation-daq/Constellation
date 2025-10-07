@@ -99,6 +99,8 @@ constellation_private_deps = []
 if host_machine.system() == 'windows'
   # Disable parts of Windows API with conflicting macro definitions
   constellation_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
+  # Set minimum OS version to Windows 10
+  constellation_args += '-D_WIN32_WINNT=0x0A00'
   # Add ws2_32 and iphlpapi to dependencies
   constellation_private_deps += cpp.find_library('ws2_32')
   constellation_private_deps += cpp.find_library('iphlpapi')

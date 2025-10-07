@@ -672,6 +672,20 @@ docs:spelling:
   stage: deploy
   needs: []
 
+deploy:bundle-mingw-artifacts:
+  extends:
+    - .deploy
+    - .fedora-mingw
+  needs:
+    - job: build:fedora-mingw
+      artifacts: true
+  script:
+    - etc/scripts/bundle_mingw_artifacts.sh
+  artifacts:
+    paths:
+      - mingw_artifacts
+    expire_in: 1 week
+
 deploy:release:
   extends:
     - .deploy
