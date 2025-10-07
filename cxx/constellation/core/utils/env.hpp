@@ -10,8 +10,13 @@
 #pragma once
 
 #include <cstdlib>
+#include <mutex>
 #include <optional>
+#include <regex>
 #include <string>
+
+#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::utils {
 
@@ -21,15 +26,14 @@ namespace constellation::utils {
      *          default is returned
      *
      * @param name Name of the environment variable
-     * @param default_val Fallback value in case the environment variable is not found
-     * @return Optional with the valure read from the environment variable
+     * @return Optional with the value read from the environment variable
      */
-    inline std::optional<std::string> getenv(const std::string& name, const std::string default_val = {}) {
+    inline std::optional<std::string> getenv(const std::string& name) {
+        static std::mutex getenv_mutex;
+        std::lock_guard<std::mutex> lock(getenv_mutex);
+
         const auto* val = std::getenv(name.c_str());
         if(val == nullptr) {
-            if(!default_val.empty()) {
-                return default_val;
-            }
             return std::nullopt;
         }
         return std::string(val);
