@@ -12,6 +12,7 @@
 #include <cstdlib>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <regex>
 #include <string>
 
@@ -30,9 +31,9 @@ namespace constellation::utils {
      */
     inline std::optional<std::string> getenv(const std::string& name) {
         static std::mutex getenv_mutex;
-        std::lock_guard<std::mutex> lock(getenv_mutex);
+        const std::lock_guard<std::mutex> lock(getenv_mutex);
 
-        const auto* val = std::getenv(name.c_str());
+        const auto* val = std::getenv(name.c_str()); // NOLINT(concurrency-mt-unsafe)
         if(val == nullptr) {
             return std::nullopt;
         }
@@ -53,8 +54,8 @@ namespace constellation::utils {
      */
     inline std::string resolve_env(const std::regex& pattern, const std::string& input) {
 
-        std::sregex_iterator begin(input.begin(), input.end(), pattern);
-        std::sregex_iterator end {};
+        const std::sregex_iterator begin(input.begin(), input.end(), pattern);
+        const std::sregex_iterator end {};
         std::size_t last_pos = 0;
 
         std::string result;
@@ -80,7 +81,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?:\}|\b))");
+        const std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?:\}|\b))");
         return resolve_env(ctrl_pattern, config_value);
     }
 
@@ -92,7 +93,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_satellite_env(const std::string& config_value) {
-        std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?:\}|\b))");
+        const std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?:\}|\b))");
         return resolve_env(sat_pattern, config_value);
     }
 
