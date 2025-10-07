@@ -36,7 +36,7 @@ def get_interface_addresses(interface_names: list[str] | None) -> list[str]:
     interface_addresses.append("127.0.0.1")
 
     # Iterate over given names
-    if_names = [if_name for if_idx, if_name in socket.if_nameindex()]
+    if_names = get_interface_names()
     for if_name in interface_names:
         if if_name in if_names:
             if_addr = get_addr(if_name)
@@ -52,24 +52,20 @@ def get_interface_addresses(interface_names: list[str] | None) -> list[str]:
 def get_interface_names() -> list[str]:
     """Get all multicast interface names."""
     interface_names = []
-    for if_idx, if_name in socket.if_nameindex():
-        if_addr = get_addr(if_name)
-        if if_addr is not None:
+    for if_name, if_stats in psutil.net_if_stats().items():
+        if if_stats.isup and get_addr(if_name) is not None:
             interface_names.append(if_name)
     return interface_names
 
 
-def validate_interface(interface: str) -> str:
+def validate_interface(interface_name: str) -> str:
     """Validate that the provided interface exists.
 
-    interface :: IPv4 address or name of an existing network interface.
+    interface :: name of an existing network interface.
 
-    Returns IPv4 address of interface or '*' for any/all interfaces.
-
-    Raises ValueError if the interface/IP does not exist.
+    Raises ValueError if the interface does not exist.
     """
-    for if_idx, if_name in socket.if_nameindex():
-        if_addr = get_addr(if_name)
-        if if_addr is not None and if_name == interface:
+    for if_name in get_interface_names():
+        if interface_name.lower() == if_name.lower():
             return if_name
-    raise argparse.ArgumentTypeError(f"`{interface}` is not valid a network interface name.")
+    raise argparse.ArgumentTypeError(f"`{interface_name}` is not valid a network interface name.")
