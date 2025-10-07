@@ -39,4 +39,61 @@ namespace constellation::utils {
         return std::string(val);
     }
 
+    /**
+     * @brief Helper to resolve all environment variables in a string
+     * @details This method takes a regex pattern and an input string. For each match, the first match group is taken and
+     *          looked up as environment variable. A runtime exception is thrown if not found, the match string replaced with
+     *          the value otherwise.
+     *
+     * @param pattern Input regular expression. Only the first match group is used.
+     * @param input Input string to resolve matches for
+     *
+     * @return String with all regular expression matches replaced
+     * @throws RuntimeError if an environment variable could not be found
+     */
+    inline std::string resolve_env(const std::regex& pattern, const std::string& input) {
+
+        std::sregex_iterator begin(input.begin(), input.end(), pattern);
+        std::sregex_iterator end {};
+        std::size_t last_pos = 0;
+
+        std::string result;
+        for(const auto& match : std::ranges::subrange(begin, end)) {
+            result += input.substr(last_pos, match.position() - last_pos);
+            auto env_val = getenv(match[1]);
+            if(!env_val.has_value()) {
+                throw RuntimeError("Environment variable " + quote(match[1].str()) + " not defined");
+            }
+            result += env_val.value();
+            last_pos = match.position() + match.length();
+        }
+
+        result += input.substr(last_pos);
+        return result;
+    }
+
+    /**
+     * @brief Helper to resolve all controller environment variables matching _${VAR} or _$VAR
+     *
+     * @param config_value Input string to resolve environment variables in
+     * @return String with all environment variables replaced with their values
+     * @throws RuntimeError if an environment variable could not be found
+     */
+    inline std::string resolve_controller_env(const std::string& config_value) {
+        std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?:\}|\b))");
+        return resolve_env(ctrl_pattern, config_value);
+    }
+
+    /**
+     * @brief Helper to resolve all satellite environment variables matching ${VAR} or $VAR
+     *
+     * @param config_value Input string to resolve environment variables in
+     * @return String with all environment variables replaced with their values
+     * @throws RuntimeError if an environment variable could not be found
+     */
+    inline std::string resolve_satellite_env(const std::string& config_value) {
+        std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?:\}|\b))");
+        return resolve_env(sat_pattern, config_value);
+    }
+
 } // namespace constellation::utils
