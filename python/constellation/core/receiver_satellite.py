@@ -20,7 +20,7 @@ from .satellite import Satellite
 
 
 class ReceiverSatellite(Satellite):
-    """Constellation Satellite which can send data via CDTP"""
+    """Constellation Satellite which can receive data via CDTP"""
 
     def __init__(self, *args: Any, **kwargs: Any):
         self._drc: DataReceiver | None = None
@@ -34,6 +34,12 @@ class ReceiverSatellite(Satellite):
         """Configure values specific for all ReceiverSatellite-type classes."""
         super()._pre_initializing_hook(config)
         data_transmitters = self.config.setdefault("_data_transmitters", None)
+        if data_transmitters:
+            if not isinstance(data_transmitters, list) or not all([isinstance(t, str) for t in data_transmitters]):
+                msg = "The '_data_transmitters' configuration parameter needs to be a list of strings "
+                msg += '(e.g. \'["TachyonDetector.array1", "XRayCamera.cam1"]\')'
+                raise ValueError(msg)
+            data_transmitters = set(data_transmitters)
         # Create data receiver
         self._drc = DataReceiver(
             self.context, self.log_cdtp, self.receive_bor, self.receive_data, self.receive_eor, data_transmitters
