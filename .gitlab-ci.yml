@@ -480,12 +480,9 @@ lint:clang-scan-build:
   needs:
     - job: build:fedora-clang
       artifacts: false
-  variables:
-    CCC_CC: clang
-    CCC_CXX: clang++
   script:
     - meson setup build -Dcxx_tests=disabled -Dbuildtype=debug -Dmemory_allocator=system $(etc/scripts/meson_enable_all_components.sh)
-    - ninja -C build scan-build
+    - CCC_CC=clang CCC_CXX=clang++ ninja -C build scan-build
     - if [ ! -z "$(ls -A build/meson-logs/scanbuild)" ]; then false; fi
   artifacts:
     paths:
