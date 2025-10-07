@@ -204,12 +204,11 @@ namespace constellation::satellite {
         }
 
         /**
-         * @brief Helper to append flags to the run condition
+         * @brief Helper to update the run metadata
          *
-         * @param conditions Input conditions
-         * @return Amended conditions
+         * @param condition_code Run condition code to append to metadata
          */
-        CNSTLN_LOCAL protocol::CDTP::RunCondition append_run_conditions(protocol::CDTP::RunCondition conditions) const;
+        CNSTLN_LOCAL void update_run_metadata(protocol::CDTP::RunCondition condition_code);
 
         /**
          * @brief Stop sending thread

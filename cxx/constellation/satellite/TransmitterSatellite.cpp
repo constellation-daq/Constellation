@@ -210,8 +210,6 @@ void TransmitterSatellite::starting_transmitter(std::string_view run_identifier,
 }
 
 void TransmitterSatellite::send_eor() {
-    set_run_metadata_tag("time_end", std::chrono::system_clock::now());
-
     // Create CDTP2 EOR message
     const CDTP2EORMessage msg {getCanonicalName(), std::move(eor_tags_), std::move(run_metadata_)};
 
@@ -230,23 +228,24 @@ void TransmitterSatellite::send_eor() {
     LOG(cdtp_logger_, DEBUG) << "Sent EOR message";
 }
 
-CDTP::RunCondition TransmitterSatellite::append_run_conditions(CDTP::RunCondition conditions) const {
+void TransmitterSatellite::update_run_metadata(CDTP::RunCondition conditions) {
+    set_run_metadata_tag("time_end", std::chrono::system_clock::now());
     if(mark_run_tainted_) {
         conditions |= CDTP::RunCondition::TAINTED;
     }
     if(is_run_degraded()) {
         conditions |= CDTP::RunCondition::DEGRADED;
     }
-    return conditions;
+    set_run_metadata_tag("condition_code", std::to_underlying(conditions));
+    set_run_metadata_tag("condition", enum_name(conditions));
+    set_run_metadata_tag("data_records", seq_);
 }
 
 void TransmitterSatellite::stopping_transmitter() {
     // Stop sending thread
     stop_sending_loop();
     // Send EOR
-    const auto condition_code = append_run_conditions(CDTP::RunCondition::GOOD);
-    set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
-    set_run_metadata_tag("condition", enum_name(condition_code));
+    update_run_metadata(CDTP::RunCondition::GOOD);
     send_eor();
     // Emit final metrics
     STAT("TX_BYTES", bytes_transmitted_.load());
@@ -259,9 +258,7 @@ void TransmitterSatellite::interrupting_transmitter(CSCP::State previous_state) 
     stop_sending_loop();
     // If previous state was running, stop the run by sending an EOR
     if(previous_state == CSCP::State::RUN) {
-        const auto condition_code = append_run_conditions(CDTP::RunCondition::INTERRUPTED);
-        set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
-        set_run_metadata_tag("condition", enum_name(condition_code));
+        update_run_metadata(CDTP::RunCondition::INTERRUPTED);
         send_eor();
     }
 }
@@ -272,9 +269,7 @@ void TransmitterSatellite::failure_transmitter(CSCP::State previous_state) {
     // If previous state was running, attempt to send an EOR
     if(previous_state == CSCP::State::RUN) {
         markRunTainted();
-        const auto condition_code = append_run_conditions(CDTP::RunCondition::ABORTED);
-        set_run_metadata_tag("condition_code", std::to_underlying(condition_code));
-        set_run_metadata_tag("condition", enum_name(condition_code));
+        update_run_metadata(CDTP::RunCondition::ABORTED);
         send_eor();
     }
 }
