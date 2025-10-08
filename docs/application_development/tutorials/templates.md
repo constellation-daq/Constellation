@@ -10,39 +10,31 @@ satellites, consult the [introduction](../intro/listing.md).
 
 ## Getting Started
 
-On GitHub, new repositories can be created from the template repositories using the green `Use this template` button.
-For projects which will not be hosted on GitHub, the template code can be downloaded manually using the green `Code` button.
+Template repositories are provided on both GitLab and GitHub and can be cloned or used directly.
 
-::::::{tab-set}
-:::::{tab-item} C++
-:sync: cxx
+On GitLab, the repository should be forked and renamed, while on GitHub, new repositories can be created from the template
+repositories using the green {bdg-primary}`Use this template` button. Alternatively, for projects which will not be hosted on GitHub, the
+template code can be downloaded manually using the green {bdg-primary}`Code` button.
 
-::::{tab-set}
-:::{tab-item} Meson
-:sync: meson
+The following templates are available:
 
-The template repository can be found on [GitHub](https://github.com/constellation-daq/template-satellite-cpp-meson).
+* Satellite in **C++ with Meson** build system:
 
-:::
-:::{tab-item} CMake
-:sync: cmake
+  * [https://github.com/constellation-daq/template-satellite-cpp-meson](https://github.com/constellation-daq/template-satellite-cpp-meson)
+  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-meson](https://gitlab.desy.de/constellation/templates/satellite-cpp-meson).
 
-The template repository can be found on [GitHub](https://github.com/constellation-daq/template-satellite-cpp-cmake).
+* Satellite in **C++ with CMake** build system:
 
-:::
-::::
+  * [https://github.com/constellation-daq/template-satellite-cpp-cmake](https://github.com/constellation-daq/template-satellite-cpp-cmake).
+  * [https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake](https://gitlab.desy.de/constellation/templates/satellite-cpp-cmake).
 
-:::::
-:::::{tab-item} Python
-:sync: python
+* Satellite in **Python**:
 
-The template repository can be found on [GitHub](https://github.com/constellation-daq/template-satellite-python).
+  * [https://github.com/constellation-daq/template-satellite-python](https://github.com/constellation-daq/template-satellite-python).
+  * [https://gitlab.desy.de/constellation/templates/satellite-python](https://gitlab.desy.de/constellation/templates/satellite-python).
 
-:::::
-::::::
-
-After cloning the new repository, the first which should be done is adjusting the files to match the new
-[satellite type](../../operator_guide/concepts/satellite.md#type-and-name). This can be easily done with the included
+After cloning the repository, the files should first be adapted to the desired
+[satellite type](../../operator_guide/concepts/satellite.md#type-and-name). This can be accomplished using the supplied
 rename script:
 
 ```sh
@@ -64,12 +56,8 @@ consulted to install build dependencies such as Meson or Python's `venv` module.
 ```
 
 ::::::{tab-set}
-:::::{tab-item} C++
+:::::{tab-item} C++ / Meson
 :sync: cxx
-
-::::{tab-set}
-:::{tab-item} Meson
-:sync: meson
 
 External satellites can use a [wrap file](https://mesonbuild.com/Wrap-dependency-system-manual.html) for Constellation to
 automatically build Constellation if required. The Meson template satellite already contains a wrap file pointing to the
@@ -82,9 +70,9 @@ for example by downloading the current file from the template repository again.
 
 Alternatively, Constellation can also be installed system-wide as explained in the instructions for CMake.
 
-:::
-:::{tab-item} CMake
-:sync: cmake
+:::::
+:::::{tab-item} C++ / CMake
+:sync: cxx-cmake
 
 External satellites require an installation from source of Constellation. By default, the `meson install` command installs to
 `/usr/local`. This can be changed via:
@@ -108,9 +96,6 @@ Note that the platform specific part (`lib64`) might be different depending on y
 `lib/x86_64-linux-gnu` for `amd64` Debian/Ubuntu. It can be found be checking the content of the prefix path.
 ````
 
-:::
-::::
-
 :::::
 :::::{tab-item} Python
 :sync: python
@@ -130,12 +115,8 @@ source venv/bin/activate
 ## Building the Satellite
 
 ::::::{tab-set}
-:::::{tab-item} C++
+:::::{tab-item} C++ / Meson
 :sync: cxx
-
-::::{tab-set}
-:::{tab-item} Meson
-:sync: meson
 
 The satellite can be built using:
 
@@ -144,9 +125,9 @@ meson setup build
 meson compile -C build
 ```
 
-:::
-:::{tab-item} CMake
-:sync: cmake
+:::::
+:::::{tab-item} C++ / CMake
+:sync: cxx-cmake
 
 The satellite can be built using:
 
@@ -161,9 +142,6 @@ Or alternatively using Make:
 cmake -B build
 make -C build
 ```
-
-:::
-::::
 
 :::::
 :::::{tab-item} Python
