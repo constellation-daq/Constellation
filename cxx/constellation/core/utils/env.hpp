@@ -46,7 +46,8 @@ namespace constellation::utils {
      *          looked up as environment variable. A runtime exception is thrown if not found, the match string replaced with
      *          the value otherwise.
      *
-     * @param pattern Input regular expression. Only the first match group is used.
+     * @param pattern Input regular expression. The first match group represents the variable name, the second an optional
+     * default
      * @param input Input string to resolve matches for
      *
      * @return String with all regular expression matches replaced
@@ -62,10 +63,13 @@ namespace constellation::utils {
         for(const auto& match : std::ranges::subrange(begin, end)) {
             result += input.substr(last_pos, match.position() - last_pos);
             auto env_val = getenv(match[1]);
-            if(!env_val.has_value()) {
+            if(env_val.has_value()) {
+                result += env_val.value();
+            } else if(match[2].matched) {
+                result += match[2].str();
+            } else {
                 throw RuntimeError("Environment variable " + quote(match[1].str()) + " not defined");
             }
-            result += env_val.value();
             last_pos = match.position() + match.length();
         }
 
@@ -81,7 +85,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        const std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?:\}|\b))");
+        const std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?::-([^}]*))?(?:\}|\b))");
         return resolve_env(ctrl_pattern, config_value);
     }
 
@@ -93,7 +97,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_satellite_env(const std::string& config_value) {
-        const std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?:\}|\b))");
+        const std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?::-([^}]*))?(?:\}|\b))");
         return resolve_env(sat_pattern, config_value);
     }
 
