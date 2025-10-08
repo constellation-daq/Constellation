@@ -72,6 +72,7 @@ Alternatively, Constellation can also be installed system-wide as explained in t
 
 :::::
 :::::{tab-item} C++ / CMake
+:sync: cxx-cmake
 
 External satellites require an installation from source of Constellation. By default, the `meson install` command installs to
 `/usr/local`. This can be changed via:
@@ -126,6 +127,7 @@ meson compile -C build
 
 :::::
 :::::{tab-item} C++ / CMake
+:sync: cxx-cmake
 
 The satellite can be built using:
 
