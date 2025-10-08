@@ -529,4 +529,36 @@ TEST_CASE("Configuration message assembly & disassembly", "[core][core::config]"
     REQUIRE(config.asDictionary() == Configuration::disassemble(message).asDictionary());
 }
 
+TEST_CASE("Resolve environment variables", "[core][core::config]") {
+    // Set an environment variable
+#if defined(_WIN32)
+    _putenv("CNSTLN_TEST_KEY=value");
+#else
+    setenv("CNSTLN_TEST_KEY", "value", 1);
+#endif
+
+    Dictionary dict {};
+
+    dict["no_env_var"] = "CNSTLN_TEST_KEY";
+    dict["env_var"] = "${CNSTLN_TEST_KEY}";
+    dict["env_var_default"] = "${CNSTLN_TEST_KEY:-unused}";
+    dict["alt_env_var"] = "$CNSTLN_TEST_KEY";
+    dict["missing_env_var"] = "${MISSING}";
+    dict["missing_env_var_default"] = "${MISSING:-default}";
+
+    Configuration config {std::move(dict)};
+
+    // Read values back
+    REQUIRE(config.get<std::string>("no_env_var") == "CNSTLN_TEST_KEY");
+    REQUIRE(config.get<std::string>("env_var") == "value");
+    REQUIRE(config.get<std::string>("env_var_default") == "value");
+    REQUIRE(config.get<std::string>("alt_env_var") == "value");
+
+    REQUIRE_THROWS_MATCHES(
+        config.get<std::string>("missing_env_var"),
+        InvalidValueError,
+        Message("Value `${MISSING}` of key `missing_env_var` is not valid: Environment variable `MISSING` not defined"));
+    REQUIRE(config.get<std::string>("missing_env_var_default") == "default");
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
