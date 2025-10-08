@@ -1,10 +1,11 @@
 # Environment Variables
 
 For configuration parameters such as access keys or tokens it can be beneficial to not store them directly in configuration
-files, which might be under version control or shared to and accessible by a wide range of people.
-For this purpose, Constellation supports placeholders for environment variables, which are read at run-time.
+files, which might be under version control or shared to and accessible by a wide range of people, but to read them from the
+current environment. For this purpose, Constellation supports placeholders for environment variables that are evaluated
+at run-time.
 
-## Placeholders in Configuration Files
+## Placeholders Syntax
 
 The syntax of placeholders is based on the familiar format of environment variables in the shell, i.e. a variable name
 prefixed with a dollar sign. Since environment variables are always string representations, the usage of placeholders is
@@ -14,19 +15,21 @@ A configuration value can contain multiple and different environment variable pl
 They are placed directly in the value of the respective configuration key, for example:
 
 ```toml
-file_path = "/home/${USER}/data/"
+file_path = "/home/${USER}/${CNSTLN_LOGDIR}/logfile.txt"
 ```
 
-Environment variables can either be present on the machine where the satellite requiring the parameter runs, or only on the
-node running a controller of the Constellation. Hence, both concepts are available as described in the following.
+## Place of Resolution
 
-## Controller-Side Variables
+Environment variables can either be present on the machine where the configuration file is read and parsed by the controller,
+or only on the node that runs the satellite requiring the parameter. Hence, both concepts are available as described in the
+following.
+
+### Controller-Side Variables
 
 *Controller-side variables* can be placed in configuration files using the syntax `_${VARIABLE}`. These placeholders will
-be resolved on the controller side, i.e. before encoding and sending the configuration to satellites during the
-{bdg-secondary}`initializing` or {bdg-secondary}`reconfiguring` state transitions. The resolution is performed on the
-node the controller runs on. When parsing configuration keys on the controller side, an error is displayed when a
-referenced environment variable cannot be found.
+be resolved on the controller side, i.e. before encoding and sending the configuration to satellites with the
+`initialize` or `reconfigure` commands. The resolution is performed on the node the controller runs on. When parsing
+configuration keys on the controller side, an error is displayed when a referenced environment variable cannot be found.
 
 ```{warning}
 Controller-side environment variables will be substituted by the controller and subsequently sent to the respective
@@ -34,7 +37,7 @@ satellites in clear text. Also retrieving the configuration from a satellite wil
 should therefore not be used for secrets.
 ```
 
-## Satellite-Side Variables
+### Satellite-Side Variables
 
 *Satellite-side variables* are denoted using the syntax `${VARIABLE}`. They will be resolved on the satellite side, i.e.
 only after the satellite has received the configuration and when it accesses the respective configuration key. The
@@ -65,3 +68,17 @@ will be substituted, resulting in the final value provided to the satellite bein
 
 
 ## Default Values
+
+In some cases it can be helpful to be able to specify a default fallback value to be used if the environment variable is not
+set on the target node. Constellation supports this using the typical shell-like syntax separating the variable name from the
+default value with the token `:-`:
+
+```toml
+[FlightRecorder.Logger]
+file_path = "/home/${USER}/${CNSTLN_LOGDIR:-logs}/logfile.txt"
+```
+
+In case the environment variable `CNSTLN_LOGGER` is not defined, the parameter `file_path` resolves to
+`/home/myuser/logs/logfile.txt` without producing an error.
+
+The default syntax can be used both for controller-side and satellite-side environment variables.
