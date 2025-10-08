@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+# environment variables:
+no_env_var = "CNSTLN_TEST_KEY"
+
+# controller-side variables
+ctrl_env_var = "_${CNSTLN_TEST_KEY}"
+ctrl_env_var_default = "_${CNSTLN_TEST_KEY:-unused}"
+alt_ctrl_env_var = "_$CNSTLN_TEST_KEY"
+missing_ctrl_env_var_default = "_${MISSING:-default}"
+
+sat_env_var = "${CNSTLN_TEST_KEY}"
+sat_env_var_default = "${CNSTLN_TEST_KEY:-unused}"
+alt_sat_env_var = "$CNSTLN_TEST_KEY"
+missing_sat_env_var = "${MISSING}"
+missing_sat_env_var_default = "${MISSING:-default}"

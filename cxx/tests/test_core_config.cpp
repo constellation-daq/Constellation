@@ -534,7 +534,7 @@ TEST_CASE("Resolve environment variables", "[core][core::config]") {
 #if defined(_WIN32)
     _putenv("CNSTLN_TEST_KEY=value");
 #else
-    setenv("CNSTLN_TEST_KEY", "value", 1);
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe)
 #endif
 
     Dictionary dict {};

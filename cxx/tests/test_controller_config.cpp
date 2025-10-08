@@ -449,6 +449,34 @@ TEST_CASE("Valid YAML file", "[controller]") {
     REQUIRE(config.hasSatelliteConfiguration("Dummy3.D3"));
 }
 
+TEST_CASE("Resolving controller-side environment variables", "[controller]") {
+
+    // Set an environment variable
+#if defined(_WIN32)
+    _putenv("CNSTLN_TEST_KEY=value");
+#else
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe)
+#endif
+
+    const auto test_file = test_files_dir() / "env_config.toml";
+    const ControllerConfiguration config {test_file};
+
+    // Test that controller-side variables are resolved
+    const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
+    REQUIRE(global_config.at("no_env_var").get<std::string>() == "CNSTLN_TEST_KEY");
+    REQUIRE(global_config.at("ctrl_env_var").get<std::string>() == "value");
+    REQUIRE(global_config.at("ctrl_env_var_default").get<std::string>() == "value");
+    REQUIRE(global_config.at("alt_ctrl_env_var").get<std::string>() == "value");
+    REQUIRE(global_config.at("missing_ctrl_env_var_default").get<std::string>() == "default");
+
+    // Test that satellite-side variables are not resolved
+    REQUIRE(global_config.at("sat_env_var").get<std::string>() == "${CNSTLN_TEST_KEY}");
+    REQUIRE(global_config.at("sat_env_var_default").get<std::string>() == "${CNSTLN_TEST_KEY:-unused}");
+    REQUIRE(global_config.at("alt_sat_env_var").get<std::string>() == "$CNSTLN_TEST_KEY");
+    REQUIRE(global_config.at("missing_sat_env_var").get<std::string>() == "${MISSING}");
+    REQUIRE(global_config.at("missing_sat_env_var_default").get<std::string>() == "${MISSING:-default}");
+}
+
 // --- Configuration emitting ---
 
 TEST_CASE("Get as TOML", "[controller]") {
