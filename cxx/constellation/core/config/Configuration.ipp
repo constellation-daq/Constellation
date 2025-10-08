@@ -63,6 +63,9 @@ namespace constellation::config {
         } catch(const std::invalid_argument& error) {
             // Value held by the dictionary entry is not valid (e.g. out of range)
             throw InvalidValueError(*this, key, error.what());
+        } catch(const utils::RuntimeError& error) {
+            // Issue when parsing the value
+            throw InvalidValueError(*this, key, error.what());
         }
     }
 
