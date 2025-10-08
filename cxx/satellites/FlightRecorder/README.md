@@ -42,7 +42,7 @@ The following parameters are read and interpreted by this satellite. Parameters 
 
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
-| `method` | String | Method to be used for logging. Valid values are `FILE`, `ROTATE`, `DAILY` and `RUN` | `FILE` |
+| `method` | String | Method to be used for logging. Valid values are `FILE`, `ROTATE`, `DAILY` and `RUN` | - |
 | `file_path` | String | Path to the target log file | - |
 | `allow_overwriting` | Boolean | Flag to allow or deny overwriting of existing log files | `false` |
 | `global_recording_level` | String | Global log level to be recorded by this satellite | `WARNING` |
