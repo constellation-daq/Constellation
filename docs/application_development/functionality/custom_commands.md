@@ -54,7 +54,7 @@ registration process are discussed below in detail.
 Alternatively, commands can also be registered using
 [lambda expressions](https://en.cppreference.com/w/cpp/language/lambda.html):
 
-```c++
+```cpp
     register_command("get_random_number",
                      "Return random number chosen by a fair dice roll.", // See https://xkcd.com/221/
                      {},                                                 // Allow commands in all states
@@ -65,13 +65,13 @@ Alternatively, commands can also be registered using
 When using lambda expressions, parameters have to be typed explicitly.
 The compilation will fail for lambda expression using the `auto` keyword for parameters, meaning
 
-```c++
+```cpp
 [this](const auto& name) { return device_->getVoltage(name); }
 ```
 
 has to be replaced with
 
-```c++
+```cpp
 [this](const std::string& name) { return device_->getVoltage(name); }
 ```
 
