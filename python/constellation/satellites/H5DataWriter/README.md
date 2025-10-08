@@ -64,7 +64,7 @@ TODO
 
 A group is created for each transmitter with its canonical name. In this group further groups are created for the begin-of-run (`BOR`) and end-of-run (`EOR`) messages, as well as a group for each data (`data_XXXXXXXXX`) message.
 
-The BOR and EOR groups contain two empty datasets, one called `user_tags` containing the user provided tags for those message, and one called `configuration` for the BOR or `run_meta` for the EOR respectively. The configuration and run metadata are added as attributes to those datasets.
+The BOR and EOR groups contain two empty datasets, one called `user_tags` containing the user provided tags for those message, and one called `configuration` for the BOR or `run_metadata` for the EOR respectively. The configuration and run metadata are added as attributes to those datasets.
 
 Each data group contains the tags of the data record as attributes and contains a dataset for each block contained in the data record (`block_XX`). By default data is stored with the `uint8` data type.
 The data type might differ if the data record contained a `dtype` tag, in which case `numpy` is used to extract store data with the given data type.
