@@ -3,10 +3,22 @@
 For configuration parameters such as access keys or tokens it can be beneficial to not store them directly in configuration
 files, which might be under version control or shared to and accessible by a wide range of people.
 For this purpose, Constellation supports placeholders for environment variables, which are read at run-time.
-The syntax here is based on the familiar format of environment variables in the shell.
+
+## Placeholders in Configuration Files
+
+The syntax of placeholders is based on the familiar format of environment variables in the shell, i.e. a variable name
+prefixed with a dollar sign. Since environment variables are always string representations, the usage of placeholders is
+reserved for string-type configuration keys.
+
+A configuration value can contain multiple and different environment variable placeholders.
+They are placed directly in the value of the respective configuration key, for example:
+
+```toml
+file_path = "/home/${USER}/data/"
+```
 
 Environment variables can either be present on the machine where the satellite requiring the parameter runs, or only on the
-node running a controller of the Constellation. Hence, both concepts are available:
+node running a controller of the Constellation. Hence, both concepts are available as described in the following.
 
 ## Controller-Side Variables
 
@@ -51,9 +63,5 @@ moment, all environment variable placeholders in the value are resolved, and the
 will be substituted, resulting in the final value provided to the satellite being e.g.
 `https://yourmattermost.com/hooks/9om7nhes7p859e1qrxi5dgykzr`.
 
-## Limitations
-
-* Only strings can be
-* multiple variables per config value possible
 
 ## Default Values
