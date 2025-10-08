@@ -7,9 +7,9 @@ with a time series database like [InfluxDB](https://www.influxdata.com/).
 ## Setting up Docker Compose
 
 The easiest way to set up InfluxDB and Grafana is with Docker Compose. Installation instructions for Docker and the Docker
-Compose plugin can be found [here](https://docs.docker.com/engine/install/). Alternatively, since Docker is not trivial to
-set up and requires root, `podman-docker` together with `podman-compose` can be used instead if available in the distribution
-repositories.
+Compose plugin can be found [on the Docker website](https://docs.docker.com/engine/install/). Alternatively, since Docker is
+not trivial to set up and requires root, `podman-docker` together with `podman-compose` can be used instead if available in
+the distribution repositories.
 
 A file named `docker-compose.yaml` needs to be created with the following content:
 
@@ -131,12 +131,12 @@ SatelliteInflux -g edda -n DB
 The satellites need to be configured. A sample configuration might look like this:
 
 ```toml
-[satellites.Mariner.Nine]
+[Mariner.Nine]
 voltage = 1.0
 current = 1.0
 sample_period = 5.0
 
-[satellites.Influx.DB]
+[Influx.DB]
 org = "Insert organization name here"
 token = "Insert read-write API token here"
 ```

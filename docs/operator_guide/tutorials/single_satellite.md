@@ -149,15 +149,14 @@ satellites. The individual satellite configurations are sent to their satellites
 dictionary. Their basic structure and syntax is the following:
 
 ```toml
-[satellites]
 # General settings which apply to all satellites
 _role = "DYNAMIC"
 
-[satellites.Sputnik]
+[Sputnik]
 # Settings which apply to all satellites of type "Sputnik"
 interval = 1000
 
-[satellites.Mariner.Nine]
+[Mariner.Nine]
 # Settings which only apply to the satellite with name "Mariner.Nine"
 voltage = 5.1
 ```

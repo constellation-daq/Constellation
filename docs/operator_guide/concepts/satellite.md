@@ -219,7 +219,7 @@ For this purpose, Constellation provides [Conditional Transitions](autonomy.md#c
 a transition order using the `_require_<transition>_after` keywords provided via the satellite configuration:
 
 ```toml
-[satellites.Sputnik.A]
+[Sputnik.A]
 _require_starting_after = ["Sputnik.B"]
 ```
 

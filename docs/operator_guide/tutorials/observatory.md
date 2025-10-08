@@ -44,14 +44,14 @@ Observatory main window after satellites are started
 To initialize the satellites, MissionControl can be used with the following configuration file:
 
 ```toml
-[satellites.Sputnik.One]
+[Sputnik.One]
 unused_parameter = 1
 
-[satellites.Sputnik.Two]
+[Sputnik.Two]
 
-[satellites.RandomTransmitter.Sender]
+[RandomTransmitter.Sender]
 
-[satellites.EudaqNativeWriter.Receiver]
+[EudaqNativeWriter.Receiver]
 _data_transmitters = ["Sender"]
 output_directory = "/tmp/test"
 ```
@@ -78,13 +78,13 @@ Log message details
 To fix this issue, the configuration file has to be adjusted:
 
 ```toml
-[satellites.Sputnik.One]
+[Sputnik.One]
 
-[satellites.Sputnik.Two]
+[Sputnik.Two]
 
-[satellites.RandomTransmitter.Sender]
+[RandomTransmitter.Sender]
 
-[satellites.EudaqNativeWriter.Receiver]
+[EudaqNativeWriter.Receiver]
 _data_transmitters = ["RandomTransmitter.Sender"]
 output_directory = "/tmp/test"
 ```

@@ -45,7 +45,7 @@ SatelliteMattermost -g edda -n Logger
 The satellite requires a configuration, which in the simplest case might look like this:
 
 ```toml
-[satellites.Mattermost.Logger]
+[Mattermost.Logger]
 webhook_url = "https://yourmattermost.com/hooks/yourwebhook"
 ```
 
