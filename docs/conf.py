@@ -11,6 +11,7 @@ import gitlab
 import latex_helpers
 import sphinx
 import sphinx.util.logging
+from pydata_sphinx_theme.short_link import ShortenLinkTransform
 from slugify import slugify
 
 from constellation.core import __version__, __version_code_name__
@@ -101,6 +102,9 @@ html_theme_options = {
 html_css_files = [
     "css/custom.css",
 ]
+
+# Also shorten DESY GitLab URLs
+ShortenLinkTransform.supported_platform["gitlab.desy.de"] = "gitlab"
 
 html_show_sourcelink = False
 
