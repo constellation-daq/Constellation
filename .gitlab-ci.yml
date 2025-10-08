@@ -682,6 +682,7 @@ deploy:bundle-mingw-artifacts:
     paths:
       - mingw_artifacts
     expire_in: 1 week
+  <<: *cpp-rules
 
 deploy:bundle-release-artifacts:
   extends:
