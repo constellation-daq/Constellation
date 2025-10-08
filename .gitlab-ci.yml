@@ -134,6 +134,9 @@ variables:
 .python-3.13:
   image: tollerort.desy.de/hub.docker.com/python:3.13
 
+.python-3.14:
+  image: tollerort.desy.de/hub.docker.com/python:3.14
+
 # Combined Python / C++ templates
 
 # In MRs run only if either C++ or Python files are changed
@@ -363,6 +366,12 @@ test:python-3.13:
     - .test-py
     - .python-venv
     - .python-3.13
+
+test:python-3.14:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.14
 
 # lint stage
 
