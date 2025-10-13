@@ -455,7 +455,7 @@ TEST_CASE("Resolving controller-side environment variables", "[controller]") {
 #if defined(_WIN32)
     _putenv("CNSTLN_TEST_KEY=value");
 #else
-    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe)
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)
 #endif
 
     const auto test_file = test_files_dir() / "env_config.toml";
