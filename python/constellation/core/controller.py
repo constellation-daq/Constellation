@@ -474,6 +474,11 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                 )
             raise e
         socket.connect("tcp://" + service.address + ":" + str(service.port))
+        # Set linger period for socket shutdown to avoid long hangs shutting
+        # down [ms]
+        socket.setsockopt(zmq.LINGER, 2000)
+        # Set maximum time before a recv operation returns with EAGAIN [ms]
+        socket.setsockopt(zmq.RCVTIMEO, 5000)
         ct = CommandTransmitter(self.name, socket)
         self.log.debug(
             "Connecting to %s, address %s on port %s...",

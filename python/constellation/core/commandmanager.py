@@ -88,6 +88,11 @@ class CommandReceiver(BaseSatelliteFrame):
 
         # set up the command channel
         sock = self.context.socket(zmq.REP)
+        # Set linger period for socket shutdown to avoid long hangs shutting
+        # down [ms]
+        sock.setsockopt(zmq.LINGER, 2000)
+        # Set maximum time before a recv operation returns with EAGAIN [ms]
+        sock.setsockopt(zmq.RCVTIMEO, 5000)
         if not cmd_port:
             self.cmd_port = sock.bind_to_random_port("tcp://*")
         else:
