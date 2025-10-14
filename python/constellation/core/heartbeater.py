@@ -42,6 +42,12 @@ class HeartbeatSender(SatelliteStateHandler):
         # switch to verbose xpub mode to receive all subscription & unsubscription messages:
         socket.setsockopt(zmq.XPUB_VERBOSER, True)
 
+        # Set linger period for socket shutdown to avoid long hangs shutting
+        # down [ms]
+        socket.setsockopt(zmq.LINGER, 2000)
+        # Set maximum time before a recv operation returns with EAGAIN [ms]
+        socket.setsockopt(zmq.RCVTIMEO, 5000)
+
         if not hb_port:
             self.hb_port = socket.bind_to_random_port("tcp://*")
         else:
