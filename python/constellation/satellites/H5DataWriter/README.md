@@ -151,9 +151,11 @@ for i in range(dset_data_idx.shape[0]):
 | Metric | Description | Value Type | Metric Type | Interval |
 |--------|-------------|------------|-------------|----------|
 | `CONCURRENT_READING_ENABLED` | Concurrent reading status | Bool | `LAST_VALUE` | 5s |
+| `CURRENTLY_OPEN_FILENAME` | The name of the file currently being written to | str | `LAST_VALUE` | 5s |
 
 ## Custom Commands
 
 | Command | Description | Arguments | Return Value |
 |---------|-------------|-----------|--------------|
 | `get_concurrent_reading_status` | Get if concurrent reading is enabled | - | Bool |
+| `get_current_filename` | Get the file name currently being written to | - | str |

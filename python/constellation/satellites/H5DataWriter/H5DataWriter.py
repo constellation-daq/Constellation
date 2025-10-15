@@ -255,6 +255,14 @@ class H5DataWriter(ReceiverSatellite):
         """Concurrent reading status"""
         return self._swmr_mode_enabled
 
+    @schedule_metric("filename", MetricsType.LAST_VALUE, 5)
+    def currently_open_filename(self) -> str | None:
+        """Concurrent reading status"""
+        try:
+            return self.outfile.filename
+        except Exception:
+            return None
+
     @cscp_requestable
     def get_concurrent_reading_status(
         self,
@@ -266,3 +274,14 @@ class H5DataWriter(ReceiverSatellite):
                 return "enabled", True, {}
             return "not yet enabled", False, {"bor_sent": list(self._swmr_bor_sent)}
         return "not enabled", False, {}
+
+    @cscp_requestable
+    def get_current_filename(
+        self,
+        _request: CSCP1Message,
+    ) -> tuple[str, Any, dict[str, Any]]:
+        """Get the name of the currently open HDF5 file."""
+        try:
+            return "file is open", self.outfile.filename, {}
+        except Exception:
+            return "no file currently open", "", {}
