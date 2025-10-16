@@ -134,6 +134,9 @@ variables:
 .python-3.13:
   image: tollerort.desy.de/hub.docker.com/python:3.13
 
+.python-3.14:
+  image: tollerort.desy.de/hub.docker.com/python:3.14
+
 # Combined Python / C++ templates
 
 # In MRs run only if either C++ or Python files are changed
@@ -258,18 +261,6 @@ build:python-3.11:
       - dist
     expire_in: 24 hour
 
-build:python-3.12:
-  extends:
-    - .build-py
-    - .python-venv
-    - .python-3.12
-
-build:python-3.13:
-  extends:
-    - .build-py
-    - .python-venv
-    - .python-3.13
-
 # test stage
 
 .test-cpp:
@@ -363,27 +354,24 @@ test:python-3.11:
     - .test-py
     - .python-venv
     - .python-3.11
-  needs:
-    - job: build:python-3.11
-      artifacts: false
 
 test:python-3.12:
   extends:
     - .test-py
     - .python-venv
     - .python-3.12
-  needs:
-    - job: build:python-3.12
-      artifacts: false
 
 test:python-3.13:
   extends:
     - .test-py
     - .python-venv
     - .python-3.13
-  needs:
-    - job: build:python-3.13
-      artifacts: false
+
+test:python-3.14:
+  extends:
+    - .test-py
+    - .python-venv
+    - .python-3.14
 
 # lint stage
 
