@@ -144,6 +144,7 @@ class DataTransmitter:
 
     @property
     def payload_threshold(self) -> int:
+        """The current threshold (in [kiB]) at which current payloads will be transmitted."""
         return self._payload_threshold
 
     @payload_threshold.setter
@@ -152,6 +153,7 @@ class DataTransmitter:
 
     @property
     def queue_size(self) -> int:
+        """The maximum size of the data record queue."""
         return self._queue_size
 
     @queue_size.setter
@@ -172,6 +174,7 @@ class DataTransmitter:
         self._queue.put(data_record, block=False)
 
     def send_bor(self, user_tags: dict[str, Any], configuration: dict[str, Any], flags: int = 0) -> None:
+        """Send a beginning-of-run message."""
         # Adjust send timeout for BOR message
         self.log_cdtp.debug("Sending BOR message with timeout %ss", self._bor_timeout)
         timeout = 1000 * self._bor_timeout if self._bor_timeout >= 0 else -1
@@ -187,6 +190,7 @@ class DataTransmitter:
         self.log_cdtp.debug("Sent BOR message")
 
     def send_eor(self, user_tags: dict[str, Any], run_metadata: dict[str, Any], flags: int = 0) -> None:
+        """Send an end-of-run message."""
         # Adjust send timeout for EOR message
         self.log_cdtp.debug("Sending EOR message with timeout %ss", self._eor_timeout)
         timeout = 1000 * self._eor_timeout if self._eor_timeout >= 0 else -1
@@ -202,9 +206,11 @@ class DataTransmitter:
         self.log_cdtp.debug("Sent EOR message")
 
     def _send_message(self, msg: CDTP2Message, flags: int = 0) -> None:
+        """Send a message"""
         msg.assemble().send(self._socket, flags)
 
     def start_sending(self) -> None:
+        """Start the data push thread."""
         # Reset stop event, sequence number, bytes transmitted and re-create queue
         self._stopevt.clear()
         self._sequence_number = 0
@@ -280,6 +286,7 @@ class DataTransmitter:
             msg.clear_data_records()
 
     def stop_sending(self) -> None:
+        """Stop data push thread."""
         if self._push_thread is not None:
             # Wait until queue is empty
             self.log_cdtp.debug("Waiting until data queue is empty")
@@ -347,14 +354,17 @@ class DataReceiver:
 
     @property
     def bytes_received(self) -> int:
+        """The number of bytes received so far."""
         return self._bytes_received
 
     @property
     def running(self) -> bool:
+        """Whether or not puller thread is running."""
         return self._running
 
     @property
     def data_transmitters(self) -> set[str] | None:
+        """Access available set of data transmitter's canonical names."""
         return self._data_transmitters
 
     @property
@@ -367,6 +377,7 @@ class DataReceiver:
         self._eor_timeout = timeout
 
     def start_receiving(self) -> None:
+        """Prepare and start a thread pulling data."""
         # Reset stop event, data transmitter states and bytes received
         self._stopevt.clear()
         self._reset_data_transmitter_states()
@@ -380,6 +391,7 @@ class DataReceiver:
         self._running = True
 
     def stop_receiving(self) -> None:
+        """Stop the thread pulling data."""
         if self._pull_thread is not None:
             # Wait until no more events returned by poller
             while self._poller_events > 0 and self._pull_thread.is_alive():
@@ -450,6 +462,7 @@ class DataReceiver:
             self._pull_thread_exc = e
 
     def check_exception(self) -> None:
+        """Raise any exception encountered in pull thread."""
         if self._pull_thread_exc is not None:
             # Reset sockets
             self._reset_sockets()
@@ -465,6 +478,7 @@ class DataReceiver:
             self._running = False
 
     def add_sender(self, service: DiscoveredService) -> None:
+        """Prepare for pulling data from a discovered sender."""
         # Check that pull thread is running
         if self._pull_thread is None or not self._pull_thread.is_alive():
             return
@@ -475,6 +489,7 @@ class DataReceiver:
         self._add_socket(service.host_uuid, service.address, service.port)
 
     def remove_sender(self, service: DiscoveredService) -> None:
+        """Close connection to a sender."""
         # Check that pull thread is running
         if self._pull_thread is None or not self._pull_thread.is_alive():
             return
