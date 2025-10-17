@@ -22,11 +22,6 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: "subprojects/packagefiles/libzmq/fix-mingw-afunixh.diff"
 
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
@@ -45,12 +40,6 @@ repos:
         args: [ --fix ]
       # Run the formatter.
       - id: ruff-format
-
-  - repo: https://github.com/psf/black
-    rev: 25.11.0
-    hooks:
-      - id: black
-        language_version: python3
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.18.2
