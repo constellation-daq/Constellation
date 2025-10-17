@@ -53,6 +53,8 @@ class TransmitterStateSeq:
 
 
 class SendTimeoutError(RuntimeError):
+    """Exception thrown when a timeout occurs during a send operation."""
+
     def __init__(self, what: str, timeout: int):
         super().__init__(f"Failed sending {what} after {timeout}s")
 
@@ -294,11 +296,15 @@ class DataTransmitter:
 
 
 class RecvTimeoutError(RuntimeError):
+    """Exception thrown when a timeout occurs during a receive operation."""
+
     def __init__(self, what: str, timeout: int):
         super().__init__(f"Failed receiving {what} after {timeout}s")
 
 
 class InvalidCDTPMessageType(RuntimeError):
+    """Exception thrown when an invalid CTDP message type is encountered."""
+
     def __init__(self, msg_type: CDTP2Message.Type, reason: str):
         super().__init__(f"Error handling CDTP message with type {msg_type.name}: {reason}")
 
