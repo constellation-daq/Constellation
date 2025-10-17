@@ -9,29 +9,14 @@ on:
   pull_request:
 
 jobs:
-  lint-python:
-    name: Python Formatting
+  format-python:
+    name: Python Format Check (ruff)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Ignore git ownership warnings
-        run: git config --global --add safe.directory $GITHUB_WORKSPACE
-
-      - name: Set up Python Venv
-        uses: getsentry/action-setup-venv@v2.2.0
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v3
         with:
-          python-version: "3.11"
-          cache-dependency-path: pyproject.toml
-          install-cmd: |
-            pip install --upgrade pip black flake8 flake8-pyproject
-
-      - name: Run black
-        run: black --check python/
-
-      - name: Run flake8
-        run: flake8 python/
+          args: format --diff
 
   format-cpp:
     name: C++ Format Check (clang-format)

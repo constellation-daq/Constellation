@@ -138,6 +138,9 @@ variables:
 .python-3.14:
   image: tollerort.desy.de/hub.docker.com/python:3.14
 
+.ruff:
+  image: tollerort.desy.de/ghcr.io/astral-sh/ruff:alpine
+
 # Combined Python / C++ templates
 
 # In MRs run only if either C++ or Python files are changed
@@ -419,6 +422,16 @@ lint:coverage-cpp:
         path: build/meson-logs/coverage.xml
   <<: *cpp-python-rules # Run on both C++ and Python changes for correct coverage reporting
 
+lint:ruff:
+  extends:
+    - .lint
+    - .ruff
+  script:
+    - ruff check --output-format=gitlab | tee code-quality-report.json
+  artifacts:
+    reports:
+      codequality: code-quality-report.json
+
 lint:mypy:
   extends:
     - .lint
@@ -518,32 +531,12 @@ lint:coverity-scan:
   stage: format
   needs: []
 
-format:black:
+format:ruff:
   extends:
     - .format
-    - .python-venv
-    - .python-3.11
+    - .ruff
   script:
-    - pip install --no-build-isolation -e .[dev]
-    - black --check python/
-
-format:isort:
-  extends:
-    - .format
-    - .python-venv
-    - .python-3.11
-  script:
-    - pip install --no-build-isolation -e .[dev]
-    - isort --check .
-
-format:flake8:
-  extends:
-    - .format
-    - .python-venv
-    - .python-3.11
-  script:
-    - pip install --no-build-isolation -e .[dev]
-    - flake8 python/
+    - ruff format --diff
 
 format:clang-format:
   extends:
