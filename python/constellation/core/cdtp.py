@@ -18,9 +18,9 @@ from uuid import UUID
 
 import zmq
 
-from .base import ConstellationLogger
 from .chirp import get_uuid
 from .chirpmanager import DiscoveredService
+from .logging import ConstellationLogger
 from .message.cdtp2 import CDTP2BORMessage, CDTP2EORMessage, CDTP2Message, DataRecord
 
 
