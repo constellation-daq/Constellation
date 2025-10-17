@@ -109,7 +109,6 @@ def mock_chirp_socket():
 
     """
     with patch("constellation.core.multicast.socket.socket") as mock:
-
         # one packet queue per fixture
         packet_queue = []
         mock._packet_queue = packet_queue

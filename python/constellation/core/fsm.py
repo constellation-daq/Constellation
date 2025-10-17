@@ -309,7 +309,6 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
         # Wait for remote states to match condition:
         while True:
-
             satisfied = True
             for name in self.conditions[self.fsm.current_state.value]:
                 # Check that remote is registered

@@ -30,7 +30,7 @@ class PyDevNullReceiver(ReceiverSatellite):
         gigabyte_received = 1e-9 * self._drc.bytes_received
         self.data_rate = 8 * gigabyte_received / run_duration
 
-        self.log.status(f"Received {gigabyte_received :.2g} GB in {run_duration :.0f}s ({self.data_rate :.3g} Gbps)")
+        self.log.status(f"Received {gigabyte_received:.2g} GB in {run_duration:.0f}s ({self.data_rate:.3g} Gbps)")
 
     @cscp_requestable
     def get_data_rate(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:

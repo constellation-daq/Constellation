@@ -25,7 +25,6 @@ class HeartbeatSender(SatelliteStateHandler):
         hb_port: int,
         **kwargs: Any,
     ) -> None:
-
         super().__init__(name=name, **kwargs)
         self._default_heartbeat_period = 30000
         self.minimum_heartbeat_period = 500
