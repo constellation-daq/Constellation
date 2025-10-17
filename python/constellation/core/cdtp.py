@@ -310,29 +310,6 @@ class InvalidCDTPMessageType(RuntimeError):
         super().__init__(f"Error handling CDTP message with type {msg_type.name}: {reason}")
 
 
-class PullThread(threading.Thread):
-    """Receiving thread for CDTP"""
-
-    def __init__(self, drc: DataReceiver) -> None:
-        super().__init__()
-        self._drc = drc
-        self.exc: BaseException | None = None
-
-    def run(self) -> None:
-        """Thread method pulling data messages"""
-        try:
-            while not self._drc._stopevt.is_set():
-                with self._drc._poller_lock:
-                    sockets_ready = dict(self._drc._poller.poll(timeout=50))
-                    self._drc._poller_events = len(sockets_ready)
-                for socket in sockets_ready.keys():
-                    frames = socket.recv_multipart()
-                    msg = CDTP2Message.disassemble(frames)
-                    self._drc._handle_cdtp_message(msg)
-        except Exception as e:
-            self.exc = e
-
-
 class DataReceiver:
     """Base class for receiving CDTP messages via ZMQ."""
 
@@ -362,7 +339,10 @@ class DataReceiver:
         self._eor_timeout = 10
 
         self._stopevt = threading.Event()
-        self._pull_thread: PullThread | None = None
+        self._pull_thread: threading.Thread | None = None
+        # store possible exception from push thread:
+        self._pull_thread_exc: Exception | None = None
+
         self._running = False
 
     @property
@@ -391,9 +371,11 @@ class DataReceiver:
         self._stopevt.clear()
         self._reset_data_transmitter_states()
         self._bytes_received = 0
+        # clear previous exceptions
+        self._pull_thread_exc = None
         # Start receiving thread
         self.log_cdtp.debug("Starting pull thread")
-        self._pull_thread = PullThread(self)
+        self._pull_thread = threading.Thread(target=self._run_data_puller)
         self._pull_thread.start()
         self._running = True
 
@@ -453,13 +435,26 @@ class DataReceiver:
             # Stop and join thread
             self._stop_pull_thread()
 
+    def _run_data_puller(self) -> None:
+        """Thread method pulling data messages"""
+        try:
+            while not self._stopevt.is_set():
+                with self._poller_lock:
+                    sockets_ready = dict(self._poller.poll(timeout=50))
+                    self._poller_events = len(sockets_ready)
+                for socket in sockets_ready.keys():
+                    frames = socket.recv_multipart()
+                    msg = CDTP2Message.disassemble(frames)
+                    self._handle_cdtp_message(msg)
+        except Exception as e:
+            self._pull_thread_exc = e
+
     def check_exception(self) -> None:
-        if self._pull_thread is not None:
-            if self._pull_thread.exc is not None:
-                # Reset sockets
-                self._reset_sockets()
-                # Then raise
-                raise self._pull_thread.exc
+        if self._pull_thread_exc is not None:
+            # Reset sockets
+            self._reset_sockets()
+            # Then raise (in the current thread's context)
+            raise self._pull_thread_exc
 
     def _stop_pull_thread(self) -> None:
         if self._pull_thread is not None:
