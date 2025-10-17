@@ -328,7 +328,7 @@ class PullThread(threading.Thread):
                     frames = socket.recv_multipart()
                     msg = CDTP2Message.disassemble(frames)
                     self._drc._handle_cdtp_message(msg)
-        except BaseException as e:
+        except Exception as e:
             self.exc = e
 
 
