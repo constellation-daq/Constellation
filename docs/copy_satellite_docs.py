@@ -176,11 +176,14 @@ def append_parent_classes(language: str, parent_classes: list[str]) -> str:
 
 
 def convert_satellite_readme(
-    markdown: str, language: str, parent_classes: list[str], extra_front_matter: dict[str, str] = {}
+    markdown: str, language: str, parent_classes: list[str], extra_front_matter: dict[str, str] | None = None
 ) -> str:
     """
     Convert Markdown front-matter and append parent classes
     """
+    if extra_front_matter is None:
+        extra_front_matter = {}
+
     # Convert front matter
     markdown = convert_front_matter(markdown, extra_front_matter)
 

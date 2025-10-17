@@ -73,10 +73,10 @@ class chirpsocket:
             data = self.mock_chirp_packet_queue[self.seen]
             self.seen += 1
             return data, ["127.0.0.1", CHIRP_PORT]
-        except IndexError:
+        except IndexError as e:
             if self.timeout > 0:
-                raise TimeoutError("no mock data")
-            raise BlockingIOError("no mock data")
+                raise TimeoutError("no mock data") from e
+            raise BlockingIOError("no mock data") from e
 
     def recvmsg(self, bufsize, ancsize):
         """Get next entry from queue."""
@@ -93,8 +93,8 @@ class chirpsocket:
                 )
             ]
             return data, ancdata, 0, ["127.0.0.1", CHIRP_PORT]
-        except IndexError:
-            raise TimeoutError("no mock data")
+        except IndexError as e:
+            raise TimeoutError("no mock data") from e
 
     def setsockopt(self, *args, **kwargs):
         """Ignored."""

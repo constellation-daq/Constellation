@@ -59,7 +59,7 @@ def get_scheduled_metrics(cls: object) -> dict[str, dict[str, Any]]:
         if callable(call) and not func.startswith("__"):
             # regular method
             if hasattr(call, "metric_scheduled") and hasattr(call, "__name__"):
-                res[call.__name__] = {"function": call, "interval": getattr(call, "metric_scheduled")}
+                res[call.__name__] = {"function": call, "interval": call.metric_scheduled}
     return res
 
 
@@ -105,7 +105,7 @@ class MonitoringSender(BaseSatelliteFrame):
 
         self._zmq_log_handler.setLevel("TRACE")
         # add zmq logging to existing Constellation loggers
-        for name, logger in logging.root.manager.loggerDict.items():
+        for logger in logging.root.manager.loggerDict.values():
             # only configure Constellation's own loggers
             if isinstance(logger, ConstellationLogger):
                 # only configure logger if we keep a reference to it ourselves

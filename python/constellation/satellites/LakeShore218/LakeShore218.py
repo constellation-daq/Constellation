@@ -76,8 +76,8 @@ class LakeShore218(Satellite):
         channel = 0
         try:
             channel = int(request.payload[0])
-        except (TypeError, ValueError):
-            raise Exception("Requires channel number as parameter")
+        except (TypeError, ValueError) as e:
+            raise Exception("Requires channel number as parameter") from e
         if channel < 1 or channel > 8:
             raise Exception(f"Channel {channel} does not exist")
         temp = self._get_temp(channel)

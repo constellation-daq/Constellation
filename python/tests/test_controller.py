@@ -46,10 +46,10 @@ def test_ctrl_reconfigure_cmd_missing(mock_controller, mock_satellite):
 
     with pytest.raises(AttributeError):
         ctrl.constellation.reconfigure({})
-    classarr = getattr(ctrl.constellation, "Satellite")
+    classarr = ctrl.constellation.Satellite
     with pytest.raises(AttributeError):
         classarr.reconfigure({})
-    sat = getattr(classarr, "mock_satellite")
+    sat = classarr.mock_satellite
     with pytest.raises(AttributeError):
         sat.reconfigure({})
 

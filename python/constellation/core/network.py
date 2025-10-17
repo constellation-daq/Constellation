@@ -21,7 +21,7 @@ def get_addr(if_name: str) -> str | None:
 
 
 def get_loopback_interface_name() -> str:
-    for if_idx, if_name in socket.if_nameindex():
+    for _if_idx, if_name in socket.if_nameindex():
         if get_addr(if_name) == "127.0.0.1":
             return if_name
     return "lo"

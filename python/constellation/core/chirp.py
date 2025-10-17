@@ -79,15 +79,15 @@ class CHIRPMessage:
     def __init__(
         self,
         msgtype: CHIRPMessageType = CHIRPMessageType.NONE,
-        group_uuid: UUID = UUID(int=0),
-        host_uuid: UUID = UUID(int=0),
+        group_uuid: UUID | None = None,
+        host_uuid: UUID | None = None,
         serviceid: CHIRPServiceIdentifier = CHIRPServiceIdentifier.NONE,
         port: int = 0,
     ):
         """Initialize attributes."""
         self.msgtype = msgtype
-        self.group_uuid = group_uuid
-        self.host_uuid = host_uuid
+        self.group_uuid = group_uuid if group_uuid is not None else UUID(int=0)
+        self.host_uuid = host_uuid if host_uuid is not None else UUID(int=0)
         self.serviceid = serviceid
         self.port = port
         self.from_address: str = ""
