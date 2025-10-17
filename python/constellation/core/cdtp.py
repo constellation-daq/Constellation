@@ -67,67 +67,6 @@ class PushThread(threading.Thread):
         self._dtm = dtm
         self.exc: SendTimeoutError | None = None
 
-    def _send(self, msg: CDTP2Message, current_payload_bytes: int) -> bool:
-        try:
-            self._dtm.log_cdtp.trace(
-                "Sending data records from %s to %s (%d bytes)",
-                msg.data_records[0].sequence_number,
-                msg.data_records[-1].sequence_number,
-                current_payload_bytes,
-            )
-            self._dtm._send_message(msg)
-            self._dtm._bytes_transmitted += current_payload_bytes
-            self._dtm._records_transmitted += len(msg.data_records)
-            msg.clear_data_records()
-        except zmq.error.Again:
-            self.exc = SendTimeoutError("DATA message", self._dtm._data_timeout)
-            self._dtm._failure_cb(str(self.exc))
-            return False
-        return True
-
-    def run(self) -> None:
-        """Thread method pushing data messages"""
-        last_sent = time.time()
-        current_payload_bytes = 0
-
-        # Convert data payload threshold from KiB to bytes
-        payload_threshold_b = self._dtm._payload_threshold * 1024
-
-        # Preallocate message
-        msg = CDTP2Message(self._dtm._name, CDTP2Message.Type.DATA)
-
-        while not self._dtm._stopevt.is_set() and self.exc is None:
-            try:
-                # Get data record from queue
-                data_record = self._dtm._queue.get_nowait()
-                # Add to message
-                current_payload_bytes += data_record.count_payload_bytes()
-                msg.add_data_record(data_record)
-                self._dtm._queue.task_done()
-                # If threshold not reached, continue
-                if current_payload_bytes < payload_threshold_b:
-                    continue
-            except queue.Empty:
-                # Continue if send timeout is not reached yet
-                if time.time() - last_sent < 0.5:
-                    time.sleep(0.01)
-                    continue
-                # Continue if nothing to send even after timeout was reached
-                if current_payload_bytes == 0:
-                    last_sent = time.time()
-                    continue
-
-            # Send message
-            success = self._send(msg, current_payload_bytes)
-            if not success:
-                return
-            last_sent = time.time()
-            current_payload_bytes = 0
-
-        # Send remaining records
-        if msg.data_records:
-            _ = self._send(msg, current_payload_bytes)
-
 
 class DataTransmitter:
     """Base class for sending CDTP messages via ZMQ."""
@@ -151,8 +90,10 @@ class DataTransmitter:
         self._payload_threshold = 128
         self._queue = queue.Queue[DataRecord](self._queue_size)
         self._stopevt = threading.Event()
-        self._push_thread: PushThread | None = None
+        self._push_thread: threading.Thread | None = None
         self._failure_cb = failure_cb
+        # store potential exception from push thread:
+        self._push_thread_exc: SendTimeoutError | None = None
 
         self._data_timeout: int = -1
         self._bor_timeout: int = -1
@@ -275,8 +216,68 @@ class DataTransmitter:
         self._socket.setsockopt(zmq.SNDTIMEO, timeout)
         # Start sending thread
         self.log_cdtp.debug("Starting push thread")
-        self._push_thread = PushThread(self)
+        self._push_thread_exc = None
+        self._push_thread = threading.Thread(target=self._run_pusher)
         self._push_thread.start()
+
+    def _run_pusher(self) -> None:
+        """Thread method pushing data messages"""
+        last_sent = time.time()
+        current_payload_bytes = 0
+
+        # Convert data payload threshold from KiB to bytes
+        payload_threshold_b = self._payload_threshold * 1024
+
+        # Preallocate message
+        msg = CDTP2Message(self._name, CDTP2Message.Type.DATA)
+
+        while not self._stopevt.is_set() and self._push_thread_exc is None:
+            try:
+                # Get data record from queue
+                data_record = self._queue.get_nowait()
+                # Add to message
+                current_payload_bytes += data_record.count_payload_bytes()
+                msg.add_data_record(data_record)
+                self._queue.task_done()
+                # If threshold not reached, continue
+                if current_payload_bytes < payload_threshold_b:
+                    continue
+            except queue.Empty:
+                # Continue if send timeout is not reached yet
+                if time.time() - last_sent < 0.5:
+                    time.sleep(0.01)
+                    continue
+                # Continue if nothing to send even after timeout was reached
+                if current_payload_bytes == 0:
+                    last_sent = time.time()
+                    continue
+
+            # Send message
+            self._push_data_record(msg, current_payload_bytes)
+            last_sent = time.time()
+            current_payload_bytes = 0
+
+        # Send remaining records
+        if msg.data_records and not self._push_thread_exc:
+            self._push_data_record(msg, current_payload_bytes)
+
+    def _push_data_record(self, msg: CDTP2Message, current_payload_bytes: int) -> None:
+        """Send a data record and track bytes sent. Called by push thread."""
+        self.log_cdtp.trace(
+            "Sending data records from %s to %s (%d bytes)",
+            msg.data_records[0].sequence_number,
+            msg.data_records[-1].sequence_number,
+            current_payload_bytes,
+        )
+        try:
+            self._send_message(msg)
+        except zmq.error.Again:
+            self._push_thread_exc = SendTimeoutError("DATA message", self._data_timeout)
+            self._failure_cb(str(self._push_thread_exc))
+        else:
+            self._bytes_transmitted += current_payload_bytes
+            self._records_transmitted += len(msg.data_records)
+            msg.clear_data_records()
 
     def stop_sending(self) -> None:
         if self._push_thread is not None:
@@ -290,9 +291,9 @@ class DataTransmitter:
             self._push_thread.join()
 
     def check_exception(self) -> None:
-        if self._push_thread is not None:
-            if self._push_thread.exc is not None:
-                raise self._push_thread.exc
+        """Raise any exception encountered in push thread."""
+        if self._push_thread_exc is not None:
+            raise self._push_thread_exc
 
 
 class RecvTimeoutError(RuntimeError):
