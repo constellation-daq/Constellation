@@ -299,8 +299,8 @@ class RecvTimeoutError(RuntimeError):
 
 
 class InvalidCDTPMessageType(RuntimeError):
-    def __init__(self, type: CDTP2Message.Type, reason: str):
-        super().__init__(f"Error handling CDTP message with type {type.name}: {reason}")
+    def __init__(self, msg_type: CDTP2Message.Type, reason: str):
+        super().__init__(f"Error handling CDTP message with type {msg_type.name}: {reason}")
 
 
 class PullThread(threading.Thread):
@@ -581,11 +581,11 @@ class DataReceiver:
         msg.run_metadata["condition_code"] = condition_code.value
         msg.run_metadata["condition"] = condition_code.name
 
-    def _check_bor_received(self, type: CDTP2Message.Type, sender: str) -> None:
+    def _check_bor_received(self, msg_type: CDTP2Message.Type, sender: str) -> None:
         # If not in states or state not BOR_RECEIVED, throw
         try:
             if self._data_transmitter_states[sender].state == TransmitterState.BOR_RECEIVED:
                 return
         except KeyError:
             pass
-        raise InvalidCDTPMessageType(type, f"did not receive BOR from {sender}")
+        raise InvalidCDTPMessageType(msg_type, f"did not receive BOR from {sender}")
