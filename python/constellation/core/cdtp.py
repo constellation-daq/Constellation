@@ -144,7 +144,7 @@ class DataTransmitter:
 
     @property
     def payload_threshold(self) -> int:
-        """The current threshold (in [kiB]) at which current payloads will be transmitted."""
+        """The current threshold (in [KiB]) at which current payloads will be transmitted."""
         return self._payload_threshold
 
     @payload_threshold.setter
