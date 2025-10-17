@@ -20,6 +20,7 @@ workflow:
     - when: always
 
 default:
+  interruptible: true
   retry:
     max: 2
     when:
@@ -655,6 +656,7 @@ docs:spelling:
 
 .deploy:
   stage: deploy
+  interruptible: false
   needs: []
 
 deploy:bundle-mingw-artifacts:
