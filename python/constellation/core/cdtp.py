@@ -217,10 +217,10 @@ class DataTransmitter:
         # Start sending thread
         self.log_cdtp.debug("Starting push thread")
         self._push_thread_exc = None
-        self._push_thread = threading.Thread(target=self._run_pusher)
+        self._push_thread = threading.Thread(target=self._run_data_pusher)
         self._push_thread.start()
 
-    def _run_pusher(self) -> None:
+    def _run_data_pusher(self) -> None:
         """Thread method pushing data messages"""
         last_sent = time.time()
         current_payload_bytes = 0
