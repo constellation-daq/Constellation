@@ -73,14 +73,14 @@ class MulticastSocket:
         # Set receive timeout
         self._recv_socket.settimeout(0.05)
 
-    def sendMessage(self, message: bytes) -> None:
+    def send_message(self, message: bytes) -> None:
         for send_socket in self._send_sockets:
             send_socket.sendto(message, self._multicast_endpoint)
 
-    def recvMessage(self) -> MulticastMessage | None:
+    def recv_message(self) -> MulticastMessage | None:
         try:
-            bytes, sender_address = self._recv_socket.recvfrom(MESSAGE_BUFFER)
-            return MulticastMessage(bytes, sender_address[0])
+            byte_data, sender_address = self._recv_socket.recvfrom(MESSAGE_BUFFER)
+            return MulticastMessage(byte_data, sender_address[0])
         except TimeoutError:
             pass
         return None

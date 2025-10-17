@@ -327,10 +327,10 @@ def test_datareceiver_double_bor(mock_data_transmitter: DataTransmitter, mock_da
     # Wait until exception is set
     timeout = 1.0
     assert receiver._pull_thread is not None
-    while receiver._pull_thread.exc is None and timeout > 0:
+    while receiver._pull_thread_exc is None and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert receiver._pull_thread.exc is not None
+    assert receiver._pull_thread_exc is not None
 
     # Check exception
     with pytest.raises(InvalidCDTPMessageType) as excinfo:
@@ -353,10 +353,10 @@ def test_datareceiver_no_bor(mock_data_transmitter: DataTransmitter, mock_data_r
     # Wait until exception is set
     timeout = 1.0
     assert receiver._pull_thread is not None
-    while receiver._pull_thread.exc is None and timeout > 0:
+    while receiver._pull_thread_exc is None and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert receiver._pull_thread.exc is not None
+    assert receiver._pull_thread_exc is not None
 
     # Check exception
     with pytest.raises(InvalidCDTPMessageType) as excinfo:

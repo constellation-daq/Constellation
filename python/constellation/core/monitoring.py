@@ -169,7 +169,10 @@ class MonitoringSender(BaseSatelliteFrame):
             time.sleep(0.1)
 
             # update list of subscribers (both log and metric)
-            self._cmdp_transmitter.update_subscriptions()
+            try:
+                self._cmdp_transmitter.update_subscriptions()
+            except ValueError as exc:
+                self.log_cmdp_s.warning("Encountered unexpected subscription request: %s", exc)
 
             # if the satellite is not ready for sending metrics then skip ahead
             # and try again later
@@ -208,7 +211,7 @@ class MonitoringSender(BaseSatelliteFrame):
         # remove all ZMQ log handlers
         self.log_cmdp_s.debug("Shutting down ZMQ logging.")
         # add zmq logging to existing Constellation loggers
-        for name, logger in logging.root.manager.loggerDict.items():
+        for _name, logger in logging.root.manager.loggerDict.items():
             if isinstance(logger, ConstellationLogger):
                 if self._zmq_log_handler in logger.handlers:
                     logger.removeHandler(self._zmq_log_handler)
@@ -453,7 +456,7 @@ class FileMonitoringListener(MonitoringListener):
         fname = f"stats/{metric.sender}.{metric.name.lower()}.csv"
         path = self.output_path / fname
         ts = metric.time.to_unix()
-        with open(path, "a") as csv:
+        with open(path, "a", encoding="utf-8") as csv:
             csv.write(f"{ts}, {metric.value}, '{metric.unit}'\n")
 
     def reentry(self) -> None:

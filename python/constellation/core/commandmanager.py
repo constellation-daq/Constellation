@@ -6,6 +6,7 @@ This module provides classes for managing CSCP requests/replies within
 Constellation Satellites.
 """
 
+import sys
 import threading
 import time
 from collections.abc import Callable
@@ -263,10 +264,8 @@ class CommandReceiver(BaseSatelliteFrame):
 
         # initialize shutdown with delay (so that CSCP response reaches
         # Controller)
-        def reentry_timer(sat: BaseSatelliteFrame) -> None:
+        def reentry_timer(_sat: BaseSatelliteFrame) -> None:
             time.sleep(0.5)
-            import sys
-
             sys.exit(0)
 
         # This command is put into the queue: it will only execute after

@@ -103,9 +103,11 @@ class SatelliteArray:
         return self._satellites[f"{sat_class}.{sat_name}"]
 
     def _add_class(
-        self, name: str, commands: dict[str, Any], hidden_commands: dict[str, str] = {}
+        self, name: str, commands: dict[str, Any], hidden_commands: dict[str, str] | None = None
     ) -> SatelliteClassCommLink:
         """Add a new class to the array."""
+        if not hidden_commands:
+            hidden_commands = {}
         try:
             cl: SatelliteClassCommLink = getattr(self, name)
             return cl
@@ -119,9 +121,11 @@ class SatelliteArray:
         return cl
 
     def _add_satellite(
-        self, name: str, cls: str, commands: dict[str, str], hidden_commands: dict[str, str] = {}
+        self, name: str, cls: str, commands: dict[str, str], hidden_commands: dict[str, str] | None = None
     ) -> SatelliteCommLink:
         """Add a new Satellite."""
+        if not hidden_commands:
+            hidden_commands = {}
         try:
             cl: SatelliteClassCommLink = getattr(self, cls)
         except AttributeError:
@@ -456,7 +460,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
     def _add_satellite(self, service: DiscoveredService) -> None:
         self.log.debug("Adding Satellite %s", service)
-        if str(service.host_uuid) in self._uuid_lookup.keys():
+        if str(service.host_uuid) in self._uuid_lookup:
             self.log.error(
                 "Satellite with name '%s.%s' already connected! Please ensure "
                 "unique Satellite names or you will not be able to communicate with all!",
@@ -549,7 +553,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         targets = []
         # figure out whether to send command to Satellite, Class or whole Constellation
         if not sat and not satcls:
-            targets = [sat for sat in self._constellation.satellites.values()]
+            targets = list(self._constellation.satellites.values())
             self.log.debug("Sending %s to all %s connected Satellites.", cmd, len(targets))
         elif not sat:
             targets = [sat for sat in self._constellation.satellites.values() if sat._class_name == satcls]
@@ -614,14 +618,13 @@ class BaseController(CHIRPManager, HeartbeatChecker):
             if sat:
                 # simplify return value for single satellite
                 return sat_response
-            else:
-                # append
-                res[str(target)] = sat_response
+            # append
+            res[str(target)] = sat_response
         return res
 
     def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
         """Pre-processes payload for specific commands."""
-        if cmd == "initialize" or cmd == "reconfigure":
+        if cmd in ("initialize", "reconfigure"):
             # payload needs to be a flat dictionary, but we want to allow to
             # supply a full config -- flatten it here
             try:
@@ -631,9 +634,9 @@ class BaseController(CHIRPManager, HeartbeatChecker):
                     cfg = flatten_config(payload, cls, name)
                     self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
                     return cfg
-            except AttributeError:
-                self.log.warning("Command needs a (valid) configuration dict.")
-                raise RuntimeError("Command needs a (valid) configuration dict.")
+            except AttributeError as exc:
+                self.log.warning("Command needs a (valid) configuration dict (error: %s).", exc)
+                raise RuntimeError("Command needs a (valid) configuration dict.") from exc
         return payload
 
     def _run_task_handler(self) -> None:
@@ -672,7 +675,7 @@ class BaseController(CHIRPManager, HeartbeatChecker):
         if getattr(self, "_task_handler_event", None):
             self._task_handler_thread.join(timeout=1)
 
-    def _repr_pretty_(self, p: Any, cycle: bool) -> None:
+    def _repr_pretty_(self, p: Any, _cycle: bool) -> None:
         nsat = len(self.constellation.satellites)
         p.text(f"Controller(group='{self.group}') for {nsat} Satellites, current state is {self.state.name}")
 
@@ -712,7 +715,8 @@ def main(args: Any = None) -> None:
     print("         > constellation.get_state?\n")
 
     if cfg_file:
-        cfg = load_config(cfg_file)  # noqa
+        # make configuration available to the user
+        cfg = load_config(cfg_file)  # noqa  # pylint: disable=unused-variable
         print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
 
     print("   Happy hacking! :)\n")
@@ -727,7 +731,7 @@ def main(args: Any = None) -> None:
     class ControllerPrompt(Prompts):
         """Customized prompt."""
 
-        def in_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+        def in_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
             return [
                 (Token, ""),
                 # show version
@@ -756,7 +760,7 @@ def main(args: Any = None) -> None:
                 ),
             ]
 
-        def out_prompt_tokens(self, cli=None):  # type: ignore[no-untyped-def]
+        def out_prompt_tokens(self, _cli=None):  # type: ignore[no-untyped-def]
             return []
 
     ipython_cfg = Config()

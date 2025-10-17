@@ -38,12 +38,12 @@ class CommandTransmitter:
     def send_reply(
         self,
         response: str,
-        type: CSCP1Message.Type,
+        msgtype: CSCP1Message.Type,
         payload: Any = None,
         tags: dict[str, Any] | None = None,
     ) -> None:
         """Send a reply to a previous command with an optional payload."""
-        self._dispatch((type, response), payload, tags, flags=zmq.NOBLOCK)
+        self._dispatch((msgtype, response), payload, tags, flags=zmq.NOBLOCK)
 
     def get_message(self, flags: int = 0) -> CSCP1Message | None:
         """Retrieve and return a CSCP1Message.
@@ -72,5 +72,6 @@ class CommandTransmitter:
             message.assemble().send(self._socket, flags)
 
     def close(self) -> None:
+        """Close the network socket."""
         with self._lock:
             self._socket.close()

@@ -12,7 +12,7 @@ from uuid import UUID
 import zmq
 
 from .base import BaseSatelliteFrame
-from .chp import CHPDecodeMessage, CHPMessageFlags, CHPRole
+from .chp import CHPMessageFlags, CHPRole, chp_decode_message
 from .message.cscp1 import SatelliteState
 
 
@@ -196,7 +196,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             sockets_ready = dict(self._heartbeat_poller.poll(timeout=50))
             for socket in sockets_ready.keys():
                 binmsg = socket.recv_multipart()
-                name, timestamp, state, flags, interval, status = CHPDecodeMessage(binmsg)
+                name, timestamp, state, flags, interval, status = chp_decode_message(binmsg)
                 hb = self._remote_heartbeat_states[socket]
                 # update values
                 hb.name = name
@@ -294,11 +294,9 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def _heartbeat_interrupt(self, reason: str) -> None:
         """Called when interrupting due to heartbeats"""
-        pass
 
     def _mark_degraded(self, reason: str) -> None:
         """Called when marking a run degraded"""
-        pass
 
     def get_failed(self) -> list[str]:
         """Get a list of the names of all failed Satellites."""

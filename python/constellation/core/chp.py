@@ -57,7 +57,7 @@ class CHPRole(Enum):
         return bool(flags & self.flags())
 
 
-def CHPDecodeMessage(msg: list[bytes]) -> tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
+def chp_decode_message(msg: list[bytes]) -> tuple[str, msgpack.Timestamp, int, CHPMessageFlags, int, str | None]:
     """Decode a CHP binary message.
 
     Returns host, timestamp, state, interval and status if available.
@@ -133,7 +133,7 @@ class CHPTransmitter:
             if "Resource temporarily unavailable" not in e.strerror:
                 raise RuntimeError("CommandTransmitter encountered zmq exception") from e
             return None, None, None, None, None
-        return CHPDecodeMessage(msg)
+        return chp_decode_message(msg)
 
     def close(self) -> None:
         """Close the socket of the transmitter."""
