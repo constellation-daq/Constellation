@@ -86,3 +86,40 @@ html[data-theme="dark"] {
     border: 1px solid var(--pst-color-border);
   }
 }
+
+/* ----------------- Code Language Labels --------------------- */
+
+/* Base style for language label */
+div.highlight::before {
+    position: absolute;
+    top: 0.4em;
+    right: 0.4em;
+    background-color: var(--pst-color-surface);
+    color: var(--pst-color-text-base);
+    font-size: 0.75em;
+    padding: 0.2em 0.5em;
+    border-radius: 4px;
+    font-family: sans-serif;
+    opacity: 1;
+    transition: opacity 0.3s ease-in-out;
+    border: 1px solid var(--pst-color-border);
+}
+
+/* Hide the language label on hover to make space for the copy button */
+div.highlight:hover::before {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Extract language from class name */
+div.highlight-abnf > div.highlight::before { content: "ABNF"; }
+div.highlight-cpp > div.highlight::before { content: "C++"; }
+div.highlight-javascript > div.highlight::before { content: "JavaScript"; }
+div.highlight-json > div.highlight::before { content: "JSON"; }
+div.highlight-meson > div.highlight::before { content: "meson"; }
+div.highlight-python > div.highlight::before { content: "Python"; }
+div.highlight-sh > div.highlight::before { content: "Shell"; }
+div.highlight-systemd > div.highlight::before { content: "systemd"; }
+div.highlight-toml > div.highlight::before { content: "TOML"; }
+div.highlight-xml > div.highlight::before { content: "XML"; }
+div.highlight-yaml > div.highlight::before { content: "YAML"; }
