@@ -7,7 +7,7 @@ if not get_option('listener_telemetry_console')
 endif
 
 if get_option('build_gui') == 'none'
-  warning('Skipping Telemetry Console since build_gui is set to none')
+  message('Skipping TelemetryConsole since build_gui is set to none')
   subdir_done()
 endif
 

@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Get instance and controller name
+        // Get instance and listener name
         const auto instance_name = options.instance_name.has_value() ? ("." + options.instance_name.value()) : "";
         const auto listener_name = "TelemetryConsole" + instance_name;
 
