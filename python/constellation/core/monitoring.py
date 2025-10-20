@@ -84,6 +84,12 @@ class MonitoringSender(BaseSatelliteFrame):
         # Open ZMQ socket using (X)PUB/SUB pattern. XPUB allows us to handle
         # subscription messages directly.
         cmdp_socket = self.context.socket(zmq.XPUB)
+        # Set linger period for socket shutdown to avoid long hangs shutting
+        # down [ms]
+        cmdp_socket.setsockopt(zmq.LINGER, 2000)
+        # Set maximum time before a recv operation returns with EAGAIN [ms]
+        cmdp_socket.setsockopt(zmq.RCVTIMEO, 5000)
+
         if not mon_port:
             self.mon_port = cmdp_socket.bind_to_random_port("tcp://*")
         else:

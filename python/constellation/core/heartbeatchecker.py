@@ -114,6 +114,12 @@ class HeartbeatChecker(BaseSatelliteFrame):
             raise e
         socket.connect(address)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        # Set maximum time before a recv operation returns with EAGAIN [ms]
+        socket.setsockopt(zmq.RCVTIMEO, 5000)
+        # Set linger period for socket shutdown to avoid long hangs shutting
+        # down [ms]
+        socket.setsockopt(zmq.LINGER, 2000)
+
         evt = threading.Event()
         self._remote_heartbeat_states[socket] = HeartbeatState(host, name, evt, self.HB_INIT_LIVES, self.HB_INIT_PERIOD)
         # set initial state
