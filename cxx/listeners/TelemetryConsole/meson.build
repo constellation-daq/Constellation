@@ -23,3 +23,14 @@ executable('TelemetryConsole',
   install: true,
   install_rpath: constellation_rpath,
 )
+
+# Install metadata to find application
+install_data(
+  'de.desy.constellation.telemetryconsole.desktop',
+  install_dir: get_option('datadir') / 'applications',
+)
+install_data(
+  meson.project_source_root() / 'docs' / 'logo' / 'logo_telemetry.svg',
+  rename: 'de.desy.constellation.telemetryconsole.svg',
+  install_dir: get_option('datadir') / 'icons' / 'hicolor' / 'scalable' / 'apps',
+)

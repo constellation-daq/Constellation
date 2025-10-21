@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=TelemetryConsole
+Comment=Telemetry Interface Constellation
+Categories=Science;Physics;
+Keywords=Constellation;DAQ;testbeam;
+
+Icon=de.desy.constellation.telemetryconsole
+Exec=Observatory
+Terminal=false
