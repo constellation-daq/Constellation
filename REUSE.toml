@@ -44,6 +44,7 @@ path = [
   "docs/etc/de.desy.constellation.metainfo.xml",
   "cxx/controllers/MissionControl/de.desy.constellation.missioncontrol.desktop",
   "cxx/listeners/Observatory/de.desy.constellation.observatory.desktop",
+  "cxx/listeners/TelemetryConsole/de.desy.constellation.telemetryconsole.desktop",
   "python/constellation/core/version_code_name",
 ]
 SPDX-FileCopyrightText = "DESY and the Constellation authors"
