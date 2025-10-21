@@ -39,6 +39,11 @@ namespace constellation::gui {
      */
     CNSTLN_API void initResources();
 
+    inline bool is_dark_mode() {
+        const auto bg = QApplication::palette().color(QPalette::Window);
+        return bg.lightness() < 128;
+    }
+
     inline QColor get_state_color(protocol::CSCP::State state) {
         switch(state) {
         case protocol::CSCP::State::NEW:

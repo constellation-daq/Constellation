@@ -17,4 +17,12 @@
         <file alias="notice">icons/material-error.svg</file>
         <file alias="unknown">icons/material-help.svg</file>
     </qresource>
+    <qresource prefix="action">
+        <file alias="add">icons/material-amend.svg</file>
+        <file alias="create">icons/material-add_circle.svg</file>
+        <file alias="delete">icons/material-cancel.svg</file>
+        <file alias="reset">icons/material-change_circle.svg</file>
+        <file alias="pause">icons/material-pause_circle.svg</file>
+        <file alias="align">icons/material-swap_vertical_circle.svg</file>
+    </qresource>
 </RCC>
