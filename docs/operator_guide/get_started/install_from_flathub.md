@@ -2,7 +2,7 @@
 
 Constellation is available on [Flathub](https://flathub.org/apps/de.desy.constellation), an app store for Linux-based
 operating systems. Flathub is available for almost all Linux distributions, installation instructions for each distribution
-can be found [here](https://flathub.org/setup).
+can be found on the [Flathub setup page](https://flathub.org/setup).
 
 After Flatpak and Flathub is set up, Constellation can be installed either via the app store of the desktop environment or
 by running:
