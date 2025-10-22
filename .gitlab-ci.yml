@@ -568,6 +568,21 @@ format:codespell:
     - pip install codespell
     - codespell
 
+format:markdownlint:
+  extends:
+    - .format
+  image:
+    name: tollerort.desy.de/hub.docker.com/davidanson/markdownlint-cli2:latest
+    entrypoint: [""]
+  script:
+    - echo "{\"outputFormatters\":[[\"markdownlint-cli2-formatter-codequality\"]]}" > .markdownlint-cli2.jsonc
+    - markdownlint-cli2 "**/*.md"
+  artifacts:
+    when: always
+    expire_in: 1 week
+    reports:
+      codequality: markdownlint-cli2-codequality.json
+
 # docs stage
 
 .docs:
