@@ -4,21 +4,5 @@
 /packagecache/
 /.wraplock
 
-# Framework dependencies
-/argparse-*/
-/asio-*/
-/atomic_queue-*/
-/Catch2-*/
-/cppzmq-*/
-/fmt-*/
-/libzmq-*/
-/magic_enum-*/
-/mimalloc-*/
-/msgpack-cxx-*/
-/spdlog-*/
-/tomlplusplus-*/
-
-# Satellite dependencies
-/cpr-*/
-/curl-*/
-/openssl-*/
+# Match downloaded dependencies
+/*-*/
