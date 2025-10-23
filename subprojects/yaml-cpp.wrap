@@ -1,0 +1,13 @@
+[wrap-file]
+directory = yaml-cpp-0.8.0
+source_url = https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.zip
+source_filename = yaml-cpp-0.8.0.zip
+source_hash = 334e80ab7b52e14c23f94e041c74bab0742f2281aad55f66be2f19f4b7747071
+source_fallback_url = https://github.com/mesonbuild/wrapdb/releases/download/yaml-cpp_0.8.0-2/yaml-cpp-0.8.0.zip
+patch_filename = yaml-cpp_0.8.0-2_patch.zip
+patch_url = https://wrapdb.mesonbuild.com/v2/yaml-cpp_0.8.0-2/get_patch
+patch_hash = e7424f2804f2bb9e99f8ecea0c3c53e6de813f93043130243a27adfef3526573
+wrapdb_version = 0.8.0-2
+
+[provide]
+dependency_names = yaml-cpp

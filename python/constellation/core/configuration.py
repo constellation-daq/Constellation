@@ -5,9 +5,12 @@ SPDX-License-Identifier: EUPL-1.2
 
 import datetime
 import json
+import pathlib
 import tomllib
 import typing
-from typing import Any
+from typing import Any, cast
+
+import yaml
 
 
 class ConfigError(Exception):
@@ -84,15 +87,26 @@ def _adjust_config_value(value: Any) -> Any:
 
 
 def load_config(path: str) -> dict[str, Any]:
-    """Load a TOML configuration from file."""
+    """Load a TOML or YAML configuration from file based on the file extension."""
+    ppath = pathlib.Path(path)
+    if not ppath.is_file():
+        raise FileNotFoundError(f"Configuration file not found: {path}")
+
     try:
-        with open(path, "rb") as f:
-            config = tomllib.load(f)
-    # TODO: Handle errors FileNotFoundError, TypeError, tomllibDecodeError
-    except tomllib.TOMLDecodeError:
-        raise
-        # TODO: Handle TOMLDecodeError
-    return config
+        with open(ppath, "rb") as f:
+            if ppath.suffix.lower() in {".yaml", ".yml"}:
+                config = yaml.safe_load(f)
+                if not isinstance(config, dict):
+                    raise ValueError(f"Expected a dict in YAML config, got {type(config).__name__}")
+                return cast(dict[str, Any], config)
+            else:
+                return tomllib.load(f)
+    except tomllib.TOMLDecodeError as e:
+        raise ValueError(f"Failed to parse TOML file: {e}") from e
+    except yaml.YAMLError as e:
+        raise ValueError(f"Failed to parse YAML file: {e}") from e
+    except Exception as e:
+        raise RuntimeError(f"Failed to load configuration file: {repr(e)}") from e
 
 
 def make_lowercase(obj: dict[str, Any]) -> dict[str, Any]:

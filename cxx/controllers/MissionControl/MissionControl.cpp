@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -329,8 +330,8 @@ void MissionControl::on_btnLog_clicked() {
 
 void MissionControl::on_btnLoadConf_clicked() {
     const QString usedpath = QFileInfo(txtConfigFileName->text()).path();
-    const QString filename =
-        QFileDialog::getOpenFileName(this, tr("Open File"), usedpath, tr("Configurations (*.conf *.toml *.ini)"));
+    const QString filename = QFileDialog::getOpenFileName(
+        this, tr("Open File"), usedpath, "Configuration Files (*.toml *.yaml *.yml);;All Files (*.*)");
     if(!filename.isNull()) {
         LOG(user_logger_, INFO) << "Loaded configuration file " << filename.toStdString();
         txtConfigFileName->setText(filename);
@@ -347,8 +348,10 @@ void MissionControl::on_btnGenConf_clicked() {
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
-    const QString filename = QFileDialog::getSaveFileName(
-        this, tr("Save File"), QFileInfo(txtConfigFileName->text()).path(), tr("Configurations (*.conf *.toml *.ini)"));
+    const QString filename = QFileDialog::getSaveFileName(this,
+                                                          tr("Save File"),
+                                                          QFileInfo(txtConfigFileName->text()).path(),
+                                                          "TOML File (*.toml);;YAML (*.yaml);;All Files (*.*)");
 
     if(filename.isNull()) {
         return;
@@ -356,7 +359,11 @@ void MissionControl::on_btnGenConf_clicked() {
 
     // Store to file:
     std::ofstream file {filename.toStdString()};
-    file << new_cfg.getAsTOML();
+    if(filename.endsWith(".yaml", Qt::CaseInsensitive) || filename.endsWith(".yml", Qt::CaseInsensitive)) {
+        file << new_cfg.getAsYAML();
+    } else {
+        file << new_cfg.getAsTOML();
+    }
     file.close();
 
     LOG(user_logger_, INFO) << "Stored configuration from running Constellation to file " << filename.toStdString();
@@ -367,11 +374,15 @@ void MissionControl::on_btnGenConf_clicked() {
 
 void MissionControl::update_button_states(CSCP::State state) {
 
-    const QRegularExpression rx_conf(R"(.+(\.conf$|\.ini$|\.toml$))");
-    auto m = rx_conf.match(txtConfigFileName->text());
+    // Check for config file existence
+    const auto config_path = txtConfigFileName->text();
+    const auto file_info = QFileInfo(config_path);
+    const auto config_exists = file_info.exists() && file_info.isFile();
+    txtConfigFileName->setStyleSheet(config_exists ? "" : "color: red;");
 
+    // Enable/disable state buttons
     using enum CSCP::State;
-    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && m.hasMatch());
+    btnInit->setEnabled(CSCP::is_one_of_states<NEW, INIT, SAFE, ERROR>(state) && config_exists);
     btnLand->setEnabled(state == ORBIT);
     btnConfig->setEnabled(state == INIT);
     btnLoadConf->setEnabled(CSCP::is_one_of_states<NEW, initializing, INIT, SAFE, ERROR>(state));
@@ -554,7 +565,7 @@ std::optional<std::map<std::string, Controller::CommandPayload>> MissionControl:
             return {};
         }
         return payloads;
-    } catch(const ControllerError& error) {
+    } catch(const std::exception& error) {
         QMessageBox::warning(nullptr, "ERROR", QString::fromStdString(std::string("Parsing failed: ") + error.what()));
         return {};
     }

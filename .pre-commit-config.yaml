@@ -52,8 +52,9 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        args: [--no-warn-unused-ignores, --ignore-missing-imports]
+        args: [--no-warn-unused-ignores]
         files: "python/constellation/core"
+        additional_dependencies: [types-psutil, types-Pygments, types-PyYAML]
 
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.0

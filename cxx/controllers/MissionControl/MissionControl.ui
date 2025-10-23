@@ -338,6 +338,9 @@
             <property name="whatsThis">
              <string extracomment="Configuration file - directly editable or through file dialog."/>
             </property>
+            <property name="styleSheet">
+             <string notr="true">color:red</string>
+            </property>
             <property name="text">
              <string>Configuration file not set</string>
             </property>

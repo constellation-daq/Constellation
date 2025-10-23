@@ -66,6 +66,9 @@ spdlog_dep = dependency('spdlog', default_options: ['tests=disabled', 'default_l
 # TOML++
 tomlplusplus_dep = dependency('tomlplusplus', default_options: ['default_library=static'])
 
+# yaml-cpp
+yamlcpp_dep = dependency('yaml-cpp', default_options: ['tools=false', 'tests=disabled', 'default_library=static'])
+
 # System libraries
 threads_dep = dependency('threads')
 dl_dep = dependency('dl', required: false)

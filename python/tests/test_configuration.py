@@ -36,16 +36,31 @@ def test_sending_config(config, mock_example_satellite, mock_cmd_transmitter):
     assert satellite.config._config == config._config
 
 
-def test_config_flattening(rawconfig):
-    """Test that config flattening works"""
-    assert "ampere" in flatten_config(rawconfig, "mocksat"), "Parameter missing from class part of config"
-    assert "_role" in flatten_config(rawconfig, "mocksat"), "Parameter missing from constellation part of cfg"
-    val = flatten_config(rawconfig, "mocksat", "device2")["_role"]
+def test_config_flattening_toml(rawconfig_toml):
+    """Test that config flattening works from TOML files"""
+    assert "ampere" in flatten_config(rawconfig_toml, "mocksat"), "Parameter missing from class part of config"
+    assert "_role" in flatten_config(rawconfig_toml, "mocksat"), "Parameter missing from constellation part of cfg"
+    val = flatten_config(rawconfig_toml, "mocksat", "device2")["_role"]
     assert val == "essential", "Parameter incorrect from constellation part of cfg"
-    val = flatten_config(rawconfig, "mocksat", "device1")["voltage"]
+    val = flatten_config(rawconfig_toml, "mocksat", "device1")["voltage"]
     assert val == 5000, "Error flattening cfg for Satellite"
-    val = flatten_config(rawconfig, "mocksat", "device2")["voltage"]
+    val = flatten_config(rawconfig_toml, "mocksat", "device2")["voltage"]
     assert val == 3000, "Error flattening cfg for Satellite"
-    assert flatten_config(rawconfig, "nonsatellite"), "Missing dict for non-existing class"
-    assert "verbosity" in flatten_config(rawconfig, "nonsatellite"), "Missing value for non-existing class"
-    assert flatten_config(rawconfig, "mocksat", "device3"), "Missing dict for not explicitly-defined sat"
+    assert flatten_config(rawconfig_toml, "nonsatellite"), "Missing dict for non-existing class"
+    assert "verbosity" in flatten_config(rawconfig_toml, "nonsatellite"), "Missing value for non-existing class"
+    assert flatten_config(rawconfig_toml, "mocksat", "device3"), "Missing dict for not explicitly-defined sat"
+
+
+def test_config_flattening_yaml(rawconfig_yaml):
+    """Test that config flattening works from YAML files"""
+    assert "ampere" in flatten_config(rawconfig_yaml, "mocksat"), "Parameter missing from class part of config"
+    assert "_role" in flatten_config(rawconfig_yaml, "mocksat"), "Parameter missing from constellation part of cfg"
+    val = flatten_config(rawconfig_yaml, "mocksat", "device2")["_role"]
+    assert val == "essential", "Parameter incorrect from constellation part of cfg"
+    val = flatten_config(rawconfig_yaml, "mocksat", "device1")["voltage"]
+    assert val == 5000, "Error flattening cfg for Satellite"
+    val = flatten_config(rawconfig_yaml, "mocksat", "device2")["voltage"]
+    assert val == 3000, "Error flattening cfg for Satellite"
+    assert flatten_config(rawconfig_yaml, "nonsatellite"), "Missing dict for non-existing class"
+    assert "verbosity" in flatten_config(rawconfig_yaml, "nonsatellite"), "Missing value for non-existing class"
+    assert flatten_config(rawconfig_yaml, "mocksat", "device3"), "Missing dict for not explicitly-defined sat"

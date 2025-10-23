@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -30,6 +31,7 @@
 #endif
 
 #include <toml++/toml.hpp>
+#include <yaml-cpp/yaml.h>
 
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Configuration.hpp"
@@ -59,7 +61,19 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     std::ostringstream buffer {};
     buffer << file.rdbuf();
 
-    parse_toml(buffer.view());
+    const auto type = detect_config_type(path);
+    switch(type) {
+    case FileType::YAML: {
+        parse_yaml(buffer.view());
+        break;
+    }
+    case FileType::UNKNOWN:
+    case FileType::TOML: {
+        parse_toml(buffer.view());
+        break;
+    }
+    default: std::unreachable();
+    }
 
     // Build the dependency graph from all satellite configurations
     for(const auto& [name, cfg] : satellite_configs_) {
@@ -70,8 +84,20 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     validate();
 }
 
-ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
-    parse_toml(toml);
+ControllerConfiguration::ControllerConfiguration(std::string_view config, ControllerConfiguration::FileType type) {
+
+    switch(type) {
+    case FileType::YAML: {
+        parse_yaml(config);
+        break;
+    }
+    case FileType::UNKNOWN:
+    case FileType::TOML: {
+        parse_toml(config);
+        break;
+    }
+    default: std::unreachable();
+    }
 
     // Build the dependency graph from all satellite configurations
     for(const auto& [name, cfg] : satellite_configs_) {
@@ -80,6 +106,114 @@ ControllerConfiguration::ControllerConfiguration(std::string_view toml) {
 
     // Validate the configuration
     validate();
+}
+
+ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(const std::filesystem::path& file) {
+    const auto ext = transform(file.extension().string(), ::tolower);
+
+    if(ext == ".yaml" || ext == ".yml") {
+        return FileType::YAML;
+    }
+    if(ext == ".toml") {
+        return FileType::TOML;
+    }
+
+    return FileType::UNKNOWN;
+}
+
+std::string ControllerConfiguration::getAsYAML() const {
+
+    // Validate the configuration
+    try {
+        validate();
+    } catch(const ConfigFileValidationError& error) {
+        LOG(config_parser_logger_, WARNING) << error.what();
+    }
+
+    auto get_yaml_array = [&](auto&& val) -> YAML::Node {
+        YAML::Node arr;
+
+        using T = std::decay_t<decltype(val)>::value_type;
+        for(const auto& v : val) {
+            arr.push_back(static_cast<T>(v));
+        }
+        return arr;
+    };
+
+    auto get_yaml_value = [&](const Value& value) -> YAML::Node {
+        YAML::Node node;
+
+        if(std::holds_alternative<bool>(value)) {
+            node = value.get<bool>();
+        } else if(std::holds_alternative<std::int64_t>(value)) {
+            node = value.get<std::int64_t>();
+        } else if(std::holds_alternative<double>(value)) {
+            node = value.get<double>();
+        } else if(std::holds_alternative<std::string>(value)) {
+            node = value.get<std::string>();
+        } else if(std::holds_alternative<std::vector<bool>>(value)) {
+            node = get_yaml_array(value.get<std::vector<bool>>());
+        } else if(std::holds_alternative<std::vector<std::string>>(value)) {
+            node = get_yaml_array(value.get<std::vector<std::string>>());
+        } else if(std::holds_alternative<std::vector<double>>(value)) {
+            node = get_yaml_array(value.get<std::vector<double>>());
+        } else if(std::holds_alternative<std::vector<std::int64_t>>(value)) {
+            node = get_yaml_array(value.get<std::vector<std::int64_t>>());
+        }
+
+        return node;
+    };
+
+    YAML::Emitter out;
+    // Use flow-style for arrays:
+    out.SetSeqFormat(YAML::Flow);
+
+    // Global dictionary:
+    out << YAML::BeginMap;
+
+    // FIXME for arrays we could use YAML::Flow for [...] display instead of list
+
+    // Add the global configuration keys
+    for(const auto& [key, value] : global_config_) {
+        out << YAML::Key << key;
+        out << YAML::Value << get_yaml_value(value);
+    }
+
+    // Add type config, cache them as nodes for later modification
+    std::map<std::string, YAML::Node> type_nodes;
+    for(const auto& [type, config] : type_configs_) {
+        type_nodes.emplace(type, YAML::Node());
+
+        // Add type config keys
+        for(const auto& [key, value] : config) {
+            type_nodes[type][key] = get_yaml_value(value);
+        }
+    }
+
+    // Append satellite configs to the type nodes:
+    for(const auto& [canonical_name, config] : satellite_configs_) {
+        const auto pos = canonical_name.find_first_of('.', 0);
+        const auto type = canonical_name.substr(0, pos);
+        const auto name = canonical_name.substr(pos + 1);
+
+        // Add satellite config keys
+        YAML::Node node;
+        for(const auto& [key, value] : config) {
+            node[key] = get_yaml_value(value);
+        }
+        type_nodes[type][name] = node;
+    }
+
+    for(const auto& [key, node] : type_nodes) {
+        out << YAML::Key << key;
+        out << YAML::Value << node;
+    }
+
+    LOG_IF(config_parser_logger_, WARNING, !out.good()) << "Emitter error: " << out.GetLastError();
+
+    // End global dictionary
+    out << YAML::EndMap;
+    return out.c_str();
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
@@ -154,6 +288,150 @@ std::string ControllerConfiguration::getAsTOML() const {
     oss << tbl << "\n";
 
     return oss.str();
+}
+
+void ControllerConfiguration::parse_yaml(std::string_view yaml) {
+    auto root_node = YAML::Load(std::string(yaml));
+
+    // Root node needs to be a map or empty:
+    if(!root_node.IsMap() && !root_node.IsNull()) {
+        throw ConfigFileParseError("Expected map as root node");
+    }
+
+    auto parse_key = [&](const YAML::Node& node) -> std::string {
+        try {
+            return node.as<std::string>();
+        } catch(const YAML::Exception& e) {
+            throw ConfigFileParseError("Keys need to be strings");
+        }
+    };
+
+    auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
+        LOG(config_parser_logger_, TRACE) << "Reading key " << key;
+        if(node.IsMap()) {
+            LOG(config_parser_logger_, TRACE) << "Skipping map for key " << key;
+            return {};
+        }
+
+        if(node.IsSequence()) {
+            // Return monostate for empty array:
+            if(node.size() == 0) {
+                return std::monostate();
+            }
+
+            // The conversion code for vectors doesn't do any checks, hence it also doesn't return false when it fails.
+            try {
+                std::vector<bool> retval_bool;
+                if(YAML::convert<std::vector<bool>>::decode(node, retval_bool)) {
+                    return retval_bool;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as bool";
+            }
+
+            try {
+                std::vector<std::int64_t> retval_int;
+                if(YAML::convert<std::vector<std::int64_t>>::decode(node, retval_int)) {
+                    return retval_int;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as int";
+            }
+
+            try {
+                std::vector<double> retval_float;
+                if(YAML::convert<std::vector<double>>::decode(node, retval_float)) {
+                    return retval_float;
+                }
+            } catch(const YAML::RepresentationException& /*e*/) {
+                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as float";
+            }
+
+            // Otherwise return as string vector:
+            return node.as<std::vector<std::string>>();
+        }
+
+        if(node.IsScalar()) {
+            bool retval_bool {}; // NOLINT(misc-const-correctness)
+            if(YAML::convert<bool>::decode(node, retval_bool)) {
+                return retval_bool;
+            }
+
+            std::int64_t retval_int {}; // NOLINT(misc-const-correctness)
+            if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
+                return retval_int;
+            }
+
+            double retval_float {}; // NOLINT(misc-const-correctness)
+            if(YAML::convert<double>::decode(node, retval_float)) {
+                return retval_float;
+            }
+
+            // Otherwise return as string
+            return node.as<std::string>();
+        }
+
+        // If not returned yet then unknown type
+        throw ConfigFileTypeError(key, "Unknown type");
+    };
+
+    // Loop over all keys:
+    for(const auto& node : root_node) {
+        const auto key = parse_key(node.first);
+
+        // Empty key, skip
+        if(node.second.IsNull()) {
+            continue;
+        }
+
+        // Node is a map and represents a satellite type
+        if(node.second.IsMap()) {
+
+            auto type_lc = transform(key, ::tolower);
+            Dictionary dict_type {};
+
+            for(const auto& type_node : node.second) {
+                const auto type_key = parse_key(type_node.first);
+
+                // Empty key, skip
+                if(type_node.second.IsNull()) {
+                    continue;
+                }
+
+                // Node is a map and represents a satellite instance
+                if(type_node.second.IsMap()) {
+
+                    auto canonical_name_lc = type_lc + "." + transform(type_key, ::tolower);
+                    Dictionary dict_name {};
+
+                    for(const auto& name_node : type_node.second) {
+                        const auto name_key = parse_key(name_node.first);
+
+                        if(name_node.second.IsMap()) {
+                            LOG(CRITICAL) << "not supported, map in " << name_node.first;
+                        } else {
+                            const auto value = parse_value(name_key, name_node.second);
+                            if(value.has_value()) {
+                                dict_name.emplace(transform(name_key, ::tolower), value.value());
+                            }
+                        }
+                    }
+                    satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
+                } else {
+                    const auto value = parse_value(type_key, type_node.second);
+                    if(value.has_value()) {
+                        dict_type.emplace(transform(type_key, ::tolower), value.value());
+                    }
+                }
+            }
+            type_configs_.emplace(std::move(type_lc), std::move(dict_type));
+        } else {
+            const auto value = parse_value(key, node.second);
+            if(value.has_value()) {
+                global_config_.emplace(transform(key, ::tolower), value.value());
+            }
+        }
+    }
 }
 
 void ControllerConfiguration::parse_toml(std::string_view toml) {

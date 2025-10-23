@@ -102,7 +102,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
     assert ctrl.state_changes["Satellite.mock_satellite"] == satellite.fsm.last_changed
 
 
-def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawconfig):
+def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawconfig_toml):
     """Test cmd reception."""
     satellite, _ctx = mock_example_satellite
     ctrl, _ctx = mock_controller
@@ -112,8 +112,8 @@ def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawco
         timeout -= 0.05
     assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
 
-    res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize(rawconfig)
+    res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize(rawconfig_toml)
     assert res.msg == "transitioning"
     time.sleep(0.1)
-    assert satellite.config._config == flatten_config(rawconfig, "MockExampleSatellite", "mock_satellite")
+    assert satellite.config._config == flatten_config(rawconfig_toml, "MockExampleSatellite", "mock_satellite")
     assert "current_limit" not in satellite.config._config, "Found unexpected item in Satellite cfg after init"
