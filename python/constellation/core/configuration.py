@@ -5,7 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 import datetime
 import json
-import os
+import pathlib
 import tomllib
 import typing
 from typing import Any, cast
@@ -88,14 +88,13 @@ def _adjust_config_value(value: Any) -> Any:
 
 def load_config(path: str) -> dict[str, Any]:
     """Load a TOML or YAML configuration from file based on the file extension."""
-    if not os.path.isfile(path):
+    ppath = pathlib.Path(path)
+    if not ppath.is_file():
         raise FileNotFoundError(f"Configuration file not found: {path}")
 
-    _, ext = os.path.splitext(path.lower())
-
     try:
-        with open(path, "rb") as f:
-            if ext in {".yaml", ".yml"}:
+        with open(ppath, "rb") as f:
+            if ppath.suffix.lower() in {".yaml", ".yml"}:
                 config = yaml.safe_load(f)
                 if not isinstance(config, dict):
                     raise ValueError(f"Expected a dict in YAML config, got {type(config).__name__}")
