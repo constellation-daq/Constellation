@@ -26,7 +26,7 @@
 #include "constellation/build.hpp"
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -112,11 +112,11 @@ namespace constellation::satellite {
          *
          * @param sender Canonical name of the sending satellite
          * @param user_tags Dictionary with the user tags of the sending satellite
-         * @param config Configuration of the sending satellite
+         * @param config Dictionary with the user configuration of the sending satellite
          */
         virtual void receive_bor(std::string_view sender,
                                  const config::Dictionary& user_tags,
-                                 const config::Configuration& config) = 0;
+                                 const config::Dictionary& config) = 0;
 
         /**
          * @brief Receive and handle data record

@@ -25,9 +25,8 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 
 using namespace Catch::Matchers;

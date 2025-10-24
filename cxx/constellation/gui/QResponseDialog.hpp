@@ -16,7 +16,7 @@
 #include <QStandardItemModel>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 
 // Expose Qt class auto-generated from the user interface XML:
@@ -47,7 +47,7 @@ namespace constellation::gui {
         void show_as_dictionary(const config::Dictionary& dict);
 
         /** Helper to fill the UI with a list of returned values */
-        void show_as_list(const config::List& list);
+        void show_as_list(const config::CompositeList& list);
 
         /** Helper to fill the UI with a text from the response or a verbatim display of the payload */
         void show_as_string(std::string_view str);

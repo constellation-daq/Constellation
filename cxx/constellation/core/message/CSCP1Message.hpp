@@ -20,7 +20,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/BaseHeader.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/protocol/Protocol.hpp"

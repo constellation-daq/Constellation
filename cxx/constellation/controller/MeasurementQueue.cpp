@@ -29,7 +29,7 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/controller/MeasurementCondition.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -251,8 +251,8 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
 
             // Insert the key if it has not been registered yet, use the original value obtained from the configuration:
             const auto& [it, inserted] = value_cache.try_emplace(key, config.at(key));
-            LOG_IF(logger_, INFO, inserted)
-                << "Cached original value " << quote(key + " = " + config.at(key).str()) << " from satellite " << satellite;
+            LOG_IF(logger_, INFO, inserted) << "Cached original value " << quote(key + " = " + config.at(key).to_string())
+                                            << " from satellite " << satellite;
         }
 
         // Add all original values which are not part of the measurement anymore and drop them from the cache
@@ -309,7 +309,7 @@ void MeasurementQueue::queue_loop(const std::stop_token& stop_token) {
             for(const auto& [sat, cfg] : measurement) {
                 LOG(logger_, DEBUG) << "Parameters for " << sat << ":";
                 for(const auto& [k, v] : std::get<Dictionary>(cfg)) {
-                    LOG(logger_, DEBUG) << "\t" << k << " = " << v.str();
+                    LOG(logger_, DEBUG) << "\t" << k << " = " << v.to_string();
                 }
             }
 

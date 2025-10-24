@@ -25,7 +25,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/networking/Port.hpp"

@@ -19,7 +19,7 @@
 
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
@@ -57,15 +57,15 @@ std::string TimerCondition::str() const {
 
 MetricCondition::MetricCondition(std::string remote,
                                  std::string metric,
-                                 config::Value target,
-                                 std::function<bool(config::Value, config::Value)> comparator,
+                                 config::Scalar target,
+                                 std::function<bool(const config::Scalar&, const config::Scalar&)> comparator,
                                  std::string comp_name)
     : remote_(std::move(remote)), metric_(std::move(metric)), target_(std::move(target)), comparator_(std::move(comparator)),
       comparator_str_(std::move(comp_name)), metric_reception_timeout_(std::chrono::seconds(60)) {};
 
 void MetricCondition::await(std::atomic_bool& running, Controller& controller, Logger& logger) const {
     LOG(logger, DEBUG) << "Running until " << remote_ << " reports " << metric_ << " " << comparator_str_ << " "
-                       << target_.str();
+                       << target_.to_string();
 
     std::atomic<bool> condition_satisfied {false};
     // NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved)
@@ -134,6 +134,6 @@ std::string MetricCondition::str() const {
     msg += " ";
     msg += comparator_str_;
     msg += " ";
-    msg += target_.str();
+    msg += target_.to_string();
     return msg;
 }

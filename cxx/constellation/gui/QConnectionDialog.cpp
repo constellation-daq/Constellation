@@ -20,7 +20,7 @@
 #include <QStyleOptionViewItem>
 #include <QTextDocument>
 
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 
 #include "ui_QConnectionDialog.h"
 
@@ -95,7 +95,7 @@ void QConnectionDialog::show_commands(const Dictionary& dict) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         ui_->commandTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->first)));
-        ui_->commandTable->setItem(idx, 1, new QTableWidgetItem(QString::fromStdString(it->second.str())));
+        ui_->commandTable->setItem(idx, 1, new QTableWidgetItem(QString::fromStdString(it->second.to_string())));
         // NOLINTEND(cppcoreguidelines-owning-memory)
         std::advance(it, 1);
     }

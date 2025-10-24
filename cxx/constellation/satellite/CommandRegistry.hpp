@@ -20,8 +20,7 @@
 #include <utility>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 #include "constellation/core/utils/type.hpp"
@@ -64,7 +63,9 @@ namespace constellation::satellite {
          * @throws MissingUserCommandArguments if the number of arguments does not match
          * @throws std::invalid_argument if an argument or the return value could not be decoded or encoded to std::string
          */
-        CNSTLN_API config::Value call(protocol::CSCP::State state, const std::string& name, const config::List& args);
+        CNSTLN_API config::Composite call(protocol::CSCP::State state,
+                                          const std::string& name,
+                                          const config::CompositeList& args);
 
         /**
          * @brief Generate map of commands with comprehensive description
@@ -79,7 +80,7 @@ namespace constellation::satellite {
 
     private:
         // Function alias for std::function used in storage
-        using Call = std::function<config::Value(const config::List&)>;
+        using Call = std::function<config::Composite(const config::CompositeList&)>;
 
         /**
          * @brief Struct holding all information for a command
@@ -94,24 +95,23 @@ namespace constellation::satellite {
             std::set<protocol::CSCP::State> allowed_states;
         };
 
-        template <typename T> static inline T to_argument(const config::Value& value);
-        template <typename T> static inline config::Value convert(const T& value);
+        template <typename T> static inline T to_argument(const config::Composite& value);
 
         // Wrapper for command extracting function arguments from list
         template <typename R, typename... Args> struct Wrapper {
             std::function<R(Args...)> func;
 
-            config::Value operator()(const config::List& args) {
+            config::Composite operator()(const config::CompositeList& args) {
                 return callCommand(args, std::index_sequence_for<Args...> {});
             }
 
             template <std::size_t... I>
-            config::Value callCommand(const config::List& args, std::index_sequence<I...> /*unused*/) {
+            config::Composite callCommand(const config::CompositeList& args, std::index_sequence<I...> /*unused*/) {
                 if constexpr(std::same_as<R, void>) {
                     func(to_argument<typename std::decay_t<Args>>(args.at(I))...);
                     return {};
                 } else {
-                    return convert(func(to_argument<typename std::decay_t<Args>>(args.at(I))...));
+                    return config::Composite(func(to_argument<typename std::decay_t<Args>>(args.at(I))...));
                 }
             }
         };

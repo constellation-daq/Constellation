@@ -34,7 +34,7 @@
 
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/chirp/Manager.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CHP1Message.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -500,8 +500,8 @@ CSCP1Message Controller::build_message(std::string verb, const CommandPayload& p
     auto send_msg = CSCP1Message({controller_name_}, {CSCP1Message::Type::REQUEST, std::move(verb)});
     if(std::holds_alternative<Dictionary>(payload)) {
         send_msg.addPayload(std::get<Dictionary>(payload).assemble());
-    } else if(std::holds_alternative<List>(payload)) {
-        send_msg.addPayload(std::get<List>(payload).assemble());
+    } else if(std::holds_alternative<CompositeList>(payload)) {
+        send_msg.addPayload(std::get<CompositeList>(payload).assemble());
     } else if(std::holds_alternative<std::string>(payload)) {
         msgpack::sbuffer sbuf {};
         msgpack_pack(sbuf, std::get<std::string>(payload));

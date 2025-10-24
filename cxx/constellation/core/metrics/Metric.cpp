@@ -18,7 +18,7 @@
 
 #include <msgpack.hpp>
 
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -42,7 +42,7 @@ MetricValue MetricValue::disassemble(std::string name, const message::PayloadBuf
 
     try {
         // Unpack value
-        auto value = msgpack_unpack_to<config::Value>(to_char_ptr(message.span().data()), message.span().size(), offset);
+        auto value = msgpack_unpack_to<config::Scalar>(to_char_ptr(message.span().data()), message.span().size(), offset);
 
         // Unpack flags - unused reserved value
         msgpack_unpack_to<std::uint8_t>(to_char_ptr(message.span().data()), message.span().size(), offset);

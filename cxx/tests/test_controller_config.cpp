@@ -18,7 +18,7 @@
 
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;

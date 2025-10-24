@@ -12,8 +12,7 @@
 #include <atomic>
 #include <string_view>
 
-#include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/utils/timers.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
@@ -28,7 +27,7 @@ public:
 protected:
     void receive_bor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,
-                     const constellation::config::Configuration& config) final;
+                     const constellation::config::Dictionary& config) final;
     void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataRecord& data_record) final;
     void receive_eor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,

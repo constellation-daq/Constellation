@@ -28,9 +28,8 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
@@ -221,7 +220,7 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     } else {
         std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
             if(!CSCP::is_valid_canonical_name(sat)) {
-                throw InvalidValueError(config, "_data_transmitters", quote(sat) + " is not a valid canonical name");
+                throw InvalidValueError("_data_transmitters", quote(sat) + " is not a valid canonical name");
             }
         });
         LOG(BasePoolT::pool_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
@@ -439,7 +438,7 @@ void ReceiverSatellite::handle_cdtp_message(CDTP2Message&& message) {
 void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
     const auto sender = bor_message.getSender();
     LOG(BasePoolT::pool_logger_, INFO) << "Received BOR from " << sender << " with config"
-                                       << bor_message.getConfiguration().getDictionary().to_string();
+                                       << bor_message.getConfiguration().to_string();
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(sender);

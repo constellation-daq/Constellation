@@ -21,7 +21,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 
 namespace constellation::message {
@@ -217,6 +217,15 @@ namespace constellation::message {
                                    const config::Configuration& configuration);
 
         /**
+         * @brief Construct a CDTP2 begin-of-run message
+         *
+         * @param sender Name of the sender
+         * @param user_tags User tags to attach to the message
+         * @param configuration Configuration of the sender as Dictionary
+         */
+        CNSTLN_API CDTP2BORMessage(std::string sender, config::Dictionary user_tags, config::Dictionary configuration);
+
+        /**
          * @brief Construct a CDTP2 begin-of-run message from a CDTP2 message
          *
          * @param message CDTP2 message
@@ -233,9 +242,9 @@ namespace constellation::message {
         /**
          * @brief Get the configuration of the sender
          *
-         * @return Configuration
+         * @return Dictionary containing the configuration
          */
-        CNSTLN_API config::Configuration getConfiguration() const;
+        const config::Dictionary& getConfiguration() const { return getDataRecords().at(1).getTags(); }
 
     private:
         using CDTP2Message::addDataRecord;

@@ -85,7 +85,7 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
         const auto& [sender_it, new_sender] = available_topics_.try_emplace(std::string(sender));
 
         for(const auto& [top, desc] : topics) {
-            const auto [it, inserted] = sender_it->second.insert_or_assign(top, desc.str());
+            const auto [it, inserted] = sender_it->second.insert_or_assign(top, desc.to_string());
             new_topics |= inserted;
         }
         available_topics_lock.unlock();

@@ -17,8 +17,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 
 // Expose Qt class auto-generated from the user interface XML:
 namespace Ui { // NOLINT(readability-identifier-naming)
@@ -27,14 +26,14 @@ namespace Ui { // NOLINT(readability-identifier-naming)
 
 namespace constellation::gui {
 
-    class CNSTLN_API QCommandParameters : public QAbstractListModel, public config::List {
+    class CNSTLN_API QCommandParameters : public QAbstractListModel {
         Q_OBJECT
 
     public:
         QCommandParameters(QObject* parent = nullptr) : QAbstractListModel(parent) {}
         virtual ~QCommandParameters() = default;
 
-        // No copy constructor/assignment/move constructor/assignment
+        // No copy/move constructor/assignment
         /// @cond doxygen_suppress
         QCommandParameters(const QCommandParameters& other) = delete;
         QCommandParameters& operator=(const QCommandParameters& other) = delete;
@@ -47,7 +46,7 @@ namespace constellation::gui {
          *
          * @return Number of parameters
          */
-        int rowCount(const QModelIndex& /*unused*/) const override { return static_cast<int>(size()); }
+        int rowCount(const QModelIndex& /*unused*/) const override { return static_cast<int>(list_.size()); }
 
         /**
          * @brief Retrieve the data of a given cell (column, row) of the model i.e. a specific parameter
@@ -59,8 +58,19 @@ namespace constellation::gui {
          */
         QVariant data(const QModelIndex& index, int role) const override;
 
-        void add(const config::Value& value);
+        void add(const config::Scalar& value);
         void reset();
+        bool empty() const { return list_.empty(); }
+
+        /**
+         * @brief Get underlying parameter list
+         *
+         * @return Composite list containing the parameters
+         */
+        const config::CompositeList& getList() const { return list_; }
+
+    private:
+        config::CompositeList list_;
     };
 
     /**
