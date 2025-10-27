@@ -27,7 +27,7 @@ multicast instead of forwarding them.
 To run the CHIRP testing tool, run:
 
 ```sh
-./build/cxx/constellation/tools/chirp_manager CONSTELLATION_GROUP NAME INTERFACE
+./build/cxx/tools/chirp_manager CONSTELLATION_GROUP NAME INTERFACE
 ```
 
 The following commands are available:
