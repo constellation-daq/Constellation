@@ -9,6 +9,7 @@
 
 #include "QController.hpp"
 
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <iterator>
