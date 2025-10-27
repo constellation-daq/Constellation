@@ -201,7 +201,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     const auto old_is_global = isInGlobalState();
 
     std::unique_lock<std::mutex> lock {connection_mutex_};
-    const auto now = std::chrono::system_clock::now();
+    const auto now = std::chrono::steady_clock::now();
 
     // Find satellite from connection list based in the heartbeat sender name
     const auto sat = connections_.find(msg.getSender());
@@ -212,7 +212,8 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
                             << (status.has_value() ? ", status " + quote(status.value()) : "") //
                             << ", next message in " << msg.getInterval().count();              //
 
-        const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
+        const auto deviation =
+            std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - msg.getTime());
         if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
             LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
         }
@@ -286,9 +287,9 @@ Dictionary Controller::getConnectionCommands(std::string_view satellite_name) co
     return {};
 }
 
-std::map<std::string, std::chrono::system_clock::time_point>
+std::map<std::string, std::chrono::steady_clock::time_point>
 Controller::getLastStateChange(const std::set<std::string>& satellites) const {
-    std::map<std::string, std::chrono::system_clock::time_point> last_state_change {};
+    std::map<std::string, std::chrono::steady_clock::time_point> last_state_change {};
     const std::lock_guard connection_lock {connection_mutex_};
     for(const auto& satellite : satellites) {
         const auto connection = connections_.find(satellite);
@@ -402,7 +403,7 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
 
 void Controller::awaitState(CSCP::State state,
                             std::chrono::seconds timeout,
-                            std::map<std::string, std::chrono::system_clock::time_point> last_state_change) const {
+                            std::map<std::string, std::chrono::steady_clock::time_point> last_state_change) const {
     LOG(logger_, TRACE) << "Awaiting state change for "
                         << range_to_string(last_state_change, [](const auto& p) { return p.first; }) << " (timeout "
                         << timeout << ")";
@@ -611,13 +612,13 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
 
 void Controller::controller_loop(const std::stop_token& stop_token) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
-    auto wakeup = std::chrono::system_clock::now() + 3s;
+    auto wakeup = std::chrono::steady_clock::now() + 3s;
 
     // Wait until cv is notified, timeout is reached or stop is requested, returns true if stop requested
     while(!cv_.wait_until(lock, stop_token, wakeup, [&]() { return stop_token.stop_requested(); })) {
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
-        wakeup = std::chrono::system_clock::now() + 3s;
+        wakeup = std::chrono::steady_clock::now() + 3s;
 
         for(auto conn = connections_.begin(), next_conn = conn; conn != connections_.end(); conn = next_conn) {
             ++next_conn;
@@ -625,7 +626,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
             auto& [key, remote] = *conn;
 
             // Check if we are beyond the interval and that we only subtract lives once every interval
-            const auto now = std::chrono::system_clock::now();
+            const auto now = std::chrono::steady_clock::now();
             if(remote.lives > 0 && now - remote.last_heartbeat > remote.interval &&
                now - remote.last_checked > remote.interval) {
                 // We have lives left, reduce them by one
@@ -655,7 +656,7 @@ void Controller::controller_loop(const std::stop_token& stop_token) {
 
             // Update time point until we have to wait (if not in the past)
             const auto next_heartbeat = remote.last_heartbeat + remote.interval;
-            if(next_heartbeat - now > std::chrono::system_clock::duration::zero()) {
+            if(next_heartbeat - now > std::chrono::steady_clock::duration::zero()) {
                 wakeup = std::min(wakeup, next_heartbeat);
             }
             LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "

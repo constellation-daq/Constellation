@@ -186,7 +186,7 @@ namespace constellation::controller {
          * @param measurement Measurement from which to extract to extract relevant satellites
          * @return Map of satellites names and the timestamp of their last state change
          */
-        std::map<std::string, std::chrono::system_clock::time_point>
+        std::map<std::string, std::chrono::steady_clock::time_point>
         get_last_state_change(const Measurement& measurement) const;
 
         /**

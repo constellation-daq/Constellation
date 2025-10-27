@@ -196,7 +196,7 @@ void MeasurementQueue::queue_state_changed(State /*queue_state*/, std::string_vi
 void MeasurementQueue::measurement_concluded() {};
 void MeasurementQueue::progress_updated(std::size_t /*current*/, std::size_t /*total*/) {};
 
-std::map<std::string, std::chrono::system_clock::time_point>
+std::map<std::string, std::chrono::steady_clock::time_point>
 MeasurementQueue::get_last_state_change(const Measurement& measurement) const {
     std::set<std::string> satellites {};
     std::ranges::for_each(measurement, [&](const auto& p) { satellites.emplace(p.first); });
