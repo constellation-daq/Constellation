@@ -80,9 +80,9 @@ namespace constellation::controller {
             /** Heartbeat status */
             protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {10000};
-            std::chrono::system_clock::time_point last_heartbeat {std::chrono::system_clock::now()};
-            std::chrono::system_clock::time_point last_state_change {}; // NOLINT(readability-redundant-member-init)
-            std::chrono::system_clock::time_point last_checked {std::chrono::system_clock::now()};
+            std::chrono::steady_clock::time_point last_heartbeat {std::chrono::steady_clock::now()};
+            std::chrono::steady_clock::time_point last_state_change {}; // NOLINT(readability-redundant-member-init)
+            std::chrono::steady_clock::time_point last_checked {std::chrono::steady_clock::now()};
             std::uint8_t lives {protocol::CHP::Lives};
         };
 
@@ -235,7 +235,7 @@ namespace constellation::controller {
          */
         void awaitState(protocol::CSCP::State state,
                         std::chrono::seconds timeout,
-                        std::map<std::string, std::chrono::system_clock::time_point> last_state_changed) const;
+                        std::map<std::string, std::chrono::steady_clock::time_point> last_state_changed) const;
 
         /**
          * @brief Get lowest state of any satellite connected
@@ -279,7 +279,7 @@ namespace constellation::controller {
          * @param satellites Set of satellites which to return in map
          * @return Map of satellites names and the timestamp of their last state change
          */
-        std::map<std::string, std::chrono::system_clock::time_point>
+        std::map<std::string, std::chrono::steady_clock::time_point>
         getLastStateChange(const std::set<std::string>& satellites) const;
 
         /**

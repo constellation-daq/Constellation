@@ -123,7 +123,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
                         << (status.has_value() ? ", status " + quote(status.value()) : "") //
                         << ", next message in " << msg.getInterval();                      //
 
-    const auto now = std::chrono::system_clock::now();
+    const auto now = std::chrono::steady_clock::now();
     std::unique_lock<std::mutex> lock {mutex_};
 
     // Update or add the remote:
@@ -138,7 +138,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     }
 
     // Check for time deviation
-    const auto deviation = std::chrono::duration_cast<std::chrono::seconds>(now - msg.getTime());
+    const auto deviation =
+        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - msg.getTime());
     if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
         LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << quote(msg.getSender());
     }
@@ -178,7 +179,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
     // Notify condition variable when stop is requested
     const std::stop_callback stop_callback {stop_token, [&]() { cv_.notify_all(); }};
 
-    auto wakeup = std::chrono::system_clock::now() + 3s;
+    auto wakeup = std::chrono::steady_clock::now() + 3s;
 
     while(!stop_token.stop_requested()) {
         std::unique_lock<std::mutex> lock {mutex_};
@@ -186,10 +187,10 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
         cv_.wait_until(lock, wakeup);
 
         // Calculate the next wake-up by checking when the next heartbeat times out, but time out after 3s anyway:
-        wakeup = std::chrono::system_clock::now() + 3s;
+        wakeup = std::chrono::steady_clock::now() + 3s;
         for(auto& [key, remote] : remotes_) {
             // Check if we are beyond the interval and that we only subtract lives once every interval
-            const auto now = std::chrono::system_clock::now();
+            const auto now = std::chrono::steady_clock::now();
             if(remote.lives > 0 && now - remote.last_heartbeat > remote.interval &&
                now - remote.last_checked > remote.interval) {
                 // We have lives left, reduce them by one
@@ -217,7 +218,7 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
 
             // Update time point until we have to wait (if not in the past)
             const auto next_heartbeat = remote.last_heartbeat + remote.interval;
-            if(next_heartbeat - now > std::chrono::system_clock::duration::zero()) {
+            if(next_heartbeat - now > std::chrono::steady_clock::duration::zero()) {
                 wakeup = std::min(wakeup, next_heartbeat);
             }
             LOG(logger_, TRACE) << "Updated heartbeat wakeup timer to "

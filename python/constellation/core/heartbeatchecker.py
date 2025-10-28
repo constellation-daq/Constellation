@@ -31,20 +31,20 @@ class HeartbeatState:
         self.role = role
         self.lives = lives
         self.interval = interval
-        self.last_refresh = datetime.now(timezone.utc)
+        self.last_refresh = time.monotonic()
         self.last_statechange = datetime(2000, 1, 1)
         self.state = SatelliteState.DEAD
         self.failed: threading.Event = evt
 
     def refresh(self, ts: datetime | None = None) -> None:
         if not ts:
-            self.last_refresh = datetime.now(timezone.utc)
+            self.last_refresh = time.monotonic()
         else:
-            self.last_refresh = ts
+            self.last_refresh = time.monotonic() + (ts - datetime.now(timezone.utc)).total_seconds()
 
     @property
     def seconds_since_refresh(self) -> float:
-        return (datetime.now(timezone.utc) - self.last_refresh).total_seconds()
+        return time.monotonic() - self.last_refresh
 
 
 class HeartbeatChecker(BaseSatelliteFrame):
@@ -250,7 +250,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
 
     def _run_thread(self) -> None:
         self.log_chp.debug("Starting heartbeat check thread")
-        last_check = datetime.now(timezone.utc)
+        last_check = time.monotonic()
 
         # refresh all tokens
         for hb in self._remote_heartbeat_states.values():
@@ -264,7 +264,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
             self._poll_heartbeats()
 
             # regularly check for stale connections and missed heartbeats
-            if (datetime.now(timezone.utc) - last_check).total_seconds() > 0.3:
+            if (time.monotonic() - last_check) > 0.3:
                 for hb in self._remote_heartbeat_states.values():
                     if hb.lives > 0 and hb.seconds_since_refresh > (hb.interval / 1000) * 1.5 and not hb.failed.is_set():
                         # no message after 150% of the interval, subtract life
@@ -291,7 +291,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
                             # refresh, try again later
                             hb.refresh()
                 # update timestamp for this round
-                last_check = datetime.now(timezone.utc)
+                last_check = time.monotonic()
             # finally, wait a moment
             time.sleep(0.05)
         # teardown

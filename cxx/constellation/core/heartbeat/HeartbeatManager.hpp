@@ -172,9 +172,9 @@ namespace constellation::heartbeat {
         struct Remote {
             protocol::CHP::Role role {protocol::CHP::Role::DYNAMIC};
             std::chrono::milliseconds interval {};
-            std::chrono::system_clock::time_point last_heartbeat;
+            std::chrono::steady_clock::time_point last_heartbeat;
             protocol::CSCP::State last_state {};
-            std::chrono::system_clock::time_point last_checked;
+            std::chrono::steady_clock::time_point last_checked;
             std::uint8_t lives {protocol::CHP::Lives};
         };
 
