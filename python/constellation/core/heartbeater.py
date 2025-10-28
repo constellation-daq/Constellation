@@ -6,7 +6,6 @@ SPDX-License-Identifier: EUPL-1.2
 import math
 import threading
 import time
-from datetime import datetime
 from typing import Any
 
 import zmq
@@ -84,14 +83,14 @@ class HeartbeatSender(SatelliteStateHandler):
 
     def _run_heartbeat(self) -> None:
         self.log_chp_s.info("Starting heartbeat sender thread")
-        last = datetime.now()
+        last = time.monotonic()
         # assert for mypy static type analysis
         assert isinstance(self._com_thread_evt, threading.Event), "Thread Event not set up correctly"
 
         prev_status = self.fsm.status
         while not self._com_thread_evt.is_set():
             # Wait until we need to send the next heartbeat, stay 20% below configured interval
-            if ((datetime.now() - last).total_seconds() > self._heartbeat_period * 0.8 / 1000) or self.fsm.transitioned:
+            if (time.monotonic() - last > self._heartbeat_period * 0.8 / 1000) or self.fsm.transitioned:
                 # Update number of subscribers and the associated heartbeat period
                 self._subscribers += self._hb_tm.parse_subscriptions()
                 self._heartbeat_period = min(
@@ -109,7 +108,7 @@ class HeartbeatSender(SatelliteStateHandler):
                     + " subscribers"
                 )
 
-                last = datetime.now()
+                last = time.monotonic()
                 state = self.fsm.current_state_value
                 self._hb_tm.send(
                     state.value,
