@@ -10,30 +10,23 @@
 #include "ControllerConfiguration.hpp"
 
 #include <algorithm>
-#include <chrono>
-#include <cstdint>
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <map>
-#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
-#include <type_traits>
 #include <unordered_set>
 #include <utility>
 #include <variant>
-#include <vector>
-#include <version> // IWYU pragma: keep
-
-#if __cpp_lib_chrono < 201907L
-#include <ctime>
-#endif
 
 #include <toml++/toml.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/controller/toml_helpers.hpp"
+#include "constellation/controller/yaml_helpers.hpp"
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
@@ -74,11 +67,6 @@ ControllerConfiguration::ControllerConfiguration(const std::filesystem::path& pa
     default: std::unreachable();
     }
 
-    // Build the dependency graph from all satellite configurations
-    for(const auto& [name, cfg] : satellite_configs_) {
-        fill_dependency_graph(name);
-    }
-
     // Validate the configuration
     validate();
 }
@@ -96,11 +84,6 @@ ControllerConfiguration::ControllerConfiguration(std::string_view config, Contro
         break;
     }
     default: std::unreachable();
-    }
-
-    // Build the dependency graph from all satellite configurations
-    for(const auto& [name, cfg] : satellite_configs_) {
-        fill_dependency_graph(name);
     }
 
     // Validate the configuration
@@ -121,72 +104,38 @@ ControllerConfiguration::FileType ControllerConfiguration::detect_config_type(co
 }
 
 std::string ControllerConfiguration::getAsYAML() const {
-
-    // Validate the configuration
-    try {
-        validate();
-    } catch(const ConfigFileValidationError& error) {
-        LOG(config_parser_logger_, WARNING) << error.what();
-    }
-
-    auto get_yaml_array = [&](auto&& val) -> YAML::Node {
-        YAML::Node arr;
-
-        using T = std::decay_t<decltype(val)>::value_type;
-        for(const auto& v : val) {
-            arr.push_back(static_cast<T>(v));
-        }
-        return arr;
-    };
-
-    auto get_yaml_value = [&](const Value& value) -> YAML::Node {
-        YAML::Node node;
-
-        if(std::holds_alternative<bool>(value)) {
-            node = value.get<bool>();
-        } else if(std::holds_alternative<std::int64_t>(value)) {
-            node = value.get<std::int64_t>();
-        } else if(std::holds_alternative<double>(value)) {
-            node = value.get<double>();
-        } else if(std::holds_alternative<std::string>(value)) {
-            node = value.get<std::string>();
-        } else if(std::holds_alternative<std::vector<bool>>(value)) {
-            node = get_yaml_array(value.get<std::vector<bool>>());
-        } else if(std::holds_alternative<std::vector<std::string>>(value)) {
-            node = get_yaml_array(value.get<std::vector<std::string>>());
-        } else if(std::holds_alternative<std::vector<double>>(value)) {
-            node = get_yaml_array(value.get<std::vector<double>>());
-        } else if(std::holds_alternative<std::vector<std::int64_t>>(value)) {
-            node = get_yaml_array(value.get<std::vector<std::int64_t>>());
-        }
-
-        return node;
-    };
-
     YAML::Emitter out;
-    // Use flow-style for arrays:
+
+    // Use flow-style for arrays
     out.SetSeqFormat(YAML::Flow);
 
-    // Global dictionary:
+    // Global dictionary
     out << YAML::BeginMap;
 
-    // FIXME for arrays we could use YAML::Flow for [...] display instead of list
-
     // Add the global configuration keys
-    for(const auto& [key, value] : global_config_) {
-        out << YAML::Key << key;
-        out << YAML::Value << get_yaml_value(value);
+    if(!global_config_.empty()) {
+        YAML::Node global_node {};
+        for(const auto& [key, value] : global_config_) {
+            global_node[key] = get_as_yaml_node(value);
+        }
+        out << YAML::Key << "_default";
+        out << YAML::Value << global_node;
     }
 
-    // Add type config, cache them as nodes for later modification
-    std::map<std::string, YAML::Node> type_nodes;
+    // Cache type nodes for later modification
+    std::map<std::string, YAML::Node> type_nodes {};
+
+    // Add type config
     for(const auto& [type, config] : type_configs_) {
-        type_nodes.emplace(type, YAML::Node());
+        auto [type_node_it, inserted] = type_nodes.emplace(type, YAML::Node());
+        auto& type_node = type_node_it->second;
 
         // Add type config keys
+        YAML::Node node {};
         for(const auto& [key, value] : config) {
-            type_nodes[type][key] = get_yaml_value(value);
+            node[key] = get_as_yaml_node(value);
         }
+        type_node["_default"] = node;
     }
 
     // Append satellite configs to the type nodes:
@@ -195,14 +144,18 @@ std::string ControllerConfiguration::getAsYAML() const {
         const auto type = canonical_name.substr(0, pos);
         const auto name = canonical_name.substr(pos + 1);
 
+        auto [type_node_it, inserted] = type_nodes.emplace(type, YAML::Node());
+        auto& type_node = type_node_it->second;
+
         // Add satellite config keys
-        YAML::Node node;
+        YAML::Node node {};
         for(const auto& [key, value] : config) {
-            node[key] = get_yaml_value(value);
+            node[key] = get_as_yaml_node(value);
         }
-        type_nodes[type][name] = node;
+        type_node[name] = node;
     }
 
+    // Write final type nodes
     for(const auto& [key, node] : type_nodes) {
         out << YAML::Key << key;
         out << YAML::Value << node;
@@ -216,72 +169,24 @@ std::string ControllerConfiguration::getAsYAML() const {
 }
 
 std::string ControllerConfiguration::getAsTOML() const {
-
-    // Validate the configuration
-    try {
-        validate();
-    } catch(const ConfigFileValidationError& error) {
-        LOG(config_parser_logger_, WARNING) << error.what();
-    }
-
-    auto get_toml_array = [&](auto&& val) -> toml::array {
-        toml::array arr;
-
-        using T = std::decay_t<decltype(val)>::value_type;
-        for(const auto& v : val) {
-            arr.push_back(static_cast<T>(v));
-        }
-        return arr;
-    };
-
-    auto get_toml_table = [&](const config::Dictionary& dict) -> toml::table {
-        toml::table tbl;
-        for(const auto& [key, value] : dict) {
-
-            LOG(config_parser_logger_, TRACE) << "Parsing key " << key;
-
-            if(std::holds_alternative<bool>(value)) {
-                tbl.emplace(key, toml::value<bool>(value.get<bool>()));
-            } else if(std::holds_alternative<std::int64_t>(value)) {
-                tbl.emplace(key, toml::value<std::int64_t>(value.get<std::int64_t>()));
-            } else if(std::holds_alternative<double>(value)) {
-                tbl.emplace(key, toml::value<double>(value.get<double>()));
-            } else if(std::holds_alternative<std::string>(value)) {
-                tbl.emplace(key, toml::value<std::string>(value.get<std::string>()));
-            } else if(std::holds_alternative<std::vector<bool>>(value)) {
-                tbl.emplace(key, get_toml_array(value.get<std::vector<bool>>()));
-            } else if(std::holds_alternative<std::vector<std::string>>(value)) {
-                tbl.emplace(key, get_toml_array(value.get<std::vector<std::string>>()));
-            } else if(std::holds_alternative<std::vector<double>>(value)) {
-                tbl.emplace(key, get_toml_array(value.get<std::vector<double>>()));
-            } else if(std::holds_alternative<std::vector<std::int64_t>>(value)) {
-                tbl.emplace(key, get_toml_array(value.get<std::vector<std::int64_t>>()));
-            }
-
-            // FIXME timestamp? char vector?
-        }
-        return tbl;
-    };
-
     // The global TOML table
-    toml::table tbl = get_toml_table(global_config_);
+    toml::table tbl {};
+    tbl.emplace("_default", get_as_toml_table(global_config_));
 
-    // Add type config:
+    // Add type config
     for(const auto& [type, config] : type_configs_) {
-        tbl.emplace(type, get_toml_table(config));
+        const auto [type_table_it, inserted] = tbl.emplace(type, toml::table());
+        type_table_it->second.as_table()->emplace("_default", get_as_toml_table(config));
     }
 
-    // Add individual satellites sections:
+    // Add config from individual satellites
     for(const auto& [canonical_name, config] : satellite_configs_) {
         const auto pos = canonical_name.find_first_of('.', 0);
         const auto type = canonical_name.substr(0, pos);
         const auto name = canonical_name.substr(pos + 1);
-        tbl.emplace(type, toml::table {});
-        tbl[type].as_table()->emplace(name, get_toml_table(config));
+        const auto [type_table_it, inserted] = tbl.emplace(type, toml::table());
+        type_table_it->second.as_table()->emplace(name, get_as_toml_table(config));
     }
-
-    // Clean up table a bit:
-    tbl.prune();
 
     std::stringstream oss;
     oss << tbl << "\n";
@@ -290,145 +195,82 @@ std::string ControllerConfiguration::getAsTOML() const {
 }
 
 void ControllerConfiguration::parse_yaml(std::string_view yaml) {
-    auto root_node = YAML::Load(std::string(yaml));
+    YAML::Node root_node {};
+    try {
+        root_node = YAML::Load(std::string(yaml));
+    } catch(const YAML::ParserException& e) {
+        throw ConfigParseError(e.what());
+    }
 
     // Root node needs to be a map or empty:
     if(!root_node.IsMap() && !root_node.IsNull()) {
-        throw ConfigFileParseError("Expected map as root node");
+        throw ConfigParseError("expected map as root node");
     }
 
-    auto parse_key = [&](const YAML::Node& node) -> std::string {
-        try {
-            return node.as<std::string>();
-        } catch(const YAML::Exception& e) {
-            throw ConfigFileParseError("Keys need to be strings");
-        }
-    };
+    // Bool to check if global default config is defined multiple times
+    bool has_global_default_config = false;
 
-    auto parse_value = [&](const std::string& key, const YAML::Node& node) -> std::optional<Value> {
-        LOG(config_parser_logger_, TRACE) << "Reading key " << key;
-        if(node.IsMap()) {
-            LOG(config_parser_logger_, TRACE) << "Skipping map for key " << key;
-            return {};
-        }
-
-        if(node.IsSequence()) {
-            // Return monostate for empty array:
-            if(node.size() == 0) {
-                return std::monostate();
-            }
-
-            // The conversion code for vectors doesn't do any checks, hence it also doesn't return false when it fails.
-            try {
-                std::vector<bool> retval_bool;
-                if(YAML::convert<std::vector<bool>>::decode(node, retval_bool)) {
-                    return retval_bool;
-                }
-            } catch(const YAML::RepresentationException& /*e*/) {
-                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as bool";
-            }
-
-            try {
-                std::vector<std::int64_t> retval_int;
-                if(YAML::convert<std::vector<std::int64_t>>::decode(node, retval_int)) {
-                    return retval_int;
-                }
-            } catch(const YAML::RepresentationException& /*e*/) {
-                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as int";
-            }
-
-            try {
-                std::vector<double> retval_float;
-                if(YAML::convert<std::vector<double>>::decode(node, retval_float)) {
-                    return retval_float;
-                }
-            } catch(const YAML::RepresentationException& /*e*/) {
-                LOG(config_parser_logger_, TRACE) << "Did not succeed in decoding array elements as float";
-            }
-
-            // Otherwise return as string vector:
-            return node.as<std::vector<std::string>>();
-        }
-
-        if(node.IsScalar()) {
-            bool retval_bool {}; // NOLINT(misc-const-correctness)
-            if(YAML::convert<bool>::decode(node, retval_bool)) {
-                return retval_bool;
-            }
-
-            std::int64_t retval_int {}; // NOLINT(misc-const-correctness)
-            if(YAML::convert<std::int64_t>::decode(node, retval_int)) {
-                return retval_int;
-            }
-
-            double retval_float {}; // NOLINT(misc-const-correctness)
-            if(YAML::convert<double>::decode(node, retval_float)) {
-                return retval_float;
-            }
-
-            // Otherwise return as string
-            return node.as<std::string>();
-        }
-
-        // If not returned yet then unknown type
-        throw ConfigFileTypeError(key, "Unknown type");
-    };
-
-    // Loop over all keys:
-    for(const auto& node : root_node) {
-        const auto key = parse_key(node.first);
-
-        // Empty key, skip
-        if(node.second.IsNull()) {
+    // Loop over all nodes
+    for(const auto& type_node_it : root_node) {
+        const auto type_key_lc = parse_yaml_key(type_node_it);
+        const auto& type_node = type_node_it.second;
+        if(type_node.IsNull()) {
+            // Skip if empty
             continue;
         }
-
-        // Node is a map and represents a satellite type
-        if(node.second.IsMap()) {
-
-            auto type_lc = transform(key, ::tolower);
-            Dictionary dict_type {};
-
-            for(const auto& type_node : node.second) {
-                const auto type_key = parse_key(type_node.first);
-
-                // Empty key, skip
-                if(type_node.second.IsNull()) {
-                    continue;
+        if(type_node.IsMap()) {
+            if(type_key_lc == "_default") {
+                // Global default config
+                LOG(config_parser_logger_, DEBUG) << "Found default config at global level";
+                if(has_global_default_config) {
+                    throw ConfigKeyError(type_key_lc, "key defined twice");
                 }
-
-                // Node is a map and represents a satellite instance
-                if(type_node.second.IsMap()) {
-
-                    auto canonical_name_lc = type_lc + "." + transform(type_key, ::tolower);
-                    Dictionary dict_name {};
-
-                    for(const auto& name_node : type_node.second) {
-                        const auto name_key = parse_key(name_node.first);
-
-                        if(name_node.second.IsMap()) {
-                            LOG(CRITICAL) << "not supported, map in " << name_node.first;
+                global_config_ = parse_yaml_map(type_key_lc, type_node);
+                has_global_default_config = true;
+            } else {
+                // Type level
+                if(!CSCP::is_valid_satellite_type(type_key_lc)) {
+                    throw ConfigKeyError(type_key_lc, "not a valid satellite type");
+                }
+                LOG(config_parser_logger_, DEBUG) << "Found type level for " << quote(type_key_lc);
+                for(const auto& name_node_it : type_node) {
+                    const auto name_key_lc = parse_yaml_key(name_node_it);
+                    const auto canonical_name_key_lc = (type_key_lc + ".").append(name_key_lc);
+                    const auto& name_node = name_node_it.second;
+                    if(name_node.IsNull()) {
+                        // Skip if empty
+                        continue;
+                    }
+                    if(name_node.IsMap()) {
+                        if(name_key_lc == "_default") {
+                            // Type default config
+                            LOG(config_parser_logger_, DEBUG)
+                                << "Found default config at type level for " << quote(type_key_lc);
+                            const auto [it, inserted] =
+                                type_configs_.try_emplace(type_key_lc, parse_yaml_map(canonical_name_key_lc, name_node));
+                            if(!inserted) {
+                                throw ConfigKeyError(canonical_name_key_lc, "key defined twice");
+                            }
                         } else {
-                            const auto value = parse_value(name_key, name_node.second);
-                            if(value.has_value()) {
-                                dict_name.emplace(transform(name_key, ::tolower), value.value());
+                            // Satellite level
+                            if(!CSCP::is_valid_satellite_name(name_key_lc)) {
+                                throw ConfigKeyError(canonical_name_key_lc, "not a valid satellite name");
+                            }
+                            LOG(config_parser_logger_, DEBUG)
+                                << "Found config at satellite level for " << quote(canonical_name_key_lc);
+                            const auto [it, inserted] = satellite_configs_.try_emplace(
+                                canonical_name_key_lc, parse_yaml_map(canonical_name_key_lc, name_node));
+                            if(!inserted) {
+                                throw ConfigKeyError(canonical_name_key_lc, "key defined twice");
                             }
                         }
-                    }
-                    satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
-                } else {
-                    const auto value = parse_value(type_key, type_node.second);
-                    if(value.has_value()) {
-                        dict_type.emplace(transform(type_key, ::tolower), value.value());
+                    } else {
+                        throw ConfigValueError(canonical_name_key_lc, "expected a dictionary at satellite level");
                     }
                 }
             }
-            type_configs_.emplace(std::move(type_lc), std::move(dict_type));
         } else {
-            const auto value = parse_value(key, node.second);
-            if(value.has_value()) {
-                global_config_.emplace(transform(key, ::tolower), value.value());
-            }
+            throw ConfigValueError(type_key_lc, "expected a dictionary at type level");
         }
     }
 }
@@ -440,144 +282,65 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
     } catch(const toml::parse_error& err) {
         std::ostringstream oss {};
         oss << err;
-        throw ConfigFileParseError(oss.view());
+        throw ConfigParseError(oss.view());
     }
 
-    auto parse_value = [&](const toml::key& key, auto&& val) -> std::optional<Value> {
-        LOG(config_parser_logger_, TRACE) << "Reading key " << key;
-        if constexpr(toml::is_table<decltype(val)>) {
-            LOG(config_parser_logger_, TRACE) << "Skipping table for key " << key;
-            return {};
-        }
-        if constexpr(toml::is_array<decltype(val)>) {
-            const auto& arr = val.as_array();
-            // Throw if non-empty inhomogeneous array (empty arrays are never homogeneous)
-            if(!val.is_homogeneous() && !arr->empty()) {
-                throw ConfigFileTypeError(key.str(), "Array is not homogeneous");
-            }
-            LOG(config_parser_logger_, TRACE) << "Found homogeneous array for key " << key;
-            if(arr->empty()) {
-                return std::monostate();
-            }
-            if(arr->front().is_integer()) {
-                std::vector<std::int64_t> return_value {};
-                return_value.reserve(arr->size());
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_integer()->get());
+    // Bool to check if global default config is defined multiple times
+    bool has_global_default_config = false;
+
+    // Loop over all nodes
+    tbl.for_each([this, &has_global_default_config](const toml::key& type_key, auto&& type_value) {
+        const auto type_key_lc = transform(type_key.str(), ::tolower);
+        if constexpr(toml::is_table<decltype(type_value)>) {
+            if(type_key_lc == "_default") {
+                // Global default config
+                LOG(config_parser_logger_, DEBUG) << "Found default config at global level";
+                if(has_global_default_config) {
+                    throw ConfigKeyError(type_key_lc, "key defined twice");
                 }
-                return return_value;
-            }
-            if(arr->front().is_floating_point()) {
-                std::vector<double> return_value {};
-                return_value.reserve(arr->size());
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_floating_point()->get());
+                global_config_ = parse_toml_table(type_key_lc, std::forward<decltype(type_value)>(type_value));
+                has_global_default_config = true;
+            } else {
+                // Type level
+                if(!CSCP::is_valid_satellite_type(type_key_lc)) {
+                    throw ConfigKeyError(type_key_lc, "not a valid satellite type");
                 }
-                return return_value;
-            }
-            if(arr->front().is_boolean()) {
-                std::vector<bool> return_value {};
-                return_value.reserve(arr->size());
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_boolean()->get());
-                }
-                return return_value;
-            }
-            if(arr->front().is_string()) {
-                std::vector<std::string> return_value {};
-                return_value.reserve(arr->size());
-                for(auto&& elem : *arr) {
-                    return_value.push_back(elem.as_string()->get());
-                }
-                return return_value;
-            }
-            // If not returned yet then unknown type
-            throw ConfigFileTypeError(key.str(), "Unknown type");
-        }
-        if constexpr(toml::is_integer<decltype(val)>) {
-            return val.as_integer()->get();
-        }
-        if constexpr(toml::is_floating_point<decltype(val)>) {
-            return val.as_floating_point()->get();
-        }
-        if constexpr(toml::is_boolean<decltype(val)>) {
-            return val.as_boolean()->get();
-        }
-        if constexpr(toml::is_string<decltype(val)>) {
-            return val.as_string()->get();
-        }
-        if constexpr(toml::is_time<decltype(val)>) {
-            // TOML defines this as local time
-            const auto toml_time = val.as_time()->get();
-
-            const auto time_now = std::chrono::system_clock::now();
-
-#if __cpp_lib_chrono >= 201907L
-            const auto local_time_now = std::chrono::current_zone()->to_local(time_now);
-            // Use midnight today plus local time from TOML
-            const auto local_time = std::chrono::floor<std::chrono::days>(local_time_now) +
-                                    std::chrono::hours {toml_time.hour} + std::chrono::minutes {toml_time.minute} +
-                                    std::chrono::seconds {toml_time.second};
-            const auto system_time = std::chrono::current_zone()->to_sys(local_time);
-#else
-            const auto time_t = std::chrono::system_clock::to_time_t(time_now);
-            std::tm tm {};
-            localtime_r(&time_t, &tm); // there is no thread-safe std::localtime
-            // Use mightnight today plus local time from TOML
-            tm.tm_hour = toml_time.hour;
-            tm.tm_min = toml_time.minute;
-            tm.tm_sec = toml_time.second;
-            const auto local_time_t = std::mktime(&tm);
-            const auto system_time = std::chrono::system_clock::from_time_t(local_time_t);
-#endif
-
-            // Return as system time
-            return system_time;
-        }
-        // If not returned yet then unknown type
-        throw ConfigFileTypeError(key.str(), "Unknown type");
-    };
-
-    // Loop over all nodes:
-    tbl.for_each([&](const toml::key& global_key, auto&& global_val) {
-        // Check if this is a table and represents a satellite type:
-        if constexpr(toml::is_table<decltype(global_val)>) {
-            LOG(config_parser_logger_, DEBUG) << "Found satellite type sub-node " << global_key;
-            auto type_lc = transform(global_key.str(), ::tolower);
-            Dictionary dict_type {};
-
-            global_val.as_table()->for_each([&](const toml::key& type_key, auto&& type_val) {
-                // Check if this is a table and represents an individual satellite
-                if constexpr(toml::is_table<decltype(type_val)>) {
-                    LOG(config_parser_logger_, DEBUG) << "Found satellite name sub-node " << type_key;
-                    auto canonical_name_lc = type_lc + "." + transform(type_key.str(), ::tolower);
-                    Dictionary dict_name {};
-
-                    type_val.as_table()->for_each([&](const toml::key& name_key, auto&& name_val) {
-                        const auto value = parse_value(name_key, name_val);
-                        if(value.has_value()) {
-                            dict_name.emplace(transform(name_key, ::tolower), value.value());
+                LOG(config_parser_logger_, DEBUG) << "Found type level for " << quote(type_key_lc);
+                type_value.for_each([this, &type_key_lc](const toml::key& name_key, auto&& name_value) {
+                    const auto name_key_lc = transform(name_key.str(), ::tolower);
+                    const auto canonical_name_key_lc = (type_key_lc + ".").append(name_key_lc);
+                    if constexpr(toml::is_table<decltype(name_value)>) {
+                        if(name_key_lc == "_default") {
+                            // Type default config
+                            LOG(config_parser_logger_, DEBUG)
+                                << "Found default config at type level for " << quote(type_key_lc);
+                            const auto [it, inserted] = type_configs_.try_emplace(
+                                type_key_lc,
+                                parse_toml_table(canonical_name_key_lc, std::forward<decltype(name_value)>(name_value)));
+                            if(!inserted) {
+                                throw ConfigKeyError(canonical_name_key_lc, "key defined twice");
+                            }
+                        } else {
+                            // Satellite level
+                            if(!CSCP::is_valid_satellite_name(name_key_lc)) {
+                                throw ConfigKeyError(canonical_name_key_lc, "not a valid satellite name");
+                            }
+                            LOG(config_parser_logger_, DEBUG)
+                                << "Found config at satellite level for " << quote(canonical_name_key_lc);
+                            const auto [it, inserted] = satellite_configs_.try_emplace(
+                                canonical_name_key_lc,
+                                parse_toml_table(canonical_name_key_lc, std::forward<decltype(name_value)>(name_value)));
+                            if(!inserted) {
+                                throw ConfigKeyError(canonical_name_key_lc, "key defined twice");
+                            }
                         }
-                    });
-
-                    // Add satellite dictionary
-                    satellite_configs_.emplace(std::move(canonical_name_lc), std::move(dict_name));
-
-                } else {
-                    const auto value = parse_value(type_key, type_val);
-                    if(value.has_value()) {
-                        dict_type.emplace(transform(type_key.str(), ::tolower), value.value());
+                    } else {
+                        throw ConfigValueError(canonical_name_key_lc, "expected a dictionary at satellite level");
                     }
-                }
-            });
-
-            // Add type dictionary
-            type_configs_.emplace(std::move(type_lc), std::move(dict_type));
-        } else {
-            const auto value = parse_value(global_key, global_val);
-            if(value.has_value()) {
-                global_config_.emplace(transform(global_key.str(), ::tolower), value.value());
+                });
             }
+        } else {
+            throw ConfigValueError(type_key_lc, "expected a dictionary at type level");
         }
     });
 }
@@ -608,7 +371,11 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
     }
 }
 
-void ControllerConfiguration::validate() const {
+void ControllerConfiguration::validate() {
+    // Build the dependency graph from all satellite configurations
+    for(const auto& [name, cfg] : satellite_configs_) {
+        fill_dependency_graph(name);
+    }
 
     // Check each transition for possible cycles
     for(const auto& transition_pair : transition_graph_) {
@@ -617,7 +384,7 @@ void ControllerConfiguration::validate() const {
 
         if(check_transition_deadlock(transition)) {
             LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
-            throw ConfigFileValidationError("Cyclic dependency for transition " + quote(to_string(transition)));
+            throw ConfigValidationError("Cyclic dependency for transition " + quote(to_string(transition)));
         }
     }
     // No deadlock in any transition
@@ -679,66 +446,102 @@ bool ControllerConfiguration::check_transition_deadlock(CSCP::State transition) 
     return deadlock;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
+void ControllerConfiguration::overwrite_config(const std::string& key_prefix,
+                                               Dictionary& base_config,
+                                               const Dictionary& config) const {
+    for(const auto& [key, value] : config) {
+        auto base_kv_it = base_config.find(key);
+        if(base_kv_it != base_config.cend()) {
+            // Overwrite existing parameter
+            const auto prefixed_key = key_prefix + key;
+            auto& base_value = base_kv_it->second;
+            // Ensure that dictionary types match
+            if((std::holds_alternative<Dictionary>(value) || std::holds_alternative<Dictionary>(base_value)) &&
+               (value.index() != base_value.index())) {
+                throw ConfigValidationError("value of key " + quote(prefixed_key) +
+                                            " has mismatched types when merging defaults");
+            }
+            if(std::holds_alternative<Dictionary>(base_value)) {
+                // If dictionary, overwrite recursively
+                overwrite_config(prefixed_key + ".", base_value.get<Dictionary>(), value.get<Dictionary>());
+            } else {
+                // Otherwise overwrite directly (ignore type mismatch)
+                base_value = value;
+                LOG(config_parser_logger_, TRACE) << "Overwritten value for key " << quote(prefixed_key);
+            }
+        } else {
+            // Add new parameter
+            base_config.emplace(key, value);
+        }
+    }
+}
+
+bool ControllerConfiguration::hasTypeConfiguration(std::string_view type) const {
+    return type_configs_.contains(transform(type, ::tolower));
+}
+
+void ControllerConfiguration::addTypeConfiguration(std::string_view type, Dictionary config) {
+    // Check if already there
+    const auto type_lc = transform(type, ::tolower);
+    auto config_it = type_configs_.find(type_lc);
+    if(config_it != type_configs_.cend()) {
+        LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite type configuration for " << quote(type);
+        config_it->second = std::move(config);
+    } else {
+        type_configs_.emplace(type_lc, std::move(config));
+    }
+}
+
+Dictionary ControllerConfiguration::getTypeConfiguration(std::string_view type) const {
+    LOG(config_parser_logger_, TRACE) << "Fetching configuration for type " << quote(type);
+
+    // Copy global config
+    auto config = getGlobalConfiguration();
+
+    // Add parameters from type level
+    const auto type_lc = transform(type, ::tolower);
+    const auto config_it = type_configs_.find(transform(type_lc, ::tolower));
+    if(config_it != type_configs_.end()) {
+        LOG(config_parser_logger_, TRACE) << "Found config at type level for " << quote(type);
+        overwrite_config("", config, config_it->second);
+    }
+
+    return config;
+}
+
 bool ControllerConfiguration::hasSatelliteConfiguration(std::string_view canonical_name) const {
     return satellite_configs_.contains(transform(canonical_name, ::tolower));
 }
 
-void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config) {
-
+void ControllerConfiguration::addSatelliteConfiguration(std::string_view canonical_name, Dictionary config) {
     // Check if already there
     const auto canonical_name_lc = transform(canonical_name, ::tolower);
     auto config_it = satellite_configs_.find(canonical_name_lc);
     if(config_it != satellite_configs_.end()) {
-        LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite configuration for " << canonical_name;
+        LOG(config_parser_logger_, WARNING) << "Overwriting existing satellite configuration for " << quote(canonical_name);
         config_it->second = std::move(config);
     } else {
         satellite_configs_.emplace(canonical_name_lc, std::move(config));
     }
-
-    // Add satellite to dependency graph:
-    fill_dependency_graph(canonical_name);
 }
 
 Dictionary ControllerConfiguration::getSatelliteConfiguration(std::string_view canonical_name) const {
-    LOG(config_parser_logger_, TRACE) << "Fetching configuration for " << canonical_name;
+    LOG(config_parser_logger_, TRACE) << "Fetching configuration for " << quote(canonical_name);
 
     // Find type from canonical name
-    const auto separator_pos = canonical_name.find_first_of('.');
-    const auto type = canonical_name.substr(0, separator_pos);
+    const auto canonical_name_lc = transform(canonical_name, ::tolower);
+    const auto separator_pos = canonical_name_lc.find_first_of('.');
+    const auto type_lc = canonical_name_lc.substr(0, separator_pos);
 
-    // Copy global section
-    auto config = global_config_;
+    // Copy from global global + type level
+    auto config = getTypeConfiguration(type_lc);
 
-    // Add parameters from type section (dict always stores types in lower case)
-    const auto type_it = type_configs_.find(transform(type, ::tolower));
-    if(type_it != type_configs_.end()) {
-        LOG(config_parser_logger_, TRACE) << "Found type section for " << type;
-        for(const auto& [key, value] : type_it->second) {
-            const auto param_it = config.find(key);
-            if(param_it != config.end()) {
-                // Overwrite existing parameter
-                param_it->second = value;
-                LOG(config_parser_logger_, DEBUG) << "Overwritten " << key << " from type section for " << type;
-            } else {
-                config.emplace(key, value);
-            }
-        }
-    }
-
-    // Add parameters from satellite section (dict always stores names in lower case)
-    const auto satellite_it = satellite_configs_.find(transform(canonical_name, ::tolower));
-    if(satellite_it != satellite_configs_.end()) {
-        LOG(config_parser_logger_, TRACE) << "Found named section for " << type;
-        for(const auto& [key, value] : satellite_it->second) {
-            const auto param_it = config.find(key);
-            if(param_it != config.end()) {
-                // Overwrite existing parameter
-                param_it->second = value;
-                LOG(config_parser_logger_, DEBUG) << "Overwritten " << key << " from named section for " << canonical_name;
-            } else {
-                config.emplace(key, value);
-            }
-        }
+    // Add parameters from satellite level
+    const auto config_it = satellite_configs_.find(canonical_name_lc);
+    if(config_it != satellite_configs_.end()) {
+        LOG(config_parser_logger_, TRACE) << "Found config at satellite level for " << quote(canonical_name);
+        overwrite_config("", config, config_it->second);
     }
 
     return config;

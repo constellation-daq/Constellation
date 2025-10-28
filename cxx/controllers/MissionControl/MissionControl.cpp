@@ -356,6 +356,12 @@ void MissionControl::on_btnGenConf_clicked() {
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
+    try {
+        new_cfg.validate();
+    } catch(const ConfigValidationError& error) {
+        LOG(logger_, WARNING) << error.what();
+    }
+
     const QString filename = QFileDialog::getSaveFileName(this,
                                                           tr("Save File"),
                                                           QFileInfo(txtConfigFileName->text()).path(),

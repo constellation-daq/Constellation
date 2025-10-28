@@ -6,6 +6,8 @@ controller_src = files(
   'ControllerConfiguration.cpp',
   'MeasurementCondition.cpp',
   'MeasurementQueue.cpp',
+  'toml_helpers.cpp',
+  'yaml_helpers.cpp',
 )
 
 controller_lib = library('ConstellationController',
