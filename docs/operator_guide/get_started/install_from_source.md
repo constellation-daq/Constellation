@@ -112,12 +112,27 @@ Building on MacOS requires the installation of the XCode Command Line Tools via:
 xcode-select --install
 ```
 
-Additionally, the compiler toolchain from [Homebrew](https://brew.sh/) is required:
+For MacOS Sequoia (version 15) or newer, the XCode clang compiler can be used. The Apple clang version needs to be 17.0.0
+or newer, which can be checked via:
 
 ```sh
-brew install meson llvm lld
-brew install qt@6
+$(xcode-select -p)/usr/bin/clang --version
 ```
+
+Additionally, Meson and Qt from [Homebrew](https://brew.sh/) are required:
+
+```sh
+brew install meson qt
+```
+
+For older MacOS versions, the LLVM compiler toolchain from Homebrew is required:
+
+```sh
+brew install llvm lld
+```
+
+The minimum required LLVM version via Homebrew is 20. In order to use clang from Homebrew, the following environment
+variables need to be set:
 
 ``` sh
 export CXX="$(brew --prefix)/opt/llvm/bin/clang++"
