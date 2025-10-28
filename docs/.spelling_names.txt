@@ -32,3 +32,4 @@ jemalloc
 mimalloc
 systemd
 polkit
+Homebrew
