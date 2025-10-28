@@ -156,11 +156,15 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
     }
     case 10: {
         // Last heartbeat
-        return from_timepoint(std::chrono::system_clock::now() + (conn.last_heartbeat - std::chrono::steady_clock::now()));
+        return from_timepoint(std::chrono::system_clock::now() +
+                              std::chrono::duration_cast<std::chrono::system_clock::duration>(
+                                  conn.last_heartbeat - std::chrono::steady_clock::now()));
     }
     case 11: {
         // Last checked
-        return from_timepoint(std::chrono::system_clock::now() + (conn.last_checked - std::chrono::steady_clock::now()));
+        return from_timepoint(std::chrono::system_clock::now() +
+                              std::chrono::duration_cast<std::chrono::system_clock::duration>(
+                                  conn.last_checked - std::chrono::steady_clock::now()));
     }
     default: {
         return QString("");
