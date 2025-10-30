@@ -57,6 +57,23 @@ test('Core CHP manager test', test_core_chp_manager,
   is_parallel: false,
 )
 
+test_core_config = executable('test_core_config',
+  sources: 'test_core_config.cpp',
+  dependencies: [core_dep, catch2_dep],
+)
+test('Core configuration test', test_core_config,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+  env: ['CXX_TESTS_DIR='+meson.current_source_dir()],
+)
+
+test_core_config_values = executable('test_core_config_values',
+  sources: 'test_core_config_values.cpp',
+  dependencies: [core_dep, msgpack_cxx_dep, catch2_dep],
+)
+test('Core configuration value types test', test_core_config_values,
+  args: ['--durations', 'yes', '--verbosity', 'high'],
+)
+
 test_core_logging = executable('test_core_logging',
   sources: 'test_core_logging.cpp',
   dependencies: [core_dep, catch2_dep],
@@ -81,14 +98,6 @@ test_core_metrics = executable('test_core_metrics',
 test('Core metrics test', test_core_metrics,
   args: ['--durations', 'yes', '--verbosity', 'high'],
   is_parallel: false,
-)
-
-test_core_config = executable('test_core_config',
-  sources: 'test_core_config.cpp',
-  dependencies: [core_dep, catch2_dep],
-)
-test('Core configuration test', test_core_config,
-  args: ['--durations', 'yes', '--verbosity', 'high'],
 )
 
 test_core_pools = executable('test_core_pools',

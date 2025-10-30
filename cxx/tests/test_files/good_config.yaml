@@ -1,27 +1,48 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
-# Config file that is valid
+# Valid YAML config file
 
-bool: true
-bool2: false
-string: "global"
-int: -42
-float: 3.14
-array_bool: [true, false, false, true]
-array_int: [1, 2, 3]
-array_float: [0.1]
-empty_array: []
-array_string: ["global1", "global2"]
+_default:
+  bool: true
+  int: -42
+  float: 3.14
+  string: global
+  time: 12:34:56
+  array_bool: [ true, false, false, true ]
+  array_int: [ 1, 2, 3 ]
+  array_float: [ 0.5, 1.0 ]
+  array_string: [ "global1", "global2" ]
+  array_time: [ "12:00:00", "13:00:00" ]
+  empty_array: []
+  dict:
+    subdict:
+      key: -1
 
 Dummy:
-  string: "type"
-  type: "Dummy"
+  _default:
+    string: type
+    type: Dummy
+    dict:
+      subdict:
+        key: 0
 
   D1:
-    string: "D1"
+    string: D1
     satellite: true
+    dict:
+      subdict:
+        key: 1
 
+dummy:
   d2:
-    StRiNg: "D2"
+    StRiNg: D2
     saTelliTe: true
+    diCt:
+      suBdiCt:
+        kEy: 2
+
+Dummy2:
+
+Dummy3:
+  D3:

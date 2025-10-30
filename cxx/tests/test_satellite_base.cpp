@@ -101,11 +101,11 @@ TEST_CASE("Standard commands", "[satellite]") {
     REQUIRE(get_commands_dict.contains("get_commands"));
     REQUIRE(get_commands_dict.at("stop").get<std::string>() == "Stop run");
     REQUIRE(get_commands_dict.contains("my_cmd"));
-    REQUIRE_THAT(std::get<std::string>(get_commands_dict.at("my_cmd")),
+    REQUIRE_THAT(get_commands_dict.at("my_cmd").get<std::string>(),
                  Equals("A User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
     REQUIRE(get_commands_dict.contains("my_cmd_state"));
     REQUIRE_THAT(
-        std::get<std::string>(get_commands_dict.at("my_cmd_state")),
+        get_commands_dict.at("my_cmd_state").get<std::string>(),
         Equals("Command for RUN state only\nThis command requires 0 arguments.\nThis command can only be called in the "
                "following states: RUN"));
 
@@ -140,11 +140,10 @@ TEST_CASE("Standard commands", "[satellite]") {
     sender.sendCommand("get_config");
     auto recv_msg_get_config = sender.recv();
     REQUIRE(recv_msg_get_config.getVerb().first == CSCP1Message::Type::SUCCESS);
-    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second),
-                 Equals("0 configuration keys, dictionary attached in payload"));
+    REQUIRE_THAT(to_string(recv_msg_get_config.getVerb().second), Equals("Configuration attached in payload"));
     REQUIRE(recv_msg_get_config.hasPayload());
     const auto config = Configuration(Dictionary::disassemble(recv_msg_get_config.getPayload()));
-    REQUIRE(config.size() == 0);
+    REQUIRE(config.empty());
     // TODO(stephan.lachnit): test with a non-empty configuration
 
     // get_version
@@ -184,7 +183,7 @@ TEST_CASE("Hidden commands", "[satellite]") {
                  Equals("Send failure signal to satellite to transition to ERROR mode"));
     REQUIRE(get_commands_dict.contains("_my_hidden_cmd"));
     REQUIRE_THAT(
-        std::get<std::string>(get_commands_dict.at("_my_hidden_cmd")),
+        get_commands_dict.at("_my_hidden_cmd").get<std::string>(),
         Equals("A Hidden User Command\nThis command requires 0 arguments.\nThis command can be called in all states."));
 
     // _get_services
@@ -249,7 +248,7 @@ TEST_CASE("User commands", "[satellite]") {
     // my_usr_cmd_arg with argument as payload
     auto usr_cmd_arg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
     msgpack::sbuffer sbuf {};
-    List args {};
+    CompositeList args {};
     args.push_back(4);
     msgpack::pack(sbuf, args);
     usr_cmd_arg_msg.addPayload(std::move(sbuf));
@@ -535,7 +534,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong argument type
     auto wrongarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    List args {};
+    CompositeList args {};
     args.push_back(std::chrono::system_clock::now());
     wrongarg_msg.addPayload(args.assemble());
     sender.send(wrongarg_msg);
@@ -547,7 +546,7 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
 
     // my_usr_cmd_arg with wrong number of argument
     auto manyarg_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_arg"});
-    List manyargs {};
+    CompositeList manyargs {};
     manyargs.push_back(3);
     manyargs.push_back(4);
     manyarg_msg.addPayload(manyargs.assemble());
@@ -565,25 +564,6 @@ TEST_CASE("Catch incorrect user command arguments", "[satellite]") {
     REQUIRE_THAT(to_string(recv_msg_usr_cmd_state.getVerb().second),
                  Equals("Command my_cmd_state cannot be called in state NEW"));
     REQUIRE(!recv_msg_usr_cmd_state.hasPayload());
-
-    satellite.exit();
-}
-
-TEST_CASE("Catch incorrect user command return value", "[satellite]") {
-    // Create and start satellite
-    DummySatellite satellite {};
-
-    // Create sender
-    CSCPSender sender {satellite.getCommandPort()};
-
-    // my_usr_cmd_arg with wrong payload encoding
-    auto invalid_return = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "my_cmd_invalid_return"});
-    sender.send(invalid_return);
-
-    auto recv_msg_invalid_return = sender.recv();
-    REQUIRE(recv_msg_invalid_return.getVerb().first == CSCP1Message::Type::INCOMPLETE);
-    REQUIRE_THAT(to_string(recv_msg_invalid_return.getVerb().second),
-                 Equals("Error casting function return type `std::array<int, 1>` to dictionary value"));
 
     satellite.exit();
 }
