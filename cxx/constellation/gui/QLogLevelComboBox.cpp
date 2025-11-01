@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <QPaintEvent>
+#include <QStylePainter>
 
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/utils/enum.hpp"
@@ -40,15 +41,13 @@ void QLogLevelDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opt
     QStyledItemDelegate::paint(painter, options, index);
 }
 
-void QLogLevelComboBox::paintEvent(QPaintEvent* event) {
-    QComboBox::paintEvent(event);
+void QLogLevelComboBox::paintEvent(QPaintEvent* /*event*/) {
+    auto painter = QStylePainter(this);
+    QStyleOptionComboBox option;
+    initStyleOption(&option);
 
     const auto item = this->itemData(this->currentIndex(), Qt::DisplayRole);
     if(!item.isNull()) {
-        QPainter painter(this);
-        QStyleOptionViewItem option;
-        option.initFrom(this);
-
         // Get log level color
         const auto level_str = item.toString().toStdString();
         const auto level = enum_cast<Level>(level_str).value_or(INFO);
@@ -56,12 +55,15 @@ void QLogLevelComboBox::paintEvent(QPaintEvent* event) {
         const auto color = get_log_level_color(level);
         if(level > Level::INFO) {
             // High levels get background coloring
-            painter.fillRect(event->rect(), QBrush(color));
+            option.palette.setBrush(QPalette::Button, QBrush(color));
+
         } else {
             // Others just text color adjustment
-            option.palette.setColor(QPalette::Text, color);
+            option.palette.setColor(QPalette::ButtonText, color);
         }
     }
+    painter.drawComplexControl(QStyle::CC_ComboBox, option);
+    painter.drawControl(QStyle::CE_ComboBoxLabel, option);
 }
 
 QLogLevelComboBox::QLogLevelComboBox(QWidget* parent) : QComboBox(parent) {
