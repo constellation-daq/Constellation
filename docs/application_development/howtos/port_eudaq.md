@@ -113,3 +113,10 @@ if(power_output_percent > 100) {
 
 Moreover, the attempt to read configuration keys without default value will automatically emit a `MissingKeyError` exception
 if the respective key is not present in the configuration.
+
+## Compatibility with EUDAQ File Format
+
+Constellation provides the `EudaqNativeWriter` satellite which is capable of storing data in a EUDAQ2-compatible file format.
+In order for satellite data to be correctly interpreted for storage, some
+[BOR flags](../../operator_guide/concepts/data.md#begin-of-run--end-of-run-messages) need to be set when sending the data. The
+details are provided in the [documentation of the EudaqNativeWriter satellite](../../satellites/EudaqNativeWriter.md).
