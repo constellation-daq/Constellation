@@ -72,7 +72,7 @@ class Mariner(Satellite):
         self.device = CanopusStarTracker(voltage, current, sample_period)
         return "Initialized"
 
-    def do_run(self, payload: Any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         """The main run routine.
 
         Here, the main part of the mission would be performed.
