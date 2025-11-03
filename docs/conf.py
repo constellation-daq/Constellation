@@ -81,7 +81,7 @@ html_theme_options = {
     "github_url": "https://github.com/constellation-daq/constellation",
     "icon_links": [
         {
-            "name": "News RSS feed",
+            "name": "News Feed",
             "url": "news/atom.xml",
             "icon": "fa-solid fa-rss",
         },
@@ -247,6 +247,7 @@ with (
 
 # ablog settings
 blog_title = project
+blog_baseurl = "https://constellation.pages.desy.de/news"
 blog_path = "news"
 blog_post_pattern = ["news/*.md", "news/*.rst"]
 post_date_format = "%Y-%m-%d"
