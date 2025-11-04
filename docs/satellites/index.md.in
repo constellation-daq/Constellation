@@ -1,3 +1,6 @@
+---
+html_theme.show_nav_level: 0
+---
 # Constellation Satellite Library
 
 These pages provide an overview of the satellites available for the Constellation framework.
