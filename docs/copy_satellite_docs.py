@@ -17,6 +17,10 @@ from slugify import slugify
 logger = sphinx.util.logging.getLogger(__name__)
 
 
+def add_markdown_metadata() -> str:
+    return "---\nhtml_theme.show_nav_level: 0\n---\n"
+
+
 def guess_language(path: pathlib.Path) -> str:
     """
     Guess the language of the satellite implementation based on the path they have been found in
@@ -108,7 +112,7 @@ def convert_front_matter(markdown: str, extra_front_matter: dict[str, str]):
         string_after_yaml = markdown[yaml_endpos:]
 
         # Add title
-        converted_front_matter = "# " + yaml_data["title"] + " Satellite\n\n"
+        converted_front_matter = add_markdown_metadata() + "# " + yaml_data["title"] + " Satellite\n\n"
 
         # Build header table
         converted_front_matter += "| Name | " + yaml_data["title"] + " |\n"
