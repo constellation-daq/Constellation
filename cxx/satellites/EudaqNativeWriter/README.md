@@ -42,7 +42,7 @@ flags or event configurations:
 * `timestamp_begin` (integer): Timestamp of the event start in units of picoseconds. If the tag is available from the
   Constellation message header, the value will be translated to nanoseconds and stored as EUDAQ event timestamp. If the tag
   is not set, `0` will be set as timestamp. This prompts analysis software to use the trigger number instead.
-* `timestamp_begin` (integer): Timestamp of the event end in units of picoseconds. If the tag is available from the
+* `timestamp_end` (integer): Timestamp of the event end in units of picoseconds. If the tag is available from the
   Constellation message header, the value will be translated to nanoseconds and stored as EUDAQ event timestamp. If the tag
   is not set, `0` will be set as timestamp. This prompts analysis software to use the trigger number instead.
 
