@@ -63,9 +63,8 @@ namespace constellation::config {
          * @param key Name of the corresponding key
          * @param vtype Type of the stored value
          * @param type Type the value should have been converted to
-         * @param reason Reason why the conversion failed
          */
-        InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type, std::string_view reason = "");
+        InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type);
     };
 
     // Forward declaration of Configuration
