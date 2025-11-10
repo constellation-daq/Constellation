@@ -78,6 +78,12 @@ namespace constellation::utils {
         out.resize(25);
         const auto res = std::to_chars(out.data(), out.data() + out.size(), t);
         out.resize(res.ptr - out.data());
+        if constexpr(std::floating_point<A>) {
+            // For floats, add trailing zero if no decimal point or exponential is found
+            if(out.find('.') == std::string::npos && out.find('e') == std::string::npos) {
+                out.append(".0");
+            }
+        }
         return out;
     }
 
