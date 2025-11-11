@@ -136,7 +136,11 @@ namespace constellation::utils {
             unit = "s";
             count *= D::period::num / D::period::den;
         }
-        return to_string(count) + unit;
+        // Convert to integer if no information is lost for prettier printing
+        const auto count_str = static_cast<double>(static_cast<std::int64_t>(count)) == count
+                                   ? to_string(static_cast<std::int64_t>(count))
+                                   : to_string(count);
+        return count_str + unit;
 #endif
     }
 
