@@ -76,7 +76,8 @@ namespace constellation::config {
     template <typename T>
         requires scalar_constructible<T>
     Scalar& Scalar::operator=(T other) {
-        *this = Scalar(std::move(other));
+        Scalar scalar {std::move(other)};
+        this->swap(scalar);
         return *this;
     }
 
@@ -140,7 +141,8 @@ namespace constellation::config {
     template <typename R>
         requires array_constructible<R>
     Array& Array::operator=(const R& other) {
-        *this = Array(other);
+        Array array {other};
+        this->swap(other);
         return *this;
     }
 
@@ -239,7 +241,8 @@ namespace constellation::config {
     template <typename T>
         requires composite_constructible<T>
     Composite& Composite::operator=(const T& other) {
-        *this = Composite(other);
+        Composite composite {other};
+        this->swap(composite);
         return *this;
     }
 

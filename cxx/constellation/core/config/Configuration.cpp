@@ -333,30 +333,25 @@ Configuration::Configuration(Dictionary root_dictionary)
     : RootDictionaryHolder(std::move(root_dictionary)), Section("", &root_dictionary_) {}
 
 // NOLINTNEXTLINE(bugprone-exception-escape): Exception not possible since root dict is empty during section construction
-Configuration::Configuration(Configuration&& other) noexcept
-    : RootDictionaryHolder(std::move(other.root_dictionary_)), Section(std::move(other.prefix_), &other.root_dictionary_) {
-    // Note: Section was constructed with moved and thus empty root dictionary to avoid creating
-    //       configuration section tree again in the Section constructor
-    // Exchange root dictionaries
-    dictionary_ = &root_dictionary_;
-    other.dictionary_ = &other.root_dictionary_;
-    // Move used keys and configuration section tree
-    used_keys_ = std::move(other.used_keys_);
-    section_tree_ = std::move(other.section_tree_);
+Configuration::Configuration(Configuration&& other) noexcept : Configuration() {
+    this->swap(other);
 }
 
 Configuration& Configuration::operator=(Configuration&& other) noexcept {
-    // Move root dictionary
-    root_dictionary_ = std::move(other.root_dictionary_);
+    this->swap(other);
+    return *this;
+}
+
+void Configuration::swap(Configuration& other) noexcept {
+    // Swap root dictionary
+    root_dictionary_.swap(other.root_dictionary_);
     // Exchange root dictionaries
     dictionary_ = &root_dictionary_;
     other.dictionary_ = &other.root_dictionary_;
-    // Move prefix, used keys and configuration section tree
-    prefix_ = std::move(other.prefix_);
-    used_keys_ = std::move(other.used_keys_);
-    section_tree_ = std::move(other.section_tree_);
-
-    return *this;
+    // Swap prefix, used keys and configuration section tree
+    prefix_.swap(other.prefix_);
+    used_keys_.swap(other.used_keys_);
+    section_tree_.swap(other.section_tree_);
 }
 
 PayloadBuffer Configuration::assemble() const {

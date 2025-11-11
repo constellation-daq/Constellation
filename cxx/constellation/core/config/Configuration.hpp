@@ -398,6 +398,9 @@ namespace constellation::config {
         /** Move assignment */
         CNSTLN_API Configuration& operator=(Configuration&& other) noexcept;
 
+        /** Swap function */
+        void swap(Configuration& other) noexcept;
+
         // TODO: as flat dictionary? useful e.g. for Qt printing
 
         /** Assemble via msgpack to message payload */
