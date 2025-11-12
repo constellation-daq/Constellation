@@ -157,6 +157,16 @@ namespace constellation::protocol::CSCP {
     }
 
     /**
+     * @brief Checks if a satellite type is valid
+     *
+     * A satellite type may contain alphanumeric characters and underscores and may not be empty.
+     */
+    inline bool is_valid_satellite_type(const std::string& type_name) {
+        // Same rules for as for satellite names
+        return is_valid_satellite_name(type_name);
+    }
+
+    /**
      * @brief Checks if a canonical name is valid
      *
      * A canonical name consists of two parts, separated by a period. Both parts may contain alphanumeric characters and
@@ -168,7 +178,7 @@ namespace constellation::protocol::CSCP {
         }
 
         const auto s = canonical_name.find('.');
-        return is_valid_satellite_name(canonical_name.substr(0, s)) && is_valid_satellite_name(canonical_name.substr(s + 1));
+        return is_valid_satellite_type(canonical_name.substr(0, s)) && is_valid_satellite_name(canonical_name.substr(s + 1));
     }
 
     /**
