@@ -11,3 +11,7 @@ no-multiple-blanks:
 
 blanks-around:
   lines_above: 1
+
+# We want style: compact with aligned separators, which is not possible yet
+# See https://github.com/DavidAnson/markdownlint/issues/1854
+table-column-style: false
