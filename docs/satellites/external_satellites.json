@@ -14,6 +14,16 @@
       "name": "AIDA-2020 TLU / aidatlu",
       "readme": "https://raw.githubusercontent.com/SiLab-Bonn/aidatlu/refs/heads/main/aidatlu/constellation/README.md",
       "website": "https://github.com/SiLab-Bonn/aidatlu"
+    },
+    {
+      "name": "MaxiGaugeTPG366",
+      "readme": "https://gitlab.desy.de/madmax/hamburg/maxigaugetpg366-satellite/-/raw/main/README.md",
+      "website": "https://gitlab.desy.de/madmax/hamburg/maxigaugetpg366-satellite"
+    },
+    {
+      "name": "AMIModel1700LLI",
+      "readme": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite/-/raw/main/README.md",
+      "website": "https://gitlab.desy.de/madmax/hamburg/amimodel1700lli-satellite"
     }
   ]
 }
