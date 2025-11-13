@@ -20,6 +20,7 @@ repos:
         args: [--branch=main]
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: "subprojects/packagefiles/libzmq/fix-mingw-afunixh.diff"
 
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
@@ -52,7 +53,7 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        args: [--no-warn-unused-ignores]
+        args: [--no-warn-unused-ignores, --ignore-missing-imports]
         files: "python/constellation/core"
         additional_dependencies: [types-psutil, types-Pygments, types-PyYAML]
 
