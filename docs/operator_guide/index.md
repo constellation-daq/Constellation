@@ -32,7 +32,7 @@ Throughout this guide, buttons of graphical user interfaces will be displayed as
 parameters and commands typeset as inline code such as `parameter_name`, and states of satellites or the entire Constellation
 will be denominated e.g. by {bdg-secondary}`ORBIT`. Sequences of keystrokes are rendered as individual keys such as {kbd}`Control-c`.
 
-A glossary of commonly used terms and names used in the context of Constellation is provided [in the Concepts section](glossary.md) of this guide.
+A **glossary** of commonly used terms and names used in the context of Constellation is provided [in the Concepts section](glossary.md) of this guide.
 
 ```{warning}
 This software framework is still under construction and no stable version has been released yet.
@@ -46,9 +46,8 @@ Features, protocols and the behavior of individual components may still change.
 ```{toctree}
 :caption: 🚀 Get started
 
-get_started/install_from_flathub
-get_started/install_from_pypi
-get_started/install_from_docker.md
+getting_started/whatis
+Installation <get_started/installation>
 ```
 
 ```{raw} latex
