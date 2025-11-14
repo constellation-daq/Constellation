@@ -84,7 +84,7 @@ toml::time constellation::controller::to_toml_time(const std::chrono::system_clo
 // NOLINTBEGIN(misc-no-recursion)
 Dictionary constellation::controller::parse_toml_table(const std::string& key, const toml::table& table) {
     Dictionary dictionary {};
-    const auto key_prefix = key + ".";
+    const auto key_prefix = key + '.';
     table.for_each([&dictionary, &key_prefix](const toml::key& toml_key, auto&& value) {
         const auto toml_key_lc = transform(toml_key.str(), ::tolower);
         const auto [it, inserted] = dictionary.try_emplace(

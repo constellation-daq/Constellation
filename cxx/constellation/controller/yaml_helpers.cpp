@@ -43,7 +43,7 @@ std::string constellation::controller::parse_yaml_key(const YAML::detail::iterat
 // NOLINTBEGIN(misc-no-recursion)
 Dictionary constellation::controller::parse_yaml_map(const std::string& key, const YAML::Node& node) {
     Dictionary dictionary {};
-    const auto key_prefix = key + ".";
+    const auto key_prefix = key + '.';
     for(const auto& sub_node : node) {
         const auto yaml_key_lc = transform(parse_yaml_key(sub_node), ::tolower);
         const auto [it, inserted] =

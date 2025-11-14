@@ -189,7 +189,7 @@ std::string ControllerConfiguration::getAsTOML() const {
     }
 
     std::stringstream oss;
-    oss << tbl << "\n";
+    oss << tbl << '\n';
 
     return oss.str();
 }
@@ -235,7 +235,7 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                 LOG(config_parser_logger_, DEBUG) << "Found type level for " << quote(type_key_lc);
                 for(const auto& name_node_it : type_node) {
                     const auto name_key_lc = parse_yaml_key(name_node_it);
-                    const auto canonical_name_key_lc = (type_key_lc + ".").append(name_key_lc);
+                    const auto canonical_name_key_lc = (type_key_lc + '.').append(name_key_lc);
                     const auto& name_node = name_node_it.second;
                     if(name_node.IsNull() && name_key_lc != "_default") {
                         // If node is empty, emplace empty satellite config and continue to next node
@@ -312,7 +312,7 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
                 LOG(config_parser_logger_, DEBUG) << "Found type level for " << quote(type_key_lc);
                 type_value.for_each([this, &type_key_lc](const toml::key& name_key, auto&& name_value) {
                     const auto name_key_lc = transform(name_key.str(), ::tolower);
-                    const auto canonical_name_key_lc = (type_key_lc + ".").append(name_key_lc);
+                    const auto canonical_name_key_lc = (type_key_lc + '.').append(name_key_lc);
                     if constexpr(toml::is_table<decltype(name_value)>) {
                         if(name_key_lc == "_default") {
                             // Type default config
@@ -468,7 +468,7 @@ void ControllerConfiguration::overwrite_config(const std::string& key_prefix,
             }
             if(std::holds_alternative<Dictionary>(base_value)) {
                 // If dictionary, overwrite recursively
-                overwrite_config(prefixed_key + ".", base_value.get<Dictionary>(), value.get<Dictionary>());
+                overwrite_config(prefixed_key + '.', base_value.get<Dictionary>(), value.get<Dictionary>());
             } else {
                 // Otherwise overwrite directly (ignore type mismatch)
                 base_value = value;

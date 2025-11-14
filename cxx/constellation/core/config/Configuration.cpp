@@ -77,7 +77,7 @@ void Section::create_section_tree() {
             auto& dict = value.get<Dictionary>();
 
             // Create and store new nested configuration section
-            const auto sub_prefix = prefix_ + key + ".";
+            const auto sub_prefix = prefix_ + key + '.';
             section_tree_.try_emplace(key, sub_prefix, &dict);
         }
     }

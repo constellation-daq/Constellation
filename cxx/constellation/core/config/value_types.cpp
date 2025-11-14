@@ -113,18 +113,18 @@ void Scalar::msgpack_unpack(const msgpack::object& msgpack_object) {
 // --- Array ---
 
 std::string Array::to_string() const {
-    return "[" +
+    return '[' +
            std::visit(
                [](const auto& arg) -> std::string {
                    using T = std::decay_t<decltype(arg)>;
                    if constexpr(std::same_as<T, std::monostate>) {
                        return "";
                    } else {
-                       return " " + utils::range_to_string(arg) + " ";
+                       return ' ' + utils::range_to_string(arg) + ' ';
                    }
                },
                *this) +
-           "]";
+           ']';
 }
 
 std::string Array::demangle() const {
@@ -214,9 +214,9 @@ void Array::msgpack_unpack(const msgpack::object& msgpack_object) {
 std::string Dictionary::to_string() const {
     std::string out = "{";
     if(!empty()) {
-        out += " " + range_to_string(*this, [](const auto& p) { return p.first + ": " + p.second.to_string(); }) + " ";
+        out += ' ' + range_to_string(*this, [](const auto& p) { return p.first + ": " + p.second.to_string(); }) + ' ';
     }
-    out += "}";
+    out += '}';
     return out;
 }
 
@@ -335,9 +335,9 @@ Composite Composite::disassemble(const PayloadBuffer& message) {
 std::string CompositeList::to_string() const {
     std::string out = "[";
     if(!empty()) {
-        out += " " + range_to_string(*this, [](const auto& e) { return e.to_string(); }) + " ";
+        out += ' ' + range_to_string(*this, [](const auto& e) { return e.to_string(); }) + ' ';
     }
-    out += "]";
+    out += ']';
     return out;
 }
 

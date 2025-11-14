@@ -112,7 +112,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 }
 
 std::string BaseSatellite::getCanonicalName() const {
-    return to_string(satellite_type_) + "." + to_string(satellite_name_);
+    return to_string(satellite_type_) + '.' + to_string(satellite_name_);
 }
 
 void BaseSatellite::join() {
