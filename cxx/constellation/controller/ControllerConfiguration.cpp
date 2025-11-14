@@ -237,8 +237,12 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                     const auto name_key_lc = parse_yaml_key(name_node_it);
                     const auto canonical_name_key_lc = (type_key_lc + ".").append(name_key_lc);
                     const auto& name_node = name_node_it.second;
-                    if(name_node.IsNull()) {
-                        // Skip if empty
+                    if(name_node.IsNull() && name_key_lc != "_default") {
+                        // If node is empty, emplace empty satellite config and continue to next node
+                        const auto [it, inserted] = satellite_configs_.try_emplace(canonical_name_key_lc);
+                        if(!inserted) {
+                            throw ConfigKeyError(canonical_name_key_lc, "key defined twice");
+                        }
                         continue;
                     }
                     if(name_node.IsMap()) {

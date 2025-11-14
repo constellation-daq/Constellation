@@ -220,6 +220,15 @@ TEST_CASE("Invalid YAML two satellite configs", "[controller]") {
                            Message("Error while parsing key `type.name` in configuration: key defined twice"));
 }
 
+TEST_CASE("Invalid YAML two empty satellite configs", "[controller]") {
+    constexpr std::string_view config = "type:\n"
+                                        "  name:\n"
+                                        "  NAME:\n";
+    REQUIRE_THROWS_MATCHES(ControllerConfiguration(config, ControllerConfiguration::FileType::YAML),
+                           ConfigKeyError,
+                           Message("Error while parsing key `type.name` in configuration: key defined twice"));
+}
+
 TEST_CASE("Invalid YAML dict key defined twice", "[controller]") {
     constexpr std::string_view config = "_default:\n"
                                         "  key: 0\n"
@@ -381,6 +390,9 @@ TEST_CASE("Valid TOML file", "[controller]") {
     REQUIRE(d2_config.at("satellite").get<bool>() == true);
     REQUIRE_THAT(d2_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", 2}})));
+
+    // Check that empty satellite configurations are registered
+    REQUIRE(config.hasSatelliteConfiguration("Dummy3.D3"));
 }
 
 TEST_CASE("Valid YAML file", "[controller]") {
@@ -430,6 +442,9 @@ TEST_CASE("Valid YAML file", "[controller]") {
     REQUIRE(d2_config.at("satellite").get<bool>() == true);
     REQUIRE_THAT(d2_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", 2}})));
+
+    // Check that empty satellite configurations are registered
+    REQUIRE(config.hasSatelliteConfiguration("Dummy3.D3"));
 }
 
 // --- Configuration emitting ---
