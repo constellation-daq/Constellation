@@ -248,6 +248,13 @@ TEST_CASE("Configuration section getters", "[core][core::config]") {
                            InvalidTypeError,
                            Message("Could not convert value of type `" + demangle<std::int64_t>() +
                                    "` to type `Section` for key `sub_2.sub.sub.int`"));
+    // Optional getter
+    const auto config_subdict_1_opt = config.getOptionalSection("sub_1");
+    REQUIRE(config_subdict_1_opt.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE(config_subdict_1_opt.value().get().get<int>("int") == 4);
+    const auto config_ne_opt = config.getOptionalSection("non_existant");
+    REQUIRE_FALSE(config_ne_opt.has_value());
 }
 
 TEST_CASE("Configuration section keys", "[core][core::config]") {

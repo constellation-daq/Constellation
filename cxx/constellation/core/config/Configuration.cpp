@@ -13,8 +13,10 @@
 #include <cctype>
 #include <cstddef>
 #include <filesystem>
+#include <functional>
 #include <initializer_list>
 #include <iterator>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -172,6 +174,14 @@ const Section& Section::getSection(std::string_view key) const {
             throw InvalidTypeError(prefix_ + utils::to_string(key), it->second.demangle(), "Section");
         }
         throw MissingKeyError(prefix_ + utils::to_string(key));
+    }
+}
+
+std::optional<std::reference_wrapper<const Section>> Section::getOptionalSection(std::string_view key) const {
+    try {
+        return getSection(key);
+    } catch(const MissingKeyError&) {
+        return std::nullopt;
     }
 }
 

@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <initializer_list>
 #include <map>
 #include <optional>
@@ -261,6 +262,18 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value is not a section
          */
         CNSTLN_API const Section& getSection(std::string_view key) const;
+
+        /**
+         * @brief Get an optional nested configuration section
+         *
+         * @note Since optionals of references are not allowed, this returns an optional of a reference wrapper. In get the
+         *       reference to the configuration section from the reference wrapper the `.get()` method has to be used.
+         *
+         * @param key Key to get section of
+         * @return Optional with nested configuration section contained by the key if available
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API std::optional<std::reference_wrapper<const Section>> getOptionalSection(std::string_view key) const;
 
         /**
          * @brief Get the keys of the configuration section
