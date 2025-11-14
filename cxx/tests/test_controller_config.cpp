@@ -364,6 +364,7 @@ TEST_CASE("Valid TOML file", "[controller]") {
     REQUIRE(global_config.at("empty_array").get<std::vector<int>>().empty());
     REQUIRE_THAT(global_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", -1}})));
+    REQUIRE(global_config.at("empty_dict").get<Dictionary>().empty());
 
     // Global + Type
     const auto type_config = config.getSatelliteConfiguration("Dummy.NotASatellite");
@@ -416,6 +417,7 @@ TEST_CASE("Valid YAML file", "[controller]") {
     REQUIRE(global_config.at("empty_array").get<std::vector<int>>().empty());
     REQUIRE_THAT(global_config.at("dict").get<Dictionary>().at("subdict").get<Dictionary>().getMap<int>(),
                  RangeEquals(std::map<std::string, int>({{"key", -1}})));
+    REQUIRE(global_config.at("empty_dict").get<Dictionary>().empty());
 
     // Global + Type
     const auto type_config = config.getSatelliteConfiguration("Dummy.NotASatellite");

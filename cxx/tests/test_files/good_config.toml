@@ -19,6 +19,8 @@ empty_array = []
 [_default.dict.subdict]
 key = -1
 
+[_default.empty_dict]
+
 [Dummy._default]
 string = "type"
 type = "Dummy"

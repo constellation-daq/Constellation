@@ -18,6 +18,7 @@ _default:
   dict:
     subdict:
       key: -1
+  empty_dict:
 
 Dummy:
   _default:

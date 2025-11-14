@@ -83,6 +83,11 @@ namespace {
 
 // NOLINTBEGIN(misc-no-recursion)
 Composite constellation::controller::parse_yaml_value(const std::string& key, const YAML::Node& node) {
+    if(node.IsNull()) {
+        // Interpret empty node as empty dictionary
+        return Dictionary();
+    }
+
     if(node.IsScalar()) {
         bool rv_bool {};
         if(YAML::convert<bool>::decode(node, rv_bool)) {
