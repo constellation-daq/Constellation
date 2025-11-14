@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <initializer_list>
 #include <map>
@@ -274,6 +275,28 @@ namespace constellation::config {
          * @return String representation of the dictionary
          */
         CNSTLN_API std::string to_string() const;
+
+        // Key filter function signature (if return value is true then key is accepted)
+        using key_filter = bool(std::string_view key);
+
+        /**
+         * @brief Default key filter accepting all keys
+         *
+         * @return True for all keys
+         */
+        static bool default_key_filter(std::string_view /*key*/) { return true; } // NOLINT(readability-identifier-naming)
+
+        /**
+         * @brief Format dictionary to YAML-style string
+         *
+         * @param newline_prefix If the string should be prefix with a newline if not empty
+         * @param filter Key filter function to only include certain keys
+         * @param indent Indent to prefix keys with (always increased by 2 for nested dictionaries)
+         * @return String representation of the dictionary in YAML-style
+         */
+        CNSTLN_API std::string format(bool newline_prefix,
+                                      key_filter* filter = default_key_filter,
+                                      std::size_t indent = 2) const;
 
         /**
          * @brief Demangle type

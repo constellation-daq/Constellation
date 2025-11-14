@@ -200,47 +200,6 @@ std::string Section::getText(std::string_view key) const {
     }
 }
 
-namespace {
-    // NOLINTNEXTLINE(misc-no-recursion)
-    inline std::string dictionary_to_string(const Dictionary& dictionary,
-                                            std::size_t indent,
-                                            Section::ConfigurationGroup configuration_group) {
-        std::string out {};
-        const auto indent_str = std::string(indent, ' ');
-        for(const auto& [key, value] : dictionary) {
-
-            // Filter keys if requested
-            const auto key_internal = key.starts_with('_');
-            if((key_internal && configuration_group == Section::ConfigurationGroup::USER) ||
-               (!key_internal && configuration_group == Section::ConfigurationGroup::INTERNAL)) {
-                continue;
-            }
-
-            if(std::holds_alternative<Dictionary>(value)) {
-                // If dictionary, increase indent and call recursively
-                const auto& new_dictionary = value.get<Dictionary>();
-                out += indent_str + key + ":\n";
-                out += dictionary_to_string(new_dictionary, indent + 2, configuration_group);
-            } else {
-                // Otherwise, add directly
-                out += indent_str + key + ": " + value.to_string() + "\n";
-            }
-        }
-        return out;
-    }
-} // namespace
-
-std::string Section::to_string(ConfigurationGroup configuration_group) const {
-    auto out = dictionary_to_string(*dictionary_, 2, configuration_group);
-
-    // Remove last newline
-    if(!out.empty()) {
-        out.resize(out.size() - 1);
-    }
-
-    return out;
-}
-
 // NOLINTNEXTLINE(misc-no-recursion)
 std::vector<std::string> Section::removeUnusedEntries() {
     std::vector<std::string> unused_keys {};
@@ -362,6 +321,22 @@ void Configuration::swap(Configuration& other) noexcept {
     prefix_.swap(other.prefix_);
     used_keys_.swap(other.used_keys_);
     section_tree_.swap(other.section_tree_);
+}
+
+std::string Configuration::to_string(ConfigurationGroup configuration_group) const {
+    Dictionary::key_filter* key_filter = Dictionary::default_key_filter;
+    switch(configuration_group) {
+    case USER: {
+        key_filter = [](std::string_view key) { return !key.starts_with('_'); };
+        break;
+    }
+    case INTERNAL: {
+        key_filter = [](std::string_view key) { return key.starts_with('_'); };
+        break;
+    }
+    default: break;
+    }
+    return root_dictionary_.format(true, key_filter);
 }
 
 PayloadBuffer Configuration::assemble() const {

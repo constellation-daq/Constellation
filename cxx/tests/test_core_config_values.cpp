@@ -427,6 +427,32 @@ TEST_CASE("Dictionary string conversion", "[core][core::config]") {
         Equals("{ array: [ 1, 2 ], bool: true, dict: { nested: true }, float: 1.5, int: 1234, string: hello world }"));
 }
 
+TEST_CASE("Dictionary format", "[core][core::config]") {
+    Dictionary dict {};
+    REQUIRE(dict.format(true).empty());
+    dict["bool"] = true;
+    REQUIRE_THAT(dict.format(true), Equals("\n  bool: true"));
+    dict["int"] = 1234;
+    dict["float"] = 1.5;
+    dict["string"] = "hello world";
+    dict["array"] = Array({1, 2});
+    dict["filtered"] = 42;
+    Dictionary subdict {};
+    subdict["nested"] = true;
+    subdict["empty_dict"] = Dictionary();
+    dict["dict"] = std::move(subdict);
+    REQUIRE_THAT(dict.format(
+                     false, [](std::string_view key) { return key != "filtered"; }, 0),
+                 Equals("array: [ 1, 2 ]\n"
+                        "bool: true\n"
+                        "dict:\n"
+                        "  empty_dict:\n"
+                        "  nested: true\n"
+                        "float: 1.5\n"
+                        "int: 1234\n"
+                        "string: hello world"));
+}
+
 TEST_CASE("Dictionary type demangling", "[core][core::config]") {
     const Dictionary dict {};
     REQUIRE_THAT(dict.demangle(), Equals("Dictionary"));

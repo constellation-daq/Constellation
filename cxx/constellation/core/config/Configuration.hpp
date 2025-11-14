@@ -36,17 +36,6 @@ namespace constellation::config {
      */
     class Section {
     public:
-        enum class ConfigurationGroup : std::uint8_t {
-            /** All configuration key-value pairs, both user and internal */
-            ALL,
-            /** Configuration key-value pairs intended for framework users */
-            USER,
-            /** Configuration key-value pairs intended for internal framework usage */
-            INTERNAL,
-        };
-        using enum ConfigurationGroup;
-
-    public:
         /**
          * @brief Construct a new configuration section
          *
@@ -312,14 +301,6 @@ namespace constellation::config {
         bool empty() const { return dictionary_->empty(); }
 
         /**
-         * @brief Convert configuration section to a string
-         *
-         * @param configuration_group Group of configuration key-value pairs to include
-         * @return String containing the configuration section
-         */
-        CNSTLN_API std::string to_string(ConfigurationGroup configuration_group = ALL) const;
-
-        /**
          * @brief Remove unused entries from the configuration section
          *
          * @return List of unused keys
@@ -385,6 +366,17 @@ namespace constellation::config {
      */
     class Configuration : private RootDictionaryHolder, public Section {
     public:
+        enum class ConfigurationGroup : std::uint8_t {
+            /** All configuration key-value pairs, both user and internal */
+            ALL,
+            /** Configuration key-value pairs intended for framework users */
+            USER,
+            /** Configuration key-value pairs intended for internal framework usage */
+            INTERNAL,
+        };
+        using enum ConfigurationGroup;
+
+    public:
         /**
          * @brief Construct an empty configuration
          */
@@ -415,6 +407,14 @@ namespace constellation::config {
         void swap(Configuration& other) noexcept;
 
         // TODO: as flat dictionary? useful e.g. for Qt printing
+
+        /**
+         * @brief Convert configuration to a YAML-like string
+         *
+         * @param configuration_group Group of configuration key-value pairs to include
+         * @return String containing the configuration
+         */
+        CNSTLN_API std::string to_string(ConfigurationGroup configuration_group = ALL) const;
 
         /** Assemble via msgpack to message payload */
         CNSTLN_API message::PayloadBuffer assemble() const;

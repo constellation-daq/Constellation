@@ -368,7 +368,8 @@ TEST_CASE("Configuration string conversion", "[core][core::config]") {
     dict["sub_2"] = std::move(subdict_2);
     const Configuration config {std::move(dict)};
     REQUIRE_THAT(config.to_string(Configuration::ALL),
-                 Equals("  _internal: 1024\n"
+                 Equals("\n"
+                        "  _internal: 1024\n"
                         "  sub_1:\n"
                         "    array: [ 1, 2, 3, 4 ]\n"
                         "  sub_2:\n"
@@ -377,14 +378,17 @@ TEST_CASE("Configuration string conversion", "[core][core::config]") {
                         "      string: hello world\n"
                         "  user: 3.14"));
     REQUIRE_THAT(config.to_string(Configuration::USER),
-                 Equals("  sub_1:\n"
+                 Equals("\n"
+                        "  sub_1:\n"
                         "    array: [ 1, 2, 3, 4 ]\n"
                         "  sub_2:\n"
                         "    enum: A\n"
                         "    sub:\n"
                         "      string: hello world\n"
                         "  user: 3.14"));
-    REQUIRE_THAT(config.to_string(Configuration::INTERNAL), Equals("  _internal: 1024"));
+    REQUIRE_THAT(config.to_string(Configuration::INTERNAL),
+                 Equals("\n"
+                        "  _internal: 1024"));
 }
 
 TEST_CASE("Configuration unused keys", "[core][core::config]") {

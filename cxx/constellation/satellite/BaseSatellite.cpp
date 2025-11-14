@@ -475,8 +475,8 @@ std::size_t BaseSatellite::store_config(Configuration&& config) {
     config_ = std::move(config);
 
     // Log config
-    LOG(logger_, INFO) << "Configuration:\n" << config_.to_string(Configuration::USER);
-    LOG(logger_, DEBUG) << "Internal configuration:\n" << config_.to_string(Configuration::INTERNAL);
+    LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
+    LOG(logger_, DEBUG) << "Internal configuration:" << config_.to_string(Configuration::INTERNAL);
 
     return unused_keys.size();
 }
@@ -493,8 +493,8 @@ std::size_t BaseSatellite::update_config(Configuration& partial_config) {
     config_.update(partial_config);
 
     // Log config
-    LOG(logger_, INFO) << "Configuration:\n" << config_.to_string(Configuration::USER);
-    LOG(logger_, DEBUG) << "Internal configuration:\n" << config_.to_string(Configuration::INTERNAL);
+    LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
+    LOG(logger_, DEBUG) << "Internal configuration:" << config_.to_string(Configuration::INTERNAL);
 
     return unused_keys.size();
 }
