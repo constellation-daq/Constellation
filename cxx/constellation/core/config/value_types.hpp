@@ -270,6 +270,13 @@ namespace constellation::config {
         template <typename T> std::map<std::string, T> getMap() const;
 
         /**
+         * @brief Get flattened dictionary
+         *
+         * @return Flattened dictionary
+         */
+        CNSTLN_API Dictionary getFlattened() const;
+
+        /**
          * @brief Convert dictionary to string representation
          *
          * @return String representation of the dictionary

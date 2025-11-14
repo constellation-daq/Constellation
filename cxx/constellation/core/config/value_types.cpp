@@ -211,6 +211,26 @@ void Array::msgpack_unpack(const msgpack::object& msgpack_object) {
 
 // --- Dictionary ---
 
+namespace {
+    // NOLINTNEXTLINE(misc-no-recursion)
+    void flatten_dictionary(const std::string& prefix, const Dictionary& input_dict, Dictionary& output_dict) {
+        for(const auto& [key, value] : input_dict) {
+            const auto prefixed_key = prefix + key;
+            if(std::holds_alternative<Dictionary>(value) && !value.get<Dictionary>().empty()) {
+                flatten_dictionary(prefixed_key + '.', value.get<Dictionary>(), output_dict);
+            } else {
+                output_dict.emplace(prefixed_key, value);
+            }
+        }
+    }
+} // namespace
+
+Dictionary Dictionary::getFlattened() const {
+    Dictionary out {};
+    flatten_dictionary("", *this, out);
+    return out;
+}
+
 std::string Dictionary::to_string() const {
     std::string out = "{";
     if(!empty()) {

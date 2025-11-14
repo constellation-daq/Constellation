@@ -411,6 +411,25 @@ TEST_CASE("Dictionary operators", "[core][core::config]") {
     REQUIRE_FALSE(dict == std::map<std::string, int>({{"hello", 1}}));
 }
 
+TEST_CASE("Dictionary flattened", "[core][core::config]") {
+    Dictionary dict {};
+    dict["sub_1"] = Dictionary();
+    Dictionary subdict {};
+    subdict["int"] = 1024;
+    Dictionary subsubdict {};
+    subsubdict["int"] = 2048;
+    subsubdict["sub_4"] = Dictionary();
+    subdict["sub_3"] = std::move(subsubdict);
+    dict["sub_2"] = std::move(subdict);
+    const auto flattened_dict = dict.getFlattened();
+    REQUIRE(flattened_dict.size() == 4);
+    REQUIRE(flattened_dict.at("sub_1").get<Dictionary>().empty());
+    REQUIRE_FALSE(flattened_dict.contains("sub_2"));
+    REQUIRE(flattened_dict.at("sub_2.int").get<int>() == 1024);
+    REQUIRE(flattened_dict.at("sub_2.sub_3.int").get<int>() == 2048);
+    REQUIRE(flattened_dict.at("sub_2.sub_3.sub_4").get<Dictionary>().empty());
+}
+
 TEST_CASE("Dictionary string conversion", "[core][core::config]") {
     Dictionary dict {};
     REQUIRE_THAT(dict.to_string(), Equals("{}"));

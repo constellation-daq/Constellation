@@ -406,8 +406,6 @@ namespace constellation::config {
         /** Swap function */
         void swap(Configuration& other) noexcept;
 
-        // TODO: as flat dictionary? useful e.g. for Qt printing
-
         /**
          * @brief Convert configuration to a YAML-like string
          *
