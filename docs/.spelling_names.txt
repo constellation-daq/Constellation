@@ -34,3 +34,6 @@ systemd
 polkit
 Homebrew
 mA
+mbar
+Torr
+hPascal
