@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "Keithley"
 description: "Satellite controlling a Keithley power supply"
+category: "Power Supplies"
 ---
 
 ## Description

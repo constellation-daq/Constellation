@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "LeCroy"
 description: "Satellite controlling a LeCroy oscilloscope using the LeCrunch library"
+category: "Oscilloscopes"
 ---
 
 ## Description
