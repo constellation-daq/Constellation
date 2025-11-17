@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "CaenHV"
 description: "Satellite controlling a CAEN high-voltage crate such as the SY5527 and its modules"
+category: "Power Supplies"
 ---
 
 ## Description
