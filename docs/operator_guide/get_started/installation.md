@@ -28,7 +28,14 @@ environment just as any other application installed through the package manager 
 After installing the Constellation Flatpak, the system requires a restart in order for Constellation to show up in the application search of the desktop environment.
 ```
 
-### Usage Notes
+### Accessing the File System
+
+Flatpak applications run in a sandbox with limited access permissions to the file system. By default, Constellation can
+only read and write to data in the user's home folder, which means that writing to `/data` with data receivers will fail.
+However, file system permissions for specific paths like `/data` can be added to the permission set of the installed
+Constellation Flatpak using e.g. the [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) tool.
+
+### Running Satellites
 
 Flatpak is mainly designed for the distribution of graphical user interfaces, not necessarily command-line tools. They can,
 hwoever, still be started, albeit only from the command line and not the desktop environment, In order to start a satellite,
@@ -42,14 +49,9 @@ flatpak run de.desy.constellation -t Sputnik -n Flatpak -g edda
 Currently, only C++ satellites are available on Flathub.
 ```
 
-Flatpak applications run in a sandbox with limited permissions to the file system. By default, Constellation can
-only read and write to data in the user's home folder, which means that writing to `/data` with data receivers will fail.
-However, file system permissions for specific paths like `/data` can be added to the permission set of the installed
-Constellation Flatpak using e.g. the [Flatseal](https://flathub.org/apps/com.github.tchx84.Flatseal) tool.
-
 It should be noted that a Flatpak is not suited for application development, for which an
-[installation from source](../../application_development/intro/install_from_source.md) is required. Information on how to build the Constellation Flatpak from
-source can be found in the [framework reference](../../framework_reference/flatpak.md).
+[installation from source](../../application_development/intro/install_from_source.md) is required. Information on how to
+build the Constellation Flatpak from source can be found in the [framework reference](../../framework_reference/flatpak.md).
 
 
 ## Installing from PyPI
@@ -77,21 +79,26 @@ Currently, only the Python version of the framework is available on PyPI.
 
 ## Running Satellites with Docker
 
-Constellation is available as Docker image, allowing to easily run satellites in a container. The images contains all
-framework satellites. Graphical user interfaces are not available in the image.
+Constellation is available as Docker image, which allows to directly start and run satellites in containers. The Docker
+image provides all framework satellites hosted in the main Constellation Repository. Graphical user interfaces are not
+available in the image due to limitations of Docker.
 
 ```{hint}
-It is also possible to use [podman](https://podman.io/docs/installation) instead of docker, which is easier to install.
+In some cases it might be preferable to use the fully Docker-compatible [podman](https://podman.io/docs/installation)
+since it is easier to install on many distributions.
 ```
 
-A satellite can be started via:
+A containerized satellite can be be directly started from the command line by running the following command:
 
 ```sh
-docker run --network host -it gitlab.desy.de:5555/constellation/constellation/constellation:latest
+docker run --network host -it gitlab.desy.de:5555/constellation/constellation/constellation:latest -t <type> -n <name> -g <group>
 ```
 
+Here, the `<type>`, `<name>` and `<group>` parameters need to be replaced with the desired satellite type, satellite name and Constellation group to connect to, respectively.
+
 ```{attention}
-Without `--network host` network discovery does not work.
+The `--network host` parameter passed to Docker is of paramount importance since the satellite will otherwise only be able to reach the
+Docker-internal network and cannot discover or communicate with other satellites in the group.
 ```
 
 In the [container registry](https://gitlab.desy.de/constellation/constellation/container_registry), two images are available:
