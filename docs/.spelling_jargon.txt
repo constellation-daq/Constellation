@@ -82,3 +82,5 @@ Microcontrollers
 microcontrollers
 linearized
 ROC
+Underrange
+Overrange
