@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC-BY-4.0 OR EUPL-1.2
 title: "LakeShore218"
 description: "Satellite controlling a LakeShore Model 218 temperature monitor"
+category: "Environment Sensors"
 ---
 
 ## Description
