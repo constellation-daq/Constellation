@@ -591,12 +591,12 @@ format:markdownlint:
   variables:
     DOC_EXTERNAL_SATELLITES: "false"
   rules:
-    - when: always
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       changes:
         - docs/satellites/external_satellites.json
       variables:
         DOC_EXTERNAL_SATELLITES: "true"
+    - when: always
 
 docs:doxygen:
   extends:
