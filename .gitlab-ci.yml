@@ -630,6 +630,10 @@ docs:html:
     expire_in: 1 week
     reports:
       annotations: "website_preview.json"
+  environment:
+    name: website-preview/$CI_COMMIT_REF_SLUG
+    url: "https://$CI_PROJECT_NAMESPACE.$CI_PAGES_DOMAIN/-/$CI_PROJECT_NAME/-/jobs/$CI_JOB_ID/artifacts/html/index.html"
+    auto_stop_in: 1 week
 
 docs:pdf:
   extends:
