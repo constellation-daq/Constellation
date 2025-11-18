@@ -45,6 +45,8 @@ flags or event configurations:
 * `timestamp_end` (integer): Timestamp of the event end in units of picoseconds. If the tag is available from the
   Constellation message header, the value will be translated to nanoseconds and stored as EUDAQ event timestamp. If the tag
   is not set, `0` will be set as timestamp. This prompts analysis software to use the trigger number instead.
+* `device_number` (integer): If set, the device number of the current EUDAQ event will be set from this, if not set the
+  device number is set to `0`.
 
 Messages from all sending satellites are written into the output file sequentially in the order in which they arrive.
 Output files are stored under the path provided via the `output_path` parameter and are named `data_<run_identifier>.raw`

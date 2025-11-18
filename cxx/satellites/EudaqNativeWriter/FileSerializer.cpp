@@ -103,8 +103,10 @@ void FileSerializer::serialize_header(std::string_view sender_lc,
     write_int<std::uint32_t>(0);
     write_int<std::uint32_t>(flags);
 
-    // Number of devices/streams/planes - seems rarely used
-    write_int<std::uint32_t>(0);
+    // Device/stream/plane number
+    const auto device_number_it = tags.find("device_number");
+    write_int<std::uint32_t>(device_number_it != tags.end() ? device_number_it->second.get<std::uint32_t>()
+                                                            : static_cast<std::uint32_t>(0));
 
     // Run sequence
     write_int(run_sequence_);
