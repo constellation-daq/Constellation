@@ -105,7 +105,10 @@ ninja -C build_cov coverage-html
 :::{tab-item} Python
 :sync: python
 
-TODO
+```sh
+pip install --no-build-isolation -e .[test]
+pytest --force-sugar --cov --cov-report term --cov-report html
+```
 
 :::
 ::::
@@ -143,7 +146,3 @@ If you encounter issue, try running:
 ```sh
 make -C docs clean
 ```
-
-### Adding Blog Posts
-
-TODO
