@@ -46,7 +46,7 @@ Features, protocols and the behavior of individual components may still change.
 ```{toctree}
 :caption: 🚀 Get started
 
-getting_started/whatis
+get_started/whatis
 Installation <get_started/installation>
 ```
 
