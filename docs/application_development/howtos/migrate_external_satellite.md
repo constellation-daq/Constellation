@@ -33,12 +33,12 @@ The following steps need to be followed to add the satellite to the common build
   # Type this satellite identifies as
   satellite_type = 'Example'
 
-  # Source files to be compiled for this satellite
+  # Source files to be compiled
   satellite_sources = files(
     'ExampleSatellite.cpp',
   )
 
-  # Additional dependencies for this satellite
+  # Additional dependencies
   satellite_dependencies = []
 
   # Add [type, sources, dependencies] to build list

@@ -8,7 +8,7 @@ category: "Example Templates"
 
 ## Description
 
-This satellite does very little apart from beeping, just as its [namesake](https://en.wikipedia.org/wiki/Sputnik_1). It mostly serves as demonstrator for the different functionalities of satellites. New satellites may be created by copying and modifying the Sputnik satellite.
+This satellite does little apart from beeping, just as its [namesake](https://en.wikipedia.org/wiki/Sputnik_1). It mostly serves as demonstrator for the different functionalities of satellites. New satellites may be created by copying and modifying the Sputnik satellite.
 
 This section describes the functions of the satellite and all relevant information about the connected hardware as well as its requirements or external software dependencies.
 

@@ -16,7 +16,7 @@ refer to and what it does) and easy to remember (and type).
 
 The name "Constellation" is borrowed from space flight, where satellite constellations operate with relatively large autonomy, transmitting
 data between them, and communicating with a ground control center which issues commands and polices the entire system.
-Consequently, vocabulary from space flight appears at different places in the framework and - hopefully - helps in clarifying
+Consequently, vocabulary from space flight appears at different places in the framework and helps in clarifying
 functionality and intention. Examples are 'satellite', 'payload', 'safe mode', or 'launch'.
 
 Other vocabulary used throughout the framework and this manual originate from data acquisition systems in nuclear and particle

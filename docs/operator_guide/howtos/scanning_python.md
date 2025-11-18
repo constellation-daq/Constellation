@@ -2,7 +2,7 @@
 
 ## Using the IPython Console
 
-The Python Controller of Constellation is a fully-features IPython console. It can be installed with the `cli` component:
+The Python Controller of Constellation is a fully featured IPython console. It can be installed with the `cli` component:
 
 ::::{tab-set}
 :::{tab-item} PyPI

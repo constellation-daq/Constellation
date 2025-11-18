@@ -16,7 +16,7 @@ Several storage options are available and can be selected via the `method` confi
   `rotate_filesize` parameter, a new file is started. After the maximum number of files set by `rotate_max_files` is reached,
   the oldest log file is overwritten. This can be useful to keep only a certain amount of history present.
 * `DAILY` will create a new log file every 24h at the time defined with the `daily_switch` parameter. This method is
-  particularly useful for very long-running Constellations which require preservation of the log history.
+  particularly useful for long-running Constellations which require preservation of the log history.
 * `RUN` will switch to a new log file whenever a new run is started, i.e. when this satellite received the `start` command.
   This can be especially helpful when many runs are recorded and an easy assignment of logs is required.
 

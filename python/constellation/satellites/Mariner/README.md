@@ -8,7 +8,7 @@ category: "Example Templates"
 
 ## Description
 
-This satellite does very little, it mostly serves as demonstrator for the different functionalities of satellites.
+This satellite does little, it mostly serves as demonstrator for the different functionalities of satellites.
 New Python satellites for Constellation may be created by copying and modifying the Mariner satellite.
 
 ## Parameters
