@@ -20,7 +20,7 @@ graphical application installer of the desktop environment or on the command lin
 flatpak install flathub de.desy.constellation
 ```
 
-This installs all graphical user interfaces of Constellation as well as the satellites maintained in the main COnstellation
+This installs all graphical user interfaces of Constellation as well as the satellites maintained in the main Constellation
 repository. The graphical user interfaces such as controllers and listeners show up in the application search of the desktop
 environment just as any other application installed through the package manager of the system.
 
@@ -38,7 +38,7 @@ Constellation Flatpak using e.g. the [Flatseal](https://flathub.org/apps/com.git
 ### Running Satellites
 
 Flatpak is mainly designed for the distribution of graphical user interfaces, not necessarily command-line tools. They can,
-hwoever, still be started, albeit only from the command line and not the desktop environment, In order to start a satellite,
+however, still be started, albeit only from the command line and not the desktop environment, In order to start a satellite,
 the following command can to be used:
 
 ```sh

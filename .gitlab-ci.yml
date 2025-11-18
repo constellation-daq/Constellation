@@ -575,7 +575,7 @@ format:proselint:
       - .python-3.11
     script:
       - pip install proselint
-      - find . -name "*md" -not -path "./build/*" -print0 | xargs -0 proselint check --config .proselint.json
+      - find . -name "*md" -not -path "./build/*" -not -path "./venv/*" -not -path "./subprojects/*" -print0 | xargs -0 proselint check --config .proselint.json
 
 format:markdownlint:
   extends:
