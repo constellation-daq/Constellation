@@ -1,6 +1,6 @@
 # Installing Constellation
 
-Constellation can be installed from a variety of sources, the optimum might differ depending on the application scenario and
+The Constellation core framework can be installed from a variety of sources, the optimum might differ depending on the application scenario and
 the required components. For graphical user interfaces, the
 [Flatpak installation](#installing-as-flatpak-package-from-flathub) is recommended, for the integration into a Python virtual
 environment, the [PyPI package](#installing-from-pypi) can be used, and individual satellites can be started directly using
@@ -88,10 +88,12 @@ In some cases it might be preferable to use the fully Docker-compatible [podman]
 since it is easier to install on many distributions.
 ```
 
-A containerized satellite can be be directly started from the command line by running the following command:
+A containerized satellite can be directly started from the command line by running the following command:
 
 ```sh
-docker run --network host -it gitlab.desy.de:5555/constellation/constellation/constellation:latest -t <type> -n <name> -g <group>
+docker run --network host \
+           -it gitlab.desy.de:5555/constellation/constellation/constellation:latest \
+           -t <type> -n <name> -g <group>
 ```
 
 Here, the `<type>`, `<name>` and `<group>` parameters need to be replaced with the desired satellite type, satellite name and Constellation group to connect to, respectively.
