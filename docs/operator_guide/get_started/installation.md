@@ -56,7 +56,8 @@ build the Constellation Flatpak from source can be found in the [framework refer
 
 ## Installing from PyPI
 
-Constellation is available on [PyPI](https://pypi.org/project/ConstellationDAQ/) and can be installed via `pip` with:
+Constellation is packaged and published on the [Python Package Index (PyPI)](https://pypi.org/project/ConstellationDAQ/) and
+can be installed directly via `pip` with:
 
 ```sh
 pip install ConstellationDAQ
@@ -66,15 +67,17 @@ pip install ConstellationDAQ
 Constellation requires Python 3.11 or newer.
 ```
 
-To install optional components of the framework, you can install those by adding them in squared brackets.
+Optional components of the framework can be installed by appending them to the package name in squared brackets.
 A recommended installation includes the `cli` and `influx` components:
 
 ```sh
 pip install "ConstellationDAQ[cli,influx]"
 ```
 
+A list of available extra components can be found on the project's [PyPI page](https://pypi.org/project/ConstellationDAQ/).
+
 ```{note}
-Currently, only the Python version of the framework is available on PyPI.
+Currently, only the Python version of the framework and the Python satellites are available on PyPI.
 ```
 
 ## Running Satellites with Docker
