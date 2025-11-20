@@ -56,7 +56,7 @@ situation, such as `SUCCESS` when the command was executed successfully, `INVALI
 that is not possible from the current state, or `UNKNOWN` in case the command is not known to the satellite.
 
 The satellite command palette contains a set of standard commands to query properties and initiate state transitions, but can
-be extended by the specific implementation as described in the [Satellite Section](./satellite.md].
+be extended by the specific implementation as described in the [Satellite Section](./satellite].
 
 ### Data Transmission
 

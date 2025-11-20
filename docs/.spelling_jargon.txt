@@ -84,3 +84,4 @@ linearized
 ROC
 Underrange
 Overrange
+quadratically
