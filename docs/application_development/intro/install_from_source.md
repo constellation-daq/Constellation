@@ -10,10 +10,73 @@ git clone https://gitlab.desy.de/constellation/constellation.git
 Constellation has two separate implementations, one in C++ and one in Python. The tabs below discuss the installation
 procedure for the two versions separately, but installing both in parallel on the same machine is possible and encouraged.
 
-::::::{tab-set}
-:::::{tab-item} C++
+## Python Version
 
-## Prerequisites for C++
+### Prerequisites for Python
+
+The Python version of Constellation requires
+
+- Python 3.11 or newer
+- The Python [`venv`](https://docs.python.org/3/library/venv.html) module
+
+The prerequisites can be installed as follows:
+
+::::{tab-set}
+:::{tab-item} Debian/Ubuntu
+
+```sh
+sudo apt install python3 python3-venv
+```
+
+:::
+:::{tab-item} Alma
+
+```sh
+sudo dnf install python3.11
+alias python3=python3.11
+```
+
+:::
+:::{tab-item} Fedora
+
+```sh
+sudo dnf install python3
+```
+
+:::
+:::{tab-item} MacOS
+
+```sh
+brew install python
+```
+
+:::
+::::
+
+### Setting up a Python Virtual Environment
+
+```sh
+python3 -m venv venv
+source venv/bin/activate
+pip install meson-python meson ninja
+```
+
+### Installing the Constellation Package
+
+```sh
+pip install --no-build-isolation --editable .
+```
+
+To install optional components of the framework, you can install those by replacing `.` with `.[component]`.
+A recommended installation includes the `cli` and `influx` components:
+
+```sh
+pip install --no-build-isolation --editable ".[cli,influx]"
+```
+
+## C++ Version
+
+### Prerequisites for C++
 
 The C++ version of Constellation requires:
 
@@ -143,35 +206,29 @@ export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/
 ```
 
 :::
-:::{tab-item} Windows
-
-TODO
-
-:::
 ::::
 
-## Building the C++ Version
+### Building & Installing
 
 ```sh
 meson setup build -Dbuildtype=debugoptimized -Dwerror=false
 meson compile -C build
 ```
 
-This is already it!
-
-## Installing the C++ Version
-
-For some use-cases, like external satellites, Constellation needs to be installed explicitly system-wide after compilation.
-This can be done via:
+For some use-cases, such as externally built satellites, Constellation needs to be installed explicitly system-wide after
+compilation. This can be done via:
 
 ```sh
 meson install -C build
 ```
 
+Alternatively, the Meson Development Environment can be activated for this purpose using `meson devenv -C build`.
+More detailed information can be found in the [Meson documentation](https://mesonbuild.com/Commands.html#devenv).
+
 Details on installing Constellation for developing satellites can be found in the
 [Application Developer Guide](../../application_development/tutorials/templates.md#installing-constellation).
 
-## Build Options
+### Build Options
 
 Build options can be set during the setup via
 
@@ -211,76 +268,3 @@ Relevant build options are:
   Which memory allocator to use (can improve data transmission performance). \
   Possible values are `auto`, `jemalloc`, `mimalloc` and `system`. \
   Defaults to `auto`.
-
-:::::
-:::::{tab-item} Python
-
-## Prerequisites for Python
-
-The Python version of Constellation requires
-
-- Python 3.11 or newer
-- The Python [`venv`](https://docs.python.org/3/library/venv.html) module
-
-The prerequisites can be installed as follows:
-
-::::{tab-set}
-:::{tab-item} Debian/Ubuntu
-
-```sh
-sudo apt install python3 python3-venv
-```
-
-:::
-:::{tab-item} Alma
-
-```sh
-sudo dnf install python3.11
-alias python3=python3.11
-```
-
-:::
-:::{tab-item} Fedora
-
-```sh
-sudo dnf install python3
-```
-
-:::
-:::{tab-item} MacOS
-
-```sh
-brew install python
-```
-
-:::
-:::{tab-item} Windows
-
-TODO
-
-:::
-::::
-
-## Setting up a Python Virtual Environment
-
-```sh
-python3 -m venv venv
-source venv/bin/activate
-pip install meson-python meson ninja
-```
-
-## Installing the Constellation Package
-
-```sh
-pip install --no-build-isolation --editable .
-```
-
-To install optional components of the framework, you can install those by replacing `.` with `.[component]`.
-A recommended installation includes the `cli` and `influx` components:
-
-```sh
-pip install --no-build-isolation --editable ".[cli,influx]"
-```
-
-:::::
-::::::
