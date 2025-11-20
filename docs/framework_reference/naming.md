@@ -55,7 +55,20 @@ adhered to when writing code which eventually should be merged into the main rep
 :::{tab-item} Python
 :sync: py
 
-TODO
+* **General style**:
+  The Python code is expected to follow the guidelines of [PEP 8](https://peps.python.org/pep-0008/) for indentation, line length, imports, and overall layout. Public modules, classes, functions, and methods should be documented with [PEP 257](https://peps.python.org/pep-0257/)-compliant docstrings.
+
+* **Class names**:
+  Class names should follow the `PascalCase` convention and should provide a concise documentation for the class as well as its functions.
+
+* **Function, variables and attributes**:
+  Functions and and variables are to use the `snake_case` naming style. A single leading underscore should be used to indicate non-public methods, e.g. `_parse_string(...)`.
+
+* **Type hints**:
+  Type hints are to be employed for public APIs.
+
+* **Imports**:
+  Absolute imports are to be preferred, ordered by standard library, third-party, and local modules. Wildcard imports should be avoided.
 
 :::
 

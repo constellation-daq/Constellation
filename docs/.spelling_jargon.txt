@@ -85,3 +85,4 @@ ROC
 Underrange
 Overrange
 quadratically
+docstrings
