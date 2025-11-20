@@ -40,12 +40,12 @@ bars indicate times of active heartbeat monitoring of the remote satellite.
 
 ```plantuml
 @startuml
+skinparam ParticipantPadding 50
 note over "Controller" : Controller joins
 "Satellite" <-- "Controller": Subscription
 activate "Controller" #lightblue
 "Satellite" -> "Controller": Heartbeat **[launching]**
 "Satellite" -[#lightcoral]> "Controller": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
-|||
 "Satellite" -> "Controller": Heartbeat **[ORBIT]**
 |||
 "Satellite" -> "Controller": Heartbeat **[ORBIT]**
@@ -63,6 +63,7 @@ deactivate "Controller"
 
 ```plantuml
 @startuml
+skinparam ParticipantPadding 50
 note over "Satellite A" : Satellite joins
 "Satellite A" --> "Satellite B": Subscription
 activate "Satellite A" #lightblue
@@ -71,7 +72,6 @@ activate "Satellite B" #lightblue
 "Satellite A" <- "Satellite B": Heartbeat **[launching]**
 "Satellite A" -> "Satellite B": Heartbeat **[NEW]**
 "Satellite A" <[#lightcoral]- "Satellite B": <font color=lightcoral>Extrasystole</font> **[ORBIT]**
-|||
 "Satellite A" <- "Satellite B": Heartbeat **[ORBIT]**
 "Satellite A" -> "Satellite B": Heartbeat **[NEW]**
 note over "Satellite B" : Satellite departs
@@ -104,7 +104,7 @@ the controller assumes the role of the client.
 skinparam ParticipantPadding 50
 "Satellite A" <-- "Controller": Connect
 "Satellite A" <- "Controller": **REQUEST** get_name
-"Satellite A" -[#lightblue]> "Controller": <font color=lightblue><b>SUCCESS</b></font> Satellite A
+"Satellite A" -[#skyblue]> "Controller": <font color=skyblue><b>SUCCESS</b></font> Satellite A
 |||
 "Satellite A" <- "Controller": **REQUEST** unknown_function
 "Satellite A" -[#lightcoral]> "Controller": <font color=lightcoral><b>UNKNOWN</b></font> Unknown command
@@ -269,11 +269,11 @@ A clean shutdown of services is possible with the `DEPART` beacon which will pro
 @startuml
 skinparam ParticipantPadding 50
 note over "Satellite A" : Satellite joins
-"Satellite A" -> "Satellite B": **OFFER** HEARTBEAT
-"Satellite A" -> "Satellite B": **REQUEST** HEARTBEAT
-"Satellite A" <- "Satellite B": **OFFER** HEARTBEAT
+"Satellite A" -> "Satellite B": **OFFER** [SERVICE]
+"Satellite A" -> "Satellite B": **REQUEST** [SERVICE]
+"Satellite A" <- "Satellite B": **OFFER** [SERVICE]
 note over "Satellite A" : Satellite departs
-"Satellite A" -> "Satellite B": **DEPART** HEARTBEAT
+"Satellite A" -> "Satellite B": **DEPART** [SERVICE]
 @enduml
 ```
 
