@@ -87,7 +87,7 @@ glossary
 ```{toctree}
 :caption: 📖 How-To Guides
 
-howtos/startup_order
+howtos/transition_order
 howtos/setup_influxdb_grafana
 howtos/setup_mattermost_logger
 howtos/scanning_python
