@@ -24,7 +24,7 @@ satellite `Sputnik.Last`, the condition can only be configured with `Sputnik.Las
 
   ```toml
   [Sputnik.Last]
-  _require_starting_after = ["SPutnik.First"]
+  _require_starting_after = ["Sputnik.First"]
   ```
 
 ## Configuring Conditional Transitions
@@ -84,7 +84,7 @@ follow suit.
 ```toml
 [Sputnik.A]
 _require_initializing_after = ["Sputnik.B"]
-_require_launching_after = ["Sputnik.C"]
+_require_launching_after = ["Sputnik.B", "Sputnik.C"]
 _require_starting_after = ["Sputnik.B"]
 
 [Sputnik.B]
@@ -98,7 +98,7 @@ launch_delay = 3
 **Observed effect:** Initialization of satellite `Sputnik.A` is allowed only after `Sputnik.B` has completed initialization.
 Since `Sputnik.B` progresses through this state without delay, the transition of `Sputnik.A` happens swiftly.
 Launching of `Sputnik.A` is completed only after `Sputnik.C` has reached the {bdg-secondary}`ORBIT` state.
-Starting of `Sputnik.A` is completed only after `Sputnik.B` has reached the {bdg-secondary}`RUN`.
+Starting of `Sputnik.A` is completed only after `Sputnik.B` has reached the {bdg-secondary}`RUN` state.
 
 ### Successive Shutdown
 
@@ -113,7 +113,6 @@ _require_landing_after = ["Sputnik.Main"]
 [Sputnik.Worker2]
 _require_stopping_after = ["Sputnik.Worker1"]
 _require_landing_after = ["Sputnik.Worker1"]
-
 ```
 
 **Observed effect:** Both in {bdg-secondary}`stopping` and {bdg-secondary}`landing`, the order of `Sputnik.Main`, then `Sputnik.Worker1` and finally `Sputnik.Worker2` is obeyed.
