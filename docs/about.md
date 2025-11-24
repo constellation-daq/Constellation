@@ -12,9 +12,18 @@ Constellation is hosted at and mainly developed by [Deutsches Elektronen-Synchro
 
 A list of all authors and contributors can be found in the [AUTHORS.md file](https://gitlab.desy.de/constellation/constellation/-/blob/main/AUTHORS.md) in the software repository.
 
-The software is released as open source software under the terms of the [European Union Public License 1.2](https://gitlab.desy.de/constellation/constellation/-/blob/main/LICENSE), this website and the documentation are distributed under the [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license.
-
 The development of Constellation is coordinated through the *EDDA (Exchange on & Development of Data Acquisitions)* Collaboration. Events, workshops and new releases are announced via the [EDDA mailing list](https://lists.desy.de/sympa/info/edda).
+
+## Software License
+
+The software is released as open source software under the terms of the [European Union Public License 1.2](https://gitlab.desy.de/constellation/constellation/-/blob/main/LICENSE). The authors wish to emphasize the interoperability of the license, and hereby declare their intention to choose this license so that:
+
+- all modifications and extensions of the Constellation framework must be made available under the same or a compatible license, such as the LGPL.
+- software that links parts of the Constellation framework or the Constellation libraries, or connects to components of the Constellation framework via a network, can be implemented under any license, including proprietary licenses.
+
+More information in the intent of the European Union Public License can be found on the [website of the European Commission](https://interoperable-europe.ec.europa.eu/collection/eupl/introduction-eupl-licence).
+
+This website and the documentation are distributed under the [Creative Commons CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) license.
 
 ## Citing Constellation
 

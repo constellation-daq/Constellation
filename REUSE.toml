@@ -46,6 +46,7 @@ path = [
   "cxx/listeners/Observatory/de.desy.constellation.observatory.desktop",
   "cxx/listeners/TelemetryConsole/de.desy.constellation.telemetryconsole.desktop",
   "python/constellation/core/version_code_name",
+  ".proselint.json",
 ]
 SPDX-FileCopyrightText = "DESY and the Constellation authors"
 SPDX-License-Identifier = "CC0-1.0"

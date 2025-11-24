@@ -47,7 +47,7 @@ if __name__ == "__main__":
 ```
 
 Most code so far deals with argument parsing and start-up, while the actual satellite does not implement any extra
-functionality. When saving the above code to a file `tutorial.py`, this satellite can already be started and operated though!
+functionality. When saving the above code to a file `tutorial.py`, this satellite can already be started and operated though.
 
 ```sh
 python3 tutorial.py --help

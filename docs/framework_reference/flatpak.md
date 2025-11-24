@@ -4,7 +4,7 @@ Constellation can be built and distributed as [Flatpak](https://flatpak.org/). T
 installation of Meson and Flatpak to build and makes it easy to distribute Constellation to the users.
 
 Information on how to start and run the Constellation Flatpak can be found in the
-[operator guide](../operator_guide/get_started/install_from_flathub.md#usage-notes).
+[operator guide](../operator_guide/get_started/installation.md#installing-as-flatpak-package-from-flathub).
 
 ## Setting up Flatpak
 

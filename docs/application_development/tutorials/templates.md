@@ -51,7 +51,7 @@ Before committing the changes, it is recommended to install the provided pre-com
 ## Installing Constellation
 
 ```{seealso}
-The installation instructions in the [operator guide](../../operator_guide/get_started/install_from_source.md) can be
+The installation instructions in the [operator guide](../intro/install_from_source.md) can be
 consulted to install build dependencies such as Meson or Python's `venv` module.
 ```
 

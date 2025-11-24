@@ -3,6 +3,7 @@ Grafana
 Adenium
 Flathub
 Flatpak
+Flatpaks
 Doxygen
 zeroconf
 avahi

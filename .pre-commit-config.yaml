@@ -72,3 +72,10 @@ repos:
     rev: v6.2.0
     hooks:
       - id: reuse-lint-file
+
+  - repo: https://github.com/amperser/proselint
+    rev: v0.16.0
+    hooks:
+      - id: proselint
+        types: [file, markdown]
+        args: ["check", "--config", ".proselint.json"]

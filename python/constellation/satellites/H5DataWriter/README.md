@@ -45,17 +45,22 @@ sudo apt install libhdf5-dev
 :::
 :::{tab-item} ALMA/Fedora
 
-TODO
+```sh
+sudo dnf install epel-release
+sudo dnf install hdf5-devel
+```
 
 :::
 :::{tab-item} MacOS
 
-TODO
+```sh
+brew install hdf5
+```
 
 :::
 :::{tab-item} Windows
 
-TODO
+A description how to install HDF5 and the development headers on Windows is provided on [the HDF5 Group website](https://www.hdfgroup.org/download-hdf5/).
 
 :::
 ::::

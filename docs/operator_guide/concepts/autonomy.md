@@ -34,7 +34,7 @@ Satellites can convey information to the Constellation by a number of possibilit
 * The satellite transmits its state through heartbeat messages
 * The satellite can depart by informing the Constellation about the unavailability of its services
 
-Roles group the actions taken by the Constellation in each of these cases into an easily-configurable parameter. The role
+Roles group the actions taken by the Constellation in each of these cases into an easily configurable parameter. The role
 is configured for the *sending* satellite and is transmitted via heartbeat message flags to the receivers throughout the
 Constellation. The following roles exist and can be configured through the `_role` parameter:
 

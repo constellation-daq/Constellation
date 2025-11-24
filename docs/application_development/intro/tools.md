@@ -2,7 +2,7 @@
 
 In the following, some tools that come in handy for the development of satellites for Constellation of the framework itself
 are described. These tools are pre-configured in the [satellite project templates](../tutorials/templates.md), and are also
-used in the same or a very similar configuration in the main Constellation repository.
+used in the same or a similar configuration in the main Constellation repository.
 
 Their goal is to ensure a coherent code base in terms of style, naming conventions and best practices.
 A detailed description of the formatting and naming conventions chosen for the main Constellation repository can be found in the [Framework Development Guide](/framework_reference/naming).
@@ -83,7 +83,7 @@ Every file of the repository clearly states its license along with the copyright
  * @file
  * @brief Description of the file content
  *
- * @copyright Copyright (c) 2025 DESY and the Constellation authors.
+ * @copyright 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */

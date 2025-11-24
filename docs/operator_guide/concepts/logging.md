@@ -3,7 +3,7 @@
 Constellation comes with a powerful asynchronous logging mechanism which can transmit log messages with different verbosity
 levels over network to other nodes, log them locally to the command line or file, or both simultaneously. *Asynchronous* in
 this context means that the code which emits the log message is not held up by the processing of the message and its
-storage or transmission via network, but continues directly. This way, even many log messages of very high verbosity level
+storage or transmission via network, but continues directly. This way, even many log messages of high verbosity level
 will not affect the performance of the code.
 
 The verbosity can be set independently for logging to the command line and by every receiving node on the Constellation
@@ -54,7 +54,7 @@ on the bandwidth available to e.g. transmit data.
 
 ## Log Topics
 
-Some verbosity levels can be - no pun intended - very verbose. In order to allow further filtering of messages on the sending
+Some verbosity levels can be - no pun intended - verbose. In order to allow further filtering of messages on the sending
 side, Constellation implements so-called *log topics*. These divide the messages of each verbosity level into sections to
 which loggers can subscribe individually.
 

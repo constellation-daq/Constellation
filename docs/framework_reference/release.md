@@ -59,6 +59,11 @@ Any changes to configuration files (such as `.clang-tidy` for example) in the ma
 
 For the Meson template, the wrap file located under `subprojects/constellation.wrap` should be updated to the new release.
 
+## Update OpenEmbedded Recipes
+
+After releasing a new version, the [OpenEmbedded recipes](https://gitlab.desy.de/constellation/oe-recipes) for installing
+Constellation on embedded systems should be updated and recipes for new dependencies added if necessary.
+
 ## Releasing on Flathub
 
 The new release should be pushed to the [Flathub repository](https://github.com/flathub/de.desy.constellation).

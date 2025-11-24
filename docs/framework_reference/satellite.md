@@ -60,7 +60,7 @@ The run identifier shall only contain alphanumeric characters, underscores or da
 
 The state can be encoded in a single-byte value.
 
-State values with the lower four bits set to zero indicate steady states. For state values with non-zero lower four bits, the higher four bits indicate the steady state they enter into.
+State values with the lower four bits set to zero indicate steady states. For state values with non-zero lower four bits, the higher four bits indicate the steady state they enter.
 
 The following states are defined:
 

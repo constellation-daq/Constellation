@@ -2,7 +2,7 @@
 
 This how-to goes through the steps necessary to port a EUDAQ Producer to the Constellation framework.
 In Constellation terminology, a *Producer* is called a *Satellite*. As will become clear soon, both the finite state machine
-that governs the life cycle of a satellite as well as the mechanism for logging information and transmitting data are very
+that governs the life cycle of a satellite as well as the mechanism for logging information and transmitting data are
 similar from an interface perspective.
 
 ```{seealso}
@@ -97,7 +97,7 @@ it also allows for the use of different exceptions classes for different purpose
 ```cpp
 auto power_output_percent = config->Get("power_output_percent", 0);
 if(power_output_percent > 100) {
-    EUDAQ_THROW("Cannot set output power to " + std::to_string(power_output_percent) + "%, 100% is the maximum!");
+    EUDAQ_THROW("Cannot set output power to " + std::to_string(power_output_percent) + "%, 100% is the maximum.");
 }
 ```
 
@@ -107,9 +107,16 @@ tell the user e.g. in which configuration file and at which position the invalid
 ```cpp
 auto power_output_percent = config.get<int>("power_output_percent");
 if(power_output_percent > 100) {
-    throw InvalidValueError(config, "power_output_percent", "Value too large, 100% is the maximum!");
+    throw InvalidValueError(config, "power_output_percent", "Value too large, 100% is the maximum.");
 }
 ```
 
 Moreover, the attempt to read configuration keys without default value will automatically emit a `MissingKeyError` exception
 if the respective key is not present in the configuration.
+
+## Compatibility with EUDAQ File Format
+
+Constellation provides the `EudaqNativeWriter` satellite which is capable of storing data in a EUDAQ2-compatible file format.
+In order for satellite data to be correctly interpreted for storage, some
+[BOR flags](../../operator_guide/concepts/data.md#begin-of-run--end-of-run-messages) need to be set when sending the data. The
+details are provided in the [documentation of the EudaqNativeWriter satellite](../../satellites/EudaqNativeWriter.md).
