@@ -29,29 +29,29 @@ satellite `Sputnik.Last`, the condition can only be configured with `Sputnik.Las
 
 ## Configuring Conditional Transitions
 
-1. Dependency planning
+1. **Dependency planning**
 
    A dependency graph is defined by determining which satellites must have completed particular transitions before others are permitted to proceed.
 
-2. Creating the Configuration
+2. **Creating the Configuration**
 
    Each dependency is translated into a condition and placed under the corresponding satellite configuration.
    Each key accepts a list of satellite identifiers.
    Satellites may not depend on themselves.
 
-3. Configuration validation, Configuring the Satellites
+3. **Configuration validation, Configuring the Satellites**
 
    The configuration is checked by the controller to ensure the absence of circular dependencies.
    Each satellite is initialized with its corresponding dependency definitions from the configuration distributed by the
    controller.
 
-4. Transition execution
+4. **Transition execution**
 
    When a transition is requested, the respective satellite enters its transitional state such as {bdg-secondary}`starting`.
    While its dependencies remain unsatisfied, the satellite remains in that state.
    Once all required satellites have reached the corresponding states, the transition is completed automatically.
 
-5. Observing Issues
+5. **Observing Issues**
 
    The state transitions should be monitored through the controller or a logging tool to enable understanding of issues such
    as timeouts during the waiting phase of the conditions.
