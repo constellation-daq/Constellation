@@ -187,10 +187,10 @@ class KeithleyInterface(metaclass=ABCMeta):
         ramp_up = voltage_target > voltage_current
 
         # Lambda to evaluate if another step should be added
-        do_next_step = lambda voltage: voltage + voltage_step < voltage_target
+        do_next_step = lambda voltage: voltage + voltage_step < voltage_target  # noqa
         if not ramp_up:
             voltage_step *= -1
-            do_next_step = lambda voltage: voltage + voltage_step > voltage_target
+            do_next_step = lambda voltage: voltage + voltage_step > voltage_target  # noqa
 
         while voltage_current != voltage_target:
             # Check if another step can be added without exceeding target

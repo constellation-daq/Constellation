@@ -86,10 +86,10 @@ class CDTP2Message:
         """End-of-run message"""
         EOR = 0x2
 
-    def __init__(self, sender: str, type: CDTP2Message.Type) -> None:
+    def __init__(self, sender: str, msg_type: CDTP2Message.Type) -> None:
         self._protocol = Protocol.CDTP2
         self._sender = sender
-        self._type = type
+        self._type = msg_type
         self._data_records = list[DataRecord]()
 
     def add_data_record(self, data_record: DataRecord) -> None:
@@ -144,7 +144,7 @@ class CDTP2Message:
         if protocol is not Protocol.CDTP2:
             raise UnexpectedProtocolError(protocol, Protocol.CDTP2)
         sender = msgpack_unpack_to(unpacker, str)
-        type = msgpack_unpack_to_int_enum(unpacker, CDTP2Message.Type)
+        msg_type = msgpack_unpack_to_int_enum(unpacker, CDTP2Message.Type)
         # Unpack array of data records
         data_records = []
         raw_data_records = msgpack_unpack_to(unpacker, list)
@@ -152,7 +152,7 @@ class CDTP2Message:
             data_records.append(DataRecord.unpack(entry))
 
         # Assemble and return message
-        msg = CDTP2Message(sender, type)
+        msg = CDTP2Message(sender, msg_type)
         for data_record in data_records:
             msg.add_data_record(data_record)
         return msg

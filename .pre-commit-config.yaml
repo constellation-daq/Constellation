@@ -22,11 +22,6 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: "subprojects/packagefiles/libzmq/fix-mingw-afunixh.diff"
 
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
@@ -37,17 +32,14 @@ repos:
     hooks:
       - id: clang-format
 
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
     hooks:
-      - id: flake8
-        additional_dependencies: [Flake8-pyproject]
-
-  - repo: https://github.com/psf/black
-    rev: 25.11.0
-    hooks:
-      - id: black
-        language_version: python3
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.18.2
@@ -58,13 +50,13 @@ repos:
         additional_dependencies: [types-psutil, types-Pygments, types-PyYAML]
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.1
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: [--py311-plus]
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.19.0
+    rev: v0.19.1
     hooks:
       - id: markdownlint-cli2
 

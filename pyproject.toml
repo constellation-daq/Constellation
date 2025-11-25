@@ -60,10 +60,8 @@ Repository = "https://gitlab.desy.de/constellation/constellation"
 # Dev components
 dev = [
     "build",
-    "black",
-    "flake8", "flake8-pyproject",
+    "ruff",
     "mypy", "types-psutil", "types-pygments", "types-PyYAML",
-    "isort",
 ]
 test = [
     "pytest",
@@ -100,17 +98,21 @@ visa = ["pyvisa", "pyvisa-py", "pyserial", "zeroconf"]
 setup = ["--wrap-mode=forcefallback", "-Dimpl_py=enabled", "-Dimpl_cxx=disabled"]  # disable C++ for now
 dist = ["--include-subprojects"]
 
-[tool.flake8]
-max-line-length = 125
-ignore = ["E203", "E731", "W503"]
-
-[tool.black]
+[tool.ruff]
 line-length = 125
 
-[tool.isort]
-profile = "black"
-line_length = 125
-skip_gitignore = true
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "B",   # flake8-bugbear
+    "A",   # flake8-builtins
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["constellation"]
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
@@ -138,10 +140,3 @@ files = "./python/constellation/core"
 exclude = [
     "^test_",
 ]
-
-[tool.pylint.main]
-# A comma-separated list of package or module names from where C extensions may
-# be loaded. Extensions are loading into the active Python interpreter and may
-# run arbitrary code.
-# extension-pkg-allow-list = ["PyQt6"]
-max-line-length=125

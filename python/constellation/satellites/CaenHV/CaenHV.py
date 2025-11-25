@@ -253,7 +253,7 @@ class CaenHV(Satellite):
             for brdno, brd in crate.boards.items():
                 # loop over boards
                 self.log.info("Configuring monitoring for board %s", brd)
-                for chno, ch in enumerate(brd.channels):
+                for chno, _ch in enumerate(brd.channels):
                     # loop over channels
                     for par in ["IMon", "VMon"]:
                         # add a callback using partial

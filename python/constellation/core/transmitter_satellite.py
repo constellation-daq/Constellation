@@ -5,7 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 A base module for a Constellation Satellite that sends data.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import zmq
@@ -96,7 +96,7 @@ class TransmitterSatellite(Satellite):
             "version": __version__,
             "version_full": f"Constellation v{__version__} ({__version_code_name__})",
             "run_id": run_identifier,
-            "time_start": datetime.now(timezone.utc),
+            "time_start": datetime.now(UTC),
             "license": self._data_license,
         }
         self._mark_run_tainted = False
@@ -169,7 +169,7 @@ class TransmitterSatellite(Satellite):
 
     def _update_run_metadata(self, condition_code: RunCondition) -> None:
         """Update run metadata at the end of a run"""
-        self._run_metadata["time_end"] = datetime.now(timezone.utc)
+        self._run_metadata["time_end"] = datetime.now(UTC)
         if self._mark_run_tainted:
             condition_code |= RunCondition.TAINTED
         if self.run_degraded:

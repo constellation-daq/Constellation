@@ -87,7 +87,7 @@ def get_chirp_callbacks(
         if callable(call) and not func.startswith("__"):
             # regular method
             if hasattr(call, "chirp_callback"):
-                res[getattr(call, "chirp_callback")] = call
+                res[call.chirp_callback] = call
     return res
 
 

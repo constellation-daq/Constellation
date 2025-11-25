@@ -8,7 +8,7 @@ import time
 from collections import defaultdict
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from threading import Event
 from typing import Any
 
@@ -94,7 +94,7 @@ class SatelliteFSM(StateMachine):
         # used by (and acknowledged by) Heartbeater.
         self.transitioned = False
         # timestamp for last state change
-        self.last_changed = datetime.now(timezone.utc)
+        self.last_changed = datetime.now(UTC)
         super().__init__()
 
     def set_status(self, status: str) -> None:
@@ -110,7 +110,7 @@ class SatelliteFSM(StateMachine):
     def after_transition(self) -> None:
         """Set flag indicating state change."""
         self.transitioned = True
-        self.last_changed = datetime.now(timezone.utc)
+        self.last_changed = datetime.now(UTC)
 
     def write_diagram(self, filename: str) -> None:
         """Create a PNG with the FSM schematic."""
@@ -309,7 +309,6 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
         # Wait for remote states to match condition:
         while True:
-
             satisfied = True
             for name in self.conditions[self.fsm.current_state.value]:
                 # Check that remote is registered

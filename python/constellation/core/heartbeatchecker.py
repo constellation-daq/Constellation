@@ -5,7 +5,7 @@ SPDX-License-Identifier: EUPL-1.2
 
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -40,7 +40,7 @@ class HeartbeatState:
         if not ts:
             self.last_refresh = time.monotonic()
         else:
-            self.last_refresh = time.monotonic() + (ts - datetime.now(timezone.utc)).total_seconds()
+            self.last_refresh = time.monotonic() + (ts - datetime.now(UTC)).total_seconds()
 
     @property
     def seconds_since_refresh(self) -> float:

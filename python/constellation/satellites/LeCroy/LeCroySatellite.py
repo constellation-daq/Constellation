@@ -39,7 +39,7 @@ class LeCroySatellite(TransmitterSatellite):
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
         except ConnectionRefusedError as e:
-            raise RuntimeError(f"Connection refused to {ip_address}:{port} -> {str(e)}")
+            raise RuntimeError(f"Connection refused to {ip_address}:{port}") from e
 
         self._configure_sequences(configuration.setdefault("nsequence", 1))
 
