@@ -228,55 +228,54 @@ std::vector<std::string> Section::removeUnusedEntries() {
     return unused_keys;
 }
 
-namespace {
-    // NOLINTNEXTLINE(misc-no-recursion)
-    void validate_update(const Dictionary& dictionary, const Dictionary& other_dictionary) {
-        for(const auto& [other_key, other_value] : other_dictionary) {
-            // Check that key is also in dictionary
-            const auto entry_it = dictionary.find(other_key);
-            if(entry_it == dictionary.cend()) {
-                throw InvalidUpdateError(other_key, "key does not exist in current configuration");
-            }
-            const auto& value = entry_it->second;
-            // Check that values has the same type
-            if(value.index() != other_value.index()) {
-                throw InvalidUpdateError(other_key,
-                                         "cannot change type from " + quote(value.demangle()) + " to " +
-                                             quote(other_value.demangle()));
-            }
-            if(std::holds_alternative<Scalar>(value)) {
-                const auto& scalar = value.get<Scalar>();
-                const auto& other_scalar = other_value.get<Scalar>();
-                // Compare scalar type
-                if(scalar.index() != other_scalar.index()) {
-                    throw InvalidUpdateError(other_key,
-                                             "cannot change type from " + quote(scalar.demangle()) + " to " +
-                                                 quote(other_scalar.demangle()));
-                }
-            } else if(std::holds_alternative<Array>(value)) {
-                const auto& array = value.get<Array>();
-                const auto& other_array = other_value.get<Array>();
-                // If array, check that elements have the same type (if not empty)
-                if(!array.empty() && !other_array.empty() && array.index() != other_array.index()) {
-                    throw InvalidUpdateError(other_key,
-                                             "cannot change type from " + quote(array.demangle()) + " to " +
-                                                 quote(other_array.demangle()));
-                }
-            } else if(std::holds_alternative<Dictionary>(value)) {
-                validate_update(value.get<Dictionary>(), other_value.get<Dictionary>());
-            } else {
-                std::unreachable();
-            }
-        }
-    }
-} // namespace
-
 void Section::update(const Section& other) {
     // Validate update beforehand
-    validate_update(*dictionary_, *other.dictionary_);
+    validate_update(other);
 
     // Update values without validating again
     update_impl(other);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void Section::validate_update(const Section& other) {
+    for(const auto& [other_key, other_value] : *other.dictionary_) {
+        // Check that key is also in dictionary
+        const auto entry_it = dictionary_->find(other_key);
+        if(entry_it == dictionary_->cend()) {
+            throw InvalidUpdateError(other_key, "key does not exist in current configuration");
+        }
+        const auto& key = entry_it->first;
+        const auto& value = entry_it->second;
+        // Check that values has the same type
+        if(value.index() != other_value.index()) {
+            throw InvalidUpdateError(
+                other_key, "cannot change type from " + quote(value.demangle()) + " to " + quote(other_value.demangle()));
+        }
+        if(std::holds_alternative<Scalar>(value)) {
+            const auto& scalar = value.get<Scalar>();
+            const auto& other_scalar = other_value.get<Scalar>();
+            // Compare scalar type
+            if(scalar.index() != other_scalar.index()) {
+                throw InvalidUpdateError(other_key,
+                                         "cannot change type from " + quote(scalar.demangle()) + " to " +
+                                             quote(other_scalar.demangle()));
+            }
+        } else if(std::holds_alternative<Array>(value)) {
+            const auto& array = value.get<Array>();
+            const auto& other_array = other_value.get<Array>();
+            // If array, check that elements have the same type (if not empty)
+            if(!array.empty() && !other_array.empty() && array.index() != other_array.index()) {
+                throw InvalidUpdateError(other_key,
+                                         "cannot change type from " + quote(array.demangle()) + " to " +
+                                             quote(other_array.demangle()));
+            }
+        } else if(std::holds_alternative<Dictionary>(value)) {
+            // If dictionary, validate recursively
+            section_tree_.at(key).validate_update(other.section_tree_.at(other_key));
+        } else {
+            std::unreachable();
+        }
+    }
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -287,7 +286,7 @@ void Section::update_impl(const Section& other) {
         const auto& value = entry_it->second;
         if(std::holds_alternative<Dictionary>(value)) {
             // If dictionary, update recursively
-            section_tree_.at(key).update_impl(other.getSection(other_key));
+            section_tree_.at(key).update_impl(other.section_tree_.at(other_key));
         } else {
             entry_it->second = other_value;
         }

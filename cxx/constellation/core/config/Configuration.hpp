@@ -321,6 +321,7 @@ namespace constellation::config {
         CNSTLN_LOCAL void convert_lowercase();
         CNSTLN_LOCAL void create_section_tree();
         CNSTLN_LOCAL void mark_used(std::string_view key) const { used_keys_.emplace(key); }
+        CNSTLN_LOCAL void validate_update(const Section& other);
         CNSTLN_LOCAL void update_impl(const Section& other);
 
     private:
