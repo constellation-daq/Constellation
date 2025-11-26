@@ -42,7 +42,6 @@ dependencies = [
 Controller = "constellation.core.controller:main"
 Monitor = "constellation.core.monitoring:main"
 # 3rd-party Satellites
-SatelliteCaenHV = "constellation.satellites.CaenHV.__main__:main"
 SatelliteH5DataWriter = "constellation.satellites.H5DataWriter.__main__:main"
 SatelliteInflux = "constellation.satellites.Influx.__main__:main"
 SatelliteKeithley = "constellation.satellites.Keithley.__main__:main"
@@ -87,7 +86,6 @@ docs = [
 # Feature components
 cli = ["ipython", "traitlets", "pygments"]
 # Satellite components
-caenhv = ["pycaenhv>=0.03", "pyserial"]
 hdf5 = ["h5py", "numpy"]
 influx = ["influxdb-client"]
 keithley = ["pyserial"]
