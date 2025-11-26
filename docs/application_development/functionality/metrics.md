@@ -101,7 +101,7 @@ powerful approach to schedule an arbitrary number of metrics.
 ```{attention}
 Note that any registered Metrics are by default retrieved in any of the Satellite's states, **except** `NEW`, `ERROR` and `initializing` where it is assumed that reliable Metrics cannot be guaranteed.
 
-If you have a Metric that is only valid in fewer than those states, it is advisable to add a check for the current state within the function's body (e.g. `if not self.fsm.current_state_value in [SatelliteState.RUN, SatelliteState.SAFE]: ...`). Simply return `None` in this case.
+If you have a Metric that is only valid in fewer than those states, it is advisable to add a check for the current state within the function's body (e.g. `if not self.fsm.state in [SatelliteState.RUN, SatelliteState.SAFE]: ...`). Simply return `None` in this case.
 
 Should any error occur during the retrieval of a Metric, it will be logged but the Satellite will not be affected otherwise and the Metric will be requested again at the next scheduled interval.
 ```
