@@ -39,9 +39,10 @@ public:
      * This attempts to open the file and checks if the path already exists
      *
      * @param file Output file stream to write to
+     * @param buffer_size Size of the file buffer
      * @param run_sequence Sequence portion of the run identifier, used to store in EUDAQ event header
      */
-    FileSerializer(std::ofstream file, std::uint32_t run_sequence);
+    FileSerializer(std::ofstream file, std::size_t buffer_size, std::uint32_t run_sequence);
 
     /**
      * @brief Destructor which flushes data to file and closes the file
@@ -108,16 +109,16 @@ private:
     /** Set eudaq event descriptors and block handling from BOR tags */
     void parse_bor_tags(std::string_view sender, const constellation::config::Dictionary& user_tags);
 
-    /** Write data to file */
+    /** Write data to event buffer */
     void write(std::span<const std::byte> data);
 
-    /** Write EUDAQ event data records to file */
+    /** Write EUDAQ event data records to event buffer */
     void write_blocks(const std::vector<constellation::message::PayloadBuffer>& payload);
 
-    /** Write a single EUDAQ event data record to file */
+    /** Write a single EUDAQ event data record to event buffer */
     void write_block(std::uint32_t key, const constellation::message::PayloadBuffer& payload);
 
-    /** Write integers of different sizes to file */
+    /** Write integers of different sizes to event buffer */
     template <typename T> void write_int(T t) {
         static_assert(sizeof(t) > 1, "Only supports integers of size > 1 byte");
         std::array<std::byte, sizeof t> buf;
@@ -128,10 +129,10 @@ private:
         write({buf.data(), buf.size()});
     }
 
-    /** Write a string to file */
+    /** Write a string to event buffer */
     void write_str(std::string_view t);
 
-    /** Write a dictionary to file */
+    /** Write a dictionary to event buffer */
     void write_tags(const constellation::config::Dictionary& dict);
 
     /** Helper function to hash a string into EUDAQ event identifiers */
@@ -139,10 +140,17 @@ private:
         return !str[h] ? 5381 : (cstr2hash(str, h + 1) * 33ULL) ^ str[h];     // NOLINT
     }
 
+    /** Flush event butter to file buffer */
+    void flush_event_buffer();
+
 private:
     std::ofstream file_;
-    std::uint32_t run_sequence_;
+    std::vector<char> buffer_;
+    std::size_t buffer_size_;
+    std::size_t buffer_written_;
+    std::vector<std::byte> event_buffer_;
 
+    std::uint32_t run_sequence_;
     constellation::utils::string_hash_map<std::string> eudaq_event_descriptors_;
     constellation::utils::string_hash_map<bool> write_as_blocks_;
 };

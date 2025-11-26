@@ -36,12 +36,13 @@ using namespace constellation::satellite;
 using namespace constellation::utils;
 
 EudaqNativeWriterSatellite::EudaqNativeWriterSatellite(std::string_view type, std::string_view name)
-    : ReceiverSatellite(type, name) {}
+    : ReceiverSatellite(type, name), buffer_size_(), flush_timer_({}) {}
 
 void EudaqNativeWriterSatellite::initializing(Configuration& config) {
     base_path_ = config.getPath("output_directory");
     validate_output_directory(base_path_);
 
+    buffer_size_ = config.get<std::size_t>("buffer_size", 128) * 1024;
     flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
 }
 
@@ -60,7 +61,7 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     auto file = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
 
     LOG(INFO) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
-    serializer_ = std::make_unique<FileSerializer>(std::move(file), sequence);
+    serializer_ = std::make_unique<FileSerializer>(std::move(file), buffer_size_, sequence);
 
     // Start timer for flushing data to file
     flush_timer_.reset();

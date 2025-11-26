@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <string_view>
@@ -60,5 +60,6 @@ protected:
 private:
     std::unique_ptr<FileSerializer> serializer_;
     std::filesystem::path base_path_;
-    constellation::utils::TimeoutTimer flush_timer_ {std::chrono::seconds(3)};
+    std::size_t buffer_size_;
+    constellation::utils::TimeoutTimer flush_timer_;
 };
