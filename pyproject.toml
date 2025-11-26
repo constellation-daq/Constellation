@@ -60,6 +60,7 @@ Repository = "https://gitlab.desy.de/constellation/constellation"
 dev = [
     "build",
     "ruff",
+    "basedpyright",
     "mypy", "types-psutil", "types-pygments", "types-PyYAML",
 ]
 test = [
@@ -111,6 +112,9 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["constellation"]
+
+[tool.pyright]
+typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
