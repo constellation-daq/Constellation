@@ -7,7 +7,8 @@ Provides the class for the Influx satellite
 
 from threading import Lock
 
-import influxdb_client
+from influxdb_client.client.influxdb_client import InfluxDBClient
+from influxdb_client.client.write.point import Point
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 from constellation.core.cmdp import Metric
@@ -31,7 +32,7 @@ class Influx(Satellite, StatListener):
             org = config["org"]
             self.bucket = config.setdefault("bucket", "constellation")
 
-            self.client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
+            self.client = InfluxDBClient(url=url, token=token, org=org)
             self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
 
             # Test connection
@@ -50,12 +51,9 @@ class Influx(Satellite, StatListener):
 
         with self._influxdb_lock:
             if self._influxdb_connected:
-                metric_type = type(metric.value)
-                record = None
-                if metric_type in [float, int, bool]:
-                    record = influxdb_client.Point(metric.sender).field(metric.name, metric.value)
-                if record is not None:
+                if isinstance(metric.value, (float, int, bool)):
+                    record = Point(metric.sender).field(metric.name, metric.value)
                     self.log.trace("Writing metric %s to InfluxDB", metric.name)
                     self.write_api.write(bucket=self.bucket, record=record)
                 else:
-                    self.log.debug(f"Metric of type {metric_type} cannot be written to InfluxDB")
+                    self.log.debug(f"Metric of type {type(metric.value).__name__} cannot be written to InfluxDB")

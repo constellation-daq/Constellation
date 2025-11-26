@@ -85,7 +85,7 @@ def mock_listener(mock_transmitter_a):
 def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
     cmdp, m = mock_transmitter_a
     log = logging.getLogger()
-    rec1 = log.makeRecord("name", 10, __name__, 42, "mock log message", None, None)
+    rec1 = log.makeRecord("name", 10, __name__, 42, "mock log message", (), None)
     cmdp.send_log(rec1)
     # check that we have a packet ready to be read
     assert len(m.packet_queue_out[DEFAULT_SEND_PORT]) == 3
@@ -259,11 +259,11 @@ def test_monitoring_subscriptions():
     # create test log records
     log = logging.getLogger()
     # make log message that will be subscribed to
-    rec = log.makeRecord("TESTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "selected", None, None)
+    rec = log.makeRecord("TESTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "selected", (), None)
     # make log message that will only be shown if a log level is subscribed to
-    rec_lvl = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "only if level", None, None)
+    rec_lvl = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("CRITICAL"), __name__, 42, "only if level", (), None)
     # make a log message that will only be shown if all logs are subscribed to
-    rec_glb = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("DEBUG"), __name__, 42, "only if global", None, None)
+    rec_glb = log.makeRecord("DIFFERENTLOGS", logging.getLevelName("DEBUG"), __name__, 42, "only if global", (), None)
     topics = ["LOG/", "LOG/CRITICAL", "LOG/CRITICAL/TESTLOGS"]
     for topic in topics:
         # subscribe to log topic

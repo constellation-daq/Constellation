@@ -38,10 +38,10 @@ class ControllerState(Enum):
     ERROR = 0xF0, "🤯"
     TRANSITIONING = 0x55, "👷"
 
-    def __new__(cls: Any, value: str, name: str) -> Any:
+    def __new__(cls, value: int, name: str) -> Any:
         member = object.__new__(cls)
         member._value_ = value
-        member.emoji = name
+        member.emoji = name  # type: ignore[attr-defined]
         return member
 
     def __int__(self) -> int:
@@ -199,8 +199,8 @@ class CommandWrapper:
     def __init__(
         self,
         handler: Callable[[str, str, str, Any], tuple[str, Any, dict[str, Any] | None]],
-        sat: str,
-        satcls: str,
+        sat: str | None,
+        satcls: str | None,
         cmd: str,
     ):
         """Initialize with fcn as a partial() call."""
@@ -375,8 +375,9 @@ class BaseController(CHIRPManager, HeartbeatChecker):
 
         """
         res = []
+        sats = []
         for state in SatelliteState:
-            sats = [sat for sat, stat in self.states.items() if stat == state]
+            sats = [sat for sat, sat_state in self.states.items() if sat_state == state]
             if sats:
                 res.append(f"{len(sats)} Satellite{'s are' if len(sats) > 1 else ' is'} in {state.name}")
         if len(self.states) != len(self.constellation.satellites):

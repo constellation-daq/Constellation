@@ -10,7 +10,7 @@ from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import UTC, datetime
 from threading import Event
-from typing import Any
+from typing import Any, cast
 
 from statemachine import StateMachine
 from statemachine.exceptions import TransitionNotAllowed
@@ -119,6 +119,10 @@ class SatelliteFSM(StateMachine):
         graph = DotGraphMachine(self)
         dot = graph()
         dot.write_png(filename)
+
+    @property
+    def state(self) -> SatelliteState:
+        return cast(SatelliteState, self.current_state_value)
 
 
 class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
@@ -310,7 +314,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         # Wait for remote states to match condition:
         while True:
             satisfied = True
-            for name in self.conditions[self.fsm.current_state.value]:
+            for name in self.conditions[self.fsm.state]:
                 # Check that remote is registered
                 if name not in self.heartbeat_states:
                     error_message = f"Dependent remote satellite {name} not present"
@@ -324,7 +328,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                     raise RuntimeError(error_message)
 
                 # Check if condition is fulfilled:
-                if not self.fsm.current_state.value.transitions_to(self.heartbeat_states[name]):
+                if not self.fsm.state.transitions_to(self.heartbeat_states[name]):
                     msg = f"Awaiting state from {name}, currently: {self.heartbeat_states[name]}"
                     self.log_fsm.debug(msg)
                     self.fsm.set_status(msg)
@@ -386,12 +390,12 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             res = "Transition completed!"
         # try to advance the FSM for finishing transitional states
         try:
-            prev = self.fsm.current_state_value.name
+            prev = self.fsm.state.name
             self.fsm.complete(res)
-            now = self.fsm.current_state_value.name
+            now = self.fsm.state.name
             self.log_fsm.status(f"State transition to steady state completed ({prev} -> {now}).")
         except TransitionNotAllowed:
-            if self.fsm.current_state_value != SatelliteState.ERROR:
+            if self.fsm.state != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
                 self.fsm.status = res
@@ -429,12 +433,12 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         self._state_thread_evt = None
         # try to advance the FSM for finishing transitional states
         try:
-            prev = self.fsm.current_state_value.name
+            prev = self.fsm.state.name
             self.fsm.complete(res)
-            now = self.fsm.current_state_value.name
+            now = self.fsm.state.name
             self.log_fsm.status(f"State transition to steady state completed ({prev} -> {now}).")
         except TransitionNotAllowed:
-            if self.fsm.current_state_value != SatelliteState.ERROR:
+            if self.fsm.state != SatelliteState.ERROR:
                 # no need to do more than set the status, we are in a steady
                 # operational state
                 self.fsm.status = res
@@ -448,7 +452,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         """
         # there are several states in which we likely either cannot or do not
         # want to send out (most) Metrics:
-        if self.fsm.current_state_value in [
+        if self.fsm.state in [
             SatelliteState.NEW,
             SatelliteState.ERROR,
             SatelliteState.DEAD,
@@ -465,12 +469,12 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
 
         Payload of the response contains 'last_changed'
         """
-        payload = self.fsm.current_state_value.value
+        payload = self.fsm.state.value
         meta = {
             "last_changed": self.fsm.last_changed,
             "last_changed_iso": self.fsm.last_changed.isoformat(),
         }
-        return self.fsm.current_state_value.name, payload, meta
+        return self.fsm.state.name, payload, meta
 
     @cscp_requestable
     def get_status(self, _request: CSCP1Message | None = None) -> tuple[str, Any, dict[str, Any]]:

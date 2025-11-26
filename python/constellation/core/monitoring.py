@@ -4,6 +4,7 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import logging
+import logging.handlers
 import os
 import pathlib
 import threading
@@ -59,7 +60,7 @@ def get_scheduled_metrics(cls: object) -> dict[str, dict[str, Any]]:
         if callable(call) and not func.startswith("__"):
             # regular method
             if hasattr(call, "metric_scheduled") and hasattr(call, "__name__"):
-                res[call.__name__] = {"function": call, "interval": call.metric_scheduled}
+                res[call.__name__] = {"function": call, "interval": getattr(call, "metric_scheduled")}  # noqa: B009
     return res
 
 

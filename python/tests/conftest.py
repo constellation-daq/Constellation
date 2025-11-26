@@ -163,12 +163,12 @@ class mocket:
     def send(self, payload, flags=None):
         """Append buf to queue."""
         try:
-            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE & flags:
                 self._get_queue(True)[self.port].append(payload)
             else:
                 self._get_queue(True)[self.port].append([payload, SNDMORE_MARK])
         except KeyError:
-            if isinstance(flags, zmq.Flag) and zmq.SNDMORE in flags:
+            if isinstance(flags, zmq.Flag) and zmq.SNDMORE & flags:
                 self._get_queue(True)[self.port] = [payload]
             else:
                 self._get_queue(True)[self.port] = [[payload, SNDMORE_MARK]]
@@ -185,7 +185,7 @@ class mocket:
         """Pop entry from queue."""
         if flags == zmq.NOBLOCK:
             if self.port not in self._get_queue(False) or not self._get_queue(False)[self.port]:
-                raise zmq.ZMQError("Resource temporarily unavailable")
+                raise zmq.ZMQError(msg="Resource temporarily unavailable")
         else:
             while self.port not in self._get_queue(False) or not self._get_queue(False)[self.port]:
                 time.sleep(0.01)
@@ -204,7 +204,7 @@ class mocket:
         """Pop single entry from queue."""
         if flags == zmq.NOBLOCK:
             if self.has_no_data():
-                raise zmq.ZMQError("Resource temporarily unavailable")
+                raise zmq.ZMQError(msg="Resource temporarily unavailable")
 
             dat = self._get_queue(False)[self.port].pop(0)
 
@@ -498,11 +498,11 @@ def monitoringlistener(request):
 
 
 def wait_for_state(fsm, state: str, timeout: float = 2.0):
-    while timeout > 0 and fsm.current_state_value.name != state:
+    while timeout > 0 and fsm.state.name != state:
         time.sleep(0.005)
         timeout -= 0.005
     if timeout < 0:
-        raise RuntimeError(f"Never reached {state}, now in state {fsm.current_state_value.name} with status '{fsm.status}'")
+        raise RuntimeError(f"Never reached {state}, now in state {fsm.state.name} with status '{fsm.status}'")
 
 
 def check_output(capsys, caplog) -> None:
