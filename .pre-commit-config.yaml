@@ -49,12 +49,6 @@ repos:
         files: "python/constellation/core"
         additional_dependencies: [types-psutil, types-Pygments, types-PyYAML]
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
-    hooks:
-      - id: pyupgrade
-        args: [--py311-plus]
-
   - repo: https://github.com/DavidAnson/markdownlint-cli2
     rev: v0.19.1
     hooks:
