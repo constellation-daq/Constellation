@@ -37,9 +37,6 @@ public:
     /** Transition function for stop command */
     void stopping() final;
 
-    /** Transition function for interrupt transition to SAFE mode */
-    void interrupting(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
-
     /** Transition function for failure transition to ERROR mode */
     void failure(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
 
