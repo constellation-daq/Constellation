@@ -771,7 +771,7 @@ deploy:zenodo:
     - .deploy
   image: tollerort.desy.de/hub.docker.com/python:latest
   needs:
-    - job: deploy:release
+    - job: deploy:bundle-release-artifacts
       artifacts: true
   script:
     - pip install git+https://gitlab.com/stephanlachnit/gitlab2zenodo.git@constellation
