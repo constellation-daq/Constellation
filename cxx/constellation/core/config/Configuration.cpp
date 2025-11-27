@@ -242,21 +242,22 @@ void Section::validate_update(const Section& other) {
         // Check that key is also in dictionary
         const auto entry_it = dictionary_->find(other_key);
         if(entry_it == dictionary_->cend()) {
-            throw InvalidUpdateError(other_key, "key does not exist in current configuration");
+            throw InvalidUpdateError(prefix_ + other_key, "key does not exist in current configuration");
         }
         const auto& key = entry_it->first;
         const auto& value = entry_it->second;
         // Check that values has the same type
         if(value.index() != other_value.index()) {
-            throw InvalidUpdateError(
-                other_key, "cannot change type from " + quote(value.demangle()) + " to " + quote(other_value.demangle()));
+            throw InvalidUpdateError(prefix_ + other_key,
+                                     "cannot change type from " + quote(value.demangle()) + " to " +
+                                         quote(other_value.demangle()));
         }
         if(std::holds_alternative<Scalar>(value)) {
             const auto& scalar = value.get<Scalar>();
             const auto& other_scalar = other_value.get<Scalar>();
             // Compare scalar type
             if(scalar.index() != other_scalar.index()) {
-                throw InvalidUpdateError(other_key,
+                throw InvalidUpdateError(prefix_ + other_key,
                                          "cannot change type from " + quote(scalar.demangle()) + " to " +
                                              quote(other_scalar.demangle()));
             }
@@ -265,7 +266,7 @@ void Section::validate_update(const Section& other) {
             const auto& other_array = other_value.get<Array>();
             // If array, check that elements have the same type (if not empty)
             if(!array.empty() && !other_array.empty() && array.index() != other_array.index()) {
-                throw InvalidUpdateError(other_key,
+                throw InvalidUpdateError(prefix_ + other_key,
                                          "cannot change type from " + quote(array.demangle()) + " to " +
                                              quote(other_array.demangle()));
             }

@@ -432,7 +432,7 @@ TEST_CASE("Configuration update", "[core][core::config]") {
     dict["array_int2"] = Array({1, 2, 3, 4, 5});
     Dictionary subdict {};
     subdict["double"] = 3.14;
-    subdict["string"] = "test";
+    subdict["string"] = "unchanged";
     dict["sub"] = std::move(subdict);
     Configuration config {std::move(dict)};
     Dictionary dict_update {};
@@ -452,40 +452,41 @@ TEST_CASE("Configuration update", "[core][core::config]") {
     REQUIRE_THAT(config.getArray<int>("array_int2"), RangeEquals(std::vector<int>({1, 2, 3, 4})));
     const auto& config_sub = config.getSection("sub");
     REQUIRE(config_sub.get<double>("double") == 6.28);
-    REQUIRE_THAT(config_sub.get<std::string>("string"), Equals("test"));
+    REQUIRE_THAT(config_sub.get<std::string>("string"), Equals("unchanged"));
 }
 
 TEST_CASE("Configuration update failure", "[core][core::config]") {
     Dictionary dict {};
-    dict["bool"] = true;
-    dict["int"] = 1024;
-    dict["array"] = Array({1.5, 2.5, 3.5});
+    Dictionary subdict {};
+    subdict["bool"] = true;
+    subdict["int"] = 1024;
+    subdict["array"] = Array({1.5, 2.5, 3.5});
+    dict["sub"] = std::move(subdict);
     Configuration config {std::move(dict)};
     // Updating non-existing key
-    Dictionary dict_update_ne_key {};
-    dict_update_ne_key["bool2"] = false;
-    REQUIRE_THROWS_MATCHES(config.update(Configuration(std::move(dict_update_ne_key))),
-                           InvalidUpdateError,
-                           Message("Failed to update value of key `bool2`: key does not exist in current configuration"));
+    Dictionary dict_update_ne_key {{"sub", Dictionary({{"bool2", false}})}};
+    REQUIRE_THROWS_MATCHES(
+        config.update(Configuration(std::move(dict_update_ne_key))),
+        InvalidUpdateError,
+        Message("Failed to update value of key `sub.bool2`: key does not exist in current configuration"));
     // Updating with other type
-    Dictionary dict_update_type {};
-    dict_update_type["bool"] = Array();
+    Dictionary dict_update_type {{"sub", Dictionary({{"bool", Array()}})}};
     REQUIRE_THROWS_MATCHES(config.update(Configuration(std::move(dict_update_type))),
                            InvalidUpdateError,
-                           Message("Failed to update value of key `bool`: cannot change type from `bool` to `Array`"));
+                           Message("Failed to update value of key `sub.bool`: cannot change type from `bool` to `Array`"));
     // Updating with other scalar type
-    Dictionary dict_update_scalar_type {};
-    dict_update_scalar_type["bool"] = "true";
-    REQUIRE_THROWS_MATCHES(config.update(Configuration(std::move(dict_update_scalar_type))),
-                           InvalidUpdateError,
-                           Message("Failed to update value of key `bool`: cannot change type from `bool` to `std::string`"));
+    Dictionary dict_update_scalar_type {{"sub", Dictionary({{"bool", "true"}})}};
+    REQUIRE_THROWS_MATCHES(
+        config.update(Configuration(std::move(dict_update_scalar_type))),
+        InvalidUpdateError,
+        Message("Failed to update value of key `sub.bool`: cannot change type from `bool` to `std::string`"));
     // Updating with other array type
-    Dictionary dict_update_array_type {};
-    dict_update_array_type["array"] = Array({"hello", "world"});
+    Dictionary dict_update_array_type {{"sub", Dictionary({{"array", Array({"hello", "world"})}})}};
     REQUIRE_THROWS_MATCHES(
         config.update(Configuration(std::move(dict_update_array_type))),
         InvalidUpdateError,
-        Message("Failed to update value of key `array`: cannot change type from `Array<double>` to `Array<std::string>`"));
+        Message(
+            "Failed to update value of key `sub.array`: cannot change type from `Array<double>` to `Array<std::string>`"));
 }
 
 TEST_CASE("Configuration message assembly & disassembly", "[core][core::config]") {
