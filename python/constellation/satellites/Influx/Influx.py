@@ -9,7 +9,7 @@ from threading import Lock
 
 from influxdb_client.client.influxdb_client import InfluxDBClient
 from influxdb_client.client.write.point import Point
-from influxdb_client.client.write_api import SYNCHRONOUS
+from influxdb_client.client.write_api import WriteOptions
 
 from constellation.core.cmdp import Metric
 from constellation.core.configuration import Configuration
@@ -33,7 +33,7 @@ class Influx(Satellite, StatListener):
             self.bucket = config.setdefault("bucket", "constellation")
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
-            self.write_api = self.client.write_api(write_options=SYNCHRONOUS)
+            self.write_api = self.client.write_api(write_options=WriteOptions(flush_interval=2500))
 
             # Test connection
             self.log.debug('Connecting to InfluxDB with org "%s" at %s', org, url)
