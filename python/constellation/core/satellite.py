@@ -142,7 +142,7 @@ class Satellite(
         """Orderly shutdown and destroy the Satellite."""
         # can only exit from certain state, go into ERROR if not the case
         self.log_satellite.info("Satellite on reentry course for self-destruction.")
-        if self.fsm.current_state_value not in [
+        if self.fsm.state not in [
             SatelliteState.NEW,
             SatelliteState.INIT,
             SatelliteState.SAFE,
@@ -164,7 +164,7 @@ class Satellite(
             pass
 
     def _mark_degraded(self, reason: str) -> None:
-        if self.fsm.current_state_value in [SatelliteState.starting, SatelliteState.RUN] and not self.run_degraded:
+        if self.fsm.state in [SatelliteState.starting, SatelliteState.RUN] and not self.run_degraded:
             self.run_degraded = True
             self.log_satellite.warning("Marking run as degraded: %s", reason)
 
@@ -364,6 +364,11 @@ class Satellite(
         """Final preparation for acquisition."""
         return "Started"
 
+    def stop_requested(self) -> bool:
+        """If the do_run loop should be stopped"""
+        assert isinstance(self._state_thread_evt, threading.Event), "Transition thread Event not set up correctly"
+        return self._state_thread_evt.is_set()
+
     @debug_log
     def do_run(self, run_identifier: str) -> str | None:
         """The acquisition event loop.
@@ -383,11 +388,7 @@ class Satellite(
         which should make the transitions themselves safe.
 
         """
-        # the stop_running Event will be set from outside the thread when it is
-        # time to close down.
-        # assert for mypy static type analysis
-        assert isinstance(self._state_thread_evt, threading.Event), "Transition thread Event not set up correctly"
-        while not self._state_thread_evt.is_set():
+        while not self.stop_requested():
             time.sleep(0.2)
         return "Finished RUN"
 

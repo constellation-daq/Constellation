@@ -50,7 +50,7 @@ def get_cscp_commands(cls: Any) -> dict[str, str]:
         call = getattr(cls, func)
         if callable(call) and not func.startswith("__"):
             # regular method
-            if hasattr(call, "cscp_command") and call.cscp_command:
+            if hasattr(call, "cscp_command") and getattr(call, "cscp_command"):  # noqa: B009
                 doc = call.__doc__
                 res[func] = doc
     return res
@@ -211,7 +211,7 @@ class CommandReceiver(BaseSatelliteFrame):
         """
         if not doc:
             call = getattr(self, method)
-            doc = call.__doc__
+            doc = str(call.__doc__)
         self._cmds[method] = doc
 
     @cscp_requestable

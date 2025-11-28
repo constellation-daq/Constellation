@@ -78,7 +78,7 @@ class Mariner(Satellite):
         Here, the main part of the mission would be performed.
 
         """
-        while not self._state_thread_evt.is_set():
+        while not self.stop_requested():
             # Example work to be done while satellite is running
             ...
             time.sleep(self.device.sample_period)
@@ -95,7 +95,7 @@ class Mariner(Satellite):
 
         """
         # we cannot perform this command when not ready:
-        if self.fsm.current_state_value in [
+        if self.fsm.state in [
             SatelliteState.NEW,
             SatelliteState.ERROR,
             SatelliteState.DEAD,
@@ -107,7 +107,7 @@ class Mariner(Satellite):
 
     @schedule_metric("lm", MetricsType.LAST_VALUE, 10)
     def brightness(self) -> int | None:
-        if self.fsm.current_state_value in [
+        if self.fsm.state in [
             SatelliteState.NEW,
             SatelliteState.ERROR,
             SatelliteState.DEAD,

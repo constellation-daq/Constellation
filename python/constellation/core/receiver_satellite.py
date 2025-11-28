@@ -134,8 +134,7 @@ class ReceiverSatellite(Satellite):
         NOTE: This must not be overridden by receiver satellite implementations!
         """
         assert self._drc is not None
-        assert self._state_thread_evt is not None
-        while not self._state_thread_evt.is_set():
+        while not self.stop_requested():
             # Check and rethrow exception from BasePool
             self._drc.check_exception()
             # Wait a bit to avoid hot loop

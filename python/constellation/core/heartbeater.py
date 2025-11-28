@@ -108,7 +108,7 @@ class HeartbeatSender(SatelliteStateHandler):
                 )
 
                 last = time.monotonic()
-                state = self.fsm.current_state_value
+                state = self.fsm.state
                 self._hb_tm.send(
                     state.value,
                     self._heartbeat_period,

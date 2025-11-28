@@ -432,14 +432,17 @@ lint:ruff:
     reports:
       codequality: code-quality-report.json
 
-lint:mypy:
+lint:basedpyright:
   extends:
     - .lint
     - .python-venv
     - .python-3.11
   script:
-    - pip install --no-build-isolation -e .[dev,hdf5,cli]
-    - mypy
+    - pip install --no-build-isolation -e .[dev,test,cli,hdf5,influx,lecroy,visa]
+    - basedpyright python --gitlabcodequality code-quality-report.json
+  artifacts:
+    reports:
+      codequality: code-quality-report.json
 
 lint:clang-tidy:
   extends:

@@ -624,7 +624,7 @@ def test_data_satellites_receiver_failure(
     # Wait until transmitter in SAFE or ERROR
     wait_for_state(receiver.fsm, "ERROR")
     timeout = 2.0
-    while transmitter.fsm.current_state_value not in [SatelliteState.SAFE, SatelliteState.ERROR] and timeout > 0:
+    while transmitter.fsm.state not in [SatelliteState.SAFE, SatelliteState.ERROR] and timeout > 0:
         time.sleep(0.05)
         timeout -= 0.05
-    assert transmitter.fsm.current_state_value in [SatelliteState.SAFE, SatelliteState.ERROR]
+    assert transmitter.fsm.state in [SatelliteState.SAFE, SatelliteState.ERROR]

@@ -21,7 +21,7 @@ class PyRandomTransmitter(TransmitterSatellite):
             self._blocks.append(random.randbytes(self._block_size))
 
     def do_run(self, run_identifier: str) -> str:
-        while not self._state_thread_evt.is_set():
+        while not self.stop_requested():
             # Check if rate limited
             if not self.can_send_record():
                 time.sleep(0.001)

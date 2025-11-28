@@ -75,7 +75,7 @@ class DiscoveredService:
 
 
 def get_chirp_callbacks(
-    cls: object,
+    cls: B,
 ) -> dict[CHIRPServiceIdentifier, Callable[[B, DiscoveredService], None]]:
     """Loop over all class methods and return those marked as CHIRP callback."""
     res = {}
@@ -87,7 +87,7 @@ def get_chirp_callbacks(
         if callable(call) and not func.startswith("__"):
             # regular method
             if hasattr(call, "chirp_callback"):
-                res[call.chirp_callback] = call
+                res[getattr(call, "chirp_callback")] = call  # noqa: B009
     return res
 
 
@@ -138,9 +138,7 @@ class CHIRPManager(BaseSatelliteFrame):
         self._registered_services: dict[int, CHIRPServiceIdentifier] = {}
         self.discovered_services: list[DiscoveredService] = []
         self._chirp_thread = None
-        self._chirp_callbacks: dict[CHIRPServiceIdentifier, Callable[[B, DiscoveredService], None]] = get_chirp_callbacks(
-            self
-        )
+        self._chirp_callbacks = get_chirp_callbacks(self)
 
     def _add_com_thread(self) -> None:
         """Add the CHIRP manager thread to the communication thread pool."""

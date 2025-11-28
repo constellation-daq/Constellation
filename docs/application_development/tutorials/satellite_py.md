@@ -167,7 +167,7 @@ below:
 def do_run(self, payload: any) -> str:
     # the stop_running Event will be set from outside the thread when it is
     # time to close down.
-    while not self._state_thread_evt.is_set():
+    while not self.stop_requested():
         # Do work
         ...
     return "Finished acquisition."

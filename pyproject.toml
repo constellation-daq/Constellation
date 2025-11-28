@@ -60,7 +60,8 @@ Repository = "https://gitlab.desy.de/constellation/constellation"
 dev = [
     "build",
     "ruff",
-    "mypy", "types-psutil", "types-pygments", "types-PyYAML",
+    "basedpyright",
+    "types-psutil", "types-pygments", "types-PyYAML",
 ]
 test = [
     "pytest",
@@ -112,6 +113,9 @@ select = [
 [tool.ruff.lint.isort]
 known-first-party = ["constellation"]
 
+[tool.pyright]
+typeCheckingMode = "standard"
+
 [tool.pytest.ini_options]
 testpaths = ["python/tests"]
 markers = [
@@ -120,21 +124,3 @@ markers = [
 
 [tool.coverage.run]
 source = ["constellation"]
-
-[tool.mypy]
-python_version = "3.11"
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_return_any = true
-warn_unused_configs = true
-# force specific ignores:
-enable_error_code = ['ignore-without-code']
-check_untyped_defs = true
-disallow_any_generics = true
-disallow_incomplete_defs = true
-disallow_untyped_defs = true
-files = "./python/constellation/core"
-exclude = [
-    "^test_",
-]

@@ -219,7 +219,7 @@ to each message sent by the satellite. There are three possibilities:
 
   ```python
   def do_run(self, run_identifier: str) -> str:
-      while not self._state_thread_evt.is_set():
+      while not self.stop_requested():
           data = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
           tags = {"dtype": str(data.dtype), "other_info": 12345}
           data_record = self.new_data_record(tags)

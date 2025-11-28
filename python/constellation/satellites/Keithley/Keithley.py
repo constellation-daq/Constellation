@@ -145,7 +145,7 @@ class Keithley(Satellite):
         return f"Device {is_str} in compliance", in_compliance, {}
 
     def _in_compliance_is_allowed(self, request: CSCP1Message) -> bool:
-        return self.fsm.current_state_value not in [SatelliteState.NEW, SatelliteState.ERROR]
+        return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
 
     @cscp_requestable
     def read_output(self, request: CSCP1Message) -> tuple[str, Any, dict[str, Any]]:
@@ -154,22 +154,22 @@ class Keithley(Satellite):
         return f"Output: {voltage}V, {current}A", {"voltage": voltage, "current": current, "timestamp": timestamp}, {}
 
     def _read_output_is_allowed(self, request: CSCP1Message) -> bool:
-        return self.fsm.current_state_value not in [SatelliteState.NEW, SatelliteState.ERROR]
+        return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
 
     @schedule_metric("V", MetricsType.LAST_VALUE, 5)
     def VOLTAGE(self) -> Any:
-        if self.fsm.current_state_value not in [SatelliteState.NEW, SatelliteState.ERROR]:
+        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.read_output()[0]
         return None
 
     @schedule_metric("A", MetricsType.LAST_VALUE, 5)
     def CURRENT(self) -> Any:
-        if self.fsm.current_state_value not in [SatelliteState.NEW, SatelliteState.ERROR]:
+        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.read_output()[1]
         return None
 
     @schedule_metric("", MetricsType.LAST_VALUE, 5)
     def IN_COMPLIANCE(self) -> Any:
-        if self.fsm.current_state_value not in [SatelliteState.NEW, SatelliteState.ERROR]:
+        if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.in_compliance()
         return None

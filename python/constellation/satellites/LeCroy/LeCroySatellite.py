@@ -22,9 +22,9 @@ from constellation.core.transmitter_satellite import TransmitterSatellite
 
 
 class LeCroySatellite(TransmitterSatellite):
-    _scope = None
-    _settings = None
-    _channels = None
+    _scope: LeCrunch3.LeCrunch3
+    _settings: dict[str, bytes]
+    _channels: list[int] = []
     _sequence_mode: bool = False
     _num_sequences: int = 1
     _num_triggers_acquired: int = 0
@@ -60,16 +60,14 @@ class LeCroySatellite(TransmitterSatellite):
         return f"Connected to scope at {ip_address}"
 
     def do_reconfigure(self, configuration: Configuration) -> str:
-        if not self._scope:
-            return "Failed to reconfigure. Scope is not connected."
         self._scope.clear()
         self._configure_sequences(configuration.setdefault("nsequence", 1))
         return "Successfully reconfigured scope"
 
-    def do_run(self, payload: Any) -> str:
+    def do_run(self, run_identifier: str) -> str:
         num_sequences_acquired = 0
         self._num_triggers_acquired = 0
-        while not self._state_thread_evt.is_set():
+        while not self.stop_requested():
             try:
                 self._scope.trigger()
                 first_channel = True
@@ -109,14 +107,14 @@ class LeCroySatellite(TransmitterSatellite):
         return "Stopped acquisition"
 
     @cscp_requestable
-    def get_num_triggers(self, request: CSCP1Message) -> [str, int, dict[str, Any]]:
-        if self.fsm.current_state_value == SatelliteState.RUN:
+    def get_num_triggers(self, request: CSCP1Message) -> tuple[str, int, dict[str, Any]]:
+        if self.fsm.state == SatelliteState.RUN:
             return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
         return "Not running", -1, {}
 
     @schedule_metric("", MetricsType.LAST_VALUE, 10)
     def NUM_TRIGGERS(self) -> int | None:
-        if self.fsm.current_state_value == SatelliteState.RUN:
+        if self.fsm.state == SatelliteState.RUN:
             return self._num_triggers_acquired
         return None
 

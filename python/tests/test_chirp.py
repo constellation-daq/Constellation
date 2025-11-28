@@ -16,21 +16,24 @@ def test_chirp_beacon_send_recv(mock_chirp_socket):
     receiver = CHIRPBeaconTransmitter("mock_receiver", "mockstellation", ["127.0.0.1"])
     sender.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = receiver.listen()
+    assert res is not None
     assert res.serviceid == CHIRPServiceIdentifier.DATA, "Receiving chirp package failed."
 
     # listen a second time
     res = receiver.listen()
-    assert not res, "Non-blocking receive w/o sending data failed."
+    assert res is None, "Non-blocking receive w/o sending data failed."
 
     # receive two packages
     sender.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     sender.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = receiver.listen()
+    assert res is not None
     assert res.serviceid == CHIRPServiceIdentifier.DATA, "First of two packages went missing"
     res = receiver.listen()
+    assert res is not None
     assert res.serviceid == CHIRPServiceIdentifier.DATA, "Second of two packages went missing"
     res = receiver.listen()
-    assert not res, "Non-blocking receive w/o sending data failed."
+    assert res is None, "Non-blocking receive w/o sending data failed."
 
     # send package, then let the test for header fail
     sender.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
@@ -45,4 +48,4 @@ def test_filter_same_host(mock_chirp_transmitter):
     t = mock_chirp_transmitter
     t.emit(CHIRPServiceIdentifier.DATA, CHIRPMessageType.OFFER, 666)
     res = t.listen()
-    assert not res, "Received packet despite same-host filter."
+    assert res is None, "Received packet despite same-host filter."
