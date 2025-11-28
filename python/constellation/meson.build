@@ -12,6 +12,7 @@ core_files = files(
   'core/cscp.py',
   'core/cdtp.py',
   'core/controller.py',
+  'core/controller_configuration.py',
   'core/configuration.py',
   'core/error.py',
   'core/fsm.py',
