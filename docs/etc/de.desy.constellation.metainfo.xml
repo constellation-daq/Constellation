@@ -32,6 +32,10 @@
       <image>https://constellation.pages.desy.de/_images/missioncontrol_run.png</image>
       <caption>MissionControl main window</caption>
     </screenshot>
+    <screenshot>
+      <image>https://constellation.pages.desy.de/_images/observatory_debug.png</image>
+      <caption>Observatory logging application</caption>
+    </screenshot>
   </screenshots>
   <categories>
       <category>Science</category>
