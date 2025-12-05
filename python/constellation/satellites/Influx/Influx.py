@@ -31,9 +31,10 @@ class Influx(Satellite, StatListener):
             token = config["token"]
             org = config["org"]
             self.bucket = config.setdefault("bucket", "constellation")
+            interval = config.setdefault("flush_interval", 2.5) * 1000
 
             self.client = InfluxDBClient(url=url, token=token, org=org)
-            self.write_api = self.client.write_api(write_options=WriteOptions(flush_interval=2500))
+            self.write_api = self.client.write_api(write_options=WriteOptions(flush_interval=interval))
 
             # Test connection
             self.log.debug('Connecting to InfluxDB with org "%s" at %s', org, url)
