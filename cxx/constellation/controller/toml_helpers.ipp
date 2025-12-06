@@ -19,7 +19,10 @@
 #include <toml++/toml.hpp>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/env.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::controller {
 
@@ -36,9 +39,18 @@ namespace constellation::controller {
     config::Composite parse_toml_value(const std::string& key, auto&& value) {
         using T = decltype(value);
 
-        if constexpr(toml::is_boolean<T> || toml::is_integer<T> || toml::is_floating_point<T> || toml::is_string<T>) {
+        if constexpr(toml::is_boolean<T> || toml::is_integer<T> || toml::is_floating_point<T>) {
             return {value.get()};
         }
+        if constexpr(toml::is_string<T>) {
+            // Resolve environment variables
+            try {
+                return utils::resolve_controller_env(value.as_string()->get());
+            } catch(const utils::RuntimeError& e) {
+                throw config::InvalidValueError(key, e.what());
+            }
+        }
+
         if constexpr(toml::is_time<T>) {
             return {from_toml_time(value.get())};
         }

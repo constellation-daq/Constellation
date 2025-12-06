@@ -24,7 +24,10 @@
 #include <yaml-cpp/yaml.h>
 
 #include "constellation/controller/exceptions.hpp"
+#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/env.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 
@@ -75,6 +78,15 @@ namespace {
                     throw ConfigValueError(key, "array is not homogeneous");
                 }
             }
+
+            // For strings, resolve controller-side environment variables:
+            if constexpr(std::is_same_v<T, std::string>) {
+                try {
+                    rv = resolve_controller_env(rv);
+                } catch(const RuntimeError& e) {
+                    throw InvalidValueError(key, e.what());
+                }
+            }
             rhs.emplace_back(std::move(rv));
         }
         return true;
@@ -104,8 +116,12 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
 
         // TODO(stephan.lachnit): add chrono parsing
 
-        // Otherwise return as string
-        return node.as<std::string>();
+        // Otherwise return as string after resolving environment variables
+        try {
+            return resolve_controller_env(node.as<std::string>());
+        } catch(const RuntimeError& e) {
+            throw InvalidValueError(key, e.what());
+        }
     }
 
     if(node.IsSequence()) {
@@ -124,8 +140,14 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
 
         // TODO(stephan.lachnit): add chrono parsing
 
-        // Otherwise return as string
-        return node.as<std::vector<std::string>>();
+        // Otherwise return as string vector after resolving environment variables
+        auto retval = node.as<std::vector<std::string>>();
+        try {
+            std::ranges::transform(retval, retval.begin(), [](const auto& val) { return resolve_controller_env(val); });
+        } catch(const RuntimeError& e) {
+            throw InvalidValueError(key, e.what());
+        }
+        return retval;
     }
 
     if(node.IsMap()) {
