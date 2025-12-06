@@ -32,6 +32,12 @@ namespace constellation::controller {
         for(const auto& element : array) {
             out.push_back(op(element));
         }
+
+        // For strings, resolve controller-side environment variables:
+        if constexpr(std::is_same_v<T, std::string>) {
+            std::ranges::transform(out, out.begin(), [](const auto& val) { return utils::resolve_controller_env(val); });
+        }
+
         return {out};
     }
 
@@ -77,8 +83,12 @@ namespace constellation::controller {
                                                    [](const auto& element) { return element.as_floating_point()->get(); })};
             }
             if(value.front().is_string()) {
-                return {
-                    convert_toml_array<std::string>(value, [](const auto& element) { return element.as_string()->get(); })};
+                try {
+                    return {convert_toml_array<std::string>(value,
+                                                            [](const auto& element) { return element.as_string()->get(); })};
+                } catch(const utils::RuntimeError& e) {
+                    throw config::InvalidValueError(key, e.what());
+                }
             }
             if(value.front().is_time()) {
                 return {convert_toml_array<std::chrono::system_clock::time_point>(

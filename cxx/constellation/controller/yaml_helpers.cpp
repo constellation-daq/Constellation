@@ -78,15 +78,6 @@ namespace {
                     throw ConfigValueError(key, "array is not homogeneous");
                 }
             }
-
-            // For strings, resolve controller-side environment variables:
-            if constexpr(std::is_same_v<T, std::string>) {
-                try {
-                    rv = resolve_controller_env(rv);
-                } catch(const RuntimeError& e) {
-                    throw InvalidValueError(key, e.what());
-                }
-            }
             rhs.emplace_back(std::move(rv));
         }
         return true;
