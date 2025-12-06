@@ -12,9 +12,9 @@ A detailed technical description, including protocol sequence diagrams, can be f
 [protocol description chapter](../../framework_reference/protocols.md#command--controlling) in the framework development guide.
 ```
 
-## Graphical Controller: MissionControl
+## Graphical Controller
 
-This graphical user interface is a general purpose controller for Constellation based on [Qt](https://www.qt.io/) which allows loading and parsing of configuration files, deduction of the configuration from a running Constellation, and common control of all active satellites as well as each individual satellite.
+The *MissionControl* graphical user interface is a general purpose controller for Constellation based on [Qt](https://www.qt.io/) which allows loading and parsing of configuration files, deduction of the configuration from a running Constellation, and common control of all active satellites as well as each individual satellite.
 This section briefly describes these features and the user interface.
 
 ```{seealso}
@@ -46,6 +46,38 @@ The sequence number is automatically incremented when stopping and starting a ru
 Since satellites operate independently of the controller, and controllers can be started and closed at any time, they might not necessarily all have access to the same configuration file.
 To alleviate this, the configuration of all satellites can be deduced from the Constellation in operation directly via the {bdg-primary}`Deduce` button of the controller.
 This will collect the current configuration from all connected satellites and open a dialog window to select a storage location for the configuration file.
+
+## Scriptable Controller
+
+In some scenarios, a scriptable command-line interface might be preferable to a graphical user interface.
+For this purpose, a Python controller class is provided, both as standalone script and as interactive shell based on IPython. Individual satellites as well as the entire Constellation can be queried and controlled directly through the ScriptableController class.
+Complex routines such as automated parameter scans can be implemented in a few lines of Python code.
+
+```python
+import time
+from constellation.core.controller import ScriptableController
+
+# Create controller
+ctrl = ScriptableController(group_name)
+constellation = ctrl.constellation
+
+# Initialize, launch and start:
+cfg = load_config("my_config.toml")
+constellation.initialize(cfg)
+ctrl.await_state(SatelliteState.INIT)
+constellation.launch()
+ctrl.await_state(SatelliteState.ORBIT)
+constellation.start("run_1000")
+ctrl.await_state(SatelliteState.RUN)
+# Run for 15 seconds
+time.sleep(15)
+constellation.stop()
+ctrl.await_state(SatelliteState.ORBIT)
+```
+
+```{seealso}
+The How-To section provides a guide on [Parameter Scans with Python](../howtos/scanning_python.md).
+```
 
 ## Measurement Queues
 
