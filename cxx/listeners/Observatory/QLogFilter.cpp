@@ -46,25 +46,49 @@ bool QLogFilter::filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent
 void QLogFilter::setFilterLevel(Level level) {
     if(filter_level_ != level) {
         LOG(logger_, DEBUG) << "Updating filter level to " << to_string(level);
+#if QT_VERSION < QT_VERSION_CHECK(6, 10, 0)
         filter_level_ = level;
         invalidateFilter();
+#else
+        beginFilterChange();
+        filter_level_ = level;
+        endFilterChange();
+#endif
     }
 }
 
 void QLogFilter::setFilterSender(std::string sender) {
     LOG(logger_, DEBUG) << "Updating filter sender to " << sender;
+#if QT_VERSION < QT_VERSION_CHECK(6, 10, 0)
     filter_sender_ = std::move(sender);
     invalidateFilter();
+#else
+    beginFilterChange();
+    filter_sender_ = std::move(sender);
+    endFilterChange();
+#endif
 }
 
 void QLogFilter::setFilterTopic(std::string topic) {
     LOG(logger_, DEBUG) << "Updating filter topic to " << topic;
+#if QT_VERSION < QT_VERSION_CHECK(6, 10, 0)
     filter_topic_ = std::move(topic);
     invalidateFilter();
+#else
+    beginFilterChange();
+    filter_topic_ = std::move(topic);
+    endFilterChange();
+#endif
 }
 
 void QLogFilter::setFilterMessage(const QString& pattern) {
     LOG(logger_, DEBUG) << "Updating filter pattern for message to " << pattern.toStdString();
+#if QT_VERSION < QT_VERSION_CHECK(6, 10, 0)
     filter_message_.setPattern(pattern);
     invalidateFilter();
+#else
+    beginFilterChange();
+    filter_message_.setPattern(pattern);
+    endFilterChange();
+#endif
 }
