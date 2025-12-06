@@ -546,7 +546,7 @@ TEST_CASE("Resolve environment variables", "[core][core::config]") {
     dict["missing_env_var"] = "${MISSING}";
     dict["missing_env_var_default"] = "${MISSING:-default}";
 
-    Configuration config {std::move(dict)};
+    const Configuration config {std::move(dict)};
 
     // Read values back
     REQUIRE(config.get<std::string>("no_env_var") == "CNSTLN_TEST_KEY");
@@ -557,7 +557,7 @@ TEST_CASE("Resolve environment variables", "[core][core::config]") {
     REQUIRE_THROWS_MATCHES(
         config.get<std::string>("missing_env_var"),
         InvalidValueError,
-        Message("Value `${MISSING}` of key `missing_env_var` is not valid: Environment variable `MISSING` not defined"));
+        Message("Value of key `missing_env_var` is not valid: Environment variable `MISSING` not defined"));
     REQUIRE(config.get<std::string>("missing_env_var_default") == "default");
 }
 

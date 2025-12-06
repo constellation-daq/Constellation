@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+[_default]
 # environment variables:
 no_env_var = "CNSTLN_TEST_KEY"
 
