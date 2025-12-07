@@ -134,5 +134,5 @@ The name of the respective satellite will be used as username to allow distingui
 Log messages with a level of `WARNING` are marked as *important*, messages with level `CRITICAL` as *urgent*, and both are prefixed with `@channel` to notify all users in the Mattermost channel.
 
 ```{seealso}
-A detailed description of how to obtain a Mattermost API key and hwo to configure the satellite is provided in the How-To guide on [Setting up a Mattermost Logger](../howtos/setup_mattermost_logger.md)
+A detailed description of how to obtain a Mattermost API key and how to configure the satellite is provided in the How-To guide on [Setting up a Mattermost Logger](../howtos/setup_mattermost_logger.md)
 ```

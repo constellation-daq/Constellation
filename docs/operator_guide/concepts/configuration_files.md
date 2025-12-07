@@ -1,8 +1,11 @@
 # Configuration Files
 
-## Supported Syntax
+Constellation controllers use configuration files as source for the parameters to distribute to the satellites for their {bdg-secondary}`initializing` state, as well as for additional configuration parameter supplied during the optional {bdg-secondary}`reconfiguring` state described in the [satellite section](./satellite.md#changing-states---transitions).
+This section describes the supported syntax and structure of configuration files and details some additional features such as default parameter values and environment variables.
 
-The configuration file parsers of the available controller interfaces can parse files with either [YAML 1.2](https://yaml.org/spec/1.2.2/) or [TOML 1.0](https://toml.io/) syntax.
+## Supported File Syntax
+
+Configuration files can be provided in either [YAML 1.2](https://yaml.org/spec/1.2.2/) or [TOML 1.0](https://toml.io/) syntax.
 The versions have advantages and disadvantages in terms of readability and overview.
 
 YAML uses indentation to structure sections of the configuration.
@@ -74,6 +77,20 @@ Mariner:
 ```
 
 ::::
+
+## Parameter Keys & Values
+
+:::{dropdown} Technical note on YAML parsing
+:icon: gear
+:color: secondary
+
+The configuration used in Constellation requires strong typing, this means that each value has a determined variable type such as *floating point*, *integer* or *string*. While TOML has this sort of typing defined in its syntax, YAML does not distinguish between different types and treats all scalar nodes as opaque data.
+
+Hence, when parsing YAML it is upon the parser to determine and assign types. Constellation uses the [yaml-cpp](https://github.com/jbeder/yaml-cpp) library and its
+`convert` methods to obtain typed values from YAML scalars. First, a conversion to a Boolean is attempted, then to an Integer, Floating point number, and timestamp, respectively. If all conversions fail, the content will be interpreted as string.
+:::
+
+### Framework Parameters
 
 ### Default Values via `_default` Sections
 
@@ -175,21 +192,6 @@ _role = "ESSENTIAL"
 Here, `Sputnik.One` will obtain the parameter value `ESSENTIAL` set directly in its instance configuration, `Sputnik.Two` will receive the satellite-type default value of `TRANSIENT` while `Mariner.Nine` falls back to the global default value of `NONE`.
 
 
-## Parameter Keys & Values
-
-:::{dropdown} Technical note on YAML parsing
-:icon: gear
-:color: secondary
-
-The configuration used in Constellation requires strong typing, this means that each value has a determined variable type such as *floating point*, *integer* or *string*. While TOML has this sort of typing defined in its syntax, YAML does not distinguish between different types and treats all scalar nodes as opaque data.
-
-Hence, when parsing YAML it is upon the parser to determine and assign types. Constellation uses the [yaml-cpp](https://github.com/jbeder/yaml-cpp) library and its
-`convert` methods to obtain typed values from YAML scalars. First, a conversion to a Boolean is attempted, then to an Integer, Floating point number, and timestamp, respectively. If all conversions fail, the content will be interpreted as string.
-:::
-
-### Framework Parameters
-
-
 ## Environment Variables
 
 For configuration parameters such as access keys or tokens it can be beneficial to not store them directly in configuration
@@ -270,7 +272,7 @@ default value with the token `:-`:
 file_path = "/home/${USER}/${CNSTLN_LOGDIR:-logs}/logfile.txt"
 ```
 
-In case the environment variable `CNSTLN_LOGGER` is not defined, the parameter `file_path` resolves to
+In case the environment variable `CNSTLN_LOGDIR` is not defined, the parameter `file_path` resolves to
 `/home/myuser/logs/logfile.txt` without producing an error.
 
 The default syntax can be used both for controller-side and satellite-side environment variables.
