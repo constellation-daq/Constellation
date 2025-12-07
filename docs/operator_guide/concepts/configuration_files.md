@@ -50,6 +50,131 @@ There are multiple online tools available which convert TOML into YAML and vice 
 
 ## File Structure
 
+Configuration files are hierarchically structured by satellite type, satellite instance, and instance parameters.
+The top-level keys will identify satellite types such as `Sputnik`, `Mariner`, or `FlightRecorder`.
+Keys immediately under the satellite type represent individual, named instances of that type.
+The combination of satellite type and instance name forms the [canonical name](./satellite.md#type-and-name) of the respective satellite, which has to be unique across the Constellation.
+Some controllers issue a warning when satellites are found in the Constellation that do not have a corresponding entry in the loaded configuration file.
+The following is an example with two Sputnik-type satellites and one Mariner, neither of them specifying parameters to these instances.
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  One:
+  Two:
+Mariner:
+  Nine:
+```
+
+```{code-block} toml
+[Sputnik.One]
+[Sputnik.Two]
+[Mariner.Nine]
+```
+
+::::
+
+### Default Values via `_default` Sections
+
+Sometimes it can be beneficial to specify a parameter for all satellites of a specific type, or even for all satellites in the Constellation instead of copying it into every satellite instance section of the configuration.
+For this purpose, Constellation configuration files feature the `_default` mechanism.
+A section named `_default` will not be interpreted as satellite type or instance, but will be used as the default set of parameters for the given configuration section.
+
+A set of default values for all satellites in the Constellation has to be placed at the top level of the file:
+
+::::{tab-set-code}
+
+```{code-block} yaml
+_default:
+  _role: ESSENTIAL
+
+Sputnik:
+  One:
+
+Mariner:
+  Nine:
+```
+
+```{code-block} toml
+[_default]
+_role = "ESSENTIAL"
+
+[Sputnik.One]
+
+[Mariner.Nine]
+```
+
+::::
+
+Here, the `_role` parameter will be applied to both satellite instances, `Sputnik.One` and `Mariner.Nine`.
+In contrast, when placing the `_default` section *within* a satellite type, only the respective satellites will inherit these parameters:
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  _default:
+    _role: ESSENTIAL
+  One:
+
+Mariner:
+  Nine:
+```
+
+```{code-block} toml
+[Sputnik._default]
+_role = "ESSENTIAL"
+
+[Sputnik.One]
+
+[Mariner.Nine]
+```
+
+::::
+
+Here, only the `Sputnik.One` satellite will receive the `_role` parameter value `ESSENTIAL`, while `Mariner.Nine` will have the framework-default value.
+
+Parameter set through this `_default` mechanism are overwritten by more specific configurations.
+This means, global parameters are overwritten by satellite-type default parameters, and satellite-type defaults are replaced by individual satellite configurations:
+
+::::{tab-set-code}
+
+```{code-block} yaml
+_default:
+  _role: ESSENTIAL
+
+Sputnik:
+  _default:
+    _role: TRANSIENT
+  One:
+    _role: NONE
+  Two:
+
+Mariner:
+  Nine:
+```
+
+```{code-block} toml
+[_default]
+_role = "NONE"
+
+[Sputnik._default]
+_role = "TRANSIENT"
+
+[Sputnik.One]
+_role = "ESSENTIAL"
+
+[Sputnik.Two]
+
+[Mariner.Nine]
+```
+
+::::
+
+Here, `Sputnik.One` will obtain the parameter value `ESSENTIAL` set directly in its instance configuration, `Sputnik.Two` will receive the satellite-type default value of `TRANSIENT` while `Mariner.Nine` falls back to the global default value of `NONE`.
+
+
 ## Parameter Keys & Values
 
 :::{dropdown} Technical note on YAML parsing
@@ -64,7 +189,6 @@ Hence, when parsing YAML it is upon the parser to determine and assign types. Co
 
 ### Framework Parameters
 
-### Default Values
 
 ## Environment Variables
 
