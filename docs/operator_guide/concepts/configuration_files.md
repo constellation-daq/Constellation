@@ -8,11 +8,11 @@ This section describes the supported syntax and structure of configuration files
 Configuration files can be provided in either [YAML 1.2](https://yaml.org/spec/1.2.2/) or [TOML 1.0](https://toml.io/) syntax.
 The versions have advantages and disadvantages in terms of readability and overview.
 
-YAML uses indentation to structure sections of the configuration.
+**YAML** uses indentation to structure sections of the configuration.
 While this may be tedious and error-prone when typing, it provides a good overview of the configuration structure at a glance.
 Keys and values are separated by a colon.
 
-TOML uses square brackets to denote sections, indentation is ignored, and values are assigned to keys with an equal sign.
+**TOML** uses square brackets to denote sections, indentation is ignored, and values are assigned to keys with an equal sign.
 This may be easier to read with a few keys, but additional subsections can quickly obscure the actual structure.
 
 A comparison of a short configuration snippet in either syntax is provided below:
@@ -80,6 +80,40 @@ Mariner:
 
 ## Parameter Keys & Values
 
+Constellation configuration files support scalar values, arrays and dictionaries, which consist of key-value pairs.
+Configuration **keys are always interpreted as strings**, while the following **scalar value types** are distinguished:
+
+* Boolean, with values `true` and `false`.
+* Integer values such as `123`.
+* Floating point numbers, indicated by a decimal point or an exponent, such as `1.23` or `1e13`.
+* Timestamps such as dates, daytime, or full timestamps, such as `2025-11-13`, `05:55:23`, or `2025-05-27T00:32:00-07:00`.
+* Strings of text, enclosed in double-quotes such as `"configuration parameter with spaces"`.
+
+In a configuration file, these types appear as in the following example.
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  One:
+    bool: true
+    integer: 123
+    float: 1.23
+    daytime: 05:55:23
+    string: "configuration parameter with spaces"
+```
+
+```{code-block} toml
+[Sputnik.One]
+bool = true
+integer = 123
+float = 1.23
+daytime = 05:55:23
+string = "configuration parameter with spaces"
+```
+
+::::
+
 :::{dropdown} Technical note on YAML parsing
 :icon: gear
 :color: secondary
@@ -90,9 +124,77 @@ Hence, when parsing YAML it is upon the parser to determine and assign types. Co
 `convert` methods to obtain typed values from YAML scalars. First, a conversion to a Boolean is attempted, then to an Integer, Floating point number, and timestamp, respectively. If all conversions fail, the content will be interpreted as string.
 :::
 
+### Arrays
+
+**Arrays** are lists of scalar values and can be written in a short or a long syntax format, also called *flow syntax* and *block syntax* for YAML.
+
+```{note}
+Although the file syntax allows mixing of types, configuration arrays in Constellation must be homogeneous, i.e., all elements must have the same scalar type.
+
+```
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  One:
+    array_block:
+      - 1.3
+      - 0.5
+      - 1e15
+    array_flow: [1.3, 0.5, 1e15]
+```
+
+```{code-block} toml
+[Sputnik.One]
+array_block = [
+  1.3,
+  0.5,
+  1e15
+]
+array_flow = [1.3, 0.5, 1e15]
+```
+
+::::
+
+### Dictionaries
+
+**Dictionaries**, also known as *tables* on TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
+Value types can be mixed freely, and dictionaries can be recursively nested.
+This means that the value of a dictionary entry can be again either a scalar, an array, or a dictionary itself.
+Some satellites use this to structure their configuration into separate sections:
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  One:
+    dictionary:
+      parameter_a: 12
+      parameter_b: "access_token"
+    other_dict:
+      channel: 5
+      output: 1.3
+```
+
+```{code-block} toml
+[Sputnik.One]
+
+[Sputnik.One.dictionary]
+parameter_a = 12
+parameter_b = "access_token"
+
+[Sputnik.One.other_dict]
+channel = 5
+output = 1.3
+```
+
+::::
+
 ### Framework Parameters
 
-### Default Values via `_default` Sections
+
+### Default Parameter Values
 
 Sometimes it can be beneficial to specify a parameter for all satellites of a specific type, or even for all satellites in the Constellation instead of copying it into every satellite instance section of the configuration.
 For this purpose, Constellation configuration files feature the `_default` mechanism.
