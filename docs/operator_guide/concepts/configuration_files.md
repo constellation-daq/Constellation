@@ -193,6 +193,28 @@ output = 1.3
 
 ### Framework Parameters
 
+Constellation uses a leading underscore to distinguish parameters from satellite implementations of parameters that are directed at framework components, and to avoid naming conflicts between them.
+The satellite documentation lists these parameters in separate sections.
+
+In the following, the parameter `_role` is a Constellation framework parameter, while `interval` is a parameter that is read and interpreted by the satellite implementation:
+
+::::{tab-set-code}
+
+```{code-block} yaml
+Sputnik:
+  One:
+    _role: "ESSENTIAL"
+    interval: 1500
+```
+
+```{code-block} toml
+[Sputnik.One]
+_role = "ESSENTIAL"
+interval = 1500
+```
+
+::::
+
 
 ### Default Parameter Values
 
