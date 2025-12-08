@@ -67,7 +67,7 @@ The following is an example with two Sputnik-type satellites and one Mariner, ne
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   One:
   Two:
@@ -75,7 +75,7 @@ Mariner:
   Nine:
 ```
 
-```{code-block} toml
+```toml
 [Sputnik.One]
 [Sputnik.Two]
 [Mariner.Nine]
@@ -98,7 +98,7 @@ In a configuration file, these types appear as in the following example.
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   One:
     bool: true
@@ -108,7 +108,7 @@ Sputnik:
     string: "configuration parameter with spaces"
 ```
 
-```{code-block} toml
+```toml
 [Sputnik.One]
 bool = true
 integer = 123
@@ -140,7 +140,7 @@ Although the file syntax allows mixing of types, configuration arrays in Constel
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   One:
     array_block:
@@ -150,7 +150,7 @@ Sputnik:
     array_flow: [1.3, 0.5, 1e15]
 ```
 
-```{code-block} toml
+```toml
 [Sputnik.One]
 array_block = [
   1.3,
@@ -171,7 +171,7 @@ Some satellites use this to structure their configuration into separate sections
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   One:
     dictionary:
@@ -182,7 +182,7 @@ Sputnik:
       output: 1.3
 ```
 
-```{code-block} toml
+```toml
 [Sputnik.One]
 
 [Sputnik.One.dictionary]
@@ -205,14 +205,14 @@ In the following, the parameter `_role` is a Constellation framework parameter, 
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   One:
     _role: "ESSENTIAL"
     interval: 1500
 ```
 
-```{code-block} toml
+```toml
 [Sputnik.One]
 _role = "ESSENTIAL"
 interval = 1500
@@ -231,7 +231,7 @@ A set of default values for all satellites in the Constellation has to be placed
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 _default:
   _role: ESSENTIAL
 
@@ -242,7 +242,7 @@ Mariner:
   Nine:
 ```
 
-```{code-block} toml
+```toml
 [_default]
 _role = "ESSENTIAL"
 
@@ -258,7 +258,7 @@ In contrast, when placing the `_default` section *within* a satellite type, only
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 Sputnik:
   _default:
     _role: ESSENTIAL
@@ -268,7 +268,7 @@ Mariner:
   Nine:
 ```
 
-```{code-block} toml
+```toml
 [Sputnik._default]
 _role = "ESSENTIAL"
 
@@ -286,7 +286,7 @@ This means, global parameters are overwritten by satellite-type default paramete
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 _default:
   _role: ESSENTIAL
 
@@ -301,7 +301,7 @@ Mariner:
   Nine:
 ```
 
-```{code-block} toml
+```toml
 [_default]
 _role = "NONE"
 
@@ -412,7 +412,7 @@ The following comprehensive example demonstrates the configuration of two Satell
 
 ::::{tab-set-code}
 
-```{code-block} yaml
+```yaml
 # Configuration for Sputnik-type satellites
 Sputnik:
   # Default parameters inherited by all Sputnik instances
@@ -445,7 +445,7 @@ Mariner:
     voltage: 5.5
 ```
 
-```{code-block} toml
+```toml
 # Defining the top-level satellite type is optional in the TOML syntax
 [Sputnik]
 
