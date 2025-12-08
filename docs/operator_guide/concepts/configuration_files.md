@@ -1,6 +1,8 @@
 # Configuration Files
 
-Constellation controllers use configuration files as source for the parameters to distribute to the satellites for their {bdg-secondary}`initializing` state, as well as for additional configuration parameter supplied during the optional {bdg-secondary}`reconfiguring` state described in the [satellite section](./satellite.md#changing-states---transitions).
+Constellation uses configuration files as source for the parameters.
+Controllers parse and validate these configuration files and distribute the derived configuration sections to the individual satellites for their {bdg-secondary}`initializing` state, as well as additional configuration parameter for the optional {bdg-secondary}`reconfiguring` state described in the [satellite section](./satellite.md#changing-states---transitions).
+
 This section describes the supported syntax and structure of configuration files and details some additional features such as default parameter values and environment variables.
 
 ## Supported File Syntax
@@ -53,9 +55,12 @@ There are multiple online tools available which convert TOML into YAML and vice 
 
 ## File Structure
 
-Configuration files are hierarchically structured by satellite type, satellite instance, and instance parameters.
-The top-level keys will identify satellite types such as `Sputnik`, `Mariner`, or `FlightRecorder`.
-Keys immediately under the satellite type represent individual, named instances of that type.
+Configuration files are hierarchically structured into three main levels by satellite type, satellite instance, and instance parameters:
+
+* The top-level keys identify satellite types such as `Sputnik`, `Mariner`, or `FlightRecorder`.
+* Keys on the second level, immediately under the satellite type, represent individual, named instances of that type.
+* Keys on the third level and below are parameter keys that define the specific operational settings of the respective satellite instance.
+
 The combination of satellite type and instance name forms the [canonical name](./satellite.md#type-and-name) of the respective satellite, which has to be unique across the Constellation.
 Some controllers issue a warning when satellites are found in the Constellation that do not have a corresponding entry in the loaded configuration file.
 The following is an example with two Sputnik-type satellites and one Mariner, neither of them specifying parameters to these instances.
