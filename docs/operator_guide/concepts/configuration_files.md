@@ -3,6 +3,11 @@
 Constellation uses configuration files as source for the parameters.
 Controllers parse and validate these configuration files and distribute the derived configuration sections to the individual satellites for their {bdg-secondary}`initializing` state, as well as additional configuration parameter for the optional {bdg-secondary}`reconfiguring` state described in the [satellite section](./satellite.md#changing-states---transitions).
 
+```{hint}
+It is strongly recommended to keep configuration files under version control, for example by checking them into a `git` repository specifically designated for the configurations of the Constellation setup.
+This allows configuration changes to be tracked and tried-and-tested configuration files to be used in further measurement campaigns.
+```
+
 This section describes the supported syntax and structure of configuration files and details some additional features such as default parameter values and environment variables.
 
 ## Supported File Syntax
