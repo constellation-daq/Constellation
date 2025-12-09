@@ -7,6 +7,12 @@
  * SPDX-License-Identifier: EUPL-1.2
  */
 
+// Suppress false positive warning in GCC 15 about uninitialized vectors in std::variant copy constructor
+#if defined(__GNUC__) && __GNUC__ >= 15
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include "MissionControl.hpp"
 
 #include <chrono>
@@ -591,3 +597,8 @@ std::optional<Controller::CommandPayload> MissionControl::parse_config_file(cons
     }
     return {};
 }
+
+// Restore diagnostic state
+#if defined(__GNUC__) && __GNUC__ >= 15
+#pragma GCC diagnostic pop
+#endif
