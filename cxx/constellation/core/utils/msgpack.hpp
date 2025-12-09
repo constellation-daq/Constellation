@@ -10,6 +10,7 @@
 #pragma once
 
 #include <type_traits>
+#include <typeinfo>
 
 #include <msgpack.hpp>
 
@@ -49,6 +50,8 @@ namespace constellation::utils {
             const auto msgpack_var = msgpack::unpack(std::forward<Args>(args)...);
             return msgpack_var->template as<R>();
         } catch(const msgpack::type_error& e) {
+            throw MsgpackUnpackError("Type error for " + utils::demangle<R>(), e.what());
+        } catch(const std::bad_cast& e) { // Workaround for libc++: same as msgpack::type_error
             throw MsgpackUnpackError("Type error for " + utils::demangle<R>(), e.what());
         } catch(const msgpack::parse_error& e) {
             throw MsgpackUnpackError("Error parsing data", e.what());
