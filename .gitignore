@@ -16,3 +16,6 @@
 __pycache__/
 .mypy_cache/
 .pytest_cache
+
+# CodeQL analysis artifacts
+_codeql_detected_source_root
