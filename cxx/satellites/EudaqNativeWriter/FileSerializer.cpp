@@ -32,8 +32,13 @@ using namespace constellation::message;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-FileSerializer::FileSerializer(std::ofstream file, std::uint32_t run_sequence)
-    : file_(std::move(file)), run_sequence_(run_sequence) {}
+FileSerializer::FileSerializer(std::ofstream file, std::size_t buffer_size, std::uint32_t run_sequence)
+    : file_(std::move(file)), buffer_size_(buffer_size), buffer_written_(0), run_sequence_(run_sequence) {
+    buffer_.resize(buffer_size_);
+    event_buffer_.reserve(buffer_size_);
+    // Use custom file buffer to only write full events to file
+    file_.rdbuf()->pubsetbuf(buffer_.data(), static_cast<std::streamsize>(buffer_.size()));
+}
 
 FileSerializer::~FileSerializer() {
     if(file_.is_open()) {
@@ -42,16 +47,38 @@ FileSerializer::~FileSerializer() {
 }
 
 void FileSerializer::flush() {
-    if(file_.is_open()) {
-        file_.flush();
-    }
+    file_.flush();
+    buffer_written_ = 0;
 }
 
 void FileSerializer::write(std::span<const std::byte> data) {
-    file_.write(to_char_ptr(data.data()), static_cast<std::streamsize>(data.size_bytes()));
-    if(!file_.good()) {
+    event_buffer_.insert(event_buffer_.end(), data.begin(), data.end());
+}
+
+void FileSerializer::flush_event_buffer() {
+    const auto event_buffer_size = event_buffer_.size();
+
+    // Check if writing to file would result in a force flush and flush beforehand
+    if(buffer_written_ + event_buffer_size >= buffer_size_) {
+        flush();
+
+        // Check if writing would still force a flush and warn about it
+        if(event_buffer_size > buffer_size_) {
+            LOG_N(WARNING, 5) << "Event larger than file buffer, set `buffer_size` to at least " << event_buffer_size
+                              << " in order to only write full events to disk";
+        }
+    }
+
+    // Write to file
+    file_.write(to_char_ptr(event_buffer_.data()), static_cast<std::streamsize>(event_buffer_size));
+    buffer_written_ += event_buffer_size;
+
+    if(!file_.good()) [[unlikely]] {
         throw SatelliteError("Error writing to file");
     }
+
+    // Reset event buffer (performance note: capacity is kept, so no need so reserve anything)
+    event_buffer_.resize(0);
 }
 
 void FileSerializer::write_str(std::string_view t) {
@@ -190,6 +217,12 @@ void FileSerializer::serializeDelimiterMsg(std::string_view sender, CDTP2Message
     // BORE/EORE does not contain data - write empty blocks and empty subevent count:
     write_blocks({});
     write_int<std::uint32_t>(0);
+
+    // Flush to file buffer
+    flush_event_buffer();
+
+    // Flush file
+    flush();
 }
 
 void FileSerializer::serializeDataRecord(std::string_view sender, const CDTP2Message::DataRecord& data_record) {
@@ -229,4 +262,7 @@ void FileSerializer::serializeDataRecord(std::string_view sender, const CDTP2Mes
             write_int<std::uint32_t>(0);
         }
     }
+
+    // Flush event buffer
+    flush_event_buffer();
 }

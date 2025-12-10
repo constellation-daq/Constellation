@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <chrono>
+#include <cstddef>
 #include <filesystem>
 #include <memory>
 #include <string_view>
@@ -37,9 +37,6 @@ public:
     /** Transition function for stop command */
     void stopping() final;
 
-    /** Transition function for interrupt transition to SAFE mode */
-    void interrupting(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
-
     /** Transition function for failure transition to ERROR mode */
     void failure(constellation::protocol::CSCP::State previous_state, std::string_view reason) final;
 
@@ -60,5 +57,6 @@ protected:
 private:
     std::unique_ptr<FileSerializer> serializer_;
     std::filesystem::path base_path_;
-    constellation::utils::TimeoutTimer flush_timer_ {std::chrono::seconds(3)};
+    std::size_t buffer_size_;
+    constellation::utils::TimeoutTimer flush_timer_;
 };
