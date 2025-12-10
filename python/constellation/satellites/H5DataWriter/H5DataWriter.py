@@ -16,6 +16,7 @@ import numpy as np
 
 from constellation.core import __version__
 from constellation.core.commandmanager import cscp_requestable
+from constellation.core.configuration import Configuration
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
 from constellation.core.monitoring import schedule_metric
@@ -25,11 +26,11 @@ from constellation.core.receiver_satellite import ReceiverSatellite
 class H5DataWriter(ReceiverSatellite):
     """Satellite which receives data via ZMQ and writes to HDF5."""
 
-    def do_initializing(self, config: dict[str, Any]) -> str:
+    def do_initializing(self, config: Configuration) -> str:
         """Initialize and configure the satellite."""
-        self.output_directory = pathlib.Path(self.config["output_directory"])
-        self.flush_interval: float = self.config.setdefault("flush_interval", 10.0)
-        self.swmr_mode: bool = self.config.setdefault("allow_concurrent_reading", False)
+        self.output_directory = config.get_path("output_directory")
+        self.flush_interval: float = config.get_num("flush_interval", 10.0)
+        self.swmr_mode: bool = config.get("allow_concurrent_reading", False, return_type=bool)
         if self.swmr_mode and self.data_transmitters is None:
             raise RuntimeError("SWMR mode require list of known data transmitters")
         # Book keeping for swmr file indices and datasets

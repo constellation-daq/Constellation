@@ -32,8 +32,8 @@ class LakeShore218(Satellite):
         visa_address = f"ASRL{port}::INSTR"
 
         # Get metrics config
-        channel_names = config.setdefault("channel_names", [f"TEMP_{n + 1}" for n in range(8)])
-        sampling_interval = config.setdefault("sampling_interval", 5)
+        channel_names = config.get_array("channel_names", [f"TEMP_{n + 1}" for n in range(8)], element_type=str)
+        sampling_interval = config.get_num("sampling_interval", 5, min_val=1)
 
         # Check that channel names are unique and eight in total
         if len(set(channel_names)) != 8:

@@ -31,16 +31,17 @@ class LeCroySatellite(TransmitterSatellite):
     def do_initializing(self, configuration: Configuration) -> str:
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
 
-        ip_address = configuration["ip_address"]
-        port = configuration.setdefault("port", 1861)
-        timeout = configuration.setdefault("timeout", 5.0)
+        ip_address = configuration.get("ip_address", return_type=str)
+        port = configuration.get_int("port", 1861, min_val=0, max_val=65535)
+        timeout = configuration.get_num("timeout", 5.0)
+        num_sequences = configuration.get_int("nsequence", 1)
 
         try:
             self._scope = LeCrunch3.LeCrunch3(str(ip_address), port=int(port), timeout=float(timeout))
         except ConnectionRefusedError as e:
             raise RuntimeError(f"Connection refused to {ip_address}:{port}") from e
 
-        self._configure_sequences(configuration.setdefault("nsequence", 1))
+        self._configure_sequences(num_sequences)
 
         # channels trigger levels and offsets are not expected to change on reconfiguration
         self._channels = self._scope.get_channels()
@@ -59,8 +60,10 @@ class LeCroySatellite(TransmitterSatellite):
         return f"Connected to scope at {ip_address}"
 
     def do_reconfigure(self, configuration: Configuration) -> str:
-        self._scope.clear()
-        self._configure_sequences(configuration.setdefault("nsequence", 1))
+        if "nsequence" in configuration:
+            num_sequences = configuration.get_int("nsequence")
+            self._scope.clear()
+            self._configure_sequences(num_sequences)
         return "Successfully reconfigured scope"
 
     def do_run(self, run_identifier: str) -> str:
