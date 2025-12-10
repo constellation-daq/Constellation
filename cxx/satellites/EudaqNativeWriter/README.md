@@ -67,4 +67,4 @@ meson configure build -Dsatellite_eudaq_native_writer=false
 |-----------|------|-------------|---------------|
 | `output_directory` | String | Base path to which to write output files to | - |
 | `buffer_size` | Unsigned Integer | Size of file buffer before flushing takes place in KiB | `128` |
-| `flush_interval` | Integer | Interval in seconds in which data should be additionally flushed to disk | 3 |
+| `flush_interval` | Integer | Longest interval in seconds after which data in the file buffer will be written to disk | 3 |
