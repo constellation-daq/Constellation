@@ -1,4 +1,4 @@
-CHIRPManager module
+CHIRPManager Module
 ========================
 
 .. automodule:: core.chirpmanager

@@ -1,4 +1,4 @@
-CSCP1 module
+CSCP1 Module
 ============
 
 .. automodule:: core.message.cscp1

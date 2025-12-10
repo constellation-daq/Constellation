@@ -1,4 +1,4 @@
-MessagePack Helper module
+MessagePack Helper Module
 =========================
 
 .. automodule:: core.message.msgpack_helpers

@@ -1,4 +1,4 @@
-Multipart module
+Multipart Module
 ================
 
 .. automodule:: core.message.multipart

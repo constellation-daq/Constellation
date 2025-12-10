@@ -1,4 +1,4 @@
-TransmitterSatellite module
+TransmitterSatellite Module
 ===========================
 
 .. automodule:: core.transmitter_satellite

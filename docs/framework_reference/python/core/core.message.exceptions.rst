@@ -1,4 +1,4 @@
-Exceptions module
+Exceptions Module
 =================
 
 .. automodule:: core.message.exceptions
