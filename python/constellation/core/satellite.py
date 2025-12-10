@@ -18,7 +18,7 @@ from .chirp import CHIRPServiceIdentifier
 from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .chp import CHPRole
 from .commandmanager import CommandReceiver, cscp_requestable
-from .configuration import ConfigError, Configuration
+from .configuration import Configuration, ConfigurationGroup
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
 from .heartbeater import HeartbeatSender
@@ -58,7 +58,7 @@ class Satellite(
 
         self.run_identifier: str = ""
         self.run_degraded: bool = False
-        self.config = Configuration({})
+        self._config = Configuration()
 
         # give monitoring a chance to start up and catch early messages
         time.sleep(0.1)
@@ -193,26 +193,16 @@ class Satellite(
         self._state_thread_evt = None
         self._state_thread_fut = None
 
-        # Store configuration
-        self.config = config
+        self._pre_initializing_hook(config)
+        status_msg: str | None = self.do_initializing(config)
+        if not isinstance(status_msg, str):
+            status_msg = "Initialized"
 
-        # call device-specific user-routine
-        try:
-            self._pre_initializing_hook(self.config)
-            init_msg: str | None = self.do_initializing(self.config)
-            if not isinstance(init_msg, str):
-                init_msg = "Initialized"
-            if self.config.has_unused_values():
-                for key in self.config.get_unused_keys():
-                    self.log_satellite.warning("Satellite ignored configuration value: '%s'", key)
-                init_msg += " IGNORED parameters: "
-                init_msg += ",".join(self.config.get_unused_keys())
-        except ConfigError as e:
-            msg = "Caught exception during initialization: "
-            msg += f"missing a required configuration value {e}?"
-            self.log_satellite.error(msg)
-            raise RuntimeError(msg) from e
-        return init_msg
+        unused_keys = self._store_config(config)
+        if unused_keys > 0:
+            status_msg += f" ({unused_keys} unused keys)"
+
+        return status_msg
 
     @debug_log
     def _pre_initializing_hook(self, config: Configuration) -> None:
@@ -222,8 +212,8 @@ class Satellite(
         user code is executed.
 
         """
-        self.role = CHPRole[self.config.setdefault("_role", "DYNAMIC").upper()]
-        self.max_heartbeat_interval = self.config.setdefault("_max_heartbeat_interval", 30)
+        self.role = CHPRole[config.get("_role", "DYNAMIC", return_type=str).upper()]
+        self.max_heartbeat_interval = config.get_int("_max_heartbeat_interval", 30, min_val=0)
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str | None:
@@ -277,19 +267,15 @@ class Satellite(
         # reconfigure is not necessarily implemented; it is not in the this base
         # class to allow checking for the existence of the method to
         # determine the reaction to a `reconfigure` CSCP command.
-        init_msg: str | None = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
-        if not isinstance(init_msg, str):
-            init_msg = "Reconfigured"
+        status_msg: str | None = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
+        if not isinstance(status_msg, str):
+            status_msg = "Reconfigured"
 
-        # update config
-        self.config.update(partial_config.get_dict(), partial_config.get_unused_keys())
+        unused_keys = self._update_config(partial_config)
+        if unused_keys > 0:
+            status_msg += f" ({unused_keys} unused keys)"
 
-        if partial_config.has_unused_values():
-            for key in partial_config.get_unused_keys():
-                self.log_satellite.warning("Satellite ignored configuration value: '%s'", key)
-            init_msg += " IGNORED parameters: "
-            init_msg += ",".join(self.config.get_unused_keys())
-        return init_msg
+        return status_msg
 
     @handle_error
     @debug_log
@@ -464,6 +450,36 @@ class Satellite(
         self.do_landing()
         return "Interrupted"
 
+    def _store_config(self, config: Configuration) -> int:
+        # Remove unused entries
+        unused_keys = config._remove_unused_entries()
+        if unused_keys:
+            self.log.warning(f"{len(unused_keys)} keys of the configuration were not used: {unused_keys}")
+
+        # Store new configuration
+        self._config = config
+
+        # Log config
+        self.log.info(f"Configuration:{self._config.to_string(ConfigurationGroup.USER)}")
+        self.log.debug(f"Configuration:{self._config.to_string(ConfigurationGroup.INTERNAL)}")
+
+        return len(unused_keys)
+
+    def _update_config(self, partial_config: Configuration) -> int:
+        # Remove unused entries
+        unused_keys = partial_config._remove_unused_entries()
+        if unused_keys:
+            self.log.warning(f"{len(unused_keys)} keys of the configuration were not used: {unused_keys}")
+
+        # Update configuration
+        self._config._update(partial_config)
+
+        # Log config
+        self.log.info(f"Configuration:{self._config.to_string(ConfigurationGroup.USER)}")
+        self.log.debug(f"Configuration:{self._config.to_string(ConfigurationGroup.INTERNAL)}")
+
+        return len(unused_keys)
+
     def _thread_exception(self, args: Any) -> None:
         """Handle exceptions in threads.
 
@@ -518,8 +534,8 @@ class Satellite(
         No payload argument.
 
         """
-        cfg_dict = self.config.get_dict()
-        return f"{len(cfg_dict)} configuration keys, dictionary attached in payload", cfg_dict, {}
+        cfg_dict = self._config._dictionary
+        return "Dictionary attached in payload", cfg_dict, {}
 
 
 # -------------------------------------------------------------------------

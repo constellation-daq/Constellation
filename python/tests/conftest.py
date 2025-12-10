@@ -15,8 +15,9 @@ import pytest
 import zmq
 
 from constellation.core.chirp import CHIRP_PORT, CHIRPBeaconTransmitter
-from constellation.core.configuration import Configuration, flatten_config, load_config
+from constellation.core.configuration import Configuration
 from constellation.core.controller import BaseController
+from constellation.core.controller_configuration import load_config
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
 from constellation.core.message.cscp1 import SatelliteState
@@ -440,12 +441,7 @@ def rawconfig_yaml():
 @pytest.fixture
 def config(rawconfig_toml):
     """Fixture for specific configuration"""
-    config = flatten_config(
-        rawconfig_toml,
-        "mocksat",
-        "device2",
-    )
-    yield Configuration(config)
+    yield rawconfig_toml.get_satellite_configuration("mocksat.device2")
 
 
 @pytest.fixture
@@ -455,14 +451,14 @@ def mock_example_satellite(mock_zmq_context, mock_chirp_socket):
     ctx.flip_queues()
 
     class MockExampleSatellite(Satellite):
-        def do_initializing(self, payload):
-            self.voltage = self.config.setdefault("voltage", 10)
-            self.mode = self.config.setdefault("mode", "passionate")
+        def do_initializing(self, config: Configuration):
+            self.voltage = config.get_int("voltage", 10)
+            self.mode = config.get("mode", "passionate")
             return "finished with mock initialization"
 
-        def do_reconfigure(self, payload):
-            self.voltage = self.config.setdefault("voltage", 100)
-            self.mode = self.config.setdefault("mode", "cautious")
+        def do_reconfigure(self, partial_config: Configuration):
+            self.voltage = partial_config.get_int("voltage", 100)
+            self.mode = partial_config.get("mode", "cautious")
             return "finished with mock reconfiguration"
 
     s = MockExampleSatellite("mock_satellite", "mockstellation", 11111, 22222, MON_PORT, [get_loopback_interface_name()])

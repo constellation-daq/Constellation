@@ -32,19 +32,15 @@ class ReceiverSatellite(Satellite):
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all ReceiverSatellite-type classes."""
         super()._pre_initializing_hook(config)
-        data_transmitters = self.config.setdefault("_data_transmitters", None)
-        if data_transmitters:
-            if not isinstance(data_transmitters, list) or not all([isinstance(t, str) for t in data_transmitters]):
-                msg = "The '_data_transmitters' configuration parameter needs to be a list of strings "
-                msg += '(e.g. \'["TachyonDetector.array1", "XRayCamera.cam1"]\')'
-                raise ValueError(msg)
-            data_transmitters = set(data_transmitters)
+        data_transmitters: None | set[str] = None
+        if "_data_transmitters" in config:
+            data_transmitters = config.get_set("_data_transmitters", element_type=str)
         # Create data receiver
         self._drc = DataReceiver(
             self.context, self.log_cdtp, self.receive_bor, self.receive_data, self.receive_eor, data_transmitters
         )
         # EOR timeout
-        self._drc.eor_timeout = self.config.setdefault("_eor_timeout", 10)
+        self._drc.eor_timeout = config.get_int("_eor_timeout", 10, min_val=1)
         self.log_cdtp.debug("Timeout for EOR messages is %ss", self._drc.eor_timeout)
 
     def _pre_launching_hook(self) -> None:
