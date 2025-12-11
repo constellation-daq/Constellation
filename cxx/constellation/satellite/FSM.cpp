@@ -592,11 +592,13 @@ FSM::State FSM::interrupted(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::failure(TransitionPayload payload) {
-    // Set status message with information from payload:
+    // Set status message with information from payload, use status as default
     std::string reason;
     if(std::holds_alternative<std::string>(payload)) {
         reason = std::get<std::string>(std::move(payload));
         set_status(reason);
+    } else {
+        reason = std::string(getStatus());
     }
 
     auto call_wrapper = [this](State previous_state, std::string reason) {
