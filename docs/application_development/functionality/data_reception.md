@@ -82,8 +82,8 @@ A simplified example implementation of these callbacks can be found below. Here,
 taken from the received messages, and discard the data.
 
 ```cpp
-void MyWriterSatellite::receive_bor(std::string_view sender, const Dictionary& user_tags, const Configuration& config) {
-    LOG(INFO) << "Received BOR from " << sender << " with config" << config.getDictionary().to_string();
+void MyWriterSatellite::receive_bor(std::string_view sender, const Dictionary& user_tags, const Dictionary& config) {
+    LOG(INFO) << "Received BOR from " << sender << " with config" << config.to_string();
 }
 
 void MyWriterSatellite::receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) {

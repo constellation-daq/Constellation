@@ -20,7 +20,7 @@ states are implemented by overriding the virtual methods provided by the
 
 For a new satellite, the following transitional state actions **should be implemented**:
 
-* `void ExampleSatellite::initializing(config::Configuration& config)`
+* `void ExampleSatellite::initializing(Configuration& config)`
 * `void ExampleSatellite::launching()`
 * `void ExampleSatellite::landing()`
 * `void ExampleSatellite::starting(std::string_view run_identifier)`
@@ -28,15 +28,81 @@ For a new satellite, the following transitional state actions **should be implem
 
 The following transitional state actions are optional:
 
-* `void ExampleSatellite::reconfiguring(const config::Configuration& config)`: implements a fast partial reconfiguration of the satellite, see below for a detailed description.
+* `void ExampleSatellite::reconfiguring(const Configuration& partial_config)`: implements a fast partial reconfiguration of the satellite, see [below](#to-reconfigure-or-not-to-reconfigure) for a detailed description.
 * `void ExampleSatellite::interrupting()`: this is the transition to the `SAFE` state and defaults to `stopping` (if necessary because current state is `RUN`), followed by `landing`. If desired, this can be overwritten with a custom action.
 
-For the steady state action for the `RUN` state, see below.
+For the steady state action for the `RUN` state, see [below](#running-and-the-stop-token).
+
+## Reading Configuration Parameters
 
 ```{caution}
 Reading information from the satellite configuration is only possible in the `initializing` function.
 All parameters the satellite requires should be read and validated in this function, the `launching` function should only be used to apply this configuration to hardware.
 ```
+
+Configuration parameters can be read using the `get` method on the `Configuration` object:
+
+```cpp
+void ExampleSatellite::initializing(const Configuration& config) {
+    // Read voltage as double
+    const auto voltage = config.get<double>("voltage");
+
+    // Read channel as integer, with default value 1 if not given in config file
+    const auto channel = config.get<int>("channel", 1);
+}
+```
+
+Several other `get` methods exists for convenience:
+
+* `getOptional`: get an `std::optional` instead of throwing if the key is not present
+* `getArray`, `getOptionalArray`: get an `std::vector`
+* `getSet`, `getOptionalSet`: get an `std::set`
+* `getPath`, `getPathArray`: get an `std::filesystem::path`
+
+To access nested configuration section, `getSection` can be used:
+
+```cpp
+void ExampleSatellite::initializing(const Configuration& config) {
+    // Read channel 0 & 1 as nested configuration sections
+    for(auto n : {0, 1}) {
+
+      // Get section for channel n
+      const auto& channel_section = config.getSection("channel_" + to_string(n));
+
+      // channel_section has the same methods available as config
+      const auto voltage = channel_section.get<double>("voltage");
+    }
+}
+```
+
+It is possible to iterate over sections using `getKeys`:
+
+```cpp
+void ExampleSatellite::initializing(const Configuration& config) {
+    // Get sections for channels
+    const auto& channels_section = config.getSection("channels");
+
+    // Iterate over keys in sections
+    for(const auto& key : channels_section.getKeys()) {
+
+        // Keys defined as `chN`
+        if(!key.starts_with("ch") {
+            throw InvalidKeyError("channels." + key, "key should start with `ch`");
+        }
+        const auto channel = std::stoul(key.substr(2));
+
+        // Get section for channel
+        const auto& channel_section = channels_section.getSection(key);
+        const auto enabled = channel_section.get<bool>("enabled");
+    }
+}
+```
+
+Besides the `get` methods, following methods might be helpful when reading the configuration:
+
+* `has`: checks if a key is present in the configuration
+* `count`: counts how many of the given keys are present in the configuration, useful to check for invalid key combinations (see also [error handling](#configuration-errors))
+* `setAlias`: can be used to set an alias for a renamed key
 
 ## Running and the Stop Token
 
@@ -132,9 +198,8 @@ the framework of the problem. The Constellation core library provides different 
 
 ### Configuration Errors
 
-* `MissingKeyError` should be thrown when a mandatory configuration key is absent. When accessing the key in a configuration
-  object where it is not present, this exception is thrown automatically.
 * `InvalidValueError` should be used when a value read from the configuration is not valid.
+* `InvalidCombinationError` should be used when an invalid combination of configuration keys is present.
 
 The message provided with the exception should be as descriptive as possible. It will both be logged and will be used as
 status message by the satellite.
