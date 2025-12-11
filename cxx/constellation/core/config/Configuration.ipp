@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::config {
@@ -30,6 +31,11 @@ namespace constellation::config {
     }
 
     template <typename T> T Section::get(std::string_view key) const {
+        // Ensure that get<Dictionary> does not work
+        if constexpr(std::same_as<T, Dictionary>) {
+            throw utils::LogicError("`get<Dictionary>` called, usage of `getSection` required");
+        }
+
         const auto key_lc = utils::transform(key, tolower);
         try {
             const auto composite = dictionary_->at(key_lc);

@@ -25,6 +25,7 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/type.hpp"
 
 using namespace Catch::Matchers;
@@ -255,6 +256,9 @@ TEST_CASE("Configuration section getters", "[core][core::config]") {
     REQUIRE(config_subdict_1_opt.value().get().get<int>("int") == 4);
     const auto config_ne_opt = config.getOptionalSection("non_existant");
     REQUIRE_FALSE(config_ne_opt.has_value());
+    // Check dictionary via get fails
+    REQUIRE_THROWS_MATCHES(
+        config.get<Dictionary>("sub_1"), LogicError, Message("`get<Dictionary>` called, usage of `getSection` required"));
 }
 
 TEST_CASE("Configuration section keys", "[core][core::config]") {
