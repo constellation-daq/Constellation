@@ -187,6 +187,10 @@ namespace constellation::message {
          *
          * @param frames ZeroMQ frames
          * @return CDTP2 message
+         * @throw MessageDecodingError If decoding fails
+         * @throw UnexpectedProtocolError If the protocol does not match
+         * @throw InvalidProtocolError If the protocol is invalid or unknown
+
          */
         CNSTLN_API static CDTP2Message disassemble(zmq::multipart_t& frames);
 

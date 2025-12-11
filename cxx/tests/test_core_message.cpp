@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
+#include <memory>
 #include <numbers>
 #include <string>
 #include <utility>
@@ -28,6 +29,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/msgpack.hpp"
@@ -38,6 +40,7 @@ using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::log;
 using namespace constellation::message;
+using namespace constellation::metrics;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::string_literals;
@@ -220,13 +223,10 @@ TEST_CASE("Message Assembly / Disassembly (CSCP1)", "[core][core::message]") {
 TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
-    // Log message with logger topic
-    CMDP1LogMessage log_msg {Level::STATUS, "logger", {"senderCMDP", tp}, ""};
+    // Create state message
+    CMDP1StatMessage log_msg {{"senderCMDP", tp}, {std::make_shared<Metric>("name", "unit", MetricType::LAST_VALUE), {}}};
     auto log_frames = log_msg.assemble();
 
-    // Actually a stat message TODO(stephan.lachnit): use CMDPStatMessage once implemented
-    zmq::message_t stat_topic {"STAT/STATI_TOPIC"s};
-    log_frames.at(0).swap(stat_topic);
     REQUIRE_THROWS_MATCHES(CMDP1LogMessage::disassemble(log_frames),
                            IncorrectMessageType,
                            Message("Message type is incorrect: Not a log message"));

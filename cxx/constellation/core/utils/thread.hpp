@@ -25,6 +25,6 @@ namespace constellation::utils {
 #ifdef __linux__
         pthread_setname_np(thread.native_handle(), name.substr(0, 15).c_str());
 #endif
-        // TODO(stephn.lachnit): Implement for Windows / MacOS
+        // TODO(stephan.lachnit): Implement for Windows / MacOS
     }
 } // namespace constellation::utils

@@ -122,7 +122,9 @@ namespace constellation::message {
          * This function moves the payload frame if there is one.
          *
          * @return New CSCP1Message assembled from ZeroMQ frames
-         * @throw TODO
+         * @throw MessageDecodingError If decoding fails
+         * @throw UnexpectedProtocolError If the protocol does not match
+         * @throw InvalidProtocolError If the protocol is invalid or unknown
          */
         CNSTLN_API static CSCP1Message disassemble(zmq::multipart_t& frames);
 
