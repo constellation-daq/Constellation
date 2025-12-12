@@ -94,7 +94,7 @@ Constellation configuration files support scalar values, arrays and dictionaries
 Configuration **keys are always interpreted as strings**, while the following **scalar value types** are distinguished:
 
 * Boolean, with values `true` and `false`.
-* Integer values such as `123`.
+* Integer values such as `123`, `0x33`, or `0b11`. Integers can be provided in decimal (plain number), hexadecimal (with `0x` prefix) or binary notation (`0b` prefix).
 * Floating point numbers, indicated by a decimal point or an exponent, such as `1.23` or `1e13`.
 * Timestamps such as dates, daytime, or full timestamps, such as `2025-11-13`, `05:55:23`, or `2025-05-27T00:32:00-07:00`.
 * Strings of text, enclosed in double-quotes such as `"configuration parameter with spaces"`.
