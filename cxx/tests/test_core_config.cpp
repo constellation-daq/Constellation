@@ -335,6 +335,21 @@ TEST_CASE("Configuration aliases", "[core][core::config]") {
     REQUIRE_FALSE(config.has("old"));
 }
 
+TEST_CASE("Configuration invalid key combination", "[core][core::config]") {
+    const auto evaluate = [](const Configuration& config) {
+        if(config.count({"voltage", "current", "power"}) > 1) {
+            throw InvalidCombinationError(config, {"voltage", "current", "power"}, "only one source mode possible");
+        }
+    };
+    Dictionary dict {};
+    dict["voltage"] = 5.0;
+    dict["current"] = 1.0;
+    const Configuration config {std::move(dict)};
+    REQUIRE_THROWS_MATCHES(evaluate(config),
+                           InvalidCombinationError,
+                           Message("Combination of keys `voltage`, `current` is not valid: only one source mode possible"));
+}
+
 TEST_CASE("Configuration case-insensitivity", "[core][core::config]") {
     Dictionary dict {};
     constexpr auto bool_v = true;
