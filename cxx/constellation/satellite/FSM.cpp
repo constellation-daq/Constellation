@@ -433,15 +433,15 @@ void FSM::initialize_fsm(Configuration& config) {
             LOG(logger_, INFO) << "Registering condition for transitional state " << quote(to_string(state))
                                << " and remotes " << quote(range_to_string(remotes));
 
-            std::ranges::for_each(remotes, [this, &key, state](const auto& remote) {
+            std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
                 // Check that names are valid
                 if(!CSCP::is_valid_canonical_name(remote)) {
-                    throw InvalidValueError(key, quote(remote) + " is not a valid canonical name");
+                    throw InvalidValueError(config, key, quote(remote) + " is not a valid canonical name");
                 }
 
                 // Check that the requested remote is not this satellite
                 if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
-                    throw InvalidValueError(key, "Satellite cannot depend on itself");
+                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
                 }
 
                 remote_conditions_.emplace(remote, state);

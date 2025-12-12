@@ -44,14 +44,13 @@ namespace constellation::config {
             return value;
         } catch(const std::out_of_range&) {
             // Requested key has not been found in dictionary
-            throw MissingKeyError(prefix_ + utils::to_string(key));
+            throw MissingKeyError(*this, key);
         } catch(const std::bad_variant_access&) {
             // Value held by the dictionary entry could not be cast to desired type
-            throw InvalidTypeError(
-                prefix_ + utils::to_string(key), dictionary_->at(key_lc).demangle(), utils::demangle<T>());
+            throw InvalidTypeError(*this, key, dictionary_->at(key_lc).demangle(), utils::demangle<T>());
         } catch(const std::invalid_argument& error) {
             // Value held by the dictionary entry is not valid (e.g. out of range)
-            throw InvalidValueError(prefix_ + utils::to_string(key), error.what());
+            throw InvalidValueError(*this, key, error.what());
         }
     }
 

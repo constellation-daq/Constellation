@@ -17,6 +17,9 @@
 #include "constellation/core/utils/exceptions.hpp"
 
 namespace constellation::config {
+    // Forward declaration of Section
+    class Section;
+
     /**
      * @ingroup Exceptions
      * @brief Base class for all configurations exceptions in the framework.
@@ -31,9 +34,10 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for a missing key
-         * @param key Name of the missing key
+         * @param config Configuration section containing the key
+         * @param key Name of the problematic key
          */
-        MissingKeyError(std::string_view key);
+        MissingKeyError(const Section& config, std::string_view key);
     };
 
     /**
@@ -46,10 +50,11 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid key
+         * @param config Configuration section containing the key
          * @param key Name of the problematic key
          * @param reason Reason why the key is invalid (empty if no explicit reason)
          */
-        InvalidKeyError(std::string_view key, std::string_view reason = "");
+        InvalidKeyError(const Section& config, std::string_view key, std::string_view reason = "");
     };
 
     /**
@@ -60,15 +65,13 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for a value with an invalid type
-         * @param key Name of the corresponding key
+         * @param config Configuration section containing the key
+         * @param key Name of the problematic key
          * @param vtype Type of the stored value
          * @param type Type the value should have been converted to
          */
-        InvalidTypeError(std::string_view key, std::string_view vtype, std::string_view type);
+        InvalidTypeError(const Section& config, std::string_view key, std::string_view vtype, std::string_view type);
     };
-
-    // Forward declaration of Configuration
-    class Configuration;
 
     /**
      * @ingroup Exceptions
@@ -81,10 +84,11 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid value
+         * @param config Configuration section containing the key
          * @param key Name of the problematic key
          * @param reason Reason why the value is invalid
          */
-        InvalidValueError(std::string_view key, std::string_view reason);
+        InvalidValueError(const Section& config, std::string_view key, std::string_view reason);
     };
 
     /**
@@ -98,11 +102,11 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid combination of keys
-         * @param config Configuration object containing the problematic key combination
+         * @param config Configuration section containing the problematic key combination
          * @param keys List of names of the conflicting keys
          * @param reason Reason why the key combination is invalid (empty if no explicit reason)
          */
-        InvalidCombinationError(const Configuration& config,
+        InvalidCombinationError(const Section& config,
                                 std::initializer_list<std::string> keys,
                                 std::string_view reason = "");
     };
@@ -118,10 +122,11 @@ namespace constellation::config {
     public:
         /**
          * @brief Construct an error for an invalid update
+         * @param config Configuration section containing the problematic key combination
          * @param key Name of the problematic key
          * @param reason Reason why the updated value is invalid
          */
-        InvalidUpdateError(std::string_view key, std::string_view reason);
+        InvalidUpdateError(const Section& config, std::string_view key, std::string_view reason);
     };
 
 } // namespace constellation::config

@@ -220,7 +220,7 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
     } else {
         std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
             if(!CSCP::is_valid_canonical_name(sat)) {
-                throw InvalidValueError("_data_transmitters", quote(sat) + " is not a valid canonical name");
+                throw InvalidValueError(config, "_data_transmitters", quote(sat) + " is not a valid canonical name");
             }
         });
         LOG(BasePoolT::pool_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
@@ -272,7 +272,7 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
     }
 
     if(partial_config.has("_data_transmitters")) {
-        throw InvalidKeyError("_data_transmitters", "Reconfiguration of data transmitters not possible");
+        throw InvalidKeyError(partial_config, "_data_transmitters", "Reconfiguration of data transmitters not possible");
     }
 
     if(partial_config.has("_eor_timeout")) {

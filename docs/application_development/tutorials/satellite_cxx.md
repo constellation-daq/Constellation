@@ -87,7 +87,7 @@ void ExampleSatellite::initializing(const Configuration& config) {
 
         // Keys defined as `chN`
         if(!key.starts_with("ch") {
-            throw InvalidKeyError("channels." + key, "key should start with `ch`");
+            throw InvalidKeyError(channels_section, key, "key should start with `ch`");
         }
         const auto channel = std::stoul(key.substr(2));
 

@@ -61,7 +61,7 @@ void Section::convert_lowercase() {
             const auto insert_res = dictionary_->insert(std::move(node));
             // Check that node was insert, if not there were duplicate keys
             if(!insert_res.inserted) {
-                throw InvalidKeyError(prefix_ + key, "key defined twice");
+                throw InvalidKeyError(*this, key, "key defined twice");
             }
         }
         // Advance iterator
@@ -144,7 +144,7 @@ std::filesystem::path Section::getPath(std::string_view key, bool check_exists) 
     try {
         return path_to_absolute(path_str, check_exists);
     } catch(std::invalid_argument& e) {
-        throw InvalidValueError(prefix_ + utils::to_string(key), e.what());
+        throw InvalidValueError(*this, key, e.what());
     }
 }
 
@@ -156,7 +156,7 @@ std::vector<std::filesystem::path> Section::getPathArray(std::string_view key, b
         try {
             out.emplace_back(path_to_absolute(path_str, check_exists));
         } catch(std::invalid_argument& e) {
-            throw InvalidValueError(prefix_ + utils::to_string(key), e.what());
+            throw InvalidValueError(*this, key, e.what());
         }
     }
     return out;
@@ -171,9 +171,9 @@ const Section& Section::getSection(std::string_view key) const {
     } catch(const std::out_of_range&) {
         const auto it = dictionary_->find(key_lc);
         if(it != dictionary_->cend()) {
-            throw InvalidTypeError(prefix_ + utils::to_string(key), it->second.demangle(), "Section");
+            throw InvalidTypeError(*this, key, it->second.demangle(), "Section");
         }
-        throw MissingKeyError(prefix_ + utils::to_string(key));
+        throw MissingKeyError(*this, key);
     }
 }
 
@@ -196,7 +196,7 @@ std::string Section::getText(std::string_view key) const {
     try {
         return dictionary_->at(key_lc).to_string();
     } catch(const std::out_of_range&) {
-        throw MissingKeyError(prefix_ + utils::to_string(key));
+        throw MissingKeyError(*this, key);
     }
 }
 
@@ -242,13 +242,14 @@ void Section::validate_update(const Section& other) {
         // Check that key is also in dictionary
         const auto entry_it = dictionary_->find(other_key);
         if(entry_it == dictionary_->cend()) {
-            throw InvalidUpdateError(prefix_ + other_key, "key does not exist in current configuration");
+            throw InvalidUpdateError(other, other_key, "key does not exist in current configuration");
         }
         const auto& key = entry_it->first;
         const auto& value = entry_it->second;
         // Check that values has the same type
         if(value.index() != other_value.index()) {
-            throw InvalidUpdateError(prefix_ + other_key,
+            throw InvalidUpdateError(other,
+                                     other_key,
                                      "cannot change type from " + quote(value.demangle()) + " to " +
                                          quote(other_value.demangle()));
         }
@@ -257,7 +258,8 @@ void Section::validate_update(const Section& other) {
             const auto& other_scalar = other_value.get<Scalar>();
             // Compare scalar type
             if(scalar.index() != other_scalar.index()) {
-                throw InvalidUpdateError(prefix_ + other_key,
+                throw InvalidUpdateError(other,
+                                         other_key,
                                          "cannot change type from " + quote(scalar.demangle()) + " to " +
                                              quote(other_scalar.demangle()));
             }
@@ -266,7 +268,8 @@ void Section::validate_update(const Section& other) {
             const auto& other_array = other_value.get<Array>();
             // If array, check that elements have the same type (if not empty)
             if(!array.empty() && !other_array.empty() && array.index() != other_array.index()) {
-                throw InvalidUpdateError(prefix_ + other_key,
+                throw InvalidUpdateError(other,
+                                         other_key,
                                          "cannot change type from " + quote(array.demangle()) + " to " +
                                              quote(other_array.demangle()));
             }

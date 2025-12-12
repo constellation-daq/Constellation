@@ -301,6 +301,13 @@ namespace constellation::config {
         bool empty() const { return dictionary_->empty(); }
 
         /**
+         * @brief Return the prefix of the configuration section
+         *
+         * @return Prefix with trailing dot
+         */
+        std::string_view prefix() const { return prefix_; }
+
+        /**
          * @brief Remove unused entries from the configuration section
          *
          * @return List of unused keys
