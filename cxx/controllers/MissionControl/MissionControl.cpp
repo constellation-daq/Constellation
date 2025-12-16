@@ -162,6 +162,11 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         labelState->setText(get_styled_state(state, global));
 
         if(state == CSCP::State::RUN && global) {
+            // Update run identifier from running satellites:
+            const auto run_id = std::string(runcontrol_.getRunIdentifier());
+            const auto [identifier, sequence] = split_run_identifier(run_id);
+            update_run_identifier(QString::fromStdString(identifier), static_cast<int>(sequence));
+
             // Set start time for this run
             const auto run_time = runcontrol_.getRunStartTime();
             if(run_time.has_value()) {
