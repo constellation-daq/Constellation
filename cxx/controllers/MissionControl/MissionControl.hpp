@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 
 #include <QCloseEvent>
 #include <QCompleter>
@@ -169,7 +170,14 @@ private:
      */
     void update_button_states(constellation::protocol::CSCP::State state);
 
-private:
+    /**
+     * @brief Helper to separate run name and sequence from a run identifier string
+     *
+     * @param run_id Run identifier string
+     * @return Run name and sequence
+     */
+    std::pair<std::string, std::size_t> split_run_identifier(const std::string& run_id) const;
+
     /**
      * @brief Helper to parse the configuration file for all satellites
      *
@@ -189,6 +197,7 @@ private:
     std::optional<constellation::controller::Controller::CommandPayload> parse_config_file(const QString& file,
                                                                                            const QModelIndex& index);
 
+private:
     /** The controller instance of the UI */
     constellation::gui::QController runcontrol_;
 

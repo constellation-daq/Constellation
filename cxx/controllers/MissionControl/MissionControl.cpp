@@ -162,6 +162,11 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
         labelState->setText(get_styled_state(state, global));
 
         if(state == CSCP::State::RUN && global) {
+            // Update run identifier from running satellites:
+            const auto run_id = std::string(runcontrol_.getRunIdentifier());
+            const auto [identifier, sequence] = split_run_identifier(run_id);
+            update_run_identifier(QString::fromStdString(identifier), static_cast<int>(sequence));
+
             // Set start time for this run
             const auto run_time = runcontrol_.getRunStartTime();
             if(run_time.has_value()) {
@@ -191,6 +196,20 @@ MissionControl::MissionControl(std::string controller_name, std::string_view gro
     runcontrol_.start();
 }
 
+std::pair<std::string, std::size_t> MissionControl::split_run_identifier(const std::string& run_id) const {
+    // Attempt to find a sequence number:
+    const std::size_t pos = run_id.find_last_of('_');
+    const auto& identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
+    std::size_t sequence = 0;
+    try {
+        sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
+    } catch(const std::invalid_argument&) {
+        LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
+    }
+
+    return {identifier, sequence};
+}
+
 void MissionControl::startup(std::size_t num) {
 
     // For the very first connection, try to obtain run time and run identifier
@@ -200,15 +219,7 @@ void MissionControl::startup(std::size_t num) {
         // Read last run identifier from the connection:
         const auto run_id = std::string(runcontrol_.getRunIdentifier());
         if(!run_id.empty()) {
-            // attempt to find a sequence number:
-            const std::size_t pos = run_id.find_last_of('_');
-            const auto& identifier = (pos != std::string::npos ? run_id.substr(0, pos) : run_id);
-            std::size_t sequence = 0;
-            try {
-                sequence = (pos != std::string::npos ? std::stoi(run_id.substr(pos + 1)) : 0);
-            } catch(const std::invalid_argument&) {
-                LOG(logger_, DEBUG) << "Could not detect a sequence number in run identifier, appending 0 instead";
-            }
+            auto [identifier, sequence] = split_run_identifier(run_id);
 
             // This is an old run identifier, increment the sequence:
             if(!is_running) {
@@ -230,9 +241,6 @@ void MissionControl::update_run_identifier(const QString& text, int number) {
         current_run_.clear();
     }
     current_run_ += QString::number(number);
-
-    gui_settings_.setValue("run/identifier", text);
-    gui_settings_.setValue("run/sequence", number);
 
     LOG(logger_, DEBUG) << "Updated run identifier to " << current_run_.toStdString();
 }
@@ -429,6 +437,8 @@ void MissionControl::closeEvent(QCloseEvent* event) {
     gui_settings_.setValue("log_level", comboBoxLogLevel->currentText());
 
     gui_settings_.setValue("run/configfile", txtConfigFileName->text());
+    gui_settings_.setValue("run/identifier", runIdentifier->text());
+    gui_settings_.setValue("run/sequence", runSequence->value());
 
     // Terminate the application
     event->accept();
