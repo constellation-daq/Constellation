@@ -20,6 +20,7 @@ moc_files = qt.compile_moc(headers: ['QMetricDisplay.hpp', 'QStatListener.hpp', 
 executable('TelemetryConsole',
   sources: ['main.cpp', 'TelemetryConsole.cpp', 'QMetricDisplay.cpp', 'QMetricSeries.cpp', 'QStatListener.cpp', qrc_files, moc_files, ui_files],
   dependencies: [core_dep, gui_dep, listener_dep, exec_dep, argparse_dep, qtcharts_dep],
+  cpp_args: constellation_private_args,
   install: true,
   install_rpath: constellation_rpath,
 )

@@ -105,22 +105,29 @@ else
 endif
 
 # Compilation arguments and private system dependencies
-constellation_args = []
+constellation_public_args = []
+constellation_private_args = []
 constellation_private_deps = []
+# Flags for static libraries
+if get_option('default_library') == 'static'
+  constellation_public_args += '-DCNSTLN_STATIC'
+elif get_option('default_library') == 'both'
+  error('Building both static and shared libraries is not possible')
+endif
+# clang flags
+if cpp.get_id() == 'clang'
+  # Qt uses C++26 extensions exposed by clang even when using pre-C++26, leading to warnings
+  constellation_private_args += cpp.get_supported_arguments('-Wno-c++26-extensions')
+endif
+# Windows flags
 if host_machine.system() == 'windows'
   # Disable parts of Windows API with conflicting macro definitions
-  constellation_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
+  constellation_public_args += ['-DWIN32_LEAN_AND_MEAN', '-DNOGDI']
   # Set minimum OS version to Windows 10
-  constellation_args += '-D_WIN32_WINNT=0x0A00'
+  constellation_public_args += '-D_WIN32_WINNT=0x0A00'
   # Add ws2_32 and iphlpapi to dependencies
   constellation_private_deps += cpp.find_library('ws2_32')
   constellation_private_deps += cpp.find_library('iphlpapi')
-endif
-# Add flags for static libraries
-if get_option('default_library') == 'static'
-  constellation_args += '-DCNSTLN_STATIC'
-elif get_option('default_library') == 'both'
-  error('Building both static and shared libraries is not possible')
 endif
 
 constellation_inc = include_directories('.')

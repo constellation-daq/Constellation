@@ -13,14 +13,14 @@ exec_lib = library('ConstellationExec',
   include_directories: constellation_inc,
   dependencies: [core_dep, satellite_dep, argparse_dep, asio_dep, dl_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: constellation_public_args + constellation_private_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
   install_rpath: constellation_rpath,
 )
 
 exec_dep = declare_dependency(
   link_with: exec_lib,
-  compile_args: constellation_args,
+  compile_args: constellation_public_args,
   include_directories: constellation_inc,
   dependencies: [core_dep, satellite_dep, argparse_dep],
 )
@@ -30,7 +30,7 @@ pkg.generate(exec_lib,
   description: 'Constellation exec library',
   variables: ['bindir=${prefix}/'+get_option('bindir')],
   uninstalled_variables: ['bindir=${prefix}/'+get_option('bindir')],
-  extra_cflags: constellation_args,
+  extra_cflags: constellation_public_args,
   libraries: [core_dep, satellite_dep],
 )
 

@@ -16,14 +16,14 @@ satellite_lib = library(
   include_directories: constellation_inc,
   dependencies: [core_dep, atomic_queue_dep, cppzmq_dep, msgpack_cxx_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: constellation_public_args + constellation_private_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
   install_rpath: constellation_rpath,
 )
 
 satellite_dep = declare_dependency(
   link_with: satellite_lib,
-  compile_args: constellation_args,
+  compile_args: constellation_public_args,
   include_directories: constellation_inc,
   dependencies: [core_dep, atomic_queue_dep, cppzmq_dep],
 )
@@ -31,7 +31,7 @@ meson.override_dependency('ConstellationSatellite', satellite_dep)
 
 pkg.generate(satellite_lib,
   description: 'Constellation satellite library',
-  extra_cflags: constellation_args,
+  extra_cflags: constellation_public_args,
   libraries: [core_dep, cppzmq_dep],
 )
 

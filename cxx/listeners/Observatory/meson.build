@@ -18,6 +18,7 @@ moc_files = qt.compile_moc(headers: ['QLogFilter.hpp', 'QLogListener.hpp', 'QSen
 executable('Observatory',
   sources: ['main.cpp', 'Observatory.cpp', 'QLogFilter.cpp', 'QLogListener.cpp', 'QSubscriptionList.cpp', 'QSenderSubscriptions.cpp', qrc_files, ui_files, moc_files],
   dependencies: [core_dep, gui_dep, listener_dep, exec_dep, argparse_dep, qt_dep],
+  cpp_args: constellation_private_args,
   install: true,
   install_rpath: constellation_rpath,
 )
