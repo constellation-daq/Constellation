@@ -40,14 +40,14 @@ core_lib = library(
     malloc_dep,
   ],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: constellation_args + ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: constellation_public_args + constellation_private_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
   install_rpath: constellation_rpath,
 )
 
 core_dep = declare_dependency(
   link_with: core_lib,
-  compile_args: constellation_args,
+  compile_args: constellation_public_args,
   include_directories: constellation_inc,
   dependencies: [
     asio_dep,
@@ -63,7 +63,7 @@ meson.override_dependency('ConstellationCore', core_dep)
 
 pkg.generate(core_lib,
   description: 'Constellation core library',
-  extra_cflags: constellation_args,
+  extra_cflags: constellation_public_args,
   libraries: [asio_dep, asio_raw_dep, cppzmq_dep, magic_enum_dep, msgpack_cxx_dep, spdlog_dep],
 )
 
