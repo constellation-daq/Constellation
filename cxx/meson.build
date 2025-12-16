@@ -4,6 +4,14 @@
 cpp = meson.get_compiler('cpp')
 pkgconfig = find_program('pkg-config', required: false)
 
+# Error for unsupported compilers (for now only gcc)
+if cpp.get_id() == 'gcc'
+  gcc_major_version = cpp.version().split('.')[0].to_int()
+  if gcc_major_version < 12
+    error('GCC version 12 or newer required')
+  endif
+endif
+
 # argparse
 argparse_dep = dependency('argparse')
 
