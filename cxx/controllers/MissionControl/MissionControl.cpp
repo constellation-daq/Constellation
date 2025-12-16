@@ -231,9 +231,6 @@ void MissionControl::update_run_identifier(const QString& text, int number) {
     }
     current_run_ += QString::number(number);
 
-    gui_settings_.setValue("run/identifier", text);
-    gui_settings_.setValue("run/sequence", number);
-
     LOG(logger_, DEBUG) << "Updated run identifier to " << current_run_.toStdString();
 }
 
@@ -429,6 +426,8 @@ void MissionControl::closeEvent(QCloseEvent* event) {
     gui_settings_.setValue("log_level", comboBoxLogLevel->currentText());
 
     gui_settings_.setValue("run/configfile", txtConfigFileName->text());
+    gui_settings_.setValue("run/identifier", runIdentifier->text());
+    gui_settings_.setValue("run/sequence", runSequence->value());
 
     // Terminate the application
     event->accept();
