@@ -83,7 +83,7 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
-- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components; required Qt components: Core, Gui, Widgets, Charts)
+- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components; required Qt components: Core, Gui, Widgets, Svg, Charts)
 
 The prerequisites can be installed as follows:
 
