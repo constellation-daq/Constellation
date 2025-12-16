@@ -83,7 +83,7 @@ The C++ version of Constellation requires:
 - [Meson](https://mesonbuild.com/) 0.61 or newer
 - C++20 capable compiler like GCC 12 or newer and clang 16 or newer
 - C++20 enabled standard library (GCC's libstdc++ 12 or newer and LLVM's libc++ 18 or newer)
-- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components; required Qt components: Core, Gui, Widgets, Charts)
+- [Qt](https://www.qt.io/) 5 or 6 (optional, required for GUI components; required Qt components: Core, Gui, Widgets, Svg, Charts)
 
 The prerequisites can be installed as follows:
 
@@ -94,7 +94,7 @@ Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages can be 
 
 ```sh
 sudo apt install meson g++
-sudo apt install qt6-base-dev qt6-charts-dev
+sudo apt install qt6-base-dev qt6-qtsvg-dev qt6-charts-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -102,7 +102,7 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
-sudo apt install qtbase5-dev libqt5charts5-dev
+sudo apt install qtbase5-dev qt5-qtsvg-dev libqt5charts5-dev
 export CXX="g++-12"
 ```
 
@@ -117,7 +117,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
-sudo apt install qtbase5-dev libqt5charts5-dev
+sudo apt install qtbase5-dev qt5-qtsvg-dev qt5-qtsvglibqt5charts5-dev
 export CXX="g++-13"
 ```
 
@@ -136,7 +136,7 @@ For Fedora the official packages can be used:
 
 ```sh
 sudo dnf install meson gcc-c++
-sudo dnf install qt6-qtbase-devel qt6-qtcharts-devel
+sudo dnf install qt6-qtbase-devel qt6-qtsvg-devel qt6-qtcharts-devel
 ```
 
 :::
@@ -153,7 +153,7 @@ AlmaLinux 9 also requires a newer version of GCC than available by default:
 
 ```sh
 sudo dnf install meson gcc-toolset-14
-sudo dnf install qt5-qtbase-devel qt5-qtcharts-devel
+sudo dnf install qt5-qtbase-devel qt5-qtsvg-devel qt5-qtcharts-devel
 ```
 
 To use the latest GCC a terminal session has to be started with the `scl` command:

@@ -7,7 +7,7 @@ endif
 
 qt_version = get_option('build_gui')
 qt = import(qt_version)
-qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets'])
+qt_dep = dependency(qt_version, modules: ['Core', 'Gui', 'Widgets', 'Svg'])
 
 ui_files = qt.compile_ui(sources: ['QConnectionDialog.ui', 'QCommandDialog.ui', 'QResponseDialog.ui', 'QLogMessageDialog.ui'])
 moc_files = qt.compile_moc(headers: ['QController.hpp', 'QConnectionDialog.hpp', 'QCommandDialog.hpp', 'QResponseDialog.hpp', 'QLogLevelComboBox.hpp', 'QLogMessageDialog.hpp'])
