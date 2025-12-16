@@ -33,14 +33,14 @@ repos:
       - id: clang-format
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.8
+    rev: v0.14.9
     hooks:
       - id: ruff-check
         args: [ --fix ]
       - id: ruff-format
 
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.19.1
+    rev: v0.20.0
     hooks:
       - id: markdownlint-cli2
 
