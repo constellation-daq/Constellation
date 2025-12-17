@@ -107,7 +107,7 @@ void QSubscriptionList::notify_item_expanded(QSenderSubscriptions* item, bool ex
 void QSubscriptionList::rebuild_layout() {
 
     // Remove all widgets from layout:
-    QLayoutItem* child = nullptr;
+    QLayoutItem* child = nullptr; // NOLINT(misc-const-correctness)
     while((child = scroll_layout_->takeAt(0)) != nullptr) {
         if(child->widget() != nullptr) {
             scroll_layout_->removeWidget(child->widget());

@@ -276,7 +276,7 @@ void ReceiverSatellite::stopping_receiver() {
     if(BasePoolT::pool_logger_.shouldLog(WARNING)) {
 
         // Warn about transmitters that never sent a BOR message
-        const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
+        const std::scoped_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
         auto data_transmitters_not_connected =
             std::ranges::views::filter(data_transmitter_states_, [](const auto& data_transmitter_p) {
                 return data_transmitter_p.second.state == TransmitterState::NOT_CONNECTED;
@@ -372,7 +372,7 @@ void ReceiverSatellite::failure_receiver() {
 }
 
 void ReceiverSatellite::reset_data_transmitter_states() {
-    const std::lock_guard data_transmitter_states_lock {data_transmitter_states_mutex_};
+    const std::scoped_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     data_transmitter_states_.clear();
     for(const auto& data_transmitter : data_transmitters_) {
         data_transmitter_states_.emplace(data_transmitter, TransmitterStateSeq(TransmitterState::NOT_CONNECTED, 0, 0));

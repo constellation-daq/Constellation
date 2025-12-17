@@ -63,7 +63,7 @@ void MeasurementQueue::setPrefix(std::string prefix) {
 
 void MeasurementQueue::setDefaultCondition(std::shared_ptr<MeasurementCondition> condition) {
     // Lock the measurements mutex since the default condition might be used when appending
-    const std::lock_guard measurement_lock {measurement_mutex_};
+    const std::scoped_lock measurement_lock {measurement_mutex_};
 
     default_condition_ = std::move(condition);
 }

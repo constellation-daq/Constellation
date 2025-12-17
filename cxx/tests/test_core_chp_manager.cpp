@@ -41,12 +41,12 @@ public:
               std::move(name),
               [&]() { return CSCP::State::NEW; },
               [&](std::string_view status) {
-                  const std::lock_guard lock {mutex_};
+                  const std::scoped_lock lock {mutex_};
                   interrupt_message_ = std::string(status);
                   interrupt_received_.store(true);
               },
               [&](std::string_view /*reason*/) {
-                  const std::lock_guard lock {mutex_};
+                  const std::scoped_lock lock {mutex_};
                   degraded_received_.store(true);
               }) {}
 
@@ -65,7 +65,7 @@ public:
     }
 
     std::string getInterruptMessage() {
-        const std::lock_guard lock {mutex_};
+        const std::scoped_lock lock {mutex_};
         return interrupt_message_;
     }
 

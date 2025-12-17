@@ -52,7 +52,7 @@ std::string constellation::networking::get_hostname() {
 std::vector<Interface> constellation::networking::get_interfaces() {
     std::vector<Interface> interfaces {};
 
-#if defined(_WIN32)
+#ifdef _WIN32
 
     // Allocate a 15 KiB buffer for adapter info
     ULONG buffer_size = 15 * 1024;
@@ -104,8 +104,8 @@ std::vector<Interface> constellation::networking::get_interfaces() {
 #else
 
     // Obtain linked list of all local network interfaces
-    struct ifaddrs* addrs = nullptr;
-    struct ifaddrs* ifa = nullptr;
+    ifaddrs* addrs = nullptr;
+    const ifaddrs* ifa = nullptr;
     if(getifaddrs(&addrs) != 0) {
         throw NetworkError("Unable to get list of interfaces");
     }
@@ -126,7 +126,7 @@ std::vector<Interface> constellation::networking::get_interfaces() {
 
         char buffer[NI_MAXHOST];      // NOLINT(modernize-avoid-c-arrays)
         if(getnameinfo(ifa->ifa_addr, // NOLINT(cppcoreguidelines-pro-type-union-access)
-                       sizeof(struct sockaddr_in),
+                       sizeof(sockaddr_in),
                        buffer, // NOLINT(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
                        sizeof(buffer),
                        nullptr,

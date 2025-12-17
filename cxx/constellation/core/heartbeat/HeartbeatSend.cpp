@@ -128,7 +128,7 @@ void HeartbeatSend::loop(const std::stop_token& stop_token) {
 
 void HeartbeatSend::send_heartbeat(CHP::MessageFlags flags, std::optional<std::string> status) {
     // Lock socket
-    const std::lock_guard lock {mutex_};
+    const std::scoped_lock lock {mutex_};
 
     // Update the interval based on the amount of subscribers
     const auto interval = CHP::calculate_interval(subscribers_, default_interval_);

@@ -40,7 +40,7 @@ public:
     MetricsReceiver(std::string topic = "")
         : SubscriberPoolT("MNTR",
                           [this](CMDP1StatMessage&& msg) {
-                              const std::lock_guard last_message_lock {last_message_mutex_};
+                              const std::scoped_lock last_message_lock {last_message_mutex_};
                               last_message_ = std::make_shared<CMDP1StatMessage>(std::move(msg));
                               last_message_updated_.store(true);
                           }),
@@ -54,7 +54,7 @@ public:
         std::this_thread::sleep_for(150ms);
     }
     void resetLastMessage() {
-        const std::lock_guard last_message_lock {last_message_mutex_};
+        const std::scoped_lock last_message_lock {last_message_mutex_};
         last_message_.reset();
         last_message_updated_.store(false);
     }
@@ -65,7 +65,7 @@ public:
         last_message_updated_.store(false);
     }
     std::shared_ptr<CMDP1StatMessage> getLastMessage() {
-        const std::lock_guard last_message_lock {last_message_mutex_};
+        const std::scoped_lock last_message_lock {last_message_mutex_};
         return last_message_;
     }
 
@@ -234,7 +234,7 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     double value = std::numbers::phi;
     metrics_manager.registerTimedMetric(
         "TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, [&]() -> std::optional<double> {
-            const std::lock_guard value_lock {value_mutex};
+            const std::scoped_lock value_lock {value_mutex};
             return nullopt ? std::nullopt : std::optional(value);
         });
 
@@ -244,7 +244,7 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     // Disable sending and adjust value
     {
-        const std::lock_guard value_lock {value_mutex};
+        const std::scoped_lock value_lock {value_mutex};
         nullopt = true;
         value = std::numbers::e;
     }
@@ -255,7 +255,7 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
 
     // Adjust value and enable sending again
     {
-        const std::lock_guard value_lock {value_mutex};
+        const std::scoped_lock value_lock {value_mutex};
         value = std::numbers::pi;
         nullopt = false;
     }

@@ -509,12 +509,12 @@ std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
 }
 
 void BaseSatellite::set_user_status(std::string message) {
-    const std::lock_guard lock {user_status_mutex_};
+    const std::scoped_lock lock {user_status_mutex_};
     user_status_ = std::move(message);
 }
 
 std::string BaseSatellite::get_user_status_or(std::string message) {
-    const std::lock_guard lock {user_status_mutex_};
+    const std::scoped_lock lock {user_status_mutex_};
     const auto status = user_status_.value_or(std::move(message));
     user_status_.reset();
     return status;
@@ -642,7 +642,7 @@ std::optional<std::string> BaseSatellite::running_wrapper(const std::stop_token&
     running(stop_token);
 
     // Reset user status
-    const std::lock_guard lock {user_status_mutex_};
+    const std::scoped_lock lock {user_status_mutex_};
     user_status_.reset();
 
     return std::nullopt;
@@ -665,7 +665,7 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
     }
 
     // Reset user status
-    const std::lock_guard lock {user_status_mutex_};
+    const std::scoped_lock lock {user_status_mutex_};
     user_status_.reset();
 
     // Do not provide status, the message comes from the `requestInterrupt()` function directly
@@ -688,7 +688,7 @@ std::optional<std::string> BaseSatellite::failure_wrapper(CSCP::State previous_s
     failure(previous_state, reason);
 
     // Reset user status
-    const std::lock_guard lock {user_status_mutex_};
+    const std::scoped_lock lock {user_status_mutex_};
     user_status_.reset();
 
     // Do not provide status, the message comes from the exception which triggered the failure

@@ -35,7 +35,7 @@ CMDPListener::CMDPListener(std::string_view log_topic, std::function<void(CMDP1M
       callback_(std::move(callback)) {}
 
 void CMDPListener::host_connected(const chirp::DiscoveredService& service) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
 
     // Directly subscribe to current topic list
     for(const auto& topic : subscribed_topics_) {
@@ -133,7 +133,7 @@ void CMDPListener::sender_connected(std::string_view /* sender */) {}
 void CMDPListener::sender_disconnected(std::string_view /* sender */) {}
 
 std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_view sender) const {
-    const std::lock_guard topics_lock {available_topics_mutex_};
+    const std::scoped_lock topics_lock {available_topics_mutex_};
     const auto sender_it = available_topics_.find(sender);
     if(sender_it != available_topics_.cend()) {
         // Create regular map for easy consumption
@@ -144,7 +144,7 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics(std::string_
 }
 
 std::map<std::string, std::string> CMDPListener::getAvailableTopics() const {
-    const std::lock_guard topics_lock {available_topics_mutex_};
+    const std::scoped_lock topics_lock {available_topics_mutex_};
 
     std::map<std::string, std::string> topics {};
     for(const auto& [sender, sender_topics] : available_topics_) {
@@ -155,7 +155,7 @@ std::map<std::string, std::string> CMDPListener::getAvailableTopics() const {
 }
 
 std::set<std::string> CMDPListener::getAvailableSenders() const {
-    const std::lock_guard topics_lock {available_topics_mutex_};
+    const std::scoped_lock topics_lock {available_topics_mutex_};
 
     std::set<std::string> senders {};
     std::ranges::for_each(available_topics_, [&](const auto& p) { senders.emplace(p.first); });
@@ -164,12 +164,12 @@ std::set<std::string> CMDPListener::getAvailableSenders() const {
 }
 
 bool CMDPListener::isTopicAvailable(std::string_view topic) const {
-    const std::lock_guard topics_lock {available_topics_mutex_};
+    const std::scoped_lock topics_lock {available_topics_mutex_};
     return std::ranges::any_of(available_topics_, [&](const auto& s) { return s.second.find(topic) != s.second.cend(); });
 }
 
 bool CMDPListener::isSenderAvailable(std::string_view sender) const {
-    const std::lock_guard topics_lock {available_topics_mutex_};
+    const std::scoped_lock topics_lock {available_topics_mutex_};
     return (available_topics_.find(sender) != available_topics_.cend());
 }
 
@@ -183,7 +183,7 @@ void CMDPListener::unsubscribeTopic(std::string topic) {
 
 void CMDPListener::multiscribeTopics(const std::vector<std::string>& unsubscribe_topics,
                                      const std::vector<std::string>& subscribe_topics) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
 
     // Unsubscribe from requested topics
     std::set<std::string_view> actually_unsubscribed_topics {};
@@ -212,7 +212,7 @@ void CMDPListener::multiscribeTopics(const std::vector<std::string>& unsubscribe
 }
 
 std::set<std::string> CMDPListener::getTopicSubscriptions() {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     return subscribed_topics_;
 }
 
@@ -227,7 +227,7 @@ void CMDPListener::unsubscribeExtraTopic(const std::string& host, std::string to
 void CMDPListener::multiscribeExtraTopics(const std::string& host,
                                           const std::vector<std::string>& unsubscribe_topics,
                                           const std::vector<std::string>& subscribe_topics) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
 
     // Check if extra topics already set
     const auto host_it = extra_subscribed_topics_.find(host);
@@ -262,7 +262,7 @@ void CMDPListener::multiscribeExtraTopics(const std::string& host,
 }
 
 std::set<std::string> CMDPListener::getExtraTopicSubscriptions(const std::string& host) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     const auto host_it = extra_subscribed_topics_.find(host);
     if(host_it != extra_subscribed_topics_.end()) {
         return host_it->second;
@@ -271,7 +271,7 @@ std::set<std::string> CMDPListener::getExtraTopicSubscriptions(const std::string
 }
 
 void CMDPListener::removeExtraTopicSubscriptions(const std::string& host) {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     const auto host_it = extra_subscribed_topics_.find(host);
     if(host_it != extra_subscribed_topics_.end()) {
         // Unsubscribe from each topic not in subscribed_topics_
@@ -285,7 +285,7 @@ void CMDPListener::removeExtraTopicSubscriptions(const std::string& host) {
 }
 
 void CMDPListener::removeExtraTopicSubscriptions() {
-    const std::lock_guard subscribed_topics_lock {subscribed_topics_mutex_};
+    const std::scoped_lock subscribed_topics_lock {subscribed_topics_mutex_};
     std::ranges::for_each(extra_subscribed_topics_, [&](const auto& host_p) {
         // Unsubscribe from each topic not in subscribed_topics_
         std::ranges::for_each(host_p.second, [&](const auto& topic) {

@@ -63,7 +63,7 @@ QVariant QController::data(const QModelIndex& index, int role) const {
         return {};
     }
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
@@ -178,7 +178,7 @@ QMap<QString, QVariant> QController::getQDetails(const QModelIndex& index) const
         return {};
     }
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     // Select connection by index:
     auto it = connections_.begin();
     std::advance(it, index.row());
@@ -229,7 +229,7 @@ void QController::propagate_update(UpdateType type, std::size_t position, std::s
 }
 
 Dictionary QController::getQCommands(const QModelIndex& index) {
-    const std::lock_guard lock {connection_mutex_};
+    const std::scoped_lock lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();
@@ -239,7 +239,7 @@ Dictionary QController::getQCommands(const QModelIndex& index) {
 }
 
 std::string QController::getQName(const QModelIndex& index) const {
-    const std::lock_guard lock {connection_mutex_};
+    const std::scoped_lock lock {connection_mutex_};
 
     // Select connection by index:
     auto it = connections_.begin();

@@ -36,7 +36,7 @@ namespace constellation::pools {
         using enum constellation::log::Level;
 
         try {
-            const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
+            const std::scoped_lock sockets_lock {BasePoolT::sockets_mutex_};
             const auto socket_it = std::ranges::find(
                 BasePoolT::get_sockets(), host_id, [&](const auto& socket_p) { return socket_p.first.host_id; });
             if(socket_it != BasePoolT::get_sockets().end()) {
@@ -60,7 +60,7 @@ namespace constellation::pools {
         using enum constellation::log::Level;
 
         try {
-            const std::lock_guard sockets_lock {BasePoolT::sockets_mutex_};
+            const std::scoped_lock sockets_lock {BasePoolT::sockets_mutex_};
             for(auto& [host, socket] : BasePoolT::get_sockets()) {
                 if(subscribe) {
                     BasePoolT::pool_logger_.log(TRACE)

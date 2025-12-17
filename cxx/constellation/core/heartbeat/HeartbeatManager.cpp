@@ -69,7 +69,7 @@ void HeartbeatManager::sendExtrasystole(std::string status) {
 }
 
 std::optional<CSCP::State> HeartbeatManager::getRemoteState(std::string_view remote) {
-    const std::lock_guard lock {mutex_};
+    const std::scoped_lock lock {mutex_};
     const auto remote_it = std::ranges::find_if(
         remotes_, [remote](const auto& r) { return transform(r.first, ::tolower) == transform(remote, ::tolower); });
     if(remote_it != remotes_.end()) {
@@ -93,7 +93,7 @@ void HeartbeatManager::setRole(CHP::Role role) {
 void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service) {
 
     LOG(logger_, DEBUG) << "Processing orderly departure of remote " << service.to_uri();
-    const std::lock_guard lock {mutex_};
+    const std::scoped_lock lock {mutex_};
 
     // Remove the remote
     auto remote_it =
