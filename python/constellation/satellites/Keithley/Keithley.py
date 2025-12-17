@@ -7,7 +7,6 @@ Provides the class for the Keithley satellite
 
 from typing import Any
 
-from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
@@ -156,19 +155,19 @@ class Keithley(Satellite):
     def _read_output_is_allowed(self, request: CSCP1Message) -> bool:
         return self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]
 
-    @schedule_metric("V", MetricsType.LAST_VALUE, 5)
+    @schedule_metric("V", 5)
     def VOLTAGE(self) -> Any:
         if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.read_output()[0]
         return None
 
-    @schedule_metric("A", MetricsType.LAST_VALUE, 5)
+    @schedule_metric("A", 5)
     def CURRENT(self) -> Any:
         if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.read_output()[1]
         return None
 
-    @schedule_metric("", MetricsType.LAST_VALUE, 5)
+    @schedule_metric("", 5)
     def IN_COMPLIANCE(self) -> Any:
         if self.fsm.state not in [SatelliteState.NEW, SatelliteState.ERROR]:
             return self.device.in_compliance()

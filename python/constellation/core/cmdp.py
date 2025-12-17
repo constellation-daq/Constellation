@@ -8,7 +8,6 @@ Module implementing the Constellation Monitoring Distribution Protocol.
 import io
 import logging
 import time
-from enum import Enum
 from threading import Lock
 from typing import Any
 
@@ -18,15 +17,6 @@ import zmq
 from .protocol import Protocol
 
 
-class MetricsType(Enum):
-    """Identifier values for different metrics types."""
-
-    LAST_VALUE = 0x1
-    ACCUMULATE = 0x2
-    AVERAGE = 0x3
-    RATE = 0x4
-
-
 class Metric:
     """Class to hold information for a Constellation metric."""
 
@@ -34,12 +24,10 @@ class Metric:
         self,
         name: str,
         unit: str,
-        handling: MetricsType,
         value: Any = None,
     ):
         self.name: str = name
         self.unit: str = unit
-        self.handling: MetricsType = handling
         self.value: Any = value
         self.sender: str = ""
         self.time: msgpack.Timestamp = msgpack.Timestamp(0)
@@ -50,7 +38,7 @@ class Metric:
         stream = io.BytesIO()
         packer = msgpack.Packer()
         stream.write(packer.pack(self.value))
-        stream.write(packer.pack(self.handling.value))
+        stream.write(packer.pack(0x0))
         stream.write(packer.pack(self.unit))
         return stream.getvalue()
 
@@ -157,10 +145,11 @@ def decode_metric(name: str, topic: str, msg: list[Any]) -> Metric:
     unpacker = msgpack.Unpacker()
     unpacker.feed(msg[2])
     value = unpacker.unpack()
-    handling = unpacker.unpack()
+    # unpack unused metric flags
+    unpacker.unpack()
     unit = unpacker.unpack()
     # Create metric and fill in sender
-    m = Metric(name, unit, MetricsType(handling), value)
+    m = Metric(name, unit, value)
     m.sender = sender
     m.time = timestamp
     m.meta = record

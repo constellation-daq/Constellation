@@ -9,7 +9,6 @@ import random
 import time
 from typing import Any
 
-from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
@@ -105,7 +104,7 @@ class Mariner(Satellite):
             return "Canopus Star Tracker not ready", None, {}
         return "Canopus Star Tracker locked and ready", self.device.get_attitude(), {}
 
-    @schedule_metric("lm", MetricsType.LAST_VALUE, 10)
+    @schedule_metric("lm", 10)
     def brightness(self) -> int | None:
         if self.fsm.state in [
             SatelliteState.NEW,
