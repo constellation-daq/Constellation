@@ -64,12 +64,26 @@ public:
     /**
      * @brief Append a new data point to the series
      * @details Purely virtual method to be implemented by concrete series
+     *
+     * @param x X-axis value
+     * @param y Y-axis value
      */
     virtual void append(qint64 x, double y) = 0;
 
     /**
+     * @brief Remove all data points prior to the provided x value
+     * @details Purely virtual method to be implemented by concrete series
+     *
+     * @param x X-axis value
+     */
+    virtual void clearUntil(qint64 x) = 0;
+
+    /**
      * @brief Update the value marker
      * @details Purely virtual method to be implemented by concrete series
+     *
+     * @param chart Pointer to the target chart of the value marker
+     * @param unit String describing the unit of the value
      */
     void updateMarker(QT_CHART QChart* chart, const QString& unit);
 
@@ -94,6 +108,7 @@ public:
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
+    void clearUntil(qint64 x) override;
 
 private:
     QT_CHART QAbstractSeries* series() const override { return spline_; }
@@ -110,6 +125,7 @@ public:
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
+    void clearUntil(qint64 x) override;
 
 private:
     QT_CHART QAbstractSeries* series() const override { return scatter_; }
@@ -126,6 +142,7 @@ public:
     void clear() override;
     QList<QPointF> points() const override;
     void append(qint64 x, double y) override;
+    void clearUntil(qint64 x) override;
 
 private:
     QT_CHART QAbstractSeries* series() const override { return area_series_; }

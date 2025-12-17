@@ -61,6 +61,17 @@ void QSplineMetricSeries::append(qint64 x, double y) {
     spline_->append(static_cast<double>(x), y);
 }
 
+void QSplineMetricSeries::clearUntil(qint64 x) {
+    int index = 0;
+    while(index < spline_->count() && spline_->at(index).x() < static_cast<double>(x)) {
+        ++index;
+    }
+
+    if(index > 1) {
+        spline_->removePoints(0, index - 1);
+    }
+}
+
 QScatterMetricSeries::QScatterMetricSeries(QChart* chart) : QMetricSeries(chart), scatter_(new QScatterSeries()) {
     scatter_->setMarkerSize(8.0);
     chart->addSeries(scatter_);
@@ -76,6 +87,17 @@ QList<QPointF> QScatterMetricSeries::points() const {
 
 void QScatterMetricSeries::append(qint64 x, double y) {
     scatter_->append(static_cast<double>(x), y);
+}
+
+void QScatterMetricSeries::clearUntil(qint64 x) {
+    int index = 0;
+    while(index < scatter_->count() && scatter_->at(index).x() < static_cast<double>(x)) {
+        ++index;
+    }
+
+    if(index > 1) {
+        scatter_->removePoints(0, index - 1);
+    }
 }
 
 QAreaMetricSeries::QAreaMetricSeries(QChart* chart)
@@ -96,4 +118,16 @@ QList<QPointF> QAreaMetricSeries::points() const {
 void QAreaMetricSeries::append(qint64 x, double y) {
     spline_->append(static_cast<double>(x), y);
     lower_->append(static_cast<double>(x), 0);
+}
+
+void QAreaMetricSeries::clearUntil(qint64 x) {
+    int index = 0;
+    while(index < spline_->count() && spline_->at(index).x() < static_cast<double>(x)) {
+        ++index;
+    }
+
+    if(index > 1) {
+        spline_->removePoints(0, index - 1);
+        lower_->removePoints(0, index - 1);
+    }
 }
