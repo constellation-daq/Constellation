@@ -54,17 +54,17 @@ public:
 
 protected:
     void host_connected(const chirp::DiscoveredService& /*service*/) final {
-        const std::lock_guard pseudo_lock {pesudo_mutex_};
+        const std::scoped_lock pseudo_lock {pesudo_mutex_};
         cv_.notify_one();
     }
 
     void host_disconnected(const chirp::DiscoveredService& /*service*/) final {
-        const std::lock_guard pseudo_lock {pesudo_mutex_};
+        const std::scoped_lock pseudo_lock {pesudo_mutex_};
         cv_.notify_one();
     }
 
     void host_disposed(const chirp::DiscoveredService& /*service*/) final {
-        const std::lock_guard pseudo_lock {pesudo_mutex_};
+        const std::scoped_lock pseudo_lock {pesudo_mutex_};
         cv_.notify_one();
     }
 
@@ -82,7 +82,7 @@ TEST_CASE("Message callback", "[core][core::pools]") {
     std::condition_variable cv {};
     std::shared_ptr<CMDP1LogMessage> log_msg {nullptr};
     auto callback = [&](CMDP1Message&& msg) {
-        const std::lock_guard msg_lock {msg_mutex};
+        const std::scoped_lock msg_lock {msg_mutex};
         log_msg = std::make_shared<CMDP1LogMessage>(std::move(msg));
         cv.notify_all();
     };

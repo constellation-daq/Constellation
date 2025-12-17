@@ -244,7 +244,7 @@ void SinkManager::setConsoleLevels(Level global_level, string_hash_map<Level> to
     levels_lock.unlock();
 
     // Acquire lock to prevent modification of loggers_
-    const std::lock_guard loggers_lock {loggers_mutex_};
+    const std::scoped_lock loggers_lock {loggers_mutex_};
     // Set re-calculate log level for every logger
     for(auto& logger : loggers_) {
         calculate_log_level(logger);
@@ -259,7 +259,7 @@ void SinkManager::updateCMDPLevels(Level cmdp_global_level, string_hash_map<Leve
     levels_lock.unlock();
 
     // Acquire lock for loggers_
-    const std::lock_guard loggers_lock {loggers_mutex_};
+    const std::scoped_lock loggers_lock {loggers_mutex_};
     // Set re-calculate log level for every logger
     for(auto& logger : loggers_) {
         calculate_log_level(logger);

@@ -73,7 +73,7 @@ public:
         SubscriberPool<constellation::message::CHP1Message, constellation::protocol::CHIRP::ServiceIdentifier::HEARTBEAT>;
     CHPMockReceiver()
         : SubscriberPoolT("LINK", [this](constellation::message::CHP1Message&& msg) {
-              const std::lock_guard last_message_lock {last_message_mutex_};
+              const std::scoped_lock last_message_lock {last_message_mutex_};
               last_message_ = std::make_shared<constellation::message::CHP1Message>(std::move(msg));
               last_message_updated_.store(true);
           }) {}
@@ -91,7 +91,7 @@ public:
         last_message_updated_.store(false);
     }
     std::shared_ptr<constellation::message::CHP1Message> getLastMessage() {
-        const std::lock_guard last_message_lock {last_message_mutex_};
+        const std::scoped_lock last_message_lock {last_message_mutex_};
         return last_message_;
     }
 

@@ -86,7 +86,7 @@ void Controller::stop() {
     }
 
     // Close all open connections
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     try {
         for(auto& conn : connections_) {
             conn.second.req.close();
@@ -260,7 +260,7 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
 }
 
 std::set<std::string> Controller::getConnections() const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     std::set<std::string> connections;
     for(const auto& [key, conn] : connections_) {
         connections.insert(key);
@@ -269,14 +269,14 @@ std::set<std::string> Controller::getConnections() const {
 }
 
 bool Controller::hasConnection(std::string_view satellite_name) const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     // Find satellite by canonical name:
     return connections_.contains(satellite_name);
 }
 
 Dictionary Controller::getConnectionCommands(std::string_view satellite_name) const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     // Find satellite by canonical name:
     const auto sat = connections_.find(satellite_name);
@@ -290,7 +290,7 @@ Dictionary Controller::getConnectionCommands(std::string_view satellite_name) co
 std::map<std::string, std::chrono::steady_clock::time_point>
 Controller::getLastStateChange(const std::set<std::string>& satellites) const {
     std::map<std::string, std::chrono::steady_clock::time_point> last_state_change {};
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     for(const auto& satellite : satellites) {
         const auto connection = connections_.find(satellite);
         if(connection == connections_.cend()) {
@@ -302,7 +302,7 @@ Controller::getLastStateChange(const std::set<std::string>& satellites) const {
 }
 
 std::string Controller::getRunIdentifier() {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     for(auto& [name, sat] : connections_) {
 
         try {
@@ -321,7 +321,7 @@ std::string Controller::getRunIdentifier() {
 }
 
 std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime() {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     std::optional<std::chrono::system_clock::time_point> time {};
     for(auto& [name, sat] : connections_) {
@@ -351,7 +351,7 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
 }
 
 bool Controller::isInState(CSCP::State state) const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     // Without connections, the state is NEW
     if(connections_.empty() && state != CSCP::State::NEW) {
@@ -363,7 +363,7 @@ bool Controller::isInState(CSCP::State state) const {
 }
 
 bool Controller::hasAnyErrorState() const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     // Without connection, there is no error state
     if(connections_.empty()) {
@@ -376,7 +376,7 @@ bool Controller::hasAnyErrorState() const {
 }
 
 bool Controller::isInGlobalState() const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     // If no adjacent connection with different state found, then in global state
     return std::ranges::adjacent_find(connections_.cbegin(), connections_.cend(), [](auto const& x, auto const& y) {
@@ -454,7 +454,7 @@ void Controller::awaitState(CSCP::State state,
 }
 
 CSCP::State Controller::getLowestState() const {
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     if(connections_.empty()) {
         return CSCP::State::NEW;
@@ -512,7 +512,7 @@ CSCP1Message Controller::build_message(std::string verb, const CommandPayload& p
 
 CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Message& cmd) {
     try {
-        const std::lock_guard connection_lock {connection_mutex_};
+        const std::scoped_lock connection_lock {connection_mutex_};
 
         // Find satellite by canonical name:
         const auto sat = connections_.find(satellite_name);
@@ -538,7 +538,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(CSCP1Message& cmd) 
     std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
     for(auto& [name, sat] : connections_) {
         // Start command sending and store future:
         futures.emplace(name, std::async(std::launch::async, [&]() { return send_receive(sat, cmd, true); }));
@@ -574,7 +574,7 @@ std::map<std::string, CSCP1Message> Controller::sendCommands(const std::string& 
     std::map<std::string, std::future<CSCP1Message>> futures {};
     std::map<std::string, CSCP1Message> replies {};
 
-    const std::lock_guard connection_lock {connection_mutex_};
+    const std::scoped_lock connection_lock {connection_mutex_};
 
     for(auto& [name, sat] : connections_) {
         // If satellites without payload should not be included, skip:

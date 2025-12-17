@@ -47,12 +47,12 @@ MetricsManager::~MetricsManager() noexcept {
 }
 
 bool MetricsManager::shouldStat(std::string_view name) const {
-    const std::lock_guard subscription_lock {subscription_mutex_};
+    const std::scoped_lock subscription_lock {subscription_mutex_};
     return global_subscription_ || subscribed_topics_.contains(name);
 }
 
 void MetricsManager::updateSubscriptions(bool global, string_hash_set topic_subscriptions) {
-    const std::lock_guard subscription_lock {subscription_mutex_};
+    const std::scoped_lock subscription_lock {subscription_mutex_};
     global_subscription_ = global;
     subscribed_topics_ = std::move(topic_subscriptions);
 }
@@ -130,7 +130,7 @@ void MetricsManager::unregisterMetrics() {
 
 std::map<std::string, std::string> MetricsManager::getMetricsDescriptions() const {
     std::map<std::string, std::string> metrics_descriptions {};
-    const std::lock_guard metrics_lock {metrics_mutex_};
+    const std::scoped_lock metrics_lock {metrics_mutex_};
     std::ranges::for_each(metrics_, [&](const auto& p) { metrics_descriptions.emplace(p.first, p.second->description()); });
     return metrics_descriptions;
 }
@@ -153,7 +153,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             auto [name, value] = std::move(triggered_queue_.front());
             triggered_queue_.pop();
             LOG(logger_, TRACE) << "Looking for queued metric " << quote(name);
-            const std::lock_guard metrics_lock {metrics_mutex_};
+            const std::scoped_lock metrics_lock {metrics_mutex_};
             auto metric_it = metrics_.find(name);
             if(metric_it != metrics_.end()) {
                 LOG(logger_, TRACE) << "Sending metric " << quote(name) << ": " << value.str() << " ["
@@ -170,7 +170,7 @@ void MetricsManager::run(const std::stop_token& stop_token) {
         wakeup = now + 1s;
 
         // Check timed metrics
-        const std::lock_guard timed_metrics_lock {timed_metrics_mutex_};
+        const std::scoped_lock timed_metrics_lock {timed_metrics_mutex_};
         for(auto& [name, timed_metric] : timed_metrics_) {
             // If last time sent larger than interval and allowed and there is a subscription -> send metric
             if(timed_metric.timeoutReached() && shouldStat(name)) {

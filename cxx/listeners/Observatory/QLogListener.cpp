@@ -51,7 +51,7 @@ void QLogListener::add_message(CMDP1LogMessage&& msg) {
     // Add new message to the end of the deque
     std::size_t messages_size {};
     {
-        const std::lock_guard message_lock {message_write_mutex_};
+        const std::scoped_lock message_lock {message_write_mutex_};
         messages_.emplace_back(std::move(msg));
         messages_size = messages_.size();
     }

@@ -33,7 +33,7 @@ public:
             messages_lock.unlock();
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
-        const std::lock_guard messages_lock {messages_mutex_};
+        const std::scoped_lock messages_lock {messages_mutex_};
         auto msg = std::move(messages_.front());
         messages_.pop_front();
         return msg;
@@ -43,7 +43,7 @@ private:
     void handle_message(constellation::message::CMDP1Message&& message) {
         LOG(DEBUG) << "Received message with topic " << constellation::utils::quote(message.getTopic()) << " from "
                    << constellation::utils::quote(message.getHeader().getSender());
-        const std::lock_guard messages_lock {messages_mutex_};
+        const std::scoped_lock messages_lock {messages_mutex_};
         messages_.emplace_back(std::move(message));
     }
 

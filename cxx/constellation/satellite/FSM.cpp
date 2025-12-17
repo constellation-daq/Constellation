@@ -87,7 +87,7 @@ void FSM::set_state(FSM::State new_state) {
 }
 
 void FSM::set_status(std::string status) {
-    const std::lock_guard status_lock {status_mutex_};
+    const std::scoped_lock status_lock {status_mutex_};
 
     // Store the status message and reset emission flag if new:
     if(status != status_) {
@@ -98,7 +98,7 @@ void FSM::set_status(std::string status) {
 }
 
 std::string_view FSM::getStatus() const {
-    const std::lock_guard status_lock {status_mutex_};
+    const std::scoped_lock status_lock {status_mutex_};
     return status_;
 }
 
@@ -113,7 +113,7 @@ bool FSM::isAllowed(Transition transition) const {
 
 void FSM::react(Transition transition, TransitionPayload payload) {
     // Acquire lock to prevent other threads from setting state
-    const std::lock_guard transition_lock {transition_mutex_};
+    const std::scoped_lock transition_lock {transition_mutex_};
     // Find transition
     auto transition_function = find_transition_function(transition);
 
@@ -139,7 +139,7 @@ std::pair<CSCP1Message::Type, std::string> FSM::reactCommand(TransitionCommand t
     auto transition = static_cast<Transition>(transition_command);
     LOG(logger_, INFO) << "Reacting to transition " << transition;
     // Acquire lock to prevent other threads from setting state
-    const std::lock_guard transition_lock {transition_mutex_};
+    const std::scoped_lock transition_lock {transition_mutex_};
     // Check if command is a valid transition for the current state
     TransitionFunction transition_function {};
     try {
@@ -237,12 +237,12 @@ void FSM::requestFailure(std::string_view reason) {
 }
 
 void FSM::registerStateCallback(const std::string& identifier, std::function<void(State, std::string_view)> callback) {
-    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    const std::scoped_lock state_callbacks_lock {state_callbacks_mutex_};
     state_callbacks_.emplace(identifier, std::move(callback));
 }
 
 void FSM::unregisterStateCallback(const std::string& identifier) {
-    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    const std::scoped_lock state_callbacks_lock {state_callbacks_mutex_};
     state_callbacks_.erase(identifier);
 }
 
@@ -257,7 +257,7 @@ void FSM::registerRemoteCallback(std::function<std::optional<State>(std::string_
 }
 
 void FSM::call_state_callbacks(bool only_with_status) {
-    const std::lock_guard state_callbacks_lock {state_callbacks_mutex_};
+    const std::scoped_lock state_callbacks_lock {state_callbacks_mutex_};
 
     // Check if the status has been emitted:
     if(status_emitted_.load() && only_with_status) {

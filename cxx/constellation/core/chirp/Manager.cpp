@@ -139,7 +139,7 @@ bool Manager::unregisterService(ServiceIdentifier service_id, Port port) {
 }
 
 void Manager::unregisterServices() {
-    const std::lock_guard registered_services_lock {registered_services_mutex_};
+    const std::scoped_lock registered_services_lock {registered_services_mutex_};
     for(auto service : registered_services_) {
         send_message(DEPART, service);
     }
@@ -147,12 +147,12 @@ void Manager::unregisterServices() {
 }
 
 std::set<RegisteredService> Manager::getRegisteredServices() {
-    const std::lock_guard registered_services_lock {registered_services_mutex_};
+    const std::scoped_lock registered_services_lock {registered_services_mutex_};
     return registered_services_;
 }
 
 bool Manager::registerDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id, std::any user_data) {
-    const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
+    const std::scoped_lock discover_callbacks_lock {discover_callbacks_mutex_};
     const auto insert_ret = discover_callbacks_.emplace(callback, service_id, std::move(user_data));
 
     // Return if actually inserted
@@ -160,7 +160,7 @@ bool Manager::registerDiscoverCallback(DiscoverCallback* callback, ServiceIdenti
 }
 
 bool Manager::unregisterDiscoverCallback(DiscoverCallback* callback, ServiceIdentifier service_id) {
-    const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
+    const std::scoped_lock discover_callbacks_lock {discover_callbacks_mutex_};
     const auto erase_ret = discover_callbacks_.erase({callback, service_id, {}});
 
     // Return if actually erased
@@ -168,12 +168,12 @@ bool Manager::unregisterDiscoverCallback(DiscoverCallback* callback, ServiceIden
 }
 
 void Manager::unregisterDiscoverCallbacks() {
-    const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
+    const std::scoped_lock discover_callbacks_lock {discover_callbacks_mutex_};
     discover_callbacks_.clear();
 }
 
 void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5Hash host_id) {
-    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
     const auto service_it = std::ranges::find_if(discovered_services_, [&](const auto& service) {
         return service.host_id == host_id && service.identifier == identifier;
     });
@@ -185,7 +185,7 @@ void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5
 }
 
 void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
-    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
 
     const auto count = std::erase_if(discovered_services_, [&](const auto& service) {
         if(service.host_id == host_id) {
@@ -198,20 +198,20 @@ void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
 }
 
 void Manager::forgetDiscoveredServices() {
-    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
     discovered_services_.clear();
 }
 
 std::vector<DiscoveredService> Manager::getDiscoveredServices() {
     std::vector<DiscoveredService> ret {};
-    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
     std::ranges::copy(discovered_services_, std::back_inserter(ret));
     return ret;
 }
 
 std::vector<DiscoveredService> Manager::getDiscoveredServices(ServiceIdentifier service_id) {
     std::vector<DiscoveredService> ret {};
-    const std::lock_guard discovered_services_lock {discovered_services_mutex_};
+    const std::scoped_lock discovered_services_lock {discovered_services_mutex_};
     for(const auto& discovered_service : discovered_services_) {
         if(discovered_service.identifier == service_id) {
             ret.push_back(discovered_service);
@@ -231,7 +231,7 @@ void Manager::send_message(MessageType type, RegisteredService service) {
 }
 
 void Manager::call_discover_callbacks(const DiscoveredService& discovered_service, ServiceStatus status) {
-    const std::lock_guard discover_callbacks_lock {discover_callbacks_mutex_};
+    const std::scoped_lock discover_callbacks_lock {discover_callbacks_mutex_};
     std::vector<std::future<void>> futures {};
     futures.reserve(discover_callbacks_.size());
     for(const auto& callback : discover_callbacks_) {
@@ -269,7 +269,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
     case REQUEST: {
         auto service_id = discovered_service.identifier;
         LOG(logger_, DEBUG) << "Received REQUEST for " << service_id << " services";
-        const std::lock_guard registered_services_lock {registered_services_mutex_};
+        const std::scoped_lock registered_services_lock {registered_services_mutex_};
         // Replay OFFERs for registered services with same service identifier
         for(const auto& service : registered_services_) {
             if(service.identifier == service_id) {

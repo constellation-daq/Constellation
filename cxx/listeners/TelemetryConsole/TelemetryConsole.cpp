@@ -74,7 +74,7 @@ TelemetryConsole::TelemetryConsole(std::string_view group_name) {
 
     // When selecting a metric, offer the "add" button if it exists already as display
     connect(metricName, &QComboBox::currentTextChanged, this, [&](const QString& text) {
-        const std::lock_guard widgets_lock {metric_widgets_mutex_};
+        const std::scoped_lock widgets_lock {metric_widgets_mutex_};
         for(auto& metric : metric_widgets_) {
             if(metric->getMetric() == text) {
                 addMetric->setEnabled(true);
@@ -235,7 +235,7 @@ void TelemetryConsole::delete_all_metrics() {
 }
 
 void TelemetryConsole::reset_metric() {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    const std::scoped_lock widgets_lock {metric_widgets_mutex_};
 
     // Call the reset method of all widgets
     for(auto& metric : metric_widgets_) {
@@ -307,7 +307,7 @@ void TelemetryConsole::update_layout() {
 }
 
 void TelemetryConsole::generate_splitters(const QList<int>& vertical, const QVector<QList<int>>& horizontal) {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    const std::scoped_lock widgets_lock {metric_widgets_mutex_};
 
     // Delete old layout and remove child widgets
     delete dashboard_widget_.layout();
@@ -363,7 +363,7 @@ void TelemetryConsole::create_metric_display(const QString& name,
     // Ownership is transferred to the storage
     // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
     auto* metric_widget = new QMetricDisplay(name, type.value(), window, this);
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    const std::scoped_lock widgets_lock {metric_widgets_mutex_};
 
     // Connect delete request and update method and status updates
     connect(metric_widget, &QMetricDisplay::deleteRequested, this, &TelemetryConsole::delete_metric);
@@ -377,7 +377,7 @@ void TelemetryConsole::create_metric_display(const QString& name,
 }
 
 void TelemetryConsole::add_metric_sender(const QString& name, const QString& sender) {
-    const std::lock_guard widgets_lock {metric_widgets_mutex_};
+    const std::scoped_lock widgets_lock {metric_widgets_mutex_};
 
     // Find metric - always add sender to the last widget registered with this metric
     auto it = std::ranges::find_if(std::ranges::reverse_view(metric_widgets_),

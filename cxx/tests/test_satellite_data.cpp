@@ -46,7 +46,7 @@ public:
 protected:
     void receive_bor(std::string_view sender, const Dictionary& user_tags, const Configuration& config) override {
         const auto sender_str = std::string(sender);
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         bor_map_.erase(sender_str);
         bor_map_.emplace(sender, Configuration(config.getDictionary()));
         bor_tag_map_.erase(sender_str);
@@ -55,14 +55,14 @@ protected:
     }
     void receive_data(std::string_view sender, const CDTP2Message::DataRecord& data_record) override {
         const auto sender_str = std::string(sender);
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         last_data_map_.erase(sender_str);
         last_data_map_.emplace(sender, copy_record(data_record));
         data_received_ = true;
     }
     void receive_eor(std::string_view sender, const Dictionary& user_tags, const Dictionary& run_metadata) override {
         const auto sender_str = std::string(sender);
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         eor_map_.erase(sender_str);
         eor_map_.emplace(sender, run_metadata);
         eor_tag_map_.erase(sender_str);
@@ -93,23 +93,23 @@ public:
     }
 
     const Configuration& getBOR(const std::string& sender) {
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         return bor_map_.at(sender);
     }
     const Dictionary& getBORTags(const std::string& sender) {
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         return bor_tag_map_.at(sender);
     }
     const CDTP2Message::DataRecord& getLastData(const std::string& sender) {
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         return last_data_map_.at(sender);
     }
     const Dictionary& getEOR(const std::string& sender) {
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         return eor_map_.at(sender);
     }
     const Dictionary& getEORTags(const std::string& sender) {
-        const std::lock_guard map_lock {map_mutex_};
+        const std::scoped_lock map_lock {map_mutex_};
         return eor_tag_map_.at(sender);
     }
 

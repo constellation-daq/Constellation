@@ -96,7 +96,7 @@ void CMDPSink::subscription_loop(const std::stop_token& stop_token) {
 
         try {
             // Lock for the mutex provided by the sink base class
-            const std::lock_guard socket_lock {mutex_};
+            const std::scoped_lock socket_lock {mutex_};
             received = recv_msg.recv(pub_socket_);
         } catch(const zmq::error_t& e) {
             throw NetworkError(e.what());
@@ -298,7 +298,7 @@ void CMDPSink::sinkMetric(MetricValue metric_value) {
     auto msghead = CMDP1Message::Header(sender_name_, std::chrono::system_clock::now());
 
     // Lock the mutex - automatically done for regular logging:
-    const std::lock_guard<std::mutex> lock {mutex_};
+    const std::scoped_lock<std::mutex> lock {mutex_};
 
     try {
         // Create and send CMDP message
@@ -313,7 +313,7 @@ void CMDPSink::sinkNotification(std::string id, Dictionary topics) {
     auto msghead = CMDP1Message::Header(sender_name_, std::chrono::system_clock::now());
 
     // Lock the mutex - automatically done for regular logging:
-    const std::lock_guard<std::mutex> lock {mutex_};
+    const std::scoped_lock<std::mutex> lock {mutex_};
 
     try {
         // Create and send CMDP message
