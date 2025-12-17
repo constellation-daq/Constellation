@@ -13,7 +13,6 @@ from typing import Any
 import LeCrunch3
 import numpy as np
 
-from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message, SatelliteState
@@ -112,7 +111,7 @@ class LeCroySatellite(TransmitterSatellite):
             return f"Number of triggers: {self._num_triggers_acquired}", self._num_triggers_acquired, {}
         return "Not running", -1, {}
 
-    @schedule_metric("", MetricsType.LAST_VALUE, 10)
+    @schedule_metric("", 10)
     def NUM_TRIGGERS(self) -> int | None:
         if self.fsm.state == SatelliteState.RUN:
             return self._num_triggers_acquired

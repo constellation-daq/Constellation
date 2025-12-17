@@ -39,10 +39,9 @@ RandomTransmitterSatellite::RandomTransmitterSatellite(std::string_view type, st
     : TransmitterSatellite(type, name), byte_rng_(generate_random_seed()) {
     support_reconfigure();
 
-    register_timed_metric(
-        "DUTY_CYCLE", "", MetricType::LAST_VALUE, "Total duty cycle of the run loop", 5s, {State::RUN}, [this]() {
-            return 1. - (static_cast<double>(rate_limited_.load()) / static_cast<double>(loop_iterations_.load()));
-        });
+    register_timed_metric("DUTY_CYCLE", "", "Total duty cycle of the run loop", 5s, {State::RUN}, [this]() {
+        return 1. - (static_cast<double>(rate_limited_.load()) / static_cast<double>(loop_iterations_.load()));
+    });
 }
 
 std::uint32_t RandomTransmitterSatellite::generate_random_seed() {

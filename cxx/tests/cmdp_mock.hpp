@@ -42,13 +42,9 @@ public:
         msg.assemble().send(pub_socket_);
     }
 
-    void sendStatMessage(std::string name,
-                         std::string unit,
-                         constellation::metrics::MetricType type,
-                         constellation::config::Value&& value) {
+    void sendStatMessage(std::string name, std::string unit, constellation::config::Value&& value) {
         auto msg = constellation::message::CMDP1StatMessage(
-            {name_},
-            {std::make_shared<constellation::metrics::Metric>(std::move(name), std::move(unit), type), std::move(value)});
+            {name_}, {std::make_shared<constellation::metrics::Metric>(std::move(name), std::move(unit)), std::move(value)});
         msg.assemble().send(pub_socket_);
     }
 

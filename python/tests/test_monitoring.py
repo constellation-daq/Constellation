@@ -13,7 +13,7 @@ import zmq
 from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
-from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, Notification
+from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, Notification
 from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
 
 
@@ -37,7 +37,7 @@ def mock_monitoringsender(mock_zmq_context):
     ctx = mock_zmq_context()
 
     class MyStatProducer(MonitoringSender):
-        @schedule_metric("Answer", MetricsType.LAST_VALUE, 0.1)
+        @schedule_metric("Answer", 0.1)
         def get_answer(self):
             """The answer to the Ultimate Question"""
             # self.log.info("Got the answer!")
@@ -57,7 +57,7 @@ def monitoringsender():
     """Create a MonitoringSender instance."""
 
     class MyStatProducer(MonitoringSender):
-        @schedule_metric("Answer", MetricsType.LAST_VALUE, 0.5)
+        @schedule_metric("Answer", 0.5)
         def get_answer(self):
             """The answer to the Ultimate Question"""
             # self.log.info("Got the answer!")
@@ -98,7 +98,7 @@ def test_log_transmission(mock_transmitter_a, mock_transmitter_b):
 
 def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
     cmdp, m = mock_transmitter_a
-    m1 = Metric("mock_val", "Mmocs", MetricsType.LAST_VALUE, 42)
+    m1 = Metric("mock_val", "Mmocs", 42)
     assert not m1.sender
     cmdp.send(m1)
     # check that we have a packet ready to be read

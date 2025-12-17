@@ -12,7 +12,7 @@ For the basic concepts behind telemetry in Constellation and the available metri
 Metrics have to be registered before use. For satellite this can be done via:
 
 ```cpp
-register_metric("NAME", "unit", MetricsValue::LAST_VALUE, "description");
+register_metric("NAME", "unit", M "description");
 ```
 
 A metric can then be send using the `STAT` macros:
@@ -29,7 +29,7 @@ described in detail in the [framework reference](../../framework_reference/cxx/c
 Metrics that are evaluated regularly from a lambda can also be registered:
 
 ```cpp
-register_timed_metric("NAME", "unit", MetricType::LAST_VALUE, "description", 10s,
+register_timed_metric("NAME", "unit", "description", 10s,
                       [this]() -> std::optional<double> {
     return allowed_to_get_metric() ? std::optional(get_metric_value()) : std::nullopt;
 });
@@ -39,7 +39,7 @@ The lambda can return either the value directly, or an optional, where the empty
 not be sent. To check if the satellite is in a given state the `getState()` method can be used, or the following helper:
 
 ```cpp
-register_timed_metric("NAME", "unit", MetricType::LAST_VALUE, "description", 10s,
+register_timed_metric("NAME", "unit", "description", 10s,
                       {CSCP::State::ORBIT, CSCP::State::RUN},
                       [this]() { return get_metric_value(); }
 );
@@ -56,10 +56,9 @@ via a function decorator and the other is via a scheduling method.
 
 The scheduling method,`schedule_metric`, makes it easy to create metrics
 programmatically at run time. This can be particularly useful in cases where e.g. the number of available channels is only
-known after connecting to the instrument hardware. The method takes a metric name, the unit, a polling interval, a
-metric type and a callable function as arguments. The name of the metric will always be converted to upper-case.
+known after connecting to the instrument hardware. The method takes a metric name, the unit, a polling interval, and a
+callable function as arguments. The name of the metric will always be converted to upper-case.
 
-* Metric type: can be `LAST_VALUE`, `ACCUMULATE`, `AVERAGE`, or `RATE`.
 * Polling interval: a float value in seconds, indicating how often the metric is transmitted.
 * Callable function: Should return a single value (of any type), and take no arguments. If you have a callable that requires
   arguments, consider using `functools.partial` to fill in the necessary information at scheduling time. If the callback
@@ -68,7 +67,7 @@ metric type and a callable function as arguments. The name of the metric will al
 An example call is shown below:
 
 ```python
-self.schedule_metric("Current", "A", MetricsType.LAST_VALUE, 10, self.device.get_current)
+self.schedule_metric("Current", "A", 10, self.device.get_current)
 ```
 
 In this example, the callable `self.device.get_current` fetches the current from
@@ -79,7 +78,7 @@ last value.
 Similarly, a metric to can be sent via the `schedule_metric` function decorator:
 
 ```python
-@schedule_metric("A", MetricsType.LAST_VALUE, 10)
+@schedule_metric("A", 10)
 def Current(self) -> Any:
     """The current as measured by the power supply."""
     if self.device.can_read_current():

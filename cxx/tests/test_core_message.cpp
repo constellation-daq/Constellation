@@ -224,7 +224,7 @@ TEST_CASE("Incorrect message type (CMDP1)", "[core][core::message]") {
     auto tp = std::chrono::system_clock::now();
 
     // Create state message
-    CMDP1StatMessage log_msg {{"senderCMDP", tp}, {std::make_shared<Metric>("name", "unit", MetricType::LAST_VALUE), {}}};
+    CMDP1StatMessage log_msg {{"senderCMDP", tp}, {std::make_shared<Metric>("name", "unit"), {}}};
     auto log_frames = log_msg.assemble();
 
     REQUIRE_THROWS_MATCHES(CMDP1LogMessage::disassemble(log_frames),

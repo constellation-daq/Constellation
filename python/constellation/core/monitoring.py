@@ -21,14 +21,14 @@ import zmq
 from .base import EPILOG, BaseSatelliteFrame, ConstellationArgumentParser
 from .chirp import CHIRPServiceIdentifier
 from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
-from .cmdp import CMDPPublisher, CMDPTransmitter, Metric, MetricsType, decode_metric
+from .cmdp import CMDPPublisher, CMDPTransmitter, Metric, decode_metric
 from .logging import ConstellationLogger, ZeroMQSocketLogHandler, setup_cli_logging
 
 P = ParamSpec("P")
 B = TypeVar("B", bound=BaseSatelliteFrame)
 
 
-def schedule_metric(unit: str, handling: MetricsType, interval: float) -> Callable[[Callable[P, Any]], Callable[P, Metric]]:
+def schedule_metric(unit: str, interval: float) -> Callable[[Callable[P, Any]], Callable[P, Metric]]:
     """Schedule a function for callback at interval [s] and send Metric.
 
     The function should take no arguments and return a value [any]
@@ -41,7 +41,6 @@ def schedule_metric(unit: str, handling: MetricsType, interval: float) -> Callab
             return Metric(
                 name=func.__name__,
                 unit=unit,
-                handling=handling,
                 value=val,
             )
 
@@ -125,7 +124,6 @@ class MonitoringSender(BaseSatelliteFrame):
         self,
         name: str,
         unit: str,
-        handling: MetricsType,
         interval: float,
         callback: Callable[..., Any],
     ) -> None:
@@ -143,7 +141,6 @@ class MonitoringSender(BaseSatelliteFrame):
             return Metric(
                 name=name,
                 unit=unit,
-                handling=handling,
                 value=val,
             )
 

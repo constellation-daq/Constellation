@@ -29,16 +29,14 @@
 
 namespace constellation::metrics {
 
-    inline void
-    MetricsManager::registerMetric(std::string name, std::string unit, metrics::MetricType type, std::string description) {
-        registerMetric(std::make_shared<metrics::Metric>(std::move(name), std::move(unit), type, std::move(description)));
+    inline void MetricsManager::registerMetric(std::string name, std::string unit, std::string description) {
+        registerMetric(std::make_shared<metrics::Metric>(std::move(name), std::move(unit), std::move(description)));
     };
 
     template <typename C>
         requires std::invocable<C>
     void MetricsManager::registerTimedMetric(std::string name,
                                              std::string unit,
-                                             metrics::MetricType type,
                                              std::string description,
                                              std::chrono::steady_clock::duration interval,
                                              C value_callback) {
@@ -62,7 +60,7 @@ namespace constellation::metrics {
             }
         };
         registerTimedMetric(std::make_shared<TimedMetric>(
-            std::move(name), std::move(unit), type, std::move(description), interval, std::move(value_callback_cast)));
+            std::move(name), std::move(unit), std::move(description), interval, std::move(value_callback_cast)));
     }
 
     template <typename T> void MetricsManager::triggerMetric(std::string name, const T& value) {

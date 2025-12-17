@@ -27,29 +27,25 @@
 
 namespace constellation::satellite {
 
-    inline void
-    Satellite::register_metric(std::string name, std::string unit, metrics::MetricType type, std::string description) {
-        utils::ManagerLocator::getMetricsManager().registerMetric(
-            std::move(name), std::move(unit), type, std::move(description));
+    inline void Satellite::register_metric(std::string name, std::string unit, std::string description) {
+        utils::ManagerLocator::getMetricsManager().registerMetric(std::move(name), std::move(unit), std::move(description));
     }
 
     template <typename C>
         requires std::invocable<C>
     inline void Satellite::register_timed_metric(std::string name,
                                                  std::string unit,
-                                                 metrics::MetricType type,
                                                  std::string description,
                                                  std::chrono::steady_clock::duration interval,
                                                  C value_callback) {
         utils::ManagerLocator::getMetricsManager().registerTimedMetric(
-            std::move(name), std::move(unit), type, std::move(description), interval, std::move(value_callback));
+            std::move(name), std::move(unit), std::move(description), interval, std::move(value_callback));
     }
 
     template <typename C>
         requires std::invocable<C>
     inline void Satellite::register_timed_metric(std::string name,
                                                  std::string unit,
-                                                 metrics::MetricType type,
                                                  std::string description,
                                                  std::chrono::steady_clock::duration interval,
                                                  std::set<protocol::CSCP::State> allowed_states,
@@ -57,7 +53,6 @@ namespace constellation::satellite {
         utils::ManagerLocator::getMetricsManager().registerTimedMetric(
             std::move(name),
             std::move(unit),
-            type,
             std::move(description),
             interval,
             [this, allowed_states = std::move(allowed_states), value_callback = std::move(value_callback)]() mutable {

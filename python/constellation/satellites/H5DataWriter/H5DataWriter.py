@@ -15,7 +15,6 @@ import h5py  # type: ignore[import-untyped]
 import numpy as np
 
 from constellation.core import __version__
-from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.message.cdtp2 import DataRecord
 from constellation.core.message.cscp1 import CSCP1Message
@@ -250,12 +249,12 @@ class H5DataWriter(ReceiverSatellite):
 
         return {key: _convert(value) for key, value in meta.items()}
 
-    @schedule_metric("bool", MetricsType.LAST_VALUE, 5)
+    @schedule_metric("bool", 5)
     def concurrent_reading_enabled(self) -> bool | None:
         """Concurrent reading status"""
         return self._swmr_mode_enabled
 
-    @schedule_metric("filename", MetricsType.LAST_VALUE, 5)
+    @schedule_metric("filename", 5)
     def currently_open_filename(self) -> str | None:
         """Concurrent reading status"""
         try:

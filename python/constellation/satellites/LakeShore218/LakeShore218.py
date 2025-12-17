@@ -12,7 +12,6 @@ from typing import Any
 import pyvisa
 import pyvisa.constants
 
-from constellation.core.cmdp import MetricsType
 from constellation.core.commandmanager import cscp_requestable
 from constellation.core.configuration import Configuration
 from constellation.core.message.cscp1 import CSCP1Message
@@ -55,9 +54,7 @@ class LakeShore218(Satellite):
         # Register metrics
         self.reset_scheduled_metrics()
         for n in range(8):
-            self.schedule_metric(
-                channel_names[n], "K", MetricsType.LAST_VALUE, sampling_interval, partial(self._get_temp, n + 1)
-            )
+            self.schedule_metric(channel_names[n], "K", sampling_interval, partial(self._get_temp, n + 1))
 
     def _get_temp(self, channel: int) -> float | None:
         # Check that _serial exists (required for metrics before INIT)

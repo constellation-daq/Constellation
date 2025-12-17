@@ -87,12 +87,12 @@ TEST_CASE("Registering and unregistering metrics", "[core][metrics]") {
     auto& metrics_manager = ManagerLocator::getMetricsManager();
 
     // Register metrics
-    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE, "description");
-    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, "description", 100ms, []() { return 0; });
+    metrics_manager.registerMetric("TEST", "t", "description");
+    metrics_manager.registerTimedMetric("TEST_T", "t", "description", 100ms, []() { return 0; });
 
     // Overwrite registered metric
-    metrics_manager.registerMetric("TEST", "u", MetricType::LAST_VALUE, "description");
-    metrics_manager.registerTimedMetric("TEST_T", "t", MetricType::LAST_VALUE, "description", 100ms, []() { return 1; });
+    metrics_manager.registerMetric("TEST", "u", "description");
+    metrics_manager.registerTimedMetric("TEST_T", "t", "description", 100ms, []() { return 1; });
 
     // Unregister metric
     metrics_manager.unregisterMetric("TEST");
@@ -116,7 +116,7 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register new metric
-    metrics_manager.registerMetric("TEST", "t", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerMetric("TEST", "t", "description");
     // Trigger metric
     metrics_manager.triggerMetric("TEST", 0);
     // Trigger unregistered metric (does nothing)
@@ -127,7 +127,6 @@ TEST_CASE("Receive triggered metric", "[core][metrics]") {
     const auto last_message = metrics_receiver.getLastMessage();
     REQUIRE(last_message->getMetric().getMetric()->name() == "TEST");
     REQUIRE(last_message->getMetric().getMetric()->unit() == "t");
-    REQUIRE(last_message->getMetric().getMetric()->type() == MetricType::LAST_VALUE);
     REQUIRE(last_message->getMetric().getValue().get<int>() == 0);
 
     metrics_receiver.stopPool();
@@ -150,10 +149,10 @@ TEST_CASE("Receive with STAT macros", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register metrics
-    metrics_manager.registerMetric("STAT", "counts", MetricType::LAST_VALUE, "description");
-    metrics_manager.registerMetric("STAT_IF", "counts", MetricType::LAST_VALUE, "description");
-    metrics_manager.registerMetric("STAT_NTH", "counts", MetricType::LAST_VALUE, "description");
-    metrics_manager.registerMetric("STAT_T", "counts", MetricType::LAST_VALUE, "description");
+    metrics_manager.registerMetric("STAT", "counts", "description");
+    metrics_manager.registerMetric("STAT_IF", "counts", "description");
+    metrics_manager.registerMetric("STAT_NTH", "counts", "description");
+    metrics_manager.registerMetric("STAT_T", "counts", "description");
 
     // Trigger metric with macro
     metrics_receiver.resetLastMessage();
@@ -203,7 +202,7 @@ TEST_CASE("Receive timed metric", "[core][metrics]") {
     metrics_receiver.waitSubscription();
 
     // Register timed metric
-    metrics_manager.registerTimedMetric("TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, []() { return 3.14; });
+    metrics_manager.registerTimedMetric("TIMED", "t", "description", 10ms, []() { return 3.14; });
 
     // Receive metric
     metrics_receiver.waitNextMessage();
@@ -232,11 +231,10 @@ TEST_CASE("Receive timed metric with optional", "[core][metrics]") {
     bool nullopt = false;
     std::mutex value_mutex;
     double value = std::numbers::phi;
-    metrics_manager.registerTimedMetric(
-        "TIMED", "t", MetricType::LAST_VALUE, "description", 10ms, [&]() -> std::optional<double> {
-            const std::scoped_lock value_lock {value_mutex};
-            return nullopt ? std::nullopt : std::optional(value);
-        });
+    metrics_manager.registerTimedMetric("TIMED", "t", "description", 10ms, [&]() -> std::optional<double> {
+        const std::scoped_lock value_lock {value_mutex};
+        return nullopt ? std::nullopt : std::optional(value);
+    });
 
     // Receive metric, first time triggered immediately
     metrics_receiver.waitNextMessage();
