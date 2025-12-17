@@ -21,10 +21,8 @@
 #include "constellation/core/config/Value.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/casts.hpp"
-#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/msgpack.hpp"
-#include "constellation/core/utils/std_future.hpp" // IWYU pragma: keep
 
 using namespace constellation::metrics;
 using namespace constellation::message;

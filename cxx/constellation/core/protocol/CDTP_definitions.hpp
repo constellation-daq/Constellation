@@ -14,7 +14,7 @@
 namespace constellation::protocol::CDTP {
 
     /** Possible conditions of a run */
-    enum RunCondition : std::uint8_t {
+    enum RunCondition : std::uint8_t { // NOLINT(cppcoreguidelines-use-enum-class)
         /** The run has concluded normally, no other information has been provided by the sender */
         GOOD = 0x00,
 

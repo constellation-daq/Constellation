@@ -27,7 +27,6 @@
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
-#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
@@ -41,7 +40,6 @@
 
 using namespace constellation::config;
 using namespace constellation::message;
-using namespace constellation::metrics;
 using namespace constellation::networking;
 using namespace constellation::protocol;
 using namespace constellation::satellite;
