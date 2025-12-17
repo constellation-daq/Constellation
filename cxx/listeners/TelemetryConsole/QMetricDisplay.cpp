@@ -204,12 +204,18 @@ void QMetricDisplay::update(
         return;
     }
 
-    rescale_axes(time);
+    const auto start = rescale_axes(time);
+
+    // Drop points out of view if possible
+    if(start.has_value()) {
+        series->clearUntil(start.value().toMSecsSinceEpoch());
+    }
+
     axis_y_.setTitleText(metric + (unit.isEmpty() ? "" : " [" + unit + "]"));
     series->updateMarker(chart_view_->chart(), unit);
 }
 
-void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
+std::optional<QDateTime> QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     const auto local_time = newTime.toLocalTime();
 
     // Rescale y axis according to min/max values
@@ -236,9 +242,9 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     }
 
     if(sliding_window_.has_value()) {
-        const auto start = local_time.addSecs(-1 * static_cast<qint64>(sliding_window_.value()));
+        auto start = local_time.addSecs(-1 * static_cast<qint64>(sliding_window_.value()));
         axis_x_.setRange(start, local_time);
-        return;
+        return start;
     }
 
     if(local_time > axis_x_.max()) {
@@ -247,4 +253,6 @@ void QMetricDisplay::rescale_axes(const QDateTime& newTime) {
     if(local_time < axis_x_.min()) {
         axis_x_.setMin(local_time);
     }
+
+    return {};
 }

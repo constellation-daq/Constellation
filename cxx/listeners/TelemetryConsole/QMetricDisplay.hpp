@@ -158,8 +158,9 @@ private:
      * @brief Helper tor rescale the x axis of the chart
      *
      * @param time New time to be added to the axis
+     * @return The time of the earliest displayed point
      */
-    void rescale_axes(const QDateTime& time);
+    std::optional<QDateTime> rescale_axes(const QDateTime& time);
 
     std::unique_ptr<QT_CHART QChartView> chart_view_;
     QMap<QString, QMetricSeries*> series_;
