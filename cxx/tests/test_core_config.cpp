@@ -35,6 +35,13 @@ using namespace constellation::config;
 using namespace constellation::utils;
 using namespace std::string_view_literals;
 
+namespace {
+    enum class MyEnum : std::uint8_t {
+        ONE,
+        TWO,
+    };
+} // namespace
+
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 // NOLINTBEGIN(google-readability-casting,readability-redundant-casting)
 
@@ -55,10 +62,6 @@ TEST_CASE("Set & Get Values", "[core][core::config]") {
     config.set("string_view", std::string_view("b"));
     config.set("char_array", "c");
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.set("myenum", MyEnum::ONE);
 
     auto tp = std::chrono::system_clock::now();
@@ -110,10 +113,6 @@ TEST_CASE("Keys Are Case-Insensitive", "[core][core::config]") {
 TEST_CASE("Enum Values Are Case-Insensitive", "[core][core::config]") {
     Configuration config {};
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.set("myenum", MyEnum::ONE);
     // Enum from string
     config.set("myenumstr", "ONE");
@@ -142,10 +141,6 @@ TEST_CASE("Set & Get Array Values", "[core][core::config]") {
 
     config.setArray<std::string>("string", {"a", "b", "c"});
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
 
     auto tp = std::chrono::system_clock::now();
@@ -190,10 +185,6 @@ TEST_CASE("Set & Get Set Values", "[core][core::config]") {
     config.setSet<char>("binary", {0x1, 0x2, 0x3, 0x3});
     config.setSet<std::string>("string", {"a", "b", "c", "c"});
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.setSet<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO, MyEnum::TWO});
 
     const auto tp1 = std::chrono::system_clock::now();
@@ -294,10 +285,6 @@ TEST_CASE("Access Values as Text", "[core][core::config]") {
     config.set("float", float(7.5));
     config.set("string", std::string("a"));
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.set("myenum", MyEnum::ONE);
 
     const std::chrono::time_point<std::chrono::system_clock> tp {};
@@ -333,10 +320,6 @@ TEST_CASE("Access Arrays as Text", "[core][core::config]") {
 
     config.setArray<std::string>("string", {"a", "b", "c"});
 
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
 
     const std::chrono::system_clock::time_point tp {};
@@ -505,10 +488,6 @@ TEST_CASE("Invalid Key Access", "[core][core::config]") {
                            Message("Could not convert value of type `bool` to type `double` for key `key`"));
 
     // Check for invalid enum value conversion:
-    enum MyEnum : std::uint8_t {
-        ONE,
-        TWO,
-    };
     config.set("myenum", "THREE");
     REQUIRE_THROWS_MATCHES(config.get<MyEnum>("myenum"),
                            InvalidValueError,

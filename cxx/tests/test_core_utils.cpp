@@ -93,6 +93,7 @@ TEST_CASE("Enum names", "[core]") {
     REQUIRE_THAT(enum_name(Color::RED), Equals("RED"));
     REQUIRE_THAT(enum_names<Color>(), RangeEquals(std::array<std::string_view, 3>({"RED", "BLUE", "GREEN"})));
     // Unscoped enum (works also as flag)
+    // NOLINTNEXTLINE(cppcoreguidelines-use-enum-class)
     enum ColorMix : std::uint8_t { WHITE = 0x0, RED = 0x1, BLUE = 0x2, GREEN = 0x4 };
     REQUIRE_THAT(enum_name(ColorMix::WHITE), Equals("WHITE"));
     REQUIRE_THAT(enum_name(ColorMix::RED | ColorMix::BLUE), Equals("RED|BLUE"));

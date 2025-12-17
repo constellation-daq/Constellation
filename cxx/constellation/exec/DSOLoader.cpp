@@ -132,13 +132,13 @@ Generator* DSOLoader::loadSatelliteGenerator() {
 
 void* DSOLoader::get_raw_function_from_dso(const std::string& function_name) {
 #ifdef _WIN32
-    void* function = reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(handle_), function_name.c_str()));
+    void* const function = reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(handle_), function_name.c_str()));
     if(function == nullptr) {
         const auto last_win_error = std::system_category().message(GetLastError());
         throw DSOFunctionLoadingError(function_name, dso_name_, last_win_error);
     }
 #else
-    void* function = dlsym(handle_, function_name.c_str());
+    void* const function = dlsym(handle_, function_name.c_str()); // NOLINT(misc-const-correctness)
     if(function == nullptr) {
         const auto* error_dlsym = dlerror(); // NOLINT(concurrency-mt-unsafe)
         throw DSOFunctionLoadingError(function_name, dso_name_, error_dlsym);

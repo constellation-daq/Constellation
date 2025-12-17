@@ -23,7 +23,7 @@ namespace constellation::protocol::CHP {
     static constexpr std::uint8_t Lives = 3;
 
     /** Possible CHP message flags */
-    enum MessageFlags : std::uint8_t {
+    enum MessageFlags : std::uint8_t { // NOLINT(cppcoreguidelines-use-enum-class)
         NONE = 0x00,
 
         /** Indicating that the sender should not be allowed to depart, and an interrupt should be triggered */
