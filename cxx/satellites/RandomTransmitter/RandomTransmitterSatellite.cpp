@@ -22,14 +22,12 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
 
 using namespace constellation::config;
-using namespace constellation::metrics;
 using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;

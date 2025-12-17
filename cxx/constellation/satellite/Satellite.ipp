@@ -20,7 +20,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/type.hpp"

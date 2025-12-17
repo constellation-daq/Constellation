@@ -18,13 +18,11 @@
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/log/log.hpp"
-#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation::config;
-using namespace constellation::metrics;
 using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace std::chrono_literals;

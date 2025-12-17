@@ -15,7 +15,6 @@
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
 #include "constellation/core/log/Level.hpp"
-#include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
@@ -29,7 +28,6 @@ using namespace Catch::Matchers;
 using namespace constellation::listener;
 using namespace constellation::log;
 using namespace constellation::message;
-using namespace constellation::metrics;
 using namespace constellation::protocol;
 using namespace constellation::utils;
 using namespace std::chrono_literals;

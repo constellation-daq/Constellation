@@ -426,7 +426,7 @@ void TelemetryConsole::closeEvent(QCloseEvent* event) {
 
         gui_settings_.beginGroup("dashboard/layout");
         // Save vertical splitter states (row heights)
-        QSplitter* splitter_vertical = nullptr;
+        QSplitter* splitter_vertical = nullptr; // NOLINT(misc-const-correctness)
         if(dashboard_widget_.layout() != nullptr && dashboard_widget_.layout()->count() > 0) {
             splitter_vertical = qobject_cast<QSplitter*>(dashboard_widget_.layout()->itemAt(0)->widget());
         }
