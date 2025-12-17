@@ -55,24 +55,17 @@ using namespace std::chrono_literals;
 FlightRecorderSatellite::FlightRecorderSatellite(std::string_view type, std::string_view name)
     : Satellite(type, name), LogListener("MNTR", [this](auto&& arg) { log_message(std::forward<decltype(arg)>(arg)); }) {
 
-    register_timed_metric("MSG_TOTAL",
-                          "",
-                          MetricType::LAST_VALUE,
-                          "Total number messages received and logged since satellite startup",
-                          3s,
-                          [this]() { return msg_logged_total_.load(); });
-    register_timed_metric("MSG_WARN",
-                          "",
-                          MetricType::LAST_VALUE,
-                          "Number of warning messages received and logged since satellite startup",
-                          3s,
-                          [this]() { return msg_logged_warning_.load(); });
-    register_timed_metric("MSG_RUN",
-                          "",
-                          MetricType::LAST_VALUE,
-                          "Total number messages received and logged since the last run start",
-                          3s,
-                          [this]() { return msg_logged_run_.load(); });
+    register_timed_metric(
+        "MSG_TOTAL", "", "Total number messages received and logged since satellite startup", 3s, [this]() {
+            return msg_logged_total_.load();
+        });
+    register_timed_metric(
+        "MSG_WARN", "", "Number of warning messages received and logged since satellite startup", 3s, [this]() {
+            return msg_logged_warning_.load();
+        });
+    register_timed_metric("MSG_RUN", "", "Total number messages received and logged since the last run start", 3s, [this]() {
+        return msg_logged_run_.load();
+    });
 
     register_command(
         "flush", "Flush log sink", {State::INIT, State::ORBIT, State::RUN, State::SAFE}, [this]() { sink_->flush(); });

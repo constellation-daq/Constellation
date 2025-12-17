@@ -58,21 +58,18 @@ TransmitterSatellite::TransmitterSatellite(std::string_view type, std::string_vi
 
     register_timed_metric("TX_BYTES",
                           "B",
-                          MetricType::LAST_VALUE,
                           "Number of bytes transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_transmitted_.load(); });
     register_timed_metric("TX_BLOCKS",
                           "",
-                          MetricType::LAST_VALUE,
                           "Number of blocks transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return blocks_transmitted_.load(); });
     register_timed_metric("TX_RECORDS",
                           "",
-                          MetricType::LAST_VALUE,
                           "Number of data records transmitted by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},

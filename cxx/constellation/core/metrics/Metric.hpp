@@ -24,19 +24,6 @@
 
 namespace constellation::metrics {
 
-    /** Metrics types */
-    enum class MetricType : std::uint8_t {
-        /** Always keep the latest value, replace earlier ones */
-        LAST_VALUE = 1,
-        /** Sum every new value to previously received ones */
-        ACCUMULATE = 2,
-        /** Calculate the average value */
-        AVERAGE = 3,
-        /** Calculate the rate from the value over a given time interval */
-        RATE = 4,
-    };
-    using enum MetricType;
-
     /**
      * @brief This class represents a metric for telemetry or data quality monitoring
      *
@@ -51,11 +38,10 @@ namespace constellation::metrics {
          *
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
-         * @param type Type of the metric
          * @param description Description of the metric
          */
-        Metric(std::string name, std::string unit, MetricType type, std::string description = "")
-            : name_(std::move(name)), unit_(std::move(unit)), type_(type), description_(std::move(description)) {}
+        Metric(std::string name, std::string unit, std::string description = "")
+            : name_(std::move(name)), unit_(std::move(unit)), description_(std::move(description)) {}
 
         /**
          * @brief Obtain the name of the metric
@@ -75,16 +61,9 @@ namespace constellation::metrics {
          */
         std::string_view description() const { return description_; }
 
-        /**
-         * @brief Obtain type of the metric
-         * @return Metric type
-         */
-        MetricType type() const { return type_; }
-
     private:
         std::string name_;
         std::string unit_;
-        MetricType type_;
         std::string description_;
     };
 
@@ -101,18 +80,16 @@ namespace constellation::metrics {
          *
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
-         * @param type Type of the metric
          * @param description Description of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
          */
         TimedMetric(std::string name,
                     std::string unit,
-                    MetricType type,
                     std::string description,
                     std::chrono::nanoseconds interval,
                     std::function<std::optional<config::Value>()> value_callback)
-            : Metric(std::move(name), std::move(unit), type, std::move(description)), interval_(interval),
+            : Metric(std::move(name), std::move(unit), std::move(description)), interval_(interval),
               value_callback_(std::move(value_callback)) {}
 
         /**

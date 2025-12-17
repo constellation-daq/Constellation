@@ -218,7 +218,7 @@ TEST_CASE("Available topics", "[listener]") {
     REQUIRE(pool.getAvailableTopics("CMDPSender.s1").empty());
 
     // Send a message to trigger manual topic addition
-    sender1.sendStatMessage("STAT/C", "c", MetricType::LAST_VALUE, 5);
+    sender1.sendStatMessage("STAT/C", "c", 5);
     pool.popNextMessage();
 
     // Check that STAT/C was added (without description)
@@ -229,7 +229,7 @@ TEST_CASE("Available topics", "[listener]") {
     sender1.sendNotification("STAT?", {{{"STAT/A", "A"}, {"STAT/B", "B"}}});
 
     // Send a message to ensure notification was received
-    sender1.sendStatMessage("STAT/C", "c", MetricType::LAST_VALUE, 6);
+    sender1.sendStatMessage("STAT/C", "c", 6);
     pool.popNextMessage();
 
     // Check that STAT/A and STAT/B were added
@@ -276,7 +276,7 @@ TEST_CASE("Available senders", "[listener]") {
     REQUIRE_FALSE(pool.isSenderAvailable("CMDPSender.s1"));
 
     // Send a message
-    sender.sendStatMessage("STAT/C", "c", MetricType::LAST_VALUE, 7);
+    sender.sendStatMessage("STAT/C", "c", 7);
     pool.popNextMessage();
 
     // Check that sender is available

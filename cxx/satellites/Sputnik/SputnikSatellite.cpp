@@ -39,10 +39,10 @@ SputnikSatellite::SputnikSatellite(std::string_view type, std::string_view name)
                      {State::NEW, State::INIT, State::ORBIT},
                      [](int channel) { return 13.8 * channel; });
 
-    register_timed_metric("BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", 3s, []() { return 42; });
-    register_metric("TIME", "s", MetricType::LAST_VALUE, "Sputnik total time since launch");
-    register_metric("TEMPERATURE", "degC", MetricType::LAST_VALUE, "Measured temperature inside satellite");
-    register_metric("FAN_RUNNING", "", MetricType::LAST_VALUE, "Information on the fan state");
+    register_timed_metric("BEEP", "beeps", "Sputnik beeps", 3s, []() { return 42; });
+    register_metric("TIME", "s", "Sputnik total time since launch");
+    register_metric("TEMPERATURE", "degC", "Measured temperature inside satellite");
+    register_metric("FAN_RUNNING", "", "Information on the fan state");
 }
 
 void SputnikSatellite::initializing(Configuration& config) {
@@ -52,18 +52,15 @@ void SputnikSatellite::initializing(Configuration& config) {
     // Obtain launch delay from the configuration:
     launch_delay_ = std::chrono::seconds(config.get<std::uint64_t>("launch_delay", 0));
 
-    register_timed_metric(
-        "BEEP", "beeps", MetricType::LAST_VALUE, "Sputnik beeps", std::chrono::milliseconds(interval), []() { return 42; });
+    register_timed_metric("BEEP", "beeps", "Sputnik beeps", std::chrono::milliseconds(interval), []() { return 42; });
 }
 
 void SputnikSatellite::reconfiguring(const constellation::config::Configuration& config) {
     if(config.has("interval")) {
-        register_timed_metric("BEEP",
-                              "beeps",
-                              MetricType::LAST_VALUE,
-                              "Sputnik beeps",
-                              std::chrono::milliseconds(config.get<std::uint64_t>("interval")),
-                              []() { return 42; });
+        register_timed_metric(
+            "BEEP", "beeps", "Sputnik beeps", std::chrono::milliseconds(config.get<std::uint64_t>("interval")), []() {
+                return 42;
+            });
     }
 }
 

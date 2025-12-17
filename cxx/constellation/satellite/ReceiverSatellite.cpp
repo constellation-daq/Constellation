@@ -61,11 +61,10 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
     : Satellite(type, name),
       BasePool("DATA", [this](CDTP2Message&& message) { this->handle_cdtp_message(std::move(message)); }) {
 
-    register_metric("OUTPUT_FILE", "", MetricType::LAST_VALUE, "Current output file path. Updated when changed.");
+    register_metric("OUTPUT_FILE", "", "Current output file path. Updated when changed.");
 
     register_timed_metric("RX_BYTES",
                           "B",
-                          MetricType::LAST_VALUE,
                           "Number of bytes received by this satellite in the current run",
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
@@ -159,7 +158,6 @@ void ReceiverSatellite::register_diskspace_metric(const std::filesystem::path& p
 
     register_timed_metric("DISKSPACE_FREE",
                           "MiB",
-                          MetricType::LAST_VALUE,
                           "Available disk space at the target location of the output file",
                           10s,
                           [this, path]() -> std::optional<uint64_t> {

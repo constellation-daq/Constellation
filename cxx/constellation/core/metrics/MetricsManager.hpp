@@ -61,10 +61,9 @@ namespace constellation::metrics {
          *
          * @param name Unique topic of the metric
          * @param unit Unit of the provided value
-         * @param type Type of the metric
          * @param description Description of the metric
          */
-        void registerMetric(std::string name, std::string unit, metrics::MetricType type, std::string description);
+        void registerMetric(std::string name, std::string unit, std::string description);
 
         /**
          * Register a timed metric
@@ -78,7 +77,6 @@ namespace constellation::metrics {
          *
          * @param name Name of the metric
          * @param unit Unit of the metric as human readable string
-         * @param type Type of the metric
          * @param description Description of the metric
          * @param interval Interval in which to send the metric
          * @param value_callback Callback to determine the current value of the metric
@@ -87,7 +85,6 @@ namespace constellation::metrics {
             requires std::invocable<C>
         void registerTimedMetric(std::string name,
                                  std::string unit,
-                                 metrics::MetricType type,
                                  std::string description,
                                  std::chrono::steady_clock::duration interval,
                                  C value_callback);
