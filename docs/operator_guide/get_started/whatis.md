@@ -35,6 +35,10 @@ in nuclear and particle physics:
   of data produced by a given device. Constellation tries to avoid this term as much as possible, referring to *messages*
   when communication between nodes is concerned, and *data records* for any instrument data.
 
+Any node in a Constellation network has a well-defined *canonical name*, consisting if its type and a user-specified name,
+separated by a dot, and a *group name*. These parameters are used to discover other nodes, and to communicate with them.
+These names are interpreted case-insensitively.
+
 ## Components
 
 The Constellation framework knows three different types of components, namely *satellites*, *controllers* and *listeners*.

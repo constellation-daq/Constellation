@@ -27,6 +27,9 @@ When services are shut down, the a special beacon will prompt other nodes to dis
 
 All other protocols use *CHIRP* in order to find the other nodes of the Constellation.
 
+In Constellation, this discovery is designed to work within so-called *groups*, where the group name has to be provided to
+any node at startup and is interpreted case-insensitively.
+
 ### Heartbeat Exchange
 
 Autonomous operation of the Constellation requires the constant exchange of state information between all participants.
