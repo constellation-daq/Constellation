@@ -34,7 +34,8 @@ TEST_CASE("MD5 hashing with RFC 1321 reference implementation values", "[chirp][
     REQUIRE_THAT(MD5Hash("abc").to_string(), Equals("900150983cd24fb0d6963f7d28e17f72"));
     REQUIRE_THAT(MD5Hash("message digest").to_string(), Equals("f96b697d7cb7938d525a2f31aaf161d0"));
     REQUIRE_THAT(MD5Hash("abcdefghijklmnopqrstuvwxyz").to_string(), Equals("c3fcd3d76192e4007dfb496cca67e13b"));
-    REQUIRE_THAT(MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").to_string(), Equals("d174ab98d277d9f5a5611c2c9f419d9f"));
+    REQUIRE_THAT(MD5Hash("aBCDefghiJKLmnopqRSTuvwXYZ").to_string(), Equals("c3fcd3d76192e4007dfb496cca67e13b"));
+    REQUIRE_THAT(MD5Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789").to_string(), Equals("36eea18da65a8e4606c529635c3d5b15"));
     REQUIRE_THAT(MD5Hash("12345678901234567890123456789012345678901234567890123456789012345678901234567890").to_string(), Equals("57edf4a22be3c955ac49da2e2107b67a"));
     // clang-format on
 }
