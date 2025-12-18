@@ -31,7 +31,7 @@ located in a folder named `flatpak` within a clone of the Constellation reposito
 ```yaml
 id: de.desy.constellation
 runtime: org.kde.Platform
-runtime-version: "6.9"
+runtime-version: "6.10"
 sdk: org.kde.Sdk
 command: Satellite
 finish-args:
