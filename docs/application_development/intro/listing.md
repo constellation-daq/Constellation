@@ -20,6 +20,10 @@ Therefore, the following criteria should be met for including a satellite in the
 
 In all other cases (i.e. hardware control for a niche system, large control code base required, small user community) the satellite is probably more fittingly stored in a separate repository and developed independently of the main Constellation code.
 
+```{note}
+Inclusion of a satellite requires its code to be licensed under the same software license as the core framework, i.e. the [European Union Public License 1.2](https://gitlab.desy.de/constellation/constellation/-/blob/main/LICENSE). More information on the license and the intent of the Constellation authors in choosing it can be found on [the website](../../about).
+```
+
 ## Listing an External Satellite in the Library
 
 Satellites not part of the main Constellation repository can still be listed in the Satellite Library as externally available component.
