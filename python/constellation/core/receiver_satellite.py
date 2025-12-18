@@ -53,7 +53,7 @@ class ReceiverSatellite(Satellite):
 
         if self.data_transmitters is None:
             return
-            
+
         # Request data services
         self.request(CHIRPServiceIdentifier.DATA)
 
