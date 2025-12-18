@@ -243,10 +243,21 @@ class Satellite(
         control to the device-specific public method.
 
         """
+        self._pre_launching_hook()
         msg: str | None = self.do_launching()
         if not isinstance(msg, str):
             msg = "Launched"
         return msg
+
+    @debug_log
+    def _pre_launching_hook(self) -> None:
+        """Hook run before do_launchingn() is called.
+
+        Allows inheriting (core) classes to perform actions immediately before
+        user code is executed.
+
+        """
+        pass
 
     @debug_log
     def do_launching(self) -> str | None:
