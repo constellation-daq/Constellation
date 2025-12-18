@@ -51,6 +51,9 @@ class ReceiverSatellite(Satellite):
         """Check the available data transmitters against the configured list."""
         super()._pre_launching_hook()
 
+        if self.data_transmitters is None:
+            return
+            
         # Request data services
         self.request(CHIRPServiceIdentifier.DATA)
 
