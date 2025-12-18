@@ -232,20 +232,34 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
 }
 
 void ReceiverSatellite::launching_receiver() {
-    LOG(cdtp_logger_, DEBUG) << "Checking for discovered data service endpoints";
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Checking for discovered data service endpoints";
     auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
     if(chirp_manager != nullptr) {
-        // Get discovered DATA services
-        const auto services = chirp_manager->getDiscoveredServices(CHIRP::DATA);
 
-        // Cross-check their providers with the configured data transmitters:
-        auto it = std::ranges::find_if(data_transmitters_, [this, &services](const auto& host) {
-            LOG(cdtp_logger_, DEBUG) << "Checking for availability of host " << host;
-            return std::ranges::find(services, MD5Hash(host), [&](const auto& service) { return service.host_id; }) ==
-                   services.end();
-        });
-        if(it != data_transmitters_.end()) {
-            LOG(cdtp_logger_, WARNING) << "Data transmitter " << *it << " not found";
+        // Request DATA services
+        chirp_manager->sendRequest(CHIRP::DATA);
+
+        auto timer = TimeoutTimer(3s);
+        timer.reset();
+
+        auto missing_transmitters = data_transmitters_;
+        while(!missing_transmitters.empty() && !timer.timeoutReached()) {
+            std::this_thread::sleep_for(100ms);
+
+            // Get discovered DATA services
+            const auto services = chirp_manager->getDiscoveredServices(CHIRP::DATA);
+
+            // Cross-check their providers with the configured data transmitters:
+            std::erase_if(missing_transmitters, [&services](const std::string& host) {
+                return std::ranges::find(services, MD5Hash(host), [&](const auto& service) { return service.host_id; }) !=
+                       services.end();
+            });
+        }
+
+        // If transmitters are missing, throw
+        if(!missing_transmitters.empty()) {
+            throw SatelliteError("The requested data transmitters " + range_to_string(missing_transmitters) +
+                                 " are not available");
         }
     }
 }
