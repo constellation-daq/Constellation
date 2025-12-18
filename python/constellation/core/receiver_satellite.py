@@ -9,7 +9,7 @@ import time
 from typing import Any
 
 from .cdtp import DataReceiver, RecvTimeoutError
-from .chirp import CHIRPServiceIdentifier
+from .chirp import CHIRPServiceIdentifier, get_uuid
 from .chirpmanager import DiscoveredService, chirp_callback
 from .configuration import Configuration
 from .error import debug_log, handle_error
@@ -46,6 +46,26 @@ class ReceiverSatellite(Satellite):
         # EOR timeout
         self._drc.eor_timeout = self.config.setdefault("_eor_timeout", 10)
         self.log_cdtp.debug("Timeout for EOR messages is %ss", self._drc.eor_timeout)
+
+    def _pre_launching_hook(self) -> None:
+        """Check the available data transmitters against the configured list."""
+        super()._pre_launching_hook()
+
+        # Request data services
+        self.request(CHIRPServiceIdentifier.DATA)
+
+        # wait until all data services are discovered
+        timeout = 3.0
+        missing_transmitters = self.data_transmitters
+        while timeout > 0.0 and len(missing_transmitters) > 0:
+            for dataservice in self.get_discovered(CHIRPServiceIdentifier.DATA):
+                missing_transmitters = {h for h in missing_transmitters if get_uuid(h) != dataservice.host_uuid}
+
+            time.sleep(0.1)
+            timeout -= 0.1
+
+        if len(missing_transmitters) > 0:
+            raise RuntimeError(f"The requested data transmitters {', '.join(missing_transmitters)} are not available")
 
     def _pre_run_hook(self, run_identifier: str) -> None:
         """Hook run immediately before `do_run()` is called.
