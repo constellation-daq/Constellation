@@ -51,13 +51,14 @@ class ReceiverSatellite(Satellite):
         """Check the available data transmitters against the configured list."""
         super()._pre_launching_hook()
 
+        # Always request data services
+        self.request(CHIRPServiceIdentifier.DATA)
+
+        # If this receiver should connect to all available transmitters, return
         if self.data_transmitters is None:
             return
 
-        # Request data services
-        self.request(CHIRPServiceIdentifier.DATA)
-
-        # wait until all data services are discovered
+        # Wait until all data services are discovered
         timeout = 3.0
         missing_transmitters = self.data_transmitters
         while timeout > 0.0 and len(missing_transmitters) > 0:
