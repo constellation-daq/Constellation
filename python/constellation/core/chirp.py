@@ -18,8 +18,8 @@ CHIRP_HEADER = "CHIRP\x01"
 
 
 def get_uuid(name: str) -> UUID:
-    """Return the UUID for a string using MD5 hashing."""
-    val = md5(name.encode(), usedforsecurity=False)
+    """Return the UUID for a string using MD5 hashing. Hashes are calculated from the lower-case string."""
+    val = md5(name.lower().encode(), usedforsecurity=False)
     return UUID(bytes=val.digest())
 
 

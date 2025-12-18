@@ -29,8 +29,12 @@ using namespace constellation::networking;
 using namespace constellation::protocol::CHIRP;
 
 MD5Hash::MD5Hash(std::string_view string) : array() {
+
+    // Convert strings to lower-case before hashing
+    const auto string_lc = utils::transform(string, ::tolower);
+
     auto hasher = Chocobo1::MD5();
-    hasher.addData(string.data(), string.length());
+    hasher.addData(string_lc.data(), string_lc.length());
     hasher.finalize();
     // Swap output of hash with this to avoid copy
     auto hash_copy = hasher.toArray();

@@ -264,7 +264,7 @@ class Satellite(
         """
 
         # reconfigure is not necessarily implemented; it is not in the this base
-        # class to allow checking for the exististance of the method to
+        # class to allow checking for the existence of the method to
         # determine the reaction to a `reconfigure` CSCP command.
         init_msg: str | None = self.do_reconfigure(partial_config)  # type: ignore[attr-defined]
         if not isinstance(init_msg, str):
