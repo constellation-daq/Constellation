@@ -11,6 +11,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -24,6 +25,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp" // IWYU pragma: keep
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/std_future.hpp"
 #include "constellation/satellite/FSM.hpp"
 #include "constellation/satellite/ReceiverSatellite.hpp"
 #include "constellation/satellite/TransmitterSatellite.hpp"
@@ -235,7 +237,8 @@ TEST_CASE("Transmitter / EOR timeout", "[satellite]") {
     REQUIRE(receiver.getState() == FSM::State::ERROR);
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("condition").get<std::string>() == "ABORTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::ABORTED);
+    REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
+            std::to_underlying(CDTP::RunCondition::ABORTED));
     receiver.exit();
 
     // Stop the transmitter to send EOR
