@@ -22,6 +22,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -332,7 +333,7 @@ void ReceiverSatellite::stopping_receiver() {
                 if(is_run_degraded()) {
                     condition_code |= CDTP::RunCondition::DEGRADED;
                 }
-                run_metadata["condition_code"] = condition_code;
+                run_metadata["condition_code"] = std::to_underlying(condition_code);
                 run_metadata["condition"] = enum_name(condition_code);
                 receive_eor(data_transmitter.first, {}, run_metadata);
             }
@@ -462,10 +463,11 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
         auto condition_code_it = metadata.find("condition_code");
         if(condition_code_it != metadata.end()) {
             // Add flag to existing condition
-            condition_code |= condition_code_it->second.get<CDTP::RunCondition>();
-            condition_code_it->second = condition_code;
+            condition_code |=
+                CDTP::RunCondition(condition_code_it->second.get<std::underlying_type_t<CDTP::RunCondition>>());
+            condition_code_it->second = std::to_underlying(condition_code);
         } else {
-            metadata.emplace("condition_code", condition_code);
+            metadata.emplace("condition_code", std::to_underlying(condition_code));
         }
         // Overwrite existing human-readable run condition
         metadata.insert_or_assign("condition", enum_name(condition_code));
