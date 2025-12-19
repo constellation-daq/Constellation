@@ -38,8 +38,10 @@
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/pools/BasePool.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
+#include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/std_future.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/timers.hpp"
@@ -68,6 +70,11 @@ ReceiverSatellite::ReceiverSatellite(std::string_view type, std::string_view nam
                           10s,
                           {CSCP::State::RUN, CSCP::State::stopping, CSCP::State::interrupting},
                           [this]() { return bytes_received_.load(); });
+
+    auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+        chirp_manager->sendRequest(CHIRP::DATA);
+    }
 }
 
 void ReceiverSatellite::validate_output_directory(const std::filesystem::path& path) {
@@ -223,6 +230,39 @@ void ReceiverSatellite::initializing_receiver(Configuration& config) {
 
     data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
     LOG(BasePoolT::pool_logger_, DEBUG) << "Timeout for EOR messages is " << data_eor_timeout_;
+}
+
+void ReceiverSatellite::launching_receiver() {
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Checking for discovered data service endpoints";
+    auto* chirp_manager = utils::ManagerLocator::getCHIRPManager();
+    if(chirp_manager != nullptr) {
+
+        // Request DATA services
+        chirp_manager->sendRequest(CHIRP::DATA);
+
+        auto timer = TimeoutTimer(3s);
+        timer.reset();
+
+        auto missing_transmitters = data_transmitters_;
+        while(!missing_transmitters.empty() && !timer.timeoutReached()) {
+            std::this_thread::sleep_for(100ms);
+
+            // Get discovered DATA services
+            const auto services = chirp_manager->getDiscoveredServices(CHIRP::DATA);
+
+            // Cross-check their providers with the configured data transmitters:
+            std::erase_if(missing_transmitters, [&services](const std::string& host) {
+                return std::ranges::find(services, MD5Hash(host), [&](const auto& service) { return service.host_id; }) !=
+                       services.end();
+            });
+        }
+
+        // If transmitters are missing, throw
+        if(!missing_transmitters.empty()) {
+            throw SatelliteError("The requested data transmitters " + range_to_string(missing_transmitters) +
+                                 " are not available");
+        }
+    }
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {

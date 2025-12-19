@@ -568,6 +568,11 @@ std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& c
 std::optional<std::string> BaseSatellite::launching_wrapper() {
     launching();
 
+    auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
+    if(receiver_ptr != nullptr) {
+        receiver_ptr->ReceiverSatellite::launching_receiver();
+    }
+
     return {get_user_status_or("Satellite launched successfully")};
 }
 
