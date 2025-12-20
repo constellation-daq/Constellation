@@ -593,9 +593,6 @@
           </property>
           <item>
            <widget class="QTreeView" name="viewConn">
-            <property name="toolTip">
-             <string>Satellites connected to the Run Control</string>
-            </property>
             <property name="horizontalScrollBarPolicy">
              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
             </property>
