@@ -16,6 +16,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/BaseSatellite.hpp"
 
 using namespace constellation::protocol::CSCP;
@@ -39,7 +40,7 @@ void Satellite::stopping() {}
 void Satellite::running(const std::stop_token& /* stop_token */) {}
 
 void Satellite::interrupting(State previous_state, std::string_view reason) {
-    LOG(logger_, INFO) << "Interrupting from " << previous_state << " (default implementation), reason: " << reason;
+    LOG(logger_, INFO) << "Interrupting from " << quote(previous_state) << " (default implementation), reason: " << reason;
     if(previous_state == State::RUN) {
         LOG(logger_, DEBUG) << "Interrupting: execute stopping";
         stopping();
@@ -49,5 +50,5 @@ void Satellite::interrupting(State previous_state, std::string_view reason) {
 }
 
 void Satellite::failure(State previous_state, std::string_view reason) {
-    LOG(logger_, DEBUG) << "Failure from " << previous_state << " (default implementation), reason: " << reason;
+    LOG(logger_, DEBUG) << "Failure from " << quote(previous_state) << " (default implementation), reason: " << reason;
 }

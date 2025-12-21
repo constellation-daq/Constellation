@@ -87,7 +87,7 @@ Manager::Manager(std::string_view group_name, std::string_view host_name, const 
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 
     LOG(logger_, INFO) << "Using interfaces "
-                       << range_to_string(interfaces, [](const auto& interface) { return interface.name; });
+                       << range_to_string(interfaces, [](const auto& interface) { return interface.name; }, true);
 
     const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
     multicast_socket_ = std::make_unique<MulticastSocket>(interfaces, multicast_adddress, PORT);
@@ -178,7 +178,8 @@ void Manager::forgetDiscoveredService(ServiceIdentifier identifier, message::MD5
         return service.host_id == host_id && service.identifier == identifier;
     });
     if(service_it != discovered_services_.end()) {
-        LOG(logger_, DEBUG) << "Dropping discovered service " << identifier << " for host id " << host_id.to_string();
+        LOG(logger_, DEBUG) << "Dropping discovered service " << quote(identifier) << " for host id "
+                            << quote(host_id.to_string());
         call_discover_callbacks(*service_it, ServiceStatus::DEAD);
         discovered_services_.erase(service_it);
     }
@@ -194,7 +195,7 @@ void Manager::forgetDiscoveredServices(message::MD5Hash host_id) {
         }
         return false;
     });
-    LOG(logger_, DEBUG) << "Dropped " << count << " discovered services for host id " << host_id.to_string();
+    LOG(logger_, DEBUG) << "Dropped " << count << " discovered services for host id " << quote(host_id.to_string());
 }
 
 void Manager::forgetDiscoveredServices() {
@@ -225,7 +226,8 @@ void Manager::sendRequest(ServiceIdentifier service) {
 }
 
 void Manager::send_message(MessageType type, RegisteredService service) {
-    LOG(logger_, DEBUG) << "Sending " << type << " for " << service.identifier << " service on port " << service.port;
+    LOG(logger_, DEBUG) << "Sending " << quote(type) << " for " << quote(service.identifier) << " service on port "
+                        << service.port;
     const auto asm_msg = CHIRPMessage(type, group_id_, host_id_, service.identifier, service.port).assemble();
     multicast_socket_->sendMessage(asm_msg);
 }
@@ -246,11 +248,11 @@ void Manager::call_discover_callbacks(const DiscoveredService& discovered_servic
 }
 
 void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asio::ip::address_v4& address) {
-    LOG(logger_, TRACE) << "Received message from " << address.to_string()    //
-                        << ": group = " << chirp_msg.getGroupID().to_string() //
-                        << ", host = " << chirp_msg.getHostID().to_string()   //
-                        << ", type = " << chirp_msg.getType()                 //
-                        << ", service = " << chirp_msg.getServiceIdentifier() //
+    LOG(logger_, TRACE) << "Received message from " << address.to_string()           //
+                        << ": group = " << quote(chirp_msg.getGroupID().to_string()) //
+                        << ", host = " << quote(chirp_msg.getHostID().to_string())   //
+                        << ", type = " << quote(chirp_msg.getType())                 //
+                        << ", service = " << quote(chirp_msg.getServiceIdentifier()) //
                         << ", port = " << chirp_msg.getPort();
 
     if(chirp_msg.getGroupID() != group_id_) {
@@ -268,7 +270,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
     switch(chirp_msg.getType()) {
     case REQUEST: {
         auto service_id = discovered_service.identifier;
-        LOG(logger_, DEBUG) << "Received REQUEST for " << service_id << " services";
+        LOG(logger_, DEBUG) << "Received REQUEST for " << quote(service_id) << " services";
         const std::scoped_lock registered_services_lock {registered_services_mutex_};
         // Replay OFFERs for registered services with same service identifier
         for(const auto& service : registered_services_) {
@@ -285,8 +287,8 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
             // Check if new port if service already discovered
             if(discovered_service_it->port != discovered_service.port) {
                 // Assume old host is dead
-                LOG(logger_, WARNING) << discovered_service.host_id.to_string() << " has new port "
-                                      << discovered_service.port << " for " << discovered_service.identifier
+                LOG(logger_, WARNING) << quote(discovered_service.host_id.to_string()) << " has new port "
+                                      << discovered_service.port << " for " << quote(discovered_service.identifier)
                                       << " service, assuming service has been replaced";
 
                 // Forget any discovered services of host
@@ -305,7 +307,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
             // Unlock discovered_services_lock for user callback
             discovered_services_lock.unlock();
 
-            LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << address.to_string() << ":"
+            LOG(logger_, DEBUG) << quote(chirp_msg.getServiceIdentifier()) << " service at " << address.to_string() << ":"
                                 << chirp_msg.getPort() << " discovered";
 
             call_discover_callbacks(discovered_service, ServiceStatus::DISCOVERED);
@@ -320,7 +322,7 @@ void Manager::handle_incoming_message(message::CHIRPMessage chirp_msg, const asi
             // Unlock discovered_services_lock for user callback
             discovered_services_lock.unlock();
 
-            LOG(logger_, DEBUG) << chirp_msg.getServiceIdentifier() << " service at " << address.to_string() << ":"
+            LOG(logger_, DEBUG) << quote(chirp_msg.getServiceIdentifier()) << " service at " << address.to_string() << ":"
                                 << chirp_msg.getPort() << " departed";
 
             call_discover_callbacks(discovered_service, ServiceStatus::DEPARTED);

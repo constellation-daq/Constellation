@@ -127,7 +127,7 @@ TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
 
     // Wait for interrupt
     manager.waitInterrupt();
-    REQUIRE_THAT(manager.getInterruptMessage(), Equals("`sender` reports state ERROR"));
+    REQUIRE_THAT(manager.getInterruptMessage(), Equals("sender reports state ERROR"));
 
     // Clear remote error state by sending heartbeat with regular state:
     sender.sendHeartbeat(CSCP::State::INIT, std::chrono::milliseconds(100000), CHP::flags_from_role(CHP::Role::DYNAMIC));
@@ -137,7 +137,7 @@ TEST_CASE("Receive interrupt from failure states", "[chp][send]") {
 
     // Wait for interrupt
     manager.waitInterrupt();
-    REQUIRE_THAT(manager.getInterruptMessage(), Equals("`sender` reports state SAFE"));
+    REQUIRE_THAT(manager.getInterruptMessage(), Equals("sender reports state SAFE"));
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     manager.terminate();
@@ -158,7 +158,7 @@ TEST_CASE("Receive interrupt from heartbeat timeout", "[chp][send]") {
 
     // Wait for interrupt
     manager.waitInterrupt();
-    REQUIRE_THAT(manager.getInterruptMessage(), Equals("No signs of life detected anymore from `sender`"));
+    REQUIRE_THAT(manager.getInterruptMessage(), Equals("No signs of life detected anymore from sender"));
 
     ManagerLocator::getCHIRPManager()->forgetDiscoveredServices();
     manager.terminate();

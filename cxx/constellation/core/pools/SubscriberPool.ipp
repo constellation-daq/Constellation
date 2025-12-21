@@ -41,12 +41,11 @@ namespace constellation::pools {
                 BasePoolT::get_sockets(), host_id, [&](const auto& socket_p) { return socket_p.first.host_id; });
             if(socket_it != BasePoolT::get_sockets().end()) {
                 if(subscribe) {
-                    BasePoolT::pool_logger_.log(TRACE)
-                        << "Subscribing to " << utils::quote(topic) << " for " << socket_it->first.to_uri();
+                    BasePoolT::pool_logger_.log(TRACE) << "Subscribing to " << topic << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::subscribe, topic);
                 } else {
                     BasePoolT::pool_logger_.log(TRACE)
-                        << "Unsubscribing from " << utils::quote(topic) << " for " << socket_it->first.to_uri();
+                        << "Unsubscribing from " << topic << " for " << socket_it->first.to_uri();
                     socket_it->second.set(zmq::sockopt::unsubscribe, topic);
                 }
             }
@@ -63,12 +62,10 @@ namespace constellation::pools {
             const std::scoped_lock sockets_lock {BasePoolT::sockets_mutex_};
             for(auto& [host, socket] : BasePoolT::get_sockets()) {
                 if(subscribe) {
-                    BasePoolT::pool_logger_.log(TRACE)
-                        << "Subscribing to " << utils::quote(topic) << " for " << host.to_uri();
+                    BasePoolT::pool_logger_.log(TRACE) << "Subscribing to " << topic << " for " << host.to_uri();
                     socket.set(zmq::sockopt::subscribe, topic);
                 } else {
-                    BasePoolT::pool_logger_.log(TRACE)
-                        << "Unsubscribing from " << utils::quote(topic) << " for " << host.to_uri();
+                    BasePoolT::pool_logger_.log(TRACE) << "Unsubscribing from " << topic << " for " << host.to_uri();
                     socket.set(zmq::sockopt::unsubscribe, topic);
                 }
             }

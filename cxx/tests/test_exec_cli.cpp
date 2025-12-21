@@ -36,10 +36,10 @@ TEST_CASE("Base parser invalid level", "[exec]") {
     parser.setup();
 
     std::vector<const char*> args {"TestProg", "-l", "ERROR"};
-    REQUIRE_THROWS_MATCHES(
-        parser.parse(args),
-        CommandLineInterfaceError,
-        Message("`ERROR` is not a valid log level, possible value are TRACE, DEBUG, INFO, WARNING, STATUS, CRITICAL, OFF"));
+    REQUIRE_THROWS_MATCHES(parser.parse(args),
+                           CommandLineInterfaceError,
+                           Message("`ERROR` is not a valid log level, possible value are `TRACE`, `DEBUG`, `INFO`, "
+                                   "`WARNING`, `STATUS`, `CRITICAL`, `OFF`"));
 }
 
 TEST_CASE("Base parser invalid argument", "[exec]") {
