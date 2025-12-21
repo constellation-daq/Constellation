@@ -29,7 +29,6 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
-#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 // Forward declaration
