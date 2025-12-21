@@ -21,6 +21,7 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <version> // IWYU pragma: keep
 
 #ifdef __cpp_lib_format
@@ -43,16 +44,6 @@ namespace constellation::utils {
             out += static_cast<char>(operation(static_cast<unsigned char>(character)));
         }
         return out;
-    }
-
-    /** Add backtick quotes to a string */
-    inline std::string quote(std::string_view str) {
-        return "`" + std::string(str) + "`";
-    }
-
-    /** Define defined literal "_quoted" operator */
-    inline std::string operator""_quote(const char* text, std::size_t len) {
-        return "`" + std::string(text, len) + "`";
     }
 
     /** Converts a string-like object to a string */
@@ -157,24 +148,56 @@ namespace constellation::utils {
         { to_string(t) } -> std::same_as<std::string>;
     };
 
-    /** Converts a range to a string with custom to_string function and delimiter */
+    /** Convert char as hex string */
+    inline std::string char_to_hex_string(char c) {
+        std::string hex {"00"};
+        auto* last = hex.data() + hex.size();
+        auto res = std::to_chars(hex.data(), last, static_cast<std::uint8_t>(c), 16);
+        if(res.ptr != last) {
+            // c < 16, i.e. written to first char of hex -> reverse string
+            std::ranges::reverse(hex);
+        }
+        return "0x" + transform(hex, ::toupper);
+    }
+
+    /** Add backtick quotes to strings */
+    inline std::string quote(std::string str, bool quote = true) {
+        if(str.empty() || !quote) {
+            return str;
+        }
+
+        return "`" + std::move(str) + "`";
+    }
+
+    /** Add backtick quotes to a value */
+    template <typename S> inline std::string quote(S value, bool quote = true) {
+        return quote(to_string(value));
+    }
+
+    /** Define defined literal "_quote" operator */
+    inline std::string operator""_quote(const char* text, std::size_t len) {
+        return quote(std::string {text, len}, true);
+    }
+
+    /** Converts a range to a string with custom to_string function, markup and delimiter */
     template <typename R, typename F>
         requires std::ranges::bidirectional_range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
-    inline std::string range_to_string(const R& range, F to_string_func, const std::string& delim = ", ") {
+    inline std::string
+    range_to_string(const R& range, F to_string_func, bool quote_values = false, const std::string& delim = ", ") {
         std::string out {};
         if(!std::ranges::empty(range)) {
             std::ranges::for_each(std::ranges::subrange(std::cbegin(range), std::ranges::prev(std::ranges::cend(range))),
-                                  [&](const auto& element) { out += to_string_func(element) + delim; });
-            out += to_string_func(*std::ranges::crbegin(range));
+                                  [&](const auto& element) { out += quote(to_string_func(element), quote_values) + delim; });
+            out += quote(to_string_func(*std::ranges::crbegin(range)), quote_values);
         }
         return out;
     }
 
-    /** Converts a range to a string with custom delimiter */
+    /** Converts a range to a string with custom markup and delimiter */
     template <typename R>
         requires std::ranges::bidirectional_range<R> && convertible_to_string<std::ranges::range_value_t<R>>
-    inline std::string range_to_string(const R& range, const std::string& delim = ", ") {
-        return range_to_string(range, to_string<std::ranges::range_value_t<R>>, delim);
+    inline std::string range_to_string(const R& range, bool quote_values, const std::string& delim = ", ") {
+        return range_to_string(range, to_string<std::ranges::range_value_t<R>>, quote_values, delim);
     }
 
     /** Range that can be converted to a string */
@@ -187,19 +210,7 @@ namespace constellation::utils {
     template <typename E>
         requires std::is_enum_v<E>
     inline std::string list_enum_names() {
-        return range_to_string(enum_names<E>());
-    }
-
-    /** Convert char as hex string */
-    inline std::string char_to_hex_string(char c) {
-        std::string hex {"00"};
-        auto* last = hex.data() + hex.size();
-        auto res = std::to_chars(hex.data(), last, static_cast<std::uint8_t>(c), 16);
-        if(res.ptr != last) {
-            // c < 16, i.e. written to first char of hex -> reverse string
-            std::ranges::reverse(hex);
-        }
-        return "0x" + transform(hex, ::toupper);
+        return range_to_string(enum_names<E>(), true);
     }
 
 } // namespace constellation::utils
