@@ -29,6 +29,7 @@
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/metrics/Metric.hpp"
 #include "constellation/core/networking/Port.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
 
 // Forward declaration
@@ -57,6 +58,13 @@ namespace constellation::log {
 
         // Formatter for the topic (adds brackets except for the default logger)
         class ConstellationTopicFormatter : public spdlog::custom_flag_formatter {
+        public:
+            void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
+            std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
+        };
+
+        // Formatter for the message (converts markup to ANSI characters)
+        class ConstellationMessageFormatter : public spdlog::custom_flag_formatter {
         public:
             void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
             std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;

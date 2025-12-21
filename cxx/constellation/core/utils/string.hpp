@@ -161,8 +161,8 @@ namespace constellation::utils {
     }
 
     /** Add backtick quotes to strings */
-    inline std::string quote(std::string str, bool quote = true) {
-        if(str.empty() || !quote) {
+    inline std::string quote(std::string str, bool markup = true) {
+        if(str.empty() || !markup) {
             return str;
         }
 
@@ -170,8 +170,8 @@ namespace constellation::utils {
     }
 
     /** Add backtick quotes to a value */
-    template <typename S> inline std::string quote(S value, bool quote = true) {
-        return quote(to_string(value));
+    template <typename S> inline std::string quote(S value, bool markup = true) {
+        return quote(to_string(value), markup);
     }
 
     /** Define defined literal "_quote" operator */
@@ -183,12 +183,12 @@ namespace constellation::utils {
     template <typename R, typename F>
         requires std::ranges::bidirectional_range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
     inline std::string
-    range_to_string(const R& range, F to_string_func, bool quote_values = false, const std::string& delim = ", ") {
+    range_to_string(const R& range, F to_string_func, bool markup = false, const std::string& delim = ", ") {
         std::string out {};
         if(!std::ranges::empty(range)) {
             std::ranges::for_each(std::ranges::subrange(std::cbegin(range), std::ranges::prev(std::ranges::cend(range))),
-                                  [&](const auto& element) { out += quote(to_string_func(element), quote_values) + delim; });
-            out += quote(to_string_func(*std::ranges::crbegin(range)), quote_values);
+                                  [&](const auto& element) { out += quote(to_string_func(element), markup) + delim; });
+            out += quote(to_string_func(*std::ranges::crbegin(range)), markup);
         }
         return out;
     }
@@ -196,8 +196,8 @@ namespace constellation::utils {
     /** Converts a range to a string with custom markup and delimiter */
     template <typename R>
         requires std::ranges::bidirectional_range<R> && convertible_to_string<std::ranges::range_value_t<R>>
-    inline std::string range_to_string(const R& range, bool quote_values, const std::string& delim = ", ") {
-        return range_to_string(range, to_string<std::ranges::range_value_t<R>>, quote_values, delim);
+    inline std::string range_to_string(const R& range, bool markup = false, const std::string& delim = ", ") {
+        return range_to_string(range, to_string<std::ranges::range_value_t<R>>, markup, delim);
     }
 
     /** Range that can be converted to a string */
