@@ -19,6 +19,7 @@ from constellation.core.configuration import Configuration, flatten_config, load
 from constellation.core.controller import BaseController
 from constellation.core.cscp import CommandTransmitter
 from constellation.core.heartbeatchecker import HeartbeatChecker
+from constellation.core.message.cscp1 import SatelliteState
 from constellation.core.monitoring import FileMonitoringListener
 from constellation.core.network import get_loopback_interface_name
 from constellation.core.satellite import Satellite
@@ -498,7 +499,8 @@ def monitoringlistener(request):
 
 
 def wait_for_state(fsm, state: str, timeout: float = 2.0):
-    while timeout > 0 and fsm.state.name != state:
+    state_enum = SatelliteState[state.upper()]
+    while timeout > 0 and fsm.state != state_enum:
         time.sleep(0.005)
         timeout -= 0.005
     if timeout < 0:

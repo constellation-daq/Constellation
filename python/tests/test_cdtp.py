@@ -84,9 +84,10 @@ class DummyTransmitterSatellite(TransmitterSatellite):
         return "Stopped"
 
     def do_run(self, run_identifier: str) -> str:
-        if self.throw_run:
+        while not self.stop_requested():
+            if self.throw_run:
+                raise Exception("throwing in RUN as requested")
             time.sleep(0.05)
-            raise Exception("throwing in RUN as requested")
         return "Finished run"
 
 
@@ -128,9 +129,10 @@ class DummyReceiverSatellite(ReceiverSatellite):
         self.last_eors.append((sender, user_tags, run_metadata))
 
     def do_run(self, run_identifier: str) -> str:
-        if self.throw_run:
+        while not self.stop_requested():
+            if self.throw_run:
+                raise Exception("throwing in RUN as requested")
             time.sleep(0.05)
-            raise Exception("throwing in RUN as requested")
         return super().do_run(run_identifier)
 
 
@@ -537,9 +539,6 @@ def test_data_satellites_transmitter_failure(
     receiver = receiver_satellite
     cmd_tx, cmd_rx = cmd_transmitter
 
-    # Set transmitter to throw in RUN
-    transmitter.throw_run = True
-
     # Initialize
     cmd_tx.request_get_response(
         "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
@@ -573,7 +572,10 @@ def test_data_satellites_transmitter_failure(
         timeout -= 0.05
     assert len(receiver.last_bors) == 1, "BOR not received"
 
-    # Wait until receiver in SAFE
+    # Set transmitter to throw
+    transmitter.throw_run = True
+
+    # Wait until transmitter is in ERROR and receiver in SAFE
     wait_for_state(transmitter.fsm, "ERROR")
     wait_for_state(receiver.fsm, "SAFE")
 
@@ -591,9 +593,6 @@ def test_data_satellites_receiver_failure(
     transmitter = transmitter_satellite
     receiver = receiver_satellite
     cmd_tx, cmd_rx = cmd_transmitter
-
-    # Set receiver to throw in RUN
-    receiver.throw_run = True
 
     # Initialize
     cmd_tx.request_get_response(
@@ -621,7 +620,10 @@ def test_data_satellites_receiver_failure(
     cmd_tx.request_get_response("start", "test_run_1")
     wait_for_state(transmitter.fsm, "RUN")
 
-    # Wait until transmitter in SAFE or ERROR
+    # Set receiver to throw
+    receiver.throw_run = True
+
+    # Wait until receiver is in ERROR and transmitter in SAFE or ERROR
     wait_for_state(receiver.fsm, "ERROR")
     timeout = 2.0
     while transmitter.fsm.state not in [SatelliteState.SAFE, SatelliteState.ERROR] and timeout > 0:
