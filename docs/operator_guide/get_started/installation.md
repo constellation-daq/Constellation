@@ -42,16 +42,17 @@ however, still be started, albeit only from the command line and not the desktop
 the following command can to be used:
 
 ```sh
-flatpak run de.desy.constellation -t Sputnik -n Flatpak -g edda
+flatpak run de.desy.constellation -t <type> -n <name> -g <group>
 ```
+
+Here, the `<type>`, `<name>` and `<group>` parameters need to be replaced with the desired satellite type, satellite name and Constellation group to connect to, respectively.
 
 ```{note}
 Currently, only C++ satellites are available on Flathub.
 ```
 
-It should be noted that a Flatpak is not suited for application development, for which an
-[installation from source](../../application_development/intro/install_from_source.md) is required. Information on how to
-build the Constellation Flatpak from source can be found in the [framework reference](../../framework_reference/flatpak.md).
+It should be noted that a Flatpak is not suited for application development, for which an [installation from source](#installing-from-source) is required.
+Information on how to build the Constellation Flatpak from source can be found in the [framework reference](../../framework_reference/flatpak.md).
 
 
 ## Installing from PyPI
@@ -79,6 +80,11 @@ A list of available extra components can be found on the project's [PyPI page](h
 ```{note}
 Currently, only the Python version of the framework and the Python satellites are available on PyPI.
 ```
+
+## Installing from Source
+
+In certain cases, an installation from source is required (e.g. for building external C++ satellites).
+The installation instructions can be found in the [Application Developer Guide](../../application_development/intro/install_from_source.md).
 
 ## Running Satellites with Docker
 
