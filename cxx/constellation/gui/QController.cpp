@@ -101,6 +101,16 @@ QVariant QController::get_data(std::map<std::string, Connection, std::less<>>::c
         return font;
     }
 
+    // Define tooltips
+    if(role == Qt::ToolTipRole) {
+        if(idx == 0 || idx == 1) {
+            return QString::fromStdString(name);
+        }
+        if(idx == 3) {
+            return QString::fromStdString(conn.last_message);
+        }
+    }
+
     // Below only handle display role
     if(role != Qt::DisplayRole) {
         return {};
