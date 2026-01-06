@@ -10,6 +10,7 @@
 #pragma once
 
 #include <chrono>
+#include <compare>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -97,6 +98,14 @@ namespace constellation::config {
         template <typename T>
             requires scalar_constructible<T>
         bool operator==(T other) const;
+
+        /** Spaceship operator */
+        template <typename T>
+            requires scalar_constructible<T>
+        std::partial_ordering operator<=>(T other) const;
+
+        /** Spaceship operator (implementation) */
+        CNSTLN_API std::partial_ordering operator<=>(const Scalar& other) const;
 
         /**
          * @brief Get scalar in requested type

@@ -126,10 +126,17 @@ TEST_CASE("Scalar operators", "[core][core::config]") {
     REQUIRE_FALSE(scalar == 0);
     scalar = 3.0F;
     REQUIRE(scalar == 3.0);
-    REQUIRE_FALSE(scalar == 3); // TODO int/double comparison?
+    REQUIRE(scalar == 3);
+    REQUIRE(scalar > -2);
+    REQUIRE(scalar < 255);
+    scalar = 4;
+    REQUIRE(scalar == 4);
+    REQUIRE(scalar == 4.0);
+    REQUIRE(scalar > -5);
+    REQUIRE(scalar < 512);
     scalar = "string";
     REQUIRE(scalar == "string");
-    REQUIRE_FALSE(scalar == 3.0F);
+    REQUIRE_FALSE(scalar == 4);
 }
 
 TEST_CASE("Scalar string conversion", "[core][core::config]") {

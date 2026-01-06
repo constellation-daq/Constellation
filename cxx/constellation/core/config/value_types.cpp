@@ -10,6 +10,7 @@
 #include "value_types.hpp"
 
 #include <chrono>
+#include <compare>
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -35,6 +36,19 @@ using namespace constellation::utils;
 // NOLINTBEGIN(misc-no-recursion)
 
 // --- Scalar ---
+
+std::partial_ordering Scalar::operator<=>(const Scalar& other) const {
+    // Explicit mixed int/double comparison
+    if(std::holds_alternative<std::int64_t>(*this) && std::holds_alternative<double>(other)) {
+        return static_cast<double>(std::get<std::int64_t>(*this)) <=> std::get<double>(other);
+    }
+    if(std::holds_alternative<double>(*this) && std::holds_alternative<std::int64_t>(other)) {
+        return std::get<double>(*this) <=> static_cast<double>(std::get<std::int64_t>(other));
+    }
+
+    // Otherwise use variant default ordering
+    return static_cast<ScalarMonostateVariant>(*this) <=> static_cast<ScalarMonostateVariant>(other);
+}
 
 std::string Scalar::to_string() const {
     return std::visit(

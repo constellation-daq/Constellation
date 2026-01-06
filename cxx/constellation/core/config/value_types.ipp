@@ -12,6 +12,7 @@
 #include "value_types.hpp" // NOLINT(misc-header-include-cycle)
 
 #include <algorithm>
+#include <compare>
 #include <concepts>
 #include <cstdint>
 #include <initializer_list>
@@ -84,7 +85,13 @@ namespace constellation::config {
     template <typename T>
         requires scalar_constructible<T>
     bool Scalar::operator==(T other) const {
-        return *this == Scalar(std::move(other));
+        return (*this <=> other) == std::partial_ordering::equivalent;
+    }
+
+    template <typename T>
+        requires scalar_constructible<T>
+    std::partial_ordering Scalar::operator<=>(T other) const {
+        return *this <=> Scalar(std::move(other));
     }
 
     template <typename T>
