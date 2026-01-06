@@ -266,6 +266,16 @@ def test_configuration_get_section():
     with pytest.raises(InvalidTypeError) as excinfo:
         config_subsubsubdict.get_section("int")
     assert str(excinfo.value) == "Could not convert value of type `int` to `Section` for key `sub_2.sub.sub.int`"
+    # get_section with default parameter
+    config_subdict_2_def = config.get_section("sub_2", {})
+    assert "int" in config_subdict_2_def
+    config_subdict_3_def = config.get_section("sub_3", {"default": "True", "sub": {"int": -3}})
+    assert config_subdict_3_def.get("default") == "True"
+    config_subdict_3_def_sub = config_subdict_3_def.get_section("sub")
+    assert config_subdict_3_def_sub.get("int") == -3
+    with pytest.raises(InvalidTypeError) as excinfo:
+        config.get_section("int", {})
+    assert str(excinfo.value) == "Could not convert value of type `int` to `Section` for key `int`"
     # dictionary via get
     with pytest.raises(InvalidTypeError) as excinfo:
         config["sub_1"]

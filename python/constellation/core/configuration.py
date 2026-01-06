@@ -320,9 +320,16 @@ class Section:
             ),
         )
 
-    def get_section(self, key: str) -> Section:
+    def get_section(self, key: str, default_value: dict[str, Any] | None = None) -> Section:
         """Get nested configuration section"""
         key_lc = key.lower()
+        if default_value is not None:
+            # Set default value manually since dictionary needs to be inserted into tree
+            if key_lc not in self._section_tree:
+                if key_lc in self._dictionary:
+                    raise InvalidTypeError(self, key, type(self._dictionary[key_lc]).__name__, "Section")
+                self._dictionary[key_lc] = default_value
+                self._section_tree[key_lc] = Section(f"{self._prefix}{key_lc}.", default_value)
         try:
             return self._section_tree[key_lc]
         except KeyError as e:
