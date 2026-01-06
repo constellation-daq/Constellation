@@ -249,6 +249,17 @@ TEST_CASE("Configuration section getters", "[core][core::config]") {
                            InvalidTypeError,
                            Message("Could not convert value of type `" + demangle<std::int64_t>() +
                                    "` to type `Section` for key `sub_2.sub.sub.int`"));
+    // Default getter
+    const auto& config_subdict_2_def = config.getSection("sub_2", {});
+    REQUIRE(config_subdict_2_def.has("int"));
+    const auto& config_subdict_3_def = config.getSection("sub_3", {{"default", true}, {"sub", Dictionary({{"int", -3}})}});
+    REQUIRE(config_subdict_3_def.get<bool>("default") == true);
+    const auto& config_subdict_3_def_sub = config_subdict_3_def.getSection("sub");
+    REQUIRE(config_subdict_3_def_sub.get<int>("int") == -3);
+    REQUIRE_THROWS_MATCHES(
+        config.getSection("int", {}),
+        InvalidTypeError,
+        Message("Could not convert value of type `" + demangle<std::int64_t>() + "` to type `Section` for key `int`"));
     // Optional getter
     const auto config_subdict_1_opt = config.getOptionalSection("sub_1");
     REQUIRE(config_subdict_1_opt.has_value());

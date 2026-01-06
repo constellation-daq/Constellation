@@ -177,6 +177,21 @@ const Section& Section::getSection(std::string_view key) const {
     }
 }
 
+const Section& Section::getSection(std::string_view key, Dictionary&& default_value) const {
+    // Set default value manually since dictionary needs to be inserted into tree
+    const auto key_lc = utils::transform(key, tolower);
+    const auto confdict_it = section_tree_.find(key_lc);
+    if(confdict_it == section_tree_.cend()) {
+        auto [it, inserted] = dictionary_->try_emplace(key_lc, std::move(default_value));
+        if(!inserted) {
+            throw InvalidTypeError(*this, key, it->second.demangle(), "Section");
+        }
+        section_tree_.try_emplace(key_lc, prefix_ + key_lc + ".", &it->second.get<Dictionary>());
+    }
+
+    return getSection(key_lc);
+}
+
 std::optional<std::reference_wrapper<const Section>> Section::getOptionalSection(std::string_view key) const {
     try {
         return getSection(key);

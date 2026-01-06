@@ -253,6 +253,17 @@ namespace constellation::config {
         CNSTLN_API const Section& getSection(std::string_view key) const;
 
         /**
+         * @brief Get nested configuration section or a default dictionary if it does not exists
+         *
+         * @param key Key to get section of
+         * @param default_value Default value to set if key is not defined
+         * @return Configuration section contained by the key
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API const Section& getSection(std::string_view key, Dictionary&& default_value) const;
+
+        /**
          * @brief Get an optional nested configuration section
          *
          * @note Since optionals of references are not allowed, this returns an optional of a reference wrapper. In get the
