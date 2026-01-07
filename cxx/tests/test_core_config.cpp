@@ -531,7 +531,7 @@ TEST_CASE("Configuration message assembly & disassembly", "[core][core::config]"
 
 TEST_CASE("Resolve environment variables", "[core][core::config]") {
     // Set an environment variable
-#if defined(_WIN32)
+#ifdef _WIN32
     _putenv("CNSTLN_TEST_KEY=value");
 #else
     setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)

@@ -62,13 +62,17 @@ namespace constellation::utils {
         std::string result;
         for(const auto& match : std::ranges::subrange(begin, end)) {
             result += input.substr(last_pos, match.position() - last_pos);
-            auto env_val = getenv(match[1]);
+            // Reinsert matched prefix character
+            if(match[1].matched) {
+                result += match[1].str();
+            }
+            auto env_val = getenv(match[2]);
             if(env_val.has_value()) {
                 result += env_val.value();
-            } else if(match[2].matched) {
-                result += match[2].str();
+            } else if(match[3].matched) {
+                result += match[3].str();
             } else {
-                throw RuntimeError("Environment variable " + quote(match[1].str()) + " not defined");
+                throw RuntimeError("Environment variable " + quote(match[2].str()) + " not defined");
             }
             last_pos = match.position() + match.length();
         }

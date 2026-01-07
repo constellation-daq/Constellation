@@ -25,6 +25,7 @@
 
 #include "constellation/core/utils/casts.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/msgpack.hpp"
 #include "constellation/core/utils/std_future.hpp"
@@ -113,6 +114,43 @@ TEST_CASE("Msgpack enum", "[core]") {
     REQUIRE_THROWS_MATCHES(msgpack_unpack_to_enum<test::TestEnum>(to_char_ptr(sbuf.data()), sbuf.size(), offset),
                            MsgpackUnpackError,
                            Message("Type error for test::TestEnum: value out of range"));
+}
+
+TEST_CASE("Env resolution controller", "[core]") {
+
+    // Set an environment variable
+#ifdef _WIN32
+    _putenv("CNSTLN_TEST_KEY=value");
+#else
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)
+#endif
+
+    REQUIRE_THAT(resolve_controller_env("_${CNSTLN_TEST_KEY}"), Equals("value"));
+    REQUIRE_THAT(resolve_controller_env("_${CNSTLN_TEST_KEY:-default}"), Equals("value"));
+    REQUIRE_THAT(resolve_controller_env("prefix__${CNSTLN_TEST_KEY}"), Equals("prefix_value"));
+    REQUIRE_THAT(resolve_controller_env("\\_${CNSTLN_TEST_KEY}"), Equals("_${CNSTLN_TEST_KEY}"));
+    REQUIRE_THAT(resolve_controller_env("${CNSTLN_TEST_KEY}"), Equals("${CNSTLN_TEST_KEY}"));
+    REQUIRE_THROWS_MATCHES(
+        resolve_controller_env("_${MISSING}"), RuntimeError, Message("Environment variable `MISSING` not defined"));
+    REQUIRE_THAT(resolve_controller_env("_${MISSING:-default}"), Equals("default"));
+}
+
+TEST_CASE("Env resolution satellite", "[core]") {
+
+    // Set an environment variable
+#ifdef _WIN32
+    _putenv("CNSTLN_TEST_KEY=value");
+#else
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)
+#endif
+
+    REQUIRE_THAT(resolve_satellite_env("${CNSTLN_TEST_KEY}"), Equals("value"));
+    REQUIRE_THAT(resolve_satellite_env("${CNSTLN_TEST_KEY:-default}"), Equals("value"));
+    REQUIRE_THAT(resolve_satellite_env("prefix_$${CNSTLN_TEST_KEY}"), Equals("prefix_$value"));
+    REQUIRE_THAT(resolve_satellite_env("\\${CNSTLN_TEST_KEY}"), Equals("${CNSTLN_TEST_KEY}"));
+    REQUIRE_THROWS_MATCHES(
+        resolve_satellite_env("${MISSING}"), RuntimeError, Message("Environment variable `MISSING` not defined"));
+    REQUIRE_THAT(resolve_satellite_env("${MISSING:-default}"), Equals("default"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)
