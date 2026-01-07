@@ -90,7 +90,7 @@ Mariner:
 
 ## Parameter Keys & Values
 
-Constellation configuration files support scalar values, arrays and dictionaries, which consist of key-value pairs.
+Constellation configuration files support key-value pairs, where the key is always a string, and the values can be scalars, arrays or sections, which again consist of key-value pairs.
 Configuration **keys are always interpreted as strings**, while the following **scalar value types** are distinguished:
 
 * Boolean, with values `true` and `false`.
@@ -167,22 +167,22 @@ array_flow = [1.3, 0.5, 1e15]
 
 ::::
 
-### Dictionaries
+### Section
 
-**Dictionaries**, also known as *tables* on TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
-Value types can be mixed freely, and dictionaries can be recursively nested.
-This means that the value of a dictionary entry can be again either a scalar, an array, or a dictionary itself.
-Some satellites use this to structure their configuration into separate sections:
+**Section**, also known as *tables* in TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
+Value types can be mixed freely, and sections can be recursively nested.
+This means that the value of a section entry can be again either a scalar, an array, or a section itself.
+Some satellites use this to better structure their configuration:
 
 ::::{tab-set-code}
 
 ```yaml
 Sputnik:
   One:
-    dictionary:
+    section_one:
       parameter_a: 12
       parameter_b: "access_token"
-    other_dict:
+    section_other:
       channel: 5
       output: 1.3
 ```
@@ -190,11 +190,11 @@ Sputnik:
 ```toml
 [Sputnik.One]
 
-[Sputnik.One.dictionary]
+[Sputnik.One.section_one]
 parameter_a = 12
 parameter_b = "access_token"
 
-[Sputnik.One.other_dict]
+[Sputnik.One.section_other]
 channel = 5
 output = 1.3
 ```
