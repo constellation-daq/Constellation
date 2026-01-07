@@ -46,8 +46,8 @@ namespace constellation::utils {
      *          looked up as environment variable. A runtime exception is thrown if not found, the match string replaced with
      *          the value otherwise.
      *
-     * @param pattern Input regular expression. The first match group represents the variable name, the second an optional
-     * default
+     * @param pattern Input regular expression. The first match group represents the matched prefix, if any, the second the
+     *        environment variable name, and the third an optional default
      * @param input Input string to resolve matches for
      *
      * @return String with all regular expression matches replaced
@@ -66,6 +66,7 @@ namespace constellation::utils {
             if(match[1].matched) {
                 result += match[1].str();
             }
+            // Resolve environment variable or use default if present
             auto env_val = getenv(match[2]);
             if(env_val.has_value()) {
                 result += env_val.value();
@@ -83,21 +84,21 @@ namespace constellation::utils {
 
     /**
      * @brief Helper to resolve all controller environment variables matching _${VAR}.
-     * @details This method matches strings following the pattern `_${}` and attempts to replace them with an environment
-     *          variable of the same name. It respects escaping of the pattern via `\_` and will replace this escape sequence
-     *          with `_` after resolution of the environment variables.
+     * @details This method matches strings following the pattern `$_{}` and attempts to replace them with an environment
+     *          variable of the same name. It respects escaping of the pattern via `\$_` and will replace the escape sequence
+     *          with `$_` after resolution of the environment variables.
      *
      * @param config_value Input string to resolve environment variables in
      * @return String with all environment variables replaced with their values
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        const std::regex ctrl_pattern(R"((^|[^\\])_\$\{(\w+)(?::-([^}]*))?\})");
+        const std::regex ctrl_pattern(R"((^|[^\\])\$_\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
         const auto resolved = resolve_env(ctrl_pattern, config_value);
         // Resolve escape sequence
-        return std::regex_replace(resolved, std::regex(R"(\\_)"), "_");
+        return std::regex_replace(resolved, std::regex(R"(\\\$_)"), "$_");
     }
 
     /**

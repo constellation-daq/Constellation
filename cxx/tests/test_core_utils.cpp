@@ -125,14 +125,14 @@ TEST_CASE("Env resolution controller", "[core]") {
     setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)
 #endif
 
-    REQUIRE_THAT(resolve_controller_env("_${CNSTLN_TEST_KEY}"), Equals("value"));
-    REQUIRE_THAT(resolve_controller_env("_${CNSTLN_TEST_KEY:-default}"), Equals("value"));
-    REQUIRE_THAT(resolve_controller_env("prefix__${CNSTLN_TEST_KEY}"), Equals("prefix_value"));
-    REQUIRE_THAT(resolve_controller_env("\\_${CNSTLN_TEST_KEY}"), Equals("_${CNSTLN_TEST_KEY}"));
+    REQUIRE_THAT(resolve_controller_env("$_{CNSTLN_TEST_KEY}"), Equals("value"));
+    REQUIRE_THAT(resolve_controller_env("$_{CNSTLN_TEST_KEY:-default}"), Equals("value"));
+    REQUIRE_THAT(resolve_controller_env("prefix_$_{CNSTLN_TEST_KEY}"), Equals("prefix_value"));
+    REQUIRE_THAT(resolve_controller_env("\\$_{CNSTLN_TEST_KEY}"), Equals("$_{CNSTLN_TEST_KEY}"));
     REQUIRE_THAT(resolve_controller_env("${CNSTLN_TEST_KEY}"), Equals("${CNSTLN_TEST_KEY}"));
     REQUIRE_THROWS_MATCHES(
-        resolve_controller_env("_${MISSING}"), RuntimeError, Message("Environment variable `MISSING` not defined"));
-    REQUIRE_THAT(resolve_controller_env("_${MISSING:-default}"), Equals("default"));
+        resolve_controller_env("$_{MISSING}"), RuntimeError, Message("Environment variable `MISSING` not defined"));
+    REQUIRE_THAT(resolve_controller_env("$_{MISSING:-default}"), Equals("default"));
 }
 
 TEST_CASE("Env resolution satellite", "[core]") {
