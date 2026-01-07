@@ -45,6 +45,10 @@ namespace constellation::satellite {
                                      std::set<protocol::CSCP::State> allowed_states,
                                      C function) {
         const auto name_lc = utils::transform(name, ::tolower);
+        if(name_lc.empty()) {
+            throw utils::LogicError("Cannot register command without name");
+        }
+
         if(!protocol::CSCP::is_valid_command_name(name_lc)) {
             throw utils::LogicError("Command name " + utils::quote(name_lc) + " is invalid");
         }

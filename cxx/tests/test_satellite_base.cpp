@@ -552,7 +552,7 @@ TEST_CASE("Catch invalid user command registrations", "[satellite]") {
 
     auto my_satellite = MySatellite();
 
-    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand(""), LogicError, Message("Command name `` is invalid"));
+    REQUIRE_THROWS_MATCHES(my_satellite.registerCommand(""), LogicError, Message("Cannot register command without name"));
 
     REQUIRE_THROWS_MATCHES(my_satellite.registerCommand("command_with_amper&sand"),
                            LogicError,
