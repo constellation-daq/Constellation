@@ -25,10 +25,6 @@ namespace constellation::metrics {
 
     /**
      * @brief This class represents a metric for telemetry or data quality monitoring
-     *
-     * @details It comprises a name, a unit and a type. The type defines how the value should be treated, i.e. if always the
-     *          last transmitted value should be displayed, if an average of the values should be calculated or if they
-     *          should be accumulated.
      */
     class Metric {
     public:
