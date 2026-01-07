@@ -19,7 +19,6 @@
 #include <toml++/toml.hpp>
 
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -53,7 +52,7 @@ namespace constellation::controller {
             try {
                 return utils::resolve_controller_env(value.as_string()->get());
             } catch(const utils::RuntimeError& e) {
-                throw config::InvalidValueError(key, e.what());
+                throw ConfigValueError(key, e.what());
             }
         }
 
@@ -87,7 +86,7 @@ namespace constellation::controller {
                     return {convert_toml_array<std::string>(value,
                                                             [](const auto& element) { return element.as_string()->get(); })};
                 } catch(const utils::RuntimeError& e) {
-                    throw config::InvalidValueError(key, e.what());
+                    throw ConfigValueError(key, e.what());
                 }
             }
             if(value.front().is_time()) {

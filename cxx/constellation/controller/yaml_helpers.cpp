@@ -111,7 +111,7 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
         try {
             return resolve_controller_env(node.as<std::string>());
         } catch(const RuntimeError& e) {
-            throw InvalidValueError(key, e.what());
+            throw ConfigValueError(key, e.what());
         }
     }
 
@@ -136,7 +136,7 @@ Composite constellation::controller::parse_yaml_value(const std::string& key, co
         try {
             std::ranges::transform(retval, retval.begin(), [](const auto& val) { return resolve_controller_env(val); });
         } catch(const RuntimeError& e) {
-            throw InvalidValueError(key, e.what());
+            throw ConfigValueError(key, e.what());
         }
         return retval;
     }
