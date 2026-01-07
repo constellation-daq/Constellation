@@ -465,6 +465,8 @@ TEST_CASE("Resolving controller-side environment variables in TOML", "[controlle
     const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
     REQUIRE(global_config.at("no_env_var").get<std::string>() == "CNSTLN_TEST_KEY");
     REQUIRE(global_config.at("ctrl_env_var").get<std::string>() == "value");
+    REQUIRE_THAT(global_config.at("ctrl_env_var_array").get<std::vector<std::string>>(),
+                 RangeEquals(std::vector<std::string>({"value", "value"})));
     REQUIRE(global_config.at("ctrl_env_var_default").get<std::string>() == "value");
     REQUIRE(global_config.at("missing_ctrl_env_var_default").get<std::string>() == "default");
 
@@ -491,6 +493,8 @@ TEST_CASE("Resolving controller-side environment variables in YAML", "[controlle
     const auto global_config = config.getSatelliteConfiguration("NotA.Satellite");
     REQUIRE(global_config.at("no_env_var").get<std::string>() == "CNSTLN_TEST_KEY");
     REQUIRE(global_config.at("ctrl_env_var").get<std::string>() == "value");
+    REQUIRE_THAT(global_config.at("ctrl_env_var_array").get<std::vector<std::string>>(),
+                 RangeEquals(std::vector<std::string>({"value", "value"})));
     REQUIRE(global_config.at("ctrl_env_var_default").get<std::string>() == "value");
     REQUIRE(global_config.at("missing_ctrl_env_var_default").get<std::string>() == "default");
 

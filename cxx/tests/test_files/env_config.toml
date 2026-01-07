@@ -7,6 +7,7 @@ no_env_var = "CNSTLN_TEST_KEY"
 
 # controller-side variables
 ctrl_env_var = "$_{CNSTLN_TEST_KEY}"
+ctrl_env_var_array = ["$_{CNSTLN_TEST_KEY}", "$_{CNSTLN_TEST_KEY}"]
 ctrl_env_var_default = "$_{CNSTLN_TEST_KEY:-unused}"
 missing_ctrl_env_var_default = "$_{MISSING:-default}"
 
