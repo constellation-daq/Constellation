@@ -39,6 +39,7 @@
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
+#include "constellation/core/metrics/stat.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/networking/zmq_helpers.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -106,6 +107,9 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 
     // Register remote state callback to retrieve information on distant satellites
     fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });
+
+    // Register metric for announcing new run ids:
+    utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
 }
 
 std::string BaseSatellite::getCanonicalName() const {
@@ -622,6 +626,9 @@ std::optional<std::string> BaseSatellite::starting_wrapper(std::string run_ident
     if(transmitter_ptr != nullptr) {
         transmitter_ptr->TransmitterSatellite::starting_transmitter(run_identifier_, config_);
     }
+
+    // Announce new run id:
+    STAT("RUN_ID", run_identifier_);
 
     return {get_user_status_or("Satellite started run " + run_identifier_ + " successfully")};
 }
