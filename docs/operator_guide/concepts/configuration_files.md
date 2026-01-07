@@ -352,19 +352,6 @@ Environment variables can either be present on the machine where the configurati
 or only on the node that runs the satellite requiring the parameter. Hence, both concepts are available as described in the
 following.
 
-#### Controller-Side Variables
-
-*Controller-side variables* can be placed in configuration files using the syntax `_${VARIABLE}`. These placeholders will
-be resolved on the controller side, i.e. before encoding and sending the configuration to satellites with the
-`initialize` or `reconfigure` commands. The resolution is performed on the node the controller runs on. When parsing
-configuration keys on the controller side, an error is displayed when a referenced environment variable cannot be found.
-
-```{warning}
-Controller-side environment variables will be substituted by the controller and subsequently sent to the respective
-satellites in clear text. Also retrieving the configuration from a satellite will contain the substituted values. They
-should therefore not be used for secrets.
-```
-
 #### Satellite-Side Variables
 
 *Satellite-side variables* are denoted using the syntax `${VARIABLE}`. They will be resolved on the satellite side, i.e.
@@ -394,6 +381,18 @@ moment, all environment variable placeholders in the value are resolved, and the
 will be substituted, resulting in the final value provided to the satellite being e.g.
 `https://yourmattermost.com/hooks/9om7nhes7p859e1qrxi5dgykzr`.
 
+#### Controller-Side Variables
+
+*Controller-side variables* can be placed in configuration files using the syntax `$_{VARIABLE}`. These placeholders will
+be resolved on the controller side, i.e. before encoding and sending the configuration to satellites with the
+`initialize` or `reconfigure` commands. The resolution is performed on the node the controller runs on. When parsing
+configuration keys on the controller side, an error is displayed when a referenced environment variable cannot be found.
+
+```{warning}
+Controller-side environment variables will be substituted by the controller and subsequently sent to the respective
+satellites in clear text. Also retrieving the configuration from a satellite will contain the substituted values. They
+should therefore not be used for secrets.
+```
 
 ### Default Values for Environment Variables
 
@@ -410,6 +409,14 @@ In case the environment variable `CNSTLN_LOGDIR` is not defined, the parameter `
 `/home/myuser/logs/logfile.txt` without producing an error.
 
 The default syntax can be used both for controller-side and satellite-side environment variables.
+
+### Escaping Environment Variables
+
+It might be necessary to provide a satellite with a literal string containing the pattern matching an environment variable.
+In this case, the corresponding sequence can be escaped by prepending a backslash character `\`. This means:
+
+* Controllers will not attempt to replace an environment variable in `\$_{VARIABLE}` but pass on a literal `$_{VARIABLE}` to the satellites.
+* Satellites will not attempt to replace an environment variable in `\${VARIABLE}` but provide the literal `${VARIABLE}` to the satellite code.
 
 ## Examples
 
