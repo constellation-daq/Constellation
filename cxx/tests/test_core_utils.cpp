@@ -128,6 +128,7 @@ TEST_CASE("Env resolution controller", "[core]") {
     REQUIRE_THAT(resolve_controller_env("$_{CNSTLN_TEST_KEY}"), Equals("value"));
     REQUIRE_THAT(resolve_controller_env("$_{CNSTLN_TEST_KEY:-default}"), Equals("value"));
     REQUIRE_THAT(resolve_controller_env("prefix_$_{CNSTLN_TEST_KEY}"), Equals("prefix_value"));
+    REQUIRE_THAT(resolve_controller_env("$_{CNSTLN_TEST_KEY}&$_{CNSTLN_TEST_KEY}"), Equals("value&value"));
     REQUIRE_THAT(resolve_controller_env("\\$_{CNSTLN_TEST_KEY}"), Equals("$_{CNSTLN_TEST_KEY}"));
     REQUIRE_THAT(resolve_controller_env("${CNSTLN_TEST_KEY}"), Equals("${CNSTLN_TEST_KEY}"));
     REQUIRE_THROWS_MATCHES(
@@ -147,6 +148,7 @@ TEST_CASE("Env resolution satellite", "[core]") {
     REQUIRE_THAT(resolve_satellite_env("${CNSTLN_TEST_KEY}"), Equals("value"));
     REQUIRE_THAT(resolve_satellite_env("${CNSTLN_TEST_KEY:-default}"), Equals("value"));
     REQUIRE_THAT(resolve_satellite_env("prefix_$${CNSTLN_TEST_KEY}"), Equals("prefix_$value"));
+    REQUIRE_THAT(resolve_satellite_env("${CNSTLN_TEST_KEY}&${CNSTLN_TEST_KEY}"), Equals("value&value"));
     REQUIRE_THAT(resolve_satellite_env("\\${CNSTLN_TEST_KEY}"), Equals("${CNSTLN_TEST_KEY}"));
     REQUIRE_THROWS_MATCHES(
         resolve_satellite_env("${MISSING}"), RuntimeError, Message("Environment variable `MISSING` not defined"));
