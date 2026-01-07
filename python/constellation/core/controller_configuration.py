@@ -10,12 +10,13 @@ from __future__ import annotations
 import copy
 import enum
 import pathlib
+import re
 import tomllib
 from typing import Any
 
 import yaml
 
-from constellation.core.configuration import Configuration
+from constellation.core.configuration import Configuration, resolve_env_variable
 
 
 class ConfigParseError(RuntimeError):
@@ -173,7 +174,10 @@ class ControllerConfiguration:
                 # Global default config
                 if has_global_default_config:
                     raise ConfigKeyError(type_key_lc, "key defined twice")
-                self.set_global_configuration(type_value)
+
+                # Resolve environment variables
+                type_value_res = self._resolve_env(type_value)
+                self.set_global_configuration(type_value_res)
                 has_global_default_config = True
             else:
                 # Type level
@@ -186,16 +190,18 @@ class ControllerConfiguration:
                     if not isinstance(name_value, dict):
                         raise ConfigValueError(canonical_name_lc, "expected a dictionary at satellite level")
 
+                    # Resolve environment variables
+                    name_value_res = self._resolve_env(name_value)
                     if name_key_lc == "_default":
                         # Type default config
                         if self.has_type_configuration(type_key_lc):
                             raise ConfigKeyError(canonical_name_lc, "key defined twice")
-                        self.add_type_configuration(type_key_lc, name_value)
+                        self.add_type_configuration(type_key_lc, name_value_res)
                     else:
                         # Satellite level
                         if self.has_satellite_configuration(canonical_name_lc):
                             raise ConfigKeyError(canonical_name_lc, "key defined twice")
-                        self.add_satellite_configuration(canonical_name_lc, name_value)
+                        self.add_satellite_configuration(canonical_name_lc, name_value_res)
 
     def _parse_toml(self, config_string: str) -> None:
         toml_dict: dict[str, Any]
@@ -238,6 +244,19 @@ class ControllerConfiguration:
                 single_dict[satellite_type] = {}
             single_dict[satellite_type][satellite_name] = value._dictionary
         return single_dict
+
+    def _resolve_env(self, value: Any) -> Any:
+        """Recursively resolve environment variables"""
+        env_regex = re.compile(r"(?<!\\)\$_\{(\w+)(?::-([^}]*))?\}")
+        if isinstance(value, str):
+            resolved = env_regex.sub(resolve_env_variable, value)
+            return resolved.replace(r"\$_", "$_")
+        elif isinstance(value, list):
+            return [self._resolve_env(v) for v in value]
+        elif isinstance(value, dict):
+            return {k: self._resolve_env(v) for k, v in value.items()}
+        else:
+            return value
 
 
 def load_config(path: str | pathlib.Path) -> ControllerConfiguration:

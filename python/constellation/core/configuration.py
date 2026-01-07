@@ -170,8 +170,6 @@ def resolve_env_variable(match: re.Match[str]) -> str:
 class Section:
     """Class to access a section in the configuration"""
 
-    _env_regex = re.compile(r"(?<!\\)\$\{(\w+)(?::-([^}]*))?\}")
-
     def __init__(self, prefix: str, dictionary: dict[str, Any]):
         self._prefix = prefix
         self._dictionary = dictionary
@@ -468,8 +466,9 @@ class Section:
 
     def _resolve_env(self, value: Any) -> Any:
         """Recursively resolve environment variables"""
+        env_regex = re.compile(r"(?<!\\)\$\{(\w+)(?::-([^}]*))?\}")
         if isinstance(value, str):
-            resolved = self._env_regex.sub(resolve_env_variable, value)
+            resolved = env_regex.sub(resolve_env_variable, value)
             return resolved.replace(r"\$", "$")
         elif isinstance(value, list):
             return [self._resolve_env(v) for v in value]
