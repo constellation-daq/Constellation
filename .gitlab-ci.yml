@@ -231,7 +231,7 @@ build:fedora-mingw:
     - .fedora-mingw
   variables:
     BUILD_TYPE: "release"
-    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini -Dbuild_gui=none"
+    BUILD_OPTIONS: "--cross .cross/mingw-ucrt.ini -Dbuild_gui=none -Dcpp_args=-Wno-maybe-uninitialized" # GCC 15 bug
 
 build:ubuntu-22.04:
   extends:
