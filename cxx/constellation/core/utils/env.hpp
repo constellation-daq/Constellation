@@ -88,7 +88,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        const std::regex ctrl_pattern(R"((?<!\\)_\$\{(\w+)(?::-([^}]*))?\})");
+        const std::regex ctrl_pattern(R"((^|[^\\])_\$\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
         const auto resolved = resolve_env(ctrl_pattern, config_value);
@@ -107,7 +107,7 @@ namespace constellation::utils {
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_satellite_env(const std::string& config_value) {
-        const std::regex sat_pattern(R"((?<!\\)\$\{(\w+)(?::-([^}]*))?\})");
+        const std::regex sat_pattern(R"((^|[^\\])\$\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
         const auto resolved = resolve_env(sat_pattern, config_value);
