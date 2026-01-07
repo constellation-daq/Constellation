@@ -4,6 +4,7 @@ SPDX-License-Identifier: EUPL-1.2
 """
 
 import datetime
+import os
 import pathlib
 
 import pytest
@@ -234,6 +235,52 @@ def test_ctrl_config_valid_toml():
 
     # Check that empty satellite configurations are registered
     assert config.has_satellite_configuration("Dummy3.D3")
+
+
+def test_ctrl_config_env_variables_toml():
+    # set environment variable
+    os.environ["CNSTLN_TEST_KEY"] = "value"
+
+    test_files_path = pathlib.Path(__file__).parent / "test_files"
+    test_file = test_files_path / "env_config.toml"
+    config = ControllerConfiguration.from_path(test_file)
+
+    # Use a single dictionary top avoid resolving satellite variables through Configuration.get()
+    global_config = config._as_single_dict()
+    assert global_config["_default"]["no_env_var"] == "CNSTLN_TEST_KEY"
+    assert global_config["_default"]["ctrl_env_var"] == "value"
+    assert global_config["_default"]["ctrl_env_var_array"] == ["value", "value"]
+    assert global_config["_default"]["ctrl_env_var_default"] == "value"
+    assert global_config["_default"]["missing_ctrl_env_var_default"] == "default"
+
+    # Test that satellite-side variables are not resolved
+    assert global_config["_default"]["sat_env_var"] == "${CNSTLN_TEST_KEY}"
+    assert global_config["_default"]["sat_env_var_default"] == "${CNSTLN_TEST_KEY:-unused}"
+    assert global_config["_default"]["missing_sat_env_var"] == "${MISSING}"
+    assert global_config["_default"]["missing_sat_env_var_default"] == "${MISSING:-default}"
+
+
+def test_ctrl_config_env_variables_yaml():
+    # set environment variable
+    os.environ["CNSTLN_TEST_KEY"] = "value"
+
+    test_files_path = pathlib.Path(__file__).parent / "test_files"
+    test_file = test_files_path / "env_config.yaml"
+    config = ControllerConfiguration.from_path(test_file)
+
+    # Use a single dictionary top avoid resolving satellite variables through Configuration.get()
+    global_config = config._as_single_dict()
+    assert global_config["_default"]["no_env_var"] == "CNSTLN_TEST_KEY"
+    assert global_config["_default"]["ctrl_env_var"] == "value"
+    assert global_config["_default"]["ctrl_env_var_array"] == ["value", "value"]
+    assert global_config["_default"]["ctrl_env_var_default"] == "value"
+    assert global_config["_default"]["missing_ctrl_env_var_default"] == "default"
+
+    # Test that satellite-side variables are not resolved
+    assert global_config["_default"]["sat_env_var"] == "${CNSTLN_TEST_KEY}"
+    assert global_config["_default"]["sat_env_var_default"] == "${CNSTLN_TEST_KEY:-unused}"
+    assert global_config["_default"]["missing_sat_env_var"] == "${MISSING}"
+    assert global_config["_default"]["missing_sat_env_var_default"] == "${MISSING:-default}"
 
 
 def test_ctrl_config_valid_yaml():
