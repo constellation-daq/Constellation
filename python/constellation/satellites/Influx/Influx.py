@@ -52,7 +52,7 @@ class Influx(Satellite, StatListener):
 
         with self._influxdb_lock:
             if self._influxdb_connected:
-                if isinstance(metric.value, (float, int, bool)):
+                if isinstance(metric.value, (float, int, bool, str)):
                     record = Point(metric.sender).field(metric.name, metric.value).time(metric.time.to_datetime())
                     self.log.trace("Writing metric %s to InfluxDB", metric.name)
                     self.write_api.write(bucket=self.bucket, record=record)
