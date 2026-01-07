@@ -12,6 +12,7 @@ import enum
 import functools
 import os
 import pathlib
+import re
 from collections.abc import Callable
 from io import BytesIO
 from typing import Any, TypeVar, cast
@@ -152,8 +153,24 @@ def absolute_path_type(value: Any, check_exists: bool) -> pathlib.Path:
     return path
 
 
+def resolve_env_variable(match: re.Match[str]) -> str:
+    """Resolve a variable name against environment variables"""
+    var_name = match.group(1)
+    default = match.group(2)
+
+    value = os.environ.get(var_name)
+    if value is not None:
+        return value
+    if default is not None:
+        return default
+
+    raise ValueError(f"Environment variable `{var_name}` not defined")
+
+
 class Section:
     """Class to access a section in the configuration"""
+
+    _env_regex = re.compile(r"(?<!\\)\$\{(\w+)(?::-([^}]*))?\}")
 
     def __init__(self, prefix: str, dictionary: dict[str, Any]):
         self._prefix = prefix
@@ -447,7 +464,19 @@ class Section:
                 raise InvalidValueError(self, key, str(e)) from e
             except Exception as e:
                 raise InvalidTypeError(self, key, type(value).__name__, reason=str(e)) from e
-        return value
+        return self._resolve_env(value)
+
+    def _resolve_env(self, value: Any) -> Any:
+        """Recursively resolve environment variables"""
+        if isinstance(value, str):
+            resolved = self._env_regex.sub(resolve_env_variable, value)
+            return resolved.replace(r"\$", "$")
+        elif isinstance(value, list):
+            return [self._resolve_env(v) for v in value]
+        elif isinstance(value, dict):
+            return {k: self._resolve_env(v) for k, v in value.items()}
+        else:
+            return value
 
 
 class ConfigurationGroup(enum.Enum):
