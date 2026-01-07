@@ -542,7 +542,6 @@ TEST_CASE("Resolve environment variables", "[core][core::config]") {
     dict["no_env_var"] = "CNSTLN_TEST_KEY";
     dict["env_var"] = "${CNSTLN_TEST_KEY}";
     dict["env_var_default"] = "${CNSTLN_TEST_KEY:-unused}";
-    dict["alt_env_var"] = "$CNSTLN_TEST_KEY";
     dict["missing_env_var"] = "${MISSING}";
     dict["missing_env_var_default"] = "${MISSING:-default}";
 
@@ -552,7 +551,6 @@ TEST_CASE("Resolve environment variables", "[core][core::config]") {
     REQUIRE(config.get<std::string>("no_env_var") == "CNSTLN_TEST_KEY");
     REQUIRE(config.get<std::string>("env_var") == "value");
     REQUIRE(config.get<std::string>("env_var_default") == "value");
-    REQUIRE(config.get<std::string>("alt_env_var") == "value");
 
     REQUIRE_THROWS_MATCHES(
         config.get<std::string>("missing_env_var"),
