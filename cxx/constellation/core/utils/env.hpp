@@ -78,27 +78,41 @@ namespace constellation::utils {
     }
 
     /**
-     * @brief Helper to resolve all controller environment variables matching _${VAR} or _$VAR
+     * @brief Helper to resolve all controller environment variables matching _${VAR}.
+     * @details This method matches strings following the pattern `_${}` and attempts to replace them with an environment
+     *          variable of the same name. It respects escaping of the pattern via `\_` and will replace this escape sequence
+     *          with `_` after resolution of the environment variables.
      *
      * @param config_value Input string to resolve environment variables in
      * @return String with all environment variables replaced with their values
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_controller_env(const std::string& config_value) {
-        const std::regex ctrl_pattern(R"(_\$(?:\{|\b)(\w+)(?::-([^}]*))?(?:\}|\b))");
-        return resolve_env(ctrl_pattern, config_value);
+        const std::regex ctrl_pattern(R"((?<!\\)_\$\{(\w+)(?::-([^}]*))?\})");
+
+        // Resolve environment variables
+        std::string resolved = resolve_env(ctrl_pattern, config_value);
+        // Resolve escape sequence
+        return std::regex_replace(resolved, std::regex(R"(\\_)"), "_");
     }
 
     /**
-     * @brief Helper to resolve all satellite environment variables matching ${VAR} or $VAR
+     * @brief Helper to resolve all satellite environment variables matching ${VAR}
+     * @details This method matches strings following the pattern `${}` and attempts to replace them with an environment
+     *          variable of the same name. It respects escaping of the pattern via `\$` and will replace this escape sequence
+     *          with `$` after resolution of the environment variables.
      *
      * @param config_value Input string to resolve environment variables in
      * @return String with all environment variables replaced with their values
      * @throws RuntimeError if an environment variable could not be found
      */
     inline std::string resolve_satellite_env(const std::string& config_value) {
-        const std::regex sat_pattern(R"(\$(?:\{|\b)(\w+)(?::-([^}]*))?(?:\}|\b))");
-        return resolve_env(sat_pattern, config_value);
+        const std::regex sat_pattern(R"((?<!\\)\$\{(\w+)(?::-([^}]*))?\})");
+
+        // Resolve environment variables
+        std::string resolved = resolve_env(sat_pattern, config_value);
+        // Resolve escape sequence
+        return std::regex_replace(resolved, std::regex(R"(\\\$)"), "$");
     }
 
 } // namespace constellation::utils
