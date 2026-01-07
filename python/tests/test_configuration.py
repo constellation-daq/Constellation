@@ -442,6 +442,33 @@ def test_configuration_assemble_disassemble():
     assert config._dictionary == config_disassembled._dictionary
 
 
+def test_configuration_env_variables():
+    # set environment variable
+    os.environ["CNSTLN_TEST_KEY"] = "value"
+
+    config = Configuration(
+        {
+            "env_var": "${CNSTLN_TEST_KEY}",
+            "env_var_default": "${CNSTLN_TEST_KEY:-default}",
+            "env_var_prefix": "prefix_$${CNSTLN_TEST_KEY}",
+            "env_var_multi": "${CNSTLN_TEST_KEY}&${CNSTLN_TEST_KEY}",
+            "env_var_escaped": "\\${CNSTLN_TEST_KEY}",
+            "env_var_missing": "${MISSING}",
+            "env_var_missing_default": "${MISSING:-default}",
+        }
+    )
+
+    assert config["env_var"] == "value"
+    assert config["env_var_default"] == "value"
+    assert config["env_var_prefix"] == "prefix_$value"
+    assert config["env_var_multi"] == "value&value"
+    assert config["env_var_escaped"] == "${CNSTLN_TEST_KEY}"
+    with pytest.raises(ValueError) as e:
+        config["env_var_missing"]
+    assert "Environment variable `MISSING` not defined" in str(e.value)
+    assert config["env_var_missing_default"] == "default"
+
+
 def test_validate_dictionary_invalid():
     # Not a dictionary
     with pytest.raises(TypeError) as excinfo:
