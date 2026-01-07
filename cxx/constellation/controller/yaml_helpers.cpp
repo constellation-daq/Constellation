@@ -24,7 +24,6 @@
 #include <yaml-cpp/yaml.h>
 
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/exceptions.hpp"

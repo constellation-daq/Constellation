@@ -31,7 +31,7 @@ namespace constellation::utils {
      */
     inline std::optional<std::string> getenv(const std::string& name) {
         static std::mutex getenv_mutex;
-        const std::lock_guard<std::mutex> lock(getenv_mutex);
+        const std::scoped_lock<std::mutex> lock(getenv_mutex);
 
         const auto* val = std::getenv(name.c_str()); // NOLINT(concurrency-mt-unsafe)
         if(val == nullptr) {
@@ -91,7 +91,7 @@ namespace constellation::utils {
         const std::regex ctrl_pattern(R"((?<!\\)_\$\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
-        std::string resolved = resolve_env(ctrl_pattern, config_value);
+        const auto resolved = resolve_env(ctrl_pattern, config_value);
         // Resolve escape sequence
         return std::regex_replace(resolved, std::regex(R"(\\_)"), "_");
     }
@@ -110,7 +110,7 @@ namespace constellation::utils {
         const std::regex sat_pattern(R"((?<!\\)\$\{(\w+)(?::-([^}]*))?\})");
 
         // Resolve environment variables
-        std::string resolved = resolve_env(sat_pattern, config_value);
+        const auto resolved = resolve_env(sat_pattern, config_value);
         // Resolve escape sequence
         return std::regex_replace(resolved, std::regex(R"(\\\$)"), "$");
     }
