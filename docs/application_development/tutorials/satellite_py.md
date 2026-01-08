@@ -140,8 +140,8 @@ The `do_initializing` routine can be called more than once as this transition is
 ## Reading Configuration Parameters
 
 ```{caution}
-Reading information from the satellite configuration is only possible in the `initializing` function.
-All parameters the satellite requires should be read and validated in this function, the `launching` function should only be used to apply this configuration to hardware.
+Reading information from the satellite configuration is only possible in the `do_initializing` function.
+All parameters the satellite requires should be read and validated in this function, the `do_launching` function should only be used to apply this configuration to hardware.
 ```
 
 Configuration parameters can be read using the {py:func}`get() <core.configuration.ConfigDictionary.get>` method on the configuration object:
