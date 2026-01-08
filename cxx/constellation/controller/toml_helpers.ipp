@@ -13,6 +13,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <ranges>
 #include <string>
 #include <vector>
 

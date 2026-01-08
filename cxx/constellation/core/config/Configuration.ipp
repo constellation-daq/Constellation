@@ -13,16 +13,20 @@
 
 #include <algorithm>
 #include <cctype>
+#include <concepts>
 #include <iterator>
 #include <optional>
+#include <set>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "constellation/core/config/exceptions.hpp"
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/utils/env.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 
 namespace constellation::config {

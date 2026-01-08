@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 #include <variant>
+#include <vector>
 
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/std_future.hpp"
