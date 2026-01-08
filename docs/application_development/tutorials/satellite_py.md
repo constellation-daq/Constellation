@@ -176,13 +176,23 @@ Several other `get` methods exists for convenience:
 To access nested dictionaries, `get_section` can be used:
 
 ```python
+# Get configuration section for channels
+channels_section = config.get_section("channels")
+
 # Read channel 0 & 1 as nested sections
 for n in range(2):
-    # Get section for channel n
-    channel_section = config.get_section(f"channel_{n}");
 
-    # channel_section has the same methods available as config
-    voltage = channel_section.get_int("voltage");
+    # Get section for channel n
+    channel_section = config.get_section(f"channel_{n}")
+
+    # Note that channel_section has the same methods available as config
+
+    # Get voltage for channel
+    voltage = channel_section.get_num("voltage")
+```
+
+```{seealso}
+More details about configuration sections and their intricacies can be found in [Configuration Sections](../functionality/configuration_sections.md).
 ```
 
 It is possible to iterate over sections using `get_keys`:
