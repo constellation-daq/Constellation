@@ -48,18 +48,19 @@ void ExampleSatellite::initializing(const Configuration& config) {
     const auto voltage = config.get<double>("voltage");
 
     // Read channel as integer, with default value 1 if not given in config file
+    // Note: this also sets the default value, so it will appear when using the get_config command
     const auto channel = config.get<int>("channel", 1);
 }
 ```
 
 Several other `get` methods exists for convenience:
 
-* `getOptional`: get an `std::optional` instead of throwing if the key is not present
+* `getOptional`: get an `std::optional` instead of throwing a `MissingKeyError` exception if the key is not present
 * `getArray`, `getOptionalArray`: get an `std::vector`
 * `getSet`, `getOptionalSet`: get an `std::set`
 * `getPath`, `getPathArray`: get an `std::filesystem::path`
 
-To access nested configuration section, `getSection` can be used:
+To access nested configuration sections, `getSection` can be used:
 
 ```cpp
 void ExampleSatellite::initializing(const Configuration& config) {
