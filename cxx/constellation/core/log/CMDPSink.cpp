@@ -28,7 +28,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/log/Logger.hpp"

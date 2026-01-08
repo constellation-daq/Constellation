@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
@@ -92,7 +92,7 @@ void FileSerializer::write_tags(const Dictionary& dict) {
     write_int(static_cast<std::uint32_t>(dict.size()));
     for(const auto& i : dict) {
         write_str(i.first);
-        write_str(i.second.str());
+        write_str(i.second.to_string());
     }
 }
 

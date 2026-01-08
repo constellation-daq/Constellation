@@ -148,19 +148,6 @@ namespace constellation::satellite {
 
     /**
      * @ingroup Exceptions
-     * @brief Invalid return type from user command
-     */
-    class CNSTLN_API InvalidUserCommandResult : public UserCommandError {
-    public:
-        explicit InvalidUserCommandResult(std::string_view argtype) {
-            error_message_ = "Error casting function return type ";
-            error_message_ += utils::quote(argtype);
-            error_message_ += " to dictionary value";
-        }
-    };
-
-    /**
-     * @ingroup Exceptions
      * @brief Error when a received CDTP message does not have the correct type
      */
     class CNSTLN_API InvalidCDTPMessageType : public satellite::SatelliteError {

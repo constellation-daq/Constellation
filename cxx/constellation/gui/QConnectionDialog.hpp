@@ -19,7 +19,7 @@
 #include <QStyleOptionViewItem>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 
 // Expose Qt class auto-generated from the user interface XML:
 namespace Ui { // NOLINT(readability-identifier-naming)

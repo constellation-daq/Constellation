@@ -23,7 +23,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/exceptions.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/protocol/Protocol.hpp"
@@ -156,9 +156,12 @@ CDTP2Message CDTP2Message::disassemble(zmq::multipart_t& frames) {
 }
 
 CDTP2BORMessage::CDTP2BORMessage(std::string sender, Dictionary user_tags, const Configuration& configuration)
+    : CDTP2BORMessage(std::move(sender), std::move(user_tags), configuration.asDictionary()) {}
+
+CDTP2BORMessage::CDTP2BORMessage(std::string sender, Dictionary user_tags, Dictionary configuration)
     : CDTP2Message(std::move(sender), Type::BOR, 2) {
     addDataRecord({0, std::move(user_tags), 0});
-    addDataRecord({1, configuration.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED), 0});
+    addDataRecord({1, std::move(configuration), 0});
 }
 
 CDTP2BORMessage::CDTP2BORMessage(CDTP2Message&& message) : CDTP2Message(std::move(message)) {
@@ -174,11 +177,6 @@ CDTP2EORMessage::CDTP2EORMessage(std::string sender, Dictionary user_tags, Dicti
     : CDTP2Message(std::move(sender), Type::EOR, 2) {
     addDataRecord({0, std::move(user_tags), 0});
     addDataRecord({1, std::move(run_metadata), 0});
-}
-
-Configuration CDTP2BORMessage::getConfiguration() const {
-    // Return as configuration and mark config keys as used
-    return {getDataRecords().at(1).getTags(), true};
 }
 
 CDTP2EORMessage::CDTP2EORMessage(CDTP2Message&& message) : CDTP2Message(std::move(message)) {

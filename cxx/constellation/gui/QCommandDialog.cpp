@@ -14,8 +14,7 @@
 #include <QDialog>
 
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 
 #include "ui_QCommandDialog.h"
 
@@ -23,25 +22,25 @@ using namespace constellation::config;
 using namespace constellation::controller;
 using namespace constellation::gui;
 
-void QCommandParameters::add(const Value& value) {
-    beginInsertRows(QModelIndex(), static_cast<int>(size()), static_cast<int>(size()));
-    push_back(value);
+void QCommandParameters::add(const Scalar& value) {
+    beginInsertRows(QModelIndex(), static_cast<int>(list_.size()), static_cast<int>(list_.size()));
+    list_.push_back(value);
     endInsertRows();
 }
 
 void QCommandParameters::reset() {
-    beginRemoveRows(QModelIndex(), 0, static_cast<int>(size() - 1));
-    List::clear();
+    beginRemoveRows(QModelIndex(), 0, static_cast<int>(list_.size() - 1));
+    list_.clear();
     endRemoveRows();
 }
 
 QVariant QCommandParameters::data(const QModelIndex& index, int role) const {
 
-    if(role != Qt::DisplayRole || !index.isValid() || index.row() >= static_cast<int>(size()) || index.column() > 0) {
+    if(role != Qt::DisplayRole || !index.isValid() || index.row() >= static_cast<int>(list_.size()) || index.column() > 0) {
         return {};
     }
 
-    return QString::fromStdString(at(index.row()).str());
+    return QString::fromStdString(list_.at(index.row()).to_string());
 }
 
 QCommandDialog::QCommandDialog(QWidget* parent,
@@ -94,7 +93,7 @@ Controller::CommandPayload QCommandDialog::getPayload() const {
     if(parameters_.empty()) {
         return std::monostate();
     }
-    return parameters_;
+    return parameters_.getList();
 }
 
 void QCommandDialog::on_btnAddParameter_clicked() {

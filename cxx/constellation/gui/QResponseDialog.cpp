@@ -17,8 +17,7 @@
 #include <QDialog>
 #include <QString>
 
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/gui/qt_utils.hpp"
 
@@ -52,11 +51,11 @@ QResponseDialog::QResponseDialog(QWidget* parent, const CSCP1Message& message)
             show_as_dictionary(dict);
         } catch(...) {
             try {
-                const auto list = List::disassemble(payload);
+                const auto list = CompositeList::disassemble(payload);
                 show_as_list(list);
             } catch(...) {
                 try {
-                    const auto val = Value::disassemble(payload).str();
+                    const auto val = Composite::disassemble(payload).to_string();
                     show_as_string(val);
                 } catch(...) {
                     show_as_string(payload.to_string_view());
@@ -67,23 +66,24 @@ QResponseDialog::QResponseDialog(QWidget* parent, const CSCP1Message& message)
 }
 
 void QResponseDialog::show_as_dictionary(const Dictionary& dict) {
-    ui_->responseTable->setRowCount(static_cast<int>(dict.size()));
+    const auto flattened_dict = dict.getFlattened();
+    ui_->responseTable->setRowCount(static_cast<int>(flattened_dict.size()));
     ui_->responseTable->setColumnCount(2);
     ui_->responseTable->setHorizontalHeaderLabels({"Key", "Value"});
     ui_->responseTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-    auto it = dict.begin();
-    for(int idx = 0; std::cmp_less(idx, dict.size()); idx++) {
+    auto it = flattened_dict.begin();
+    for(int idx = 0; std::cmp_less(idx, flattened_dict.size()); idx++) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTBEGIN(cppcoreguidelines-owning-memory)
         ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->first)));
-        ui_->responseTable->setItem(idx, 1, new QTableWidgetItem(QString::fromStdString(it->second.str())));
+        ui_->responseTable->setItem(idx, 1, new QTableWidgetItem(QString::fromStdString(it->second.to_string())));
         // NOLINTEND(cppcoreguidelines-owning-memory)
         std::advance(it, 1);
     }
 }
 
-void QResponseDialog::show_as_list(const List& list) {
+void QResponseDialog::show_as_list(const CompositeList& list) {
     ui_->responseTable->setRowCount(static_cast<int>(list.size()));
     ui_->responseTable->setColumnCount(1);
     ui_->responseTable->setHorizontalHeaderLabels({"Value"});
@@ -93,7 +93,7 @@ void QResponseDialog::show_as_list(const List& list) {
     for(int idx = 0; std::cmp_less(idx, list.size()); idx++) {
         // QTableWidget takes ownership of assigned QTableWidgetItems
         // NOLINTNEXTLINE(cppcoreguidelines-owning-memory)
-        ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->str())));
+        ui_->responseTable->setItem(idx, 0, new QTableWidgetItem(QString::fromStdString(it->to_string())));
         std::advance(it, 1);
     }
 }

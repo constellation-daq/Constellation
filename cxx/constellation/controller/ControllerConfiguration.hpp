@@ -15,9 +15,10 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"
@@ -44,7 +45,7 @@ namespace constellation::controller {
         };
 
         /**
-         * @brief Default constructor with empty configuration dictionaries
+         * @brief Default constructor with empty configuration
          */
         ControllerConfiguration() = default;
 
@@ -81,30 +82,86 @@ namespace constellation::controller {
         /// @endcond
 
         /**
-         * @brief Check if a configuration exists for a given satellite
+         * @brief Set the global configuration
          *
-         * This only checks the specific (named) satellite sections of the configuration file, not any type-bound or global
-         * configuration key-value-pairs.
+         * @note This method always overwrites the current global configuration without warning
          *
-         * @return True if a configuration is available for the satellite with the given name, false otherwise
+         * @param config Dictionary with the global configuration
+         */
+        void setGlobalConfiguration(config::Dictionary config) { global_config_ = std::move(config); }
+
+        /**
+         * @brief Get the configuration at the global level
+         *
+         * @returns Dictionary with the global configuration
+         */
+        const config::Dictionary& getGlobalConfiguration() const { return global_config_; };
+
+        /**
+         * @brief Check if an explicit configuration exists for a given satellite type
+         *
+         * @returns True if a configuration is available for the given satellite type, false otherwise
+         */
+        CNSTLN_API bool hasTypeConfiguration(std::string_view type) const;
+
+        /**
+         * @brief Add an explicit configuration for a satellite type
+         *
+         * @param type Satellite type to add the configuration for
+         * @param config Dictionary with the satellite type configuration
+         */
+        CNSTLN_API void addTypeConfiguration(std::string_view type, config::Dictionary config);
+
+        /**
+         * @brief Get configuration for a given satellite type
+         *
+         * @param type Satellite type to get the configuration for
+         * @returns Dictionary with the combined configuration for the given satellite type
+         */
+        CNSTLN_API config::Dictionary getTypeConfiguration(std::string_view type) const;
+
+        /**
+         * @brief Check if an explicit configuration exists for a given satellite
+         *
+         * The cached dictionaries from the input configuration are searched for the given satellite type, and keys from the
+         * the type level as global keys to all satellites are added.
+         *
+         * @param canonical_name Canonical name of the satellite
+         * @return True if a configuration is available for the satellite with the given canonical name, false otherwise
          */
         CNSTLN_API bool hasSatelliteConfiguration(std::string_view canonical_name) const;
 
         /**
-         * @brief Prepare and return configuration dictionary for a given satellite
+         * @brief Add an explicit configuration for a satellite
          *
-         * The cached dictionaries from parsed from the input configuration are searched for the given satellite, and keys
-         * from the type section matching this satellite as well as global keys to all satellites are added. Name and type
-         * are matched case-insensitively.
+         * @param canonical_name Canonical name of the satellite to add the configuration for
+         * @param config Dictionary with the satellite configuration
+         */
+        CNSTLN_API void addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config);
+
+        /**
+         * @brief Get configuration for a given satellite
          *
-         * @return Configuration dictionary, possibly empty if the satellite was not found in the cached configuration
+         * The cached dictionaries from the input configuration are searched for the given satellite, and keys from the
+         * type level matching this satellite's type as well as global keys to all satellites are added.
+         *
+         * @param canonical_name Canonical name of the satellite
+         * @return Dictionary with the combined configuration for the given satellite
          */
         CNSTLN_API config::Dictionary getSatelliteConfiguration(std::string_view canonical_name) const;
 
-        CNSTLN_API void addSatelliteConfiguration(std::string_view canonical_name, config::Dictionary config);
-
+        /**
+         * @brief Get configuration as TOML
+         *
+         * @return String containing the configuration as TOML
+         */
         CNSTLN_API std::string getAsTOML() const;
 
+        /**
+         * @brief Get configuration as YAML
+         *
+         * @return String containing the configuration as YAML
+         */
         CNSTLN_API std::string getAsYAML() const;
 
         /**
@@ -113,7 +170,7 @@ namespace constellation::controller {
          *
          * @throws ConfigFileValidationError if a validation error is encountered
          */
-        CNSTLN_API void validate() const;
+        CNSTLN_API void validate();
 
     private:
         static FileType detect_config_type(const std::filesystem::path& file);
@@ -159,11 +216,15 @@ namespace constellation::controller {
          */
         bool check_transition_deadlock(protocol::CSCP::State transition) const;
 
+        void overwrite_config(const std::string& key_prefix,
+                              config::Dictionary& base_config,
+                              const config::Dictionary& config) const;
+
     private:
-        /* Key-value pairs of the global satellite section */
+        /* Key-value pairs of the global level */
         config::Dictionary global_config_;
 
-        /* Dictionaries of satellite type sections */
+        /* Dictionaries of satellite type level */
         utils::string_hash_map<config::Dictionary> type_configs_;
 
         /**

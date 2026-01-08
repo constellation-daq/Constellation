@@ -28,9 +28,8 @@
 
 #include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/CHIRPMessage.hpp"
@@ -273,7 +272,7 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
     }
 
     if(partial_config.has("_data_transmitters")) {
-        throw InvalidKeyError("_data_transmitters", "Reconfiguration of data transmitters not possible");
+        throw InvalidKeyError(partial_config, "_data_transmitters", "Reconfiguration of data transmitters not possible");
     }
 
     if(partial_config.has("_eor_timeout")) {
@@ -438,8 +437,8 @@ void ReceiverSatellite::handle_cdtp_message(CDTP2Message&& message) {
 
 void ReceiverSatellite::handle_bor_message(const CDTP2BORMessage& bor_message) {
     const auto sender = bor_message.getSender();
-    LOG(BasePoolT::pool_logger_, INFO) << "Received BOR from " << sender << " with config"
-                                       << bor_message.getConfiguration().getDictionary().to_string();
+    LOG(BasePoolT::pool_logger_, INFO) << "Received BOR from " << sender
+                                       << " with configuration:" << bor_message.getConfiguration().format(true);
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(sender);
@@ -486,8 +485,8 @@ void ReceiverSatellite::handle_data_message(const CDTP2Message& data_message) {
 
 void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
     const auto sender = eor_message.getSender();
-    LOG(BasePoolT::pool_logger_, INFO) << "Received EOR from " << sender << " with run metadata"
-                                       << eor_message.getRunMetadata().to_string();
+    LOG(BasePoolT::pool_logger_, INFO) << "Received EOR from " << sender
+                                       << " with run metadata:" << eor_message.getRunMetadata().format(true);
 
     std::unique_lock data_transmitter_states_lock {data_transmitter_states_mutex_};
     auto data_transmitter_it = data_transmitter_states_.find(sender);

@@ -1,6 +1,0 @@
-# SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
-# SPDX-License-Identifier: CC0-1.0
-
-# Invalid YAML file: keys need to be strings
-
-[0, 1]: "test"

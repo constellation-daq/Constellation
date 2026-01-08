@@ -1,4 +1,4 @@
-# Implementing a satellite (Python)
+# Implementing a Satellite (Python)
 
 This tutorial will walk through the implementation of a new satellite, written in Python, step by step.
 With this basic satellite in place, the code can be extended with  the functionality for specific hardware and needs.
@@ -88,9 +88,9 @@ considered for implementation**:
 The following transitional state actions are optional:
 
 * `def do_interrupting(self)`: this is the transition to the `SAFE` state and defaults to `do_stopping` (if necessary because current state is `RUN`), followed by `do_landing`. If desired, this can be overwritten with a custom action.
-* `do_reconfigure`: this transition occurs from `ORBIT` (i.e. when your satellite is ready to take data) and -- if your satellite and hardware supports it -- allows to change some or all of the configuration parameters.
+* `def do_reconfigure(self, partial_config: Configuration)`: this transition occurs from `ORBIT` (i.e. when your satellite is ready to take data) and -- if your satellite and hardware supports it -- allows to change some or all of the configuration parameters.
 
-For the steady state action for the `RUN` state, see below.
+For the steady state action for the `RUN` state, see [below](#running-and-the-stop-event).
 
 The following code implements some basic transitions into the tutorial class:
 
@@ -102,8 +102,8 @@ class TutorialMachine(Satellite):
 
     def do_initializing(self, config: Configuration) -> str:
         """Establish a connection to the hardware via socket."""
-        address = config.setdefault("ip_address", "192.168.1.2")
-        port = config.setdefault("port", 56789)
+        address = config.get("ip_address", "192.168.1.2")
+        port = config.get_int("port", 56789)
         if getattr(self, "socket", None):
             # already have a connection?
             if self.socket.connected():
@@ -114,45 +114,100 @@ class TutorialMachine(Satellite):
 
     def do_launching(self) -> str:
         self.socket.send("PREPARE")
-        return "Prepared!"
+        return "Connection fully prepared"
 
-    def do_starting(self, run_identifier:str) -> str:
+    def do_starting(self, run_identifier: str) -> None:
         self.socket.send(f"START_{run_identifier}")
-        return "Prepared!"
 
-    def do_stopping(self) -> str:
-        self.socket.send(f"STOP!")
-        return "Stopped."
+    def do_stopping(self) -> None:
+        self.socket.send(f"STOP")
 
-    def do_landing(self) -> str:
-        self.socket.send(f"Power down!")
-        return "Stopped."
+    def do_landing(self) -> None:
+        self.socket.send(f"POWER_DOWN")
 ```
 
-Note that all of the above transitions return a string which summarizes the
-state change. This string will afterwards be a part of the status message of the
-satellite.
+Note that some of the above transitions return a string which summarizes the state change.
+This string will afterwards be a part of the status of the satellite.
 
-This particular satellite implementation sets up a network socket to send
-commands via a TCP/IP network connection to a device. In the actual satellite implementation,
-this might be a USB connection, or maybe the hardware has its own Python library that communicates with it.
+This particular satellite sets up a network socket to send commands via a TCP/IP network connection to a device.
+In the actual satellite implementation, this might be a USB connection, or maybe the hardware has its own Python
+library that communicates with it.
 
 ```{caution}
 The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` as well as 'ERROR' and 'SAFE' states. It should therefore be carefully ensured that e.g. any already open connections are closed before establishing new ones or that the class keeps track of any steps that only needs to be performed once (e.g. loading an FPGA bit stream).
 ```
 
-Note that the configuration parameters in `do_initialize` are accessed via
-`config.setdefault()`. This method will return the value for the respective key
-and fall back to a default value should no such key be configured.
+## Reading Configuration Parameters
 
-Any options that **must** be provided can also be accessed directly
-as with any dictionary, for example `config["my_important_parameter"]`. In this
-case, should the key `my_important_parameter` not be found, an exception will be
-raised. See the section on error handling below for what that entails.
+```{caution}
+Reading information from the satellite configuration is only possible in the `do_initializing` function.
+All parameters the satellite requires should be read and validated in this function, the `do_launching` function should only be used to apply this configuration to hardware.
+```
 
-In case a specific key is *not accessed* in the configuration during the
-initialization transition, the satellite will log a warning as this might point
-to a user error, such as a typo in the parameter name.
+Configuration parameters can be read using the {py:func}`get() <core.configuration.ConfigDictionary.get>` method on the configuration object:
+
+```python
+address = config.get("ip_address")
+```
+
+A default value can be provided as the second argument:
+
+```python
+address = config.get("ip_address", "192.168.1.2")
+```
+
+An explicit return type can be specified with the `return_type` argument:
+
+```python
+address = config.get("ip_address", return_type=str)
+```
+
+```{hint}
+It is also possible to set a method as return type that takes `Any` and returns the desired type.
+```
+
+Several other `get` methods exists for convenience:
+
+* `get_num`, `get_int`, `get_float`: get an {py:class}`int` or {py:class}`float` with optional limit checks
+* `get_array`: get a {py:class}`list` with homogeneous elements
+* `get_set`: get a {py:class}`set` with homogeneous elements
+* `get_path`: get a {py:class}`pathlib.Path`
+
+To access nested dictionaries, `get_section` can be used:
+
+```python
+# Read channel 0 & 1 as nested sections
+for n in range(2):
+    # Get section for channel n
+    channel_section = config.get_section(f"channel_{n}");
+
+    # channel_section has the same methods available as config
+    voltage = channel_section.get_int("voltage");
+```
+
+It is possible to iterate over sections using `get_keys`:
+
+```python
+# Get section for channels
+channels_section = config.get_section("channels");
+
+# Iterate over keys in dictionary
+for key in channels_section.get_keys():
+    # Keys defined as `chN`
+    if not key.startswith("ch")
+        raise InvalidKeyError(channels_section, key, "key have to start with `ch`");
+    channel = int(key[2:])
+
+    # Get section for channel
+    channel_section = channels_section.get_section(key)
+    enabled = channel_section.get("enabled", False, return_type=bool)
+```
+
+Besides the `get` methods, following methods might be helpful when reading the configuration:
+
+* `has`: checks if a key is present in the configuration
+* `count`: counts how many of the given keys are present in the configuration, useful to check for invalid key combinations
+* `set_alias`: can be used to set an alias for a renamed key
 
 ## Running and the Stop Event
 

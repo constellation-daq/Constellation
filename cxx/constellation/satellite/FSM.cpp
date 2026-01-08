@@ -29,8 +29,8 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/message/exceptions.hpp"
@@ -436,7 +436,7 @@ void FSM::initialize_fsm(Configuration& config) {
             std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
                 // Check that names are valid
                 if(!CSCP::is_valid_canonical_name(remote)) {
-                    throw InvalidValueError(config, key, "Not a valid canonical name");
+                    throw InvalidValueError(config, key, quote(remote) + " is not a valid canonical name");
                 }
 
                 // Check that the requested remote is not this satellite
@@ -513,9 +513,9 @@ FSM::State FSM::landed(TransitionPayload /* payload */) {
 }
 
 FSM::State FSM::reconfigure(TransitionPayload payload) {
-    auto call_wrapper = [this](Configuration&& partial_config) {
+    auto call_wrapper = [this](Configuration partial_config) {
         LOG(logger_, INFO) << "Calling reconfiguring function of satellite...";
-        const auto success = call_satellite_function(&BaseSatellite::reconfiguring_wrapper, std::move(partial_config));
+        const auto success = call_satellite_function(&BaseSatellite::reconfiguring_wrapper, partial_config);
         react(success ? Transition::reconfigured : Transition::failure);
     };
     launch_assign_thread(transitional_thread_, call_wrapper, std::get<Configuration>(std::move(payload)));

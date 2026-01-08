@@ -24,6 +24,7 @@ Submodules
    core.commandmanager
    core.configuration
    core.controller
+   core.controller_configuration
    core.cscp
    core.error
    core.fsm

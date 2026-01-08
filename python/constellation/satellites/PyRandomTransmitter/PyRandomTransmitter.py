@@ -12,8 +12,8 @@ from constellation.core.transmitter_satellite import TransmitterSatellite
 
 class PyRandomTransmitter(TransmitterSatellite):
     def do_initializing(self, config: Configuration) -> None:
-        self._block_size = config.setdefault("block_size", 1024)
-        self._number_of_blocks = config.setdefault("number_of_blocks", 1)
+        self._block_size = config.get_int("block_size", 1024, min_val=1)
+        self._number_of_blocks = config.get_int("number_of_blocks", 1, min_val=1)
 
     def do_launching(self) -> None:
         self._blocks = []

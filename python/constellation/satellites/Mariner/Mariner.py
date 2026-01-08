@@ -65,9 +65,9 @@ class Mariner(Satellite):
         automatically return an error or warning, respectively.
 
         """
-        voltage = config.setdefault("voltage", 5.0)
-        current = config.setdefault("current", 0.1)
-        sample_period = config.setdefault("sample_period", 0.5)
+        voltage = config.get("voltage", 5.0)
+        current = config.get("current", 0.1)
+        sample_period = config.get("sample_period", 0.5)
         self.device = CanopusStarTracker(voltage, current, sample_period)
         return "Initialized"
 

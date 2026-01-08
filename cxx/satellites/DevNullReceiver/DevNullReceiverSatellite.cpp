@@ -12,8 +12,7 @@
 #include <chrono>
 #include <string_view>
 
-#include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -53,7 +52,7 @@ void DevNullReceiverSatellite::stopping() {
 
 void DevNullReceiverSatellite::receive_bor(std::string_view /*sender*/,
                                            const Dictionary& /*user_tags*/,
-                                           const Configuration& /*config*/) {
+                                           const Dictionary& /*config*/) {
     // Drop message
 }
 

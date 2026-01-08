@@ -22,7 +22,7 @@
 #include <spdlog/sinks/base_sink.h>
 #include <zmq.hpp>
 
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/metrics/Metric.hpp"

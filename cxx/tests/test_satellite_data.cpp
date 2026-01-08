@@ -19,7 +19,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CDTP_definitions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
@@ -46,11 +46,11 @@ public:
     Receiver(std::string_view name = "r1") : DummySatelliteNR<ReceiverSatellite>(name) {}
 
 protected:
-    void receive_bor(std::string_view sender, const Dictionary& user_tags, const Configuration& config) override {
+    void receive_bor(std::string_view sender, const Dictionary& user_tags, const Dictionary& config) override {
         const auto sender_str = std::string(sender);
         const std::scoped_lock map_lock {map_mutex_};
         bor_map_.erase(sender_str);
-        bor_map_.emplace(sender, Configuration(config.getDictionary()));
+        bor_map_.emplace(sender, config);
         bor_tag_map_.erase(sender_str);
         bor_tag_map_.emplace(sender, user_tags);
         bor_received_ = true;
@@ -94,7 +94,7 @@ public:
         eor_received_.store(false);
     }
 
-    const Configuration& getBOR(const std::string& sender) {
+    const Dictionary& getBOR(const std::string& sender) {
         const std::scoped_lock map_lock {map_mutex_};
         return bor_map_.at(sender);
     }
@@ -132,7 +132,7 @@ private:
     std::atomic_bool bor_received_ {false};
     std::atomic_bool data_received_ {false};
     std::atomic_bool eor_received_ {false};
-    std::map<std::string, Configuration> bor_map_;
+    std::map<std::string, Dictionary> bor_map_;
     std::map<std::string, Dictionary> bor_tag_map_;
     std::map<std::string, CDTP2Message::DataRecord> last_data_map_;
     std::map<std::string, Dictionary> eor_map_;
@@ -155,14 +155,14 @@ public:
 
 TEST_CASE("Receiver / Reconfigure transmitters", "[satellite]") {
     auto receiver = Receiver();
-    auto config = Configuration();
-    config.set("_eor_timeout", 1);
-    config.set("_allow_overwriting", true);
+    auto config = Dictionary();
+    config["_eor_timeout"] = 1;
+    config["_allow_overwriting"] = true;
     receiver.reactFSM(FSM::Transition::initialize, std::move(config));
     receiver.reactFSM(FSM::Transition::launch);
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
-    auto config2 = Configuration();
-    config2.setArray<std::string>("_data_transmitters", {"Dummy.t1"});
+    auto config2 = Dictionary();
+    config2["_data_transmitters"] = {"Dummy.t1"};
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
 
@@ -172,18 +172,18 @@ TEST_CASE("Receiver / Reconfigure transmitters", "[satellite]") {
 TEST_CASE("Receiver / Invalid transmitter name", "[satellite]") {
     auto receiver = Receiver();
     // Additional dot
-    auto config1 = Configuration();
-    config1.setArray<std::string>("_data_transmitters", {"satellites.Dummy.t1"});
+    Dictionary config1 {};
+    config1["_data_transmitters"] = {"satellites.Dummy.t1"};
     receiver.reactFSM(FSM::Transition::initialize, std::move(config1));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
     // Missing dot
-    auto config2 = Configuration();
-    config2.setArray<std::string>("_data_transmitters", {"t1"});
+    Dictionary config2 {};
+    config2["_data_transmitters"] = {"t1"};
     receiver.reactFSM(FSM::Transition::initialize, std::move(config2));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
     // Invalid symbol
-    auto config3 = Configuration();
-    config3.setArray<std::string>("_data_transmitters", {"Dummy.t-1"});
+    Dictionary config3 {};
+    config3["_data_transmitters"] = {"Dummy.t-1"};
     receiver.reactFSM(FSM::Transition::initialize, std::move(config3));
     REQUIRE(receiver.getState() == FSM::State::ERROR);
 
@@ -192,9 +192,9 @@ TEST_CASE("Receiver / Invalid transmitter name", "[satellite]") {
 
 TEST_CASE("Transmitter / BOR timeout", "[satellite]") {
     auto transmitter = Transmitter();
-    auto config = Configuration();
-    config.set("_bor_timeout", 1);
-    config.set("_eor_timeout", 1);
+    auto config = Dictionary();
+    config["_bor_timeout"] = 1;
+    config["_eor_timeout"] = 1;
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config));
     transmitter.reactFSM(FSM::Transition::launch);
     transmitter.reactFSM(FSM::Transition::start, "test");
@@ -212,12 +212,12 @@ TEST_CASE("Transmitter / EOR timeout", "[satellite]") {
     transmitter.mockChirpService(CHIRP::DATA);
 
     auto receiver = Receiver();
-    auto config_receiver = Configuration();
-    config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
+    auto config_receiver = Dictionary();
+    config_receiver["_eor_timeout"] = 1;
+    config_receiver["_data_transmitters"] = {transmitter.getCanonicalName()};
 
-    auto config_transmitter = Configuration();
-    config_transmitter.set("_eor_timeout", 1);
+    auto config_transmitter = Dictionary();
+    config_transmitter["_eor_timeout"] = 1;
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -228,7 +228,7 @@ TEST_CASE("Transmitter / EOR timeout", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 10);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).at("_bor_timeout").get<int>() == 10);
 
     // Stop the receiver to avoid receiving data
     receiver.reactFSM(FSM::Transition::stop);
@@ -259,25 +259,25 @@ TEST_CASE("Successful run", "[satellite]") {
     auto transmitter = Transmitter();
     transmitter.mockChirpService(CHIRP::DATA);
 
-    auto config_receiver = Configuration();
-    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
+    auto config_receiver = Dictionary();
+    config_receiver["_data_transmitters"] = {transmitter.getCanonicalName()};
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, Configuration());
     receiver.reactFSM(FSM::Transition::launch);
     transmitter.reactFSM(FSM::Transition::launch);
 
-    auto config2_receiver = Configuration();
-    config2_receiver.set("_allow_overwriting", true);
-    config2_receiver.set("_eor_timeout", 1);
-    auto config2_transmitter = Configuration();
-    config2_transmitter.set("_bor_timeout", 1);
-    config2_transmitter.set("_data_timeout", 1);
-    config2_transmitter.set("_eor_timeout", 1);
-    config2_transmitter.set("_data_timeout", 1);
-    config2_transmitter.set("_payload_threshold", 0);
-    config2_transmitter.set("_queue_size", 2);
-    config2_transmitter.set("_data_license", "PDDL-1.0");
+    auto config2_receiver = Dictionary();
+    config2_receiver["_allow_overwriting"] = true;
+    config2_receiver["_eor_timeout"] = 1;
+    auto config2_transmitter = Dictionary();
+    config2_transmitter["_bor_timeout"] = 1;
+    config2_transmitter["_data_timeout"] = 1;
+    config2_transmitter["_eor_timeout"] = 1;
+    config2_transmitter["_data_timeout"] = 1;
+    config2_transmitter["_payload_threshold"] = 0;
+    config2_transmitter["_queue_size"] = 2;
+    config2_transmitter["_data_license"] = "PDDL-1.0";
 
     receiver.reactFSM(FSM::Transition::reconfigure, std::move(config2_receiver));
     transmitter.reactFSM(FSM::Transition::reconfigure, std::move(config2_transmitter));
@@ -290,7 +290,7 @@ TEST_CASE("Successful run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).at("_bor_timeout").get<int>() == 1);
 
     const auto& bor_tags = receiver.getBORTags(transmitter.getCanonicalName());
     REQUIRE(bor_tags.at("firmware_version").get<int>() == 3);
@@ -341,14 +341,14 @@ TEST_CASE("Tainted run", "[satellite]") {
     auto transmitter = Transmitter();
     transmitter.mockChirpService(CHIRP::DATA);
 
-    auto config_receiver = Configuration();
-    config_receiver.set("_eor_timeout", 1);
+    auto config_receiver = Dictionary();
+    config_receiver["_eor_timeout"] = 1;
 
-    auto config_transmitter = Configuration();
-    config_transmitter.set("_bor_timeout", 1);
-    config_transmitter.set("_eor_timeout", 1);
-    config_transmitter.set("_payload_threshold", 1024);
-    config_transmitter.set("_queue_size", 2);
+    auto config_transmitter = Dictionary();
+    config_transmitter["_bor_timeout"] = 1;
+    config_transmitter["_eor_timeout"] = 1;
+    config_transmitter["_payload_threshold"] = 1024;
+    config_transmitter["_queue_size"] = 2;
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -359,7 +359,7 @@ TEST_CASE("Tainted run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).at("_bor_timeout").get<int>() == 1);
 
     // Send a data
     transmitter.sendData(std::vector<int>({1, 2, 3, 4}));
@@ -400,13 +400,13 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     transmitter.mockChirpService(CHIRP::DATA);
     transmitter.mockChirpService(CHIRP::HEARTBEAT);
 
-    auto config_receiver = Configuration();
-    config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
+    auto config_receiver = Dictionary();
+    config_receiver["_eor_timeout"] = 1;
+    config_receiver["_data_transmitters"] = {transmitter.getCanonicalName()};
 
-    auto config_transmitter = Configuration();
-    config_transmitter.set("_bor_timeout", 1);
-    config_transmitter.set("_eor_timeout", 1);
+    auto config_transmitter = Dictionary();
+    config_transmitter["_bor_timeout"] = 1;
+    config_transmitter["_eor_timeout"] = 1;
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -417,7 +417,7 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).at("_bor_timeout").get<int>() == 1);
 
     // Allow to progress through transitional state autonomously
     transmitter.skipTransitional(true);
@@ -458,13 +458,13 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     transmitter.mockChirpService(CHIRP::DATA);
     transmitter.mockChirpService(CHIRP::HEARTBEAT);
 
-    auto config_receiver = Configuration();
-    config_receiver.set("_eor_timeout", 1);
-    config_receiver.setArray<std::string>("_data_transmitters", {transmitter.getCanonicalName()});
+    auto config_receiver = Dictionary();
+    config_receiver["_eor_timeout"] = 1;
+    config_receiver["_data_transmitters"] = {transmitter.getCanonicalName()};
 
-    auto config_transmitter = Configuration();
-    config_transmitter.set("_bor_timeout", 1);
-    config_transmitter.set("_eor_timeout", 1);
+    auto config_transmitter = Dictionary();
+    config_transmitter["_bor_timeout"] = 1;
+    config_transmitter["_eor_timeout"] = 1;
 
     receiver.reactFSM(FSM::Transition::initialize, std::move(config_receiver));
     transmitter.reactFSM(FSM::Transition::initialize, std::move(config_transmitter));
@@ -475,7 +475,7 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
 
     // Wait a bit for BOR to be handled by receiver
     receiver.awaitBOR();
-    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).get<int>("_bor_timeout") == 1);
+    REQUIRE(receiver.getBOR(transmitter.getCanonicalName()).at("_bor_timeout").get<int>() == 1);
 
     // Allow receiver to progress through transitional state autonomously:
     receiver.skipTransitional(true);

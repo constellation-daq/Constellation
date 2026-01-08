@@ -45,7 +45,7 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/ControllerConfiguration.hpp"
 #include "constellation/controller/exceptions.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -356,6 +356,12 @@ void MissionControl::on_btnGenConf_clicked() {
         new_cfg.addSatelliteConfiguration(config.first, cfg);
     }
 
+    try {
+        new_cfg.validate();
+    } catch(const ConfigValidationError& error) {
+        LOG(logger_, WARNING) << error.what();
+    }
+
     const QString filename = QFileDialog::getSaveFileName(this,
                                                           tr("Save File"),
                                                           QFileInfo(txtConfigFileName->text()).path(),
@@ -519,7 +525,7 @@ void MissionControl::custom_context_menu(const QPoint& point) {
 
         auto* action = new QAction(QString::fromStdString(key), this);
         connect(action, &QAction::triggered, this, [this, index, key, value]() {
-            QCommandDialog cmd_dialog {this, runcontrol_.getQName(index), key, value.str()};
+            QCommandDialog cmd_dialog {this, runcontrol_.getQName(index), key, value.to_string()};
             if(cmd_dialog.exec() == QDialog::Accepted && !cmd_dialog.getCommand().empty()) {
                 const auto& response = runcontrol_.sendQCommand(index, cmd_dialog.getCommand(), cmd_dialog.getPayload());
                 if(response.hasPayload()) {

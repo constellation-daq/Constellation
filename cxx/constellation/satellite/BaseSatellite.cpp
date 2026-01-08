@@ -17,7 +17,6 @@
 #include <map>
 #include <mutex>
 #include <optional>
-#include <ranges>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -33,7 +32,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/heartbeat/HeartbeatManager.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -113,7 +112,7 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
 }
 
 std::string BaseSatellite::getCanonicalName() const {
-    return to_string(satellite_type_) + "." + to_string(satellite_name_);
+    return to_string(satellite_type_) + '.' + to_string(satellite_name_);
 }
 
 void BaseSatellite::join() {
@@ -278,14 +277,14 @@ BaseSatellite::handle_standard_command(std::string_view command) {
     case get_state: {
         const auto state = fsm_.getState();
         return_verb = {CSCP1Message::Type::SUCCESS, enum_name(state)};
-        return_payload = Value::set(std::to_underlying(state)).assemble();
+        return_payload = Composite(std::to_underlying(state)).assemble();
         return_tags["last_changed"] = fsm_.getLastChanged();
         break;
     }
     case get_role: {
         const auto role = heartbeat_manager_.getRole();
         return_verb = {CSCP1Message::Type::SUCCESS, enum_name(role)};
-        return_payload = Value::set(std::to_underlying(flags_from_role(role))).assemble();
+        return_payload = Composite(std::to_underlying(flags_from_role(role))).assemble();
         break;
     }
     case get_status: {
@@ -293,10 +292,8 @@ BaseSatellite::handle_standard_command(std::string_view command) {
         break;
     }
     case get_config: {
-        const auto config_dict = config_.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED);
-        return_verb = {CSCP1Message::Type::SUCCESS,
-                       to_string(config_dict.size()) + " configuration keys, dictionary attached in payload"};
-        return_payload = config_dict.assemble();
+        return_verb = {CSCP1Message::Type::SUCCESS, "Configuration attached in payload"};
+        return_payload = config_.assemble();
         break;
     }
     case get_run_id: {
@@ -316,7 +313,7 @@ BaseSatellite::handle_standard_command(std::string_view command) {
             return_verb = {CSCP1Message::Type::SUCCESS,
                            to_string(remotes_dict.size()) + " remote services registered" +
                                (remotes_dict.empty() ? "" : ", list attached in payload")};
-            return_payload = Dictionary::fromMap(remotes_dict).assemble();
+            return_payload = Dictionary(remotes_dict).assemble();
         } else {
             return_verb = {CSCP1Message::Type::INVALID, "No network discovery service available"};
         }
@@ -362,22 +359,22 @@ BaseSatellite::handle_user_command(std::string_view command, const PayloadBuffer
     std::pair<CSCP1Message::Type, std::string> return_verb {};
     PayloadBuffer return_payload {};
 
-    List args {};
+    CompositeList args {};
     try {
         if(!payload.empty()) {
-            args = List::disassemble(payload);
+            args = CompositeList::disassemble(payload);
         }
 
         auto retval = user_commands_.call(fsm_.getState(), std::string(command), args);
         LOG(logger_, DEBUG) << "User command " << quote(command) << " succeeded, packing return value.";
 
         // Return the call value as payload only if it is not std::monostate
-        if(!std::holds_alternative<std::monostate>(retval)) {
+        if(std::holds_alternative<Scalar>(retval) && !std::holds_alternative<std::monostate>(retval.get<Scalar>())) {
             msgpack::sbuffer sbuf {};
             msgpack_pack(sbuf, retval);
             return_payload = {std::move(sbuf)};
         }
-        return_verb = {CSCP1Message::Type::SUCCESS, "Command returned: " + retval.str()};
+        return_verb = {CSCP1Message::Type::SUCCESS, "Command returned: " + retval.to_string()};
     } catch(const MsgpackUnpackError&) {
         // Issue with obtaining parameters from payload
         return_verb = {CSCP1Message::Type::INCOMPLETE, "Could not convert command payload to argument list"};
@@ -467,49 +464,39 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
 }
 
 std::size_t BaseSatellite::store_config(Configuration&& config) {
-    using enum Configuration::Group;
-    using enum Configuration::Usage;
-
-    // Check for unused KVPs
-    const auto unused_kvps = config.getDictionary(ALL, UNUSED);
-    if(!unused_kvps.empty()) {
-        LOG(logger_, WARNING) << unused_kvps.size() << " keys of the configuration were not used: "
-                              << range_to_string(std::views::keys(unused_kvps));
-        // Only store used keys
-        config_ = {config.getDictionary(ALL, USED), true};
-    } else {
-        // Move configuration
-        config_ = std::move(config);
+    // Remove unused entries
+    const auto unused_keys = config.removeUnusedEntries();
+    if(!unused_keys.empty()) {
+        LOG(logger_, WARNING) << unused_keys.size()
+                              << " keys of the configuration were not used: " << range_to_string(unused_keys);
     }
+
+    // Store new configuration
+    config_ = std::move(config);
 
     // Log config
-    LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
-    LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
-                        << config_.getDictionary(INTERNAL).to_string();
+    LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
+    LOG(logger_, DEBUG) << "Internal configuration:" << config_.to_string(Configuration::INTERNAL);
 
-    return unused_kvps.size();
+    return unused_keys.size();
 }
 
-std::size_t BaseSatellite::update_config(const Configuration& partial_config) {
-    using enum Configuration::Group;
-    using enum Configuration::Usage;
-
-    // Check for unused KVPs
-    const auto unused_kvps = partial_config.getDictionary(ALL, UNUSED);
-    if(!unused_kvps.empty()) {
-        LOG(logger_, WARNING) << unused_kvps.size() << " keys of the configuration were not used: "
-                              << range_to_string(std::views::keys(unused_kvps));
+std::size_t BaseSatellite::update_config(Configuration& partial_config) {
+    // Remove unused entries
+    const auto unused_keys = partial_config.removeUnusedEntries();
+    if(!unused_keys.empty()) {
+        LOG(logger_, WARNING) << unused_keys.size()
+                              << " keys of the configuration were not used: " << range_to_string(unused_keys);
     }
 
-    // Update configuration (only updates used values of partial config)
+    // Update configuration
     config_.update(partial_config);
 
     // Log config
-    LOG(logger_, INFO) << "Configuration: " << config_.size(USER) << " settings" << config_.getDictionary(USER).to_string();
-    LOG(logger_, DEBUG) << "Internal configuration: " << config_.size(INTERNAL) << " settings"
-                        << config_.getDictionary(INTERNAL).to_string();
+    LOG(logger_, INFO) << "Configuration:" << config_.to_string(Configuration::USER);
+    LOG(logger_, DEBUG) << "Internal configuration:" << config_.to_string(Configuration::INTERNAL);
 
-    return unused_kvps.size();
+    return unused_keys.size();
 }
 
 void BaseSatellite::set_user_status(std::string message) {
@@ -586,7 +573,7 @@ std::optional<std::string> BaseSatellite::landing_wrapper() {
     return {get_user_status_or("Satellite landed successfully")};
 }
 
-std::optional<std::string> BaseSatellite::reconfiguring_wrapper(const Configuration& partial_config) {
+std::optional<std::string> BaseSatellite::reconfiguring_wrapper(Configuration& partial_config) {
     apply_internal_config(partial_config);
 
     reconfiguring(partial_config);

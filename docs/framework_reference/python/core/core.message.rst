@@ -1,4 +1,4 @@
-Message module
+Message Module
 ==============
 
 Module contents

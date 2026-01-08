@@ -66,7 +66,7 @@ cppzmq_dep = dependency('cppzmq', default_options: cppzmq_sp_default_options)
 magic_enum_dep = dependency('magic_enum', default_options: ['test=false'])
 
 # msgpack-cxx
-msgpack_cxx_dep = dependency('msgpack-cxx', default_options: ['boost=disabled', 'tests=disabled'])
+msgpack_cxx_dep = dependency('msgpack-cxx', version: '>=7.0.0', default_options: ['boost=disabled', 'tests=disabled'])
 
 # spdlog
 spdlog_dep = dependency('spdlog', default_options: ['tests=disabled', 'default_library=static'])

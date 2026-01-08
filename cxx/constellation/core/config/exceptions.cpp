@@ -12,70 +12,65 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "constellation/core/config/Configuration.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::config;
+using namespace constellation::utils;
 
-MissingKeyError::MissingKeyError(std::string_view key) {
-    error_message_ = "Key ";
-    error_message_ += utils::quote(key);
-    error_message_ += " does not exist";
+namespace {
+    std::string get_prefixed_key(const Section& config, std::string_view key) {
+        auto prefixed_key = std::string(config.prefix());
+        prefixed_key += key;
+        return quote(prefixed_key);
+    }
+} // namespace
+
+MissingKeyError::MissingKeyError(const Section& config, std::string_view key) {
+    error_message_ = "Key " + get_prefixed_key(config, key) + " does not exist";
 }
 
-InvalidKeyError::InvalidKeyError(std::string_view key, std::string_view reason) {
-    error_message_ = "Key ";
-    error_message_ += utils::quote(key);
-    error_message_ += " is not valid";
+InvalidKeyError::InvalidKeyError(const Section& config, std::string_view key, std::string_view reason) {
+    error_message_ = "Key " + get_prefixed_key(config, key) + " is not valid";
     if(!reason.empty()) {
         error_message_ += ": ";
         error_message_ += reason;
     }
 }
 
-InvalidTypeError::InvalidTypeError(std::string_view key,
+InvalidTypeError::InvalidTypeError(const Section& config,
+                                   std::string_view key,
                                    std::string_view vtype,
-                                   std::string_view type,
-                                   std::string_view reason) {
-    // FIXME wording
-    error_message_ = "Could not convert value of type ";
-    error_message_ += utils::quote(vtype);
-    error_message_ += " to type ";
-    error_message_ += utils::quote(type);
-    error_message_ += " for key ";
-    error_message_ += utils::quote(key);
-    if(!reason.empty()) {
-        error_message_ += ": ";
-        error_message_ += reason;
-    }
+                                   std::string_view type) {
+    error_message_ = "Could not convert value of type " + quote(vtype) + " to type " + quote(type) + " for key " +
+                     get_prefixed_key(config, key);
 }
 
-InvalidValueError::InvalidValueError(const Configuration& config, const std::string& key, std::string_view reason)
-    : InvalidValueError(config.getText(key), key, reason) {}
-
-InvalidValueError::InvalidValueError(const std::string& value, const std::string& key, std::string_view reason) {
-    error_message_ = "Value " + utils::quote(value) + " of key " + utils::quote(key) + " is not valid";
-    if(!reason.empty()) {
-        error_message_ += ": ";
-        error_message_ += reason;
-    }
+InvalidValueError::InvalidValueError(const Section& config, std::string_view key, std::string_view reason) {
+    error_message_ = "Value of key " + get_prefixed_key(config, key) + " is not valid: ";
+    error_message_ += reason;
 }
 
-InvalidCombinationError::InvalidCombinationError(const Configuration& config,
+InvalidCombinationError::InvalidCombinationError(const Section& config,
                                                  std::initializer_list<std::string> keys,
                                                  std::string_view reason) {
-    error_message_ = "Combination of keys ";
+    std::vector<std::string> present_keys {};
     for(const auto& key : keys) {
         if(!config.has(key)) {
             continue;
         }
-        error_message_ += utils::quote(key) + ", ";
+        present_keys.emplace_back(get_prefixed_key(config, key));
     }
-    error_message_.resize(error_message_.size() - 2);
-    error_message_ += " is not valid";
+    error_message_ = "Combination of keys " + range_to_string(present_keys) + " is not valid";
     if(!reason.empty()) {
         error_message_ += ": ";
         error_message_ += reason;
     }
+}
+
+InvalidUpdateError::InvalidUpdateError(const Section& config, std::string_view key, std::string_view reason) {
+    error_message_ = "Failed to update value of key " + get_prefixed_key(config, key) + ": ";
+    error_message_ += reason;
 }

@@ -20,7 +20,7 @@
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -569,12 +569,12 @@ TEST_CASE("Conditional transitions", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
-    Configuration config {};
-    config.set("_require_initializing_after", "Dummy.sat2");
-    config.set("_require_launching_after", "Dummy.sat2");
-    config.set("_require_landing_after", "Dummy.sat2");
-    config.set("_require_starting_after", "Dummy.sat2");
-    config.set("_require_stopping_after", "Dummy.sat2");
+    Dictionary config {};
+    config["_require_initializing_after"] = "Dummy.sat2";
+    config["_require_launching_after"] = "Dummy.sat2";
+    config["_require_landing_after"] = "Dummy.sat2";
+    config["_require_starting_after"] = "Dummy.sat2";
+    config["_require_stopping_after"] = "Dummy.sat2";
 
     // Remote callback
     std::atomic<State> state {State::NEW};
@@ -601,22 +601,23 @@ TEST_CASE("Conditional transitions (invalid configuration)", "[satellite][satell
     auto& fsm = satellite.getFSM();
 
     // Initialization failure due to invalid canonical name
-    Configuration config1 {};
-    config1.set("_require_initializing_after", "Dummy.sat2.fake");
+    Dictionary config1 {};
+    config1["_require_initializing_after"] = "Dummy.sat2.fake";
     satellite.reactFSM(Transition::initialize, std::move(config1));
     REQUIRE(fsm.getState() == State::ERROR);
     REQUIRE_THAT(std::string(fsm.getStatus()),
-                 Equals("Critical failure: Value `Dummy.sat2.fake` of key `_require_initializing_after` is not valid: Not "
-                        "a valid canonical name"));
+                 Equals("Critical failure: Value of key `_require_initializing_after` is not valid: `Dummy.sat2.fake` is "
+                        "not a valid canonical name"));
 
     // Initialization failure due to depence on self
-    Configuration config2 {};
-    config2.set("_require_initializing_after", "Dummy.sat1");
+    Dictionary config2 {};
+    config2["_require_initializing_after"] = "Dummy.sat1";
     satellite.reactFSM(Transition::initialize, std::move(config2));
     REQUIRE(fsm.getState() == State::ERROR);
-    REQUIRE_THAT(std::string(fsm.getStatus()),
-                 Equals("Critical failure: Value `Dummy.sat1` of key `_require_initializing_after` is not valid: "
-                        "Satellite cannot depend on itself"));
+    REQUIRE_THAT(
+        std::string(fsm.getStatus()),
+        Equals(
+            "Critical failure: Value of key `_require_initializing_after` is not valid: Satellite cannot depend on itself"));
 
     satellite.exit();
 }
@@ -625,8 +626,8 @@ TEST_CASE("Conditional transitions (remote not present)", "[satellite][satellite
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
-    Configuration config {};
-    config.set("_require_initializing_after", "Dummy.sat2");
+    Dictionary config {};
+    config["_require_initializing_after"] = "Dummy.sat2";
 
     // Remote callback
     fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional<State>(); });
@@ -644,8 +645,8 @@ TEST_CASE("Conditional transitions (remote in ERROR)", "[satellite][satellite::f
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
-    Configuration config {};
-    config.set("_require_initializing_after", "Dummy.sat2");
+    Dictionary config {};
+    config["_require_initializing_after"] = "Dummy.sat2";
 
     // Remote callback
     fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional(State::ERROR); });
@@ -663,9 +664,9 @@ TEST_CASE("Conditional transitions (timeout)", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
-    Configuration config {};
-    config.set("_conditional_transition_timeout", 0);
-    config.set("_require_initializing_after", "Dummy.sat2");
+    Dictionary config {};
+    config["_conditional_transition_timeout"] = 0;
+    config["_require_initializing_after"] = "Dummy.sat2";
 
     // Remote callback
     fsm.registerRemoteCallback([&](std::string_view /*canonical_name*/) { return std::optional(State::NEW); });

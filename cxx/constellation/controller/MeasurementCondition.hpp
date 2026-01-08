@@ -16,7 +16,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/controller/Controller.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Logger.hpp"
 
 namespace constellation::controller {
@@ -94,11 +94,12 @@ namespace constellation::controller {
          * @param comp_name String representation of the comparator function, e.g. ">="
 
          */
-        MetricCondition(std::string remote,
-                        std::string metric,
-                        config::Value target,
-                        std::function<bool(const config::Value, const config::Value)> comparator = std::greater_equal<>(),
-                        std::string comp_name = ">=");
+        MetricCondition(
+            std::string remote,
+            std::string metric,
+            config::Scalar target,
+            std::function<bool(const config::Scalar&, const config::Scalar&)> comparator = std::greater_equal<>(),
+            std::string comp_name = ">=");
 
         void await(std::atomic_bool& running, Controller& controller, log::Logger& logger) const override;
 
@@ -107,8 +108,8 @@ namespace constellation::controller {
     private:
         std::string remote_;
         std::string metric_;
-        config::Value target_;
-        std::function<bool(config::Value, config::Value)> comparator_;
+        config::Scalar target_;
+        std::function<bool(const config::Scalar&, const config::Scalar&)> comparator_;
         std::string comparator_str_;
         std::chrono::seconds metric_reception_timeout_;
     };

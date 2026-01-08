@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief Template implementation of configuration
+ * @brief Inline implementation of configuration
  *
- * @copyright Copyright (c) 2024 DESY and the Constellation authors.
+ * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
@@ -11,41 +11,70 @@
 
 #include "Configuration.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <algorithm>
+#include <cctype>
+#include <iterator>
 #include <optional>
-#include <set>
 #include <stdexcept>
-#include <string>
-#include <typeinfo>
-#include <variant>
+#include <string_view>
+#include <utility>
 #include <vector>
 
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/env.hpp"
 #include "constellation/core/utils/string.hpp"
-#include "constellation/core/utils/type.hpp"
 
 namespace constellation::config {
 
-    template <typename T> T Configuration::get(const std::string& key) const {
-        const auto key_lc = utils::transform(key, ::tolower);
+    template <typename T> void Section::setDefault(std::string_view key, T&& default_value) const {
+        const auto key_lc = utils::transform(key, tolower);
+        dictionary_->try_emplace(key_lc, std::forward<T>(default_value));
+    }
+
+    template <typename T> T Section::get(std::string_view key) const {
+        // Ensure that get<Dictionary> does not work
+        if constexpr(std::same_as<T, Dictionary>) {
+            throw utils::LogicError("`get<Dictionary>` called, usage of `getSection` required");
+        }
+
+        const auto key_lc = utils::transform(key, tolower);
         try {
-            const auto& dictval = config_.at(key_lc);
-            const auto val = dictval.get<T>();
-            dictval.markUsed();
-            return val;
+            const auto composite = dictionary_->at(key_lc);
+            auto value = composite.get<T>();
+            mark_used(key_lc);
+
+            // Resolve environment variables for string-type values:
+            if constexpr(std::is_same_v<T, std::string>) {
+                value = utils::resolve_satellite_env(value);
+            }
+
+            if constexpr(std::is_same_v<T, std::vector<std::string>>) {
+                std::ranges::transform(value, value.begin(), [](const auto& v) { return utils::resolve_satellite_env(v); });
+            }
+
+            return value;
         } catch(const std::out_of_range&) {
             // Requested key has not been found in dictionary
-            throw MissingKeyError(key);
+            throw MissingKeyError(*this, key);
         } catch(const std::bad_variant_access&) {
             // Value held by the dictionary entry could not be cast to desired type
-            throw InvalidTypeError(key, config_.at(key_lc).demangle(), utils::demangle<T>());
+            throw InvalidTypeError(*this, key, dictionary_->at(key_lc).demangle(), utils::demangle<T>());
         } catch(const std::invalid_argument& error) {
-            // Value held by the dictionary entry could not be converted to desired type
-            throw InvalidValueError(getText(key), key, error.what());
+            // Value held by the dictionary entry is not valid (e.g. out of range)
+            throw InvalidValueError(*this, key, error.what());
+        } catch(const utils::RuntimeError& error) {
+            // Issue when parsing the value
+            throw InvalidValueError(*this, key, error.what());
         }
     }
 
-    template <typename T> std::optional<T> Configuration::getOptional(const std::string& key) const {
+    template <typename T> T Section::get(std::string_view key, T default_value) const {
+        setDefault(key, std::move(default_value));
+        return get<T>(key);
+    }
+
+    template <typename T> std::optional<T> Section::getOptional(std::string_view key) const {
         try {
             return get<T>(key);
         } catch(const MissingKeyError&) {
@@ -53,12 +82,7 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> T Configuration::get(const std::string& key, const T& def) {
-        setDefault<T>(key, def);
-        return get<T>(key);
-    }
-
-    template <typename T> std::vector<T> Configuration::getArray(const std::string& key) const {
+    template <typename T> std::vector<T> Section::getArray(std::string_view key) const {
         try {
             // First, try reading as single value
             return {get<T>(key)};
@@ -68,7 +92,12 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> std::optional<std::vector<T>> Configuration::getOptionalArray(const std::string& key) const {
+    template <typename T> std::vector<T> Section::getArray(std::string_view key, std::vector<T> default_value) const {
+        setDefault(key, std::move(default_value));
+        return getArray<T>(key);
+    }
+
+    template <typename T> std::optional<std::vector<T>> Section::getOptionalArray(std::string_view key) const {
         try {
             return getArray<T>(key);
         } catch(const MissingKeyError&) {
@@ -76,67 +105,21 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> std::vector<T> Configuration::getArray(const std::string& key, const std::vector<T>& def) {
-        return get<std::vector<T>>(key, def);
+    template <typename T> std::set<T> Section::getSet(std::string_view key) const {
+        auto vec = getArray<T>(key);
+        return {std::make_move_iterator(vec.begin()), std::make_move_iterator(vec.end())};
     }
 
-    template <typename T> std::set<T> Configuration::getSet(const std::string& key) const {
-        const auto vec = getArray<T>(key);
-        return {vec.begin(), vec.end()};
+    template <typename T> std::set<T> Section::getSet(std::string_view key, const std::set<T>& default_value) const {
+        setDefault(key, std::vector<T>({default_value.cbegin(), default_value.cend()}));
+        return getSet<T>(key);
     }
 
-    template <typename T> std::optional<std::set<T>> Configuration::getOptionalSet(const std::string& key) const {
+    template <typename T> std::optional<std::set<T>> Section::getOptionalSet(std::string_view key) const {
         try {
-            const auto vec = getArray<T>(key);
-            return std::set<T>(vec.begin(), vec.end());
+            return getSet<T>(key);
         } catch(const MissingKeyError&) {
             return std::nullopt;
-        }
-    }
-
-    template <typename T> std::set<T> Configuration::getSet(const std::string& key, const std::set<T>& def) {
-        const auto vec = getArray<T>(key, {def.begin(), def.end()});
-        return {vec.begin(), vec.end()};
-    }
-
-    template <typename T> void Configuration::set(const std::string& key, const T& val, bool mark_used) {
-        const auto key_lc = utils::transform(key, ::tolower);
-        try {
-            config_[key_lc] = {Value::set(val), mark_used};
-        } catch(const std::bad_cast&) {
-            // Value held by the dictionary entry could not be cast to desired type
-            throw InvalidTypeError(key, utils::demangle<T>(), utils::demangle<value_t>());
-        } catch(const std::overflow_error& error) {
-            if constexpr(utils::convertible_to_string<T>) {
-                throw InvalidValueError(utils::to_string(val), key, error.what());
-            } else if constexpr(utils::convertible_range_to_string<T>) {
-                throw InvalidValueError(utils::range_to_string(val), key, error.what());
-            } else {
-                throw InvalidValueError("<unknown>", key, error.what());
-            }
-        }
-    }
-
-    template <typename T> void Configuration::setDefault(const std::string& key, const T& val) {
-        if(!has(key)) {
-            set<T>(key, val, false);
-        }
-    }
-
-    template <typename T> void Configuration::setDefaultArray(const std::string& key, const std::vector<T>& val) {
-        if(!has(key)) {
-            setArray<T>(key, val, false);
-        }
-    }
-
-    template <typename F> void Configuration::for_each(Group group, Usage usage, F f) const {
-        using enum Group;
-        using enum Usage;
-        for(const auto& [key, value] : config_) {
-            if((group == ALL || (group == USER && !key.starts_with("_")) || (group == INTERNAL && key.starts_with("_"))) &&
-               (usage == ANY || (usage == USED && value.isUsed()) || (usage == UNUSED && !value.isUsed()))) {
-                f(key, value);
-            }
         }
     }
 

@@ -12,13 +12,13 @@
 #include "CommandRegistry.hpp" // NOLINT(misc-header-include-cycle)
 
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <typeinfo>
 #include <utility>
 #include <variant>
 
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/exceptions.hpp"
@@ -28,19 +28,13 @@
 
 namespace constellation::satellite {
 
-    template <typename T> inline T CommandRegistry::to_argument(const config::Value& value) {
+    template <typename T> inline T CommandRegistry::to_argument(const config::Composite& value) {
         try {
             return value.get<T>();
         } catch(const std::bad_variant_access&) {
             throw InvalidUserCommandArguments(utils::demangle<T>(), value.demangle());
-        }
-    }
-
-    template <typename T> inline config::Value CommandRegistry::convert(const T& value) {
-        try {
-            return config::Value::set(value);
-        } catch(const std::bad_cast&) {
-            throw InvalidUserCommandResult(utils::demangle<T>());
+        } catch(const std::invalid_argument&) {
+            throw InvalidUserCommandArguments(utils::demangle<T>(), value.demangle());
         }
     }
 

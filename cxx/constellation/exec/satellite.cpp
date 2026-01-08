@@ -66,7 +66,7 @@ int constellation::exec::satellite_main(std::span<const char*> args,
         }
 
         // Get canonical name
-        const auto canonical_name = loaded_satellite.type_name + "." + options.satellite_name;
+        const auto canonical_name = loaded_satellite.type_name + '.' + options.satellite_name;
 
         // Setup CHIRP
         constellation_setup_chirp(options.group, canonical_name, options.interfaces);

@@ -1,39 +1,48 @@
 /**
- * @copyright Copyright (c) 2024 DESY and the Constellation authors.
+ * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
 
-#include <array>
 #include <chrono>
-#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
-#include <limits>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_exception.hpp>
+#include <catch2/matchers/catch_matchers_range_equals.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <msgpack.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
 #include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
-#include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/config/value_types.hpp"
+#include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/type.hpp"
 
 using namespace Catch::Matchers;
 using namespace constellation::config;
 using namespace constellation::utils;
-using namespace std::string_view_literals;
+
+enum class Enum : std::uint8_t { A, B };
+
+namespace {
+    std::filesystem::path test_files_dir() {
+        const auto* cxx_tests_dir = std::getenv("CXX_TESTS_DIR"); // NOLINT(concurrency-mt-unsafe)
+        if(cxx_tests_dir == nullptr) {
+            return std::filesystem::current_path() / "cxx" / "tests" / "test_files";
+        }
+        return std::filesystem::path(cxx_tests_dir) / "test_files";
+    }
+} // namespace
 
 namespace {
     enum class MyEnum : std::uint8_t {
@@ -43,638 +52,511 @@ namespace {
 } // namespace
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
-// NOLINTBEGIN(google-readability-casting,readability-redundant-casting)
 
-TEST_CASE("Set & Get Values", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("bool", true);
-
-    config.set("int64", std::int64_t(63));
-    config.set("size", std::size_t(1));
-    config.set("uint64", std::uint64_t(64));
-    config.set("uint8", std::uint8_t(8));
-
-    config.set("double", double(1.3));
-    config.set("float", float(3.14));
-
-    config.set("string", std::string("a"));
-    config.set("string_view", std::string_view("b"));
-    config.set("char_array", "c");
-
-    config.set("myenum", MyEnum::ONE);
-
-    auto tp = std::chrono::system_clock::now();
-    config.set("time", tp);
-
-    // Check that keys are unused
-    REQUIRE(config.size() == config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED));
-
-    // Read values back
-    REQUIRE(config.get<bool>("bool") == true);
-
-    // Read single value as array or set:
-    REQUIRE(config.getArray<bool>("bool") == std::vector<bool>({true}));
-    REQUIRE(config.getSet<bool>("bool") == std::set<bool>({true}));
-
-    REQUIRE(config.get<std::int64_t>("int64") == 63);
-    REQUIRE(config.get<std::size_t>("size") == 1);
-    REQUIRE(config.get<std::uint64_t>("uint64") == 64);
-    REQUIRE(config.get<std::uint8_t>("uint8") == 8);
-
-    REQUIRE(config.get<double>("double") == 1.3);
-    REQUIRE(config.get<float>("float") == 3.14F);
-
-    REQUIRE(config.get<std::string>("string") == "a");
-    REQUIRE(config.get<std::string>("string_view") == "b");
-    REQUIRE(config.get<std::string>("char_array") == "c");
-
-    REQUIRE(config.get<MyEnum>("myenum") == MyEnum::ONE);
-
-    REQUIRE(config.get<std::chrono::system_clock::time_point>("time") == tp);
-
-    // Check that all keys have been marked as used
-    REQUIRE(config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED) == 0);
-}
-
-TEST_CASE("Keys Are Case-Insensitive", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("bool", true);
-    config.set("INT64", std::int64_t(63));
-
-    REQUIRE(config.get<bool>("BOOL") == true);
-    REQUIRE(config.get<bool>("bool") == true);
-
-    REQUIRE(config.get<std::int64_t>("int64") == 63);
-    REQUIRE(config.get<std::int64_t>("INT64") == 63);
-}
-
-TEST_CASE("Enum Values Are Case-Insensitive", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("myenum", MyEnum::ONE);
-    // Enum from string
-    config.set("myenumstr", "ONE");
-    // Enum case-insensitive from string
-    config.set("myenumstr2", "oNe");
-
-    REQUIRE(config.get<MyEnum>("myenum") == MyEnum::ONE);
-    REQUIRE(config.get<MyEnum>("myenumstr") == MyEnum::ONE);
-    REQUIRE(config.get<MyEnum>("myenumstr2") == MyEnum::ONE);
-}
-
-TEST_CASE("Set & Get Array Values", "[core][core::config]") {
-    Configuration config {};
-
-    config.setArray<bool>("bool", {true, false, true});
-
-    config.setArray<std::int64_t>("int64", {63, 62, 61});
-    config.setArray<std::size_t>("size", {1, 2, 3});
-    config.setArray<std::uint64_t>("uint64", {64, 65, 66});
-    config.setArray<std::uint8_t>("uint8", {8, 7, 6});
-
-    config.setArray<double>("double", {1.3, 3.1});
-    config.setArray<float>("float", {3.14F, 1.43F});
-
-    config.setArray<char>("binary", {0x1, 0x2, 0x3});
-
-    config.setArray<std::string>("string", {"a", "b", "c"});
-
-    config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
-
-    auto tp = std::chrono::system_clock::now();
-    config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
-
-    // Empty vector:
-    config.setArray<double>("empty", {});
-
-    // Read values back
-    REQUIRE(config.getArray<bool>("bool") == std::vector<bool>({true, false, true}));
-
-    REQUIRE(config.getArray<std::int64_t>("int64") == std::vector<std::int64_t>({63, 62, 61}));
-    REQUIRE(config.getArray<size_t>("size") == std::vector<size_t>({1, 2, 3}));
-    REQUIRE(config.getArray<std::uint64_t>("uint64") == std::vector<std::uint64_t>({64, 65, 66}));
-    REQUIRE(config.getArray<std::uint8_t>("uint8") == std::vector<std::uint8_t>({8, 7, 6}));
-
-    REQUIRE(config.getArray<double>("double") == std::vector<double>({1.3, 3.1}));
-    REQUIRE(config.getArray<float>("float") == std::vector<float>({3.14F, 1.43F}));
-
-    REQUIRE(config.getArray<char>("binary") == std::vector<char>({0x1, 0x2, 0x3}));
-
-    REQUIRE(config.getArray<std::string>("string") == std::vector<std::string>({"a", "b", "c"}));
-
-    REQUIRE(config.getArray<std::chrono::system_clock::time_point>("time") ==
-            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
-
-    REQUIRE(config.getArray<double>("empty").empty());
-}
-
-TEST_CASE("Set & Get Set Values", "[core][core::config]") {
-    Configuration config {};
-
-    config.setSet<bool>("bool", {true, false, false});
-    config.setSet<std::int64_t>("int64", {63, 62, 61, 61});
-    config.setSet<std::size_t>("size", {1, 2, 3, 3});
-    config.setSet<std::uint64_t>("uint64", {64, 65, 66, 66});
-    config.setSet<std::uint8_t>("uint8", {8, 7, 6, 6});
-
-    config.setSet<double>("double", {1.3, 3.1, 3.1});
-    config.setSet<float>("float", {3.14F, 1.43F, 1.43F});
-
-    config.setSet<char>("binary", {0x1, 0x2, 0x3, 0x3});
-    config.setSet<std::string>("string", {"a", "b", "c", "c"});
-
-    config.setSet<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO, MyEnum::TWO});
-
-    const auto tp1 = std::chrono::system_clock::now();
-    const auto tp2 = tp1 + std::chrono::seconds(1);
-    config.setSet<std::chrono::system_clock::time_point>("time", {tp1, tp1, tp2});
-
-    // Empty vector:
-    config.setSet<double>("empty", {});
-
-    // Read values back
-    REQUIRE(config.getSet<bool>("bool") == std::set<bool>({true, false}));
-    REQUIRE(config.getSet<std::int64_t>("int64") == std::set<std::int64_t>({63, 62, 61}));
-    REQUIRE(config.getSet<size_t>("size") == std::set<size_t>({1, 2, 3}));
-    REQUIRE(config.getSet<std::uint64_t>("uint64") == std::set<std::uint64_t>({64, 65, 66}));
-    REQUIRE(config.getSet<std::uint8_t>("uint8") == std::set<std::uint8_t>({8, 7, 6}));
-
-    REQUIRE(config.getSet<double>("double") == std::set<double>({1.3, 3.1}));
-    REQUIRE(config.getSet<float>("float") == std::set<float>({3.14F, 1.43F}));
-    REQUIRE(config.getSet<char>("binary") == std::set<char>({0x1, 0x2, 0x3}));
-    REQUIRE(config.getSet<std::string>("string") == std::set<std::string>({"a", "b", "c"}));
-    REQUIRE(config.getSet<std::chrono::system_clock::time_point>("time") ==
-            std::set<std::chrono::system_clock::time_point>({tp1, tp2}));
-
-    REQUIRE(config.getSet<double>("empty").empty());
-}
-
-TEST_CASE("Handle monostate", "[core][core::config]") {
-    Configuration config {};
-
-    config.set<std::monostate>("monostate", {});
-
-    REQUIRE(config.get<std::monostate>("monostate") == std::monostate {});
-    REQUIRE(config.get<std::vector<double>>("monostate").empty());
-
-    REQUIRE_THROWS_MATCHES(config.get<double>("monostate"),
-                           InvalidTypeError,
-                           Message("Could not convert value of type `std::monostate` to type `double` for key `monostate`"));
-
-    REQUIRE(config.getText("monostate") == "NIL");
-}
-
-TEST_CASE("Set & Get Path Values", "[core][core::config]") {
-    Configuration config {};
-
-    config.set<std::string>("path", "/tmp/somefile.txt");
-    config.set<double>("tisnotapath", 16.5);
-    config.setArray<std::string>("patharray", {"/tmp/somefile.txt", "/tmp/someotherfile.txt"});
-    config.setArray<double>("tisnotapatharray", {16.5, 17.5});
-    config.set<std::string>("relpath", "somefile.txt");
-
-    // Read path without canonicalization
-    REQUIRE(config.getPath("path") == std::filesystem::path("/tmp/somefile.txt"));
-
-    // Attempt to read value that is not a string:
-    REQUIRE_THROWS_AS(config.getPath("tisnotapath"), InvalidTypeError);
-
-    // Read path without canonicalization, setting an extension
-    REQUIRE(config.getPathWithExtension("path", "ini") == std::filesystem::path("/tmp/somefile.ini"));
-    REQUIRE_THROWS_AS(config.getPathWithExtension("path", "ini", true), InvalidValueError);
-
-    // Read path with check for existence
-    REQUIRE_THROWS_MATCHES(
-        config.getPath("path", true),
-        InvalidValueError,
-        Message("Value `/tmp/somefile.txt` of key `path` is not valid: path /tmp/somefile.txt not found"));
-
-    // Read relative path
-    auto relpath = config.getPath("relpath");
-    REQUIRE(!std::filesystem::relative(relpath, std::filesystem::current_path()).empty());
-
-    // Read path array without canonicalization
-    REQUIRE(config.getPathArray("patharray") ==
-            std::vector<std::filesystem::path>({"/tmp/somefile.txt", "/tmp/someotherfile.txt"}));
-
-    // Read path array with check for existence
-    REQUIRE_THROWS_MATCHES(
-        config.getPathArray("patharray", true),
-        InvalidValueError,
-        Message("Value `[/tmp/somefile.txt, /tmp/someotherfile.txt]` of key `patharray` is not valid: path "
-                "/tmp/somefile.txt not found"));
-
-    // Attempt to read value that is not a string:
-    REQUIRE_THROWS_AS(config.getPathArray("tisnotapatharray"), InvalidTypeError);
-
-    // config.setArray<size_t>("my_size_t_array", {1, 2, 3});
-    // REQUIRE(config.getArray<size_t>("my_size_t_array") == std::vector<size_t>({1, 2, 3}));
-}
-
-TEST_CASE("Access Values as Text", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("bool", true);
-    config.set("int64", std::int64_t(63));
-    config.set("size", std::size_t(1));
-    config.set("uint64", std::uint64_t(64));
-    config.set("uint8", std::uint8_t(8));
-    config.set("double", double(1.3));
-    config.set("float", float(7.5));
-    config.set("string", std::string("a"));
-
-    config.set("myenum", MyEnum::ONE);
-
-    const std::chrono::time_point<std::chrono::system_clock> tp {};
-    config.set("time", tp);
-
-    // Compare text representation
-    REQUIRE(config.getText("bool") == "true");
-    REQUIRE(config.getText("int64") == "63");
-    REQUIRE(config.getText("size") == "1");
-    REQUIRE(config.getText("uint64") == "64");
-    REQUIRE(config.getText("uint8") == "8");
-    REQUIRE(config.getText("double") == "1.3");
-    REQUIRE(config.getText("float") == "7.5");
-    REQUIRE(config.getText("string") == "a");
-    REQUIRE(config.getText("myenum") == "ONE");
-    REQUIRE_THAT(config.getText("time"), ContainsSubstring("1970-01-01 00:00:00.000000"));
-}
-
-TEST_CASE("Access Arrays as Text", "[core][core::config]") {
-    Configuration config {};
-
-    config.setArray<bool>("bool", {true, false, true});
-
-    config.setArray<std::int64_t>("int64", {63, 62, 61});
-    config.setArray<std::size_t>("size", {1, 2, 3});
-    config.setArray<std::uint64_t>("uint64", {64, 65, 66});
-    config.setArray<std::uint8_t>("uint8", {8, 7, 6});
-
-    config.setArray<double>("double", {1.3, 3.1});
-    config.setArray<float>("float", {1.0F, 7.5F});
-
-    config.setArray<char>("binary", {0x1, 0xA, 0x1F});
-
-    config.setArray<std::string>("string", {"a", "b", "c"});
-
-    config.setArray<MyEnum>("myenum", {MyEnum::ONE, MyEnum::TWO});
-
-    const std::chrono::system_clock::time_point tp {};
-    config.setArray<std::chrono::system_clock::time_point>("time", {tp, tp, tp});
-
-    REQUIRE(config.getText("bool") == "[true, false, true]");
-    REQUIRE(config.getText("int64") == "[63, 62, 61]");
-    REQUIRE(config.getText("size") == "[1, 2, 3]");
-    REQUIRE(config.getText("uint64") == "[64, 65, 66]");
-    REQUIRE(config.getText("uint8") == "[8, 7, 6]");
-    REQUIRE(config.getText("double") == "[1.3, 3.1]");
-    REQUIRE(config.getText("float") == "[1, 7.5]");
-    REQUIRE(config.getText("binary") == "[ 0x01 0x0A 0x1F ]");
-    REQUIRE(config.getText("string") == "[a, b, c]");
-    REQUIRE_THAT(config.getText("time"),
-                 RegexMatcher("\\[1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}, 1970-01-01 00:00:00.0{6,}\\]", {}));
-}
-
-TEST_CASE("Count Key Appearances", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("bool", true);
-    config.set("int64", std::int64_t(63));
-
-    REQUIRE(config.count({"nokey", "otherkey"}) == 0);
-    REQUIRE(config.count({"bool", "notbool"}) == 1);
-    REQUIRE(config.count({"bool", "int64"}) == 2);
-
-    REQUIRE_THROWS_MATCHES(config.count({}), std::invalid_argument, Message("list of keys cannot be empty"));
-}
-
-TEST_CASE("Set Value & Mark Used", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("myval", 3.14, true);
-
-    // Check that the key is marked as used
-    REQUIRE(config.size(Configuration::Group::ALL, Configuration::Usage::UNUSED) == 0);
-    REQUIRE(config.get<double>("myval") == 3.14);
-}
-
-TEST_CASE("Configuration size", "[core][core::config]") {
-    using enum Configuration::Group;
-    using enum Configuration::Usage;
-
-    Configuration config {};
-
-    config.set("myval1", 1);
-    config.set("myval2", 2);
-    config.set("myval3", 3);
-    config.set("_internal1", 4);
-    config.set("_internal2", 5);
-    config.set("_internal3", 6);
-    config.set("_internal4", 7);
-
-    REQUIRE(config.size(ALL, ANY) == 7);
-    REQUIRE(config.size(ALL, USED) == 0);
-    REQUIRE(config.size(ALL, UNUSED) == 7);
-    REQUIRE(config.size(USER, ANY) == 3);
-    REQUIRE(config.size(USER, USED) == 0);
-    REQUIRE(config.size(USER, UNUSED) == 3);
-    REQUIRE(config.size(INTERNAL, ANY) == 4);
-    REQUIRE(config.size(INTERNAL, USED) == 0);
-    REQUIRE(config.size(INTERNAL, UNUSED) == 4);
-
-    config.get<int>("myval1");
-    config.get<int>("myval2");
-    config.get<int>("_internal1");
-    config.get<int>("_internal2");
-    config.get<int>("_internal3");
-
-    REQUIRE(config.size(ALL, ANY) == 7);
-    REQUIRE(config.size(ALL, USED) == 5);
-    REQUIRE(config.size(ALL, UNUSED) == 2);
-    REQUIRE(config.size(USER, ANY) == 3);
-    REQUIRE(config.size(USER, USED) == 2);
-    REQUIRE(config.size(USER, UNUSED) == 1);
-    REQUIRE(config.size(INTERNAL, ANY) == 4);
-    REQUIRE(config.size(INTERNAL, USED) == 3);
-    REQUIRE(config.size(INTERNAL, UNUSED) == 1);
-}
-
-TEST_CASE("Get key-value pairs", "[core][core::config]") {
-    using enum Configuration::Group;
-    using enum Configuration::Usage;
-
-    Configuration config {};
-
-    config.set("myval1", 3.14);
-    config.set("myval2", 1234);
-    config.set("myval3", false);
-    config.set("_internal1", true);
-    config.set("_internal2", 0.739);
-    config.set("_internal3", 6);
-
-    // Test that value are kept
-    REQUIRE(std::get<double>(config.getDictionary().at("myval1")) == 3.14);
-    REQUIRE(std::get<bool>(config.getDictionary().at("_internal1")) == true);
-    REQUIRE(std::get<std::int64_t>(config.getDictionary(USER).at("myval2")) == 1234);
-    REQUIRE_FALSE(config.getDictionary(USER).contains("_internal2"));
-    REQUIRE_FALSE(config.getDictionary(INTERNAL).contains("myval3"));
-    REQUIRE(std::get<std::int64_t>(config.getDictionary(INTERNAL).at("_internal3")) == 6);
-
-    config.get<double>("myval1");
-    config.get<bool>("_internal1");
-
-    // Test that used / unused keys are filtered properly
-    REQUIRE(config.getDictionary(ALL, USED).size() == 2);
-    REQUIRE(config.getDictionary(USER, UNUSED).size() == 2);
-    REQUIRE(config.getDictionary(INTERNAL, USED).size() == 1);
-}
-
-TEST_CASE("Set Default Value", "[core][core::config]") {
-    Configuration config {};
-
-    // Check that a default does not overwrite existing values
-    config.set("myval", true);
-    config.setDefault("myval", false);
-    REQUIRE(config.get<bool>("myval") == true);
-
-    // Check that a default is set when the value does not exist
-    config.setDefault("mydefault", false);
-    REQUIRE(config.get<bool>("mydefault") == false);
-}
-
-TEST_CASE("Set & Use Aliases", "[core][core::config]") {
-    Configuration config {};
-
-    // Alias set before key exists
-    config.setAlias("thisisnotset", "mykey");
-
-    // Set key
-    config.set("mykey", 99);
-
-    // Set alias to key
-    config.setAlias("thisisset", "mykey");
-
-    // Check that the alias set before the key existed is not set:
-    REQUIRE(config.has("thisisnotset") == false);
-
-    // Check that the new key is accessible
-    REQUIRE(config.get<std::size_t>("thisisset") == 99);
-
-    // Set second key
-    config.set("myotherkey", 77);
-    // Attempt to set an alias for second key
-    config.setAlias("mykey", "myotherkey");
-
-    // Check that the alias would not overwrite another existing key:
-    REQUIRE(config.get<std::size_t>("mykey") == 99);
-}
-
-TEST_CASE("Invalid Key Access", "[core][core::config]") {
-    Configuration config {};
-
-    // Check for invalid key to be detected
-    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
-
-    // Check for invalid key to be detected when querying text representation
-    REQUIRE_THROWS_MATCHES(config.getText("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
-
-    // Check for invalid type conversion
-    config.set("key", true);
-    REQUIRE_THROWS_MATCHES(config.get<double>("key"),
-                           InvalidTypeError,
-                           Message("Could not convert value of type `bool` to type `double` for key `key`"));
-
-    // Check for invalid enum value conversion:
-    config.set("myenum", "THREE");
-    REQUIRE_THROWS_MATCHES(config.get<MyEnum>("myenum"),
-                           InvalidValueError,
-                           Message("Value `THREE` of key `myenum` is not valid: possible values are ONE, TWO"));
-
-    // Check for setting of invalid types
-    REQUIRE_THROWS_AS(config.set("key", std::array<int, 5> {1, 2, 3, 4, 5}), InvalidTypeError);
-}
-
-TEST_CASE("Using Optional Key Access", "[core][core::config]") {
-    const Configuration config {};
-
-    // Read invalid key regularly and as optional
-    REQUIRE_THROWS_MATCHES(config.get<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
-    REQUIRE_FALSE(config.getOptional<bool>("invalidkey").has_value());
-
-    // Read invalid key for array regularly and as optional
-    REQUIRE_THROWS_MATCHES(config.getArray<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
-    REQUIRE_FALSE(config.getOptionalArray<bool>("invalidkey").has_value());
-
-    // Read invalid key for set regularly and as optional
-    REQUIRE_THROWS_MATCHES(config.getSet<bool>("invalidkey"), MissingKeyError, Message("Key `invalidkey` does not exist"));
-    REQUIRE_FALSE(config.getOptionalSet<bool>("invalidkey").has_value());
-}
-
-TEST_CASE("Value Overflow & Invalid Conversions", "[core][core::config]") {
-
-    const std::size_t val = std::numeric_limits<std::size_t>::max();
-    REQUIRE_THROWS_AS(Value::set(val), std::overflow_error);
-    REQUIRE_THROWS_AS(Value::set(std::vector<std::size_t>({val})), std::overflow_error);
-
-    Configuration config {};
-    REQUIRE_THROWS_AS(config.set("size", val), InvalidValueError);
-
-    enum class Enum : std::uint8_t { A, B };
-    config.set<std::string>("key1", "C");
-    REQUIRE_THROWS_MATCHES(config.get<Enum>("key1"),
-                           InvalidValueError,
-                           Message("Value `C` of key `key1` is not valid: possible values are A, B"));
-}
-
-TEST_CASE("Update Configuration", "[core][core::config]") {
-    Configuration config_base {};
-    Configuration config_update {};
-
-    config_base.set("bool", true);
-    config_base.set("int64", std::int64_t(63));
-    config_base.set("string", std::string("unchanged"));
-
-    config_update.set("bool", false, false);                      // exists but not used
-    config_update.set("uint64", std::uint64_t(64), true);         // exists and used
-    config_update.set("string2", std::string("new_value"), true); // new and used
-
-    // Update configuration
-    config_base.update(config_update);
-
-    // Check that used keys from config_update were updated in config_base
-    REQUIRE(config_base.get<std::uint64_t>("uint64") == 64);
-    REQUIRE(config_base.get<std::string>("string2") == "new_value");
-
-    // Check that unused key from config_update were not updated in config_base
-    REQUIRE(config_base.get<bool>("bool") == true);
-}
-
-TEST_CASE("Move Configuration", "[core][core::config]") {
-    Configuration config {};
-
-    config.set("bool", true);
-
-    const Configuration config_move = std::move(config);
-    REQUIRE(config_move.get<bool>("bool") == true);
-}
-
-TEST_CASE("Assemble & disassemble Value to PayloadBuffer", "[core][core::config]") {
-    const auto val = Value::set(3.14);
-    const auto val_assembled = val.assemble();
-    REQUIRE(val == Value::disassemble(val_assembled));
-}
-
-TEST_CASE("Pack & Unpack List to MsgPack", "[core][core::config]") {
-    // Create dictionary
-    List list {};
-    auto tp = std::chrono::system_clock::now();
-    list.push_back(true);
-    list.push_back(std::int64_t(63));
-    list.push_back(double(1.3));
-    list.push_back(std::string("a"));
-    list.push_back(tp);
-    list.push_back(std::vector<bool>({true, false, true}));
-    list.push_back(std::vector<std::int64_t>({63, 62, 61}));
-    list.push_back(std::vector<double>({1.3, 3.1}));
-    list.push_back(std::vector<std::string>({"a", "b", "c"}));
-    list.push_back(std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
-
-    // Empty vector
-    list.push_back(std::vector<double> {});
-
-    // MsgPack NIL
-    list.push_back(std::monostate {});
-
-    // Pack to MsgPack
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, list);
-
-    // Unpack from MsgPack
-    auto list_unpacked = msgpack_unpack_to<List>(sbuf.data(), sbuf.size());
-
-    REQUIRE(list_unpacked.at(0).get<bool>() == true);
-    REQUIRE(list_unpacked.at(1).get<std::int64_t>() == std::int64_t(63));
-    REQUIRE(list_unpacked.at(2).get<double>() == double(1.3));
-    REQUIRE(list_unpacked.at(3).get<std::string>() == std::string("a"));
-    REQUIRE(list_unpacked.at(4).get<std::chrono::system_clock::time_point>() == tp);
-    REQUIRE(list_unpacked.at(5).get<std::vector<bool>>() == std::vector<bool>({true, false, true}));
-    REQUIRE(list_unpacked.at(6).get<std::vector<std::int64_t>>() == std::vector<std::int64_t>({63, 62, 61}));
-    REQUIRE(list_unpacked.at(7).get<std::vector<double>>() == std::vector<double>({1.3, 3.1}));
-    REQUIRE(list_unpacked.at(8).get<std::vector<std::string>>() == std::vector<std::string>({"a", "b", "c"}));
-    REQUIRE(list_unpacked.at(9).get<std::vector<std::chrono::system_clock::time_point>>() ==
-            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
-    REQUIRE(list_unpacked.at(10).get<std::vector<double>>().empty());
-    REQUIRE(list_unpacked.at(11).get<std::monostate>() == std::monostate());
-}
-
-TEST_CASE("Pack & Unpack Dictionary to MsgPack", "[core][core::config]") {
-    // Create dictionary
+TEST_CASE("Configuration constructors and operators", "[core][core::config]") {
+    const Configuration config_empty {};
+    REQUIRE(config_empty.empty());
     Dictionary dict {};
-    auto tp = std::chrono::system_clock::now();
+    dict["test"] = true;
+    Configuration config_dict {dict};
+    REQUIRE(config_dict.asDictionary() == dict);
+    Configuration config_moved {std::move(config_dict)};
+    REQUIRE(config_moved.asDictionary() == dict);
+    REQUIRE(config_dict.empty()); // NOLINT(bugprone-use-after-move)
+    Configuration config_assigned {};
+    REQUIRE(config_assigned.empty());
+    config_assigned = std::move(config_moved);
+    REQUIRE(config_assigned.asDictionary() == dict);
+    REQUIRE(config_moved.empty()); // NOLINT(bugprone-use-after-move)
+}
+
+TEST_CASE("Configuration has and count", "[core][core::config]") {
+    Dictionary dict {};
+    dict["output_active"] = true;
+    dict["fixed_voltage"] = 5.0;
+    dict["fixed_current"] = 0.1;
+    const Configuration config {std::move(dict)};
+    REQUIRE(config.has("output_active"));
+    REQUIRE(config.has("OUTPUT_ACTIVE"));
+    REQUIRE_FALSE(config.has("output_disabled"));
+    REQUIRE(config.count({"fixed_voltage", "fixed_current"}) == 2);
+    REQUIRE(config.count({"FIXED_VOLTAGE", "FIXED_CURRENT"}) == 2);
+    REQUIRE(config.count({"output_disabled"}) == 0);
+    REQUIRE_THROWS_MATCHES(config.count({}), std::invalid_argument, Message("list of keys to count cannot be empty"));
+}
+
+TEST_CASE("Configuration scalar getters", "[core][core::config]") {
+    Dictionary dict {};
+    constexpr bool bool_v = false;
+    dict["bool"] = bool_v;
+    constexpr int int_v = 16;
+    dict["int"] = int_v;
+    constexpr double double_v = 1.5;
+    dict["double"] = double_v;
+    constexpr std::string_view string_v = "hello world";
+    dict["string"] = string_v;
+    const auto chrono_v = std::chrono::system_clock::now();
+    dict["chrono"] = chrono_v;
+    constexpr auto enum_v = Enum::A;
+    dict["enum"] = enum_v;
+    const Configuration config {std::move(dict)};
+    // Normal getter
+    REQUIRE(config.get<bool>("bool") == bool_v);
+    REQUIRE(config.get<int>("int") == int_v);
+    REQUIRE(config.get<double>("double") == double_v);
+    REQUIRE(config.get<std::string>("string") == string_v);
+    REQUIRE(config.get<std::chrono::system_clock::time_point>("chrono") == chrono_v);
+    REQUIRE(config.get<Enum>("enum") == enum_v);
+    // Default getter
+    REQUIRE(config.get<int>("int", int_v + 10) == int_v);
+    REQUIRE_FALSE(config.has("int_default"));
+    REQUIRE(config.get<int>("int_default", int_v + 15) == int_v + 15);
+    REQUIRE(config.has("int_default"));
+    // Optional getter
+    const auto config_bool_opt = config.getOptional<bool>("bool");
+    REQUIRE(config_bool_opt.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE(config_bool_opt.value() == bool_v);
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    const auto config_ne_opt = config.getOptional<double>("double_non_existant");
+    REQUIRE_FALSE(config_ne_opt.has_value());
+}
+
+TEST_CASE("Configuration array getters", "[core][core::config]") {
+    Dictionary dict {};
+    const std::vector<bool> bool_v {true, true, false};
+    dict["bool"] = bool_v;
+    const std::vector<int> int_v {1, 2, 3, 4, 5};
+    dict["int"] = int_v;
+    const std::vector<std::string> string_v {"hello", "world"};
+    dict["string"] = string_v;
+    dict["single_string"] = "test";
+    const Configuration config {std::move(dict)};
+    // Normal getter
+    REQUIRE_THAT(config.getArray<bool>("bool"), RangeEquals(bool_v));
+    REQUIRE_THAT(config.getArray<int>("int"), RangeEquals(int_v));
+    REQUIRE_THAT(config.getArray<std::string>("string"), RangeEquals(string_v));
+    REQUIRE_THAT(config.getArray<std::string>("single_string"), RangeEquals(std::vector<std::string>({"test"})));
+    // Default getter
+    REQUIRE_THAT(config.getArray<int>("int", {100, 200, 300}), RangeEquals(int_v));
+    REQUIRE_FALSE(config.has("int_default"));
+    REQUIRE_THAT(config.getArray<int>("int_default", {10, 20, 30}), RangeEquals(std::vector<int>({10, 20, 30})));
+    REQUIRE(config.has("int_default"));
+    // Optional getter
+    const auto config_bool_opt = config.getOptionalArray<bool>("bool");
+    REQUIRE(config_bool_opt.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE_THAT(config_bool_opt.value(), RangeEquals(bool_v));
+    const auto config_ne_opt = config.getOptionalArray<double>("double_non_existant");
+    REQUIRE_FALSE(config_ne_opt.has_value());
+}
+
+TEST_CASE("Configuration set getters", "[core][core::config]") {
+    Dictionary dict {};
+    const std::vector<std::string> string_v {"A", "A", "B", "C", "B"};
+    dict["string"] = string_v;
+    dict["single_string"] = "A";
+    const Configuration config {std::move(dict)};
+    // Normal getter
+    REQUIRE_THAT(config.getSet<std::string>("string"), UnorderedRangeEquals(std::vector<std::string>({"A", "B", "C"})));
+    REQUIRE_THAT(config.getSet<std::string>("single_string"), UnorderedRangeEquals(std::vector<std::string>({"A"})));
+    // Default getter
+    const std::set<std::string> default_set_v {"D", "E", "F"};
+    REQUIRE_THAT(config.getSet<std::string>("string", default_set_v),
+                 UnorderedRangeEquals(std::vector<std::string>({"A", "B", "C"})));
+    REQUIRE_FALSE(config.has("string_default"));
+    REQUIRE_THAT(config.getSet("string_default", default_set_v), UnorderedRangeEquals(default_set_v));
+    REQUIRE(config.has("string_default"));
+    // Optional getter
+    const auto config_string_opt = config.getOptionalSet<std::string>("string");
+    REQUIRE(config_string_opt.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE_THAT(config_string_opt.value(), UnorderedRangeEquals(std::vector<std::string>({"A", "B", "C"})));
+    const auto config_ne_opt = config.getOptionalSet<std::string>("double_non_existant");
+    REQUIRE_FALSE(config_ne_opt.has_value());
+}
+
+TEST_CASE("Configuration path getters", "[core][core::config]") {
+    Dictionary dict {};
+    const auto absolute_existing_path = test_files_dir() / "good_config.toml";
+    dict["absolute_existing_path"] = absolute_existing_path.string();
+    const auto absolute_existing_path_2 = test_files_dir() / "good_config.yaml";
+    dict["absolute_existing_path_2"] = absolute_existing_path_2.string();
+    const auto absolute_nonexistent_path = test_files_dir() / "nonexistent.txt";
+    dict["absolute_nonexistent_path"] = absolute_nonexistent_path.string();
+    const auto relative_nonexistent_path = std::filesystem::path("nonexistent.txt");
+    dict["relative_nonexistent_path"] = relative_nonexistent_path.string();
+    dict["absolute_existing_path_array"] = Array({absolute_existing_path.string(), absolute_existing_path_2.string()});
+    dict["absolute_nonexistent_path_array"] = Array({absolute_nonexistent_path.string()});
+    const Configuration config {std::move(dict)};
+    // Normal getter
+    const auto absolute_existing_path_r = config.getPath("absolute_existing_path", true);
+    REQUIRE(absolute_existing_path_r == absolute_existing_path);
+    REQUIRE_THAT(absolute_existing_path_r.string(), EndsWith("good_config.toml"));
+    const auto absolute_existing_path_2_r = config.getPath("absolute_existing_path_2", false);
+    REQUIRE(absolute_existing_path_2_r == absolute_existing_path_2);
+    REQUIRE_THAT(absolute_existing_path_2_r.string(), EndsWith("good_config.yaml"));
+    const auto absolute_nonexistent_path_r = config.getPath("absolute_nonexistent_path", false);
+    REQUIRE(absolute_nonexistent_path_r == absolute_nonexistent_path);
+    REQUIRE_THROWS_MATCHES(config.getPath("absolute_nonexistent_path", true),
+                           InvalidValueError,
+                           Message("Value of key `absolute_nonexistent_path` is not valid: path `" +
+                                   absolute_nonexistent_path.string() + "` not found"));
+    const auto relative_nonexistent_path_r = config.getPath("relative_nonexistent_path", false);
+    REQUIRE(relative_nonexistent_path_r.is_absolute());
+    // Array getter
+    REQUIRE_THAT(config.getPathArray("absolute_existing_path_array", true),
+                 RangeEquals(std::vector({absolute_existing_path, absolute_existing_path_2})));
+    REQUIRE_THAT(config.getPathArray("absolute_nonexistent_path_array", false),
+                 RangeEquals(std::vector({absolute_nonexistent_path})));
+    REQUIRE_THROWS_MATCHES(config.getPathArray("absolute_nonexistent_path_array", true),
+                           InvalidValueError,
+                           Message("Value of key `absolute_nonexistent_path_array` is not valid: path `" +
+                                   absolute_nonexistent_path.string() + "` not found"));
+}
+
+TEST_CASE("Configuration section getters", "[core][core::config]") {
+    Dictionary dict {};
+    dict["int"] = 5;
+    Dictionary subdict_1 {};
+    subdict_1["int"] = 4;
+    dict["sub_1"] = std::move(subdict_1);
+    Dictionary subdict_2 {};
+    subdict_2["int"] = 3;
+    Dictionary subsubdict {};
+    subsubdict["int"] = 2;
+    Dictionary subsubsubdict {};
+    subsubsubdict["int"] = 1;
+    subsubdict["sub"] = std::move(subsubsubdict);
+    subdict_2["sub"] = std::move(subsubdict);
+    dict["sub_2"] = std::move(subdict_2);
+    // Check configuration matches
+    const Configuration config {std::move(dict)};
+    REQUIRE(config.get<int>("int") == 5);
+    const auto& config_subdict_1 = config.getSection("sub_1");
+    REQUIRE(config_subdict_1.get<int>("int") == 4);
+    const auto& config_subdict_2 = config.getSection("sub_2");
+    REQUIRE(config_subdict_2.get<int>("int") == 3);
+    const auto& config_subsubdict = config_subdict_2.getSection("sub");
+    REQUIRE(config_subsubdict.get<int>("int") == 2);
+    const auto& config_subsubsubdict = config_subsubdict.getSection("sub");
+    REQUIRE(config_subsubsubdict.get<int>("int") == 1);
+    // Check missing key
+    REQUIRE_THROWS_MATCHES(
+        config_subsubsubdict.getSection("sub"), MissingKeyError, Message("Key `sub_2.sub.sub.sub` does not exist"));
+    // Check not section
+    REQUIRE_THROWS_MATCHES(config_subsubsubdict.getSection("int"),
+                           InvalidTypeError,
+                           Message("Could not convert value of type `" + demangle<std::int64_t>() +
+                                   "` to type `Section` for key `sub_2.sub.sub.int`"));
+    // Default getter
+    const auto& config_subdict_2_def = config.getSection("sub_2", {});
+    REQUIRE(config_subdict_2_def.has("int"));
+    const auto& config_subdict_3_def = config.getSection("sub_3", {{"default", true}, {"sub", Dictionary({{"int", -3}})}});
+    REQUIRE(config_subdict_3_def.get<bool>("default") == true);
+    const auto& config_subdict_3_def_sub = config_subdict_3_def.getSection("sub");
+    REQUIRE(config_subdict_3_def_sub.get<int>("int") == -3);
+    REQUIRE_THROWS_MATCHES(
+        config.getSection("int", {}),
+        InvalidTypeError,
+        Message("Could not convert value of type `" + demangle<std::int64_t>() + "` to type `Section` for key `int`"));
+    // Optional getter
+    const auto config_subdict_1_opt = config.getOptionalSection("sub_1");
+    REQUIRE(config_subdict_1_opt.has_value());
+    // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+    REQUIRE(config_subdict_1_opt.value().get().get<int>("int") == 4);
+    const auto config_ne_opt = config.getOptionalSection("non_existant");
+    REQUIRE_FALSE(config_ne_opt.has_value());
+    // Check dictionary via get fails
+    REQUIRE_THROWS_MATCHES(
+        config.get<Dictionary>("sub_1"), LogicError, Message("`get<Dictionary>` called, usage of `getSection` required"));
+}
+
+TEST_CASE("Configuration section keys", "[core][core::config]") {
+    Dictionary dict {};
     dict["bool"] = true;
-    dict["int64"] = std::int64_t(63);
-    dict["double"] = double(1.3);
-    dict["string"] = std::string("a");
-    dict["time"] = tp;
-
-    dict["array_bool"] = std::vector<bool>({true, false, true});
-    dict["array_int64"] = std::vector<std::int64_t>({63, 62, 61});
-    dict["array_double"] = std::vector<double>({1.3, 3.1});
-    dict["array_binary"] = std::vector<char>({0x1, 0x2, 0x3});
-    dict["array_string"] = std::vector<std::string>({"a", "b", "c"});
-    dict["array_time"] = std::vector<std::chrono::system_clock::time_point>({tp, tp, tp});
-
-    // Pack to MsgPack
-    msgpack::sbuffer sbuf {};
-    msgpack::pack(sbuf, dict);
-
-    // Unpack from MsgPack
-    auto dict_unpacked = msgpack_unpack_to<Dictionary>(sbuf.data(), sbuf.size());
-
-    REQUIRE(dict_unpacked["bool"].get<bool>() == true);
-    REQUIRE(dict_unpacked["int64"].get<std::int64_t>() == std::int64_t(63));
-    REQUIRE(dict_unpacked["double"].get<double>() == double(1.3));
-    REQUIRE(dict_unpacked["string"].get<std::string>() == std::string("a"));
-    REQUIRE(dict_unpacked["time"].get<std::chrono::system_clock::time_point>() == tp);
-    REQUIRE(dict_unpacked["array_bool"].get<std::vector<bool>>() == std::vector<bool>({true, false, true}));
-    REQUIRE(dict_unpacked["array_int64"].get<std::vector<std::int64_t>>() == std::vector<std::int64_t>({63, 62, 61}));
-    REQUIRE(dict_unpacked["array_double"].get<std::vector<double>>() == std::vector<double>({1.3, 3.1}));
-    REQUIRE(dict_unpacked["array_binary"].get<std::vector<char>>() == std::vector<char>({0x1, 0x2, 0x3}));
-    REQUIRE(dict_unpacked["array_string"].get<std::vector<std::string>>() == std::vector<std::string>({"a", "b", "c"}));
-    REQUIRE(dict_unpacked["array_time"].get<std::vector<std::chrono::system_clock::time_point>>() ==
-            std::vector<std::chrono::system_clock::time_point>({tp, tp, tp}));
+    dict["int"] = 5;
+    dict["subdict_1"] = Dictionary({{"hello", 1}, {"world", 2}});
+    dict["subdict_2"] = Dictionary({{"1", 1}, {"2", 4}, {"3", 9}, {"4", 16}});
+    const Configuration config {std::move(dict)};
+    REQUIRE_THAT(config.getKeys(), RangeEquals(std::vector<std::string>({"bool", "int", "subdict_1", "subdict_2"})));
 }
 
-TEST_CASE("Generate Configurations from Dictionary", "[core][core::config]") {
-    // Create dictionary
+TEST_CASE("Configuration get text", "[core][core::config]") {
     Dictionary dict {};
-    dict["key"] = 3.12;
-    dict["array"] = std::vector<std::string>({"one", "two", "three"});
-
-    const Configuration config {dict};
-
-    REQUIRE(config.get<double>("key") == 3.12);
-    REQUIRE(config.getArray<std::string>("array") == std::vector<std::string>({"one", "two", "three"}));
+    dict["bool"] = true;
+    dict["int"] = 5;
+    const Configuration config {std::move(dict)};
+    REQUIRE_THAT(config.getText("bool"), Equals("true"));
+    REQUIRE_THAT(config.getText("int"), Equals("5"));
+    REQUIRE_THROWS_MATCHES(config.getText("ne"), MissingKeyError, Message("Key `ne` does not exist"));
 }
 
-TEST_CASE("Assemble ZMQ Message from Configuration", "[core][core::config]") {
-    Configuration config {};
-    config.set("bool", true);
-    config.set("int64", std::int64_t(63));
-    config.set("size", std::size_t(1));
-
-    // Mark one key as used:
-    REQUIRE(config.get<std::int64_t>("int64") == std::int64_t(63));
-
-    // Assemble & disassemble with all used keys:
-    const auto config_zmq = config.getDictionary(Configuration::Group::ALL, Configuration::Usage::USED).assemble();
-    const auto config_unpacked = Configuration(Dictionary::disassemble(config_zmq));
-    REQUIRE(config_unpacked.size() == 1);
-    REQUIRE(config_unpacked.get<std::int64_t>("int64") == 63);
+TEST_CASE("Configuration missing key", "[core][core::config]") {
+    Dictionary dict {};
+    Dictionary subdict {};
+    subdict["key"] = true;
+    dict["sub"] = std::move(subdict);
+    const Configuration config {std::move(dict)};
+    const auto& sub_config = config.getSection("Sub");
+    REQUIRE_THROWS_MATCHES(sub_config.get<int>("Key2"), MissingKeyError, Message("Key `sub.Key2` does not exist"));
 }
 
-// NOLINTEND(google-readability-casting,readability-redundant-casting)
+TEST_CASE("Configuration invalid values", "[core][core::config]") {
+    Dictionary dict {};
+    dict["int"] = -1;
+    Dictionary enum_dict {};
+    enum_dict["c"] = "C";
+    dict["enum"] = std::move(enum_dict);
+    const Configuration config {std::move(dict)};
+    REQUIRE_THROWS_MATCHES(
+        config.get<std::uint32_t>("int"),
+        InvalidValueError,
+        Message("Value of key `int` is not valid: value `-1` is out of range for `" + demangle<std::uint32_t>() + "`"));
+    const auto& config_enum = config.getSection("enum");
+    REQUIRE_THROWS_MATCHES(config_enum.get<Enum>("c"),
+                           InvalidValueError,
+                           Message("Value of key `enum.c` is not valid: value `C` is not valid, possible values are A, B"));
+}
+
+TEST_CASE("Configuration aliases", "[core][core::config]") {
+    // Alias used
+    Dictionary dict_old {};
+    dict_old["old"] = 1;
+    const Configuration config_old {std::move(dict_old)};
+    REQUIRE(config_old.has("old"));
+    config_old.setAlias("new", "old");
+    REQUIRE(config_old.get<int>("new") == 1);
+    REQUIRE_FALSE(config_old.has("old"));
+    // Alias not used
+    Dictionary dict_new {};
+    dict_new["new"] = 1;
+    const Configuration config_new {std::move(dict_new)};
+    REQUIRE(config_new.has("new"));
+    config_new.setAlias("new", "old");
+    REQUIRE(config_new.has("new"));
+    REQUIRE_FALSE(config_new.has("old"));
+    REQUIRE(config_new.get<int>("new") == 1);
+    // Alias not in configuration
+    Dictionary dict {};
+    dict["something_else"] = 1;
+    const Configuration config {std::move(dict)};
+    config.setAlias("new", "old");
+    REQUIRE_FALSE(config.has("new"));
+    REQUIRE_FALSE(config.has("old"));
+}
+
+TEST_CASE("Configuration invalid key combination", "[core][core::config]") {
+    const auto evaluate = [](const Configuration& config) {
+        if(config.count({"voltage", "current", "power"}) > 1) {
+            throw InvalidCombinationError(config, {"voltage", "current", "power"}, "only one source mode possible");
+        }
+    };
+    Dictionary dict {};
+    dict["voltage"] = 5.0;
+    dict["current"] = 1.0;
+    const Configuration config {std::move(dict)};
+    REQUIRE_THROWS_MATCHES(evaluate(config),
+                           InvalidCombinationError,
+                           Message("Combination of keys `voltage`, `current` is not valid: only one source mode possible"));
+}
+
+TEST_CASE("Configuration case-insensitivity", "[core][core::config]") {
+    Dictionary dict {};
+    constexpr auto bool_v = true;
+    dict["BOOL"] = bool_v;
+    constexpr auto int_v = 5;
+    dict["inT"] = int_v;
+    constexpr std::string_view string_v = "hello world";
+    dict["sTrInG"] = string_v;
+    const Configuration config {std::move(dict)};
+    REQUIRE(config.get<bool>("bOoL") == bool_v);
+    REQUIRE(config.get<int>("INT") == int_v);
+    REQUIRE(config.get<std::string>("StRiNg") == string_v);
+}
+
+TEST_CASE("Configuration case-insensitivity during construction", "[core][core::config]") {
+    Dictionary dict {};
+    dict["BOOL"] = true;
+    dict["bool"] = true;
+    REQUIRE_THROWS_MATCHES(
+        Configuration(std::move(dict)), InvalidKeyError, Message("Key `bool` is not valid: key defined twice"));
+}
+
+TEST_CASE("Configuration string conversion", "[core][core::config]") {
+    Dictionary dict {};
+    dict["_internal"] = 1024;
+    dict["user"] = 3.14;
+    Dictionary subdict_1 {};
+    subdict_1["array"] = Array({1, 2, 3, 4});
+    dict["sub_1"] = std::move(subdict_1);
+    Dictionary subdict_2 {};
+    subdict_2["enum"] = Enum::A;
+    Dictionary subsubdict {};
+    subsubdict["string"] = "hello world";
+    subdict_2["sub"] = std::move(subsubdict);
+    dict["sub_2"] = std::move(subdict_2);
+    const Configuration config {std::move(dict)};
+    REQUIRE_THAT(config.to_string(Configuration::ALL),
+                 Equals("\n"
+                        "  _internal: 1024\n"
+                        "  sub_1:\n"
+                        "    array: [ 1, 2, 3, 4 ]\n"
+                        "  sub_2:\n"
+                        "    enum: A\n"
+                        "    sub:\n"
+                        "      string: hello world\n"
+                        "  user: 3.14"));
+    REQUIRE_THAT(config.to_string(Configuration::USER),
+                 Equals("\n"
+                        "  sub_1:\n"
+                        "    array: [ 1, 2, 3, 4 ]\n"
+                        "  sub_2:\n"
+                        "    enum: A\n"
+                        "    sub:\n"
+                        "      string: hello world\n"
+                        "  user: 3.14"));
+    REQUIRE_THAT(config.to_string(Configuration::INTERNAL),
+                 Equals("\n"
+                        "  _internal: 1024"));
+}
+
+TEST_CASE("Configuration unused keys", "[core][core::config]") {
+    Dictionary dict {};
+    dict["used"] = 1024;
+    dict["unused"] = 1024;
+    Dictionary subdict {};
+    subdict["used"] = 2048;
+    subdict["unused"] = 2048;
+    Dictionary subsubdict {};
+    subsubdict["unused"] = 4096;
+    subdict["sub"] = std::move(subsubdict);
+    dict["sub"] = std::move(subdict);
+    Configuration config {std::move(dict)};
+    // Mark keys as used
+    REQUIRE(config.get<int>("used") == 1024);
+    const auto& sub_config = config.getSection("sub");
+    REQUIRE(sub_config.get<int>("used") == 2048);
+    // Move configuration
+    Configuration config_moved {std::move(config)};
+    Configuration config_assigned {};
+    config_assigned = std::move(config_moved);
+    // Check existence of unused keys
+    REQUIRE(config_assigned.has("unused"));
+    // Remove unused keys
+    const auto removed_keys = config_assigned.removeUnusedEntries();
+    REQUIRE_THAT(removed_keys, UnorderedRangeEquals(std::vector<std::string>({"unused", "sub.unused", "sub.sub.unused"})));
+    // Check unused keys were removed
+    REQUIRE_FALSE(config_assigned.has("unused"));
+    const auto& sub_config_after = config_assigned.getSection("sub");
+    REQUIRE(sub_config_after.has("used"));
+    REQUIRE_FALSE(sub_config_after.has("sub"));
+}
+
+TEST_CASE("Configuration update", "[core][core::config]") {
+    Dictionary dict {};
+    dict["bool"] = true;
+    dict["int"] = 1024;
+    dict["array_empty"] = Array();
+    dict["array_int"] = Array({1, 2, 3});
+    dict["array_int2"] = Array({1, 2, 3, 4, 5});
+    Dictionary subdict {};
+    subdict["double"] = 3.14;
+    subdict["string"] = "unchanged";
+    dict["sub"] = std::move(subdict);
+    Configuration config {std::move(dict)};
+    Dictionary dict_update {};
+    dict_update["bool"] = false;
+    dict_update["int"] = 2048;
+    dict_update["array_empty"] = Array({1, 2});
+    dict_update["array_int"] = Array();
+    dict_update["array_int2"] = Array({1, 2, 3, 4});
+    Dictionary subdict_update {};
+    subdict_update["double"] = 6.28;
+    dict_update["sub"] = std::move(subdict_update);
+    config.update(Configuration(std::move(dict_update)));
+    REQUIRE(config.get<bool>("bool") == false);
+    REQUIRE(config.get<int>("int") == 2048);
+    REQUIRE_THAT(config.getArray<int>("array_empty"), RangeEquals(std::vector<int>({1, 2})));
+    REQUIRE_THAT(config.getArray<int>("array_int"), RangeEquals(std::vector<int>({})));
+    REQUIRE_THAT(config.getArray<int>("array_int2"), RangeEquals(std::vector<int>({1, 2, 3, 4})));
+    const auto& config_sub = config.getSection("sub");
+    REQUIRE(config_sub.get<double>("double") == 6.28);
+    REQUIRE_THAT(config_sub.get<std::string>("string"), Equals("unchanged"));
+}
+
+TEST_CASE("Configuration update failure", "[core][core::config]") {
+    Dictionary dict {};
+    Dictionary subdict {};
+    subdict["bool"] = true;
+    subdict["int"] = 1024;
+    subdict["array"] = Array({1.5, 2.5, 3.5});
+    dict["sub"] = std::move(subdict);
+    Configuration config {std::move(dict)};
+    // Updating non-existing key
+    Dictionary dict_update_ne_key {{"sub", Dictionary({{"bool2", false}})}};
+    REQUIRE_THROWS_MATCHES(
+        config.update(Configuration(std::move(dict_update_ne_key))),
+        InvalidUpdateError,
+        Message("Failed to update value of key `sub.bool2`: key does not exist in current configuration"));
+    // Updating with other type
+    Dictionary dict_update_type {{"sub", Dictionary({{"bool", Array()}})}};
+    REQUIRE_THROWS_MATCHES(config.update(Configuration(std::move(dict_update_type))),
+                           InvalidUpdateError,
+                           Message("Failed to update value of key `sub.bool`: cannot change type from `bool` to `Array`"));
+    // Updating with other scalar type
+    Dictionary dict_update_scalar_type {{"sub", Dictionary({{"bool", "true"}})}};
+    REQUIRE_THROWS_MATCHES(
+        config.update(Configuration(std::move(dict_update_scalar_type))),
+        InvalidUpdateError,
+        Message("Failed to update value of key `sub.bool`: cannot change type from `bool` to `std::string`"));
+    // Updating with other array type
+    Dictionary dict_update_array_type {{"sub", Dictionary({{"array", Array({"hello", "world"})}})}};
+    REQUIRE_THROWS_MATCHES(
+        config.update(Configuration(std::move(dict_update_array_type))),
+        InvalidUpdateError,
+        Message(
+            "Failed to update value of key `sub.array`: cannot change type from `Array<double>` to `Array<std::string>`"));
+}
+
+TEST_CASE("Configuration message assembly & disassembly", "[core][core::config]") {
+    Dictionary dict {};
+    dict["bool"] = true;
+    dict["int"] = 5;
+    dict["subdict"] = Dictionary({{"hello", 1}, {"world", 2}});
+    const Configuration config {std::move(dict)};
+    const auto message = config.assemble();
+    REQUIRE(config.asDictionary() == Configuration::disassemble(message).asDictionary());
+}
+
+TEST_CASE("Resolve environment variables", "[core][core::config]") {
+    // Set an environment variable
+#ifdef _WIN32
+    _putenv("CNSTLN_TEST_KEY=value");
+#else
+    setenv("CNSTLN_TEST_KEY", "value", 1); // NOLINT(concurrency-mt-unsafe,misc-include-cleaner)
+#endif
+
+    Dictionary dict {};
+
+    dict["no_env_var"] = "CNSTLN_TEST_KEY";
+    dict["env_var"] = "${CNSTLN_TEST_KEY}";
+    dict["env_var_default"] = "${CNSTLN_TEST_KEY:-unused}";
+    dict["missing_env_var"] = "${MISSING}";
+    dict["missing_env_var_default"] = "${MISSING:-default}";
+
+    const Configuration config {std::move(dict)};
+
+    // Read values back
+    REQUIRE(config.get<std::string>("no_env_var") == "CNSTLN_TEST_KEY");
+    REQUIRE(config.get<std::string>("env_var") == "value");
+    REQUIRE(config.get<std::string>("env_var_default") == "value");
+
+    REQUIRE_THROWS_MATCHES(
+        config.get<std::string>("missing_env_var"),
+        InvalidValueError,
+        Message("Value of key `missing_env_var` is not valid: Environment variable `MISSING` not defined"));
+    REQUIRE(config.get<std::string>("missing_env_var_default") == "default");
+}
+
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

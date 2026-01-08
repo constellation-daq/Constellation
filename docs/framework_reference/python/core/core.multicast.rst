@@ -1,4 +1,4 @@
-Multicast module
+Multicast Module
 =====================
 
 .. automodule:: core.multicast

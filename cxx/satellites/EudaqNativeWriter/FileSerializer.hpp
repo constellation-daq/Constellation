@@ -18,7 +18,7 @@
 #include <string_view>
 #include <vector>
 
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/PayloadBuffer.hpp"
 #include "constellation/core/utils/string_hash_map.hpp"

@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
+# SPDX-License-Identifier: CC0-1.0
+
+# Valid TOML config file
+
+[_default]
+bool = true
+int = -42
+float = 3.14
+string = "global"
+time = 12:34:56
+date = 2025-12-07
+datetime = 2025-12-07T12:34:56+00:00
+array_bool = [ true, false, false, true ]
+array_int = [ 1, 2, 3 ]
+array_float = [ 0.5, 1.0 ]
+array_string = [ "global1", "global2" ]
+array_time = [ 12:00:00, 13:00:00 ]
+empty_array = []
+
+[_default.dict.subdict]
+key = -1
+
+[_default.empty_dict]
+
+[Dummy._default]
+string = "type"
+type = "Dummy"
+
+[Dummy._default.dict.subdict]
+key = 0
+
+[Dummy.D1]
+string = "D1"
+satellite = true
+
+[Dummy.D1.dict.subdict]
+key = 1
+
+[dummy.d2]
+StRiNg = "D2"
+saTelliTe = true
+
+[dummy.d2.diCt.subdiCt]
+kEy = 2
+
+[Dummy2]
+
+[Dummy3.D3]

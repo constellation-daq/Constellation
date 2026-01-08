@@ -1,4 +1,4 @@
-CDTP2 module
+CDTP2 Module
 ============
 
 .. automodule:: core.message.cdtp2

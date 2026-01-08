@@ -23,6 +23,7 @@
 #include <zmq_addon.hpp>
 
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
@@ -316,20 +317,17 @@ TEST_CASE("CDTP2 DATA Packing / Unpacking", "[core][core::message]") {
 
 TEST_CASE("CDTP2 BOR Packing / Unpacking", "[core][core::message]") {
     // Create dummy user tags and configuration
-    Dictionary user_tags {};
-    user_tags["test"] = 1234;
-    Configuration config {};
-    config.set("used", "this is used", true);
-    config.set("unused", "this is not used", false);
+    Dictionary user_tags {{"test", 1234}};
+    const Configuration config {{{"key", "value"}}};
     // Create BOR message
-    const auto bor_message = CDTP2BORMessage("sender", user_tags, config);
+    const auto bor_message = CDTP2BORMessage("sender", std::move(user_tags), config);
     auto zmq_mpm = bor_message.assemble();
     // Decode BOR message and check content
     const auto bor_message_decoded = CDTP2BORMessage(CDTP2Message::disassemble(zmq_mpm));
     REQUIRE(bor_message_decoded.getUserTags().at("test") == 1234);
-    const auto config_decoded = bor_message_decoded.getConfiguration();
-    REQUIRE(config_decoded.get<std::string>("used") == "this is used");
-    REQUIRE_FALSE(config_decoded.has("unused"));
+    const auto& config_decoded = bor_message_decoded.getConfiguration();
+    REQUIRE(config_decoded.at("key").get<std::string>() == "value");
+    REQUIRE_FALSE(config_decoded.contains("unused"));
 }
 
 TEST_CASE("CDTP2 EOR Packing / Unpacking", "[core][core::message]") {

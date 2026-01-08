@@ -96,7 +96,7 @@ def test_mariner_cfg_missing_items(mock_cmd_transmitter, mariner_satellite):
     # wait for state transition
 
     wait_for_state(mariner_satellite.fsm, "ERROR", 4.0)
-    assert "missing a required configuration value" in mariner_satellite.fsm.status
+    assert "Key `voltage` does not exist" in mariner_satellite.fsm.status
 
 
 def test_mariner_command(mock_cmd_transmitter, mariner_satellite):

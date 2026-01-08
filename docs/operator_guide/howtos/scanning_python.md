@@ -71,8 +71,8 @@ It is also possible to create a standalone script which can be run without the I
 
 ```python
 import time
-from constellation.core.configuration import load_config
 from constellation.core.controller import ScriptableController
+from constellation.core.controller_configuration import load_config
 from constellation.core.message.cscp1 import SatelliteState
 
 # Settings

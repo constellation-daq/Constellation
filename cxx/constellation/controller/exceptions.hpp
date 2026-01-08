@@ -16,6 +16,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/utils/exceptions.hpp"
+#include "constellation/core/utils/string.hpp"
 
 namespace constellation::controller {
     /**
@@ -47,51 +48,69 @@ namespace constellation::controller {
 
     /**
      * @ingroup Exceptions
-     * @brief Error with parsing the file content to TOML
+     * @brief Error with parsing the configuration
      */
-    class CNSTLN_API ConfigFileParseError : public ControllerError {
+    class CNSTLN_API ConfigParseError : public ControllerError {
     public:
         /**
-         * @brief Construct an error for a configuration file that cannot correctly be parsed as TOML
-         * @param error Error message returned by the TOML parser
+         * @brief Construct an error for a configuration file that cannot correctly be parsed
+         * @param error Error message
          */
-        explicit ConfigFileParseError(std::string_view error) {
-            error_message_ = "Could not parse content of configuration file: ";
+        explicit ConfigParseError(std::string_view error) {
+            error_message_ = "Could not parse content of configuration: ";
+            error_message_ += error;
+        }
+
+    protected:
+        ConfigParseError() = default;
+    };
+
+    /**
+     * @ingroup Exceptions
+     * @brief Error while parsing a key
+     */
+    class CNSTLN_API ConfigKeyError : public ConfigParseError {
+    public:
+        /**
+         * @brief Construct an error for a configuration key
+         * @param key Name of the problematic key
+         * @param error Error message
+         */
+        explicit ConfigKeyError(std::string_view key, std::string_view error) {
+            error_message_ = "Error while parsing key " + utils::quote(key) + " in configuration: ";
             error_message_ += error;
         }
     };
 
     /**
      * @ingroup Exceptions
-     * @brief Error with the type of a key in the configuration file
+     * @brief Error while parsing a value
      */
-    class CNSTLN_API ConfigFileTypeError : public ControllerError {
+    class CNSTLN_API ConfigValueError : public ConfigParseError {
     public:
         /**
-         * @brief Construct an error for a configuration key that has an invalid type
-         * @param key The offending configuration key
+         * @brief Construct an error for a configuration value
+         * @param key Name of the problematic key
          * @param error Error message
          */
-        explicit ConfigFileTypeError(std::string_view key, std::string_view error) {
-            error_message_ = "Invalid value type for key ";
-            error_message_ += key;
-            error_message_ += ": ";
+        explicit ConfigValueError(std::string_view key, std::string_view error) {
+            error_message_ = "Error while parsing value of key " + utils::quote(key) + " in configuration: ";
             error_message_ += error;
         }
     };
 
     /**
      * @ingroup Exceptions
-     * @brief Error in configuration file validation
+     * @brief Error in configuration validation
      */
-    class CNSTLN_API ConfigFileValidationError : public ControllerError {
+    class CNSTLN_API ConfigValidationError : public ControllerError {
     public:
         /**
-         * @brief Construct an error for a configuration file validation failure
+         * @brief Construct an error for a configuration validation failure
          * @param error Error message
          */
-        explicit ConfigFileValidationError(std::string_view error) {
-            error_message_ = "Error validating configuration file: ";
+        explicit ConfigValidationError(std::string_view error) {
+            error_message_ = "Error validating configuration: ";
             error_message_ += error;
         }
     };

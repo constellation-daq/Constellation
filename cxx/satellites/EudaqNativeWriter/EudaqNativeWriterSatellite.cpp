@@ -20,7 +20,7 @@
 #include <utility>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -77,10 +77,10 @@ void EudaqNativeWriterSatellite::failure(CSCP::State /*previous_state*/, std::st
 
 void EudaqNativeWriterSatellite::receive_bor(std::string_view sender,
                                              const Dictionary& user_tags,
-                                             const Configuration& config) {
+                                             const Dictionary& config) {
     // Add the configuration as single key to the BOR tags:
     auto header_tags = user_tags;
-    header_tags["EUDAQ_CONFIG"] = config.getDictionary().to_string();
+    header_tags["EUDAQ_CONFIG"] = config.to_string();
 
     serializer_->serializeDelimiterMsg(sender, CDTP2Message::Type::BOR, header_tags);
 }

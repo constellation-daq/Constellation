@@ -1,4 +1,4 @@
-ReceiverSatellite module
+ReceiverSatellite Module
 ========================
 
 .. automodule:: core.receiver_satellite

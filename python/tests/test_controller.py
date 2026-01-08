@@ -7,7 +7,6 @@ import time
 
 import pytest
 
-from constellation.core.configuration import flatten_config
 from constellation.core.message.cscp1 import SatelliteState
 
 # %%%%%%%%%%%%%%%
@@ -115,5 +114,10 @@ def test_satellite_init_w_fullcfg(mock_controller, mock_example_satellite, rawco
     res = ctrl.constellation.MockExampleSatellite.mock_satellite.initialize(rawconfig_toml)
     assert res.msg == "transitioning"
     time.sleep(0.1)
-    assert satellite.config._config == flatten_config(rawconfig_toml, "MockExampleSatellite", "mock_satellite")
-    assert "current_limit" not in satellite.config._config, "Found unexpected item in Satellite cfg after init"
+
+    # Remove unused keys from excepted configuration
+    exp_config = rawconfig_toml.get_satellite_configuration("MockExampleSatellite.mock_satellite")._dictionary
+    for key in ["name", "verbosity", "magic"]:
+        del exp_config[key]
+
+    assert satellite._config._dictionary == exp_config

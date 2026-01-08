@@ -12,8 +12,7 @@
 #include <map>
 #include <string>
 
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/satellite/exceptions.hpp"
@@ -23,7 +22,7 @@ using namespace constellation::protocol::CSCP;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
-config::Value CommandRegistry::call(State state, const std::string& name, const config::List& args) {
+config::Composite CommandRegistry::call(State state, const std::string& name, const config::CompositeList& args) {
     const auto name_lc = transform(name, ::tolower);
     const auto cmd = commands_.find(name_lc);
 

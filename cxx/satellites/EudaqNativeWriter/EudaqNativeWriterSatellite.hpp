@@ -15,7 +15,7 @@
 #include <string_view>
 
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CDTP2Message.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/timers.hpp"
@@ -44,7 +44,7 @@ protected:
     /** Callback for receiving a BOR message */
     void receive_bor(std::string_view sender,
                      const constellation::config::Dictionary& user_tags,
-                     const constellation::config::Configuration& config) final;
+                     const constellation::config::Dictionary& config) final;
 
     /** Callback for receiving data records in a DATA message */
     void receive_data(std::string_view sender, const constellation::message::CDTP2Message::DataRecord& data_record) final;

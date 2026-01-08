@@ -67,6 +67,26 @@ namespace constellation::utils {
     template <typename T> struct is_function<T, std::void_t<typename function_traits<T>::function_type>> : std::true_type {};
     template <typename T> inline constexpr bool is_function_v = is_function<T>::value;
 
+    // Type trait to check if type is part of a variant
+    template <typename T, typename U> struct is_one_of : std::false_type {};
+    template <typename T, typename... Us>
+    struct is_one_of<T, std::variant<Us...>> : std::bool_constant<(std::same_as<T, Us> || ...)> {};
+    template <typename T, typename U> inline constexpr bool is_one_of_v = is_one_of<T, U>::value;
+
+    // Type trait to extend variant with monostate
+    template <typename T> struct monostate_variant {}; // NOLINT(readability-identifier-naming)
+    template <typename... Ts> struct monostate_variant<std::variant<Ts...>> {
+        using type = std::variant<std::monostate, Ts...>;
+    };
+    template <typename T> using monostate_variant_t = monostate_variant<T>::type;
+
+    // Get a variant of vectors of types using the types from a variant
+    template <typename T> struct vector_variant;
+    template <typename... Ts> struct vector_variant<std::variant<Ts...>> {
+        using type = std::variant<std::vector<Ts>...>;
+    };
+    template <typename T> using vector_variant_t = vector_variant<T>::type;
+
     /// @endcond
 
     /**

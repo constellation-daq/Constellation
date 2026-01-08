@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief Configuration class
+ * @brief Configuration
  *
- * @copyright Copyright (c) 2024 DESY and the Constellation authors.
+ * @copyright Copyright (c) 2025 DESY and the Constellation authors.
  * This software is distributed under the terms of the EUPL-1.2 License, copied verbatim in the file "LICENSE.md".
  * SPDX-License-Identifier: EUPL-1.2
  */
@@ -12,107 +12,62 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <initializer_list>
 #include <map>
 #include <optional>
 #include <set>
 #include <string>
-#include <utility>
+#include <string_view>
 #include <vector>
 
 #include "constellation/build.hpp"
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/exceptions.hpp"
-#include "constellation/core/config/Value.hpp"
-#include "constellation/core/utils/string.hpp"
+#include "constellation/core/config/value_types.hpp"
+#include "constellation/core/message/PayloadBuffer.hpp"
 
 namespace constellation::config {
 
     /**
-     * @brief Generic configuration object storing keys
+     * @brief Class to access a section in the configuration
      *
-     * The configuration holds a set of keys with arbitrary values that are internally stored as std::variant.
+     * Each `Section` corresponds to a `Dictionary`. It provides convenient access methods for the `Dictionary`,
+     * keeps track of used and unused values, and owns any nested `Section` classes corresponding to `Dictionary`
+     * classes contained in the `Dictionary` class corresponding to itself.
      */
-    class Configuration {
-    private:
+    class Section {
+    public:
         /**
-         * @brief Helper class to keep track of key-value pair access
+         * @brief Construct a new configuration section
+         *
+         * @param prefix Prefix for the configuration section, e.g. `channel_1.`
+         * @param dictionary Pointer to the corresponding `Dictionary` object
+         * @throws InvalidKeyError If two keys with the same lowercase spellings are contained in the dictionary
          */
-        class ConfigValue : public Value {
-        public:
-            using Value::Value; // NOLINT(misc-include-cleaner)
-            using Value::operator=;
+        CNSTLN_API Section(std::string prefix, Dictionary* dictionary);
 
-            /**
-             * @brief Construct ConfigValue from Value with predefined usage
-             */
-            ConfigValue(Value value, bool used = false) : Value(std::move(value)), used_(used) {}
+        /** Destructor */
+        virtual ~Section() = default;
 
-            /**
-             * @brief Method to mark ConfigValue as used/unused
-             * @param used If the key-value pair should be marked used or unused
-             */
-            void markUsed(bool used = true) const { used_ = used; }
+        /// @cond doxygen_suppress
+        // No copy/move constructor/assignment
+        Section(const Section& other) = delete;
+        Section& operator=(const Section& other) = delete;
+        Section(Section&& other) = delete;
+        Section& operator=(Section&& other) = delete;
+        /// @endcond
 
-            /**
-             * @brief Method to retrieve of ConfigValue is used/unused
-             * @return true if used, false if unused
-             */
-            bool isUsed() const { return used_; }
-
-        private:
-            mutable bool used_ {false};
-        };
+    private:
+        // Configuration needs access to internal variables for move operations
+        friend class Configuration;
 
     public:
         /**
-         * @brief Construct an empty configuration object
-         */
-        Configuration() = default;
-        ~Configuration() = default;
-
-        /**
-         * @brief Construct a configuration object from a dictionary
-         *
-         * @param dict Dictionary to construct configuration object from
-         * @param mark_used Whether to mark the key-value pairs in the dict as used
-         */
-        CNSTLN_API Configuration(const Dictionary& dict, bool mark_used = false);
-
-        // No copy constructor/assignment, default move constructor/assignment
-        /// @cond doxygen_suppress
-        Configuration(const Configuration& other) = delete;
-        Configuration& operator=(const Configuration& other) = delete;
-        Configuration(Configuration&& other) noexcept = default;
-        Configuration& operator=(Configuration&& other) = default;
-        /// @endcond
-
-        enum class Group : std::uint8_t {
-            /** All configuration key-value pairs, both user and internal */
-            ALL,
-            /** Configuration key-value pairs intended for framework users */
-            USER,
-            /** Configuration key-value pairs intended for internal framework usage */
-            INTERNAL,
-        };
-
-        enum class Usage : std::uint8_t {
-            /** Both used and unused key-value pairs */
-            ANY,
-            /** Only used key-value pairs */
-            USED,
-            /** Only unused key-value pairs */
-            UNUSED,
-        };
-
-        /**
          * @brief Check if key is defined
+         *
          * @param key Key to check for existence
          * @return True if key exists, false otherwise
-         *
-         * @note Keys are handled case-insensitively
          */
-        bool has(const std::string& key) const { return config_.contains(utils::transform(key, ::tolower)); }
+        CNSTLN_API bool has(std::string_view key) const;
 
         /**
          * @brief Check how many of the given keys are defined
@@ -120,291 +75,369 @@ namespace constellation::config {
          * This is useful to check if two or more conflicting configuration keys that are defined.
          *
          * @param keys Keys to check for existence
-         * @return number of existing keys from the given list
-         *
-         * @note Keys are handled case-insensitively
+         * @return Number of existing keys from the given list
          */
-        CNSTLN_API std::size_t count(std::initializer_list<std::string> keys) const;
-
-        /**
-         * @brief Get value of a key in requested type
-         * @param key Key to get value of
-         * @return Value of the key in the type of the requested template parameter
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws MissingKeyError If the requested key is not defined
-         * @throws InvalidTypeError If the conversion to the requested type did not succeed
-         * @throws InvalidTypeError If an overflow happened while converting the key
-         */
-        template <typename T> T get(const std::string& key) const;
-
-        /**
-         * @brief Get an optional with value of a key in requested type if available
-         * @param key Key to get value of
-         * @return Optional holding the value of the key in the type of the requested template parameter if available
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidTypeError If the conversion to the requested type did not succeed
-         * @throws InvalidTypeError If an overflow happened while converting the key
-         */
-        template <typename T> std::optional<T> getOptional(const std::string& key) const;
-
-        /**
-         * @brief Get value of a key in requested type or default value if it does not exists
-         * @param key Key to get value of
-         * @param def Default value to set if key is not defined
-         * @return Value of the key in the type of the requested template parameter
-         *         or the default value if the key does not exists
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> T get(const std::string& key, const T& def);
-
-        /**
-         * @brief Get values for a key containing an array. This will also attempt to read the configuration key as single
-         *        value and will return a vector with one entry if succeeding
-         * @param key Key to get values of
-         * @return List of values in the array in the requested template parameter
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws MissingKeyError If the requested key is not defined
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::vector<T> getArray(const std::string& key) const;
-
-        /**
-         * @brief Get an optional with the values for a key containing an array if available. This will also attempt to read
-         *        the configuration key as single value and will return a vector with one entry if succeeding
-         * @param key Key to get values of
-         * @return Optional with a list of values in the array in the requested template parameter if available
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::optional<std::vector<T>> getOptionalArray(const std::string& key) const;
-
-        /**
-         * @brief Get values for a key containing an array or default array if it does not exists
-         * @param key Key to get values of
-         * @param def Default value array to set if key is not defined
-         * @return List of values in the array in the requested template parameter
-         *         or the default array if the key does not exist
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::vector<T> getArray(const std::string& key, const std::vector<T>& def);
-
-        /**
-         * @brief Get values for a key containing a set
-         * @param key Key to get values of
-         * @return Set of values in the requested template parameter
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws MissingKeyError If the requested key is not defined
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::set<T> getSet(const std::string& key) const;
-
-        /**
-         * @brief Get an optional with values for a key containing a set if available
-         * @param key Key to get values of
-         * @return Optional with a set of values in the requested template parameter if available
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws MissingKeyError If the requested key is not defined
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::optional<std::set<T>> getOptionalSet(const std::string& key) const;
-
-        /**
-         * @brief Get values for a key containing a set or default set if it does not exists
-         * @param key Key to get values of
-         * @param def Default value set to set if key is not defined
-         * @return Set of values in the requested template parameter or the default set if the key does not exist
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidKeyError If the conversion to the requested type did not succeed
-         * @throws InvalidKeyError If an overflow happened while converting the key
-         */
-        template <typename T> std::set<T> getSet(const std::string& key, const std::set<T>& def);
-
-        /**
-         * @brief Get literal value of a key as string
-         * @param key Key to get values of
-         * @return Literal value of the key
-         * @note This function does also not remove quotation marks in strings, Keys are handled case-insensitively
-         */
-        CNSTLN_API std::string getText(const std::string& key) const;
-
-        /**
-         * @brief Get absolute path to file with paths relative to the configuration
-         * @param key Key to get path of
-         * @param check_exists If the file should be checked for existence (if yes always returns a canonical path)
-         * @return Absolute path to a file
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
-         */
-        CNSTLN_API std::filesystem::path getPath(const std::string& key, bool check_exists = false) const;
-
-        /**
-         * @brief Get absolute path to file with paths relative to the configuration
-         * @param key Key to get path of
-         * @param extension File extension to be added to path if not present
-         * @param check_exists If the file should be checked for existence (if yes always returns a canonical path)
-         * @return Absolute path to a file
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
-         */
-        CNSTLN_API std::filesystem::path getPathWithExtension(const std::string& key,
-                                                              const std::string& extension,
-                                                              bool check_exists = false) const;
-
-        /**
-         * @brief Get array of absolute paths to files with paths relative to the configuration
-         * @param key Key to get path of
-         * @param check_exists If the files should be checked for existence (if yes always returns a canonical path)
-         * @return List of absolute path to all the requested files
-         *
-         * @note Keys are handled case-insensitively
-         *
-         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
-         */
-        CNSTLN_API std::vector<std::filesystem::path> getPathArray(const std::string& key, bool check_exists = false) const;
-
-        /**
-         * @brief Set value for a key in a given type
-         * @param key Key to set value of
-         * @param val Value to assign to the key
-         * @param mark_used Flag whether key should be marked as "used" directly
-         *
-         * @note Keys are handled case-insensitively and stored in lower case.
-         */
-        template <typename T> void set(const std::string& key, const T& val, bool mark_used = false);
-
-        /**
-         * @brief Set array of values for a key in a given type
-         * @param key Key to set values of
-         * @param val Array of values to assign to the key
-         * @param mark_used Flag whether key should be marked as "used" directly
-         *
-         * @note Keys are handled case-insensitively and stored in lower case.
-         */
-        template <typename T> void setArray(const std::string& key, const std::vector<T>& val, bool mark_used = false) {
-            set<std::vector<T>>(key, val, mark_used);
-        }
-
-        /**
-         * @brief Set list of values for a key in a given type
-         * @param key Key to set values of
-         * @param val Set of values to assign to the key
-         * @param mark_used Flag whether key should be marked as "used" directly
-         *
-         * @note Keys are handled case-insensitively and stored in lower case.
-         */
-        template <typename T> void setSet(const std::string& key, const std::set<T>& val, bool mark_used = false) {
-            set<std::vector<T>>(key, {val.begin(), val.end()}, mark_used);
-        }
+        CNSTLN_API std::size_t count(std::initializer_list<std::string_view> keys) const;
 
         /**
          * @brief Set default value for a key only if it is not defined yet
+         *
+         * @note This does not mark the key as used.
+         *
          * @param key Key to possible set value of
-         * @param val Value to assign if the key is not defined yet
-         * @note This marks the default key as "used" automatically
-         *
-         * @note Keys are handled case-insensitively and stored in lower case.
+         * @param default_value Value to assign if the key is not defined yet
          */
-        template <typename T> void setDefault(const std::string& key, const T& val);
-
-        /**
-         * @brief Set default list of values for a key only if it is not defined yet
-         * @param key Key to possible set values of
-         * @param val List of values to assign to the key if the key is not defined yet
-         * @note This marks the default key as "used" automatically
-         *
-         * @note Keys are handled case-insensitively and stored in lower case.
-         */
-        template <typename T> void setDefaultArray(const std::string& key, const std::vector<T>& val);
+        template <typename T> void setDefault(std::string_view key, T&& default_value) const;
 
         /**
          * @brief Set alias name for an already existing key
+         *
+         * @note This marks the old key as "used" automatically.
+         *
          * @param new_key New alias to be created
          * @param old_key Key the alias is created for
          * @param warn Optionally print a warning message to notify of deprecation
-         * @note This marks the old key as "used" automatically. Keys are handled case-insensitively and stored in lower
-         * case.
          */
-        CNSTLN_API void setAlias(const std::string& new_key, const std::string& old_key, bool warn = false);
+        CNSTLN_API void setAlias(std::string_view new_key, std::string_view old_key, bool warn = true) const;
 
         /**
-         * @brief Get number of key-value pairs for specific group and usage setting
+         * @brief Get value of a key in requested type
          *
-         * @param group Enum to restrict group of key-value pairs to include
-         * @param usage Enum to restrict usage status of key-value pairs to include
-         *
-         * @return Number of key-value pairs
+         * @param key Key to get value of
+         * @return Value of the key in the type of the requested template parameter
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
          */
-        CNSTLN_API std::size_t size(Group group = Group::ALL, Usage usage = Usage::ANY) const;
+        template <typename T> T get(std::string_view key) const;
 
         /**
-         * @brief Get dictionary with key-value pairs for specific group and usage setting
+         * @brief Get value of a key in requested type or default value if it does not exists
          *
-         * @param group Enum to restrict group of key-value pairs to include
-         * @param usage Enum to restrict usage status of key-value pairs to include
-         *
-         * @return Dictionary containing the key-value pairs
+         * @param key Key to get value of
+         * @param default_value Default value to set if key is not defined
+         * @return Value of the key in the type of the requested template parameter
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
          */
-        CNSTLN_API Dictionary getDictionary(Group group = Group::ALL, Usage usage = Usage::ANY) const;
+        template <typename T> T get(std::string_view key, T default_value) const;
 
         /**
-         * @brief Update with keys from another configuration, potentially overriding keys in this configuration
+         * @brief Get an optional with value of a key in requested type if available
          *
-         * @note This function only updates values that are actually used
-         *
-         * @param other Configuration with updated values
+         * @param key Key to get value of
+         * @return Optional holding the value of the key in the type of the requested template parameter if available
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
          */
-        CNSTLN_API void update(const Configuration& other);
+        template <typename T> std::optional<T> getOptional(std::string_view key) const;
+
+        /**
+         * @brief Get values for a key containing an array
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a vector
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @return List of values in the array in the requested template parameter
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::vector<T> getArray(std::string_view key) const;
+
+        /**
+         * @brief Get values for a key containing an array or a default array if it does not exists
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a vector
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @param default_value Default value to set if key is not defined
+         * @return List of values in the array in the requested template parameter
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::vector<T> getArray(std::string_view key, std::vector<T> default_value) const;
+
+        /**
+         * @brief Get an optional with the values for a key containing an array if available
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a vector
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @return Optional with a list of values in the array in the requested template parameter if available
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::optional<std::vector<T>> getOptionalArray(std::string_view key) const;
+
+        /**
+         * @brief Get values for a key containing a set
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a set
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @return Set of values in the requested template parameter
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::set<T> getSet(std::string_view key) const;
+
+        /**
+         * @brief Get values for a key containing a set or default set if it does not exists
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a set
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @param default_value Default value to set if key is not defined
+         * @return Set of values in the requested template parameter
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::set<T> getSet(std::string_view key, const std::set<T>& default_value) const;
+
+        /**
+         * @brief Get an optional with values for a key containing a set if available
+         *
+         * @note This will also attempt to read the configuration key as single value and will return a set
+         *       with one entry if succeeding.
+         *
+         * @param key Key to get values of
+         * @return Optional with a set of values in the requested template parameter if available
+         * @throws InvalidTypeError If the value could not be cast to desired type
+         * @throws InvalidValueError If the value is not valid for the requested type
+         */
+        template <typename T> std::optional<std::set<T>> getOptionalSet(std::string_view key) const;
+
+        /**
+         * @brief Get path
+         *
+         * @note Relative paths are taken relative to the current work directory.
+         *
+         * @param key Key to get path of
+         * @param check_exists If the file should be checked for existence (if true always returns a canonical path)
+         * @return Absolute path
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a string
+         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
+         */
+        CNSTLN_API std::filesystem::path getPath(std::string_view key, bool check_exists = false) const;
+
+        /**
+         * @brief Get list of paths
+         *
+         * @note Relative paths are taken relative to the current work directory.
+         *
+         * @param key Key to get list of path of
+         * @param check_exists If the file should be checked for existence (if true always returns a canonical path)
+         * @return List of absolute paths
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a string
+         * @throws InvalidValueError If the path did not exists while the check_exists parameter is given
+         */
+        CNSTLN_API std::vector<std::filesystem::path> getPathArray(std::string_view key, bool check_exists = false) const;
+
+        /**
+         * @brief Get nested configuration section
+         *
+         * @param key Key to get section of
+         * @return Configuration section contained by the key
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API const Section& getSection(std::string_view key) const;
+
+        /**
+         * @brief Get nested configuration section or a default dictionary if it does not exists
+         *
+         * @param key Key to get section of
+         * @param default_value Default value to set if key is not defined
+         * @return Configuration section contained by the key
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API const Section& getSection(std::string_view key, Dictionary&& default_value) const;
+
+        /**
+         * @brief Get an optional nested configuration section
+         *
+         * @note Since optionals of references are not allowed, this returns an optional of a reference wrapper. In get the
+         *       reference to the configuration section from the reference wrapper the `.get()` method has to be used.
+         *
+         * @param key Key to get section of
+         * @return Optional with nested configuration section contained by the key if available
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API std::optional<std::reference_wrapper<const Section>> getOptionalSection(std::string_view key) const;
+
+        /**
+         * @brief Get the keys of the configuration section
+         *
+         * @note This does not mark the keys as used.
+         *
+         * @return List containing the keys of the section
+         */
+        CNSTLN_API std::vector<std::string> getKeys() const;
+
+        /**
+         * @brief Get literal value of a key as string
+         *
+         * @warning This does not mark the key as used, and thus should never be used to retrieve a configuration value.
+         *
+         * @param key Key to get values of
+         * @return Literal value of the key
+         */
+        CNSTLN_API std::string getText(std::string_view key) const;
+
+        /**
+         * @brief Get configuration as dictionary
+         *
+         * @warning Accessing entries in the dictionary does not mark the key as used,
+         *          and thus should never be used to retrieve configuration values.
+         *
+         * @return Dictionary containing the configuration section
+         */
+        const Dictionary& asDictionary() const { return *dictionary_; }
+
+        /**
+         * @brief Check if the configuration section is empty
+         *
+         * @return True if section is empty, false otherwise
+         */
+        bool empty() const { return dictionary_->empty(); }
+
+        /**
+         * @brief Return the prefix of the configuration section
+         *
+         * @return Prefix with trailing dot
+         */
+        std::string_view prefix() const { return prefix_; }
+
+        /**
+         * @brief Remove unused entries from the configuration section
+         *
+         * @return List of unused keys
+         */
+        CNSTLN_API std::vector<std::string> removeUnusedEntries();
+
+        /**
+         * @brief Update configuration with values from another configuration section
+         *
+         * @details Before updating this method validates that all keys which are to be updated already exist and that their
+         *          corresponding values have the same type after the update.
+         *
+         * @param other Configuration section from which to update values from
+         */
+        CNSTLN_API void update(const Section& other);
 
     private:
+        CNSTLN_LOCAL void convert_lowercase();
+        CNSTLN_LOCAL void create_section_tree();
+        CNSTLN_LOCAL void mark_used(std::string_view key) const { used_keys_.emplace(key); }
+        CNSTLN_LOCAL void validate_update(const Section& other);
+        CNSTLN_LOCAL void update_impl(const Section& other);
+
+    private:
+        std::string prefix_;
+        Dictionary* dictionary_;
+        mutable std::set<std::string> used_keys_;
+        mutable std::map<std::string, Section> section_tree_;
+    };
+
+    /**
+     * @brief Class which owns the root dictionary of the configuration
+     *
+     * This class is required since the `Configuration` class cannot own the root dictionary due to initialization order.
+     */
+    class RootDictionaryHolder {
+    public:
         /**
-         * @brief Make relative paths absolute from this configuration file
-         * @param path Path to make absolute (if it is not already absolute)
-         * @param canonicalize_path If the path should be canonicalized (throws an error if the path does not exist)
-         * @throws std::invalid_argument If the path does not exists
+         * @brief Construct with an empty root dictionary
          */
-        static std::filesystem::path path_to_absolute(std::filesystem::path path, bool canonicalize_path);
+        RootDictionaryHolder() = default;
 
         /**
-         * @brief Calls a function for every key-value pair matching group and usage criteria
+         * @brief Construct from an existing dictionary
          *
-         * @param group Enum to restrict group of key-value pairs to include
-         * @param usage Enum to restrict usage of key-value pairs to include
-         * @param f Function taking a string ref and a Value ref
-         *
+         * @note This constructor iterates recursively over all keys and converts them to lower-case.
          */
-        template <typename F> void for_each(Group group, Usage usage, F f) const;
+        RootDictionaryHolder(Dictionary dictionary);
 
-        std::map<std::string, ConfigValue> config_;
+    private:
+        // Configuration needs access to internal variables for move operations
+        friend class Configuration;
+
+    private:
+        Dictionary root_dictionary_;
+    };
+
+    /**
+     * @brief Class for the top-level configuration of a satellite
+     *
+     * This class is is a `Section` with additional methods to make suitable to be used within the framework.
+     * It inherits from `RootDictionaryHolder` since constructors first initializes all base classes and then
+     * member variables, meaning it cannot own the root dictionary as member to initialize the base `Section`.
+     */
+    class Configuration : private RootDictionaryHolder, public Section {
+    public:
+        enum class ConfigurationGroup : std::uint8_t {
+            /** All configuration key-value pairs, both user and internal */
+            ALL,
+            /** Configuration key-value pairs intended for framework users */
+            USER,
+            /** Configuration key-value pairs intended for internal framework usage */
+            INTERNAL,
+        };
+        using enum ConfigurationGroup;
+
+    public:
+        /**
+         * @brief Construct an empty configuration
+         */
+        CNSTLN_API Configuration();
+
+        virtual ~Configuration() = default;
+
+        /// @cond doxygen_suppress
+        // No copy constructor/assignment
+        Configuration(const Configuration& other) = delete;
+        Configuration& operator=(const Configuration& other) = delete;
+        /// @endcond
+
+        /**
+         * @brief Construct a configuration from a dictionary
+         *
+         * @param root_dictionary Root dictionary of the configuration
+         */
+        CNSTLN_API Configuration(Dictionary root_dictionary);
+
+        /** Move constructor */
+        CNSTLN_API Configuration(Configuration&& other) noexcept;
+
+        /** Move assignment */
+        CNSTLN_API Configuration& operator=(Configuration&& other) noexcept;
+
+        /** Swap function */
+        void swap(Configuration& other) noexcept;
+
+        /**
+         * @brief Convert configuration to a YAML-like string
+         *
+         * @param configuration_group Group of configuration key-value pairs to include
+         * @return String containing the configuration
+         */
+        CNSTLN_API std::string to_string(ConfigurationGroup configuration_group = ALL) const;
+
+        /** Assemble via msgpack to message payload */
+        CNSTLN_API message::PayloadBuffer assemble() const;
+
+        /** Disassemble from message payload */
+        CNSTLN_API static Configuration disassemble(const message::PayloadBuffer& message);
     };
 
 } // namespace constellation::config

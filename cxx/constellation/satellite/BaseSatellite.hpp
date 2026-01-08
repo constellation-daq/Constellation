@@ -24,7 +24,7 @@
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/Configuration.hpp"
-#include "constellation/core/config/Dictionary.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/heartbeat/HeartbeatManager.hpp"
 #include "constellation/core/log/Logger.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
@@ -205,7 +205,7 @@ namespace constellation::satellite {
          * @brief Update configuration stored in satellite
          * @return Number of unused key-value pairs in the configuration
          */
-        std::size_t update_config(const config::Configuration& partial_config);
+        std::size_t update_config(config::Configuration& partial_config);
 
         /**
          * @brief Helper to obtain the current user-defined status or return an alternative default message
@@ -242,7 +242,7 @@ namespace constellation::satellite {
         std::optional<std::string> initializing_wrapper(config::Configuration&& config);
         std::optional<std::string> launching_wrapper();
         std::optional<std::string> landing_wrapper();
-        std::optional<std::string> reconfiguring_wrapper(const config::Configuration& partial_config);
+        std::optional<std::string> reconfiguring_wrapper(config::Configuration& partial_config);
         std::optional<std::string> starting_wrapper(std::string run_identifier);
         std::optional<std::string> stopping_wrapper();
         std::optional<std::string> running_wrapper(const std::stop_token& stop_token);

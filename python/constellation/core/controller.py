@@ -19,7 +19,8 @@ from .base import EPILOG, ConstellationArgumentParser
 from .chirp import CHIRPServiceIdentifier, get_uuid
 from .chirpmanager import CHIRPManager, DiscoveredService, chirp_callback
 from .commandmanager import get_cscp_commands
-from .configuration import flatten_config, load_config
+from .configuration import Configuration
+from .controller_configuration import ControllerConfiguration, load_config
 from .cscp import CommandTransmitter
 from .error import debug_log
 from .heartbeatchecker import HeartbeatChecker
@@ -631,18 +632,17 @@ class BaseController(CHIRPManager, HeartbeatChecker):
     def _preprocess_payload(self, payload: Any, uuid: str, cmd: str) -> Any:
         """Pre-processes payload for specific commands."""
         if cmd in ("initialize", "reconfigure"):
-            # payload needs to be a flat dictionary, but we want to allow to
-            # supply a full config -- flatten it here
-            try:
-                if any(isinstance(i, dict) for i in payload.values()):
-                    # have a nested dict
-                    cls, name = self._uuid_lookup[uuid]
-                    cfg = flatten_config(payload, cls, name)
-                    self.log.debug("Flattening and sending configuration for %s.%s", cls, name)
-                    return cfg
-            except AttributeError as exc:
-                self.log.warning("Command needs a (valid) configuration dict (error: %s).", exc)
-                raise RuntimeError("Command needs a (valid) configuration dict.") from exc
+            # payload needs to be a Configuration, but we want to allow to
+            # supply a full config or a plain dict -- adjust here
+            if not isinstance(payload, Configuration):
+                if isinstance(payload, dict):
+                    payload = Configuration(payload)
+                elif isinstance(payload, ControllerConfiguration):
+                    sat_type, sat_name = self._uuid_lookup[uuid]
+                    payload = payload.get_satellite_configuration(f"{sat_type}.{sat_name}")
+                else:
+                    raise RuntimeError("Payload needs to be a dictionary, configuration or controller configuration")
+            return payload._dictionary
         return payload
 
     def _run_task_handler(self) -> None:
@@ -712,7 +712,7 @@ def main(args: Any = None) -> None:
     # start server with args
     ctrl = BaseController(**args)
 
-    constellation = ctrl.constellation  # noqa
+    constellation = ctrl.constellation
 
     print("\nWelcome to the Constellation CLI IPython Controller!\n")
     print("You can interact with the discovered Satellites via the `constellation` array:")
@@ -722,7 +722,7 @@ def main(args: Any = None) -> None:
 
     if cfg_file:
         # make configuration available to the user
-        cfg = load_config(cfg_file)  # noqa  # pylint: disable=unused-variable
+        cfg = load_config(cfg_file)  # noqa: F841
         print(f"The configuration file '{cfg_file}' has been loaded into 'cfg'.\n")
 
     print("   Happy hacking! :)\n")

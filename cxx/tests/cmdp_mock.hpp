@@ -16,8 +16,7 @@
 #include <zmq.hpp>
 #include <zmq_addon.hpp>
 
-#include "constellation/core/config/Dictionary.hpp"
-#include "constellation/core/config/Value.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/Level.hpp"
 #include "constellation/core/message/CMDP1Message.hpp"
 #include "constellation/core/metrics/Metric.hpp"
@@ -42,7 +41,7 @@ public:
         msg.assemble().send(pub_socket_);
     }
 
-    void sendStatMessage(std::string name, std::string unit, constellation::config::Value&& value) {
+    void sendStatMessage(std::string name, std::string unit, constellation::config::Scalar&& value) {
         auto msg = constellation::message::CMDP1StatMessage(
             {name_}, {std::make_shared<constellation::metrics::Metric>(std::move(name), std::move(unit)), std::move(value)});
         msg.assemble().send(pub_socket_);

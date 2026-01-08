@@ -18,7 +18,7 @@ from statemachine.states import States
 
 from .base import BaseSatelliteFrame
 from .commandmanager import cscp_requestable
-from .configuration import Configuration, make_lowercase
+from .configuration import Configuration
 from .error import debug_log, handle_error
 from .heartbeatchecker import HeartbeatChecker
 from .message.cscp1 import CSCP1Message, SatelliteState
@@ -161,7 +161,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             raise TypeError("Payload must be a dictionary with configuration values")
 
         # prepare configuration
-        config = Configuration(make_lowercase(request.payload))
+        config = Configuration(request.payload)
 
         # Clear conditions
         self.conditions = defaultdict(list)
@@ -185,7 +185,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
         # Set timeout for conditional transitions
-        self._conditional_transition_timeout = config.setdefault("_conditional_transition_timeout", 30)
+        self._conditional_transition_timeout = config.get_int("_conditional_transition_timeout", 30, min_val=0)
 
         return self._transition("initialize", config, thread=False)
 
