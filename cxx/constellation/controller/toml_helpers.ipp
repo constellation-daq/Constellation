@@ -11,9 +11,9 @@
 
 #include "toml_helpers.hpp" // NOLINT(misc-header-include-cycle)
 
+#include <algorithm>
 #include <chrono>
 #include <cstdint>
-#include <ranges>
 #include <string>
 #include <vector>
 
