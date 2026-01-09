@@ -32,6 +32,7 @@ core_message_files = files(
   'core/message/__init__.py',
   'core/message/cscp1.py',
   'core/message/cdtp2.py',
+  'core/message/cmdp1.py',
   'core/message/exceptions.py',
   'core/message/msgpack_helpers.py',
   'core/message/multipart.py',
@@ -39,6 +40,7 @@ core_message_files = files(
 
 core_protocol_files = files(
   'core/protocol/__init__.py',
+  'core/protocol/cmdp1.py',
 )
 
 satellites_files = files(
