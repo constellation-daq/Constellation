@@ -176,8 +176,8 @@ void MetricsManager::run(const std::stop_token& stop_token) {
             if(timed_metric.timeoutReached() && shouldStat(name)) {
                 auto value = timed_metric->currentValue();
                 if(value.has_value()) {
-                    LOG(logger_, TRACE) << "Sending metric " << timed_metric->name() << ": "
-                                        << value.value().to_string() << " [" << timed_metric->unit() << "]";
+                    LOG(logger_, TRACE) << "Sending metric " << timed_metric->name() << ": " << value.value().to_string()
+                                        << " [" << timed_metric->unit() << "]";
                     ManagerLocator::getSinkManager().sendCMDPMetric({timed_metric.getMetric(), std::move(value.value())});
                     timed_metric.resetTimer();
                 } else {
