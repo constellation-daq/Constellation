@@ -314,9 +314,10 @@ TEST_CASE("Configuration invalid values", "[core][core::config]") {
         InvalidValueError,
         Message("Value of key `int` is not valid: value `-1` is out of range for `" + demangle<std::uint32_t>() + "`"));
     const auto& config_enum = config.getSection("enum");
-    REQUIRE_THROWS_MATCHES(config_enum.get<Enum>("c"),
-                           InvalidValueError,
-                           Message("Value of key `enum.c` is not valid: value `C` is not valid, possible values are A, B"));
+    REQUIRE_THROWS_MATCHES(
+        config_enum.get<Enum>("c"),
+        InvalidValueError,
+        Message("Value of key `enum.c` is not valid: value `C` is not valid, possible values are `A`, `B`"));
 }
 
 TEST_CASE("Configuration aliases", "[core][core::config]") {
