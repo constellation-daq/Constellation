@@ -6,7 +6,8 @@ MessagePack decoding helpers
 """
 
 from enum import IntEnum
-from typing import TypeVar
+from io import BytesIO
+from typing import Any, TypeVar
 
 import msgpack  # type: ignore[import-untyped]
 
@@ -14,6 +15,12 @@ from .exceptions import MessageDecodingError
 
 T = TypeVar("T")
 T_IE = TypeVar("T_IE", bound=IntEnum)
+
+
+def msgpack_pack(value: Any) -> bytes:
+    stream = BytesIO()
+    msgpack.pack(value, stream)
+    return stream.getvalue()
 
 
 def msgpack_unpack_to(unpacker: msgpack.Unpacker, target_type: type[T]) -> T:
