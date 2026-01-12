@@ -22,6 +22,7 @@ core_files = files(
   'core/monitoring.py',
   'core/multicast.py',
   'core/network.py',
+  'core/pools.py',
   'core/py.typed',
   'core/receiver_satellite.py',
   'core/satellite.py',
