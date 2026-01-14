@@ -15,7 +15,7 @@ This section describes the supported syntax and structure of configuration files
 Configuration files can be provided in either [YAML 1.2](https://yaml.org/spec/1.2.2/) or [TOML 1.0](https://toml.io/) syntax.
 The versions have advantages and disadvantages in terms of readability and overview.
 
-**YAML** uses indentation to structure sections of the configuration.
+**YAML** uses indentation to structure the configuration.
 While this may be tedious and error-prone when typing, it provides a good overview of the configuration structure at a glance.
 Keys and values are separated by a colon.
 
