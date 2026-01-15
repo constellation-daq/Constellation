@@ -38,11 +38,12 @@ variables:
   changes:
     - .gitlab-ci.yml
     - meson.build
+    - meson_options.txt
     - cxx/**/*
     - subprojects/**/*
+    - .clang-format*
     - .clang-tidy
     - gcovr.cfg
-    - docs/Doxyfile
 
 # In MRs only run if above mentioned files are changed, otherwise always
 .cpp-rules: &cpp-rules
@@ -105,6 +106,7 @@ variables:
   changes:
     - .gitlab-ci.yml
     - meson.build
+    - meson_options.txt
     - python/**/*
     - pyproject.toml
 
@@ -431,6 +433,7 @@ lint:ruff:
   artifacts:
     reports:
       codequality: code-quality-report.json
+  <<: *python-rules
 
 lint:basedpyright:
   extends:
@@ -443,6 +446,7 @@ lint:basedpyright:
   artifacts:
     reports:
       codequality: code-quality-report.json
+  <<: *python-rules
 
 lint:clang-tidy:
   extends:
@@ -540,6 +544,7 @@ format:ruff:
     - .ruff
   script:
     - ruff format --diff
+  <<: *python-rules
 
 format:clang-format:
   extends:
@@ -548,6 +553,7 @@ format:clang-format:
   script:
     - meson setup build -Dcxx_tests=enabled $(etc/scripts/meson_enable_all_satellites.sh)
     - ninja -C build clang-format-check
+  <<: *cpp-rules
 
 format:reuse:
   extends: .format
