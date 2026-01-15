@@ -72,6 +72,7 @@ tutorials/observatory
 concepts/constellation
 concepts/satellite
 concepts/controller
+concepts/configuration_files
 concepts/autonomy
 concepts/logging
 concepts/telemetry

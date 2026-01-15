@@ -89,3 +89,50 @@ standardized log topics used by the framework:
 
 * **`UI`**: Anything related to user interfaces such as change of button states or the parsing of configurations are logged
   under this topic.
+
+## Graphical Logger
+
+The *Observatory* listener is a flexible logger for Constellation based on [Qt](https://www.qt.io/).
+This logger is a pure user interface and does not provide any storage facilities or cache of log messages.
+Its main window is structured in three parts:
+
+```{figure} ../tutorials/observatory_debug.png
+Main window of the *Observatory* log listener interface
+```
+
+The central area of the window is occupied by the log message display.
+Each received message is displayed on a single line of the display, with its timestamp, sender name, log level, topic and message text, colored according to the log level severity.
+By default, log messages appear time-ordered with the most recent message at the top.
+Double-clicking a log message opens a dialog with additional information such as message tags or source code location information.
+
+The right sidebar displays information on the Constellation along with the number of connected log senders at the top, followed by a drop-down to select the global log subscription level.
+Below, a list of individual log senders, such as satellites or controllers, can be found, each with their own drop-down selection for log levels.
+When expanding the individual senders by clicking on their name, the sender-specific list of provided log topics is shown.
+These settings provide fine-grained control over the subscribed log topics and determine which log messages are transmitted by the respective senders and received by the listener in addition to those subscribed via the global log level, as described in [the previous section](#log-topics).
+For user convenience, the log levels function as thresholds, i.e. any subscription automatically includes all higher-severity levels.
+
+The filter settings for received messages are located at the top of the window. With their help, the displayed list of log messages can be filtered by any combination of log level, sender name, log topic, or text matching the log message.
+
+```{note}
+Filtering messages does not prevent them from being transmitted over the network.
+For this, the corresponding subscription has to be adjusted in the right sidebar.
+```
+
+The status bar of the application lists the total number of received messages and indicates the number of messages received with the levels `WARNING` or `CRITICAL`.
+
+## Storage & Notifications
+
+In many application scenarios, keeping log messages for later inspection is an important feature.
+Log messages can be archived using the [**FlightRecorder** satellite](../../satellites/FlightRecorder.md).
+It provides the possibility to store log messages either to a single log file or to a set of rotating log files based on their size.
+Alternatively, the satellite can start a new log file every 24h at a configured time, or switch to a new log file whenever a new run is started, i.e. when it received the start command.
+The latter can be especially helpful when many runs are recorded and an easy assignment of logs is required.
+
+For remote monitoring of the system, Constellation comes with the [**Mattermost** satellite](../../satellites/Mattermost.md) which connects the logging system with *Mattermost*.
+The satellite listens to log messages sent by other satellites and forwards them to a configured Mattermost channel.
+The name of the respective satellite will be used as username to allow distinguishing them easily in the chat history.
+Log messages with a level of `WARNING` are marked as *important*, messages with level `CRITICAL` as *urgent*, and both are prefixed with `@channel` to notify all users in the Mattermost channel.
+
+```{seealso}
+A detailed description of how to obtain a Mattermost API key and how to configure the satellite is provided in the How-To guide on [Setting up a Mattermost Logger](../howtos/setup_mattermost_logger.md)
+```

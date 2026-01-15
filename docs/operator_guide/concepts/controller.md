@@ -1,5 +1,8 @@
 # The Controller
 
+Controllers are the main interfaces through which operators can set up and alter the state of a Constellation.
+Currently, the framework provides two different controllers, a graphical user interface and a scriptable interactive command-line interface.
+
 ```{figure} CSCP.svg
 Schematic drawing of CSCP
 ```
@@ -7,6 +10,73 @@ Schematic drawing of CSCP
 ```{seealso}
 A detailed technical description, including protocol sequence diagrams, can be found in the
 [protocol description chapter](../../framework_reference/protocols.md#command--controlling) in the framework development guide.
+```
+
+## Graphical Controller
+
+The *MissionControl* graphical user interface is a general purpose controller for Constellation based on [Qt](https://www.qt.io/) which allows loading and parsing of configuration files, deduction of the configuration from a running Constellation, and common control of all active satellites as well as each individual satellite.
+This section briefly describes these features and the user interface.
+
+```{seealso}
+The tutorials section provides a step-by-step guide on [Using MissionControl](../tutorials/missioncontrol.md).
+```
+
+```{figure} ../tutorials/missioncontrol_run.png
+Main window of the MissionControl controller
+```
+
+The main window of *MissionControl* is divided into three parts:
+The header portion displays information on the Constellation which the controller is connected to, such as its name, the number of satellites and the global state. Here, the global state is a summarized state of all satellites. It represents the lowest state of any individual satellite, and, if not all satellites are in the same state, is amended by the symbol ≊ to indicate a mixed global state, e.g. {bdg-secondary}`INIT ≊` for a constellation where all satellites are initialized but one is already launched.
+Furthermore, the current or last run identifier along with its run duration are displayed. None of this information is stored locally; instead, it is all fetched from the running Constellation upon startup of the controller.
+
+The section below the header is the control area steering the entire Constellation at once. The input fields allow
+selection of the configuration file, dispatch of log messages by the operator, and setup of the run identifier.
+The buttons on the right serve as control for the satellite [finite state machine](./satellite.md#the-finite-state-machine).
+Buttons for transition commands unavailable in the current global state are deactivated and grayed out.
+
+Finally, the lower part of the main window is occupied by the list of all connected satellites of the Constellation.
+The type and name of each satellite are displayed alongside its current state, the last command response and the current CHP heartbeat interval and remaining lives. Double-clicking a satellite item from the list opens a dialog with additional connection details.
+A context menu provides direct access to the commands of the individual satellite, including transitions and possibly defined custom commands.
+All information is obtained directly from the running satellite and does not depend on any local cache or pre-loaded information in the controller.
+In case a command returns payload information, such as the `get_config` command, a dialog window displays this to the operator.
+
+While the run identifier is a free-form string, this controller defines it as a name followed by a sequence number.
+The sequence number is automatically incremented when stopping and starting a run, such that a unique run identifier is always generated and sent to the Constellation.
+
+Since satellites operate independently of the controller, and controllers can be started and closed at any time, they might not necessarily all have access to the same configuration file.
+To alleviate this, the configuration of all satellites can be deduced from the Constellation in operation directly via the {bdg-primary}`Deduce` button of the controller.
+This will collect the current configuration from all connected satellites and open a dialog window to select a storage location for the configuration file.
+
+## Scriptable Controller
+
+In some scenarios, a scriptable command-line interface might be preferable to a graphical user interface.
+For this purpose, a Python controller class is provided, both as standalone script and as interactive shell based on IPython. Individual satellites as well as the entire Constellation can be queried and controlled directly through the ScriptableController class.
+Complex routines such as automated parameter scans can be implemented in a few lines of Python code.
+
+```python
+import time
+from constellation.core.controller import ScriptableController
+
+# Create controller
+ctrl = ScriptableController(group_name)
+constellation = ctrl.constellation
+
+# Initialize, launch and start:
+cfg = load_config("my_config.toml")
+constellation.initialize(cfg)
+ctrl.await_state(SatelliteState.INIT)
+constellation.launch()
+ctrl.await_state(SatelliteState.ORBIT)
+constellation.start("run_1000")
+ctrl.await_state(SatelliteState.RUN)
+# Run for 15 seconds
+time.sleep(15)
+constellation.stop()
+ctrl.await_state(SatelliteState.ORBIT)
+```
+
+```{seealso}
+The How-To section provides a guide on [Parameter Scans with Python](../howtos/scanning_python.md).
 ```
 
 ## Measurement Queues
