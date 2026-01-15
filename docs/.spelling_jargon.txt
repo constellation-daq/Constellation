@@ -88,6 +88,7 @@ quadratically
 docstrings
 Svg
 prepending
+reconfigurable
 doi
 et
 al
