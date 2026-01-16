@@ -201,6 +201,61 @@ output = 1.3
 
 ::::
 
+:::::{dropdown} Note on tables in TOML
+:icon: gear
+:color: secondary
+
+TOML has three ways to write tables: with table headers, as inline tables or by prefixing keys.
+Functionally all three are identical, and any way can be picked depending on personal preference.
+
+::::{tab-set}
+:::{tab-item} Table headers
+
+```toml
+[Sputnik._default.section_one]
+parameter_a = 13
+
+[Sputnik.One.section_one]
+parameter_a = 12
+parameter_b = "access_token"
+
+[Sputnik.One.section_other]
+channel = 5
+output = 1.3
+```
+
+:::
+:::{tab-item} Inline tables
+
+```toml
+[Sputnik._default]
+section_one = { parameter_a = 13 }
+
+[Sputnik.One]
+section_one = { parameter_a = 12, parameter_b = "access_token" }
+section_other = { channel = 5, output = 1.3 }
+```
+
+:::
+:::{tab-item} Prefixed keys
+
+```toml
+[Sputnik]
+_default.section_one.parameter_a = 13
+
+[Sputnik.One]
+section_one.parameter_a = 12
+section_one.parameter_b = "access_token"
+
+section_other.channel = 5
+section_other.output = 1.3
+```
+
+:::
+::::
+
+:::::
+
 ### Framework Parameters
 
 Constellation uses a leading underscore to distinguish parameters from satellite implementations of parameters that are directed at framework components, and to avoid naming conflicts between them.

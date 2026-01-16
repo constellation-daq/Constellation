@@ -28,15 +28,15 @@ MyPSU:
 [MyPSU.Bias]
 port = "/dev/ttyUSB0"
 
-[MyPSU.Bias.channels.channel_0]
-enabled = true
-name = "5V Logic"
-voltage = 5
+[MyPSU.Bias.channels]
 
-[MyPSU.Bias.channels.channel_1]
-enabled = true
-name = "3.3V Logic"
-voltage = 3.3
+channel_0.enabled = true
+channel_0.name = "5V Logic"
+channel_0.voltage = 5
+
+channel_1.enabled = true
+channel_1.name = "3.3V Logic"
+channel_1.voltage = 3.3
 ```
 
 ::::
@@ -210,11 +210,9 @@ MyLogger:
 ```
 
 ```toml
-[MyLogger.Logger.subscriptions."MyPSU.Bias"]
-topics = { MYPSU = "DEBUG" }
-
-[MyLogger.Logger.subscriptions."MyDet.DUT"]
-topics = { MYDET = "DEBUG", DATA = "INFO" }
+[MyLogger.Logger.subscriptions]
+"MyPSU.Bias".topics = { MYPSU = "DEBUG" }
+"MyDet.DUT".topics = { MYDET = "DEBUG", DATA = "INFO" }
 ```
 
 ::::
