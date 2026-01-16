@@ -130,8 +130,7 @@ string = "configuration parameter with spaces"
 
 The configuration used in Constellation requires strong typing, this means that each value has a determined variable type such as *floating point*, *integer* or *string*. While TOML has this sort of typing defined in its syntax, YAML does not distinguish between different types and treats all scalar nodes as opaque data.
 
-Hence, when parsing YAML it is upon the parser to determine and assign types. Constellation uses the [yaml-cpp](https://github.com/jbeder/yaml-cpp) library and its
-`convert` methods to obtain typed values from YAML scalars. First, a conversion to a Boolean is attempted, then to an Integer, Floating point number, and timestamp, respectively. If all conversions fail, the content will be interpreted as string.
+Hence, when parsing YAML it is upon the parser to determine and assign types. Those parsers attempt to convert each value to a boolean, integer, floating point number, and timestamp. If all conversions fail, the content will be interpreted as string.
 :::
 
 ### Arrays
