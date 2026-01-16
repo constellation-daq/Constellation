@@ -14,7 +14,8 @@ from conftest import DEFAULT_SEND_PORT
 
 from constellation.core.chirp import CHIRPBeaconTransmitter, CHIRPMessageType, CHIRPServiceIdentifier
 from constellation.core.cmdp import CMDPPublisher, CMDPTransmitter, Metric, Notification
-from constellation.core.monitoring import MonitoringSender, ZeroMQSocketLogListener, schedule_metric
+from constellation.core.listener import LogPoolQueueListener
+from constellation.core.monitoring import MonitoringSender, schedule_metric
 
 
 @pytest.fixture
@@ -83,7 +84,7 @@ def mock_listener(mock_transmitter_a):
     mock_handler.create_lock.return_value = None
     mock_handler.lock = None
     tm, sock = mock_transmitter_a
-    listener = ZeroMQSocketLogListener(tm, mock_handler)
+    listener = LogPoolQueueListener(tm, mock_handler)
     yield listener, mock_handler, sock
 
 
@@ -119,7 +120,7 @@ def test_stat_transmission(mock_transmitter_a, mock_transmitter_b):
 
 
 def test_log_monitoring(mock_listener, mock_monitoringsender):
-    """Test that log messages are received, decoded and enqueued by ZeroMQSocketLogListener."""
+    """Test that log messages are received and decoded."""
     listener, stream, sock = mock_listener
     ms, ctx = mock_monitoringsender
     assert ms._zmq_log_handler, "ZMQ CMDP log handler not properly set up"

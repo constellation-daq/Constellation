@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
+from logging import LogRecord, makeLogRecord
 from typing import Any, cast
 
 import msgpack  # type: ignore[import-untyped]
@@ -161,9 +162,44 @@ class CMDP1LogMessage(CMDP1Message):
     def log_message(self) -> str:
         return self._log_message
 
+    def to_log_record(self) -> LogRecord:
+        meta: dict[str, Any] = {}
+        meta["name"] = self._log_topic
+        meta["levelname"] = self._log_level.name
+        meta["levelno"] = self._log_level.value
+        meta["msg"] = self._log_message
+        meta["created"] = self._time.timestamp()
+        meta["sender"] = self._sender
+        meta.update(self.tags)
+        return makeLogRecord(meta)
+
     @staticmethod
-    def disassemble(frames: list[bytes]) -> CMDP1LogMessage:
-        msg = CMDP1Message.disassemble(frames)
+    def from_log_record(record: LogRecord, sender: str = "") -> CMDP1LogMessage:
+        tags = {
+            "filename": record.filename,
+            "pathname": record.pathname,
+            "lineno": record.lineno,
+            "funcName": record.funcName,
+            "module": record.module,
+            "thread": record.thread,
+            "threadName": record.threadName,
+            "process": record.process,
+            "processName": record.processName,
+        }
+        tb: str | None = getattr(record, "traceback", None)
+        if tb:
+            tags["traceback"] = tb
+        return CMDP1LogMessage(
+            sender,
+            LogLevel(record.levelno),
+            record.name,
+            record.getMessage(),
+            datetime.fromtimestamp(record.created).astimezone(),
+            tags,
+        )
+
+    @staticmethod
+    def from_cmdp_message(msg: CMDP1Message) -> CMDP1LogMessage:
         if not msg.is_log_message():
             raise MessageDecodingError("Not a log message")
         # Cast to CMDP1LogMessage
@@ -174,6 +210,10 @@ class CMDP1LogMessage(CMDP1Message):
         msg._log_message = msg._payload.decode()
 
         return msg
+
+    @staticmethod
+    def disassemble(frames: list[bytes]) -> CMDP1LogMessage:
+        return CMDP1LogMessage.from_cmdp_message(CMDP1Message.disassemble(frames))
 
 
 @dataclass
@@ -222,8 +262,7 @@ class CMDP1StatMessage(CMDP1Message):
         return self._metric_value.value
 
     @staticmethod
-    def disassemble(frames: list[bytes]) -> CMDP1StatMessage:
-        msg = CMDP1Message.disassemble(frames)
+    def from_cmdp_message(msg: CMDP1Message) -> CMDP1StatMessage:
         if not msg.is_stat_message():
             raise MessageDecodingError("Not a stat message")
         # Cast to CMDP1StatMessage
@@ -234,6 +273,10 @@ class CMDP1StatMessage(CMDP1Message):
         msg._metric_value = MetricValue.disassemble(metric_name, msg._payload)
 
         return msg
+
+    @staticmethod
+    def disassemble(frames: list[bytes]) -> CMDP1StatMessage:
+        return CMDP1StatMessage.from_cmdp_message(CMDP1Message.disassemble(frames))
 
 
 class CMDP1Notification(CMDP1Message):
@@ -259,8 +302,7 @@ class CMDP1Notification(CMDP1Message):
         return self._topics
 
     @staticmethod
-    def disassemble(frames: list[bytes]) -> CMDP1Notification:
-        msg = CMDP1Message.disassemble(frames)
+    def from_cmdp_message(msg: CMDP1Message) -> CMDP1Notification:
         if not msg.is_notification():
             raise MessageDecodingError("Not a notification")
         # Cast to CMDP1Notification
@@ -272,3 +314,7 @@ class CMDP1Notification(CMDP1Message):
         msg._topics = msgpack_unpack_to(unpacker, dict)
 
         return msg
+
+    @staticmethod
+    def disassemble(frames: list[bytes]) -> CMDP1Notification:
+        return CMDP1Notification.from_cmdp_message(CMDP1Message.disassemble(frames))

@@ -41,7 +41,6 @@ class BasePool:
         """Start poll thread (if not already started)"""
         if self._poll_thread is None or not self._poll_thread.is_alive():
             self._stopevt.clear()
-            self._reset_sockets()
             self._poll_thread_exc = None
             self._poll_thread = threading.Thread(target=self._poll)
             self._poll_thread.start()
@@ -52,6 +51,7 @@ class BasePool:
         if self._poll_thread is not None and self._poll_thread.is_alive():
             self._stopevt.set()
             self._poll_thread.join()
+            self.reset_sockets()
             self.check_exception()
             self._polling = False
 
@@ -59,17 +59,18 @@ class BasePool:
         """Raise any exception encountered in poller"""
         if self._poll_thread_exc is not None:
             # Reset sockets
-            self._reset_sockets()
+            self.reset_sockets()
             # Then raise (in the current thread's context)
             raise self._poll_thread_exc
 
     def add_socket(self, uuid: UUID, address: str, port: int) -> None:
         """Add socket to pool"""
         with self._poller_lock:
-            socket = self._context.socket(self._socket_type.value)
-            socket.connect(f"tcp://{address}:{port}")
-            self._poller.register(socket, zmq.POLLIN)
-            self._sockets[uuid] = socket
+            if uuid not in self._sockets:
+                socket = self._context.socket(self._socket_type.value)
+                socket.connect(f"tcp://{address}:{port}")
+                self._poller.register(socket, zmq.POLLIN)
+                self._sockets[uuid] = socket
 
     def remove_socket(self, uuid: UUID) -> None:
         """Remove socket from pool"""
@@ -81,7 +82,7 @@ class BasePool:
             except KeyError:
                 pass  # no socket for UUID registered
 
-    def _reset_sockets(self) -> None:
+    def reset_sockets(self) -> None:
         with self._poller_lock:
             for socket in self._sockets.values():
                 self._poller.unregister(socket)

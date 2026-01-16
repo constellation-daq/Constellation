@@ -13,7 +13,7 @@ class MessageDecodingError(RuntimeError):
         super().__init__(f"Error decoding message: {reason}")
 
 
-class InvalidProtocolError(RuntimeError):
+class InvalidProtocolError(MessageDecodingError):
     def __init__(self, protocol: str):
         super().__init__(f"Invalid protocol identifier `{protocol}`")
 

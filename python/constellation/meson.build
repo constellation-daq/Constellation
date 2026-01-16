@@ -19,6 +19,7 @@ core_files = files(
   'core/heartbeatchecker.py',
   'core/heartbeater.py',
   'core/logging.py',
+  'core/listener.py',
   'core/monitoring.py',
   'core/multicast.py',
   'core/network.py',
@@ -51,6 +52,7 @@ satellites_files = files(
 tools_files = files(
   'tools/__init__.py',
   'tools/discover_plugins.py',
+  'tools/monitor.py',
 )
 
 py.install_sources(core_files,
