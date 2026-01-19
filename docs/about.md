@@ -27,8 +27,10 @@ This website and the documentation are distributed under the [Creative Commons C
 
 ## Citing Constellation
 
-Constellation is distributed freely and openly under the EUPL license, but the authors kindly ask to cite the Zenodo record
-in scientific publications:
+Constellation is distributed freely and openly under the EUPL license, but the authors kindly ask to cite the reference paper
+and the Zenodo record in scientific publications:
+
+- The reference paper is published in NIM A and can be found at [10.1016/j.nima.2026.171279](https://doi.org/10.1016/j.nima.2026.171279).
 
 - The versioned Zenodo records can be found at [10.5281/zenodo.15688357](https://doi.org/10.5281/zenodo.15688357).
   Please cite the version used for the published work. For example, the version 0.4 should be cited as:
