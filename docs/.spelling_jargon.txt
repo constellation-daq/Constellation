@@ -88,3 +88,6 @@ quadratically
 docstrings
 Svg
 prepending
+doi
+et
+al
