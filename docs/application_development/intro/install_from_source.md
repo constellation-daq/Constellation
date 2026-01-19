@@ -94,7 +94,7 @@ Starting with Ubuntu 24.04 and Debian 12 or newer, the official packages can be 
 
 ```sh
 sudo apt install meson g++
-sudo apt install qt6-base-dev qt6-qtsvg-dev qt6-charts-dev
+sudo apt install qt6-base-dev qt6-svg-dev qt6-charts-dev
 ```
 
 Ubuntu 22.04 requires a newer version of GCC than installed by default. Version 12 is recommended and available in the
@@ -102,7 +102,7 @@ regular package repositories:
 
 ```sh
 sudo apt install meson g++-12
-sudo apt install qtbase5-dev qt5-qtsvg-dev libqt5charts5-dev
+sudo apt install qtbase5-dev libqt5svg5-dev libqt5charts5-dev
 export CXX="g++-12"
 ```
 
