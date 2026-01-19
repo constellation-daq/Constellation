@@ -38,3 +38,6 @@ mA
 mbar
 Torr
 hPascal
+arXiv
+Nucl
+nima

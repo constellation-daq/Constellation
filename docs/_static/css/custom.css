@@ -113,6 +113,7 @@ div.highlight:hover::before {
 
 /* Extract language from class name */
 div.highlight-abnf > div.highlight::before { content: "ABNF"; }
+div.highlight-bibtex > div.highlight::before { content: "BibTeX"; }
 div.highlight-cpp > div.highlight::before { content: "C++"; }
 div.highlight-javascript > div.highlight::before { content: "JavaScript"; }
 div.highlight-json > div.highlight::before { content: "JSON"; }
