@@ -31,8 +31,42 @@ Constellation is distributed freely and openly under the EUPL license, but the a
 and the Zenodo record in scientific publications:
 
 - The reference paper is published in NIM A and can be found at [10.1016/j.nima.2026.171279](https://doi.org/10.1016/j.nima.2026.171279).
+  Please cite this paper for all works using Constellation, for example as:
+
+  > S. Spannagel et al., “Constellation: The autonomous control and data acquisition system for dynamic experimental setups”, Nucl. Instr. Meth. A 1085 (2026) 171279, doi:10.1016/j.nima.2026.171279, arXiv:2601.06494.
 
 - The versioned Zenodo records can be found at [10.5281/zenodo.15688357](https://doi.org/10.5281/zenodo.15688357).
-  Please cite the version used for the published work. For example, the version 0.4 should be cited as:
+  Please cite the version used for the published work. For example, the version 0.6.1 should be cited as:
 
-  > Lachnit, S., Perrey, H., & Spannagel, S. (2025). Constellation (0.4). DOI: [10.5281/zenodo.15688358](https://doi.org/10.5281/zenodo.15688358).
+  > S. Lachnit, H. Perrey & S. Spannagel (2025). Constellation (0.6.1). DOI: [10.5281/zenodo.17294234](https://doi.org/10.5281/zenodo.17294234).
+
+:::{dropdown} BibTex Citations
+:icon: book
+
+```bibtex
+@article{constellation,
+  title = {Constellation: The autonomous control and data acquisition system for dynamic experimental setups},
+  journal = {Nucl. Instr. Meth. A},
+  volume = {1085},
+  pages = {171279},
+  year = {2026},
+  issn = {0168-9002},
+  doi = {10.1016/j.nima.2026.171279},
+  author = {Simon Spannagel and Stephan Lachnit and Hanno Perrey and Justus Braach and Lene Kristian Bryngemark and Erika Garutti and Adrian Herkert and Finn King and Christoph Krieger and David Leppla-Weber and Linus Ros and Sara {Ruiz Daza} and Murtaza Safdari and Luis G. Sarmiento and Annika Vauth and Håkan Wennlöf},
+  eprint={2601.06494},
+  archivePrefix={arXiv},
+  primaryClass={physics.ins-det},
+}
+
+@software{lachnit_2025_17294234,
+  author       = {Stephan Lachnit and Hanno Perrey and Simon Spannagel},
+  title        = {Constellation},
+  year         = 2025,
+  publisher    = {Zenodo},
+  version      = {0.6.1},
+  doi          = {10.5281/zenodo.17294234},
+}
+
+```
+
+:::
