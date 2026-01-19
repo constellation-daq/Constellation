@@ -166,9 +166,9 @@ array_flow = [1.3, 0.5, 1e15]
 
 ::::
 
-### Section
+### Sections
 
-**Section**, also known as *tables* in TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
+Configuration **Sections**, also known as *tables* in TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
 Value types can be mixed freely, and sections can be recursively nested.
 This means that the value of a section entry can be again either a scalar, an array, or a section itself.
 Some satellites use this to better structure their configuration:
@@ -252,6 +252,8 @@ section_other.output = 1.3
 
 :::
 ::::
+
+It should be noted though that once a table has been defined in any of the three syntactic versions, it cannot be re-defined and additional keys have to be added in the same schema.
 
 :::::
 

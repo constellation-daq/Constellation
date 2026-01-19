@@ -1,11 +1,13 @@
 # Configuration Sections
 
+Configuration sections can be used to separate different functionality of a satellite into separate logical blocks, or to logically structure a complex set of parameter in a configuration file
+
 ```{seealso}
-For the basic concepts behind satellite configuration and configuration files in Constellation check the [chapter in the operator guide](../../operator_guide/concepts/configuration_files.md).
+The basic concepts behind satellite configurations and configuration files in Constellation are described the [*Configuration Files* chapter of the operator guide](../../operator_guide/concepts/configuration_files.md).
 ```
 
-Configuration sections can be used to separate different functionality of a satellite into separate logical blocks in
-configuration files. For example, a satellite for a power supply can use them to configure each channel individually:
+A typical example where sections come in handy are satellites controlling instruments with multiple channels, such as power supply outputs.
+Here, sections can be used to describe and configure each channel individually:
 
 ::::{tab-set-code}
 
@@ -41,7 +43,9 @@ channel_1.voltage = 3.3
 
 ::::
 
-This simple case is straight-forward to implement:
+This case with two fixed channels can be implemented in C++ or Python as demonstrated in the following.
+The parameters not nested in a section are read directly from the `Configuration` objects, while the individual
+channel configurations are retrieved via the `getSection()`/`get_section()` methods:
 
 ::::{tab-set}
 :::{tab-item} C++
@@ -103,8 +107,9 @@ In the example above, both `channel_0` and `channel_1` were required to be expli
 This might be feasible when only a handful of channels are used, but for devices with many channels this approach can
 quickly become cumbersome to type out if only a few of them are used.
 
-It is thus possible to define default values also for configuration sections, just as for normal parameters.
-In order to do this, adding `{}` as add additional parameter to the method for getting the section is enough:
+It is therefore possible to define default values also for configuration sections in a similar way as for normal parameters.
+Instead of specifying all nested default values when retrieving the section from the configuration, an empty placeholder `{}`
+is added as parameter to the method fetching the section:
 
 ::::{tab-set}
 :::{tab-item} C++
@@ -191,8 +196,8 @@ voltage = channel_section.get_num("voltage", 0.0)
 
 ## Dynamic Sections
 
-In some scenarios, configuration sections with key names are required which are not known beforehand.
-For example, there might be a satellite which logs certain topics from a set satellites whose names need to be defined in the configuration:
+It can be useful to define and use configuration sections with key names that are not fixed by the satellite code but dynamically defined by the user when writing the configuration file.
+For example, a satellite which only logs messages for a configurable list of topics from a set satellites defined in the configuration file:
 
 ::::{tab-set-code}
 
@@ -217,7 +222,7 @@ MyLogger:
 
 ::::
 
-In this case, it is required to iterate over all keys which are defined for a specific section:
+In this case, it is required to iterate over all keys that are defined for a specific section:
 
 ::::{tab-set}
 :::{tab-item} C++
@@ -279,7 +284,7 @@ See [Reconfiguring](#reconfiguring) for more details.
 
 ## Reconfiguring
 
-When implementing to reconfigure a satellite, it is important to keep the assumptions Constellation makes in mind.
+It is important to keep the assumptions Constellation makes in mind when implementing to reconfigure a satellite.
 These assumptions are:
 
 - Reconfiguring does not re-initialize the satellite, it only changes parameters
@@ -287,7 +292,8 @@ These assumptions are:
 - Parameters cannot change their type
 
 This means that [dynamic sections](#dynamic-sections) are severely limited in the way they can be reconfigured, as no new
-sections can be defined and existing sections cannot be removed. Thus default sections should be preferred if possible.
+sections can be defined and existing sections cannot be removed.
+Whenever possible, default sections should be preferred over dynamic sections.
 
 When default sections are used, it is important that all parameters within the section are fetched with a default value.
-Otherwise it is not possible to reconfigure those parameters.
+Otherwise it is not possible to reconfigure those parameters since they will not be present in the section.

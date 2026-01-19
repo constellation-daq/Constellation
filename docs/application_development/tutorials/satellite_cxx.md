@@ -80,10 +80,10 @@ for(auto n : {0, 1}) {
 ```
 
 ```{seealso}
-More details about configuration sections and their intricacies can be found in [Configuration Sections](../functionality/configuration_sections.md).
+More details about configuration sections and their intricacies can be found in the dedicated [chapter on Configuration Sections](../functionality/configuration_sections.md).
 ```
 
-Besides the `get` methods, following methods might be helpful when reading the configuration:
+In addition to the `get` methods, following methods might be helpful when reading the configuration:
 
 * `has`: checks if a key is present in the configuration
 * `count`: counts how many of the given keys are present in the configuration, useful to check for invalid key combinations (see also [error handling](#configuration-errors))
