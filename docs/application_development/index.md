@@ -41,6 +41,7 @@ tutorials/satellite_py
 ```{toctree}
 :caption: ✏️ Adding Functionality
 
+functionality/configuration_sections.md
 functionality/logging
 functionality/metrics
 functionality/data_transmission

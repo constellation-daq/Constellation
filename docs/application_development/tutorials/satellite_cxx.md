@@ -63,43 +63,27 @@ Several other `get` methods exists for convenience:
 To access nested configuration sections, `getSection` can be used:
 
 ```cpp
-void ExampleSatellite::initializing(const Configuration& config) {
-    // Read channel 0 & 1 as nested configuration sections
-    for(auto n : {0, 1}) {
+// Get configuration section for channels
+const auto& channels_section = config.getSection("channels");
 
-      // Get section for channel n
-      const auto& channel_section = config.getSection("channel_" + to_string(n));
+// Read channel 0 & 1 as nested configuration sections
+for(auto n : {0, 1}) {
 
-      // channel_section has the same methods available as config
-      const auto voltage = channel_section.get<double>("voltage");
-    }
+  // Get section for channel n
+  const auto& channel_section = config.getSection("channel_" + to_string(n));
+
+  // Note that channel_section has the same methods available as config
+
+  // Get voltage for channel
+  const auto voltage = channel_section.get<double>("voltage");
 }
 ```
 
-It is possible to iterate over sections using `getKeys`:
-
-```cpp
-void ExampleSatellite::initializing(const Configuration& config) {
-    // Get sections for channels
-    const auto& channels_section = config.getSection("channels");
-
-    // Iterate over keys in sections
-    for(const auto& key : channels_section.getKeys()) {
-
-        // Keys defined as `chN`
-        if(!key.starts_with("ch") {
-            throw InvalidKeyError(channels_section, key, "key should start with `ch`");
-        }
-        const auto channel = std::stoul(key.substr(2));
-
-        // Get section for channel
-        const auto& channel_section = channels_section.getSection(key);
-        const auto enabled = channel_section.get<bool>("enabled");
-    }
-}
+```{seealso}
+More details about configuration sections and their intricacies can be found in the dedicated [chapter on Configuration Sections](../functionality/configuration_sections.md).
 ```
 
-Besides the `get` methods, following methods might be helpful when reading the configuration:
+In addition to the `get` methods, following methods might be helpful when reading the configuration:
 
 * `has`: checks if a key is present in the configuration
 * `count`: counts how many of the given keys are present in the configuration, useful to check for invalid key combinations (see also [error handling](#configuration-errors))

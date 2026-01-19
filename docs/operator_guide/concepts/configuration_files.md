@@ -130,8 +130,7 @@ string = "configuration parameter with spaces"
 
 The configuration used in Constellation requires strong typing, this means that each value has a determined variable type such as *floating point*, *integer* or *string*. While TOML has this sort of typing defined in its syntax, YAML does not distinguish between different types and treats all scalar nodes as opaque data.
 
-Hence, when parsing YAML it is upon the parser to determine and assign types. Constellation uses the [yaml-cpp](https://github.com/jbeder/yaml-cpp) library and its
-`convert` methods to obtain typed values from YAML scalars. First, a conversion to a Boolean is attempted, then to an Integer, Floating point number, and timestamp, respectively. If all conversions fail, the content will be interpreted as string.
+Hence, when parsing YAML it is upon the parser to determine and assign types. Those parsers attempt to convert each value to a boolean, integer, floating point number, and timestamp. If all conversions fail, the content will be interpreted as string.
 :::
 
 ### Arrays
@@ -167,9 +166,9 @@ array_flow = [1.3, 0.5, 1e15]
 
 ::::
 
-### Section
+### Sections
 
-**Section**, also known as *tables* in TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
+Configuration **Sections**, also known as *tables* in TOML or *mappings* in YAML, allow to combine multiple key-value pairs under a common variable name.
 Value types can be mixed freely, and sections can be recursively nested.
 This means that the value of a section entry can be again either a scalar, an array, or a section itself.
 Some satellites use this to better structure their configuration:
@@ -200,6 +199,63 @@ output = 1.3
 ```
 
 ::::
+
+:::::{dropdown} Note on tables in TOML
+:icon: gear
+:color: secondary
+
+TOML has three ways to write tables: with table headers, as inline tables or by prefixing keys.
+Functionally all three are identical, and any way can be picked depending on personal preference.
+
+::::{tab-set}
+:::{tab-item} Table headers
+
+```toml
+[Sputnik._default.section_one]
+parameter_a = 13
+
+[Sputnik.One.section_one]
+parameter_a = 12
+parameter_b = "access_token"
+
+[Sputnik.One.section_other]
+channel = 5
+output = 1.3
+```
+
+:::
+:::{tab-item} Inline tables
+
+```toml
+[Sputnik._default]
+section_one = { parameter_a = 13 }
+
+[Sputnik.One]
+section_one = { parameter_a = 12, parameter_b = "access_token" }
+section_other = { channel = 5, output = 1.3 }
+```
+
+:::
+:::{tab-item} Prefixed keys
+
+```toml
+[Sputnik]
+_default.section_one.parameter_a = 13
+
+[Sputnik.One]
+section_one.parameter_a = 12
+section_one.parameter_b = "access_token"
+
+section_other.channel = 5
+section_other.output = 1.3
+```
+
+:::
+::::
+
+It should be noted though that once a table has been defined in any of the three syntactic versions, it cannot be re-defined and additional keys have to be added in the same schema.
+
+:::::
 
 ### Framework Parameters
 

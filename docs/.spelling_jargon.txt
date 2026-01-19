@@ -87,7 +87,9 @@ Overrange
 quadratically
 docstrings
 Svg
+parsers
 prepending
+reconfigurable
 doi
 et
 al
