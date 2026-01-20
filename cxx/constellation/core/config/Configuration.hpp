@@ -243,7 +243,7 @@ namespace constellation::config {
         CNSTLN_API std::vector<std::filesystem::path> getPathArray(std::string_view key, bool check_exists = false) const;
 
         /**
-         * @brief Get nested configuration section
+         * @brief Get nested configuration section (const)
          *
          * @param key Key to get section of
          * @return Configuration section contained by the key
@@ -251,6 +251,16 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value is not a section
          */
         CNSTLN_API const Section& getSection(std::string_view key) const;
+
+        /**
+         * @brief Get nested configuration section
+         *
+         * @param key Key to get section of
+         * @return Configuration section contained by the key
+         * @throws MissingKeyError If the requested key is not defined
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API Section& getSection(std::string_view key);
 
         /**
          * @brief Get nested configuration section or a default dictionary if it does not exists
@@ -261,7 +271,19 @@ namespace constellation::config {
          * @throws MissingKeyError If the requested key is not defined
          * @throws InvalidTypeError If the value is not a section
          */
-        CNSTLN_API const Section& getSection(std::string_view key, Dictionary&& default_value);
+        CNSTLN_API Section& getSection(std::string_view key, Dictionary&& default_value);
+
+        /**
+         * @brief Get an optional nested configuration section (const)
+         *
+         * @note Since optionals of references are not allowed, this returns an optional of a reference wrapper. In get the
+         *       reference to the configuration section from the reference wrapper the `.get()` method has to be used.
+         *
+         * @param key Key to get section of
+         * @return Optional with nested configuration section contained by the key if available
+         * @throws InvalidTypeError If the value is not a section
+         */
+        CNSTLN_API std::optional<std::reference_wrapper<const Section>> getOptionalSection(std::string_view key) const;
 
         /**
          * @brief Get an optional nested configuration section
@@ -273,7 +295,7 @@ namespace constellation::config {
          * @return Optional with nested configuration section contained by the key if available
          * @throws InvalidTypeError If the value is not a section
          */
-        CNSTLN_API std::optional<std::reference_wrapper<const Section>> getOptionalSection(std::string_view key) const;
+        CNSTLN_API std::optional<std::reference_wrapper<Section>> getOptionalSection(std::string_view key);
 
         /**
          * @brief Get the keys of the configuration section
