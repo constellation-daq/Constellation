@@ -318,6 +318,7 @@ def test_configuration_unused_keys():
             "sub": {  #
                 "used": 2048,
                 "unused": 2048,
+                "used_empty": {},
                 "sub": {  #
                     "unused": 4096
                 },
@@ -328,15 +329,18 @@ def test_configuration_unused_keys():
     assert config.get("used") == 1024
     config_sub = config.get_section("sub")
     assert config_sub.get("used") == 2048
+    assert len(config_sub.get_section("used_empty")) == 0
     # Check existence of unused keys
     assert "unused" in config
     assert "unused" in config_sub
     # Remove unused keys
     removed_keys = config._remove_unused_entries()
-    assert set(removed_keys) == {"unused", "sub.unused", "sub.sub.unused"}
+    assert set(removed_keys) == {"unused", "sub.unused", "sub.sub"}
     # Check unused keys were removed
     assert "unused" not in config
     config_sub_after = config.get_section("sub")
+    assert "used" in config_sub_after
+    assert "used_empty" in config_sub_after
     assert "unused" not in config_sub_after
     assert "sub" not in config_sub_after
 

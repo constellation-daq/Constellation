@@ -346,7 +346,9 @@ class Section:
                 self._dictionary[key_lc] = default_value
                 self._section_tree[key_lc] = Section(f"{self._prefix}{key_lc}.", default_value)
         try:
-            return self._section_tree[key_lc]
+            section = self._section_tree[key_lc]
+            self._mark_used(key_lc)
+            return section
         except KeyError as e:
             if key_lc in self._dictionary:
                 raise InvalidTypeError(
@@ -367,14 +369,18 @@ class Section:
         unused_keys_to_remove = list[str]()
         for key, value in self._dictionary.items():
             if isinstance(value, dict):
-                # If dictionary, remove unused key from there
+                # Sections require special handling
                 sub_dict = self._section_tree[key]
                 sub_unused_keys = sub_dict._remove_unused_entries()
-                unused_keys += sub_unused_keys
-                # If dictionary now empty, erase it
-                if not sub_dict:
-                    del self._section_tree[key]
+                # Check if section was accessed at all
+                if key in self._used_keys:
+                    # If accessed, add unused sub keys recursively
+                    unused_keys += sub_unused_keys
+                else:
+                    # If unused, add section key instead of sub keys and remove section entirely
+                    unused_keys.append(self._prefix + key)
                     unused_keys_to_remove.append(key)
+                    del self._section_tree[key]
             else:
                 # Otherwise, check if unused and store key
                 if key not in self._used_keys:
