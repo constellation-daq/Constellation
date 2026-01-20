@@ -179,7 +179,7 @@ const Section& Section::getSection(std::string_view key) const {
     }
 }
 
-const Section& Section::getSection(std::string_view key, Dictionary&& default_value) const {
+const Section& Section::getSection(std::string_view key, Dictionary&& default_value) {
     // Set default value manually since dictionary needs to be inserted into tree
     const auto key_lc = utils::transform(key, tolower);
     const auto confdict_it = section_tree_.find(key_lc);

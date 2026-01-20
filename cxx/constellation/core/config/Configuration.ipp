@@ -31,7 +31,7 @@
 
 namespace constellation::config {
 
-    template <typename T> void Section::setDefault(std::string_view key, T&& default_value) const {
+    template <typename T> void Section::setDefault(std::string_view key, T&& default_value) {
         const auto key_lc = utils::transform(key, tolower);
         dictionary_->try_emplace(key_lc, std::forward<T>(default_value));
     }
@@ -73,7 +73,7 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> T Section::get(std::string_view key, T default_value) const {
+    template <typename T> T Section::get(std::string_view key, T default_value) {
         setDefault(key, std::move(default_value));
         return get<T>(key);
     }
@@ -96,7 +96,7 @@ namespace constellation::config {
         }
     }
 
-    template <typename T> std::vector<T> Section::getArray(std::string_view key, std::vector<T> default_value) const {
+    template <typename T> std::vector<T> Section::getArray(std::string_view key, std::vector<T> default_value) {
         setDefault(key, std::move(default_value));
         return getArray<T>(key);
     }
@@ -114,7 +114,7 @@ namespace constellation::config {
         return {std::make_move_iterator(vec.begin()), std::make_move_iterator(vec.end())};
     }
 
-    template <typename T> std::set<T> Section::getSet(std::string_view key, const std::set<T>& default_value) const {
+    template <typename T> std::set<T> Section::getSet(std::string_view key, const std::set<T>& default_value) {
         setDefault(key, std::vector<T>({default_value.cbegin(), default_value.cend()}));
         return getSet<T>(key);
     }
