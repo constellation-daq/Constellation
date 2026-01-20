@@ -70,6 +70,7 @@ Any satellite that wishes to transmit measurement data for storage should inheri
 {py:class}`TransmitterSatellite <core.transmitter_satellite.TransmitterSatellite>` class instead of the regular
 {py:class}`Satellite <core.satellite.Satellite>` class.
 This class implements the connection and transmission to data receivers in the Constellation in a transparent way.
+Furthermore, in the main function for the satellite, the {py:class}`TransmitterSatelliteArgumentParser <core.transmitter_satellite.TransmitterSatelliteArgumentParser>` has to be used instead of the default {py:class}`SatelliteArgumentParser <core.satellite.SatelliteArgumentParser>`.
 
 Data will only be transmitted in the {bdg-secondary}`RUN` state. It is always preceded by a begin-of-run (BOR) message sent
 by the framework after the {py:func}`do_starting() <core.satellite.Satellite.do_starting>` function has successfully been
@@ -94,7 +95,7 @@ If the transmitter fails to send the data within a configured time window, an ex
 transitions into the {bdg-secondary}`ERROR` state.
 
 It is possible to check if any component in the data transmission chain is data rate limited allowing handle this scenario
-on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately::
+on the hardware or software level (e.g. dropping data) by checking if a record can be sent immediately:
 
 ```python
 if not self.can_send_record():
