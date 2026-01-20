@@ -87,7 +87,7 @@ namespace constellation::config {
          * @param key Key to possible set value of
          * @param default_value Value to assign if the key is not defined yet
          */
-        template <typename T> void setDefault(std::string_view key, T&& default_value) const;
+        template <typename T> void setDefault(std::string_view key, T&& default_value);
 
         /**
          * @brief Set alias name for an already existing key
@@ -120,7 +120,7 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value could not be cast to desired type
          * @throws InvalidValueError If the value is not valid for the requested type
          */
-        template <typename T> T get(std::string_view key, T default_value) const;
+        template <typename T> T get(std::string_view key, T default_value);
 
         /**
          * @brief Get an optional with value of a key in requested type if available
@@ -158,7 +158,7 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value could not be cast to desired type
          * @throws InvalidValueError If the value is not valid for the requested type
          */
-        template <typename T> std::vector<T> getArray(std::string_view key, std::vector<T> default_value) const;
+        template <typename T> std::vector<T> getArray(std::string_view key, std::vector<T> default_value);
 
         /**
          * @brief Get an optional with the values for a key containing an array if available
@@ -199,7 +199,7 @@ namespace constellation::config {
          * @throws InvalidTypeError If the value could not be cast to desired type
          * @throws InvalidValueError If the value is not valid for the requested type
          */
-        template <typename T> std::set<T> getSet(std::string_view key, const std::set<T>& default_value) const;
+        template <typename T> std::set<T> getSet(std::string_view key, const std::set<T>& default_value);
 
         /**
          * @brief Get an optional with values for a key containing a set if available
@@ -261,7 +261,7 @@ namespace constellation::config {
          * @throws MissingKeyError If the requested key is not defined
          * @throws InvalidTypeError If the value is not a section
          */
-        CNSTLN_API const Section& getSection(std::string_view key, Dictionary&& default_value) const;
+        CNSTLN_API const Section& getSection(std::string_view key, Dictionary&& default_value);
 
         /**
          * @brief Get an optional nested configuration section

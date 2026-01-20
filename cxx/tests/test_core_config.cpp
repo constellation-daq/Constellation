@@ -99,7 +99,7 @@ TEST_CASE("Configuration scalar getters", "[core][core::config]") {
     dict["chrono"] = chrono_v;
     constexpr auto enum_v = Enum::A;
     dict["enum"] = enum_v;
-    const Configuration config {std::move(dict)};
+    Configuration config {std::move(dict)};
     // Normal getter
     REQUIRE(config.get<bool>("bool") == bool_v);
     REQUIRE(config.get<int>("int") == int_v);
@@ -131,7 +131,7 @@ TEST_CASE("Configuration array getters", "[core][core::config]") {
     const std::vector<std::string> string_v {"hello", "world"};
     dict["string"] = string_v;
     dict["single_string"] = "test";
-    const Configuration config {std::move(dict)};
+    Configuration config {std::move(dict)};
     // Normal getter
     REQUIRE_THAT(config.getArray<bool>("bool"), RangeEquals(bool_v));
     REQUIRE_THAT(config.getArray<int>("int"), RangeEquals(int_v));
@@ -156,7 +156,7 @@ TEST_CASE("Configuration set getters", "[core][core::config]") {
     const std::vector<std::string> string_v {"A", "A", "B", "C", "B"};
     dict["string"] = string_v;
     dict["single_string"] = "A";
-    const Configuration config {std::move(dict)};
+    Configuration config {std::move(dict)};
     // Normal getter
     REQUIRE_THAT(config.getSet<std::string>("string"), UnorderedRangeEquals(std::vector<std::string>({"A", "B", "C"})));
     REQUIRE_THAT(config.getSet<std::string>("single_string"), UnorderedRangeEquals(std::vector<std::string>({"A"})));
@@ -231,7 +231,7 @@ TEST_CASE("Configuration section getters", "[core][core::config]") {
     subdict_2["sub"] = std::move(subsubdict);
     dict["sub_2"] = std::move(subdict_2);
     // Check configuration matches
-    const Configuration config {std::move(dict)};
+    Configuration config {std::move(dict)};
     REQUIRE(config.get<int>("int") == 5);
     const auto& config_subdict_1 = config.getSection("sub_1");
     REQUIRE(config_subdict_1.get<int>("int") == 4);

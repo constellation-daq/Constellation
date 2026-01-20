@@ -43,7 +43,7 @@ All parameters the satellite requires should be read and validated in this funct
 Configuration parameters can be read using the `get` method on the `Configuration` object:
 
 ```cpp
-void ExampleSatellite::initializing(const Configuration& config) {
+void ExampleSatellite::initializing(Configuration& config) {
     // Read voltage as double
     const auto voltage = config.get<double>("voltage");
 
