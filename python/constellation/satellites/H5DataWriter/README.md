@@ -60,7 +60,7 @@ brew install hdf5
 :::
 :::{tab-item} Windows
 
-A description how to install HDF5 and the development headers on Windows is provided on [the HDF5 Group website](https://www.hdfgroup.org/download-hdf5/).
+HDF5 is bundled with `h5py` on Windows and therefore no separate installation is required.
 
 :::
 ::::
