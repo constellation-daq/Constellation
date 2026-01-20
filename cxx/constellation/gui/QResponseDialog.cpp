@@ -9,6 +9,7 @@
 
 #include "QResponseDialog.hpp"
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <variant>
@@ -99,6 +100,7 @@ void QResponseDialog::show_as_string(std::string_view str) {
     ui_->responseText->setText(QString::fromStdString(std::string(str)));
 }
 
+// NOLINTBEGIN(misc-no-recursion)
 void QResponseDialog::populate_tree_item(QTreeWidgetItem* parent, const std::string& key, const Composite& value) {
 
     // Set child item if available, nullptr parent indicates root node
@@ -146,3 +148,4 @@ void QResponseDialog::populate_tree_item_list(QTreeWidgetItem* parent, const Com
         }
     }
 }
+// NOLINTEND(misc-no-recursion)
