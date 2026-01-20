@@ -211,23 +211,25 @@ bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) 
 }
 
 void ReceiverSatellite::initializing_receiver(Configuration& config) {
-    allow_overwriting_ = config.get<bool>("_allow_overwriting", false);
-    LOG(BasePoolT::pool_logger_, DEBUG) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
+    auto& config_data = config.getSection("_data", {});
 
-    data_transmitters_ = config.getSet<std::string>("_data_transmitters", {});
+    allow_overwriting_ = config_data.get<bool>("allow_overwriting", false);
+    LOG(BasePoolT::pool_logger_, INFO) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
+
+    data_transmitters_ = config_data.getSet<std::string>("receive_from", {});
     if(data_transmitters_.empty()) {
         LOG(BasePoolT::pool_logger_, INFO) << "Initialized to receive data from all transmitters";
     } else {
         std::ranges::for_each(data_transmitters_, [&](const auto& sat) {
             if(!CSCP::is_valid_canonical_name(sat)) {
-                throw InvalidValueError(config, "_data_transmitters", quote(sat) + " is not a valid canonical name");
+                throw InvalidValueError(config_data, "receive_from", quote(sat) + " is not a valid canonical name");
             }
         });
         LOG(BasePoolT::pool_logger_, INFO) << "Initialized to receive data from " << range_to_string(data_transmitters_);
     }
     reset_data_transmitter_states();
 
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
+    data_eor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("eor_timeout", 10));
     LOG(BasePoolT::pool_logger_, DEBUG) << "Timeout for EOR messages is " << data_eor_timeout_;
 }
 
@@ -265,19 +267,26 @@ void ReceiverSatellite::launching_receiver() {
 }
 
 void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_config) {
-    if(partial_config.has("_allow_overwriting")) {
-        allow_overwriting_ = partial_config.get<bool>("_allow_overwriting");
-        LOG(BasePoolT::pool_logger_, DEBUG)
-            << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
-    }
+    const auto config_data_opt = partial_config.getOptionalSection("_data");
+    if(config_data_opt.has_value()) {
+        const auto& config_data = config_data_opt.value().get();
 
-    if(partial_config.has("_data_transmitters")) {
-        throw InvalidKeyError(partial_config, "_data_transmitters", "Reconfiguration of data transmitters not possible");
-    }
+        const auto allow_overwriting_opt = config_data.getOptional<bool>("allow_overwriting");
+        if(allow_overwriting_opt.has_value()) {
+            allow_overwriting_ = allow_overwriting_opt.value();
+            LOG(BasePoolT::pool_logger_, INFO)
+                << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
+        }
 
-    if(partial_config.has("_eor_timeout")) {
-        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
-        LOG(BasePoolT::pool_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
+        const auto eor_timeout_opt = config_data.getOptional<std::uint64_t>("eor_timeout");
+        if(eor_timeout_opt.has_value()) {
+            data_eor_timeout_ = std::chrono::seconds(eor_timeout_opt.value());
+            LOG(BasePoolT::pool_logger_, INFO) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
+        }
+
+        if(config_data.has("receive_from")) {
+            throw InvalidKeyError(config_data, "receive_from", "Reconfiguration of data transmitters not possible");
+        }
     }
 }
 

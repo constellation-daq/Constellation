@@ -325,6 +325,62 @@ TEST_CASE("Transitions", "[satellite]") {
     satellite.exit();
 }
 
+TEST_CASE("Autonomy configuration", "[satellite]") {
+    // Create and start satellite
+    DummySatellite satellite {};
+
+    // Create sender
+    CSCPSender sender {satellite.getCommandPort()};
+
+    // Create configuration
+    Dictionary config {};
+    Dictionary config_autonomy {};
+    config_autonomy["role"] = CHP::Role::NONE;
+    config_autonomy["max_heartbeat_interval"] = 10;
+    config["_autonomy"] = std::move(config_autonomy);
+
+    // Send initialize
+    auto initialize_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "initialize"});
+    initialize_msg.addPayload(config.assemble());
+    sender.send(initialize_msg);
+    auto recv_msg_initialize = sender.recv();
+    REQUIRE(recv_msg_initialize.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satellite.progressFsm();
+
+    // Check role
+    sender.sendCommand("get_role");
+    auto recv_msg_get_role = sender.recv();
+    REQUIRE(recv_msg_get_role.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_role.getVerb().second), Equals("NONE"));
+
+    // Send launch
+    auto launch_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "launch"});
+    sender.send(launch_msg);
+    auto recv_msg_launch = sender.recv();
+    REQUIRE(recv_msg_launch.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satellite.progressFsm();
+
+    // Change configuration
+    config_autonomy = {};
+    config_autonomy["role"] = CHP::Role::TRANSIENT;
+    config_autonomy["max_heartbeat_interval"] = 5;
+    config["_autonomy"] = std::move(config_autonomy);
+
+    // Send reconfigure
+    auto reconfigure_msg = CSCP1Message({"cscp_sender"}, {CSCP1Message::Type::REQUEST, "reconfigure"});
+    reconfigure_msg.addPayload(config.assemble());
+    sender.send(reconfigure_msg);
+    auto recv_msg_reconfigure = sender.recv();
+    REQUIRE(recv_msg_reconfigure.getVerb().first == CSCP1Message::Type::SUCCESS);
+    satellite.progressFsm();
+
+    // Check role
+    sender.sendCommand("get_role");
+    auto recv_msg_get_role_2 = sender.recv();
+    REQUIRE(recv_msg_get_role_2.getVerb().first == CSCP1Message::Type::SUCCESS);
+    REQUIRE_THAT(to_string(recv_msg_get_role_2.getVerb().second), Equals("TRANSIENT"));
+}
+
 TEST_CASE("Shutdown", "[satellite]") {
     // Create and start satellite
     DummySatellite satellite {};

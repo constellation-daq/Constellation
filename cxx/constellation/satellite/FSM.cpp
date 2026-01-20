@@ -420,28 +420,36 @@ void FSM::initialize_fsm(Configuration& config) {
     // Clear previously stored conditions
     remote_conditions_.clear();
 
+    const auto config_conditions_opt = config.getOptionalSection("_conditions");
+    if(!config_conditions_opt.has_value()) {
+        return;
+    }
+    auto& config_conditions = config_conditions_opt.value().get();
+
     // Parse all transition condition parameters
     for(const auto& state : {CSCP::State::initializing,
                              CSCP::State::launching,
                              CSCP::State::landing,
                              CSCP::State::starting,
                              CSCP::State::stopping}) {
-        const auto key = "_require_" + to_string(state) + "_after";
-        if(config.has(key)) {
-            const auto remotes = config.getArray<std::string>(key);
+        const auto key = "require_" + enum_name(state) + "_after";
+
+        const auto remotes_opt = config_conditions.getOptionalArray<std::string>(key);
+        if(remotes_opt.has_value()) {
+            const auto& remotes = remotes_opt.value();
 
             LOG(logger_, INFO) << "Registering condition for transitional state " << quote(to_string(state))
                                << " and remotes " << quote(range_to_string(remotes));
 
-            std::ranges::for_each(remotes, [this, &config, &key, state](const auto& remote) {
+            std::ranges::for_each(remotes, [this, &config_conditions, &key, state](const auto& remote) {
                 // Check that names are valid
                 if(!CSCP::is_valid_canonical_name(remote)) {
-                    throw InvalidValueError(config, key, quote(remote) + " is not a valid canonical name");
+                    throw InvalidValueError(config_conditions, key, quote(remote) + " is not a valid canonical name");
                 }
 
                 // Check that the requested remote is not this satellite
                 if(transform(remote, ::tolower) == transform(satellite_->getCanonicalName(), ::tolower)) {
-                    throw InvalidValueError(config, key, "Satellite cannot depend on itself");
+                    throw InvalidValueError(config_conditions, key, "Satellite cannot depend on itself");
                 }
 
                 remote_conditions_.emplace(remote, state);
@@ -450,7 +458,7 @@ void FSM::initialize_fsm(Configuration& config) {
     }
 
     // Set timeout for conditional transitions
-    remote_condition_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_conditional_transition_timeout", 30));
+    remote_condition_timeout_ = std::chrono::seconds(config_conditions.get<std::uint64_t>("transition_timeout", 30));
 }
 
 // NOLINTBEGIN(performance-unnecessary-value-param,readability-convert-member-functions-to-static)

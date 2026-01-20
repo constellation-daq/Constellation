@@ -21,6 +21,7 @@
 #include "constellation/controller/Controller.hpp"
 #include "constellation/controller/exceptions.hpp"
 #include "constellation/core/config/Configuration.hpp"
+#include "constellation/core/config/value_types.hpp"
 #include "constellation/core/message/CSCP1Message.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
@@ -429,9 +430,9 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
 
     // Send command to single satellite with payload
     Dictionary config_a;
-    config_a["_max_heartbeat_interval"] = 3;
+    config_a["_autonomy"] = Dictionary({{"max_heartbeat_interval", 3}});
     Dictionary config_b;
-    config_b["_max_heartbeat_interval"] = 5;
+    config_b["_autonomy"] = Dictionary({{"max_heartbeat_interval", 5}});
     const auto payload_ = std::map<std::string, Controller::CommandPayload> {{"Dummy.a", config_a}, {"Dummy.b", config_b}};
     const auto msgs = controller.sendCommands("initialize", payload_);
     REQUIRE(msgs.contains("Dummy.a"));
@@ -454,10 +455,8 @@ TEST_CASE("Controller sends command with different payloads", "[controller]") {
     REQUIRE(rply.at("Dummy.b").getVerb().first == CSCP1Message::Type::SUCCESS);
     const auto satA_cfg = Dictionary::disassemble(rply.at("Dummy.a").getPayload());
     const auto satB_cfg = Dictionary::disassemble(rply.at("Dummy.b").getPayload());
-    REQUIRE(satA_cfg.contains("_max_heartbeat_interval"));
-    REQUIRE(satB_cfg.contains("_max_heartbeat_interval"));
-    REQUIRE(satA_cfg.at("_max_heartbeat_interval").get<std::int64_t>() == 3);
-    REQUIRE(satB_cfg.at("_max_heartbeat_interval").get<std::int64_t>() == 5);
+    REQUIRE(satA_cfg.at("_autonomy").get<Dictionary>().at("max_heartbeat_interval").get<std::int64_t>() == 3);
+    REQUIRE(satB_cfg.at("_autonomy").get<Dictionary>().at("max_heartbeat_interval").get<std::int64_t>() == 5);
 
     // Stop controller and exit satellites
     controller.stop();

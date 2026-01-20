@@ -31,6 +31,7 @@
 #include "constellation/core/config/value_types.hpp"
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
+#include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/string.hpp"
 
 using namespace constellation::controller;
@@ -350,23 +351,32 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
 }
 
 void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_name) {
+    // Create config and look for transition section
+    const auto config = Configuration(getSatelliteConfiguration(canonical_name));
+    const auto config_conditions_opt = config.getOptionalSection("_conditions");
+    if(!config_conditions_opt.has_value()) {
+        return;
+    }
+    const auto& config_conditions = config_conditions_opt.value().get();
+
     // Parse all transition condition parameters
     for(const auto& state : {CSCP::State::initializing,
                              CSCP::State::launching,
                              CSCP::State::landing,
                              CSCP::State::starting,
                              CSCP::State::stopping}) {
-        const auto key = transform("_require_" + to_string(state) + "_after", ::tolower);
+        const auto key = "require_" + enum_name(state) + "_after";
 
-        // Get final assembled config and look for the key:
-        const auto config = getSatelliteConfiguration(canonical_name);
-        if(config.contains(key)) {
-            auto register_dependency = [this, canonical_name, state](auto& dependent) {
+        // Get dependents for transition
+        const auto dependents_opt = config_conditions.getOptionalArray<std::string>(key);
+        if(dependents_opt.has_value()) {
+            const auto& dependents = dependents_opt.value();
+
+            const auto register_dependency = [this, canonical_name, state](auto& dependent) {
                 // Register dependency in graph, current satellite depends on config value satellite
                 transition_graph_[state][transform(dependent, ::tolower)].emplace(transform(canonical_name, ::tolower));
             };
 
-            const auto dependents = Configuration(config).getArray<std::string>(key);
             LOG(config_parser_logger_, DEBUG)
                 << "Registering dependency for transitional state " << quote(to_string(state)) << " of " << canonical_name
                 << " with dependents " << range_to_string(dependents);

@@ -115,12 +115,12 @@ namespace constellation::satellite {
          * @brief Initialize transmitter components of satellite
          *
          * Reads the following config parameters:
-         * * `_bor_timeout`
-         * * `_eor_timeout
-         * * `_data_timeout`
-         * * `_payload_threshold`
-         * * `_queue_size`
-         * * `_data_license`
+         * * `_data.bor_timeout`
+         * * `_data.eor_timeout
+         * * `_data.data_timeout`
+         * * `_data.payload_threshold`
+         * * `_data.queue_size`
+         * * `_data.license`
          *
          * @param config Configuration of the satellite
          */
@@ -130,12 +130,12 @@ namespace constellation::satellite {
          * @brief Reconfigure transmitter components of satellite
          *
          * Supports reconfiguring of the following config parameters:
-         * * `_bor_timeout`
-         * * `_eor_timeout`
-         * * `_data_timeout`
-         * * `_payload_threshold`
-         * * `_queue_size`
-         * * `_data_license`
+         * * `_data.bor_timeout`
+         * * `_data.eor_timeout`
+         * * `_data.data_timeout`
+         * * `_data.payload_threshold`
+         * * `_data.queue_size`
+         * * `_data.data_license`
          *
          * @param partial_config Changes to the configuration of the satellite
          */
