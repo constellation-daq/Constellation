@@ -78,12 +78,14 @@ class TransmitterSatellite(Satellite):
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all TransmitterSatellite-type classes."""
         super()._pre_initializing_hook(config)
-        self._dtm.bor_timeout = config.get_int("_bor_timeout", 10, min_val=1)
-        self._dtm.data_timeout = config.get_int("_data_timeout", 10, min_val=1)
-        self._dtm.eor_timeout = config.get_int("_eor_timeout", 10, min_val=1)
-        self._dtm.payload_threshold = config.get_int("_payload_threshold", 128, min_val=0)
-        self._dtm.queue_size = config.get_int("_queue_size", 32768, min_val=1)
-        self._data_license = config.get("_data_license", "ODC-By-1.0", return_type=str)
+
+        config_data = config.get_section("_data", {})
+        self._dtm.bor_timeout = config_data.get_int("bor_timeout", 10, min_val=1)
+        self._dtm.data_timeout = config_data.get_int("data_timeout", 10, min_val=1)
+        self._dtm.eor_timeout = config_data.get_int("eor_timeout", 10, min_val=1)
+        self._dtm.payload_threshold = config_data.get_int("payload_threshold", 128, min_val=0)
+        self._dtm.queue_size = config_data.get_int("queue_size", 32768, min_val=1)
+        self._data_license = config_data.get("license", "ODC-By-1.0", return_type=str)
 
     def _pre_run_hook(self, run_identifier: str) -> None:
         """Hook run immediately before `do_run()` is called.

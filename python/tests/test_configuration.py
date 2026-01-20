@@ -414,6 +414,9 @@ def test_configuration_to_string():
     config = Configuration(
         {
             "_internal": 1024,
+            "_internal_section": {  #
+                "key": "internal"
+            },
             "user": 3.14,
             "sub_1": {  #
                 "array": [1, 2, 3, 4]
@@ -427,6 +430,7 @@ def test_configuration_to_string():
     )
     str_all = config.to_string(ConfigurationGroup.ALL)
     assert "\n  _internal: 1024" in str_all
+    assert "\n  _internal_section:\n    key: internal" in str_all
     assert "\n  user: 3.14" in str_all
     assert "\n  sub_1:\n    array: [1, 2, 3, 4]" in str_all
     assert "\n  sub_2:\n    sub:\n      string: hello world" in str_all
@@ -437,6 +441,7 @@ def test_configuration_to_string():
     assert "\n  sub_2:\n    sub:\n      string: hello world" in str_user
     str_internal = config.to_string(ConfigurationGroup.INTERNAL)
     assert "\n  _internal: 1024" in str_internal
+    assert "\n  _internal_section:\n    key: internal" in str_internal
     assert "user" not in str_internal
 
 

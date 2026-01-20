@@ -8,9 +8,9 @@ verbosity = "DEBUG"
 
 [mocksat._default]
 # Class-specific system settings
-_role = "none"
-_conditional_transition_timeout = 30
-_max_heartbeat_interval = 25
+_autonomy.role = "none"
+_autonomy.max_heartbeat_interval = 25
+_conditions.transition_timeout = 30
 # Class-specific settings for satellites
 current_limit = 5
 ampere = 2
@@ -21,8 +21,8 @@ voltage = 5000
 
 [mocksat.device2]
 # Device-specific system settings
-_role = "essential"
-start_after = "mocksat.device1"
+_autonomy.role = "essential"
+_conditions.require_starting_after = "mocksat.device1"
 # Device-specific settings for satellite
 voltage = 3000
 parameter1 = "a lot"
@@ -32,9 +32,9 @@ some_key = "some_value"
 name_format = "test_data_{date}.h5"
 
 [MockExampleSatellite._default]
-_role = "DYNAMIC"
-_conditional_transition_timeout = 30
-_max_heartbeat_interval = 25
+_autonomy.role = "DYNAMIC"
+_autonomy.max_heartbeat_interval = 25
+_conditions.transition_timeout = 30
 magic = "True"
 mode = "passionate"
 voltage = 10

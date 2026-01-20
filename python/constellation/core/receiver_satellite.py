@@ -32,15 +32,17 @@ class ReceiverSatellite(Satellite):
     def _pre_initializing_hook(self, config: Configuration) -> None:
         """Configure values specific for all ReceiverSatellite-type classes."""
         super()._pre_initializing_hook(config)
+
+        config_data = config.get_section("_data", {})
         data_transmitters: None | set[str] = None
-        if "_data_transmitters" in config:
-            data_transmitters = config.get_set("_data_transmitters", element_type=str)
+        if "receive_from" in config_data:
+            data_transmitters = config_data.get_set("receive_from", element_type=str)
         # Create data receiver
         self._drc = DataReceiver(
             self.context, self.log_cdtp, self.receive_bor, self.receive_data, self.receive_eor, data_transmitters
         )
         # EOR timeout
-        self._drc.eor_timeout = config.get_int("_eor_timeout", 10, min_val=1)
+        self._drc.eor_timeout = config_data.get_int("eor_timeout", 10, min_val=1)
         self.log_cdtp.debug("Timeout for EOR messages is %ss", self._drc.eor_timeout)
 
     def _pre_launching_hook(self) -> None:

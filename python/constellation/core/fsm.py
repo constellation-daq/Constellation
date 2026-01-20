@@ -166,26 +166,29 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
         # Clear conditions
         self.conditions = defaultdict(list)
 
-        # Read transition conditions from config
-        for transition in [
-            SatelliteState.initializing,
-            SatelliteState.launching,
-            SatelliteState.landing,
-            SatelliteState.starting,
-            SatelliteState.stopping,
-        ]:
-            key = f"_require_{transition.name}_after"
-            if key in config.get_keys():
-                value = config[key]
-                # FIXME could check for valid canonical name
-                if isinstance(value, list):
-                    self.conditions[transition] = value
-                else:
-                    self.conditions[transition].append(value)
-                self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
+        if "_conditions" in config:
+            config_conditions = config.get_section("_conditions")
 
-        # Set timeout for conditional transitions
-        self._conditional_transition_timeout = config.get_int("_conditional_transition_timeout", 30, min_val=0)
+            # Read transition conditions from config
+            for transition in [
+                SatelliteState.initializing,
+                SatelliteState.launching,
+                SatelliteState.landing,
+                SatelliteState.starting,
+                SatelliteState.stopping,
+            ]:
+                key = f"require_{transition.name}_after"
+                if key in config_conditions:
+                    value = config_conditions.get(key)
+                    # FIXME could check for valid canonical name
+                    if isinstance(value, list):
+                        self.conditions[transition] = value
+                    else:
+                        self.conditions[transition].append(value)
+                    self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
+
+            # Set timeout for conditional transitions
+            self._conditional_transition_timeout = config_conditions.get_int("transition_timeout", 30, min_val=0)
 
         return self._transition("initialize", config, thread=False)
 
