@@ -13,7 +13,7 @@
 #include <string_view>
 
 #include <QDialog>
-#include <QStandardItemModel>
+#include <QTreeWidgetItem>
 
 #include "constellation/build.hpp"
 #include "constellation/core/config/value_types.hpp"
@@ -43,7 +43,7 @@ namespace constellation::gui {
         explicit QResponseDialog(QWidget* parent, const message::CSCP1Message& message);
 
     private:
-        /** Helper to fill the UI with a tabular response from a dictionary */
+        /** Helper to fill the UI with a tree view response from a dictionary */
         void show_as_dictionary(const config::Dictionary& dict);
 
         /** Helper to fill the UI with a list of returned values */
@@ -51,6 +51,18 @@ namespace constellation::gui {
 
         /** Helper to fill the UI with a text from the response or a verbatim display of the payload */
         void show_as_string(std::string_view str);
+
+        /** Helper to setup and configure the tree widget */
+        void setup_tree_widget(const QString& key_header, const QString& value_header);
+
+        /** Recursive helper to populate a tree item with composite data */
+        void populate_tree_item(QTreeWidgetItem* parent, const std::string& key, const config::Composite& value);
+
+        /** Helper to populate a tree item with dictionary data */
+        void populate_tree_item_dict(QTreeWidgetItem* parent, const config::Dictionary& dict);
+
+        /** Helper to populate a tree item with list data */
+        void populate_tree_item_list(QTreeWidgetItem* parent, const config::CompositeList& list);
 
     private:
         std::shared_ptr<Ui::QResponseDialog> ui_;
