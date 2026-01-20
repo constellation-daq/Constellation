@@ -84,7 +84,7 @@ namespace constellation::satellite {
         /**
          * @brief Returns if online configuration is supported
          */
-        constexpr bool supportsReconfigure() const { return support_reconfigure_; }
+        [[nodiscard]] constexpr bool supportsReconfigure() const { return support_reconfigure_; }
 
         /**
          * @brief Return current state of the satellite
