@@ -179,7 +179,11 @@ const Section& Section::getSection(std::string_view key) const {
     }
 }
 
-const Section& Section::getSection(std::string_view key, Dictionary&& default_value) {
+Section& Section::getSection(std::string_view key) {
+    return const_cast<Section&>(std::as_const(*this).getSection(key)); // NOLINT(cppcoreguidelines-pro-type-const-cast)
+}
+
+Section& Section::getSection(std::string_view key, Dictionary&& default_value) {
     // Set default value manually since dictionary needs to be inserted into tree
     const auto key_lc = utils::transform(key, tolower);
     const auto confdict_it = section_tree_.find(key_lc);
@@ -195,6 +199,14 @@ const Section& Section::getSection(std::string_view key, Dictionary&& default_va
 }
 
 std::optional<std::reference_wrapper<const Section>> Section::getOptionalSection(std::string_view key) const {
+    try {
+        return getSection(key);
+    } catch(const MissingKeyError&) {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::reference_wrapper<Section>> Section::getOptionalSection(std::string_view key) {
     try {
         return getSection(key);
     } catch(const MissingKeyError&) {
