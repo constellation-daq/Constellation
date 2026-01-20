@@ -290,6 +290,7 @@ These assumptions are:
 - Reconfiguring does not re-initialize the satellite, it only changes parameters
 - Parameters which are changed have to exist already in the configuration
 - Parameters cannot change their type
+- Unused parameters (including nested sections) are removed from configuration
 
 This means that [dynamic sections](#dynamic-sections) are severely limited in the way they can be reconfigured, as no new
 sections can be defined and existing sections cannot be removed.

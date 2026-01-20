@@ -167,7 +167,9 @@ const Section& Section::getSection(std::string_view key) const {
 
     // Try to get configuration section from tree
     try {
-        return section_tree_.at(key_lc);
+        const auto& section = section_tree_.at(key_lc);
+        mark_used(key_lc);
+        return section;
     } catch(const std::out_of_range&) {
         const auto it = dictionary_->find(key_lc);
         if(it != dictionary_->cend()) {
@@ -221,17 +223,21 @@ std::vector<std::string> Section::removeUnusedEntries() {
     std::vector<std::string> unused_keys_to_remove {};
     for(const auto& [key, value] : *dictionary_) {
         if(std::holds_alternative<Dictionary>(value)) {
-            // If dictionary, remove unused key from there
-            auto& sub_dict = section_tree_.at(key);
-            auto sub_unused_keys = sub_dict.removeUnusedEntries();
-            std::ranges::move(sub_unused_keys, std::back_inserter(unused_keys));
-            // If dictionary now empty, erase it
-            if(sub_dict.empty()) {
-                section_tree_.erase(key);
+            // Sections require special handling
+            auto& sub_section = section_tree_.at(key);
+            auto sub_unused_keys = sub_section.removeUnusedEntries();
+            // Check if section was accessed at all
+            if(used_keys_.contains(key)) {
+                // If accessed, add unused sub keys recursively
+                std::ranges::move(sub_unused_keys, std::back_inserter(unused_keys));
+            } else {
+                // If unused, add section key instead of sub keys and remove section entirely
+                unused_keys.emplace_back(prefix_ + key);
                 unused_keys_to_remove.emplace_back(key);
+                section_tree_.erase(key);
             }
         } else {
-            // Otherwise, check if unused and store key
+            // Check if unused and store key for removal
             if(!used_keys_.contains(key)) {
                 unused_keys.emplace_back(prefix_ + key);
                 unused_keys_to_remove.emplace_back(key);

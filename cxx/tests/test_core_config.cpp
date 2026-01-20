@@ -428,6 +428,7 @@ TEST_CASE("Configuration unused keys", "[core][core::config]") {
     Dictionary subdict {};
     subdict["used"] = 2048;
     subdict["unused"] = 2048;
+    subdict["used_empty"] = Dictionary();
     Dictionary subsubdict {};
     subsubdict["unused"] = 4096;
     subdict["sub"] = std::move(subsubdict);
@@ -437,6 +438,7 @@ TEST_CASE("Configuration unused keys", "[core][core::config]") {
     REQUIRE(config.get<int>("used") == 1024);
     const auto& sub_config = config.getSection("sub");
     REQUIRE(sub_config.get<int>("used") == 2048);
+    REQUIRE(sub_config.getSection("used_empty").empty());
     // Move configuration
     Configuration config_moved {std::move(config)};
     Configuration config_assigned {};
@@ -445,11 +447,13 @@ TEST_CASE("Configuration unused keys", "[core][core::config]") {
     REQUIRE(config_assigned.has("unused"));
     // Remove unused keys
     const auto removed_keys = config_assigned.removeUnusedEntries();
-    REQUIRE_THAT(removed_keys, UnorderedRangeEquals(std::vector<std::string>({"unused", "sub.unused", "sub.sub.unused"})));
+    REQUIRE_THAT(removed_keys, UnorderedRangeEquals(std::vector<std::string>({"unused", "sub.unused", "sub.sub"})));
     // Check unused keys were removed
     REQUIRE_FALSE(config_assigned.has("unused"));
     const auto& sub_config_after = config_assigned.getSection("sub");
     REQUIRE(sub_config_after.has("used"));
+    REQUIRE(sub_config_after.has("used_empty"));
+    REQUIRE_FALSE(sub_config_after.has("unused"));
     REQUIRE_FALSE(sub_config_after.has("sub"));
 }
 
