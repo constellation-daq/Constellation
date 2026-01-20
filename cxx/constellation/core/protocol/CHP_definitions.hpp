@@ -100,7 +100,7 @@ namespace constellation::protocol::CHP {
     static constexpr std::chrono::milliseconds MinimumInterval = std::chrono::milliseconds(500);
 
     /** Default maximum interval between heartbeat messages */
-    static constexpr std::chrono::milliseconds MaximumInterval = std::chrono::milliseconds(300000);
+    static constexpr std::chrono::milliseconds MaximumInterval = std::chrono::milliseconds(30000);
 
     /** Load factor to scale CHP subscriber weight in interval scaling */
     static constexpr double LoadFactor = 3.;
