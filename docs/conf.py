@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+import datetime
 import json
 import os
 import pathlib
@@ -27,7 +28,7 @@ sys.path.insert(0, os.path.abspath("../python/constellation"))
 
 # metadata
 project = "Constellation"
-project_copyright = "2024 DESY and the Constellation authors, CC-BY-4.0"
+project_copyright = f"{datetime.date.today().year} DESY and the Constellation authors, CC-BY-4.0"
 author = "DESY and the Constellation authors"
 doc_author = r"Stephan Lachnit\and Simon Spannagel\and and the Constellation Authors"
 version = __version__
