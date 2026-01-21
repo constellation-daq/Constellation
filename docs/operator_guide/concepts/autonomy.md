@@ -36,7 +36,7 @@ Satellites can convey information to the Constellation by a number of possibilit
 
 Roles group the actions taken by the Constellation in each of these cases into an easily configurable parameter. The role
 is configured for the *sending* satellite and is transmitted via heartbeat message flags to the receivers throughout the
-Constellation. The following roles exist and can be configured through the `_role` parameter:
+Constellation. The following roles exist and can be configured through the `role` parameter in the `_autonomy` section:
 
 * `ESSENTIAL` satellites are considered key to the running Constellation. Their information is treated most strictly, in
   particular
@@ -71,11 +71,11 @@ command.
 In some cases it can be required to initialize, launch, start or stop satellites in a specific order - they might for example
 depend on receiving a hardware clock from another satellite that is only available after initializing.
 
-For this purpose, Constellation provides the `_require_<transitional state>_after` keywords, available for each transition.
+For this purpose, Constellation provides the `require_<transitional state>_after` parameters in the `_conditions` section, available for each transition.
 The respective satellite will receive these as conditions from the controller via the configuration passed in the
 `initialize` command and evaluate them upon entering transitional states.
 
-If, for example, Satellite `Sputnik.Second` receives the condition `_require_starting_after = "Sputnik.First"` it will enter
+If, for example, Satellite `Sputnik.Second` receives the condition `require_starting_after = "Sputnik.First"` it will enter
 the {bdg-secondary}`starting` transitional states but wait until satellite `Sputnik.First` has successfully completed the transition, and
 `Sputnik.Second` receives the state `RUN` from `Sputnik.First` via the
 [heartbeat protocol](../../framework_reference/protocols.md#autonomous-operation) before progressing through its own {bdg-secondary}`starting` state. This can
@@ -145,11 +145,11 @@ necessarily would progress sequentially.
 Conditions are available for all [regular transitional states](satellite.md#changing-states---transitions) of a satellite
 apart from {bdg-secondary}`reconfiguring`, i.e.
 
-* `_require_initializing_after`
-* `_require_launching_after`
-* `_require_landing_after`
-* `_require_starting_after`
-* `_require_stopping_after`
+* `require_initializing_after`
+* `require_launching_after`
+* `require_landing_after`
+* `require_starting_after`
+* `require_stopping_after`
 
 ```{warning}
 Depending on the Constellation, not necessarily all combinations are valid and will function. For example, a transmitter
@@ -166,7 +166,7 @@ There is no restriction to the number of conditions or the number of remote sate
 multiple satellites in one transitional state, the corresponding key can be set as array, e.g.
 
 ```toml
-_require_launching_after = ["Sputnik.First", "Sputnik.Third"]
+_conditions.require_launching_after = ["Sputnik.First", "Sputnik.Third"]
 ```
 
 Conditions cannot be set on the same satellite executing the conditional transition, and they cannot be assigned to steady
@@ -177,6 +177,6 @@ Waiting for remote conditions to be satisfied can be interrupted by a number of 
 * The remote satellite the condition depends on is not present or disappeared
 * The remote satellite the condition depends on returns an {bdg-secondary}`ERROR` state
 * The waiting satellite runs into the timeout for conditional transitions. The timeout can be configured using the key
-  `_conditional_transition_timeout` and defaults to 30 seconds.
+  `transition_timeout` and defaults to 30 seconds.
 
 In all cases the waiting satellite aborts the pending action and transitions into its {bdg-secondary}`ERROR` state.

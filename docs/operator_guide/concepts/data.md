@@ -88,7 +88,7 @@ the data recorded. Runs are marked with any of the following run condition flags
 ## Receiving and Storing Data
 
 Receiver satellites accept data form one or more satellites within the same Constellation. In order to assign transmitter
-satellites to a specific receiver, the receiver can be given the `_data_transmitters` parameter which holds a list of all
+satellites to a specific receiver, the receiver can be given the `_data.receive_from` parameter which holds a list of all
 canonical names of transmitters it should connect to. If not given, receiver satellites connect to all transmitters.
 
 Usually, receiver satellites will take great care that the data are stored properly, e.g. by testing access to the storage
@@ -120,11 +120,11 @@ More details about receiving telemetry information or log messages are provided 
 
 Constellation provides the possibility to store a data license identifier in the run metadata in order to explicitly
 define reuse policy and attribution requirements as suggested by the [FAIR principles](https://www.go-fair.org/fair-principles/).
-The data license can be configured for every transmitter satellite by adding the `_data_license` key to its configuration:
+The data license can be configured for every transmitter satellite by adding the `_data.license` key to its configuration:
 
 ```toml
 [MySatellite.Name]
-_data_license = "ODC-By-1.0"
+_data.license = "ODC-By-1.0"
 ```
 
 If no such key is provided, the [Open Data Commons Attribution License](https://opendatacommons.org/licenses/by/) is used as

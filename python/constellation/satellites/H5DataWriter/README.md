@@ -83,7 +83,7 @@ Usually, it is not safe to read from an HDF5 file while data is being written to
 If the SWMR mode is enabled via the `allow_concurrent_reading` parameter, the data format differs due to certain limitations of the SWMR mode.
 
 ```{important}
-In SWMR mode no new datasets can be created, thus all datasets for a transmitter need to be created as soon the BOR has arrived. All data transmitters have to be specified explicitly via the `_data_transmitters` parameter.
+In SWMR mode no new datasets can be created, thus all datasets for a transmitter need to be created as soon the BOR has arrived. All data transmitters have to be specified explicitly via the `_data.receive_from` parameter.
 ```
 
 Once all BOR messages have been received, the file will be set to SWMR mode.

@@ -52,7 +52,7 @@ unused_parameter = 1
 [RandomTransmitter.Sender]
 
 [EudaqNativeWriter.Receiver]
-_data_transmitters = ["Sender"]
+_data.receive_from = ["Sender"]
 output_directory = "/tmp/test"
 ```
 
@@ -71,7 +71,6 @@ Observatory main window after initialization
 To further inspect a log messages, it is possible to double-click on them to open details about the log message.
 
 ```{figure} observatory_message_detail.png
-:scale: 40 %
 Log message details
 ```
 
@@ -85,7 +84,7 @@ To fix this issue, the configuration file has to be adjusted:
 [RandomTransmitter.Sender]
 
 [EudaqNativeWriter.Receiver]
-_data_transmitters = ["RandomTransmitter.Sender"]
+_data.receive_from = ["RandomTransmitter.Sender"]
 output_directory = "/tmp/test"
 ```
 
