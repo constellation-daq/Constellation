@@ -34,6 +34,6 @@ meson configure build -Dsatellite_random_transmitter=true
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `DUTY_CYCLE` | Total duty cycle of the run loop | Integer | `LAST_VALUE` | 5s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `DUTY_CYCLE` | Total duty cycle of the run loop | Integer | 5s |

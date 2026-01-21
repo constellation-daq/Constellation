@@ -57,9 +57,9 @@ The IP address to use in this satellite will be provided beside the selection bo
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
+| Metric | Description | Value Type | Interval |
 |--------|-------------|------------|-------------|----------|
-| `NUM_TRIGGERS` | Number of triggers collected so far | Integer | `LAST_VALUE` | 10s |
+| `NUM_TRIGGERS` | Number of triggers collected so far | Integer | 10s |
 
 ## Custom Commands
 

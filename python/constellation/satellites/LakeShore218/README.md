@@ -58,16 +58,16 @@ pip install --no-build-isolation -e ".[visa]"
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `TEMP_1` | Temperature 1 | Float | `LAST_VALUE` | 5s |
-| `TEMP_2` | Temperature 2 | Float | `LAST_VALUE` | 5s |
-| `TEMP_3` | Temperature 3 | Float | `LAST_VALUE` | 5s |
-| `TEMP_4` | Temperature 4 | Float | `LAST_VALUE` | 5s |
-| `TEMP_5` | Temperature 5 | Float | `LAST_VALUE` | 5s |
-| `TEMP_6` | Temperature 6 | Float | `LAST_VALUE` | 5s |
-| `TEMP_7` | Temperature 7 | Float | `LAST_VALUE` | 5s |
-| `TEMP_8` | Temperature 8 | Float | `LAST_VALUE` | 5s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `TEMP_1` | Temperature 1 | Float | 5s |
+| `TEMP_2` | Temperature 2 | Float | 5s |
+| `TEMP_3` | Temperature 3 | Float | 5s |
+| `TEMP_4` | Temperature 4 | Float | 5s |
+| `TEMP_5` | Temperature 5 | Float | 5s |
+| `TEMP_6` | Temperature 6 | Float | 5s |
+| `TEMP_7` | Temperature 7 | Float | 5s |
+| `TEMP_8` | Temperature 8 | Float | 5s |
 
 ## Custom Commands
 

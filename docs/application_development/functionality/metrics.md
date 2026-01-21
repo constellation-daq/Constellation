@@ -1,8 +1,8 @@
 # Sending Metrics
 
 ```{seealso}
-For the basic concepts behind telemetry in Constellation and the available metric types check the
-[chapter in the operator’s guide](../../operator_guide/concepts/telemetry.md).
+The basic concepts behind metrics and telemetry in Constellation are described in the
+[*Telemetry* chapter of the operator guide](../../operator_guide/concepts/telemetry.md).
 ```
 
 ::::{tab-set}

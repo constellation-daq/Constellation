@@ -41,12 +41,12 @@ other_param = "antenna"
 
 The following metrics are distributed by this satellite and can be subscribed to. Timed metrics provide an interval in units of time, triggered metrics in number of calls.
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `BEEP` | Sputnik beep signal | Integer | `LAST_VALUE` | configurable, default 3s |
-| `TEMPERATURE` | Temperature inside the spacecraft in degrees Celsius | Float | `LAST_VALUE` | 3s |
-| `FAN_RUNNING` | Boolean indicating if the internal fan is running | Bool | `LAST_VALUE` | 5s |
-| `TIME` | Time since launch in seconds | Float | `LAST_VALUE` | 10s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `BEEP` | Sputnik beep signal | Integer | configurable, default 3s |
+| `TEMPERATURE` | Temperature inside the spacecraft in degrees Celsius | Float | 3s |
+| `FAN_RUNNING` | Boolean indicating if the internal fan is running | Bool | 5s |
+| `TIME` | Time since launch in seconds | Float | 10s |
 
 ## Custom Commands
 
