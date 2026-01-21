@@ -254,19 +254,14 @@ std::string Dictionary::to_string() const {
     return out;
 }
 
-std::string Dictionary::format(bool newline_prefix, key_filter* filter, std::size_t indent) const {
+std::string Dictionary::format(bool newline_prefix, std::size_t indent) const {
     std::string out {};
     const auto indent_str = std::string(indent, ' ');
 
     for(const auto& [key, value] : *this) {
-        // Check key filter
-        if(!filter(key)) {
-            continue;
-        }
-
         if(std::holds_alternative<Dictionary>(value)) {
             // If dictionary, call recursively with increased indent
-            out += indent_str + key + ':' + value.get<Dictionary>().format(true, filter, indent + 2) + '\n';
+            out += indent_str + key + ':' + value.get<Dictionary>().format(true, indent + 2) + '\n';
         } else {
             // Otherwise, add directly
             out += indent_str + key + ": " + value.to_string() + '\n';

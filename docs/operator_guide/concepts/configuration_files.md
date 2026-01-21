@@ -262,20 +262,21 @@ It should be noted though that once a table has been defined in any of the three
 Constellation uses a leading underscore to distinguish parameters from satellite implementations of parameters that are directed at framework components, and to avoid naming conflicts between them.
 The satellite documentation lists these parameters in separate sections.
 
-In the following, the parameter `_role` is a Constellation framework parameter, while `interval` is a parameter that is read and interpreted by the satellite implementation:
+In the following, the parameter `_autonomy.role` is a Constellation framework parameter, while `interval` is a parameter that is read and interpreted by the satellite implementation:
 
 ::::{tab-set-code}
 
 ```yaml
 Sputnik:
   One:
-    _role: "ESSENTIAL"
+    _autonomy:
+      role: "ESSENTIAL"
     interval: 1500
 ```
 
 ```toml
 [Sputnik.One]
-_role = "ESSENTIAL"
+_autonomy.role = "ESSENTIAL"
 interval = 1500
 ```
 
@@ -294,7 +295,8 @@ A set of default values for all satellites in the Constellation has to be placed
 
 ```yaml
 _default:
-  _role: ESSENTIAL
+  _autonomy:
+    role: ESSENTIAL
 
 Sputnik:
   One:
@@ -305,7 +307,7 @@ Mariner:
 
 ```toml
 [_default]
-_role = "ESSENTIAL"
+_autonomy.role = "ESSENTIAL"
 
 [Sputnik.One]
 
@@ -314,7 +316,7 @@ _role = "ESSENTIAL"
 
 ::::
 
-Here, the `_role` parameter will be applied to both satellite instances, `Sputnik.One` and `Mariner.Nine`.
+Here, the `_autonomy.role` parameter will be applied to both satellite instances, `Sputnik.One` and `Mariner.Nine`.
 In contrast, when placing the `_default` section *within* a satellite type, only the respective satellites will inherit these parameters:
 
 ::::{tab-set-code}
@@ -322,7 +324,8 @@ In contrast, when placing the `_default` section *within* a satellite type, only
 ```yaml
 Sputnik:
   _default:
-    _role: ESSENTIAL
+    _autonomy:
+      role: ESSENTIAL
   One:
 
 Mariner:
@@ -331,7 +334,7 @@ Mariner:
 
 ```toml
 [Sputnik._default]
-_role = "ESSENTIAL"
+_autonomy.role = "ESSENTIAL"
 
 [Sputnik.One]
 
@@ -340,7 +343,7 @@ _role = "ESSENTIAL"
 
 ::::
 
-Here, only the `Sputnik.One` satellite will receive the `_role` parameter value `ESSENTIAL`, while `Mariner.Nine` will have the framework-default value.
+Here, only the `Sputnik.One` satellite will receive the `_autonomy.role` parameter value `ESSENTIAL`, while `Mariner.Nine` will have the framework-default value.
 
 Parameter set through this `_default` mechanism are overwritten by more specific configurations.
 This means, global parameters are overwritten by satellite-type default parameters, and satellite-type defaults are replaced by individual satellite configurations:
@@ -349,13 +352,16 @@ This means, global parameters are overwritten by satellite-type default paramete
 
 ```yaml
 _default:
-  _role: ESSENTIAL
+  _autonomy:
+    role: ESSENTIAL
 
 Sputnik:
   _default:
-    _role: TRANSIENT
+    _autonomy:
+      role: TRANSIENT
   One:
-    _role: NONE
+    _autonomy:
+      role: NONE
   Two:
 
 Mariner:
@@ -364,13 +370,13 @@ Mariner:
 
 ```toml
 [_default]
-_role = "NONE"
+_autonomy.role = "NONE"
 
 [Sputnik._default]
-_role = "TRANSIENT"
+_autonomy.role = "TRANSIENT"
 
 [Sputnik.One]
-_role = "ESSENTIAL"
+_autonomy.role = "ESSENTIAL"
 
 [Sputnik.Two]
 
@@ -486,7 +492,8 @@ Sputnik:
   # Default parameters inherited by all Sputnik instances
   _default:
     # Framework parameter
-    _heartbeat_interval: 10
+    _autonomy:
+      max_heartbeat_interval: 10
     # Satellite-specific parameter
     interval: 3000
 
@@ -494,13 +501,13 @@ Sputnik:
   One:
     # This overrides the default, setting it to 1500ms for this instance only
     interval: 1500
-    # The _heartbeat_interval is inherited as 10 seconds
+    # The _autonomy.max_heartbeat_interval is inherited as 10 seconds
 
   # Another instance, called "Sputnik.Two"
   Two:
     # Explicitly configuring a satellite-specific parameter:
     launch_delay: 5
-    # Both interval (3000ms) and _heartbeat_interval (10s) are
+    # Both interval (3000ms) and _autonomy.max_heartbeat_interval (10s) are
     # inherited from the _default section
 
 # Configuration for Mariner-type satellites
@@ -520,7 +527,7 @@ Mariner:
 # Default parameters inherited by all Sputnik instances
 [Sputnik._default]
 # Framework parameter
-_heartbeat_interval = 10
+_autonomy.max_heartbeat_interval = 10
 # Satellite-specific parameter
 interval = 3000
 

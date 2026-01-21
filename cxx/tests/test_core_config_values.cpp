@@ -462,13 +462,11 @@ TEST_CASE("Dictionary format", "[core][core::config]") {
     dict["float"] = 1.5;
     dict["string"] = "hello world";
     dict["array"] = Array({1, 2});
-    dict["filtered"] = 42;
     Dictionary subdict {};
     subdict["nested"] = true;
     subdict["empty_dict"] = Dictionary();
     dict["dict"] = std::move(subdict);
-    REQUIRE_THAT(dict.format(
-                     false, [](std::string_view key) { return key != "filtered"; }, 0),
+    REQUIRE_THAT(dict.format(false, 0),
                  Equals("array: [ 1, 2 ]\n"
                         "bool: true\n"
                         "dict:\n"

@@ -171,9 +171,9 @@ namespace constellation::satellite {
          * @brief Initialize receiver components of satellite
          *
          * Reads the following config parameters:
-         * * `_allow_overwriting`
-         * * `_data_transmitters`
-         * * `_eor_timeout`
+         * * `_data.allow_overwriting`
+         * * `_data.receive_from`
+         * * `_data.eor_timeout`
          *
          * @param config Configuration of the satellite
          */
@@ -182,7 +182,7 @@ namespace constellation::satellite {
         /**
          * @brief Launching receiver components of satellite
          *
-         * This checks if a CHIRP DATA service has been discovered for all transmitters listed in `_data_transmitters`
+         * This checks if a CHIRP DATA service has been discovered for all configured transmitters
          */
         void launching_receiver();
 
@@ -190,8 +190,8 @@ namespace constellation::satellite {
          * @brief Reconfigure receiver components of satellite
          *
          * Supports reconfiguring of the following config parameters:
-         * * `_allow_overwriting`
-         * * `_eor_timeout`
+         * * `_data.allow_overwriting`
+         * * `_data.eor_timeout`
          *
          * @param partial_config Changes to the configuration of the satellite
          */

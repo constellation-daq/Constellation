@@ -102,47 +102,65 @@ CDTP2Message::DataRecord TransmitterSatellite::newDataRecord(std::size_t blocks)
 }
 
 void TransmitterSatellite::initializing_transmitter(Configuration& config) {
-    data_bor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_bor_timeout", 10));
-    data_eor_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_eor_timeout", 10));
-    data_msg_timeout_ = std::chrono::seconds(config.get<std::uint64_t>("_data_timeout", 10));
+    auto& config_data = config.getSection("_data", {});
+
+    data_bor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("bor_timeout", 10));
+    data_eor_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("eor_timeout", 10));
+    data_msg_timeout_ = std::chrono::seconds(config_data.get<std::uint64_t>("data_timeout", 10));
     LOG(cdtp_logger_, DEBUG) << "Timeout for BOR message " << data_bor_timeout_ << ", for EOR message " << data_eor_timeout_
                              << ", for DATA message " << data_msg_timeout_;
 
-    data_payload_threshold_ = config.get<std::size_t>("_payload_threshold", 128);
+    data_payload_threshold_ = config_data.get<std::size_t>("payload_threshold", 128);
     LOG(cdtp_logger_, DEBUG) << "Payload threshold for sending off data messages: " << data_payload_threshold_ << "KiB";
-    data_queue_size_ = config.get<unsigned>("_queue_size", ATOMIC_QUEUE_DEFAULT_SIZE);
+    data_queue_size_ = config_data.get<unsigned>("queue_size", ATOMIC_QUEUE_DEFAULT_SIZE);
     data_record_queue_ = AtomicQueueT(data_queue_size_);
     LOG(cdtp_logger_, DEBUG) << "Queue size for data records: " << data_queue_size_;
 
-    data_license_ = config.get<std::string>("_data_license", "ODC-By-1.0");
+    data_license_ = config_data.get<std::string>("license", "ODC-By-1.0");
     LOG(cdtp_logger_, INFO) << "Data will be stored under license " << data_license_;
 }
 
 void TransmitterSatellite::reconfiguring_transmitter(const Configuration& partial_config) {
-    if(partial_config.has("_bor_timeout")) {
-        data_bor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_bor_timeout"));
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
-    }
-    if(partial_config.has("_eor_timeout")) {
-        data_eor_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_eor_timeout"));
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
-    }
-    if(partial_config.has("_data_timeout")) {
-        data_msg_timeout_ = std::chrono::seconds(partial_config.get<std::uint64_t>("_data_timeout"));
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured timeout for DATA message: " << data_msg_timeout_;
-    }
-    if(partial_config.has("_payload_threshold")) {
-        data_payload_threshold_ = partial_config.get<std::size_t>("_payload_threshold");
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured payload threshold: " << data_payload_threshold_ << "KiB";
-    }
-    if(partial_config.has("_queue_size")) {
-        data_queue_size_ = partial_config.get<unsigned>("_queue_size");
-        data_record_queue_ = AtomicQueueT(data_queue_size_);
-        LOG(cdtp_logger_, DEBUG) << "Reconfigured queue size for data records: " << data_queue_size_;
-    }
-    if(partial_config.has("_data_license")) {
-        data_license_ = partial_config.get<std::string>("_data_license");
-        LOG(cdtp_logger_, INFO) << "Data license updated to " << data_license_;
+    const auto& config_data_opt = partial_config.getOptionalSection("_data");
+    if(config_data_opt.has_value()) {
+        const auto& config_data = config_data_opt.value().get();
+
+        const auto bor_timeout_opt = config_data.getOptional<std::uint64_t>("bor_timeout");
+        if(bor_timeout_opt.has_value()) {
+            data_bor_timeout_ = std::chrono::seconds(bor_timeout_opt.value());
+            LOG(cdtp_logger_, INFO) << "Reconfigured timeout for BOR message: " << data_bor_timeout_;
+        }
+
+        const auto eor_timeout_opt = config_data.getOptional<std::uint64_t>("eor_timeout");
+        if(eor_timeout_opt.has_value()) {
+            data_eor_timeout_ = std::chrono::seconds(eor_timeout_opt.value());
+            LOG(cdtp_logger_, INFO) << "Reconfigured timeout for EOR message: " << data_eor_timeout_;
+        }
+
+        const auto data_timeout_opt = config_data.getOptional<std::uint64_t>("data_timeout");
+        if(data_timeout_opt.has_value()) {
+            data_msg_timeout_ = std::chrono::seconds(data_timeout_opt.value());
+            LOG(cdtp_logger_, INFO) << "Reconfigured timeout for DATA message: " << data_msg_timeout_;
+        }
+
+        const auto payload_threshold_opt = config_data.getOptional<std::size_t>("payload_threshold");
+        if(payload_threshold_opt.has_value()) {
+            data_payload_threshold_ = payload_threshold_opt.value();
+            LOG(cdtp_logger_, INFO) << "Reconfigured payload threshold: " << data_payload_threshold_ << "KiB";
+        }
+
+        const auto queue_size_opt = config_data.getOptional<unsigned>("queue_size");
+        if(queue_size_opt.has_value()) {
+            data_queue_size_ = queue_size_opt.value();
+            data_record_queue_ = AtomicQueueT(data_queue_size_);
+            LOG(cdtp_logger_, INFO) << "Reconfigured queue size for data records: " << data_queue_size_;
+        }
+
+        const auto license_opt = config_data.getOptional<std::string>("license");
+        if(license_opt.has_value()) {
+            data_license_ = license_opt.value();
+            LOG(cdtp_logger_, INFO) << "Data license updated to " << data_license_;
+        }
     }
 }
 

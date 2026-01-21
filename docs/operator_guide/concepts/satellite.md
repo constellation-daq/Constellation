@@ -216,15 +216,15 @@ This transition needs to be specifically implemented in individual satellites in
 In some cases it can be required to launch, start or stop satellites in a specific order - they might for example depend on receiving a hardware clock from another satellite that is only available after initializing.
 
 For this purpose, Constellation provides [Conditional Transitions](autonomy.md#conditional-transitions), which enables defining
-a transition order using the `_require_<transition>_after` keywords provided via the satellite configuration:
+a transition order using the `_conditions.require_<transition>_after` parameter provided via the satellite configuration:
 
 ```toml
 [Sputnik.A]
-_require_starting_after = ["Sputnik.B"]
+_conditions.require_starting_after = ["Sputnik.B"]
 ```
 
 The satellite will evaluate these conditions upon entering respective transitional states. If, in the above example, Satellite `Sputnik.A` receives the condition
-`_require_starting_after Sputnik.B` it will enter the {bdg-secondary}`starting` transitional states but wait until it receives the state {bdg-secondary}`RUN` for satellite `Sputnik.B` before progressing through its own {bdg-secondary}`starting` state.
+`require_starting_after Sputnik.B` it will enter the {bdg-secondary}`starting` transitional states but wait until it receives the state {bdg-secondary}`RUN` for satellite `Sputnik.B` before progressing through its own {bdg-secondary}`starting` state.
 
 This method allows satellites to asynchronously progress from steady state to steady state without the necessity of a controller supervising the order of action.
 

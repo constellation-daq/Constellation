@@ -212,8 +212,9 @@ class Satellite(
         user code is executed.
 
         """
-        self.role = CHPRole[config.get("_role", "DYNAMIC", return_type=str).upper()]
-        self.max_heartbeat_interval = config.get_int("_max_heartbeat_interval", 30, min_val=0)
+        config_autonomy = config.get_section("_autonomy", {})
+        self.role = CHPRole[config_autonomy.get("role", "DYNAMIC", return_type=str).upper()]
+        self.max_heartbeat_interval = config_autonomy.get_int("max_heartbeat_interval", 30, min_val=0)
 
     @debug_log
     def do_initializing(self, config: Configuration) -> str | None:

@@ -150,9 +150,10 @@ dictionary. Their basic structure and syntax is the following:
 
 ```toml
 # General settings which apply to all satellites
-_role = "DYNAMIC"
+[_default]
+_autonomy.role = "DYNAMIC"
 
-[Sputnik]
+[Sputnik._default]
 # Settings which apply to all satellites of type "Sputnik"
 interval = 1000
 

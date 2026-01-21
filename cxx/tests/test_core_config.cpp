@@ -386,6 +386,9 @@ TEST_CASE("Configuration case-insensitivity during construction", "[core][core::
 TEST_CASE("Configuration string conversion", "[core][core::config]") {
     Dictionary dict {};
     dict["_internal"] = 1024;
+    Dictionary subdict_internal {};
+    subdict_internal["key"] = "internal";
+    dict["_internal_section"] = std::move(subdict_internal);
     dict["user"] = 3.14;
     Dictionary subdict_1 {};
     subdict_1["array"] = Array({1, 2, 3, 4});
@@ -400,6 +403,8 @@ TEST_CASE("Configuration string conversion", "[core][core::config]") {
     REQUIRE_THAT(config.to_string(Configuration::ALL),
                  Equals("\n"
                         "  _internal: 1024\n"
+                        "  _internal_section:\n"
+                        "    key: internal\n"
                         "  sub_1:\n"
                         "    array: [ 1, 2, 3, 4 ]\n"
                         "  sub_2:\n"
@@ -418,7 +423,9 @@ TEST_CASE("Configuration string conversion", "[core][core::config]") {
                         "  user: 3.14"));
     REQUIRE_THAT(config.to_string(Configuration::INTERNAL),
                  Equals("\n"
-                        "  _internal: 1024"));
+                        "  _internal: 1024\n"
+                        "  _internal_section:\n"
+                        "    key: internal"));
 }
 
 TEST_CASE("Configuration unused keys", "[core][core::config]") {

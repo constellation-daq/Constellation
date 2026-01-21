@@ -439,9 +439,9 @@ def test_data_satellites(
 
     # Initialize
     cmd_tx.request_get_response(
-        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+        "initialize", {"_data": {"bor_timeout": 1, "data_timeout": 1, "eor_timeout": 1, "payload_threshold": 0}}
     )
-    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    cmd_rx.request_get_response("initialize", {"_data": {"eor_timeout": 1}})
     wait_for_state(transmitter.fsm, "INIT", 1)
     wait_for_state(receiver.fsm, "INIT", 1)
 
@@ -473,7 +473,7 @@ def test_data_satellites(
     # Check BOR
     bor_rx_sender, bor_rx_tags, bor_rx_config = receiver.last_bors[-1]
     assert bor_rx_tags == {"dummy": True}
-    assert bor_rx_config["_payload_threshold"] == 0
+    assert bor_rx_config["_data"]["payload_threshold"] == 0
 
     # Send data
     data = b"123"
@@ -541,9 +541,9 @@ def test_data_satellites_transmitter_failure(
 
     # Initialize
     cmd_tx.request_get_response(
-        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+        "initialize", {"_data": {"bor_timeout": 1, "data_timeout": 1, "eor_timeout": 1, "payload_threshold": 0}}
     )
-    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    cmd_rx.request_get_response("initialize", {"_data": {"eor_timeout": 1}})
     wait_for_state(transmitter.fsm, "INIT", 1)
     wait_for_state(receiver.fsm, "INIT", 1)
 
@@ -596,9 +596,9 @@ def test_data_satellites_receiver_failure(
 
     # Initialize
     cmd_tx.request_get_response(
-        "initialize", {"_bor_timeout": 1, "_data_timeout": 1, "_eor_timeout": 1, "_payload_threshold": 0}
+        "initialize", {"_data": {"bor_timeout": 1, "data_timeout": 1, "eor_timeout": 1, "payload_threshold": 0}}
     )
-    cmd_rx.request_get_response("initialize", {"_eor_timeout": 1})
+    cmd_rx.request_get_response("initialize", {"_data": {"eor_timeout": 1}})
     wait_for_state(transmitter.fsm, "INIT", 1)
     wait_for_state(receiver.fsm, "INIT", 1)
 

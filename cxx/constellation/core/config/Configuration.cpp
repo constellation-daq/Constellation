@@ -360,19 +360,29 @@ void Configuration::swap(Configuration& other) noexcept {
 }
 
 std::string Configuration::to_string(ConfigurationGroup configuration_group) const {
-    Dictionary::key_filter* key_filter = Dictionary::default_key_filter;
     switch(configuration_group) {
     case USER: {
-        key_filter = [](std::string_view key) { return !key.starts_with('_'); };
-        break;
+        Dictionary user_dict {};
+        for(const auto& [key, value] : root_dictionary_) {
+            if(!key.starts_with("_")) {
+                user_dict.emplace(key, value);
+            }
+        }
+        return user_dict.format(true);
     }
     case INTERNAL: {
-        key_filter = [](std::string_view key) { return key.starts_with('_'); };
-        break;
+        Dictionary internal_dict {};
+        for(const auto& [key, value] : root_dictionary_) {
+            if(key.starts_with("_")) {
+                internal_dict.emplace(key, value);
+            }
+        }
+        return internal_dict.format(true);
     }
-    default: break;
+    default: {
+        return root_dictionary_.format(true);
     }
-    return root_dictionary_.format(true, key_filter);
+    }
 }
 
 PayloadBuffer Configuration::assemble() const {

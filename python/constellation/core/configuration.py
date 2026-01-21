@@ -501,15 +501,12 @@ class Configuration(Section):
         super().__init__("", self._root_dictionary)
 
     def to_string(self, group: ConfigurationGroup) -> str:
-        def format_dict(dictionary: dict[str, Any], key_filter: Callable[[str], bool], indent: int) -> str:
+        def format_dict(dictionary: dict[str, Any], indent: int) -> str:
             out = ""
             indent_str = " " * indent
             for key, value in dictionary.items():
-                # Check key filter
-                if not key_filter(key):
-                    continue
                 if isinstance(value, dict):
-                    out += f"{indent_str}{key}:{format_dict(value, key_filter, indent + 2)}\n"
+                    out += f"{indent_str}{key}:{format_dict(value, indent + 2)}\n"
                 else:
                     out += f"{indent_str}{key}: {value}\n"
             if out:
@@ -517,13 +514,13 @@ class Configuration(Section):
                 out = "\n" + out
             return out
 
-        key_filter: Callable[[str], bool] = lambda x: True  # noqa: E731
+        dictionary = self._dictionary
         if group == ConfigurationGroup.USER:
-            key_filter = lambda x: not x.startswith("_")  # noqa: E731
+            dictionary = {key: value for key, value in self._dictionary.items() if not key.startswith("_")}
         elif group == ConfigurationGroup.INTERNAL:
-            key_filter = lambda x: x.startswith("_")  # noqa: E731
+            dictionary = {key: value for key, value in self._dictionary.items() if key.startswith("_")}
 
-        return format_dict(self._dictionary, key_filter, 2)
+        return format_dict(dictionary, 2)
 
     def assemble(self) -> bytes:
         packer = msgpack.Packer(datetime=True)

@@ -518,24 +518,47 @@ void BaseSatellite::mark_degraded(std::string_view reason) {
     }
 }
 
-void BaseSatellite::apply_internal_config(const Configuration& config) {
+void BaseSatellite::initializing_autonomy(Configuration& config) {
+    auto& config_autonomy = config.getSection("_autonomy", {});
 
-    if(config.has("_max_heartbeat_interval")) {
-        const auto interval = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::seconds(config.get<std::uint64_t>("_max_heartbeat_interval")));
-        LOG(logger_, INFO) << "Updating maximum heartbeat interval to " + to_string(interval);
-        heartbeat_manager_.setMaximumInterval(interval);
-    }
+    const auto max_heartbeat_interval =                                             //
+        std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds( //
+            config_autonomy.get<std::uint64_t>(                                     //
+                "max_heartbeat_interval",                                           //
+                std::chrono::duration_cast<std::chrono::seconds>(CHP::MaximumInterval).count())));
+    LOG(logger_, DEBUG) << "Setting maximum heartbeat interval to " << max_heartbeat_interval;
+    heartbeat_manager_.setMaximumInterval(max_heartbeat_interval);
 
-    if(config.has("_role")) {
-        const auto role = config.get<CHP::Role>("_role");
-        LOG(logger_, INFO) << "Configuring role " << role;
-        heartbeat_manager_.setRole(role);
+    const auto role = config_autonomy.get<CHP::Role>("role", CHP::Role::DYNAMIC);
+    LOG(logger_, INFO) << "Configured role to " << role;
+    heartbeat_manager_.setRole(role);
+}
+
+void BaseSatellite::reconfiguring_autonomy(const Configuration& config) {
+    const auto config_autonomy_opt = config.getOptionalSection("_autonomy");
+    if(config_autonomy_opt.has_value()) {
+        const auto& config_autonomy = config_autonomy_opt.value().get();
+
+        const auto max_heartbeat_interval_opt = config_autonomy.getOptional<std::uint64_t>("max_heartbeat_interval");
+        if(max_heartbeat_interval_opt.has_value()) {
+            const auto max_heartbeat_interval =                                             //
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::seconds( //
+                    max_heartbeat_interval_opt.value()));
+            LOG(logger_, INFO) << "Reconfigured maximum heartbeat interval to " << max_heartbeat_interval;
+            heartbeat_manager_.setMaximumInterval(max_heartbeat_interval);
+        }
+
+        const auto role_opt = config_autonomy.getOptional<CHP::Role>("role");
+        if(role_opt.has_value()) {
+            const auto role = role_opt.value();
+            LOG(logger_, INFO) << "Reconfigured role to " << role;
+            heartbeat_manager_.setRole(role);
+        }
     }
 }
 
 std::optional<std::string> BaseSatellite::initializing_wrapper(Configuration&& config) {
-    apply_internal_config(config);
+    initializing_autonomy(config);
 
     initializing(config);
 
@@ -574,7 +597,7 @@ std::optional<std::string> BaseSatellite::landing_wrapper() {
 }
 
 std::optional<std::string> BaseSatellite::reconfiguring_wrapper(Configuration& partial_config) {
-    apply_internal_config(partial_config);
+    reconfiguring_autonomy(partial_config);
 
     reconfiguring(partial_config);
 

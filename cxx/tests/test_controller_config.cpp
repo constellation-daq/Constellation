@@ -574,7 +574,9 @@ TEST_CASE("Valid dependency graph", "[controller]") {
 
     // A depends on B
     Dictionary dict_sat_a;
-    dict_sat_a["_require_starting_after"] = "dummy.b";
+    Dictionary dict_sat_a_conditions;
+    dict_sat_a_conditions["require_starting_after"] = "dummy.b";
+    dict_sat_a["_conditions"] = std::move(dict_sat_a_conditions);
 
     config.addSatelliteConfiguration("dummy.a", dict_sat_a);
     config.addSatelliteConfiguration("dummy.b", {});
@@ -586,9 +588,13 @@ TEST_CASE("Valid dependency graph", "[controller]") {
 
     // A depends on B and C,
     // C depends on B
-    dict_sat_a["_require_starting_after"] = std::vector<std::string> {"dummy.b", "dummy.c"};
+    dict_sat_a_conditions = {};
+    dict_sat_a_conditions["require_starting_after"] = Array({"dummy.b", "dummy.c"});
+    dict_sat_a["_conditions"] = std::move(dict_sat_a_conditions);
     Dictionary dict_sat_c;
-    dict_sat_c["_require_starting_after"] = "dummy.b";
+    Dictionary dict_sat_c_conditions;
+    dict_sat_c_conditions["require_starting_after"] = "dummy.b";
+    dict_sat_c["_conditions"] = std::move(dict_sat_c_conditions);
 
     config.addSatelliteConfiguration("dummy.a", dict_sat_a);
     config.addSatelliteConfiguration("dummy.c", dict_sat_c);
@@ -603,9 +609,13 @@ TEST_CASE("Valid dependency graph", "[controller]") {
 TEST_CASE("Direct cyclic dependency graph", "[controller]") {
     ControllerConfiguration config;
     Dictionary dict_sat_a;
-    dict_sat_a["_require_starting_after"] = "dummy.b";
+    Dictionary dict_sat_a_conditions;
+    dict_sat_a_conditions["require_starting_after"] = "dummy.b";
+    dict_sat_a["_conditions"] = std::move(dict_sat_a_conditions);
     Dictionary dict_sat_b;
-    dict_sat_b["_require_starting_after"] = "dummy.a";
+    Dictionary dict_sat_b_conditions;
+    dict_sat_b_conditions["require_starting_after"] = "dummy.a";
+    dict_sat_b["_conditions"] = std::move(dict_sat_b_conditions);
 
     config.addSatelliteConfiguration("dummy.a", dict_sat_a);
     config.addSatelliteConfiguration("dummy.b", dict_sat_b);
@@ -621,11 +631,17 @@ TEST_CASE("Direct cyclic dependency graph", "[controller]") {
 TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
     ControllerConfiguration config;
     Dictionary dict_sat_a;
-    dict_sat_a["_require_launching_after"] = "dummy.b";
+    Dictionary dict_sat_a_conditions;
+    dict_sat_a_conditions["require_launching_after"] = "dummy.b";
+    dict_sat_a["_conditions"] = std::move(dict_sat_a_conditions);
     Dictionary dict_sat_b;
-    dict_sat_b["_require_launching_after"] = "dummy.c";
+    Dictionary dict_sat_b_conditions;
+    dict_sat_b_conditions["require_launching_after"] = "dummy.c";
+    dict_sat_b["_conditions"] = std::move(dict_sat_b_conditions);
     Dictionary dict_sat_c;
-    dict_sat_c["_require_launching_after"] = "dummy.a";
+    Dictionary dict_sat_c_conditions;
+    dict_sat_c_conditions["require_launching_after"] = "dummy.a";
+    dict_sat_c["_conditions"] = std::move(dict_sat_c_conditions);
 
     config.addSatelliteConfiguration("dummy.a", dict_sat_a);
     config.addSatelliteConfiguration("dummy.b", dict_sat_b);
@@ -643,7 +659,9 @@ TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
 TEST_CASE("Self-dependency", "[controller]") {
     ControllerConfiguration config;
     Dictionary dict_sat_a;
-    dict_sat_a["_require_starting_after"] = "dummy.a";
+    Dictionary dict_sat_a_conditions;
+    dict_sat_a_conditions["require_starting_after"] = "dummy.a";
+    dict_sat_a["_conditions"] = std::move(dict_sat_a_conditions);
 
     config.addSatelliteConfiguration("dummy.a", dict_sat_a);
     REQUIRE(config.hasSatelliteConfiguration("dummy.a"));

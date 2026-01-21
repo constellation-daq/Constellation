@@ -4,7 +4,8 @@ This how-to guide walks through steps required to configure a startup order of s
 example configurations for different situations.
 Conditional transitions are used to ensure that a transition is completed only after specified satellites have reached
 required states.
-These conditions are expressed through special configuration keys `_require_<transitional state>_after`.
+These conditions are expressed through special configuration keys `require_<transitional state>_after` in the `_conditions`
+section.
 
 ```{seealso}
 The concept of conditional transitions is described in detail in the
@@ -24,7 +25,7 @@ satellite `Sputnik.Last`, the condition can only be configured with `Sputnik.Las
 
   ```toml
   [Sputnik.Last]
-  _require_starting_after = ["Sputnik.First"]
+  _conditions.require_starting_after = ["Sputnik.First"]
   ```
 
 ## Configuring Conditional Transitions
@@ -69,10 +70,10 @@ The following sections provide a few examples for typical situations. The satell
 launch_delay = 5
 
 [Sputnik.Worker1]
-_require_launching_after = ["Sputnik.Main"]
+_conditions.require_launching_after = ["Sputnik.Main"]
 
 [Sputnik.Worker2]
-_require_launching_after = ["Sputnik.Main"]
+_conditions.require_launching_after = ["Sputnik.Main"]
 ```
 
 **Observed effect:** The satellites `Sputnik.Worker1` and `Sputnik.Worker2` enter the {bdg-secondary}`launching` state and remain
@@ -83,9 +84,9 @@ follow suit.
 
 ```toml
 [Sputnik.A]
-_require_initializing_after = ["Sputnik.B"]
-_require_launching_after = ["Sputnik.B", "Sputnik.C"]
-_require_starting_after = ["Sputnik.B"]
+_conditions.require_initializing_after = ["Sputnik.B"]
+_conditions.require_launching_after = ["Sputnik.B", "Sputnik.C"]
+_conditions.require_starting_after = ["Sputnik.B"]
 
 [Sputnik.B]
 # No dependencies
@@ -107,12 +108,12 @@ Starting of `Sputnik.A` is completed only after `Sputnik.B` has reached the {bdg
 # No shutdown dependencies
 
 [Sputnik.Worker1]
-_require_stopping_after = ["Sputnik.Main"]
-_require_landing_after = ["Sputnik.Main"]
+_conditions.require_stopping_after = ["Sputnik.Main"]
+_conditions.require_landing_after = ["Sputnik.Main"]
 
 [Sputnik.Worker2]
-_require_stopping_after = ["Sputnik.Worker1"]
-_require_landing_after = ["Sputnik.Worker1"]
+_conditions.require_stopping_after = ["Sputnik.Worker1"]
+_conditions.require_landing_after = ["Sputnik.Worker1"]
 ```
 
 **Observed effect:** Both in {bdg-secondary}`stopping` and {bdg-secondary}`landing`, the order of `Sputnik.Main`, then `Sputnik.Worker1` and finally `Sputnik.Worker2` is obeyed.

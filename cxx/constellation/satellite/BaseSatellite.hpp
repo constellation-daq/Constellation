@@ -191,9 +191,26 @@ namespace constellation::satellite {
         void cscp_loop(const std::stop_token& stop_token);
 
         /**
-         * @brief Parse and apply internal parameters for the satellite from the configuration
+         * @brief Initialize autonomy components of satellite
+         *
+         * Reads the following config parameters:
+         * * `_autonomy.max_heartbeat_interval`
+         * * `_autonomy.role`
+         *
+         * @param config Configuration of the satellite
          */
-        void apply_internal_config(const config::Configuration& config);
+        void initializing_autonomy(config::Configuration& config);
+
+        /**
+         * @brief Reconfigure autonomy components of satellite
+         *
+         * Supports reconfiguring of the following config parameters:
+         * * `_autonomy.max_heartbeat_interval`
+         * * `_autonomy.role`
+         *
+         * @param partial_config Changes to the configuration of the satellite
+         */
+        void reconfiguring_autonomy(const config::Configuration& partial_config);
 
         /**
          * @brief Store configuration in satellite

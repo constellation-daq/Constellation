@@ -49,7 +49,7 @@ MissionControl main window with satellites in NEW state
 To initialize the satellites, the following configuration file is used:
 
 ```toml
-[Sputnik]
+[Sputnik._default]
 interval = 3000
 
 [Sputnik.One]
@@ -60,7 +60,7 @@ interval = 2500
 [RandomTransmitter.Sender]
 
 [EudaqNativeWriter.Receiver]
-_data_transmitters = ["Sender"]
+_data.receive_from = ["Sender"]
 output_directory = "/tmp/test"
 ```
 
@@ -74,8 +74,8 @@ explicitly in the configuration - this is a measure to prevent typing errors in 
 the initialization can be continued by clicking {bdg-primary}`Ok`.
 
 ```{hint}
-Any satellites not explicitly mentioned will still be initialized. The configuration is generated from the global
-section and from the type specific section, e.g. `[Sputnik]`. If these do not exist, an empty configuration is sent.
+Any satellites not explicitly mentioned will still be initialized. The configuration is generated from the global level
+and from the type specific level, e.g. `[Sputnik._default]`. If these do not exist, an empty configuration is sent.
 ```
 
 After the initializing, all satellites besides the `EudaqNativeWriter` are now in the {bdg-secondary}`INIT` state. The
@@ -100,15 +100,15 @@ in the "Last message" column of the satellites list, or its log messages either 
 interface:
 
 ```{error}
-Critical failure during transition: Value `[Sender]` of key `_data_transmitters` is not valid: `Sender` is not a valid canonical name
+Critical failure: Value of key `_data.receive_from` is not valid: `Sender` is not a valid canonical name
 ```
 
-The `_data_transmitters` configuration parameter should contain the canonical names of all satellites from which the receiver
+The `_data.receive_from` configuration parameter should contain the canonical names of all satellites from which the receiver
 should receive data. The canonical name is `SATELLITE_TYPE.SATELLITE_NAME`, which in this case corresponds to
 `RandomTransmitter.Sender`. In order to correct this and allow a successful initialization, the file should be adapted as follows:
 
 ```toml
-[Sputnik]
+[Sputnik._default]
 interval = 3000
 
 [Sputnik.One]
@@ -121,7 +121,7 @@ interval = 2500
 [RandomTransmitter.Sender]
 
 [EudaqNativeWriter.Receiver]
-_data_transmitters = ["RandomTransmitter.Sender"]
+_data.receive_from = ["RandomTransmitter.Sender"]
 output_directory = "/tmp/test"
 ```
 
@@ -214,30 +214,63 @@ Constellation itself. This can be achieved by clicking the {bdg-primary}`Deduce`
 For the Constellation started and configured in this tutorial, this will store a configuration file with the following content:
 
 ```toml
+[_default]
+
 [sputnik.one]
 interval = 2500
+launch_delay = 0
+
+    [sputnik.one._autonomy]
+    max_heartbeat_interval = 30
+    role = 'DYNAMIC'
 
 [sputnik.two]
 interval = 3000
+launch_delay = 0
+
+    [sputnik.two._autonomy]
+    max_heartbeat_interval = 30
+    role = 'DYNAMIC'
 
 [sputnik.three]
 interval = 3000
+launch_delay = 0
+
+    [sputnik.three._autonomy]
+    max_heartbeat_interval = 30
+    role = 'DYNAMIC'
 
 [randomtransmitter.sender]
-_bor_timeout = 10
-_data_timeout = 10
-_eor_timeout = 10
 block_size = 1024
 number_of_blocks = 1
 pregen = false
-seed = 3641936878
+seed = 1752095125
+
+    [randomtransmitter.sender._autonomy]
+    max_heartbeat_interval = 30
+    role = 'DYNAMIC'
+
+    [randomtransmitter.sender._data]
+    bor_timeout = 10
+    data_timeout = 10
+    eor_timeout = 10
+    license = 'ODC-By-1.0'
+    payload_threshold = 128
+    queue_size = 32768
 
 [eudaqnativewriter.receiver]
-_allow_overwriting = false
-_data_transmitters = [ 'RandomTransmitter.Sender' ]
-_eor_timeout = 10
+buffer_size = 128
 flush_interval = 3
 output_directory = '/tmp/test'
+
+    [eudaqnativewriter.receiver._autonomy]
+    max_heartbeat_interval = 30
+    role = 'DYNAMIC'
+
+    [eudaqnativewriter.receiver._data]
+    allow_overwriting = false
+    eor_timeout = 10
+    receive_from = [ 'RandomTransmitter.Sender' ]
 ```
 
 ```{caution}
