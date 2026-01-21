@@ -284,6 +284,7 @@ build:python-3.11:
 
 .test-py:
   stage: test
+  needs: []
   script:
     - pip install --no-build-isolation -e .[test,hdf5]
     - pytest --force-sugar --junitxml=junit.xml
