@@ -184,7 +184,7 @@ class CSCP1Message:
             msg.payload = payload
         return msg
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         payload_str = f" and payload `{self._payload}`" if self._payload is not None else ""
         return (
             f"CSCP1 Message with verb `{self._verb[0].name}`:`{self._verb[1]}`{payload_str}"

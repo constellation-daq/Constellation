@@ -157,7 +157,7 @@ class CDTP2Message:
             msg.add_data_record(data_record)
         return msg
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f"CDTP2 {self._type.name} message with {len(self._data_records)} data records"
 
 

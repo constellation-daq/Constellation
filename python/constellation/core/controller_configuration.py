@@ -10,6 +10,7 @@ from __future__ import annotations
 import copy
 import enum
 import pathlib
+import pprint
 import re
 import tomllib
 from typing import Any
@@ -81,8 +82,8 @@ class ControllerConfiguration:
         self._type_configs = dict[str, Configuration]()
         self._satellite_configs = dict[str, Configuration]()
 
-    def __str__(self) -> str:
-        return str(self._as_single_dict())
+    def __repr__(self) -> str:
+        return pprint.pformat(self._as_single_dict(), sort_dicts=False)
 
     @staticmethod
     def from_string(config_string: str, file_type: FileType) -> ControllerConfiguration:

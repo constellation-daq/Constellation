@@ -12,6 +12,7 @@ import enum
 import functools
 import os
 import pathlib
+import pprint
 import re
 from collections.abc import Callable
 from io import BytesIO
@@ -189,8 +190,8 @@ class Section:
     def __getitem__(self, key: str) -> Any:
         return self.get(key)
 
-    def __str__(self) -> str:
-        return str(self._dictionary)
+    def __repr__(self) -> str:
+        return pprint.pformat(self._dictionary, sort_dicts=False)
 
     def has(self, key: str) -> bool:
         """Check if key is defined"""
