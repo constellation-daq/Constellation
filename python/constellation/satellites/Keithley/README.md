@@ -80,11 +80,11 @@ Possible terminals are `front` and `rear`.
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `VOLTAGE` | Voltage output | Float | `LAST_VALUE` | 5s |
-| `CURRENT` | Current output | Float | `LAST_VALUE` | 5s |
-| `IN_COMLIANCE` | If in compliance | Bool | `LAST_VALUE` | 5s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `VOLTAGE` | Voltage output | Float | 5s |
+| `CURRENT` | Current output | Float | 5s |
+| `IN_COMLIANCE` | If in compliance | Bool | 5s |
 
 ## Custom Commands
 

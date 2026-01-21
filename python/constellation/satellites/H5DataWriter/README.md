@@ -153,10 +153,10 @@ for i in range(dset_data_idx.shape[0]):
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `CONCURRENT_READING_ENABLED` | Concurrent reading status | Bool | `LAST_VALUE` | 5s |
-| `CURRENTLY_OPEN_FILENAME` | The name of the file currently being written to | str | `LAST_VALUE` | 5s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `CONCURRENT_READING_ENABLED` | Concurrent reading status | Bool | 5s |
+| `CURRENTLY_OPEN_FILENAME` | The name of the file currently being written to | str | 5s |
 
 ## Custom Commands
 

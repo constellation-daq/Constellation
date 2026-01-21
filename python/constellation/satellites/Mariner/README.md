@@ -21,9 +21,9 @@ New Python satellites for Constellation may be created by copying and modifying 
 
 ## Metrics
 
-| Metric | Description | Value Type | Metric Type | Interval |
-|--------|-------------|------------|-------------|----------|
-| `BRIGHTNESS` | Brightness | Integer | `LAST_VALUE` | 10s |
+| Metric | Description | Value Type | Interval |
+|--------|-------------|------------|----------|
+| `BRIGHTNESS` | Brightness | Integer| 10s |
 
 ## Custom Commands
 
