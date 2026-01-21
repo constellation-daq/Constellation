@@ -101,6 +101,12 @@ for n in [0, 1]:
 :::
 ::::
 
+```{important}
+Sections cannot be stored directly and used to access the contained parameters at a later stage since
+all contained parameters which are not accessed with the framework-provided `get`-methods are removed
+after the initializing and reconfiguring transitions.
+```
+
 ## Default Sections
 
 In the example above, both `channel_0` and `channel_1` were required to be explicitly defined in the configuration file.
