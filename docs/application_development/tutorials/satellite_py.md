@@ -133,13 +133,13 @@ This particular satellite sets up a network socket to send commands via a TCP/IP
 In the actual satellite implementation, this might be a USB connection, or maybe the hardware has its own Python
 library that communicates with it.
 
-```{caution}
+```{important}
 The `do_initializing` routine can be called more than once as this transition is allowed from both `NEW` and `INIT` as well as 'ERROR' and 'SAFE' states. It should therefore be carefully ensured that e.g. any already open connections are closed before establishing new ones or that the class keeps track of any steps that only needs to be performed once (e.g. loading an FPGA bit stream).
 ```
 
 ## Reading Configuration Parameters
 
-```{caution}
+```{important}
 Reading information from the satellite configuration is only possible in the `do_initializing` function.
 All parameters the satellite requires should be read and validated in this function, the `do_launching` function should only be used to apply this configuration to hardware.
 ```
