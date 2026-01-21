@@ -50,6 +50,7 @@ modules:
     buildsystem: meson
     config-opts:
       - -Dbuildtype=release
+      - -Dwerror=false
       - -Db_lto=true
       - -Dcxx_tools=false
       - -Dcxx_tests=disabled
