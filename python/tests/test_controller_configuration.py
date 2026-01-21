@@ -6,6 +6,7 @@ SPDX-License-Identifier: EUPL-1.2
 import datetime
 import os
 import pathlib
+import pprint
 
 import pytest
 
@@ -343,4 +344,4 @@ def test_ctrl_config_str():
         "dummy2": {"two": satellite_2_dict},
     }
     assert config._as_single_dict() == single_dict
-    assert str(config) == str(single_dict)
+    assert str(config) == pprint.pformat(single_dict, sort_dicts=False)
