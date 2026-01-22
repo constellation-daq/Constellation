@@ -64,13 +64,13 @@ To access nested configuration sections, `getSection` can be used:
 
 ```cpp
 // Get configuration section for channels
-const auto& channels_section = config.getSection("channels");
+auto& channels_section = config.getSection("channels");
 
 // Read channel 0 & 1 as nested configuration sections
 for(auto n : {0, 1}) {
 
   // Get section for channel n
-  const auto& channel_section = config.getSection("channel_" + to_string(n));
+  auto& channel_section = config.getSection("channel_" + to_string(n));
 
   // Note that channel_section has the same methods available as config
 

@@ -56,13 +56,13 @@ channel configurations are retrieved via the `getSection()`/`get_section()` meth
 const auto port = config.get<std::string>("port");
 
 // Get configuration section for channels
-const auto& channels_section = config.getSection("channels");
+auto& channels_section = config.getSection("channels");
 
 // Read channel 0 & 1 as nested configuration sections
 for(auto n : {0, 1}) {
 
   // Get section for channel n
-  const auto& channel_section = config.getSection("channel_" + to_string(n));
+  auto& channel_section = config.getSection("channel_" + to_string(n));
 
   // Note that channel_section has the same methods available as config
 
@@ -123,13 +123,13 @@ is added as parameter to the method fetching the section:
 
 ```cpp
 // Get configuration section for channels
-const auto& channels_section = config.getSection("channels", {});
+auto& channels_section = config.getSection("channels", {});
 
 // Read 128 channels as nested configuration sections
 for(auto n : std::views::iota(0, 128)) {
 
   // Get section for channel n
-  const auto& channel_section = config.getSection("channel_" + to_string(n), {});
+  auto& channel_section = config.getSection("channel_" + to_string(n), {});
 
   // Get if channel is enabled, its assigned name and the set voltage with defaults
   const auto enabled = channel_section.get<bool>("enabled", false);
@@ -236,16 +236,16 @@ In this case, it is required to iterate over all keys that are defined for a spe
 
 ```cpp
 // Get configuration section for subscriptions
-const auto& subscriptions = config.getSection("subscriptions");
+auto& subscriptions = config.getSection("subscriptions");
 
 // Iterate over all keys in the subscriptions section
 for(const auto& canonical_name : subscriptions.getKeys()) {
 
     // Get section corresponding to key (= canonical satellite name)
-    const auto& satellite_section = subscriptions.getSection(canonical_name);
+    auto& satellite_section = subscriptions.getSection(canonical_name);
 
     // Get configuration section for topics
-    const auto& topics = satellite_section.getSection("topics");
+    auto& topics = satellite_section.getSection("topics");
 
     // Iterate over all keys in the topics section
     for(const auto& topic : topics.getKeys()) {
