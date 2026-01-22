@@ -169,7 +169,7 @@ class ControllerConfiguration:
             type_key_lc = type_key.lower()
 
             if not isinstance(type_value, dict):
-                raise ConfigValueError(type_key_lc, "expected a dictionary at type level")
+                raise ConfigValueError(type_key_lc, "expected a type section")
 
             if type_key_lc == "_default":
                 # Global default config
@@ -189,7 +189,7 @@ class ControllerConfiguration:
                     canonical_name_lc = f"{type_key_lc}.{name_key_lc}"
 
                     if not isinstance(name_value, dict):
-                        raise ConfigValueError(canonical_name_lc, "expected a dictionary at satellite level")
+                        raise ConfigValueError(canonical_name_lc, "expected a satellite configuration")
 
                     # Resolve environment variables
                     name_value_res = self._resolve_env(name_value)

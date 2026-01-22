@@ -270,12 +270,12 @@ void ControllerConfiguration::parse_yaml(std::string_view yaml) {
                             }
                         }
                     } else {
-                        throw ConfigValueError(canonical_name_key_lc, "expected a dictionary at satellite level");
+                        throw ConfigValueError(canonical_name_key_lc, "expected a satellite configuration");
                     }
                 }
             }
         } else {
-            throw ConfigValueError(type_key_lc, "expected a dictionary at type level");
+            throw ConfigValueError(type_key_lc, "expected a type section");
         }
     }
 }
@@ -340,12 +340,12 @@ void ControllerConfiguration::parse_toml(std::string_view toml) {
                             }
                         }
                     } else {
-                        throw ConfigValueError(canonical_name_key_lc, "expected a dictionary at satellite level");
+                        throw ConfigValueError(canonical_name_key_lc, "expected a satellite configuration");
                     }
                 });
             }
         } else {
-            throw ConfigValueError(type_key_lc, "expected a dictionary at type level");
+            throw ConfigValueError(type_key_lc, "expected a type section");
         }
     });
 }

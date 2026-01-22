@@ -149,7 +149,7 @@ def test_ctrl_config_invalid_type_node_not_dict():
         ControllerConfiguration.from_string(config, FileType.TOML)
     assert (
         str(excinfo.value) == "Could not parse configuration: error while parsing value of key `key`: "
-        "expected a dictionary at type level"
+        "expected a type section"
     )
 
 
@@ -166,7 +166,7 @@ def test_ctrl_config_invalid_name_node_not_dict():
         ControllerConfiguration.from_string(config, FileType.TOML)
     assert (
         str(excinfo.value) == "Could not parse configuration: error while parsing value of key `type.name`: "
-        "expected a dictionary at satellite level"
+        "expected a satellite configuration"
     )
 
 

@@ -154,10 +154,9 @@ TEST_CASE("Invalid YAML non-map root node", "[controller]") {
 
 TEST_CASE("Invalid YAML type node not a map", "[controller]") {
     constexpr std::string_view config = "_default: 0";
-    REQUIRE_THROWS_MATCHES(
-        ControllerConfiguration(config, ControllerConfiguration::FileType::YAML),
-        ConfigValueError,
-        Message("Error while parsing value of key `_default` in configuration: expected a dictionary at type level"));
+    REQUIRE_THROWS_MATCHES(ControllerConfiguration(config, ControllerConfiguration::FileType::YAML),
+                           ConfigValueError,
+                           Message("Error while parsing value of key `_default` in configuration: expected a type section"));
 }
 
 TEST_CASE("Invalid YAML two global default configs", "[controller]") {
@@ -185,7 +184,7 @@ TEST_CASE("Invalid YAML name node not a map", "[controller]") {
     REQUIRE_THROWS_MATCHES(
         ControllerConfiguration(config, ControllerConfiguration::FileType::YAML),
         ConfigValueError,
-        Message("Error while parsing value of key `type.name` in configuration: expected a dictionary at satellite level"));
+        Message("Error while parsing value of key `type.name` in configuration: expected a satellite configuration"));
 }
 
 TEST_CASE("Invalid YAML two type default configs", "[controller]") {
@@ -256,10 +255,9 @@ TEST_CASE("Invalid TOML", "[controller]") {
 
 TEST_CASE("Invalid TOML type node not a table", "[controller]") {
     constexpr std::string_view config = "key = 0";
-    REQUIRE_THROWS_MATCHES(
-        ControllerConfiguration(config, ControllerConfiguration::FileType::TOML),
-        ConfigValueError,
-        Message("Error while parsing value of key `key` in configuration: expected a dictionary at type level"));
+    REQUIRE_THROWS_MATCHES(ControllerConfiguration(config, ControllerConfiguration::FileType::TOML),
+                           ConfigValueError,
+                           Message("Error while parsing value of key `key` in configuration: expected a type section"));
 }
 
 TEST_CASE("Invalid TOML two global default configs", "[controller]") {
@@ -285,7 +283,7 @@ TEST_CASE("Invalid TOML name node not a table", "[controller]") {
     REQUIRE_THROWS_MATCHES(
         ControllerConfiguration(config, ControllerConfiguration::FileType::TOML),
         ConfigValueError,
-        Message("Error while parsing value of key `type.name` in configuration: expected a dictionary at satellite level"));
+        Message("Error while parsing value of key `type.name` in configuration: expected a satellite configuration"));
 }
 
 TEST_CASE("Invalid TOML two type default configs", "[controller]") {
