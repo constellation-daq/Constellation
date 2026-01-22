@@ -273,7 +273,7 @@ output_directory = '/tmp/test'
     receive_from = [ 'RandomTransmitter.Sender' ]
 ```
 
-```{caution}
+```{important}
 This configuration contains all parameters, including parameters with default values. While giving identical results during
 initialization, it should not be seen as a replacement for the canonical configuration file which might be better grouped or
 potentially contains important comments.

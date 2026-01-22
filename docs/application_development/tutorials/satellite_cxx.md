@@ -35,7 +35,7 @@ For the steady state action for the `RUN` state, see [below](#running-and-the-st
 
 ## Reading Configuration Parameters
 
-```{caution}
+```{important}
 Reading information from the satellite configuration is only possible in the `initializing` function.
 All parameters the satellite requires should be read and validated in this function, the `launching` function should only be used to apply this configuration to hardware.
 ```

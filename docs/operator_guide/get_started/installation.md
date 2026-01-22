@@ -57,7 +57,7 @@ Information on how to build the Constellation Flatpak from source can be found i
 
 ## Installing from PyPI
 
-Constellation is packaged and published on the [Python Package Index (PyPI)](https://pypi.org/project/ConstellationDAQ/) and
+Constellation is packaged and published on the [Python Package Index (PyPI)](https://pypi.org/) and
 can be installed directly via `pip` with:
 
 ```sh

@@ -65,7 +65,7 @@ controller-type components, providing the possibility for both direct human inte
 Controllers are stateless, i.e. they are not a satellite of the Constellation.
 The main advantage of this approach is that multiple control interfaces can be active simultaneously, and that they can be
 closed and reopened by the operator, or even crash, without affecting the operation of the Constellation.
-The functionality of the controller in Constellation is described in detail in [this chapter](../concepts/controller.md).
+The functionality of the controller in Constellation is described in detail in the [controller chapter](../concepts/controller.md).
 
 ### Listeners
 
