@@ -69,7 +69,7 @@ test = [
     "pytest-sugar",
 ]
 docs = [
-    "sphinx",
+    "sphinx<9.0.0",
     "sphinx-autobuild",
     "pydata_sphinx_theme",
     "myst-parser",
