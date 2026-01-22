@@ -12,7 +12,7 @@ The basic concepts behind metrics and telemetry in Constellation are described i
 Metrics have to be registered before use. For satellite this can be done via:
 
 ```cpp
-register_metric("NAME", "unit", M "description");
+register_metric("NAME", "unit", "description");
 ```
 
 A metric can then be send using the `STAT` macros:
