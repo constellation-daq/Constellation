@@ -63,6 +63,12 @@
   </supports>
 
   <releases>
+    <release version="0.7" date="2026-01-22">
+        <url type="details">https://constellation.pages.desy.de/news/2026-01-22-Constellation-Release-0.7.html</url>
+        <description>
+        <p>Release of Constellation Reticulum</p>
+        </description>
+    </release>
     <release version="0.6.1" date="2025-10-08">
       <url type="details">https://constellation.pages.desy.de/news/2025-10-08-Patch-Release-0.6.1.html</url>
       <description>
