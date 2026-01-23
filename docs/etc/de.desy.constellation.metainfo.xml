@@ -21,7 +21,7 @@
       Constellation is an autonomous control and data acquisition system for small-scale experiments and experimental setup with volatile and dynamic constituents such as testbeam environments or laboratory test stands. Constellation aims to provide a flexible framework that requires minimal effort for the integration of new devices.
     </p>
     <p>
-      Devices participating in the DAQ system are called satellites. Satellite are autonomous and communicate over the network with each other and graphical user interfaces for controlling and monitoring. Constellation provides two user interfaces: MissionControl for controlling and Observatory for logging.
+      Devices participating in the DAQ system are called satellites. Satellites are autonomous and communicate over the network with each other. Constellation provides user interfaces to control and monitor these satellites.
     </p>
     <p>
       Detailed documentation on how to setup and run Constellation can be found on the homepage.
