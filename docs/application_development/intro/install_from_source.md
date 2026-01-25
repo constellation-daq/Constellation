@@ -117,7 +117,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
-sudo apt install qtbase5-dev qt5-qtsvg-dev qt5-qtsvglibqt5charts5-dev
+sudo apt install qtbase5-dev libqt5svg5-dev libqt5charts5-dev
 export CXX="g++-13"
 ```
 
