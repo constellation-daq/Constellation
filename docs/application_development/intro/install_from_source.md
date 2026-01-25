@@ -206,6 +206,18 @@ export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/
 ```
 
 :::
+:::{tab-item} Windows
+
+Running Constellation natively on Windows is still a work in progress.
+However, it is possible to run Constellation through [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+Within the WSL environment, the installation instruction for the corresponding Linux distribution can be used.
+
+```{important}
+When running Constellation in WSL, the "Mirrored" networking mode is required.
+This setting can be found by searching for "WSL Settings" in the taskbar.
+```
+
+:::
 ::::
 
 ### Building & Installing
