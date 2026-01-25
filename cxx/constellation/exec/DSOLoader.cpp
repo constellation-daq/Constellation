@@ -26,7 +26,6 @@
 #include "constellation/satellite/Satellite.hpp"
 
 using namespace constellation::exec;
-using namespace constellation::log;
 using namespace constellation::satellite;
 using namespace constellation::utils;
 
@@ -93,7 +92,7 @@ DSOLoader::DSOLoader(const std::string& dso_name, const std::filesystem::path& h
 
     // Did not find a matching library:
     if(possible_paths.empty()) {
-        throw DSOLoadingError(dso_name, "Could not find " + dso_file_name);
+        throw DSOLoadingError(dso_name, "could not find " + quote(dso_file_name));
     }
 
     // Get found path with highest priority

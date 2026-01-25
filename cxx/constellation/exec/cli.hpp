@@ -13,6 +13,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <argparse/argparse.hpp>
@@ -22,6 +23,25 @@
 #include "constellation/core/networking/asio_helpers.hpp"
 
 namespace constellation::exec {
+
+    /**
+     * @brief Setup Logging
+     *
+     * @param default_level Default log level for the console output
+     * @param default_topic Topic for default logger (type part the canonical name)
+     */
+    CNSTLN_API void constellation_setup_logging(log::Level default_level, std::string_view default_topic);
+
+    /**
+     * @brief Setup CHIRP
+     *
+     * @param group Constellation group name
+     * @param name CHIRP hostname
+     * @param interfaces List of network interfaces to use
+     */
+    CNSTLN_API void constellation_setup_chirp(std::string_view group,
+                                              std::string_view name,
+                                              const std::vector<networking::Interface>& interfaces);
 
     /**
      * @brief Cast C-style main argument to C++ span

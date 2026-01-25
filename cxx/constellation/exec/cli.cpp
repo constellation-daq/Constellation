@@ -14,10 +14,12 @@
 #include <exception>
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <optional>
 #include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -26,9 +28,12 @@
 
 #include "constellation/build.hpp"
 #include "constellation/build_vcs.hpp"
+#include "constellation/core/chirp/Manager.hpp"
 #include "constellation/core/log/Level.hpp"
+#include "constellation/core/log/log.hpp"
 #include "constellation/core/networking/asio_helpers.hpp"
 #include "constellation/core/utils/enum.hpp"
+#include "constellation/core/utils/ManagerLocator.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/exec/exceptions.hpp"
 
@@ -36,6 +41,30 @@ using namespace constellation::exec;
 using namespace constellation::log;
 using namespace constellation::networking;
 using namespace constellation::utils;
+
+void constellation::exec::constellation_setup_logging(Level default_level, std::string_view default_topic) {
+    // Set default log level
+    ManagerLocator::getSinkManager().setConsoleLevels(default_level);
+
+    // Set default topic
+    ManagerLocator::getSinkManager().setDefaultTopic(default_topic);
+
+    // Log version
+    LOG(STATUS) << "Constellation " << CNSTLN_VERSION_FULL;
+}
+
+void constellation::exec::constellation_setup_chirp(std::string_view group,
+                                                    std::string_view name,
+                                                    const std::vector<Interface>& interfaces) {
+    // Create CHIRP manager and set as default
+    std::unique_ptr<chirp::Manager> chirp_manager {};
+    chirp_manager = std::make_unique<chirp::Manager>(group, name, interfaces);
+    chirp_manager->start();
+    ManagerLocator::setDefaultCHIRPManager(std::move(chirp_manager));
+
+    // Register CMDP in CHIRP and set sender name for CMDP
+    ManagerLocator::getSinkManager().enableCMDPSending(std::string(name));
+}
 
 BaseParser::BaseParser(std::string program)
     : argparse::ArgumentParser(std::move(program), CNSTLN_VERSION_FULL, argparse::default_arguments::help) {

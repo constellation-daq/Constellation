@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 pydevnullreceiver_sat_files = files(
+  '__init__.py',
   '__main__.py',
   'PyDevNullReceiver.py',
 )

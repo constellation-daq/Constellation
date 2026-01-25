@@ -1,19 +1,32 @@
 # SPDX-FileCopyrightText: 2024 DESY and the Constellation authors
 # SPDX-License-Identifier: CC0-1.0
 
+py_dep = dependency('', required: false)
+py_args = []
+if impl_py
+  py_dep = py.dependency(embed: true, required: get_option('impl_py'))
+  if py_dep.found()
+    py_args = ['-DCNSTLN_EXEC_PYTHON', '-DPy_LIMITED_API=0x030B0000']
+  else
+    warning('Skipping Python satellite loader since Python development files are not installed')
+  endif
+endif
+
 exec_src = files(
   'cli.cpp',
-  'cpp.cpp',
   'DSOLoader.cpp',
+  'PyLoader.cpp',
   'satellite.cpp',
+  'satellite_cpp.cpp',
+  'satellite_python.cpp',
 )
 
 exec_lib = library('ConstellationExec',
   sources: exec_src + [build_vcs_hpp],
   include_directories: constellation_inc,
-  dependencies: [core_dep, satellite_dep, argparse_dep, asio_dep, dl_dep],
+  dependencies: [core_dep, satellite_dep, argparse_dep, asio_dep, dl_dep, py_dep],
   gnu_symbol_visibility: 'hidden',
-  cpp_args: constellation_public_args + constellation_private_args + ['-DCNSTLN_BUILDLIB=1'],
+  cpp_args: constellation_public_args + constellation_private_args + py_args + ['-DCNSTLN_BUILDLIB=1'],
   install: true,
   install_rpath: constellation_rpath,
 )
@@ -36,10 +49,12 @@ pkg.generate(exec_lib,
 
 install_headers(
   'cli.hpp',
-  'cpp.hpp',
   'DSOLoader.hpp',
   'exceptions.hpp',
+  'PyLoader.hpp',
   'satellite.hpp',
+  'satellite_cpp.hpp',
+  'satellite_python.hpp',
   subdir: 'constellation/exec',
 )
 

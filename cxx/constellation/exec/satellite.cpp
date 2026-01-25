@@ -20,13 +20,12 @@
 #include <asio.hpp>
 
 #include "constellation/core/log/log.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/exec/cli.hpp"
-#include "constellation/exec/cpp.hpp"
-#include "constellation/exec/exceptions.hpp"
-#include "constellation/satellite/Satellite.hpp"
+#include "constellation/exec/satellite_cpp.hpp"
+#include "constellation/exec/satellite_python.hpp"
 
 using namespace constellation::exec;
-using namespace constellation::satellite;
 using namespace constellation::utils;
 
 int constellation::exec::satellite_main(std::span<const char*> args,
@@ -55,33 +54,38 @@ int constellation::exec::satellite_main(std::span<const char*> args,
         // Set log level and default topic
         constellation_setup_logging(options.log_level, satellite_type_v.type_name);
 
-        // Load satellite DSO
-        LoadedCppSatellite loaded_satellite {};
+        // Load satellite
+        std::unique_ptr<LoadedSatellite> loaded_satellite {};
+        std::string cpp_load_exception {};
+        std::string py_load_exception {};
+
+        // Try loading C++ satellite
         try {
-            loaded_satellite = load_cpp_satellite(satellite_type_v);
-        } catch(const DSOLoaderError& error) {
-            LOG(CRITICAL) << "Error loading satellite type " + satellite_type_v.type_name + ": " + error.what();
+            loaded_satellite = std::make_unique<LoadedCppSatellite>(satellite_type_v);
+        } catch(const RuntimeError& error) {
+            LOG(TRACE) << "Loading C++ satellite failed: " << error.what();
+            cpp_load_exception = error.what();
+        }
+
+        // Try loading Python satellite
+        try {
+            loaded_satellite = std::make_unique<LoadedPythonSatellite>(satellite_type_v);
+        } catch(const RuntimeError& error) {
+            LOG(TRACE) << "Loading Python satellite failed: " << error.what();
+            py_load_exception = error.what();
+        }
+
+        if(!loaded_satellite) {
+            LOG(CRITICAL) << "Could not load satellite of type " << satellite_type_v.type_name;
             return 1;
         }
 
-        // Get canonical name
-        const auto canonical_name = loaded_satellite.type_name + '.' + options.satellite_name;
-
-        // Setup CHIRP
-        constellation_setup_chirp(options.group, canonical_name, options.interfaces);
-
-        // Create satellite
-        LOG(STATUS) << "Starting satellite " << canonical_name;
-        std::shared_ptr<Satellite> satellite {};
-        try {
-            satellite = loaded_satellite.satellite_generator(satellite_type_v.type_name, options.satellite_name);
-        } catch(const std::exception& error) {
-            LOG(CRITICAL) << "Failed to create satellite: " << error.what();
-            return 1;
-        }
+        // Start satellite
+        LOG(STATUS) << "Starting satellite " << loaded_satellite->getTypeName() << "." << options.satellite_name;
+        loaded_satellite->start(options.group, options.satellite_name, options.log_level, options.interfaces);
 
         // Join satellite
-        join_cpp_satellite(satellite.get());
+        loaded_satellite->join();
 
         return 0;
 
