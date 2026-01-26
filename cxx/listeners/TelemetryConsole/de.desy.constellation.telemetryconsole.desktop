@@ -3,10 +3,10 @@ Version=1.0
 Type=Application
 
 Name=TelemetryConsole
-Comment=Telemetry Interface Constellation
+Comment=Telemetry Interface for Constellation
 Categories=Science;Physics;
 Keywords=Constellation;DAQ;testbeam;
 
 Icon=de.desy.constellation.telemetryconsole
-Exec=Observatory
+Exec=TelemetryConsole
 Terminal=false
