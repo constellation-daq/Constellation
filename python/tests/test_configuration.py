@@ -142,13 +142,16 @@ def test_configuration_get_num_invalid():
 def test_configuration_get_array():
     list_str_v = ["hello", "world"]
     empty_list_v = []
-    config = Configuration({"list_str": list_str_v, "empty_list": empty_list_v})
+    not_a_list_v = 3.14
+    config = Configuration({"list_str": list_str_v, "empty_list": empty_list_v, "not_a_list": not_a_list_v})
     # get_array without parameters
     assert config.get_array("list_str") == list_str_v
     assert config.get_array("empty_list") == empty_list_v
+    assert config.get_array("not_a_list") == [not_a_list_v]
     # get_array with type parameter
     assert config.get_array("list_str", element_type=str) == list_str_v
     assert config.get_array("empty_list", element_type=int) == empty_list_v
+    assert config.get_array("not_a_list", element_type=float) == [not_a_list_v]
     # get_array with default parameter
     default_list_int_v = [1, 2, 3, 4]
     assert config.get_array("default_list_int", default_value=default_list_int_v, element_type=int) == default_list_int_v

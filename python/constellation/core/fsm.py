@@ -179,12 +179,9 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
             ]:
                 key = f"require_{transition.name}_after"
                 if key in config_conditions:
-                    value = config_conditions.get(key)
+                    value = config_conditions.get_array(key, element_type=str)
                     # FIXME could check for valid canonical name
-                    if isinstance(value, list):
-                        self.conditions[transition] = value
-                    else:
-                        self.conditions[transition].append(value)
+                    self.conditions[transition] = value
                     self.log_fsm.debug(f"Registered remote condition {transition.name} with {self.conditions[transition]}")
 
             # Set timeout for conditional transitions
