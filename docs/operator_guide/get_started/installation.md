@@ -54,7 +54,6 @@ Currently, only C++ satellites are available on Flathub.
 It should be noted that a Flatpak is not suited for application development, for which an [installation from source](#installing-from-source) is required.
 Information on how to build the Constellation Flatpak from source can be found in the [framework reference](../../framework_reference/flatpak.md).
 
-
 ## Installing from PyPI
 
 Constellation is packaged and published on the [Python Package Index (PyPI)](https://pypi.org/) and
@@ -79,6 +78,18 @@ A list of available extra components can be found on the project's [PyPI page](h
 
 ```{note}
 Currently, only the Python version of the framework and the Python satellites are available on PyPI.
+```
+
+## Installation on Windows
+
+Running Constellation natively on Windows is still a work in progress.
+However, it is possible to run Constellation through [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+Within the WSL environment, Constellation can be installed as [Flatpak](#installing-as-flatpak-package-from-flathub).
+It should be noted that root permissions (`sudo`) might be required for the installation.
+
+```{important}
+When running Constellation in WSL, the "Mirrored" networking mode is required.
+This setting can be found by searching for "WSL Settings" in the taskbar.
 ```
 
 ## Installing from Source

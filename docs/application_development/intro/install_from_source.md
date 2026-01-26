@@ -117,7 +117,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo add-apt-repository ppa:ubuntu-support-team/meson
 sudo apt update
 sudo apt install meson g++-13
-sudo apt install qtbase5-dev qt5-qtsvg-dev qt5-qtsvglibqt5charts5-dev
+sudo apt install qtbase5-dev libqt5svg5-dev libqt5charts5-dev
 export CXX="g++-13"
 ```
 
@@ -203,6 +203,18 @@ export CXX_LD="lld"
 export CC="$(brew --prefix)/opt/llvm/bin/clang"
 export CC_LD="lld"
 export LDFLAGS="-L$(brew --prefix)/opt/llvm/lib/c++ -L$(brew --prefix)/opt/llvm/lib/unwind -lunwind"
+```
+
+:::
+:::{tab-item} Windows
+
+Running Constellation natively on Windows is still a work in progress.
+However, it is possible to run Constellation through [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+Within the WSL environment, the installation instruction for the corresponding Linux distribution can be used.
+
+```{important}
+When running Constellation in WSL, the "Mirrored" networking mode is required.
+This setting can be found by searching for "WSL Settings" in the taskbar.
 ```
 
 :::
