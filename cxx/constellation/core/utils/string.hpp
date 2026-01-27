@@ -46,10 +46,17 @@ namespace constellation::utils {
         return out;
     }
 
-    /** Converts a string-like object to a string */
+    /** Converts a string to a string */
     template <typename S>
-        requires std::convertible_to<S, std::string_view>
-    inline std::string to_string(S string_like) {
+        requires std::same_as<S, std::string>
+    inline std::string to_string(S string) {
+        return string;
+    }
+
+    /** Converts a string-like object to a string */
+    template <typename V>
+        requires std::convertible_to<V, std::string_view> && (!std::same_as<V, std::string>)
+    inline std::string to_string(V string_like) {
         const std::string_view string_view {string_like};
         return {string_view.data(), string_view.size()};
     }
@@ -161,34 +168,39 @@ namespace constellation::utils {
     }
 
     /** Add backtick quotes to strings */
-    inline std::string quote(std::string str, bool markup = true) {
-        if(str.empty() || !markup) {
-            return str;
+    template <typename S>
+        requires std::same_as<S, std::string_view>
+    inline std::string quote(S str) {
+        std::string out {};
+        if(!str.empty()) {
+            out += "`";
+            out += str;
+            out += "`";
         }
-
-        return "`" + std::move(str) + "`";
+        return out;
     }
 
     /** Add backtick quotes to a value */
-    template <typename S> inline std::string quote(S value, bool markup = true) {
-        return quote(to_string(value), markup);
+    template <typename T>
+        requires convertible_to_string<T> && (!std::same_as<T, std::string_view>)
+    inline std::string quote(T value) {
+        return quote(std::string_view(to_string(std::move(value))));
     }
 
     /** Define defined literal "_quote" operator */
     inline std::string operator""_quote(const char* text, std::size_t len) {
-        return quote(std::string {text, len}, true);
+        return quote(std::string_view(text, len));
     }
 
-    /** Converts a range to a string with custom to_string function, markup and delimiter */
+    /** Converts a range to a string with custom to_string function and delimiter */
     template <typename R, typename F>
         requires std::ranges::bidirectional_range<R> && std::is_invocable_r_v<std::string, F, std::ranges::range_value_t<R>>
-    inline std::string
-    range_to_string(const R& range, F to_string_func, bool markup = false, const std::string& delim = ", ") {
+    inline std::string range_to_string(const R& range, F to_string_func, const std::string& delim = ", ") {
         std::string out {};
         if(!std::ranges::empty(range)) {
             std::ranges::for_each(std::ranges::subrange(std::cbegin(range), std::ranges::prev(std::ranges::cend(range))),
-                                  [&](const auto& element) { out += quote(to_string_func(element), markup) + delim; });
-            out += quote(to_string_func(*std::ranges::crbegin(range)), markup);
+                                  [&](const auto& element) { out += to_string_func(element) + delim; });
+            out += to_string_func(*std::ranges::crbegin(range));
         }
         return out;
     }
@@ -197,7 +209,8 @@ namespace constellation::utils {
     template <typename R>
         requires std::ranges::bidirectional_range<R> && convertible_to_string<std::ranges::range_value_t<R>>
     inline std::string range_to_string(const R& range, bool markup = false, const std::string& delim = ", ") {
-        return range_to_string(range, to_string<std::ranges::range_value_t<R>>, markup, delim);
+        using rv_t = std::ranges::range_value_t<R>;
+        return range_to_string(range, markup ? quote<rv_t> : to_string<rv_t>, delim);
     }
 
     /** Range that can be converted to a string */

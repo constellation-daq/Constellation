@@ -87,7 +87,7 @@ Manager::Manager(std::string_view group_name, std::string_view host_name, const 
     LOG(logger_, DEBUG) << "Group ID for constellation " << group_name << " is " << group_id_.to_string();
 
     LOG(logger_, INFO) << "Using interfaces "
-                       << range_to_string(interfaces, [](const auto& interface) { return interface.name; }, true);
+                       << range_to_string(interfaces, [](const auto& interface) { return quote(interface.name); });
 
     const auto multicast_adddress = asio::ip::address_v4(MULTICAST_ADDRESS);
     multicast_socket_ = std::make_unique<MulticastSocket>(interfaces, multicast_adddress, PORT);
