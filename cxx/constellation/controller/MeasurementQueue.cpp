@@ -151,7 +151,7 @@ void MeasurementQueue::start() {
 
     // We only start when we are in orbit
     if(!controller_.isInState(CSCP::State::ORBIT)) {
-        LOG(logger_, WARNING) << "Not in correct state, controller reports " << quote(controller_.getLowestState());
+        LOG(logger_, WARNING) << "Not in correct state, controller reports " << controller_.getLowestState();
         return;
     }
 

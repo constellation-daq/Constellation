@@ -377,9 +377,8 @@ void ControllerConfiguration::fill_dependency_graph(std::string_view canonical_n
                 transition_graph_[state][transform(dependent, ::tolower)].emplace(transform(canonical_name, ::tolower));
             };
 
-            LOG(config_parser_logger_, DEBUG)
-                << "Registering dependency for transitional state " << quote(to_string(state)) << " of " << canonical_name
-                << " with dependents " << range_to_string(dependents);
+            LOG(config_parser_logger_, DEBUG) << "Registering dependency for transitional state " << state << " of "
+                                              << canonical_name << " with dependents " << range_to_string(dependents);
             std::ranges::for_each(dependents, register_dependency);
         }
     }
@@ -394,11 +393,11 @@ void ControllerConfiguration::validate() {
     // Check each transition for possible cycles
     for(const auto& transition_pair : transition_graph_) {
         const auto transition = transition_pair.first;
-        LOG(config_parser_logger_, DEBUG) << "Checking for deadlock in transition: " << transition;
+        LOG(config_parser_logger_, DEBUG) << "Checking for deadlock in transition " << transition;
 
         if(check_transition_deadlock(transition)) {
-            LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition: " << transition;
-            throw ConfigValidationError("Cyclic dependency for transition " + quote(to_string(transition)));
+            LOG(config_parser_logger_, DEBUG) << "Deadlock detected in transition " << transition;
+            throw ConfigValidationError("Cyclic dependency for transition " + enum_name(transition));
         }
     }
     // No deadlock in any transition

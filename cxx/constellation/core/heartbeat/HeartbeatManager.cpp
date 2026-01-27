@@ -118,10 +118,10 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
 
 void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const auto& status = msg.getStatus();
-    LOG(logger_, TRACE) << msg.getSender() << " reports state " << quote(msg.getState()) //
-                        << ", flags " << quote(msg.getFlags())                           //
-                        << (status.has_value() ? ", status " + status.value() : "")      //
-                        << ", next message in " << msg.getInterval();                    //
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()   //
+                        << ", flags " << quote(msg.getFlags())                      //
+                        << (status.has_value() ? ", status " + status.value() : "") //
+                        << ", next message in " << msg.getInterval();               //
 
     const auto now = std::chrono::steady_clock::now();
     std::unique_lock<std::mutex> lock {mutex_};
@@ -170,7 +170,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Delay calling the interrupt until we have unlocked the mutex:
     lock.unlock();
     if(call_interrupt) {
-        LOG(logger_, DEBUG) << "Detected state " << quote(msg.getState()) << " at " << remote_name << ", interrupting";
+        LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_name << ", interrupting";
         interrupt_callback_(remote_name + " reports state " + to_string(msg.getState()));
     }
 }

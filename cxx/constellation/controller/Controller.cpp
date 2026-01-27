@@ -207,10 +207,10 @@ void Controller::process_heartbeat(const message::CHP1Message& msg) {
     const auto sat = connections_.find(msg.getSender());
     if(sat != connections_.end()) {
         const auto& status = msg.getStatus();
-        LOG(logger_, TRACE) << msg.getSender() << " reports state " << quote(msg.getState()) //
-                            << ", flags " << quote(msg.getFlags())                           //
-                            << (status.has_value() ? ", status " + status.value() : "")      //
-                            << ", next message in " << msg.getInterval().count();            //
+        LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()   //
+                            << ", flags " << quote(msg.getFlags())                      //
+                            << (status.has_value() ? ", status " + status.value() : "") //
+                            << ", next message in " << msg.getInterval().count();       //
 
         const auto deviation =
             std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - msg.getTime());
@@ -385,7 +385,7 @@ bool Controller::isInGlobalState() const {
 }
 
 void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) const {
-    LOG(logger_, TRACE) << "Awaiting state " << quote(state) << " (timeout " << timeout << ")";
+    LOG(logger_, TRACE) << "Awaiting state " << state << " (timeout " << timeout << ")";
 
     auto timer = TimeoutTimer(timeout);
     timer.reset();
@@ -393,7 +393,7 @@ void Controller::awaitState(CSCP::State state, std::chrono::seconds timeout) con
     while(!isInState(state)) {
         // Check for timeout
         if(timer.timeoutReached()) {
-            throw ControllerError("Timed out waiting for global state " + quote(state));
+            throw ControllerError("Timed out waiting for global state " + enum_name(state));
         }
 
         // Wait a bit to avoid hot-loop
@@ -439,7 +439,7 @@ void Controller::awaitState(CSCP::State state,
 
         // Check for timeout
         if(timer.timeoutReached()) {
-            throw ControllerError("Timed out waiting for global state " + quote(state) + ": " +
+            throw ControllerError("Timed out waiting for global state " + enum_name(state) + ": " +
                                   range_to_string(last_state_change, [](const auto& p) { return p.first; }) +
                                   " never changed state");
         }

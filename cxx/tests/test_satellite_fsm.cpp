@@ -588,7 +588,7 @@ TEST_CASE("Conditional transitions", "[satellite][satellite::fsm]") {
 
     // Wait a bit to ensure that loop runs without condition being satisfied
     std::this_thread::sleep_for(20ms);
-    REQUIRE_THAT(std::string(fsm.getStatus()), Equals("Awaiting state from Dummy.sat2, currently reporting state `NEW`"));
+    REQUIRE_THAT(std::string(fsm.getStatus()), Equals("Awaiting state from Dummy.sat2, currently reporting state NEW"));
 
     // Update state and progress FSM
     state.store(State::INIT);
@@ -664,7 +664,7 @@ TEST_CASE("Conditional transitions (remote in ERROR)", "[satellite][satellite::f
     satellite.reactFSM(Transition::initialize, std::move(config));
     REQUIRE(fsm.getState() == State::ERROR);
     REQUIRE_THAT(std::string(fsm.getStatus()),
-                 Equals("Critical failure: Dependent remote satellite Dummy.sat2 reports state `ERROR`"));
+                 Equals("Critical failure: Dependent remote satellite Dummy.sat2 reports state ERROR"));
 
     satellite.exit();
 }

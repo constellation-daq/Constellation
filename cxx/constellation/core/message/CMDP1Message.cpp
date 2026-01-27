@@ -119,7 +119,7 @@ Level CMDP1Message::get_log_level_from_topic(std::string_view topic) {
     const auto level_str = topic.substr(4, level_endpos - 4);
     const auto level_opt = enum_cast<Level>(level_str);
     if(!level_opt.has_value()) {
-        throw MessageDecodingError("CMDP1", quote(to_string(level_str)) + " is not a valid log level");
+        throw MessageDecodingError("CMDP1", quote(level_str) + " is not a valid log level");
     }
 
     return level_opt.value();
