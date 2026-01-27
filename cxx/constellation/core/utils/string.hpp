@@ -15,7 +15,6 @@
 #include <chrono>
 #include <concepts>
 #include <cstddef>
-#include <cstdint>
 #include <iterator>
 #include <ranges>
 #include <string>
@@ -154,18 +153,6 @@ namespace constellation::utils {
     concept convertible_to_string = requires(T t) {
         { to_string(t) } -> std::same_as<std::string>;
     };
-
-    /** Convert char as hex string */
-    inline std::string char_to_hex_string(char c) {
-        std::string hex {"00"};
-        auto* last = hex.data() + hex.size();
-        auto res = std::to_chars(hex.data(), last, static_cast<std::uint8_t>(c), 16);
-        if(res.ptr != last) {
-            // c < 16, i.e. written to first char of hex -> reverse string
-            std::ranges::reverse(hex);
-        }
-        return "0x" + transform(hex, ::toupper);
-    }
 
     /** Add backtick quotes to strings */
     template <typename S>
