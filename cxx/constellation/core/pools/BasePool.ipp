@@ -34,6 +34,7 @@
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
 #include "constellation/core/utils/ManagerLocator.hpp"
+#include "constellation/core/utils/string.hpp"
 #include "constellation/core/utils/thread.hpp"
 
 namespace constellation::pools {
@@ -241,7 +242,7 @@ namespace constellation::pools {
                                                                 chirp::ServiceStatus status) {
         using enum constellation::log::Level;
 
-        pool_logger_.log(TRACE) << "Callback for " << service.to_uri() << ", status " << status;
+        pool_logger_.log(TRACE) << "Callback for " << service.to_uri() << ", status " << utils::quote(status);
 
         if(status == chirp::ServiceStatus::DEPARTED) {
             disconnect(service);

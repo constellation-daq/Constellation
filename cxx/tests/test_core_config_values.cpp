@@ -101,14 +101,13 @@ TEST_CASE("Scalar invalid integer argument", "[core][core::config]") {
     REQUIRE_THROWS_MATCHES(
         Scalar(uint64_max),
         std::invalid_argument,
-        Message("value " + quote(to_string(uint64_max)) + " is out of range for " + quote(demangle<std::int64_t>())));
+        Message("value " + quote(uint64_max) + " is out of range for " + quote(demangle<std::int64_t>())));
     // Test getter throws
     constexpr auto int64_max = std::numeric_limits<std::int64_t>::max();
     const Scalar scalar = {int64_max};
-    REQUIRE_THROWS_MATCHES(
-        scalar.get<std::int32_t>(),
-        std::invalid_argument,
-        Message("value " + quote(to_string(int64_max)) + " is out of range for " + quote(demangle<std::int32_t>())));
+    REQUIRE_THROWS_MATCHES(scalar.get<std::int32_t>(),
+                           std::invalid_argument,
+                           Message("value " + quote(int64_max) + " is out of range for " + quote(demangle<std::int32_t>())));
 }
 
 TEST_CASE("Scalar invalid enum argument", "[core][core::config]") {
@@ -284,15 +283,14 @@ TEST_CASE("Array invalid integer argument", "[core][core::config]") {
     REQUIRE_THROWS_MATCHES(
         Array(uint64_v),
         std::invalid_argument,
-        Message("value " + quote(to_string(uint64_max)) + " is out of range for " + quote(demangle<std::int64_t>())));
+        Message("value " + quote(uint64_max) + " is out of range for " + quote(demangle<std::int64_t>())));
     // Test getter throws
     constexpr auto int64_max = std::numeric_limits<std::int64_t>::max();
     const std::vector<std::int64_t> int64_v = {1, 2, 3, int64_max, 5};
     const Array array = {int64_v};
-    REQUIRE_THROWS_MATCHES(
-        array.getVector<std::int32_t>(),
-        std::invalid_argument,
-        Message("value " + quote(to_string(int64_max)) + " is out of range for " + quote(demangle<std::int32_t>())));
+    REQUIRE_THROWS_MATCHES(array.getVector<std::int32_t>(),
+                           std::invalid_argument,
+                           Message("value " + quote(int64_max) + " is out of range for " + quote(demangle<std::int32_t>())));
 }
 
 TEST_CASE("Array invalid enum argument", "[core][core::config]") {

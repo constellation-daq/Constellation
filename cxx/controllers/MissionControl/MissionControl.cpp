@@ -575,7 +575,7 @@ std::optional<std::map<std::string, Controller::CommandPayload>> MissionControl:
                                  "Warning",
                                  "The following satellites do not have explicit configuration sections in the selected "
                                  "configuration file:\n" +
-                                     QString::fromStdString(range_to_string(sats_without_config, "\n")) +
+                                     QString::fromStdString(range_to_string(sats_without_config, false, "\n")) +
                                      "\n\nContinue anyway?",
                                  QMessageBox::Ok | QMessageBox::Cancel) == QMessageBox::Cancel) {
             return {};

@@ -69,7 +69,7 @@ void CMDPListener::host_disconnected(const chirp::DiscoveredService& service) {
     available_topics_lock.unlock();
 
     // Notify of disconnected sender
-    LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(name) << " disconnected";
+    LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << name << " disconnected";
     sender_disconnected(name);
 }
 
@@ -92,11 +92,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(sender) << " connected";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << sender << " connected";
             sender_connected(sender);
         }
         if(new_topics) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << quote(sender) << " updated";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << sender << " updated";
             topics_changed(sender);
         }
     } else {
@@ -115,11 +115,11 @@ void CMDPListener::handle_message(message::CMDP1Message&& msg) {
 
         // Call method for derived classes to propagate information
         if(new_sender) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << quote(sender) << " connected";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Sender " << sender << " connected";
             sender_connected(sender);
         }
         if(new_topic) {
-            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << quote(sender) << " updated";
+            LOG(BasePoolT::pool_logger_, TRACE) << "Topics for " << sender << " updated";
             topics_changed(sender);
         }
 

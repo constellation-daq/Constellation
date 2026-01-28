@@ -62,6 +62,13 @@ namespace constellation::log {
             std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
         };
 
+        // Formatter for the message (converts markup to ANSI characters)
+        class ConstellationMessageFormatter : public spdlog::custom_flag_formatter {
+        public:
+            void format(const spdlog::details::log_msg& msg, const std::tm& tm, spdlog::memory_buf_t& dest) override;
+            std::unique_ptr<spdlog::custom_flag_formatter> clone() const override;
+        };
+
     public:
         // No copy/move constructor/assignment
         /// @cond doxygen_suppress

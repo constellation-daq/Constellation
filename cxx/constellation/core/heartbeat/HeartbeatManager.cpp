@@ -101,16 +101,16 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
     if(remote_it != remotes_.end()) {
         // Check if the run needs to be marked as degraded
         if(degradation_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::MARK_DEGRADED)) {
-            degradation_callback_(quote(remote_it->first) + " departed illicitly");
+            degradation_callback_(remote_it->first + " departed illicitly");
         }
 
         // Check if per its role, this remote is allowed to depart:
         if(interrupt_callback_ && role_requires(remote_it->second.role, CHP::MessageFlags::DENY_DEPARTURE)) {
-            LOG(logger_, DEBUG) << quote(remote_it->first) << " departed with " << "DENY_DEPARTURE"_quote
+            LOG(logger_, DEBUG) << remote_it->first << " departed with " << "DENY_DEPARTURE"_quote
                                 << " flag, requesting interrupt";
-            interrupt_callback_(quote(remote_it->first) + " departed illicitly");
+            interrupt_callback_(remote_it->first + " departed illicitly");
         } else {
-            LOG(INFO) << quote(remote_it->first) << " departed orderly";
+            LOG(INFO) << remote_it->first << " departed orderly";
         }
         remotes_.erase(remote_it);
     }
@@ -118,10 +118,10 @@ void HeartbeatManager::host_disconnected(const chirp::DiscoveredService& service
 
 void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const auto& status = msg.getStatus();
-    LOG(logger_, TRACE) << quote(msg.getSender()) << " reports state " << msg.getState()   //
-                        << ", flags " << enum_name(msg.getFlags())                         //
-                        << (status.has_value() ? ", status " + quote(status.value()) : "") //
-                        << ", next message in " << msg.getInterval();                      //
+    LOG(logger_, TRACE) << msg.getSender() << " reports state " << msg.getState()   //
+                        << ", flags " << quote(msg.getFlags())                      //
+                        << (status.has_value() ? ", status " + status.value() : "") //
+                        << ", next message in " << msg.getInterval();               //
 
     const auto now = std::chrono::steady_clock::now();
     std::unique_lock<std::mutex> lock {mutex_};
@@ -131,7 +131,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
 
     // Add newly discovered remote:
     if(remote_it == remotes_.end()) {
-        LOG(logger_, DEBUG) << "Adding " << quote(msg.getSender()) << " after receiving first heartbeat";
+        LOG(logger_, DEBUG) << "Adding " << msg.getSender() << " after receiving first heartbeat";
         auto [it, inserted] =
             remotes_.emplace(msg.getSender(), Remote(msg.getRole(), msg.getInterval(), now, msg.getState(), now));
         remote_it = it;
@@ -141,7 +141,7 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     const auto deviation =
         std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - msg.getTime());
     if(std::chrono::abs(deviation) > 3s) [[unlikely]] {
-        LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << quote(msg.getSender());
+        LOG(logger_, DEBUG) << "Detected time deviation of " << deviation << " to " << msg.getSender();
     }
 
     // Update the role with latest information:
@@ -170,8 +170,8 @@ void HeartbeatManager::process_heartbeat(const CHP1Message& msg) {
     // Delay calling the interrupt until we have unlocked the mutex:
     lock.unlock();
     if(call_interrupt) {
-        LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << quote(remote_name) << ", interrupting";
-        interrupt_callback_(quote(remote_name) + " reports state " + to_string(msg.getState()));
+        LOG(logger_, DEBUG) << "Detected state " << msg.getState() << " at " << remote_name << ", interrupting";
+        interrupt_callback_(remote_name + " reports state " + to_string(msg.getState()));
     }
 }
 
@@ -196,11 +196,10 @@ void HeartbeatManager::run(const std::stop_token& stop_token) {
                 // We have lives left, reduce them by one
                 remote.lives--;
                 remote.last_checked = now;
-                LOG(logger_, TRACE) << "Missed heartbeat from " << quote(key) << ", reduced lives to "
-                                    << to_string(remote.lives);
+                LOG(logger_, TRACE) << "Missed heartbeat from " << key << ", reduced lives to " << to_string(remote.lives);
 
                 if(remote.lives == 0) {
-                    const auto msg = "No signs of life detected anymore from " + quote(key);
+                    const auto msg = "No signs of life detected anymore from " + key;
                     LOG(logger_, WARNING) << msg;
 
                     // Check if the run needs to be marked as degraded

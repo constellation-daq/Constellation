@@ -159,7 +159,7 @@ std::optional<CSCP1Message> BaseSatellite::get_next_command() {
         // Try to disamble message
         auto message = CSCP1Message::disassemble(recv_msg);
 
-        LOG(logger_, DEBUG) << "Received CSCP message of type " << message.getVerb().first << " with verb "
+        LOG(logger_, DEBUG) << "Received CSCP message of type " << quote(message.getVerb().first) << " with verb "
                             << quote(message.getVerb().second) << (message.hasPayload() ? " and a payload" : "") << " from "
                             << message.getHeader().getSender();
 
@@ -414,7 +414,7 @@ void BaseSatellite::cscp_loop(const std::stop_token& stop_token) {
 
             // Ensure we have a REQUEST message
             if(message.getVerb().first != CSCP1Message::Type::REQUEST) {
-                LOG(logger_, WARNING) << "Received message via CSCP that is not REQUEST type - ignoring";
+                LOG(logger_, WARNING) << "Received message via CSCP that is not " + "REQUEST"_quote + " type - ignoring";
                 send_reply({CSCP1Message::Type::ERROR, "Can only handle CSCP messages with REQUEST type"});
                 continue;
             }
@@ -468,7 +468,7 @@ std::size_t BaseSatellite::store_config(Configuration&& config) {
     const auto unused_keys = config.removeUnusedEntries();
     if(!unused_keys.empty()) {
         LOG(logger_, WARNING) << unused_keys.size()
-                              << " keys of the configuration were not used: " << range_to_string(unused_keys);
+                              << " keys of the configuration were not used: " << range_to_string(unused_keys, true);
     }
 
     // Store new configuration
@@ -486,7 +486,7 @@ std::size_t BaseSatellite::update_config(Configuration& partial_config) {
     const auto unused_keys = partial_config.removeUnusedEntries();
     if(!unused_keys.empty()) {
         LOG(logger_, WARNING) << unused_keys.size()
-                              << " keys of the configuration were not used: " << range_to_string(unused_keys);
+                              << " keys of the configuration were not used: " << range_to_string(unused_keys, true);
     }
 
     // Update configuration
@@ -530,7 +530,7 @@ void BaseSatellite::initializing_autonomy(Configuration& config) {
     heartbeat_manager_.setMaximumInterval(max_heartbeat_interval);
 
     const auto role = config_autonomy.get<CHP::Role>("role", CHP::Role::DYNAMIC);
-    LOG(logger_, INFO) << "Configured role to " << role;
+    LOG(logger_, INFO) << "Configured role to " << quote(role);
     heartbeat_manager_.setRole(role);
 }
 
@@ -551,7 +551,7 @@ void BaseSatellite::reconfiguring_autonomy(const Configuration& config) {
         const auto role_opt = config_autonomy.getOptional<CHP::Role>("role");
         if(role_opt.has_value()) {
             const auto role = role_opt.value();
-            LOG(logger_, INFO) << "Reconfigured role to " << role;
+            LOG(logger_, INFO) << "Reconfigured role to " << quote(role);
             heartbeat_manager_.setRole(role);
         }
     }
@@ -674,7 +674,7 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
     // Interrupting from receiver needs to come first to wait for all EORs
     auto* receiver_ptr = dynamic_cast<ReceiverSatellite*>(this);
     if(receiver_ptr != nullptr) {
-        LOG(logger_, DEBUG) << "Interrupting: execute interrupting_receiver";
+        LOG(logger_, DEBUG) << "Interrupting: execute " << "interrupting_receiver"_quote;
         receiver_ptr->ReceiverSatellite::interrupting_receiver(previous_state);
     }
 
@@ -682,7 +682,7 @@ std::optional<std::string> BaseSatellite::interrupting_wrapper(CSCP::State previ
 
     auto* transmitter_ptr = dynamic_cast<TransmitterSatellite*>(this);
     if(transmitter_ptr != nullptr) {
-        LOG(logger_, DEBUG) << "Interrupting: execute interrupting_transmitter";
+        LOG(logger_, DEBUG) << "Interrupting: execute " << "interrupting_transmitter"_quote;
         transmitter_ptr->TransmitterSatellite::interrupting_transmitter(previous_state);
     }
 

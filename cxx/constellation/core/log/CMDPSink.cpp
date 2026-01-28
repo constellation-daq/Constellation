@@ -182,7 +182,7 @@ void CMDPSink::handle_log_subscriptions(bool subscribe, std::string_view body) {
         }
     }
 
-    LOG(*logger_, TRACE) << "Lowest global log level: " << quote(enum_name(cmdp_global_level));
+    LOG(*logger_, TRACE) << "Lowest global log level: " << quote(cmdp_global_level);
 
     // Update subscriptions
     ManagerLocator::getSinkManager().updateCMDPLevels(cmdp_global_level, std::move(cmdp_sub_topic_levels));

@@ -91,8 +91,8 @@ namespace {
         if(args.size() >= 4) {
             interfaces = get_interfaces({{args[3]}});
         }
-        std::cout << "Using interfaces " << range_to_string(interfaces, [](const auto& interface) { return interface.name; })
-                  << "\n"
+        std::cout << "Using interfaces "
+                  << range_to_string(interfaces, [](const auto& interface) { return quote(interface.name); }) << "\n"
                   << std::flush;
 
         // Turn off console logging

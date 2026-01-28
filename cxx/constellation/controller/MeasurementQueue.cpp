@@ -208,7 +208,8 @@ void MeasurementQueue::check_replies(const std::map<std::string, message::CSCP1M
         const auto verb = reply.second.getVerb();
         const auto success = (verb.first == CSCP1Message::Type::SUCCESS);
         if(!success) {
-            LOG(logger_, WARNING) << "Satellite " << reply.first << " replied with " << verb.first << ": " << verb.second;
+            LOG(logger_, WARNING) << "Satellite " << reply.first << " replied with " << quote(verb.first) << ": "
+                                  << verb.second;
         }
         return success;
     });
@@ -244,8 +245,8 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
         for(const auto& [key, value] : measurement_dict) {
             // Check that the key exists in the current configuration:
             if(!config.contains(key)) {
-                LOG(logger_, WARNING) << "Parameter " << key << " does not exist in configuration of satellite " << satellite
-                                      << ", cannot reset original value after queue";
+                LOG(logger_, WARNING) << "Parameter " << quote(key) << " does not exist in configuration of satellite "
+                                      << satellite << ", cannot reset original value after queue";
                 continue;
             }
 
@@ -264,7 +265,7 @@ void MeasurementQueue::cache_original_values(Measurement& measurement) {
             // Insert the key if it has not been registered yet:
             const auto& [it, inserted] = measurement_dict.try_emplace(key, value);
             if(inserted) {
-                LOG(logger_, INFO) << "Resetting original value of key " << key << " from satellite " << satellite;
+                LOG(logger_, INFO) << "Resetting original value of key " << quote(key) << " from satellite " << satellite;
                 value_cache.erase(key);
             }
         }

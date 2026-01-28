@@ -623,7 +623,7 @@ TEST_CASE("Direct cyclic dependency graph", "[controller]") {
     // No exception thrown
     REQUIRE_THROWS_MATCHES(config.validate(),
                            ConfigValidationError,
-                           Message("Error validating configuration: Cyclic dependency for transition `starting`"));
+                           Message("Error validating configuration: Cyclic dependency for transition starting"));
 }
 
 TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
@@ -651,7 +651,7 @@ TEST_CASE("Indirect cyclic dependency graph", "[controller]") {
     // No exception thrown
     REQUIRE_THROWS_MATCHES(config.validate(),
                            ConfigValidationError,
-                           Message("Error validating configuration: Cyclic dependency for transition `launching`"));
+                           Message("Error validating configuration: Cyclic dependency for transition launching"));
 }
 
 TEST_CASE("Self-dependency", "[controller]") {
@@ -667,7 +667,7 @@ TEST_CASE("Self-dependency", "[controller]") {
     // No exception thrown
     REQUIRE_THROWS_MATCHES(config.validate(),
                            ConfigValidationError,
-                           Message("Error validating configuration: Cyclic dependency for transition `starting`"));
+                           Message("Error validating configuration: Cyclic dependency for transition starting"));
 }
 
 // NOLINTEND(cert-err58-cpp,misc-use-anonymous-namespace)

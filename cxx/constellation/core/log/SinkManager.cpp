@@ -43,6 +43,11 @@
 using namespace constellation::log;
 using namespace constellation::utils;
 
+namespace ansi {
+    inline constexpr std::string_view reset = "\033[0m";
+    inline constexpr std::string_view dim = "\033[2m";
+} // namespace ansi
+
 SinkManager::ConstellationLevelFormatter::ConstellationLevelFormatter(bool format_short) : format_short_(format_short) {}
 
 void SinkManager::ConstellationLevelFormatter::format(const spdlog::details::log_msg& msg,
@@ -76,6 +81,38 @@ std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::ConstellationTopicFo
     return std::make_unique<ConstellationTopicFormatter>();
 }
 
+void SinkManager::ConstellationMessageFormatter::format(const spdlog::details::log_msg& msg,
+                                                        const std::tm& /*tm*/,
+                                                        spdlog::memory_buf_t& dest) {
+    auto quoted = false;
+    for(std::size_t i = 0; i < msg.payload.size();) {
+        if(msg.payload[i] == '`') {
+            if(quoted) {
+                // We were in quoted mode, reset to normal
+                dest.append(ansi::reset.data(), ansi::reset.data() + ansi::reset.size());
+                quoted = false;
+            } else {
+                dest.append(ansi::dim.data(), ansi::dim.data() + ansi::dim.size());
+                quoted = true;
+            }
+            ++i;
+            continue;
+        }
+
+        // Normal character
+        dest.push_back(msg.payload[i++]);
+    }
+
+    // Ensure formatting reset
+    if(quoted) {
+        dest.append(ansi::reset.data(), ansi::reset.data() + ansi::reset.size());
+    }
+}
+
+std::unique_ptr<spdlog::custom_flag_formatter> SinkManager::ConstellationMessageFormatter::clone() const {
+    return std::make_unique<ConstellationMessageFormatter>();
+}
+
 SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OFF) {
     // Disable global spdlog registration of loggers
     spdlog::set_automatic_registration(false);
@@ -93,6 +130,7 @@ SinkManager::SinkManager() : console_global_level_(TRACE), cmdp_global_level_(OF
     formatter->add_flag<ConstellationLevelFormatter>('l', false);
     formatter->add_flag<ConstellationLevelFormatter>('L', true);
     formatter->add_flag<ConstellationTopicFormatter>('n');
+    formatter->add_flag<ConstellationMessageFormatter>('v');
     formatter->set_pattern("|%Y-%m-%d %H:%M:%S.%e| %^%l%$ %n %v");
     console_sink_->set_formatter(std::move(formatter));
 

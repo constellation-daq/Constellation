@@ -163,7 +163,8 @@ std::vector<Interface> constellation::networking::get_interfaces(const std::vect
         const auto interface_it =
             std::ranges::find(all_interfaces, interface_name, [](const auto& if_s) { return if_s.name; });
         if(interface_it == all_interfaces.end()) {
-            throw NetworkError("Interface `" + interface_name + "` does not exist or is not suitable for network discovery");
+            throw NetworkError("Interface " + quote(interface_name) +
+                               " does not exist or is not suitable for network discovery");
         }
         interfaces.emplace_back(*interface_it);
     });
@@ -183,7 +184,7 @@ std::string constellation::networking::to_uri(const asio::ip::address_v4& addres
         uri += protocol;
         uri += "://";
     }
-    uri += range_to_string(address.to_bytes(), ".");
+    uri += range_to_string(address.to_bytes(), false, ".");
     uri += ":";
     uri += to_string(port);
     return uri;

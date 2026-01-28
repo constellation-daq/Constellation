@@ -37,12 +37,12 @@ std::string_view StatListener::demangle_topic(std::string_view topic) {
 }
 
 void StatListener::subscribeMetric(const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << quote(metric);
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to telemetry topic " << metric;
     CMDPListener::subscribeTopic("STAT/" + metric);
 }
 
 void StatListener::unsubscribeMetric(const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << quote(metric);
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from telemetry topic " << metric;
     CMDPListener::unsubscribeTopic("STAT/" + metric);
 }
 
@@ -59,13 +59,12 @@ std::set<std::string> StatListener::getMetricSubscriptions() {
 }
 
 void StatListener::subscribeMetric(const std::string& host, const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << quote(metric) << " for host " << host;
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Subscribing to extra telemetry topic " << metric << " for host " << host;
     CMDPListener::subscribeExtraTopic(host, "STAT/" + metric);
 }
 
 void StatListener::unsubscribeMetric(const std::string& host, const std::string& metric) {
-    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << quote(metric) << " for host "
-                                        << host;
+    LOG(BasePoolT::pool_logger_, DEBUG) << "Unsubscribing from extra telemetry topic " << metric << " for host " << host;
     CMDPListener::unsubscribeExtraTopic(host, "STAT/" + metric);
 }
 
