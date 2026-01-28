@@ -23,7 +23,6 @@
 #include "constellation/core/message/CHIRPMessage.hpp"
 #include "constellation/core/networking/exceptions.hpp"
 #include "constellation/core/protocol/CHIRP_definitions.hpp"
-#include "constellation/core/utils/string.hpp"
 
 namespace constellation::pools {
 
