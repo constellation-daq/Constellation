@@ -82,15 +82,15 @@ namespace constellation::satellite {
         /**
          * @brief Set tag for the BOR message metadata send at the begin of the run
          */
-        template <typename T> void setBORTag(std::string_view key, const T& value) {
-            bor_tags_[utils::transform(key, ::tolower)] = value;
+        template <typename T> void setBORTag(std::string key, const T& value) {
+            bor_tags_.insert_or_assign(std::move(key), value);
         }
 
         /**
          * @brief Set tag for the EOR message metadata send at the end of the run
          */
-        template <typename T> void setEORTag(std::string_view key, const T& value) {
-            eor_tags_[utils::transform(key, ::tolower)] = value;
+        template <typename T> void setEORTag(std::string key, const T& value) {
+            eor_tags_.insert_or_assign(std::move(key), value);
         }
 
         /**
