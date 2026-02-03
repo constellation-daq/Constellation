@@ -186,6 +186,8 @@ void Controller::callback_impl(const constellation::chirp::DiscoveredService& se
                 leaving_state(old_lowest_state, old_is_global);
                 reached_state(getLowestState(), isInGlobalState());
             }
+        } catch(const MessageDecodingError& e) {
+            LOG(CRITICAL) << e.what();
         } catch(const zmq::error_t& e) {
             LOG(CRITICAL) << "ZeroMQ error: " << e.what();
         } catch(const NetworkError& e) {
@@ -313,6 +315,8 @@ std::string Controller::getRunIdentifier() {
             if(recv_msg.getVerb().first == CSCP1Message::Type::SUCCESS && !runid.empty()) {
                 return to_string(runid);
             }
+        } catch(const MessageDecodingError& e) {
+            LOG(CRITICAL) << e.what();
         } catch(const NetworkError& e) {
             LOG(CRITICAL) << e.what();
         }
@@ -525,6 +529,9 @@ CSCP1Message Controller::sendCommand(std::string_view satellite_name, CSCP1Messa
 
         // Exchange messages
         return send_receive(sat->second, cmd);
+    } catch(const MessageDecodingError& e) {
+        LOG(logger_, CRITICAL) << e.what();
+        return {{std::string(satellite_name)}, {CSCP1Message::Type::ERROR, e.what()}};
     } catch(const NetworkError& e) {
         LOG(logger_, CRITICAL) << e.what();
         return {{std::string(satellite_name)}, {CSCP1Message::Type::ERROR, e.what()}};
