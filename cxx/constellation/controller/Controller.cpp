@@ -345,6 +345,9 @@ std::optional<std::chrono::system_clock::time_point> Controller::getRunStartTime
         } catch(const MessageDecodingError& e) {
             LOG(CRITICAL) << e.what();
             continue;
+        } catch(const NetworkError& e) {
+            LOG(CRITICAL) << e.what();
+            continue;
         }
     }
     return time;
