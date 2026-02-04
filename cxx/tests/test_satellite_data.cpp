@@ -340,7 +340,8 @@ TEST_CASE("Successful run", "[satellite]") {
     REQUIRE(eor.at("version_full").get<std::string>() == "Constellation " CNSTLN_VERSION_FULL);
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "GOOD");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::GOOD);
+    REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
+            std::to_underlying(CDTP::RunCondition::GOOD));
     REQUIRE(eor.at("license").get<std::string>() == "PDDL-1.0");
 
     const auto& eor_tags = receiver.getEORTags(transmitter.getCanonicalName());
@@ -406,7 +407,8 @@ TEST_CASE("Tainted run", "[satellite]") {
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "TAINTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() == CDTP::RunCondition::TAINTED);
+    REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
+            std::to_underlying(CDTP::RunCondition::TAINTED));
 
     // Ensure all satellite are happy
     REQUIRE(receiver.getState() == FSM::State::ORBIT);
@@ -462,8 +464,8 @@ TEST_CASE("Transmitter interrupted run", "[satellite]") {
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "TAINTED|INTERRUPTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() ==
-            (CDTP::RunCondition::TAINTED | CDTP::RunCondition::INTERRUPTED));
+    REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
+            std::to_underlying(CDTP::RunCondition::TAINTED | CDTP::RunCondition::INTERRUPTED));
 
     // Ensure all satellites are in safe mode
     REQUIRE(transmitter.getState() == FSM::State::SAFE);
@@ -522,8 +524,8 @@ TEST_CASE("Transmitter failure run", "[satellite]") {
     const auto& eor = receiver.getEOR(transmitter.getCanonicalName());
     REQUIRE(eor.at("run_id").get<std::string>() == "test");
     REQUIRE(eor.at("condition").get<std::string>() == "TAINTED|ABORTED");
-    REQUIRE(eor.at("condition_code").get<CDTP::RunCondition>() ==
-            (CDTP::RunCondition::TAINTED | CDTP::RunCondition::ABORTED));
+    REQUIRE(eor.at("condition_code").get<std::underlying_type_t<CDTP::RunCondition>>() ==
+            std::to_underlying(CDTP::RunCondition::TAINTED | CDTP::RunCondition::ABORTED));
 
     // Wait until receiver has handled interrupting
     const auto run_interrupting = std::set<FSM::State>({FSM::State::RUN, FSM::State::interrupting});
