@@ -129,7 +129,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 continue
             # check that it is actually a REQUEST
             if req.verb_type != CSCP1Message.Type.REQUEST:
-                self.log_cscp.error(f"Received malformed request with msg verb: {req.verb}")
+                self.log_cscp.warning(f"Received malformed request with msg verb: {req.verb}")
                 self._cmd_tm.send_reply(
                     f"Received malformed request with msg verb: {req.verb}",
                     CSCP1Message.Type.INVALID,
@@ -139,7 +139,7 @@ class CommandReceiver(BaseSatelliteFrame):
             # find a matching callback
             command = req.verb_msg.lower()
             if command not in self._cmds:
-                self.log_cscp.error("Unknown command: %s", command)
+                self.log_cscp.warning("Unknown command: %s", command)
                 self._cmd_tm.send_reply(f"Unknown command: {command}", CSCP1Message.Type.UNKNOWN)
                 continue
             # test whether callback is allowed by calling the
@@ -147,7 +147,7 @@ class CommandReceiver(BaseSatelliteFrame):
             try:
                 is_allowed = getattr(self, f"_{command}_is_allowed")(req)
                 if not is_allowed:
-                    self.log_cscp.error("Command not allowed: %s", req)
+                    self.log_cscp.warning("Command not allowed: %s", req)
                     self._cmd_tm.send_reply(
                         "Command not allowed (in current state)",
                         CSCP1Message.Type.INVALID,
@@ -168,7 +168,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 )
                 continue
             except TransitionNotAllowed as e:
-                self.log_cscp.error("Transition `%s` not allowed: %s", command, e)
+                self.log_cscp.warning("Transition `%s` not allowed: %s", command, e)
                 self._cmd_tm.send_reply(f"Transition not allowed: {e}", CSCP1Message.Type.INVALID, repr(e))
                 continue
             except (TypeError, ValueError) as e:
@@ -181,7 +181,7 @@ class CommandReceiver(BaseSatelliteFrame):
                 continue
             # check the response; empty string means 'missing data/incomplete'
             if res is None:
-                self.log_cscp.error("Command `%s` returned nothing: %s", command, req)
+                self.log_cscp.warning("Command `%s` returned nothing: %s", command, req)
                 self._cmd_tm.send_reply("Command returned nothing", CSCP1Message.Type.INCOMPLETE)
                 continue
             # finally, assemble a proper response!
