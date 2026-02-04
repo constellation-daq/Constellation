@@ -72,7 +72,7 @@ namespace constellation::message {
      *
      * The message type does not match the requested operation
      */
-    class CNSTLN_API IncorrectMessageType : public utils::RuntimeError {
+    class CNSTLN_API IncorrectMessageType : public MessageDecodingError {
     public:
         explicit IncorrectMessageType(std::string_view why) {
             error_message_ = "Message type is incorrect: ";

@@ -312,9 +312,6 @@ namespace constellation::pools {
                         message_callback_(MESSAGE::disassemble(zmq_msg));
                     } catch(const message::MessageDecodingError& error) {
                         pool_logger_.log(WARNING) << error.what();
-
-                    } catch(const message::IncorrectMessageType& error) {
-                        pool_logger_.log(WARNING) << error.what();
                     }
                 });
                 polled_messages.clear();
