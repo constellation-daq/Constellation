@@ -57,7 +57,7 @@ def test_hb_send_recv_comm(mock_heartbeat_sender, mock_heartbeat_checker):
     hbs.fsm.initialize("running mock init")
     hbs.fsm.initialized("done with mock init")
     time.sleep(0.5)
-    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater"] == SatelliteState.INIT
+    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater".lower()] == SatelliteState.INIT
 
 
 def test_hb_send_recv_lag(mock_heartbeat_sender, mock_heartbeat_checker):
@@ -85,7 +85,7 @@ def test_hb_send_recv_lag(mock_heartbeat_sender, mock_heartbeat_checker):
         time.sleep(0.01)
         newstack = len(ctx_s.packet_queue_out[HB_PORT])
     assert newstack <= stack / 2
-    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater"] == SatelliteState.INIT
+    assert hbc.heartbeat_states["HeartbeatSender.mock_heartbeater".lower()] == SatelliteState.INIT
     assert not hbc.get_failed()
 
 
