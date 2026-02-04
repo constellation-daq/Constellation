@@ -176,7 +176,7 @@ class HeartbeatChecker(BaseSatelliteFrame):
         """Return a dictionary of the monitored Satellites' state."""
         res = {}
         for hb in self._remote_heartbeat_states.values():
-            res[hb.name] = hb.state
+            res[hb.name.lower()] = hb.state
         return res
 
     @property
