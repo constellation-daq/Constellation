@@ -318,7 +318,7 @@ class SatelliteStateHandler(HeartbeatChecker, BaseSatelliteFrame):
                 name_lc = name.lower()
 
                 # Check that remote is registered
-                if name_lc not in self.heartbeat_states:
+                if name_lc not in self.heartbeat_states or self.heartbeat_states[name_lc] == SatelliteState.DEAD:
                     error_message = f"Dependent remote satellite {name} not present"
                     self.fsm.status = error_message
                     raise RuntimeError(error_message)
