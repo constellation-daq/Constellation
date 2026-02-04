@@ -165,12 +165,12 @@ class CHIRPBeaconTransmitter:
         return self._group_uuid
 
     @property
-    def filter(self) -> bool:
+    def filter_group(self) -> bool:
         """Whether or not incoming messages are filtered on group."""
         return self._filter_group
 
-    @filter.setter
-    def filter(self, val: bool) -> None:
+    @filter_group.setter
+    def filter_group(self, val: bool) -> None:
         """Whether or not incoming messages are filtered on group."""
         self._filter_group = val
 

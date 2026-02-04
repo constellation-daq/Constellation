@@ -302,9 +302,11 @@ class Section:
         return self.get(
             key,
             default_value,
-            lambda x: [self._check_type(f"{key}[{n}]", element, element_type) for n, element in enumerate(x)]
-            if isinstance(x, list)
-            else [self._check_type(key, x, element_type)],
+            lambda x: (
+                [self._check_type(f"{key}[{n}]", element, element_type) for n, element in enumerate(x)]
+                if isinstance(x, list)
+                else [self._check_type(key, x, element_type)]
+            ),
         )
 
     def get_set(
