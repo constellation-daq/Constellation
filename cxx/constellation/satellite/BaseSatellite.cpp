@@ -99,16 +99,20 @@ BaseSatellite::BaseSatellite(std::string_view type, std::string_view name)
     cscp_thread_ = std::jthread(std::bind_front(&BaseSatellite::cscp_loop, this));
     set_thread_name(cscp_thread_, "CSCP");
 
+    // Register metric for announcing new run ids and states:
+    utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
+    utils::ManagerLocator::getMetricsManager().registerMetric("STATE", "", "Current satellite state. Updated when changed.");
+
     // Register state callback for extrasystoles
     fsm_.registerStateCallback("extrasystoles", [&](CSCP::State, std::string_view status) {
         heartbeat_manager_.sendExtrasystole(std::string(status));
     });
 
+    // Register state callback for metric
+    fsm_.registerStateCallback("telemetry", [&](CSCP::State state, std::string_view) { STAT("STATE", enum_name(state)); });
+
     // Register remote state callback to retrieve information on distant satellites
     fsm_.registerRemoteCallback([&](std::string_view name) { return heartbeat_manager_.getRemoteState(name); });
-
-    // Register metric for announcing new run ids:
-    utils::ManagerLocator::getMetricsManager().registerMetric("RUN_ID", "", "Current run identifier. Updated when changed.");
 }
 
 std::string BaseSatellite::getCanonicalName() const {
