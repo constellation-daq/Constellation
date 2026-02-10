@@ -24,6 +24,7 @@
 #include <thread>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "constellation/core/chirp/Manager.hpp"
@@ -507,12 +508,17 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
 
     auto metadata = eor_message.getRunMetadata();
 
-    const auto apply_run_condition = [&metadata](CDTP::RunCondition condition_code) {
+    const auto apply_run_condition = [&metadata, this](CDTP::RunCondition condition_code) {
         auto condition_code_it = metadata.find("condition_code");
         if(condition_code_it != metadata.end()) {
             // Add flag to existing condition
-            condition_code |=
-                CDTP::RunCondition(condition_code_it->second.get<std::underlying_type_t<CDTP::RunCondition>>());
+            try {
+                condition_code |=
+                    CDTP::RunCondition(condition_code_it->second.get<std::underlying_type_t<CDTP::RunCondition>>());
+            } catch(const std::bad_variant_access&) {
+                LOG(BasePoolT::pool_logger_, WARNING)
+                    << "Condition code " << quote(condition_code_it->second.to_string()) << " is not a valid";
+            }
             condition_code_it->second = std::to_underlying(condition_code);
         } else {
             metadata.emplace("condition_code", std::to_underlying(condition_code));
