@@ -467,28 +467,34 @@ void MissionControl::custom_context_menu(const QPoint& point) {
         }
         runcontrol_.sendQCommand(index, "initialize", config.value());
     });
+    initialiseAction->setEnabled(CSCP::transitions_from(CSCP::State::initializing, runcontrol_.getQState(index)));
     contextMenu.addAction(initialiseAction);
 
     auto* launchAction = new QAction(QIcon(":/command/launch"), "Launch", this);
     connect(launchAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "launch"); });
+    launchAction->setEnabled(CSCP::transitions_from(CSCP::State::launching, runcontrol_.getQState(index)));
     contextMenu.addAction(launchAction);
 
     auto* landAction = new QAction(QIcon(":/command/land"), "Land", this);
     connect(landAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "land"); });
+    landAction->setEnabled(CSCP::transitions_from(CSCP::State::landing, runcontrol_.getQState(index)));
     contextMenu.addAction(landAction);
 
     auto* startAction = new QAction(QIcon(":/command/start"), "Start", this);
     connect(startAction, &QAction::triggered, this, [this, index]() {
         runcontrol_.sendQCommand(index, "start", current_run_.toStdString());
     });
+    startAction->setEnabled(CSCP::transitions_from(CSCP::State::starting, runcontrol_.getQState(index)));
     contextMenu.addAction(startAction);
 
     auto* stopAction = new QAction(QIcon(":/command/stop"), "Stop", this);
     connect(stopAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "stop"); });
+    stopAction->setEnabled(CSCP::transitions_from(CSCP::State::stopping, runcontrol_.getQState(index)));
     contextMenu.addAction(stopAction);
 
     auto* terminateAction = new QAction(QIcon(":/command/shutdown"), "Shutdown", this);
     connect(terminateAction, &QAction::triggered, this, [this, index]() { runcontrol_.sendQCommand(index, "shutdown"); });
+    terminateAction->setEnabled(CSCP::is_shutdown_allowed(runcontrol_.getQState(index)));
     contextMenu.addAction(terminateAction);
 
     // Draw separator
