@@ -452,6 +452,11 @@ void FSM::initialize_fsm(Configuration& config) {
                     throw InvalidValueError(config_conditions, key, "Satellite cannot depend on itself");
                 }
 
+                // Check that this remote is present
+                if(!remote_callback_(remote).has_value()) {
+                    throw InvalidValueError(config_conditions, key, "Dependent remote satellite " + remote + " not present");
+                }
+
                 remote_conditions_.emplace(remote, state);
             });
         }
