@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -44,6 +45,17 @@ void EudaqNativeWriterSatellite::initializing(Configuration& config) {
 
     buffer_size_ = config.get<std::size_t>("buffer_size", 128) * 1024;
     flush_timer_ = TimeoutTimer(std::chrono::seconds(config.get<std::size_t>("flush_interval", 3)));
+
+    try {
+        file_name_pattern_ = config.get<std::string>("file_name_pattern", "data_{}.raw");
+        // Attempt to format with a dummy run number to see that it is working
+        const auto formatted = std::vformat(file_name_pattern_, std::make_format_args("dummy"));
+        LOG(DEBUG) << "Successfully tested format, files will be named like " << formatted;
+    } catch(const std::format_error& e) {
+        throw InvalidValueError(config,
+                                "file_name_pattern",
+                                "Formatting file name pattern with run identifier failed, one placeholder required");
+    }
 }
 
 void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
@@ -58,7 +70,8 @@ void EudaqNativeWriterSatellite::starting(std::string_view run_identifier) {
     }
 
     // Open target file
-    auto file = create_output_file(base_path_, "data_" + std::string(run_identifier), "raw", true);
+    auto file =
+        create_output_file(base_path_, std::vformat(file_name_pattern_, std::make_format_args(run_identifier)), "raw", true);
 
     LOG(INFO) << "Starting run with identifier " << run_identifier << ", sequence " << sequence;
     serializer_ = std::make_unique<FileSerializer>(std::move(file), buffer_size_, sequence);

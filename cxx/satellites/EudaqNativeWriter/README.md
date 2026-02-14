@@ -49,8 +49,9 @@ flags or event configurations:
   device number is set to `0`.
 
 Messages from all sending satellites are written into the output file sequentially in the order in which they arrive.
-Output files are stored under the path provided via the `output_path` parameter and are named `data_<run_identifier>.raw`
-where `<run_identifier>` is the identifier of the corresponding run.
+Output files are stored under the path provided via the `output_path` parameter and are named according to the configured
+file name pattern. By default, files are named `data_<run_identifier>.raw` where `<run_identifier>` is the identifier of the
+corresponding run.
 
 ## Building
 
@@ -66,5 +67,6 @@ meson configure build -Dsatellite_eudaq_native_writer=false
 | Parameter | Type | Description | Default Value |
 |-----------|------|-------------|---------------|
 | `output_directory` | String | Base path to which to write output files to | - |
+| `file_name_pattern` | String | Pattern for the output filename. The placeholder `{}` will be replaced with the current run identifier. | `data_{}.raw` |
 | `buffer_size` | Unsigned Integer | Size of file buffer before flushing takes place in KiB | `128` |
 | `flush_interval` | Integer | Longest interval in seconds after which data in the file buffer will be written to disk | 3 |
