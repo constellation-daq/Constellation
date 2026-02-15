@@ -9,17 +9,17 @@
 
 #include "psutils.hpp"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
-#include <string>
 #include <thread>
 
 #ifdef _WIN32
 #include <windows.h>
 #else
+#include <cstdlib>
 #include <fstream>
 #include <string>
-
-#include <unistd.h>
 #endif
 
 #ifdef __APPLE__
@@ -29,15 +29,16 @@
 using namespace constellation::utils;
 
 double constellation::utils::get_cpu_load_average() {
+    const auto cores = std::max(1U, std::thread::hardware_concurrency());
 #ifdef _WIN32
     // On windows, access to load average is not straight-forward, use active CPU count as simple proxy
     SYSTEM_INFO sysInfo;
     GetSystemInfo(&sysInfo);
-    return 100.0 * static_cast<double>(GetActiveProcessorCount(ALL_PROCESSOR_GROUPS)) / std::thread::hardware_concurrency();
+    return 100.0 * static_cast<double>(GetActiveProcessorCount(ALL_PROCESSOR_GROUPS)) / cores;
 #else
-    double loads[3] {};
-    if(getloadavg(loads, 3) != -1) {
-        return 100.0 * loads[0] / std::thread::hardware_concurrency();
+    std::array<double, 3> loads {};
+    if(getloadavg(loads.data(), static_cast<int>(loads.size())) != -1) {
+        return 100.0 * loads[0] / cores;
     }
     return 0.0;
 #endif
@@ -55,12 +56,13 @@ std::uint64_t constellation::utils::get_available_memory() {
 #ifdef __linux__
     auto file = std::ifstream("/proc/meminfo");
     std::string key;
-    std::uint64_t value;
+    std::uint64_t value = 0;
     std::string unit;
 
     while(file >> key >> value >> unit) {
-        if(key == "MemAvailable:")
+        if(key == "MemAvailable:") {
             return value / 1024ULL;
+        }
     }
     return 0;
 #endif
