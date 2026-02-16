@@ -258,6 +258,16 @@ std::string QController::getQName(const QModelIndex& index) const {
     return it->first;
 }
 
+CSCP::State QController::getQState(const QModelIndex& index) const {
+    const std::scoped_lock lock {connection_mutex_};
+
+    // Select connection by index:
+    auto it = connections_.begin();
+    std::advance(it, index.row());
+
+    return it->second.state;
+}
+
 CSCP1Message QController::sendQCommand(const QModelIndex& index, const std::string& verb, const CommandPayload& payload) {
     std::unique_lock<std::mutex> lock {connection_mutex_};
 

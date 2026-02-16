@@ -147,6 +147,14 @@ namespace constellation::gui {
         std::string getQName(const QModelIndex& index) const;
 
         /**
+         * @brief Helper to obtain the current state of a satellite identified by its QModelIndex
+         *
+         * @param index QModelIndex of the satellite in question
+         * @return State of the satellite
+         */
+        protocol::CSCP::State getQState(const QModelIndex& index) const;
+
+        /**
          * @brief Helper to obtain a map of connection details
          *
          * @param index QModelIndex of the satellite in question
