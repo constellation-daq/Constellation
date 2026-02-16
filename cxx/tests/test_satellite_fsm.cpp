@@ -627,7 +627,7 @@ TEST_CASE("Conditional transitions (invalid configuration)", "[satellite][satell
     satellite.exit();
 }
 
-TEST_CASE("Conditional transitions (remote not present)", "[satellite][satellite::fsm]") {
+TEST_CASE("Conditional transitions (remote not present at initialization)", "[satellite][satellite::fsm]") {
     DummySatellite satellite {};
     auto& fsm = satellite.getFSM();
 
@@ -641,6 +641,32 @@ TEST_CASE("Conditional transitions (remote not present)", "[satellite][satellite
 
     // Initialization failure since satellite not present
     satellite.reactFSM(Transition::initialize, std::move(config));
+    REQUIRE(fsm.getState() == State::ERROR);
+    REQUIRE_THAT(std::string(fsm.getStatus()),
+                 Equals("Critical failure: Value of key `_conditions.require_initializing_after` is not valid: Dependent "
+                        "remote satellite Dummy.sat2 not present"));
+
+    satellite.exit();
+}
+
+TEST_CASE("Conditional transitions (remote not present at condition)", "[satellite][satellite::fsm]") {
+    DummySatellite satellite {};
+    auto& fsm = satellite.getFSM();
+
+    Dictionary config {};
+    Dictionary config_conditions {};
+    config_conditions["require_launching_after"] = "Dummy.sat2";
+    config["_conditions"] = std::move(config_conditions);
+
+    // Remote callback
+    bool present = true;
+    fsm.registerRemoteCallback(
+        [&](std::string_view /*canonical_name*/) { return (present ? std::optional<State>(State::NEW) : std::nullopt); });
+    satellite.reactFSM(Transition::initialize, std::move(config));
+
+    // Launching failure since satellite not present
+    present = false;
+    satellite.reactFSM(Transition::launch);
     REQUIRE(fsm.getState() == State::ERROR);
     REQUIRE_THAT(std::string(fsm.getStatus()),
                  Equals("Critical failure: Dependent remote satellite Dummy.sat2 not present"));
