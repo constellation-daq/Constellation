@@ -187,7 +187,7 @@ In addition, the optional {bdg-secondary}`reconfiguring` transitional state enab
 without having to pass through the {bdg-secondary}`INIT` state. A typical example for reconfiguration is a high-voltage power supply unit,
 which is slowly ramped up to its target voltage in the {bdg-secondary}`launching` state. Between runs, the applied voltage is supposed to be
 changed by a few volts - and instead of the time-consuming operation ramping down via the {bdg-secondary}`landing` transition and ramping up again,
-the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfigure` transitional state:
+the voltage is ramped directly from its current value to the target value in the {bdg-secondary}`reconfiguring` transitional state:
 
 ```plantuml
 @startuml
