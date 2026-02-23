@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
         try {
             QCoreApplication::setOrganizationName("Constellation");
-            QCoreApplication::setOrganizationDomain("constellation.pages.desy.de");
+            QCoreApplication::setOrganizationDomain("constellation.desy.de");
             QCoreApplication::setApplicationName("Observatory");
         } catch(const QException&) {
             LOG(CRITICAL) << "Failed to set up UI application";
