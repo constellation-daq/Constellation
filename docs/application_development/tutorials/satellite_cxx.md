@@ -124,7 +124,7 @@ and back to `RUN`:
 @startuml
 hide empty description
 
-State ORBIT : Satellite powered
+State ORBIT : Satellite ready
 State RUN : Satellite taking data
 
 ORBIT -[#blue,bold]l-> RUN : start
