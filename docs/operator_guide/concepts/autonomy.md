@@ -123,10 +123,10 @@ In state diagrams, this additional condition can be denoted as follows:
 @startuml
 hide empty description
 
-State ORBIT : Satellite orbiting
+State ORBIT : Satellite ready
 State condition <<choice>>
 State starting #lightblue
-State RUN : Satellite running
+State RUN : Satellite taking data
 
 ORBIT -[#blue,bold]right-> condition : start
 condition -[dotted]right-> starting

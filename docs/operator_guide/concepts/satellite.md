@@ -88,7 +88,7 @@ hide empty description
 
 State NEW : Satellite started
 State INIT : Satellite initialized
-State ORBIT : Satellite powered
+State ORBIT : Satellite ready
 State RUN : Satellite taking data
 
 NEW -right[#blue,bold]-> INIT : initialize
@@ -196,7 +196,7 @@ hide empty description
 State INIT : Satellite initialized
 State launching #lightblue
 State landing #lightblue
-State ORBIT : Satellite orbiting
+State ORBIT : Satellite ready
 State reconfiguring #lightblue##[dotted]
 
 INIT -right[#blue,bold]-> launching : launch
