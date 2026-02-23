@@ -15,6 +15,7 @@
 
   <launchable type="desktop-id">de.desy.constellation.missioncontrol.desktop</launchable>
   <launchable type="desktop-id">de.desy.constellation.observatory.desktop</launchable>
+  <launchable type="desktop-id">de.desy.constellation.telemetryconsole.desktop</launchable>
 
   <description>
     <p>
