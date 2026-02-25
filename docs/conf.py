@@ -268,5 +268,5 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "pyzmq": ("https://pyzmq.readthedocs.io/en/stable/", None),
     "msgpack": ("https://msgpack-python.readthedocs.io/en/stable/", None),
-    "statemachine": ("https://python-statemachine.readthedocs.io/en/stable/", None),
+    "statemachine": ("https://python-statemachine.readthedocs.io/en/v2.6.0/", None),
 }
