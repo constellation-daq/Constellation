@@ -97,7 +97,7 @@ def test_satellite_hb_state(mock_controller, mock_satellite):
         timeout -= 0.05
     assert len(ctrl.constellation.satellites) == 1, "Timed out while waiting for Satellite to be found"
 
-    assert ctrl.states["Satellite.mock_satellite"] == SatelliteState.NEW
+    assert ctrl.states["Satellite.mock_satellite".lower()] == SatelliteState.NEW
     assert ctrl.state_changes["Satellite.mock_satellite"] == satellite.fsm.last_changed
 
 
