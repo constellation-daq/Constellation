@@ -21,7 +21,7 @@ Details about how to implement data transmission in a satellite can be found in 
 
 Data consist of individual messages that are grouped to so-called runs. A run represents a set of data recorded in known
 conditions and with a fixed set of parameters.
-A new run starts upon entering the `RUN` state of the satellite [finite state machine](./satellite.md#the-finite-state-machine)
+A new run starts upon entering the {bdg-secondary}`RUN` state of the satellite [finite state machine](./satellite.md#the-finite-state-machine)
 and ends with the departure from this state.
 Each run is labeled by its _run identifier_, which is provided along with the `start` command sent to the satellite, and
 consists of individual data messages.
@@ -57,11 +57,11 @@ code.
 
 ### Begin-of-Run & End-of-Run Messages
 
-The tags of the BOR and EOR messages can be added by the satellite implementations in their respective `starting` and
-`stopping` functions. This can be used e.g. to record additional information such as a firmware version read from attached
+The tags of the BOR and EOR messages can be added by the satellite implementations in their respective {bdg-secondary}`starting` and
+{bdg-secondary}`stopping` transitions. This can be used e.g. to record additional information such as a firmware version read from attached
 instrument hardware at the time of starting, or to indicate an accumulated metric at the time of stopping.
 
-The BOR message contains the configuration of the transmitting satellite at the time of entering the `RUN` state.
+The BOR message contains the configuration of the transmitting satellite at the time of entering the {bdg-secondary}`RUN` state.
 Depending on the actual implementation of the satellite itself, this allows to unequivocally infer the setup, state
 and configuration of the satellite and its attached hardware from the recorded data.
 
@@ -74,7 +74,7 @@ Typical run metadata entries are:
 * `time_start`: the starting time of the run, i.e. the time of sending the BOR message
 * `time_end`: the ending time of the run, i.e. the time of sending the EOR message
 
-The run condition flags allows to assess the condition during the `RUN` state of the Constellation and thereby the quality of
+The run condition flags allows to assess the condition during the {bdg-secondary}`RUN` state of the Constellation and thereby the quality of
 the data recorded. Runs are marked with any of the following run condition flags:
 
 * `GOOD` (code: `0x00`, no flag set): The run has concluded normally, no other information has been provided by the sender
@@ -88,7 +88,7 @@ the data recorded. Runs are marked with any of the following run condition flags
 ## Receiving and Storing Data
 
 Receiver satellites accept data form one or more satellites within the same Constellation. In order to assign transmitter
-satellites to a specific receiver, the receiver can be given the `_data.receive_from` parameter which holds a list of all
+satellites to a specific receiver, the receiver can be provided via `_data.receive_from` parameter which holds a list of all
 canonical names of transmitters it should connect to. If not given, receiver satellites connect to all transmitters.
 
 Usually, receiver satellites will take great care that the data are stored properly, e.g. by testing access to the storage
@@ -115,6 +115,18 @@ available space falls below 3GB, when the message severity changes to `CRITICAL`
 More details about receiving telemetry information or log messages are provided in the respective sections on
 [telemetry](../concepts/telemetry.md) and [logging](../concepts/logging.md).
 ```
+
+## File Name Conflict Strategies
+
+Constellation receiver satellites provide the `_data.file_conflict_strategy` configuration key to select how to deal with
+already existing files upon run start. Three options are available:
+
+* `ERROR`: When writing to an already existing file is attempted, the corresponding receiver satellite will transition into
+  the {bdg-secondary}`ERROR` state.
+* `OVERWRITE`: In case of a file name conflict, the existing file will be deleted before creating the new output file.
+* `RENAME`: When a file already exists under the target file name, a randomly generated 8-character (40 bit entropy) `Base36`
+  string is appended to the output file name.
+
 
 ## Data Licensing
 
