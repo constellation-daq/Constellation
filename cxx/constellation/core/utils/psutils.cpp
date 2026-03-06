@@ -17,9 +17,10 @@
 #ifdef _WIN32
 #include <windows.h>
 #else
-#include <cstdlib>
 #include <fstream>
 #include <string>
+
+#include <stdlib.h>
 #endif
 
 #ifdef __APPLE__
