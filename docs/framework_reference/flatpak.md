@@ -23,51 +23,30 @@ Then the Flatpak Builder needs to be installed:
 flatpak install -y --user flathub org.flatpak.Builder
 ```
 
-## Preparing the Flatpak
+## Preparing the Flatpak Build
 
-To build the Flatpak, a manifest for the Flatpak needs to be created. It should be named `de.desy.constellation.yml` and
-located in a folder named `flatpak` within a clone of the Constellation repository with the following contents:
-
-```yaml
-id: de.desy.constellation
-runtime: org.kde.Platform
-runtime-version: "6.10"
-sdk: org.kde.Sdk
-command: Satellite
-finish-args:
-  - --share=network
-  - --filesystem=home
-  - --share=ipc
-  - --socket=fallback-x11
-  - --socket=wayland
-  - --device=dri
-cleanup:
-  - /include
-  - /lib/pkgconfig
-  - /share/pkgconfig
-modules:
-  - name: Constellation
-    buildsystem: meson
-    config-opts:
-      - -Dbuildtype=release
-      - -Dwerror=false
-      - -Db_lto=true
-      - -Dcxx_tools=false
-      - -Dcxx_tests=disabled
-      - -Dsatellite_dev_null_receiver=true
-      - -Dsatellite_mattermost=true
-      - -Dsatellite_random_transmitter=true
-    sources:
-      - type: dir
-        path: ..
-```
-
-Since internet access is not available during the Flatpak build, all dependencies need to be downloaded beforehand. This can
-be easily done with Meson:
+Since internet access is not available during the Flatpak build, all dependencies need to be downloaded beforehand.
+For the C++ dependencies this can be achieved using Meson:
 
 ```sh
 meson subprojects download
 ```
+
+For the Python dependencies [`req2flatpak`](https://github.com/johannesjh/req2flatpak) is used to generate a manifest on the fly by running the following commands in the `flatpak` folder:
+
+```sh
+pip install pip-tools req2flatpak
+pip-compile --extra cli --extra hdf5 --extra influx --extra lecroy --extra visa -o requirements.txt ../pyproject.toml
+req2flatpak -r requirements.txt -t cp313-x86_64 cp313-aarch64 -o pypi-dependencies.json
+```
+
+````{note}
+The current Python version of the Flatpak runtime to be specified in the `req2flatpak` command can be checked via:
+
+```sh
+flatpak run --user --command=cat org.freedesktop.Sdk /usr/manifest.json | grep cpython -A 1
+```
+````
 
 ## Building the Flatpak
 

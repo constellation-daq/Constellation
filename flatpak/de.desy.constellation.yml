@@ -18,9 +18,11 @@ cleanup:
   - /lib/pkgconfig
   - /share/pkgconfig
 modules:
+  - pypi-dependencies.json
   - name: Constellation
     buildsystem: meson
     config-opts:
+      - -Dimpl_py=enabled
       - -Dbuildtype=release
       - -Dwerror=false
       - -Db_lto=true
