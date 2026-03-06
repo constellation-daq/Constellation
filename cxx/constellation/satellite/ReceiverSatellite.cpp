@@ -10,6 +10,7 @@
 #include "ReceiverSatellite.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
@@ -17,6 +18,7 @@
 #include <ios>
 #include <mutex>
 #include <optional>
+#include <random>
 #include <ranges>
 #include <stop_token>
 #include <string>
@@ -114,15 +116,25 @@ std::filesystem::path ReceiverSatellite::validate_output_file(const std::filesys
         // Create all the required main directories and possible sub-directories from the filename
         std::filesystem::create_directories(file.parent_path());
 
-        // Check if file exists
-        if(std::filesystem::is_regular_file(file)) {
-            if(!allow_overwriting_) {
+        // Handle file name conflicts:
+        if(std::filesystem::exists(file)) {
+            switch(conflict_strategy_) {
+            case FileConflictStrategy::ERROR: {
                 throw SatelliteError("Overwriting of existing file " + file.string() + " denied");
             }
-            LOG(BasePoolT::pool_logger_, WARNING) << "File " << file << " exists and will be overwritten";
-            std::filesystem::remove(file);
-        } else if(std::filesystem::is_directory(file)) {
-            throw SatelliteError("Requested output file " + file.string() + " is an existing directory");
+            case FileConflictStrategy::RENAME: {
+                file =
+                    file.parent_path() / (file.stem().string() + "_" + generate_random_base36() + file.extension().string());
+                LOG(BasePoolT::pool_logger_, WARNING) << "Target file exists, redirecting output to file " << file.string();
+                break;
+            }
+            case FileConflictStrategy::OVERWRITE: {
+                LOG(BasePoolT::pool_logger_, WARNING) << "File " << file << " exists and will be overwritten";
+                std::filesystem::remove(file);
+                break;
+            }
+            default: std::unreachable();
+            }
         }
 
         // Open the file to check if it can be accessed
@@ -214,8 +226,8 @@ bool ReceiverSatellite::should_connect(const chirp::DiscoveredService& service) 
 void ReceiverSatellite::initializing_receiver(Configuration& config) {
     auto& config_data = config.getSection("_data", {});
 
-    allow_overwriting_ = config_data.get<bool>("allow_overwriting", false);
-    LOG(BasePoolT::pool_logger_, INFO) << (allow_overwriting_ ? "Not allowing" : "Allowing") << " overwriting of files";
+    conflict_strategy_ = config_data.get<FileConflictStrategy>("file_conflict_strategy", FileConflictStrategy::RENAME);
+    LOG(BasePoolT::pool_logger_, INFO) << "Solution strategy for file name conflicts: " << conflict_strategy_;
 
     data_transmitters_ = config_data.getSet<std::string>("receive_from", {});
     if(data_transmitters_.empty()) {
@@ -272,11 +284,11 @@ void ReceiverSatellite::reconfiguring_receiver(const Configuration& partial_conf
     if(config_data_opt.has_value()) {
         const auto& config_data = config_data_opt.value().get();
 
-        const auto allow_overwriting_opt = config_data.getOptional<bool>("allow_overwriting");
-        if(allow_overwriting_opt.has_value()) {
-            allow_overwriting_ = allow_overwriting_opt.value();
+        const auto file_conflict_strategy_opt = config_data.getOptional<FileConflictStrategy>("file_conflict_strategy");
+        if(file_conflict_strategy_opt.has_value()) {
+            conflict_strategy_ = file_conflict_strategy_opt.value();
             LOG(BasePoolT::pool_logger_, INFO)
-                << "Reconfigured to " << (allow_overwriting_ ? "not " : "") << "allow overwriting of files";
+                << "Reconfigured solution strategy for file name conflicts: " << conflict_strategy_;
         }
 
         const auto eor_timeout_opt = config_data.getOptional<std::uint64_t>("eor_timeout");
@@ -541,4 +553,22 @@ void ReceiverSatellite::handle_eor_message(const CDTP2EORMessage& eor_message) {
     data_transmitter_states_lock.unlock();
 
     receive_eor(eor_message.getSender(), eor_message.getUserTags(), metadata);
+}
+
+std::string ReceiverSatellite::generate_random_base36() {
+
+    static thread_local std::mt19937_64 rng {std::random_device {}()};
+    std::uniform_int_distribution<uint64_t> dist(0, (1ULL << 40U) - 1);
+
+    auto value = dist(rng);
+    constexpr std::array<char, 36> chars {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b',
+                                          'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                                          'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    std::string result(8, '0');
+    for(int i = 7; i >= 0; --i) {
+        result[i] = chars.at(value % 36);
+        value /= 36;
+    }
+
+    return result;
 }

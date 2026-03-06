@@ -42,6 +42,15 @@ namespace constellation::satellite {
     class CNSTLN_API ReceiverSatellite
         : public Satellite,
           private pools::BasePool<message::CDTP2Message, protocol::CHIRP::DATA, zmq::socket_type::pull> {
+
+    public:
+        /** Strategy for handling conflicts in file creation */
+        enum class FileConflictStrategy : std::uint8_t {
+            ERROR,
+            OVERWRITE,
+            RENAME,
+        };
+
     private:
         using BasePoolT = BasePool<message::CDTP2Message, protocol::CHIRP::DATA, zmq::socket_type::pull>;
 
@@ -269,9 +278,15 @@ namespace constellation::satellite {
          */
         void register_diskspace_metric(const std::filesystem::path& path);
 
+        /**
+         * @brief Generate a random Base36 string with 40b entropy
+         * @return String with 8 characters in Base36
+         */
+        static std::string generate_random_base36();
+
     private:
         std::chrono::seconds data_eor_timeout_ {};
-        bool allow_overwriting_ {};
+        FileConflictStrategy conflict_strategy_ {FileConflictStrategy::RENAME};
         std::set<std::string> data_transmitters_;
         utils::string_hash_map<TransmitterStateSeq> data_transmitter_states_;
         std::mutex data_transmitter_states_mutex_;
