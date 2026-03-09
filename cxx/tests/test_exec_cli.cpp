@@ -21,6 +21,14 @@ using namespace constellation::log;
 
 // NOLINTBEGIN(cert-err58-cpp,misc-use-anonymous-namespace)
 
+TEST_CASE("Setup logging", "[exec]") {
+    constellation_setup_logging(Level::TRACE, "DEFAULT");
+}
+
+TEST_CASE("Setup CHIRP", "[exec]") {
+    constellation_setup_chirp("edda", "chirp_manager", {});
+}
+
 TEST_CASE("Base parser", "[exec]") {
     auto parser = BaseParser("TestProg");
     parser.setup();
