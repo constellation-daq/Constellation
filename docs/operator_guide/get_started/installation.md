@@ -129,7 +129,3 @@ The following tags are available for each images:
 - `latest`: tag pointing to the last released version
 - `vX.Y.Z`: tags for each release starting from version 0.6
 - `nightly`: tag pointing to the last nightly build from the main branch (not recommended for production use)
-
-```{note}
-Currently, only C++ satellites are available in the Docker images.
-```
