@@ -16,7 +16,7 @@
 #include <vector>
 
 #ifdef CNSTLN_EXEC_PYTHON
-#include <Python.h>
+#include <Python.h> // IWYU pragma: keep
 #endif
 
 #include "constellation/core/log/log.hpp"
@@ -29,6 +29,8 @@ using namespace constellation::utils;
 #ifdef CNSTLN_EXEC_PYTHON
 namespace {
     std::string handle_python_error() {
+        // NOLINTBEGIN(misc-include-cleaner)
+
         std::string exception_message {};
         if(PyErr_Occurred() != nullptr) {
             // Fetch exception
@@ -48,11 +50,15 @@ namespace {
             Py_XDECREF(py_exc_str);
         }
         return exception_message;
+
+        // NOLINTEND(misc-include-cleaner)
     }
 
     std::pair<PyObject*, std::string> run_py_func_from_module(const std::string& module,
                                                               const std::string& function,
                                                               PyObject* arg) {
+        // NOLINTBEGIN(misc-include-cleaner)
+
         // Import module
         auto* py_module = PyImport_ImportModule(module.c_str());
         if(py_module == nullptr) {
@@ -84,25 +90,33 @@ namespace {
         auto exception_message = handle_python_error();
 
         return {py_res, std::move(exception_message)};
+
+        // NOLINTEND(misc-include-cleaner)
     }
 } // namespace
 #endif
 
 PyLoader::PyLoader() {
 #ifdef CNSTLN_EXEC_PYTHON
+    // NOLINTBEGIN(misc-include-cleaner)
     Py_Initialize();
+    // NOLINTEND(misc-include-cleaner)
 #endif
 }
 
 PyLoader::~PyLoader() {
 #ifdef CNSTLN_EXEC_PYTHON
+    // NOLINTBEGIN(misc-include-cleaner)
     handle_python_error();
     Py_Finalize();
+    // NOLINTEND(misc-include-cleaner)
 #endif
 }
 
 std::map<std::string, std::string> PyLoader::loadModules() { // NOLINT(readability-convert-member-functions-to-static)
 #ifdef CNSTLN_EXEC_PYTHON
+    // NOLINTBEGIN(misc-include-cleaner)
+
     std::map<std::string, std::string> satellite_modules {};
 
     // Run discover_plugins function
@@ -130,6 +144,8 @@ std::map<std::string, std::string> PyLoader::loadModules() { // NOLINT(readabili
     }
 
     return satellite_modules;
+
+    // NOLINTEND(misc-include-cleaner)
 #else
     throw PyLoaderNotBuildError();
 #endif
@@ -139,6 +155,8 @@ void PyLoader::runModule( // NOLINT(readability-convert-member-functions-to-stat
     [[maybe_unused]] const std::string& module,
     [[maybe_unused]] const std::vector<std::string>& args) {
 #ifdef CNSTLN_EXEC_PYTHON
+    // NOLINTBEGIN(misc-include-cleaner)
+
     // Recreate arguments for main function
     const auto args_size = static_cast<Py_ssize_t>(args.size());
     auto* py_args = PyList_New(args_size);
@@ -153,6 +171,8 @@ void PyLoader::runModule( // NOLINT(readability-convert-member-functions-to-stat
     if(!exception_message.empty()) {
         throw PyLoaderPythonException(exception_message);
     }
+
+    // NOLINTEND(misc-include-cleaner)
 #else
     throw PyLoaderNotBuildError();
 #endif
