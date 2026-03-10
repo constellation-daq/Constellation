@@ -31,7 +31,7 @@ class LeCroySatellite(TransmitterSatellite):
     def do_initializing(self, configuration: Configuration) -> str:
         self.log.info("Received configuration with parameters: %s", ", ".join(configuration.get_keys()))
 
-        ip_address = configuration.get("ip_address", return_type=str)
+        ip_address = configuration.get_str("ip_address")
         port = configuration.get_int("port", 1861, min_val=0, max_val=65535)
         timeout = configuration.get_num("timeout", 5.0)
         num_sequences = configuration.get_int("nsequence", 1)

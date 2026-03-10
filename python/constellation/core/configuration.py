@@ -21,6 +21,7 @@ from typing import Any, TypeVar, cast
 import msgpack  # type: ignore[import-untyped]
 
 T = TypeVar("T")
+T_E = TypeVar("T_E", bound=enum.Enum)
 
 
 class ConfigurationError(RuntimeError):
@@ -251,6 +252,19 @@ class Section:
             return value
         except KeyError as e:
             raise MissingKeyError(self, key) from e
+
+    def get_str(self, key: str, default_value: str | None = None) -> str:
+        """Get value of key as string"""
+        return self.get(key, default_value, return_type=str)
+
+    def get_enum(self, enum: type[T_E], key: str, default_value: T_E | None = None) -> T_E:
+        """Get value of key as enum
+
+        Note: this assumes that only upper case letters are used as enum keys
+        """
+        return self.get(
+            key, default_value.name if default_value is not None else None, return_type=lambda x: enum[x.upper()]
+        )  # pyright: ignore[reportReturnType]
 
     def get_num(
         self,

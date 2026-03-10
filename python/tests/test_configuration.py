@@ -50,8 +50,7 @@ def test_configuration_get():
     bool_v = False
     int_v = 16
     str_v = "hello world"
-    enum_v = DummyEnum.A
-    config = Configuration({"bool": bool_v, "int": int_v, "str": str_v, "enum": enum_v.name})
+    config = Configuration({"bool": bool_v, "int": int_v, "str": str_v})
     # get without arguments
     assert config.get("bool") == bool_v
     assert config.get("int") == int_v
@@ -67,8 +66,6 @@ def test_configuration_get():
     assert config.get("bool", return_type=bool) == bool_v
     assert config.get("int", return_type=int) == int_v
     assert config.get("str", return_type=str) == str_v
-    # get with return type function
-    assert config.get("enum", return_type=DummyEnum.__getitem__) == enum_v
 
 
 def test_configuration_get_missing_key():
@@ -89,6 +86,19 @@ def test_configuration_case_insensitivity():
     assert config.get("key1") == 1
     assert config.get("KeY2") == 2
     assert config.get("KEY3") == 3
+
+
+def test_configuration_get_str():
+    str_v = "hello world"
+    config = Configuration({"str": str_v})
+    assert config.get_str("str") == str_v
+
+
+def test_configuration_get_enum():
+    enum_v = DummyEnum.A
+    config = Configuration({"enum_v": enum_v.name})
+    assert config.get_enum(DummyEnum, "enum_v") == enum_v
+    assert config.get_enum(DummyEnum, "enum2_v", DummyEnum.B) == DummyEnum.B
 
 
 def test_configuration_get_num():
