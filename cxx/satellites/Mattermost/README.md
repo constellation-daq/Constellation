@@ -14,6 +14,9 @@ messages with a log level of `CRITICAL` are marked as urgent. In both cases the 
 notify all users in the channel. In addition to logging from other satellites, messages are sent when a run is started,
 stopped or interrupted.
 
+When sending the message to Mattermost fails temporarily, the sending is retried a configurable number of times with a
+quadratically increasing back-off time between the trials.
+
 ## Building
 
 The Mattermost requires [`cpr`](https://github.com/libcpr/cpr), which is downloaded on demand.
@@ -31,3 +34,5 @@ meson configure build -Dsatellite_mattermost=true
 | `log_level` | Minimum log level of the logger | string | `WARNING` |
 | `ignore_topics` | Ignore log messages with certain topics | list of strings | [`FSM`] |
 | `only_in_run` | Only log to Mattermost in the `RUN`, `interrupting` or `SAFE` state | bool | `false` |
+| `max_retries` | Number of retries for sending a message to Mattermost | Integer | 5 |
+| `backoff_time` | Initial time in milliseconds for the back-off between retrying to send messages | Integer | 500 |
