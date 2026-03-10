@@ -64,8 +64,8 @@ void FileSerializer::flush_event_buffer() {
 
         // Check if writing would still force a flush and warn about it
         if(event_buffer_size > buffer_size_) {
-            LOG_N(WARNING, 5) << "Event larger than file buffer, set `buffer_size` to at least " << event_buffer_size
-                              << " in order to only write full events to disk";
+            LOG_N(WARNING, 5) << "Event larger than file buffer, set `buffer_size` to at least "
+                              << (event_buffer_size / 1024) << " KiB in order to only write full events to disk";
         }
     }
 
