@@ -63,6 +63,9 @@ void MattermostSatellite::initializing(Configuration& config) {
     only_in_run_ = config.get<bool>("only_in_run", false);
     LOG_IF(INFO, only_in_run_) << "Only logging to Mattermost in RUN state";
 
+    max_retries_ = config.get<std::size_t>("max_retries", 5);
+    backoff_time_ = static_cast<std::chrono::milliseconds>(config.get<std::size_t>("backoff_time", 500));
+
     // Stop pool in case it was already started
     stopPool();
     startPool();
@@ -110,32 +113,44 @@ void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
     // Add level and topic to card
     auto card = "**Level**: " + enum_name(msg.getLogLevel()) + "\\n\\n**Topic**: ";
     card += msg.getLogTopic();
-    // Try to send message, on failure go to ERROR state
-    try {
-        send_message(std::move(text), priority, msg.getHeader().getSender(), std::move(card));
-    } catch(const CommunicationError& error) {
-        getFSM().requestFailure(error.what());
+
+    // Try sending with exponential backoff:
+    auto backoff = backoff_time_;
+
+    for(std::size_t attempt = 1; attempt <= max_retries_; ++attempt) {
+        try {
+            send_message(text, priority, msg.getHeader().getSender(), card);
+            return;
+        } catch(const CommunicationError& error) {
+            if(attempt == max_retries_) {
+                getFSM().requestFailure(error.what());
+                return;
+            }
+
+            std::this_thread::sleep_for(backoff);
+            backoff *= 2;
+        }
     }
 }
 
-void MattermostSatellite::send_message(std::string&& text,
+void MattermostSatellite::send_message(const std::string& text,
                                        Priority priority,
                                        std::string_view username,
                                        std::string_view card) {
-    const auto response = cpr::Post(cpr::Url(webhook_url_),
-                                    cpr::Header({{"Content-Type", "application/json"}}),
-                                    cpr::Body({"{" + text_json(std::move(text)) + priority_json(priority) +
-                                               username_json(username) + card_json(card) + "}"}),
-                                    cpr::Timeout({2s}));
+    const auto response = cpr::Post(
+        cpr::Url(webhook_url_),
+        cpr::Header({{"Content-Type", "application/json"}}),
+        cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
+        cpr::Timeout({2s}));
     if(response.error) [[unlikely]] {
         throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
     }
 }
 
-std::string MattermostSatellite::text_json(std::string&& text) {
+std::string MattermostSatellite::text_json(const std::string& text) {
     constexpr const char* prefix = R"("text":")";
     constexpr const char* suffix = R"(")";
-    return prefix + escape_quotes(std::move(text)) + suffix;
+    return prefix + escape_quotes(text) + suffix;
 }
 
 std::string MattermostSatellite::priority_json(Priority priority) {
