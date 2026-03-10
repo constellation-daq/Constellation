@@ -27,10 +27,10 @@ class Influx(Satellite, StatListener):
         with self._influxdb_lock:
             self._influxdb_connected = False
 
-            url = config.get("url", "http://localhost:8086", return_type=str)
-            token = config.get("token", return_type=str)
-            org = config.get("org", return_type=str)
-            self.bucket = config.get("bucket", "constellation", return_type=str)
+            url = config.get_str("url", "http://localhost:8086")
+            token = config.get_str("token")
+            org = config.get_str("org")
+            self.bucket = config.get_str("bucket", "constellation")
             interval = int(config.get_num("flush_interval", 2.5, min_val=1) * 1000)
 
             self.client = InfluxDBClient(url=url, token=token, org=org)

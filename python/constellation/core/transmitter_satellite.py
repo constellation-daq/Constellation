@@ -85,7 +85,7 @@ class TransmitterSatellite(Satellite):
         self._dtm.eor_timeout = config_data.get_int("eor_timeout", 10, min_val=1)
         self._dtm.payload_threshold = config_data.get_int("payload_threshold", 128, min_val=0)
         self._dtm.queue_size = config_data.get_int("queue_size", 32768, min_val=1)
-        self._data_license = config_data.get("license", "ODC-By-1.0", return_type=str)
+        self._data_license = config_data.get_str("license", "ODC-By-1.0")
 
     def _pre_run_hook(self, run_identifier: str) -> None:
         """Hook run immediately before `do_run()` is called.
