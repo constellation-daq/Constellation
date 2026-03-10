@@ -352,8 +352,12 @@ void MissionControl::on_btnGenConf_clicked() {
 
     // Round-call to collect configurations from the satellites:
     for(const auto& config : runcontrol_.sendQCommands("get_config")) {
-        const auto cfg = Dictionary::disassemble(config.second.getPayload());
-        new_cfg.addSatelliteConfiguration(config.first, cfg);
+        try {
+            const auto cfg = Dictionary::disassemble(config.second.getPayload());
+            new_cfg.addSatelliteConfiguration(config.first, cfg);
+        } catch(const MsgpackUnpackError& error) {
+            LOG(logger_, WARNING) << error.what();
+        }
     }
 
     try {
