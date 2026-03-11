@@ -15,29 +15,24 @@ A file named `docker-compose.yaml` needs to be created with the following conten
 
 ```yaml
 services:
+
   influxdb:
     image: docker.io/library/influxdb:2
-    container_name: influxdb
     ports:
       - "8086:8086"
     volumes:
-      - influxdb-config:/etc/influxdb2
-      - influxdb-data:/var/lib/influxdb2
+      - ./influxdb-config:/etc/influxdb2
+      - ./influxdb-data:/var/lib/influxdb2
 
   grafana:
-    image: docker.io/grafana/grafana-oss
-    container_name: grafana
+    image: docker.io/grafana/grafana:latest
     ports:
       - "3000:3000"
     depends_on:
       - influxdb
+    user: "0"
     volumes:
-      - grafana-storage:/var/lib/grafana
-
-volumes:
-  influxdb-config:
-  influxdb-data:
-  grafana-storage:
+      - ./grafana:/var/lib/grafana
 ```
 
 Then the containers can be started with:
