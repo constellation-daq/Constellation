@@ -5,11 +5,11 @@ SPDX-License-Identifier: EUPL-1.2
 Abstract serial interface for Keithleys.
 """
 
-import time
 from abc import ABCMeta, abstractmethod
 from threading import Lock
 
-import serial
+import pyvisa
+import pyvisa.constants
 
 
 class KeithleyInterface(metaclass=ABCMeta):
@@ -18,22 +18,25 @@ class KeithleyInterface(metaclass=ABCMeta):
         port: str,
         baud: int,
         bits: int,
-        stopbits: int,
-        parity: str,
+        stopbits: pyvisa.constants.StopBits,
+        parity: pyvisa.constants.Parity,
         terminator: str,
-        flow_ctrl_xon_xoff: bool,
-        timeout: float = 2,
+        flow_control: bool,
+        timeout: float = 1000,
     ):
-        self._serial = serial.Serial(
-            port=port,
-            baudrate=baud,
-            bytesize=bits,
-            stopbits=stopbits,
+        self._rm = pyvisa.ResourceManager()
+        visa_address = f"ASRL{port}::INSTR"
+        self._serial: pyvisa.resources.SerialInstrument = self._rm.open_resource(  # type: ignore
+            visa_address,
+            baud_rate=baud,
+            data_bits=bits,
+            stop_bits=stopbits,
             parity=parity,
-            xonxoff=flow_ctrl_xon_xoff,
+            flow_control=flow_control,
+            read_termination=terminator,
+            write_termination=terminator,
             timeout=timeout,
         )
-        self._terminator = terminator
         self._lock = Lock()
 
     # Serial helper functions
@@ -43,15 +46,14 @@ class KeithleyInterface(metaclass=ABCMeta):
         Write command to serial port
         """
         with self._lock:
-            self._serial.write((command + self._terminator).encode())
+            self._serial.write(command)
 
-    def _write_read(self, command: str) -> str:
+    def _query(self, command: str) -> str:
         """
         Write command to serial and then read until terminator or timeout
         """
         with self._lock:
-            self._serial.write((command + self._terminator).encode())
-            return self._serial.read_until(self._terminator.encode()).decode().strip(self._terminator)
+            return self._serial.query(command)
 
     # Device functions
 
@@ -175,30 +177,3 @@ class KeithleyInterface(metaclass=ABCMeta):
         Release device from remote mode
         """
         pass
-
-    def ramp_voltage(self, voltage_target: float, voltage_step: float, settle_time: float):
-        """ """
-        if voltage_step <= 0:
-            raise ValueError("voltage step needs to be positive")
-        if settle_time <= 0:
-            raise ValueError("settle time needs to be positive")
-
-        voltage_current = self.get_voltage()
-        ramp_up = voltage_target > voltage_current
-
-        # Lambda to evaluate if another step should be added
-        do_next_step = lambda voltage: voltage + voltage_step < voltage_target  # noqa
-        if not ramp_up:
-            voltage_step *= -1
-            do_next_step = lambda voltage: voltage + voltage_step > voltage_target  # noqa
-
-        while voltage_current != voltage_target:
-            # Check if another step can be added without exceeding target
-            if do_next_step(voltage_current):
-                voltage_current += voltage_step
-            else:
-                voltage_current = voltage_target
-
-            # Set voltage and settle
-            self.set_voltage(voltage_current)
-            time.sleep(settle_time)
