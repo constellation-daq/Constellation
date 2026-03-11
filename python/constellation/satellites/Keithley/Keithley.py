@@ -106,6 +106,15 @@ class Keithley(Satellite):
 
         return f"Keithley at {self.device.get_voltage()}V"
 
+    def fail_gracefully(self) -> None:
+        # Try to ramp down
+        self.log.info("Attempting to ramp down after failure")
+        try:
+            self._ramp(0.0)
+            self.device.enable_output(False)
+        except Exception:
+            self.log.warning("Failed to ramp down")
+
     def reentry(self) -> None:
         if hasattr(self, "device"):
             self.device.release()
