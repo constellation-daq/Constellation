@@ -43,7 +43,7 @@ private:
 
 private:
     void log_callback(constellation::message::CMDP1LogMessage msg);
-    void send_message(std::string&& text,
+    void send_message(const std::string& text,
                       Priority priority = DEFAULT,
                       std::string_view username = "",
                       std::string_view card = "");
