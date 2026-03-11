@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -45,7 +47,7 @@ private:
                       Priority priority = DEFAULT,
                       std::string_view username = "",
                       std::string_view card = "");
-    static std::string text_json(std::string&& text);
+    static std::string text_json(const std::string& text);
     static std::string priority_json(Priority priority);
     static std::string username_json(std::string_view username);
     static std::string card_json(std::string_view card);
@@ -55,4 +57,6 @@ private:
     std::string webhook_url_;
     constellation::utils::string_hash_set ignore_topics_;
     bool only_in_run_ {};
+    std::chrono::milliseconds backoff_time_ {500};
+    std::size_t max_retries_ {5};
 };
