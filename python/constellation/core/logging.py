@@ -110,6 +110,6 @@ def setup_cli_logging(level: str) -> None:
     )
     zeromq_handler = ZeroMQSocketLogHandler()  # will be set up properly in MonitoringSender
     # Logging configuration
-    logging.basicConfig(format=logformat, handlers=[console_handler, zeromq_handler])
+    logging.basicConfig(level=logging.NOTSET, format=logformat, handlers=[console_handler, zeromq_handler])
     # Set ConstellationLogger as default logging class
     logging.setLoggerClass(ConstellationLogger)
