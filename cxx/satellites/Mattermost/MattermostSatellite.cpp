@@ -10,9 +10,11 @@
 #include "MattermostSatellite.hpp"
 
 #include <chrono> // IWYU pragma: keep
+#include <cstddef>
 #include <set>
 #include <string>
 #include <string_view>
+#include <thread>
 #include <utility>
 
 #include <cpr/cpr.h>
@@ -113,37 +115,38 @@ void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
     // Add level and topic to card
     auto card = "**Level**: " + enum_name(msg.getLogLevel()) + "\\n\\n**Topic**: ";
     card += msg.getLogTopic();
-
-    // Try sending with exponential backoff:
-    auto backoff = backoff_time_;
-
-    for(std::size_t attempt = 1; attempt <= max_retries_; ++attempt) {
-        try {
-            send_message(text, priority, msg.getHeader().getSender(), card);
-            return;
-        } catch(const CommunicationError& error) {
-            if(attempt == max_retries_) {
-                getFSM().requestFailure(error.what());
-                return;
-            }
-LOG(DEBUG) << "Sending message failed, waiting for " << backoff << " before trying again";
-            std::this_thread::sleep_for(backoff);
-            backoff *= 2;
-        }
+    // Try to send message, on failure go to ERROR state
+    try {
+        send_message(std::move(text), priority, msg.getHeader().getSender(), std::move(card));
+    } catch(const CommunicationError& error) {
+        getFSM().requestFailure(error.what());
     }
 }
 
-void MattermostSatellite::send_message(const std::string& text,
+void MattermostSatellite::send_message(std::string&& text,
                                        Priority priority,
                                        std::string_view username,
                                        std::string_view card) {
-    const auto response = cpr::Post(
-        cpr::Url(webhook_url_),
-        cpr::Header({{"Content-Type", "application/json"}}),
-        cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
-        cpr::Timeout({1s}));
-    if(response.error) [[unlikely]] {
-        throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
+
+    // Try sending with exponential backoff:
+    auto backoff = backoff_time_;
+    for(std::size_t attempt = 1; attempt <= max_retries_; ++attempt) {
+        const auto response = cpr::Post(
+            cpr::Url(webhook_url_),
+            cpr::Header({{"Content-Type", "application/json"}}),
+            cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
+            cpr::Timeout({1s}));
+        if(!response.error) [[likely]] {
+            return;
+        }
+
+        if(attempt == max_retries_) {
+            throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
+        }
+
+        LOG(DEBUG) << "Sending message failed, waiting for " << backoff << " before trying again";
+        std::this_thread::sleep_for(backoff);
+        backoff *= 2;
     }
 }
 
