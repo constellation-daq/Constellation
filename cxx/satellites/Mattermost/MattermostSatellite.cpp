@@ -126,7 +126,7 @@ void MattermostSatellite::log_callback(CMDP1LogMessage msg) {
                 getFSM().requestFailure(error.what());
                 return;
             }
-
+LOG(DEBUG) << "Sending message failed, waiting for " << backoff << " before trying again";
             std::this_thread::sleep_for(backoff);
             backoff *= 2;
         }
@@ -141,7 +141,7 @@ void MattermostSatellite::send_message(const std::string& text,
         cpr::Url(webhook_url_),
         cpr::Header({{"Content-Type", "application/json"}}),
         cpr::Body({"{" + text_json(text) + priority_json(priority) + username_json(username) + card_json(card) + "}"}),
-        cpr::Timeout({2s}));
+        cpr::Timeout({1s}));
     if(response.error) [[unlikely]] {
         throw CommunicationError("Failed to send message to Mattermost: " + response.error.message);
     }
