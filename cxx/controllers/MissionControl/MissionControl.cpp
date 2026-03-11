@@ -50,7 +50,7 @@
 #include "constellation/core/log/log.hpp"
 #include "constellation/core/protocol/CSCP_definitions.hpp"
 #include "constellation/core/utils/enum.hpp"
-#include "constellation/core/utils/msgpack.hpp"
+#include "constellation/core/utils/exceptions.hpp"
 #include "constellation/core/utils/string.hpp"
 #include "constellation/gui/QCommandDialog.hpp"
 #include "constellation/gui/QConnectionDialog.hpp"
