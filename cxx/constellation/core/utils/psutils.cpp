@@ -20,7 +20,7 @@
 #include <fstream>
 #include <string>
 
-#include <stdlib.h>
+#include <stdlib.h> // NOLINT(modernize-deprecated-headers)
 #endif
 
 #ifdef __APPLE__
